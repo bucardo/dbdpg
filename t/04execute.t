@@ -62,9 +62,9 @@ sub main {
         $sth->execute();
     };
     if ($@) {
-        print "ok $n\n"; $n++;
-    } else {
         print "not ok $n\n"; $n++;
+    } else {
+        print "ok $n\n"; $n++;
     }
 
     eval {
@@ -81,9 +81,9 @@ sub main {
         $sth->execute();
     };
     if ($@) {
-        print "ok $n\n"; $n++;
-    } else {
         print "not ok $n\n"; $n++;
+    } else {
+        print "ok $n\n"; $n++;
     }
 
     eval {
