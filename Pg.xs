@@ -161,6 +161,13 @@ getfd(dbh)
     ST(0) = sv_2mortal( newSViv( ret ) );
 
 void
+pg_endcopy(dbh)
+    SV * dbh
+    CODE:
+    D_imp_dbh(dbh);
+		ST(0) = pg_db_endcopy(dbh) ? &sv_no : &sv_yes;
+
+void
 pg_notifies(dbh)
     SV * dbh
     CODE:
@@ -303,11 +310,36 @@ lo_export(dbh, lobjId, filename)
 
 
 void
+pg_putline(dbh, buf)
+    SV * dbh
+    char * buf
+    CODE:
+      ST(0) = pg_db_putline(dbh, buf) ? &sv_yes : &sv_no;
+
+void
 putline(dbh, buf)
     SV * dbh
     char * buf
     CODE:
-        int ret = pg_db_putline(dbh, buf);
+      ST(0) = pg_db_putline(dbh, buf) ? &sv_yes : &sv_no;
+
+void
+pg_getline(dbh, buf, len)
+    PREINIT:
+        SV *bufsv = SvROK(ST(1)) ? SvRV(ST(1)) : ST(1);
+    INPUT:
+        SV * dbh
+        int len
+        char * buf = SvGROW(bufsv, 3);
+    CODE:
+				if (len > 3)
+					buf = SvGROW(bufsv, len);
+        int ret = pg_db_getline(dbh, buf, len);
+        if (*buf == '\\' && *(buf+1) == '.') {
+            ret = -1;
+        }
+    sv_setpv((SV*)ST(1), buf);
+    SvSETMAGIC(ST(1));
         ST(0) = (-1 != ret) ? &sv_yes : &sv_no;
 
 
@@ -318,8 +350,10 @@ getline(dbh, buf, len)
     INPUT:
         SV * dbh
         int len
-        char * buf = sv_grow(bufsv, len);
+        char * buf = SvGROW(bufsv, 3);
     CODE:
+				if (len > 3)
+					buf = SvGROW(bufsv, len);
         int ret = pg_db_getline(dbh, buf, len);
         if (*buf == '\\' && *(buf+1) == '.') {
             ret = -1;
@@ -327,7 +361,6 @@ getline(dbh, buf, len)
     sv_setpv((SV*)ST(1), buf);
     SvSETMAGIC(ST(1));
         ST(0) = (-1 != ret) ? &sv_yes : &sv_no;
-
 
 void
 endcopy(dbh)

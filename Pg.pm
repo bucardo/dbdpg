@@ -64,6 +64,9 @@ use 5.006001;
 		});
 
 
+		DBD::Pg::db->install_method("pg_putline");
+		DBD::Pg::db->install_method("pg_getline");
+		DBD::Pg::db->install_method("pg_endcopy");
 		DBD::Pg::db->install_method("pg_server_trace");
 		DBD::Pg::db->install_method("pg_server_untrace");
 		DBD::Pg::db->install_method("pg_savepoint");
@@ -1597,22 +1600,6 @@ object or C<undef> upon failure.
 Exports a large object into a Unix file. Returns false upon failure, true
 otherwise.
 
-=item putline
-
-  $ret = $dbh->func($line, 'putline');
-
-Used together with the SQL-command C<COPY table FROM STDIN> to copy large
-amount of data into a table avoiding the overhead of using single
-insert commands. The application must explicitly send the two characters "\."
-to indicate to the backend that it has finished sending its data.
-
-=item getline
-
-  $ret = $dbh->func($buffer, length, 'getline');
-
-Used together with the SQL-command C<COPY table TO STDOUT> to dump a complete
-table.
-
 =item pg_notifies
 
   $ret = $dbh->func('pg_notifies');
@@ -2648,6 +2635,80 @@ most recently created one.
 Releases (or removes) a named savepoint. If more than one savepoint with that name 
 exists, it will only destroy the most recently created one. Note that all savepoints 
 created after the one being released are also destroyed.
+
+=back
+
+=head2 COPY support
+
+DBD::Pg supports the COPY command through three functions: pg_putline, 
+pg_getline, and pg_endcopy. The COPY command allows data to be quickly 
+loaded or read from a table. The basic process is to issue a COPY 
+command via $dbh->do(), do either $dbh->pg_putline or $dbh->pg_getline, 
+and then issue a $dbh->pg_endcopy.
+
+The first step is to put the server into "COPY" mode. This is done by 
+sending a complete COPY command to the server, by using the do() method. 
+For example:
+
+  $dbh->do("COPY foobar FROM STDIN");
+
+This would tell the server to enter a COPY IN state. It is now ready to 
+receive information via the pg_putline method. The complete syntax of the 
+COPY command is more complex and not documented here: the canonical 
+PostgreSQL documentation for COPY be found at:
+
+http://www.postgresql.org/docs/current/static/sql-copy.html
+
+Note that 7.2 servers can only accept a small subset of later features in 
+the COPY command: most notably they do not accept column specifications.
+
+Once the COPY command has been issued, no other SQL commands are allowed 
+until after pg_endcopy has been successfully called. If in a COPY IN state, 
+you cannot use pg_getline, and if in COPY OUT state, you cannot use pg_putline.
+
+=over 4
+
+=item B<pg_putline>
+
+Used to put data into a table after the server has been put into COPY IN mode 
+by calling "COPY tablename FROM STDIN". The only argument is the data you want 
+inserted. The default delimiter is a tab character, but this can be changed in 
+the COPY statement. Returns a 1 on sucessful input. Examples:
+
+  $dbh->do("COPY mytable FROM STDIN");
+  $dbh->pg_putline("123\tPepperoni\t3\n");
+  $dbh->pg_putline("314\tMushroom\t8\n");
+  $dbh->pg_putline("6\tAnchovies\t100\n");
+  $dbh->pg_endcopy;
+
+  ## This example uses explicit columns and a custom delimiter
+  $dbh->do("COPY mytable(flavor, slices) FROM STDIN WITH DELIMITER '~'");
+  $dbh->pg_putline("Pepperoni~123\n");
+  $dbh->pg_putline("Mushroom~314\n");
+  $dbh->pg_putline("Anchovies~6\n");
+  $dbh->pg_endcopy;
+
+=item B<pg_getline>
+
+Used to retrieve data from a table after the server has been put into COPY OUT 
+mode by calling "COPY tablename TO STDOUT". The first argument to pg_getline is 
+the variable into which the data will be stored. The second argument is the size 
+of the variable: this should be greater than the expected size of the row. Returns 
+a 1 on success, and an empty string when the last row has been fetched. Example:
+
+  $dbh->do("COPY mytable TO STDOUT");
+  my @data;
+  my $x=0;
+  1 while($dbh->pg_getline($data[$x++], 100));
+  $dbh->pg_endcopy;
+  pop @data; ## Remove final "\\.\n" line
+
+=item B<pg_endcopy>
+
+When done with pg_putline or pg_getline, call pg_endcopy to put the server back in 
+a normal state. Returns a 1 on success. This method will fail if called when not 
+in a COPY IN or COPY OUT state. Note that you no longer need to send "\\.\n" when 
+in COPY IN mode: pg_endcopy will do this for you automatically as needed.
 
 =back
 

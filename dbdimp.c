@@ -296,6 +296,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	imp_dbh->prepare_now = 0;
 	imp_dbh->pg_errorlevel = 1; /* Matches PG default */
   imp_dbh->savepoints = newAV();
+	imp_dbh->copystate = 0;
 
 	/* If the server can handle it, we default to "smart", otherwise "off" */
 	imp_dbh->server_prepare = imp_dbh->pg_protocol >= 3 ? 
@@ -1489,6 +1490,10 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	if (NULL == imp_dbh->conn)
 		croak("execute on disconnected handle");
 
+	/* Abort if we are in the middle of a copy */
+	if (imp_dbh->copystate)
+		croak("Must call pg_endcopy before issuing more commands");
+
 	/* Ensure that all the placeholders have been bound */
 	if (imp_sth->numphs) {
 		for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
@@ -1752,6 +1757,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	if (dbis->debug >= 5)
 		PerlIO_printf(DBILOGFP, "  dbdpg: received a status of %d\n", status);
 
+	imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
 	if (PGRES_TUPLES_OK == status) {
 		num_fields = PQnfields(imp_sth->result);
 		imp_sth->cur_tuple = 0;
@@ -1775,6 +1781,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	}
 	else if (PGRES_COPY_OUT == status || PGRES_COPY_IN == status) {
 		/* Copy Out/In data transfer in progress */
+		imp_dbh->copystate = PGRES_COPY_OUT == status ? 1 : 2;
 		return -1;
 	}
 	else {
@@ -1967,6 +1974,8 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 			/* If a savepoint has been set, rollback to the last savepoint instead of the entire transaction */
 			I32	alen = av_len(imp_dbh->savepoints);
 			if (alen > -1) {
+		if (dbis->debug >= 4)
+			PerlIO_printf(DBILOGFP, "  dbdpg: Issuing rollback before deallocate2\n", tstatus);
 				SV		*sp = av_pop(imp_dbh->savepoints);
 				char	cmd[SvLEN(sp) + 13];
 				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
@@ -2282,12 +2291,15 @@ pg_db_putline (dbh, buffer)
 {
 		D_imp_dbh(dbh);
 		int result;
-		STRLEN buglen = strlen(buffer);
+
+		/* We must be in COPY_IN state */
+		if (2 != imp_dbh->copystate)
+			croak("pg_putline can only be called directly after issuing a COPY command\n");
 
 		if (imp_dbh->pg_protocol >= 3) {
 			if (dbis->debug >= 4)
 				PerlIO_printf(DBILOGFP, "  dbdpg: PQputCopyData\n");
-			result = PQputCopyData(imp_dbh->conn, buffer, buglen);
+			result = PQputCopyData(imp_dbh->conn, buffer, strlen(buffer));
 			if (-1 == result) {
 				pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
 				return 0;
@@ -2295,9 +2307,10 @@ pg_db_putline (dbh, buffer)
 			else if (1 != result) {
 				croak("PQputCopyData gave a value of %d\n", result);
 			}
+			return 1;
 		}
 		else {
-			return PQputline(imp_dbh->conn, buffer);
+			return ! PQputline(imp_dbh->conn, buffer); // XXX Fix me!
 		}
 }
 
@@ -2310,7 +2323,14 @@ pg_db_getline (dbh, buffer, length)
 		int length;
 {
 		D_imp_dbh(dbh);
+
+		/* We must be in COPY_IN state */
+		if (1 != imp_dbh->copystate)
+			croak("pg_getline can only be called directly after issuing a COPY command\n");
+
 		return PQgetline(imp_dbh->conn, buffer, length);
+
+		/* Someday use PQgetCopyData when we are not supporting 7.2 */
 }
 
 
@@ -2320,7 +2340,20 @@ pg_db_endcopy (dbh)
 		SV *dbh;
 {
 		D_imp_dbh(dbh);
-		return PQendcopy(imp_dbh->conn);
+
+		if (0==imp_dbh->copystate)
+			croak("pg_endcopy cannot be called until a COPY is issued");
+
+		if (imp_dbh->pg_protocol < 3 && imp_dbh->copystate==2) {
+			PQputline(imp_dbh->conn, "\\.\n");
+		}
+		if (PQendcopy(imp_dbh->conn)) {
+			pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+			return 1;
+		}
+
+		imp_dbh->copystate = 0;
+		return 0;
 }
 
 
