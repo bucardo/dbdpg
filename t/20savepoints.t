@@ -58,7 +58,8 @@ SKIP: {
 	ok (eq_set($ids, [500, 502, 503, 504]), "Implicit rollback on deallocate should rollback to last savepoint");
 }
 
-$dbh->rollback();
+$dbh->do("DELETE FROM dbd_pg_test");
+$dbh->commit();
 
 ok( $dbh->disconnect(), 'Disconnect from database');
 
