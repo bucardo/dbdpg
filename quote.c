@@ -99,7 +99,7 @@ PQescapeBytea(const unsigned char *bintext, size_t binlen, size_t *bytealen)
 				len++;
 		}
 	
-	New(0,result,len,unsigned char);
+	New(0, result, len, unsigned char);
 	if (NULL == rp)
 		return NULL;
 	rp = result;
@@ -169,7 +169,7 @@ PQunescapeBytea2(const unsigned char *strtext, size_t *retbuflen)
 	strtextlen = strlen(strtext);
 	/* will shrink, also we discover if strtext isn't NULL terminated */
 	
-	New(0,buffer,strtextlen,unsigned char);
+	New(0, buffer, strtextlen, unsigned char);
 	if (NULL == buffer)
 		return NULL;
 	
@@ -230,7 +230,7 @@ PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 		return NULL;
 	buflen = strlen(strtext);	/* will shrink, also we discover if
 														 * strtext */
-	New(0,buffer,buflen,unsigned char);
+	New(0, buffer, buflen, unsigned char);
 	if (NULL == buffer)
 		return NULL;
 	for (bp = buffer, sp = strtext; *sp != '\0'; bp++, sp++)
@@ -310,7 +310,7 @@ null_quote(string, len, retlen)
 	size_t *retlen;
 {
 	char *result;
-	New(0,result,len+1,char);
+	New(0, result, len+1, char);
 	strncpy(result,string,len);
 	result[len]='\0';
 	*retlen = len;
@@ -327,7 +327,7 @@ quote_varchar(string, len, retlen)
 	size_t	outlen;
 	char *result;
 
-	Newc(0,result,len*2+3,char, char);
+	New(0, result, len*2+3, char);
 	outlen = PQescapeString(result+1, string, len);
 	
 	/* TODO: remalloc outlen */
@@ -349,7 +349,7 @@ quote_char(string, len, retlen)
 	size_t	outlen;
 	char *result;
 	
-	Newc(0,result,len*2+3,char, char);
+	New(0, result, len*2+3, char);
 	outlen = PQescapeString(result+1, string, len);
 	
 	/* TODO: remalloc outlen */
@@ -377,7 +377,7 @@ quote_bytea(string, len, retlen)
 	unsigned char *intermead, *dest;
 	
 	intermead = PQescapeBytea(string, len, &resultant_len);
-	Newc(0,result,resultant_len+2,char, char);
+	New(0, result, resultant_len+2, char);
 	
 	
 	dest = result;
@@ -417,7 +417,7 @@ quote_sql_binary( string, len, retlen)
 
 	/* +4 == 3 for X''; 1 for \0 */
 	max_len = len*2+4;
-	Newc(0, result, max_len,char,char);
+	New(0, result, max_len, char);
 	
 	
 	dest = result;
@@ -454,7 +454,7 @@ quote_bool(value, len, retlen)
 	} else {
 		int_value = 42; /* Not true, not false. Just is */
 	}
-	Newc(0,result,max_len,char,char);
+	New(0, result, max_len, char);
 	
 	if (0 == int_value)
 		strcpy(result,"FALSE");
@@ -480,7 +480,7 @@ quote_integer(value, len, retlen)
 	char *result;
 	size_t	max_len=6;
 	
-	Newc(0,result,max_len,char,char);
+	New(0, result, max_len, char);
 	
 	if (0 == *((int*)value) )
 		strcpy(result,"FALSE");
