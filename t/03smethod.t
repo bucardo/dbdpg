@@ -49,6 +49,9 @@ ok( $sth->execute, 'Prepare/execute with pg_server_prepare on at database handle
 
 # Make sure that undefs are converted to NULL.
 $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, pdate) VALUES (?,?)');
+## Need a bind for 7.4 servers:
+$sth->bind_param(1, 401, SQL_INTEGER);
+$sth->bind_param(2, undef, SQL_TIMESTAMP);
 ok( $sth->execute(401, undef), "Prepare/execute with undef converted to NULL");
 
 $sth = $dbh->prepare($SQL, {pg_server_prepare => 0});
