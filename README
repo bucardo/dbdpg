@@ -3,9 +3,10 @@ DBD::Pg  --  a PostgreSQL interface for Perl 5.
 
    $Id$
 
+   Portions Copyright (c) 1994,1995,1996,1997 Tim Bunce
    Copyright (c) 1997,1998,1999,2000 Edmund Mergl
    Copyright (c) 2002 Jeffrey W. Baker
-   Portions Copyright (c) 1994,1995,1996,1997 Tim Bunce
+   Copyright (c) 2002 PostgreSQL Global Development Group
    
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.
@@ -14,16 +15,20 @@ DBD::Pg  --  a PostgreSQL interface for Perl 5.
 DESCRIPTION:
 ------------
 
-This is version 1.13 of DBD-Pg.
-DBD-Pg is a PostgreSQL interface for Perl5 using DBI.
+This is version 1.13 of DBD-Pg. DBD-Pg is a PostgreSQL interface for
+Perl5 using DBI.
+
+The web site for this interface is at:
+
+	http://gborg.postgresql.org/project/dbdpg/projdisplay.php
 
 For further information about DBI look at:
 
-    http://dbi.symbolstone.org/
+	http://dbi.symbolstone.org/
 
 For information about PostgreSQL, visit:
     
-    http://www.postgresql.org/
+	http://www.postgresql.org/
 
 CHANGES:
 ---------------
@@ -50,24 +55,20 @@ HOW TO GET THE LATEST VERSION:
 
 Use the following URL to look for new versions of this module: 
 
-    http://www.perl.com/CPAN/modules/by-module/DBD/
+	http://gborg.postgresql.org/project/dbdpg/projdisplay.php
 
-More recent or experimental versions might be found at:
+or
 
-    http://www.perl.com/CPAN/authors/Jeffrey_Baker/
-    
+	http://www.perl.com/CPAN/modules/by-module/DBD/
+
 Note, that this request will be redirected automatically to the 
 nearest CPAN site. 
-
-An older pre-compiled package for Windows-NT is available at:
-
-  http://www.edmund-mergl.de/export/DBD-Pg.zip
 
 
 IF YOU HAVE PROBLEMS:
 ---------------------
 
-Please send comments and bug-reports to <dbi-users@fugue.com>
+Please send comments and bug-reports to <dbd-general@gborg.postgresql.org>
 
 Please include the output of perl -v and perl -V, the version of PostgreSQL,
 the version of DBD-Pg, the version of DBI, and details about your platform
@@ -80,14 +81,6 @@ REQUIREMENTS:
   - build, test and install Perl 5         (at least 5.004)
   - build, test and install the DBI module (at least 1.21)
   - build, test and install PostgreSQL     (at least 6.5)
-
-
-PLATFORMS:
-----------
-
-  This release of DBD-Pg has been developed using Linux 2.4 with 
-  dynamic loading for the perl extensions. Let me know, if there 
-  are any problems with other platforms.
 
 
 INSTALLATION:
@@ -103,9 +96,6 @@ POSTGRES_LIB, to find the library libpq.so and the proper include files.
 
 ( 1. to 3. as normal user, not as root ! )
 
-For Windows-NT use the pre-compiled package DBD-Pg.zip. 
-Unzip the package and follow the instructions in the 
-README. 
 
 
 TESTING:
@@ -119,26 +109,29 @@ DBDPG_TEST_HOST=<hostname>
 DBDPG_TEST_DB=<database>
 DBDPG_TEST_USER=<user>
 DBDPG_TEST_PASS=<password>
-q
+
 If you are using the shared library libpq.so check if your dynamic loader 
 finds libpq.so. With Linux the command /sbin/ldconfig -v should tell you, 
 where it finds libpq.so. If ldconfig does not find libpq.so, either add an 
 appropriate entry to /etc/ld.so.conf and re-run ldconfig or add the path to 
 the environment variable LD_LIBRARY_PATH. 
 A typical error message resulting from not finding libpq.so is: 
+
   install_driver(Pg) failed: Can't load './blib/arch/auto/DBD/Pg/Pg.so' 
   for module DBD::Pg: File not found at 
 
 If you get an error message like:
+
   perl: error while loading shared libraries:
   /usr/lib/perl5/site_perl/5.6.0/i386-linux/auto/DBD/Pg/Pg.so: undefined
   symbol: PQconnectdb
+
 when you call DBI->connect, then your libpq.so was probably not seen at
 build-time. This should have caused 'make test' to fail; did you really
 run it and look at the output? Check the setting of POSTGRES_LIB and
 recompile DBD-Pg.
  
- Some linux distributions have an incomplete perl installation.
+Some linux distributions have incomplete perl installations.
 If you have compile errors like "XS_VERSION_BOOTCHECK undeclared", make a
           'find .../lib/perl5 -name XSUB.h -print'
 If this file is not present, you need to recompile and re-install perl.
@@ -172,9 +165,3 @@ Win32 Users: Running DBD-Pg scripts on Win32 needs some configuration work
              - add a postgres user with the same name as the NT-User (eg Administrator)
              - make sure, that your pg_hba.conf on the server is configured, 
                such that a connection from another host will be accepted
-
----------------------------------------------------------------------------
-
-   Jeffrey W. Baker <jwbaker@acm.org>                      27 April 2002   
-
----------------------------------------------------------------------------

@@ -2,21 +2,12 @@
 $Id$
 
 
-######################################################################
-#                                                                    #
-#             a pre-compiled package is available at:                #
-#                                                                    #
-#           http://www.edmund-mergl.de/export/DBD-Pg.zip             #
-#                                                                    #
-######################################################################
-
-
 Here is a step-by-step procedure for getting DBD-Pg to work on Windows NT.
 This Port has been done by Bob Kline <bkline@rksystems.com>. 
 
 
-prerequisites:    (older versions might also work, but these are the versions I used)
---------------
+prerequisites:	(older versions might also work, but these are the 
+--------------   versions I used)
 
  - Windows NT4 SP4
  - Visual Studio 6.0
