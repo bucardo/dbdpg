@@ -65,6 +65,13 @@ if ($serverversion < 70200) {
 	print "****************\n\n";
 }
 
+if ($serverversion < 70400) {
+	print "\n****************\n";
+	print "WARNING! Support for servers older than version 7.4 will soon end.\n";
+	print "It is highly recommended that you upgrade PostgreSQL to a newer version.\n";
+	print "****************\n\n";
+}
+
 my $dbi_arch_dir;
 if ($os eq 'MSWin32') {
 	$dbi_arch_dir = "\$(INSTALLSITEARCH)/auto/DBI";
