@@ -1,5 +1,8 @@
 	- a fetch on any column that had a type that did not have an entry
 	  in the type_info array would segfault DBD::Pg.  [reported by: TODO]
+	- Duplicate rows bug with column_info() REMARKS has been fixed. However,
+	  support for Postgres 7.1.x which worked briefly for 1.31 has now been
+	  dropped for this feature. (Mark Stosberg)
 
 1.31 Mon Nov 17 21:21:21 UTC 2003
 	- $dbh->{TYPE} now returns SQL_TYPE_TIMESTAMP instead of 1114 for 
