@@ -461,12 +461,12 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 		imp_dbh->pg_enable_utf8 = newval ? 1 : 0;
 #endif
 	}
-	else if (kl==14 && strEQ(key, "server_prepare")) {
+	else if (kl==17 && strEQ(key, "pg_server_prepare")) {
 		if (imp_dbh->pg_protocol >=3) {
 			imp_dbh->server_prepare = newval ? 1 : 0;
 		}
 	}
-	else if (kl==11 && strEQ(key, "prepare_now")) {
+	else if (kl==14 && strEQ(key, "pg_prepare_now")) {
 		if (imp_dbh->pg_protocol >=3) {
 			imp_dbh->prepare_now = newval ? 1 : 0;
 		}
@@ -508,9 +508,9 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 		retsv = newSViv((IV)INV_WRITE);
 	} else if (kl==11 && strEQ(key, "pg_protocol")) {
 		retsv = newSViv((IV)imp_dbh->pg_protocol);
-	} else if (kl==14 && strEQ(key, "server_prepare")) {
+	} else if (kl==17 && strEQ(key, "pg_server_prepare")) {
 		retsv = newSViv((IV)imp_dbh->server_prepare);
-	} else if (kl==11 && strEQ(key, "prepare_now")) {
+	} else if (kl==14 && strEQ(key, "pg_prepare_now")) {
 		retsv = newSViv((IV)imp_dbh->prepare_now);
 	} 
 	/* All the following are called too infrequently to bother caching */
@@ -695,11 +695,11 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 
 	/* Parse and set any attributes passed in */
 	if (attribs) {
-		if ((svp = hv_fetch((HV*)SvRV(attribs),"server_prepare", 14, 0)) != NULL)
+		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_server_prepare", 17, 0)) != NULL)
 			server_prepare = 0==SvIV(*svp) ? 0 : 1;
-		if ((svp = hv_fetch((HV*)SvRV(attribs),"direct", 6, 0)) != NULL)
+		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_direct", 9, 0)) != NULL)
 			direct = 0==SvIV(*svp) ? 0 : 1;
-		if ((svp = hv_fetch((HV*)SvRV(attribs),"prepare_now", 11, 0)) != NULL)
+		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_prepare_now", 14, 0)) != NULL)
 			prepare_now = 0==SvIV(*svp) ? 0 : 1;
 		/* bind_type is done in Pg.pm for now */
 	}
@@ -722,7 +722,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 		2. It's not "direct"
 		3. We can handle server-side prepares
 		4. dbh->{server_prepare} is true
-		5. They have not explicitly turned it off via sth->{server_prepare}
+		5. They have not explicitly turned it off via sth->{pg_server_prepare}
 		6. "prepare_now" (via arguments) is not false (0)
 		7. There are no placeholders OR "prepare_now" (via args/dbh) is on
 	*/
@@ -1815,7 +1815,7 @@ int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 
 	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_STORE\n"); }
 	
-	if (kl==14 && strEQ(key, "server_prepare")) {
+	if (kl==17 && strEQ(key, "pg_server_prepare")) {
 		imp_sth->server_prepare = strEQ(value,"0") ? 0 : 1;
 		/* Need to fool DBI into thinking we already have a valid statement */
 	}
@@ -1855,7 +1855,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		retsv = newSVpv((char *)imp_sth->prepare_name, 0);
 		return retsv;
 	}
-	else if (kl==14 && strEQ(key, "server_prepare")) {
+	else if (kl==17 && strEQ(key, "pg_server_prepare")) {
 		retsv = newSViv((IV)imp_sth->server_prepare);
 		return retsv;
  	}

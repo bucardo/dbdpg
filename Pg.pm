@@ -194,10 +194,10 @@ $DBD::Pg::VERSION = '1.33';
 
 		## Prevent 'do' from using server-side prepares unless specifically requested
 		if (! defined $attr) {
-			$attr = {server_prepare => 0};
+			$attr = {pg_server_prepare => 0};
 		}
-		elsif (ref $attr and ref $attr eq "HASH" and ! exists $attr->{server_prepare}) {
-			$attr->{server_prepare} = 0;
+		elsif (ref $attr and ref $attr eq "HASH" and ! exists $attr->{pg_server_prepare}) {
+			$attr->{pg_server_prepare} = 0;
 		}
 		my $sth = $dbh->prepare($statement, $attr) or return undef;
 		$sth->execute(@params) or return undef;
@@ -1594,26 +1594,26 @@ statement is prepared on the backend, and subsequent executes send the
 parameters only. Currently, the old way is the default method, even for servers 
 that can support the new way. The new "server-side prepare" can be toggled on and off 
 at the database handle level or at the statement handle level (at prepare time) with 
-the "server_prepare" attribute. For example, to enable server-side prepares in all 
+the "pg_server_prepare" attribute. For example, to enable server-side prepares in all 
 of your statements:
 
   $dbh = DBI->connect($DBNAME, $DBUSER, $DBPASS,
-    {AutoCommit=>0, RaiseError=>1, server_prepare=>1 });
+    {AutoCommit=>0, RaiseError=>1, pg_server_prepare=>1 });
 
 or just set it after your database handle is created:
 
-  $dbh->{server_prepare} = 1;
+  $dbh->{pg_server_prepare} = 1;
 
 
 To enable it for just one particular statement:
 
-  $sth = $dbh->prepare("SELECT id FROM mytable WHERE val = ?", {server_prepare => 1});
+  $sth = $dbh->prepare("SELECT id FROM mytable WHERE val = ?", {pg_server_prepare => 1});
 
 You can even toggle between the two as you go:
 
-  $sth->{server_prepare} = 1;
+  $sth->{pg_server_prepare} = 1;
   $sth->execute(22);
-  $sth->{server_prepare} = 0;
+  $sth->{pg_server_prepare} = 0;
   $sth->execute(44);
 
 In the above example, the first execute will use the new PREPARE method. In the second 
@@ -1648,25 +1648,25 @@ prepare but before the execute.
 
 A server-side prepare can also happen before the first execute. If the server can 
 handle the server-side prepare and the statement has no placeholders, it will 
-be prepared right away. It will also be prepared if the "prepare_now" argument 
-is sent. Similarly, the "prepare_now" argument can be set to 0 to ensure that 
+be prepared right away. It will also be prepared if the "pg_prepare_now" argument 
+is sent. Similarly, the "pg_prepare_now" argument can be set to 0 to ensure that 
 the statement is NOT prepared immediately, although cases in which you would 
 want this may be rare. Finally, you can set the default behavior of all prepare 
-statements to "prepare_now" by setting the attribute on the database handle:
+statements to "pg_prepare_now" by setting the attribute on the database handle:
 
-  $dbh->{prepare_now} = 1;
+  $dbh->{pg_prepare_now} = 1;
 
 The following two examples will be prepared right away:
 
   $sth->prepare("SELECT 123"); ## no placeholders
 
-  $sth->prepare("SELECT 123, ?", {prepare_now = 1});
+  $sth->prepare("SELECT 123, ?", {pg_prepare_now = 1});
 
 The following two examples will NOT be prepared right away:
 
   $sth->prepare("SELECT 123, ?"); ## has a placeholder
 
-  $sth->prepare("SELECT 123", {prepare_now = 0});
+  $sth->prepare("SELECT 123", {pg_prepare_now = 0});
 
 There are times when you may want to prepare a statement yourself. To do this, simply 
 send the PREPARE statement directly to the server (e.g. with "do"). Create a statement 
@@ -1687,6 +1687,10 @@ The above will run this query:
 Note: DBD::Pg will not escape your custom prepared statement name, so don't 
 use a name that needs escaping! DBD::Pg uses the prepare names "dbdpg_#" 
 internally, so please do not use those either.
+
+You can force DBD::Pg to send your query directly to the server by adding 
+the "pg_direct" attribute to your prepare call. This is not recommended, 
+but is added just in case you need it.
 
 =item B<Placeholders>
 
@@ -1741,7 +1745,7 @@ use different ones for each statement handle you have. Again, this is not encour
 
 Implemented by DBI, no driver-specific impact. This method is most useful 
 when using a server that supports server-side perpares, and you have asked 
-the prepare to happen immediately via the "prepare_now" attribute.
+the prepare to happen immediately via the "pg_prepare_now" attribute.
 
 =item B<do>
 
@@ -1750,7 +1754,7 @@ the prepare to happen immediately via the "prepare_now" attribute.
 Prepare and execute a single statement. Because statements with placeholders 
 should be calling prepare and execute themselves, calls to do will not 
 use server-side prepares by default. You can force the use of server-side 
-prepares by adding "server_prepare => 1" to the attribute hashref. See the 
+prepares by adding "pg_server_prepare => 1" to the attribute hashref. See the 
 notes on perpare, bind_param, and execute for more information.
 
 =item B<commit>
