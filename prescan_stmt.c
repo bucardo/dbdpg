@@ -410,7 +410,7 @@ rewrite_execute_stmt(sth, imp_sth, output)
 	phs_t *phs;
 	unsigned long ph;
 	bool in_literal = 0;
-
+	
 	src = statement = imp_sth->statement;
 	dest = output;
 	while ((ch = *src++)) {
@@ -426,7 +426,10 @@ rewrite_execute_stmt(sth, imp_sth, output)
 				if (!(back_slashes & 1)) 
 					in_literal = 0;
 			}
-        	}
+			*dest++ = ch;
+			continue;
+		}
+
 		/* check if no placeholders */
 		if (('$' != ch) || !isDIGIT(*src)) {
 			if ('\'' == ch || '"' == ch) {
@@ -446,7 +449,7 @@ rewrite_execute_stmt(sth, imp_sth, output)
 
 		memcpy(dest, phs->quoted, phs->quoted_len);
 		dest += phs->quoted_len;
-        }
+	}
 	*dest = '\0';
 	
 	return 0;
