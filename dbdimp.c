@@ -1913,11 +1913,8 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 			if (NULL == currseg->value) {
 				hv_store_ent(pvhv, newSVpv(currseg->placeholder,0), Nullsv, i);
 			}
-			else if (NULL == currseg->quoted) {
-				hv_store_ent(pvhv, newSVpv(currseg->placeholder,0), newSVpv(currseg->value,0),i);
-			}
 			else {
-				hv_store_ent(pvhv, newSVpv(currseg->placeholder,0), newSVpv(currseg->quoted,0),i);
+				hv_store_ent(pvhv, newSVpv(currseg->placeholder,0), newSVpv(currseg->value,0),i);
 			}
 		}
 		retsv = newRV_noinc((SV*)pvhv);
