@@ -20,19 +20,9 @@ access to PostgreSQL databases.
 
 =head1
 
-=head2 Version
-
-Version 0.91.
-
-=head2 Author and Contact Details
-
-The driver author is Edmund Mergl.  He can be contacted via the
-I<dbi-users> mailing list.
-
-
 =head2 Supported Database Versions and Options
 
-The DBD-Pg-0.92 module supports Postgresql 6.5.
+The DBD-Pg module supports Postgresql versions 7.1 and up.
 
 
 =head2 Connect Syntax
