@@ -1815,7 +1815,7 @@ increases. This number is tracked at the database handle level, so multiple
 statement handles will not collide. If you use your own prepare statements, do
 not name them "dbdpg_"!
 
-The actual C<PREPARE< is not performed until the first execute is called, due
+The actual C<PREPARE> is not performed until the first execute is called, due
 to the fact that information on the data types (provided by C<bind_param>) may
 be given after the prepare but before the execute.
 
