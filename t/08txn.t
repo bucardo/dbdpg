@@ -22,7 +22,6 @@ ok(defined $dbh2,
    'connect second dbh'
   );
 
-
 $dbh1->do(q{DELETE FROM test});
 ok($dbh1->commit(),
    'delete'
@@ -32,6 +31,7 @@ my $rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
 ok($rows == 0,
    'fetch on empty table from dbh1'
   );
+
 $rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
 ok($rows == 0,
    'fetch on empty table from dbh2'
