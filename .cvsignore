@@ -1,5 +1,6 @@
 Makefile
 Pg.bs
 Pg.c
+Pg.xsi
 blib
 pm_to_blib
