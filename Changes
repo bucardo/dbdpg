@@ -1,4 +1,4 @@
-1.31_4  Mon Aug 25 20:09:54 UTC 2003
+1.31_4 Mon Aug 25 20:09:54 UTC 2003
 	- Raised required versions to Perl 5.6.1 and DBI 1.35
 	- Fix syntax error related to pg_server_version (CPAN bugs #2492 and #2755)
 	- Cache multiple calls to pg_server_version.
@@ -31,14 +31,16 @@
 		is PGBOOLOID.
 	- Fixed many heap buffer overruns.
 	- Added support for the get_info() method [Greg Sabino Mullane]
-        - Added tests for POD validation [Mark Stosberg]
-    - Several improvements to column_info, including:                                                                         
-        - Fixed column_info so NULLABLE field shows correctly. [kevin@sysexperts.com] 
-        - REMARKS field works now [Mark Stosberg]                                                                             
-        - COLUMN_DEF fixed                                                                                                    
-        - COLUMN_SIZE fixed                                                                                                   
-        - pg_constraint column added to display column constraints                                                            
-        - additional documentation and tests added  
+	- Added tests for POD validation [Mark Stosberg]
+	- Several improvements to column_info, including:
+		- Fixed column_info so NULLABLE field shows correctly. [kevin@sysexperts.com]
+		- REMARKS field works now [Mark Stosberg]
+		- COLUMN_DEF fixed
+		- COLUMN_SIZE fixed
+		- pg_constraint column added to display column constraints
+		- additional documentation and tests added
+	- make test is now more intelligent and will bail out early if
+		db connection failes. [Greg Sabino Mullane]
 
 1.22 Wed Mar 26 22:33:44 EST 2003
 	- Win32 compile fix for snprintf [Joe Spears]
@@ -57,12 +59,12 @@
 	- Fix table_attributes to handle removal of pg_relcheck in 7.3,
 		from Ian Barwick <barwick@gmx.net>
 	- Properly reset transaction status after failed transaction when
-		autocommit is off.  Properly report transaction failure message.
+		autocommit is off. Properly report transaction failure message.
 		Kai <kai@xs4all.nl>
 	- New pg_bool_tf database handle that when set to true booleans are
 		returned as 't'/'f' rather than 1/0.
 
-1.20  Wed Nov 27 16:19:26 2002
+1.20 Wed Nov 27 16:19:26 2002
 	- Maintenance transferred to GBorg,
 		http://gborg.postgresql.org/project/dbdpg/projdisplay.php. Incremented
 		version number to reflect new management. [Bruce Momjian]
@@ -115,7 +117,7 @@
  
 1.01 Jun 27, 2001
 	- fixed core dump when trying to use a BYTEA value with
-		a byte outside 0..127  Alex Pilosov <alex@pilosoft.com>
+		a byte outside 0..127 Alex Pilosov <alex@pilosoft.com>
 
 1.00 May 27, 2001
 	- Fetching all records now resets Active flag as it should.
@@ -150,7 +152,7 @@
 		(now 128 Kbytes)
 	- apply patch from Tom Lane, which fixes a seg-fault when
 		inserting large amounts of text.
-	- apply patch from Peter Haworth   pmh@edison.ioppublishing.com,
+	- apply patch from Peter Haworth pmh@edison.ioppublishing.com,
 		which removes the newlines from the error messages and which 
 		quotes date placeholders.
 
@@ -275,8 +277,7 @@
 
 0.72 April 20, 1998
 	- applied patch from Michael J Schout <mschout@gkg.net>
-		which fixed the bug with queries containing the cast
-		    operator.
+		which fixed the bug with queries containing the cast operator.
 	- applied patch from "Irving Reid" <irving@tor.securecomputing.com>
 		which fixed a memory leak.
 
@@ -286,31 +287,30 @@
 		the problem with the InactiveDestroy message.
 
 0.70 March 28, 1998
-		  - linking again with the shared version of libpq 
-		    due to problems on several operating systems.
+	- linking again with the shared version of libpq 
+		due to problems on several operating systems.
 
-0.69 March  6, 1998
+0.69 March 6, 1998
 	- expanded the search path for include files
-		  - module is now linked with static libpq.a
+	- module is now linked with static libpq.a
 
-0.68  March 3, 1998
-		  - return to UNIX domain sockets in test-scripts
+0.68 March 3, 1998
+	- return to UNIX domain sockets in test-scripts
 
-0.67  February 21, 1998
-	- remove part of Driver.xst due to compile
-		error on some systems.
+0.67 February 21, 1998
+	- remove part of Driver.xst due to compile error on some systems.
 
-0.66  February 19, 1998
+0.66 February 19, 1998
 	- remove defines in Pg.h so that
 		it compiles also with postgresql-6.2.1
 	- changed ping method: set RaiseError=0
 
-0.65  February 14, 1998
+0.65 February 14, 1998
 	- adapted to changes in DBI-0.91, so that the
 		default setting for AutoCommit and PrintError is 
 		again conformant to the DBI specs.
 
-0.64  February 01, 1998
+0.64 February 01, 1998
 	- changed syntax of data_source (ODBC-conformant): 
 		'dbi:Pg:dbname=dbname;host=host;port=port'
 		!!! PLEASE ADAPT YOUR SCRIPTS !!!
@@ -324,7 +324,7 @@
 		$dbh->DBD::Pg::db::attributes($table);
 	- host-parameter in test.pl is set explicitly to localhost
 
-0.63  October 05, 1997
+0.63 October 05, 1997
 	- adapted to PostgreSQL-6.2:
 		o $sth->rows as well as $sth->execute and $sth->do return the 
 			number of affected rows even for non-Select statements.
@@ -332,7 +332,7 @@
 			please check the man-page for pg_passwd. 
 	- the data_source parameter of the connect 
 		method accepts two additional parameters 
-		which are  treated as host and port:
+		which are treated as host and port:
 		DBI->connect("dbi:Pg:dbname:host:port", "uid", "pwd")
 		- support for AutoCommit, please read the 
 		module documentation for impacts on your 
@@ -341,41 +341,41 @@
 		please read the module documentation for 
 		impacts on your scripts !
 
-0.62  August 26, 1997
+0.62 August 26, 1997
 	- added blobs/README
 
-0.61  August 23, 1997
+0.61 August 23, 1997
 	- adapted to DBI-0.89/Driver.xst
 	- added support for blob_read
 
-0.52  August 15, 1997
+0.52 August 15, 1997
 	- added support for literal $sth->{'TYPE'}, pg_type.pl / pg_type.pm.
 
-0.51  August 12, 1997
+0.51 August 12, 1997
 	- changed attributes to be DBI conformant:
 		o OID_STATUS to pg_oid_status
 		o CMD_STATUS to pg_cmd_status
 
-0.5   August 05, 1997
+0.5 August 05, 1997
 	- support for user authentication
 	- support for bind_columns
 	- added $dbh->tables
 
-0.4   Jun 24, 1997
+0.4 Jun 24, 1997
 	- adapted to DBI-0.84:
 		o new syntax for DBI->connect !
-		o execute returns 0E0 -> n for     SELECT stmt
+		o execute returns 0E0 -> n for SELECT stmt
 			-1 for non SELECT stmt
 			-2 on error
 	- new attribute $sth->{'OID_STATUS'}
 	- new attribute $sth->{'CMD_STATUS'}
 
-0.3   Apr 24, 1997
+0.3 Apr 24, 1997
 	- bug fix release, ( still alpha ! )
 
-0.2   Mar 13, 1997
+0.2 Mar 13, 1997
 	- complete rewrite, ( still alpha ! )
 
-0.1   Feb 15, 1997
+0.1 Feb 15, 1997
 	- creation, ( totally pre-alpha ! )
 
