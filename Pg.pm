@@ -248,7 +248,7 @@ $DBD::Pg::VERSION = '1.33';
 
 		my $whereclause = join "\n\t\t\t\tAND ", "", @search;
 
-		my $showschema = $version >= 70300 ? "n.nspname" : "NULL::text";
+		my $showschema = $version >= 70300 ? "quote_ident(n.nspname)" : "NULL::text";
 
 		my $schemajoin = $version >= 70300 ? 
 			"JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
@@ -261,8 +261,8 @@ $DBD::Pg::VERSION = '1.33';
 			SELECT
 				NULL::text AS "TABLE_CAT"
 				, $showschema AS "TABLE_SCHEM"
-				, c.relname AS "TABLE_NAME"
-				, a.attname AS "COLUMN_NAME"
+				, quote_ident(c.relname) AS "TABLE_NAME"
+				, quote_ident(a.attname) AS "COLUMN_NAME"
 				, a.atttypid AS "DATA_TYPE"
 				, ${CATALOG}format_type(a.atttypid, NULL) AS "TYPE_NAME"
 				, a.attlen AS "COLUMN_SIZE"
@@ -778,7 +778,7 @@ $DBD::Pg::VERSION = '1.33';
 			$tbl_sql = $version >= 70300 ? 
 				q{SELECT 
 						 NULL::text AS "TABLE_CAT"
-					 , n.nspname  AS "TABLE_SCHEM"
+					 , quote_ident(n.nspname) AS "TABLE_SCHEM"
 					 , NULL::text AS "TABLE_NAME"
 					 , NULL::text AS "TABLE_TYPE"
 					 , CASE WHEN n.nspname ~ '^pg_' THEN 'system schema' ELSE 'owned by ' || pg_get_userbyid(n.nspowner) END AS "REMARKS"
@@ -824,7 +824,7 @@ $DBD::Pg::VERSION = '1.33';
 			my $showtablespace = '';
 			my @search;
 			if ($version >= 70300) {
-				$showschema = "n.nspname";
+				$showschema = "quote_ident(n.nspname)";
 				$schemajoin = "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)";
 				$has_objsubid = "AND d.objsubid = 0";
 			}
@@ -853,11 +853,11 @@ $DBD::Pg::VERSION = '1.33';
 			push @search, "c.relkind $typesearch";
 			
 			my $whereclause = join "\n\t\t\t\t\t AND " => @search;
-			my $schemacase = $version >= 70300 ? "n.nspname" : "c.relname";
+			my $schemacase = $version >= 70300 ? "quote_ident(n.nspname)" : "quote_ident(c.relname)";
 			$tbl_sql = qq{
 				SELECT NULL::text AS "TABLE_CAT"
 					 , $showschema AS "TABLE_SCHEM"
-					 , c.relname AS "TABLE_NAME"
+					 , quote_ident(c.relname) AS "TABLE_NAME"
 					 , CASE
 					 		WHEN c.relkind = 'v' THEN
 								CASE WHEN $schemacase ~ '^pg_' THEN 'SYSTEM VIEW' ELSE 'VIEW' END
