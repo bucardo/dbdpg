@@ -250,9 +250,13 @@ dbd_quote  (string, pg_type, length, retlen)
 	sql_type_info_t *type_info;
 	char *retval;
 
+    if(pg_type == 17)
+	  croak("Use of SQL_BINARY invalid in quote()");
+
 	type_info = pg_type_data(pg_type);
 	if(!type_info)
 		croak("No Type info");
+
 
 	retval = type_info->quote(string, length, retlen);
  	return retval;
