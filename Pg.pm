@@ -62,8 +62,7 @@ $DBD::Pg::VERSION = '1.30_1';
 		my $dbh = shift;
 		return $dbh->{pg_server_version} if defined $dbh->{pg_server_version};
         my ($version) = $dbh->selectrow_array("SELECT version();");
-        return 0 unless $version =~ /^PostgreSQL ([\d\.]+)/;
-        $dbh{pg_server_version} = $1;
+        $dbh{pg_server_version} = ($version =~ /^PostgreSQL ([\d\.]+)/) ? $1 : 0;
         return $dbh{pg_server_version};
 	}
 
