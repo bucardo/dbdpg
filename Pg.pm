@@ -1369,14 +1369,14 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 DESCRIPTION
 
-DBD::Pg is a Perl module which works with the DBI module to provide access to
+DBD::Pg is a Perl module that works with the DBI module to provide access to
 PostgreSQL databases.
 
 =head1 MODULE DOCUMENTATION
 
 This documentation describes driver specific behavior and restrictions. It is
 not supposed to be used as the only reference for the user. In any case
-consult the DBI documentation first!
+consult the L<DBI|DBI> documentation first!
 
 =head1 THE DBI CLASS
 
@@ -1392,7 +1392,8 @@ syntax:
   $dbh = DBI->connect("dbi:Pg:dbname=$dbname", "", "");
 
 This connects to the database $dbname at localhost without any user
-authentication. This is sufficient for the defaults of PostgreSQL.
+authentication. This is sufficient for the defaults of PostgreSQL (excluding
+some package-installed versions).
 
 The following connect statement shows all possible parameters:
 
@@ -1419,14 +1420,14 @@ The options parameter specifies runtime options for the Postgres
 backend. Common usage is to increase the number of buffers with the C<-B>
 option. Also important is the C<-F> option, which disables automatic fsync()
 call after each transaction. For further details please refer to the
-L<PostgreSQL> documentation.
+PostgreSQL documentation at L<http://www.postgresql.org/docs/>.
 
-For authentication with username and password appropriate entries have to be
-made in pg_hba.conf. Please refer to the L<pg_hba.conf> and the L<pg_passwd> 
-files for the different types of authentication. Note that for these two parameters
-DBI distinguishes between empty and undefined. If these parameters are
-undefined DBI substitutes the values of the environment variables DBI_USER and
-DBI_PASS if present.
+For authentication with username and password, appropriate entries have to be
+made in F<pg_hba.conf>. Please refer to the comments in the F<pg_hba.conf> and
+the F<pg_passwd> files for the different types of authentication. Note that
+for these two parameters DBI distinguishes between empty and undefined. If
+these parameters are undefined DBI substitutes the values of the environment
+variables C<DBI_USER> and C<DBI_PASS> if present.
 
 =item B<available_drivers>
 
@@ -1438,10 +1439,10 @@ Implemented by DBI, no driver-specific impact.
 
   @data_sources = DBI->data_sources('Pg');
 
-This driver supports this method. Note that the necessary database connection to
-the database template1 will be done on the localhost without any
-user-authentication. Other preferences can only be set with the environment
-variables PGHOST, PGPORT, DBI_USER and DBI_PASS.
+This driver supports this method. Note that the necessary database connection
+to the database "template1" will be made on the localhost without any user
+authentication. Other preferences can only be set with the environment
+variables C<PGHOST>, C<PGPORT>, C<DBI_USER>, and C<DBI_PASS>.
 
 =item B<trace>
 
@@ -1450,10 +1451,6 @@ variables PGHOST, PGPORT, DBI_USER and DBI_PASS.
 Implemented by DBI, no driver-specific impact.
 
 =back
-
-=head2 DBI Dynamic Attributes
-
-See Common Methods.
 
 =head1 METHODS COMMON TO ALL HANDLES
 
@@ -1464,25 +1461,26 @@ See Common Methods.
   $rv = $h->err;
 
 Supported by this driver as proposed by DBI. For the connect method it returns
-PQstatus. In all other cases it returns PQresultStatus of the current handle.
+C<PQstatus>. In all other cases it returns C<PQresultStatus> of the current
+handle.
 
 =item B<errstr>
 
   $str = $h->errstr;
 
-Supported by this driver as proposed by DBI. It returns the PQerrorMessage
+Supported by this driver as proposed by DBI. It returns the C<PQerrorMessage>
 related to the current handle.
 
 =item B<state>
 
   $str = $h->state;
 
-Supported by this driver. Returns a five-character "SQLSTATE" code. 
-Databases before version 7.4 will always return a generic "S1000" code. 
+Supported by this driver. Returns a five-character "SQLSTATE" code.
+PostgreSQL servers version 7.4 will always return a generic "S1000" code.
 Success is indicated by a "00000" code.
 
 The list of codes used by PostgreSQL can be found at:
-http://www.postgresql.org/docs/current/static/errcodes-appendix.html
+L<http://www.postgresql.org/docs/current/static/errcodes-appendix.html>
 
 =item B<trace>
 
@@ -1499,15 +1497,20 @@ Implemented by DBI, no driver-specific impact.
 =item B<func>
 
 This driver supports a variety of driver specific functions accessible via the
-func interface:
+C<func> method.
+
+=over
+
+=item table_attributes
 
   $attrs = $dbh->func($table, 'table_attributes');
 
 The C<table_attributes> function is no longer recommended. Instead,
-you can use the more portable C<column_info> and C<primary_key> functions
-to access all the same information.
+you can use the more portable C<column_info> and C<primary_key> methods
+to access the same information.
 
-This method returns for the given table a reference to an array of hashes:
+The C<func> method returns, for the given table argument, a reference to an
+array of hashes, each of which contains the following keys:
 
   NAME        attribute name
   TYPE        attribute type
@@ -1518,9 +1521,10 @@ This method returns for the given table a reference to an array of hashes:
   PRIMARY_KEY flag is_primary_key
   REMARKS     attribute description
 
-The REMARKS field will be returned as NULL for Postgres versions 7.1.x and
+The REMARKS field will be returned as C<NULL> for Postgres versions 7.1.x and
 older.
 
+=item lo_create
 
   $lobjId = $dbh->func($mode, 'lo_creat');
 
@@ -1531,76 +1535,104 @@ constants:
   $dbh->{pg_INV_WRITE}
   $dbh->{pg_INV_READ}
 
-Upon failure it returns undef.
+Upon failure it returns C<undef>.
+
+=item lo_open
 
   $lobj_fd = $dbh->func($lobjId, $mode, 'lo_open');
 
 Opens an existing large object and returns an object-descriptor for use in
-subsequent lo_* calls. For the mode bits see lo_create. Returns undef upon
-failure. Note that 0 is a perfectly correct object descriptor!
+subsequent C<lo_*> calls. For the mode bits see C<lo_create>. Returns C<undef>
+upon failure. Note that 0 is a perfectly correct object descriptor!
+
+=item lo_write
 
   $nbytes = $dbh->func($lobj_fd, $buf, $len, 'lo_write');
 
 Writes $len bytes of $buf into the large object $lobj_fd. Returns the number
-of bytes written and undef upon failure.
+of bytes written and C<undef> upon failure.
+
+=item lo_read
 
   $nbytes = $dbh->func($lobj_fd, $buf, $len, 'lo_read');
 
 Reads $len bytes into $buf from large object $lobj_fd. Returns the number of
-bytes read and undef upon failure.
+bytes read and C<undef> upon failure.
+
+=item lo_lseek
 
   $loc = $dbh->func($lobj_fd, $offset, $whence, 'lo_lseek');
 
-Change the current read or write location on the large object
-$obj_id. Currently $whence can only be 0 (L_SET). Returns the current location
-and undef upon failure.
+Changes the current read or write location on the large object
+$obj_id. Currently $whence can only be 0 (C<L_SET>). Returns the current
+location and C<undef> upon failure.
+
+=item lo_tell
 
   $loc = $dbh->func($lobj_fd, 'lo_tell');
 
 Returns the current read or write location on the large object $lobj_fd and
-undef upon failure.
+C<undef> upon failure.
+
+=item lo_close
 
   $lobj_fd = $dbh->func($lobj_fd, 'lo_close');
 
 Closes an existing large object. Returns true upon success and false upon
 failure.
 
+=item lo_unlink
+
   $ret = $dbh->func($lobjId, 'lo_unlink');
 
 Deletes an existing large object. Returns true upon success and false upon
 failure.
 
+=item lo_import
+
   $lobjId = $dbh->func($filename, 'lo_import');
 
 Imports a Unix file as large object and returns the object id of the new
-object or undef upon failure.
+object or C<undef> upon failure.
+
+=item lo_export
 
   $ret = $dbh->func($lobjId, $filename, 'lo_export');
 
 Exports a large object into a Unix file. Returns false upon failure, true
 otherwise.
 
+=item putline
+
   $ret = $dbh->func($line, 'putline');
 
-Used together with the SQL-command 'COPY table FROM STDIN' to copy large
+Used together with the SQL-command C<COPY table FROM STDIN> to copy large
 amount of data into a table avoiding the overhead of using single
 insert commands. The application must explicitly send the two characters "\."
 to indicate to the backend that it has finished sending its data.
 
+=item getline
+
   $ret = $dbh->func($buffer, length, 'getline');
 
-Used together with the SQL-command 'COPY table TO STDOUT' to dump a complete
+Used together with the SQL-command C<COPY table TO STDOUT> to dump a complete
 table.
+
+=item pg_notifies
 
   $ret = $dbh->func('pg_notifies');
 
-Returns either undef or a reference to two-element array [ $table,
+Returns either C<undef> or a reference to two-element array [ $table,
 $backend_pid ] of asynchronous notifications received.
+
+=item getfd
 
   $fd = $dbh->func('getfd');
 
 Returns fd of the actual connection to server. Can be used with select() and
-func('pg_notifies'). Deprecated in favor of $dbh->{pg_socket}.
+func('pg_notifies'). Deprecated in favor of C<< $dbh->{pg_socket} >>.
+
+=back
 
 =back
 
@@ -1652,7 +1684,7 @@ Implemented by DBI, no driver-specific impact.
 =item B<ChopBlanks> (boolean, inherited)
 
 Supported by this driver as proposed by DBI. This method is similar to the
-SQL-function RTRIM.
+SQL function C<RTRIM>.
 
 =item B<LongReadLen> (integer, inherited)
 
@@ -1714,27 +1746,29 @@ Implemented by DBI, no driver-specific impact.
 
   $sth = $dbh->prepare($statement, \%attr);
 
-Prepares a statement for later execution. PostgreSQL supports prepared 
-statements, which enables DBD::Pg to only send the query once, and 
-simply send the arguments for every subsequent call to execute(). 
-DBD::Pg can use these server-side prepared statements, or it can 
-just send the entire query to the server each time. The best way 
-is automatically chosen for each query. This will be sufficient for 
-most users: keep reading for a more detailed explanation and some 
+Prepares a statement for later execution. PostgreSQL supports prepared
+statements, which enables DBD::Pg to only send the query once, and
+simply send the arguments for every subsequent call to execute().
+DBD::Pg can use these server-side prepared statements, or it can
+just send the entire query to the server each time. The best way
+is automatically chosen for each query. This will be sufficient for
+most users: keep reading for a more detailed explanation and some
 optional flags.
 
-Deciding whether or not to use prepared statements depends on many 
-factors, but you can force them to be used or not used by passing 
-the "pg_server_prepare" argument to prepare(). A "0" means to never 
-use prepared statements. This is the default when connected to servers 
-less than version 7.4, which is when prepared statements were introduced. 
-Setting pg_server_prepare to "1" means that prepared statements 
-should be used whenever possible. This is the default for servers 
-version 7.4 or higher. This attribute can also be set at connection 
+Deciding whether or not to use prepared statements depends on many
+factors, but you can force them to be used or not used by passing
+the C<pg_server_prepare> attribute to prepare(). A "0" means to never
+use prepared statements. This is the default when connected to servers
+earlier than version 7.4, which is when prepared statements were introduced.
+Setting C<pg_server_prepare> to "1" means that prepared statements
+should be used whenever possible. This is the default for servers
+version 7.4 or higher. This attribute can also be set at connection
 time like so:
 
   $dbh = DBI->connect($DBNAME, $DBUSER, $DBPASS,
-    {AutoCommit=>0, RaiseError=>1, pg_server_prepare=>0 });
+                      { AutoCommit => 0,
+                        RaiseError => 1,
+                        pg_server_prepare => 0 });
 
 or you may set it after your database handle is created:
 
@@ -1742,7 +1776,8 @@ or you may set it after your database handle is created:
 
 To enable it for just one particular statement:
 
-  $sth = $dbh->prepare("SELECT id FROM mytable WHERE val = ?", {pg_server_prepare => 1});
+  $sth = $dbh->prepare("SELECT id FROM mytable WHERE val = ?",
+                       { pg_server_prepare => 1 });
 
 You can even toggle between the two as you go:
 
@@ -1753,42 +1788,44 @@ You can even toggle between the two as you go:
   $sth->{pg_server_prepare} = 1;
   $sth->execute(66);
 
-In the above example, the first execute will use the previously prepared statement. 
-The second execute will not, but will build the query into a single string and send 
+In the above example, the first execute will use the previously prepared statement.
+The second execute will not, but will build the query into a single string and send
 it to the server. The third one will act like the first and only send the arguments.
 Even if you toggle back and forth, a statement is only prepared once.
 
-Using prepared statements is in theory quite a bit faster: not only does the 
-PostgreSQL backend only have to prepare the query once, but DBD::Pg no longer 
-has to worry about quoting each value before sending it to the server.
+Using prepared statements is in theory quite a bit faster: not only does the
+PostgreSQL backend only have to prepare the query only once, but DBD::Pg no
+longer has to worry about quoting each value before sending it to the server.
 
-However, there are some drawbacks. The server cannot always choose the ideal 
-parse plan because it will not know the arguments before hand. However, for most 
-situations in which you will be executing similar data many times, the default 
-plan will probably work out well. Further discussion on this subject are beyond 
-the scope of this documentation: please consult the pgsql-performance mailing list.
+However, there are some drawbacks. The server cannot always choose the ideal
+parse plan because it will not know the arguments before hand. But for most
+situations in which you will be executing similar data many times, the default
+plan will probably work out well. Further discussion on this subject is beyond
+the scope of this documentation: please consult the pgsql-performance mailing
+list, L<http://archives.postgresql.org/pgsql-performance/>
 
-If you are using DBD::Pg with 7.4 libraries, you must set each parameter using 
-bind_param() in order to use prepared statements. This can be a big hassle: 
-upgrading to 8.0 is highly recommended.
+If you are using DBD::Pg with 7.4 libraries, you must set the parameter for
+each placeholder using bind_param() in order to use prepared statements. This
+can be a big hassle: upgrading to 8.0 is highly recommended.
 
-Only certain commands will be sent to a server-side prepare: currently this includes 
-SELECT, INSERT, UPDATE, and DELETE. DBD::Pg uses a simple naming scheme for the 
-prepared statements: dbdpg_#,  where "#" starts at 1 and increases. This number is 
-tracked at the database handle level, so multiple statement handles will not collide.
-If you use your own prepare statements, do not name them "dbdpg_"!
+Only certain commands will be sent to a server-side prepare: currently these
+include C<SELECT>, C<INSERT>, C<UPDATE>, and C<DELETE>. DBD::Pg uses a simple
+naming scheme for the prepared statements: C<dbdpg_#>, where "#" starts at 1 and
+increases. This number is tracked at the database handle level, so multiple
+statement handles will not collide. If you use your own prepare statements, do
+not name them "dbdpg_"!
 
-The actual PREPARE is not done until the first execute is called, due to the fact 
-that information on the data types (provided by bind_param) may be given after the 
-prepare but before the execute. 
+The actual C<PREPARE< is not performed until the first execute is called, due
+to the fact that information on the data types (provided by C<bind_param>) may
+be given after the prepare but before the execute.
 
-A server-side prepare can also happen before the first execute. If the server can 
-handle the server-side prepare and the statement has no placeholders, it will 
-be prepared right away. It will also be prepared if the "pg_prepare_now" argument 
-is sent. Similarly, the "pg_prepare_now" argument can be set to 0 to ensure that 
-the statement is NOT prepared immediately, although cases in which you would 
-want this may be rare. Finally, you can set the default behavior of all prepare 
-statements to "pg_prepare_now" by setting the attribute on the database handle:
+A server-side prepare can also happen before the first execute. If the server can
+handle the server-side prepare and the statement has no placeholders, it will
+be prepared right away. It will also be prepared if the C<pg_prepare_now> attribute
+is passed. Similarly, the <pg_prepare_now> attribute can be set to 0 to ensure that
+the statement is B<not> prepared immediately, although cases in which you would
+want this may be rare. Finally, you can set the default behavior of all prepare
+statements by setting the C<pg_prepare_now> attribute on the database handle:
 
   $dbh->{pg_prepare_now} = 1;
 
@@ -1804,11 +1841,12 @@ The following two examples will NOT be prepared right away:
 
   $sth->prepare("SELECT 123", {pg_prepare_now = 0});
 
-There are times when you may want to prepare a statement yourself. To do this, simply 
-send the PREPARE statement directly to the server (e.g. with "do"). Create a statement 
-handle and set the prepared name via "pg_prepare_name". The statement handle can be 
-created with a dummy statement, as this will not be executed. However, it should have 
-the same number of placeholders as your prepared statement. Example:
+There are times when you may want to prepare a statement yourself. To do this,
+simply send the C<PREPARE> statement directly to the server (e.g. with
+"do"). Create a statement handle and set the prepared name via
+C<pg_prepare_name> attribute. The statement handle can be created with a dummy
+statement, as it will not be executed. However, it should have the same
+number of placeholders as your prepared statement. Example:
 
   $dbh->do("PREPARE mystat AS SELECT COUNT(*) FROM pg_class WHERE reltuples < ?");
   $sth = $dbh->prepare("ABC ?");
@@ -1820,28 +1858,28 @@ The above will run this query:
 
   SELECT COUNT(*) FROM pg_class WHERE reltuples < 123;
 
-Note: DBD::Pg will not escape your custom prepared statement name, so don't 
-use a name that needs escaping! DBD::Pg uses the prepare names "dbdpg_#" 
+Note: DBD::Pg will not escape your custom prepared statement name, so don't
+use a name that needs escaping! DBD::Pg uses the prepare names C<dbdpg_#>
 internally, so please do not use those either.
 
-You can force DBD::Pg to send your query directly to the server by adding 
-the "pg_direct" attribute to your prepare call. This is not recommended, 
+You can force DBD::Pg to send your query directly to the server by adding
+the C<pg_direct> attribute to your prepare call. This is not recommended,
 but is added just in case you need it.
 
 =item B<Placeholders>
 
-There are three types of placeholders that can be used in DBD::Pg. The first is 
-the question mark method, in which each placeholder is represented by a single 
-question mark. This is the method recommended by the DBI specs and is the most 
-portable. Each question mark is replaced by a "dollar sign number" in the order 
-in which they appear in the query (important when using bind_param).
+There are three types of placeholders that can be used in DBD::Pg. The first is
+the question mark method, in which each placeholder is represented by a single
+question mark. This is the method recommended by the DBI specs and is the most
+portable. Each question mark is replaced by a "dollar sign number" in the order
+in which they appear in the query (important when using C<bind_param>).
 
-The second method is to use "dollar sign numbers" directly. This is the method 
-that PostgreSQL uses internally and is overall probably the best method to use 
-if you do not need compatibility with other database systems. DBD::Pg, like 
-PostgreSQL, allows the same number to be used more than once in the query. 
-Numbers must start with "1" and increment by one value. If the same number 
-appears more than once in a query, it is treated as a single parameter and all 
+The second method is to use "dollar sign numbers" directly. This is the method
+that PostgreSQL uses internally and is overall probably the best method to use
+if you do not need compatibility with other database systems. DBD::Pg, like
+PostgreSQL, allows the same number to be used more than once in the query.
+Numbers must start with "1" and increment by one value. If the same number
+appears more than once in a query, it is treated as a single parameter and all
 instances are replaced at once. Examples:
 
 Not legal:
@@ -1860,7 +1898,7 @@ Legal:
 
   $SQL = "SELECT count(*) FROM pg_class WHERE relpages > $1 AND reltuples > $1";
 
-In the final statement above, DBI thinks there is only one placeholder, so this 
+In the final statement above, DBI thinks there is only one placeholder, so this
 statement will replace both placeholders:
 
   $sth->bind_param(1, 2045);
@@ -1869,53 +1907,54 @@ While execute requires only a single argument as well:
 
   $sth->execute(2045);
 
-The final placeholder method is the named parameters in the format ":foo". While this 
-is supported by DBD::Pg, its use is highly discouraged.
+The final placeholder method is the named parameters in the format ":foo". While this
+syntax is supported by DBD::Pg, its use is highly discouraged.
 
-The different types of placeholders cannot be mixed within a statement, but you may 
+The different types of placeholders cannot be mixed within a statement, but you may
 use different ones for each statement handle you have. Again, this is not encouraged.
 
 =item B<prepare_cached>
 
   $sth = $dbh->prepare_cached($statement, \%attr);
 
-Implemented by DBI, no driver-specific impact. This method is most useful 
-when using a server that supports server-side prepares, and you have asked 
-the prepare to happen immediately via the "pg_prepare_now" attribute.
+Implemented by DBI, no driver-specific impact. This method is most useful
+when using a server that supports server-side prepares, and you have asked
+the prepare to happen immediately via the C<pg_prepare_now> attribute.
 
 =item B<do>
 
   $rv  = $dbh->do($statement, \%attr, @bind_values);
 
-Prepare and execute a single statement. Because statements with placeholders 
-should be calling prepare and execute themselves, calls to do will not 
-use server-side prepares by default. You can force the use of server-side 
-prepares by adding "pg_server_prepare => 1" to the attribute hashref. See the 
-notes on prepare, bind_param, and execute for more information.
+Prepare and execute a single statement. Because statements with placeholders
+should be calling prepare and execute themselves, calls to C<do()> will not
+use server-side prepares by default. You can force the use of server-side
+prepares by adding C<pg_server_prepare => 1> to the attribute hashref. See the
+notes on C<prepare>, C<bind_param>, and C<execute> for more information.
 
 =item B<last_insert_id>
 
   $rv = $dbh->last_insert_id($catalog, $schema, $table, $field);
   $rv = $dbh->last_insert_id($catalog, $schema, $table, $field, \%attr);
 
-Attempts to return the id of the last value to be inserted into a table. 
-You can either provide a sequence name (preferred) or provide a table 
-name with optional schema. The "catalog" and "field" are always ignored. 
-The current value of the sequence is returned by a call to the 
-currval() function. This will fail if the sequence has not yet been used. 
+Attempts to return the id of the last value to be inserted into a table.
+You can either provide a sequence name (preferred) or provide a table
+name with optional schema. The $catalog and $field arguments are always ignored.
+The current value of the sequence is returned by a call to the
+C<CURRVAL()> PostgreSQL function. This will fail if the sequence has not yet
+been used in the current database connection.
 
-If you do not know the name of the sequence, you can provide a table name 
-and DBD::Pg will attempt to return the correct value. To do this, there 
-must be at least one column in the table that is not null, has a unique 
-constraint, and uses a sequence as a default value. If more than one 
-column meets these conditions, the primary key will be used. This involves 
-some looking up of things in the system table, so DBD::Pg will cache the 
-sequence name for susequent calls. If you need to disable this caching 
-for some reason, you can control it via the "pg_cache" argument.
+If you do not know the name of the sequence, you can provide a table name and
+DBD::Pg will attempt to return the correct value. To do this, there must be at
+least one column in the table with a C<NOT NULL> constraint, has a unique
+constraint, and uses a sequence as a default value. If more than one column
+meets these conditions, the primary key will be used. This involves some
+looking up of things in the system table, so DBD::Pg will cache the sequence
+name for susequent calls. If you need to disable this caching for some reason,
+you can control it via the C<pg_cache> attribute.
 
-Please keep in mind that this method is far from foolproof, so make your 
-script uses it properly. Specifically, make sure that it is called 
-immediately after the insert, and that the insert does not add a value 
+Please keep in mind that this method is far from foolproof, so make your
+script use it properly. Specifically, make sure that it is called
+immediately after the insert, and that the insert does not add a value
 to the column that is using the sequence as a default value.
 
 Some examples:
@@ -1928,7 +1967,7 @@ Some examples:
   $sth = $dbh->prepare($SQL);
   for (qw(uno dos tres quattro)) {
     $sth->execute($_);
-    my $newid = $dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'lii_seq'});
+    my $newid = $dbh->last_insert_id(C<undef>,undef,undef,undef,{sequence=>'lii_seq'});
     print "Last insert id was $newid\n";
   }
 
@@ -1944,7 +1983,6 @@ If you did not want to worry about the sequence name:
     my $newid = $dbh->last_insert_id(undef,undef,"lii2",undef);
     print "Last insert id was $newid\n";
   }
-
 
 =item B<commit>
 
@@ -1970,8 +2008,8 @@ Supported by this driver as proposed by DBI.
 
   $rc = $dbh->ping;
 
-This driver supports the ping method, which can be used to check the validity
-of a database handle. The ping method issues an empty query and checks the
+This driver supports the C<ping> method, which can be used to check the validity
+of a database handle. The C<ping> method issues an empty query and checks the
 result status.
 
 =item B<column_info>
@@ -1979,7 +2017,7 @@ result status.
   $sth = $dbh->column_info( $catalog, $schema, $table, $column );
 
 Supported by this driver as proposed by the DBI with the follow exceptions.
-These fields are currently always returned with NULL values:
+These fields are currently always returned with C<NULL> values:
 
    TABLE_CAT
    BUFFER_LENGTH
@@ -1996,47 +2034,48 @@ Also, four additional non-standard fields are returned:
   pg_attypmod
   pg_constraint - holds column constraint definition
 
-The REMARKS field will be returned as NULL for Postgres versions 7.1.x and
-older.
+The REMARKS field will be returned as C<NULL> for PostgreSQL versions 7.1.x
+and older.
 
 =item B<table_info>
 
   $sth = $dbh->table_info( $catalog, $schema, $table, $type );
 
-Supported by this driver as proposed by DBI. This method returns all tables 
-and views visible to the current user. The $catalog argument is currently 
-unused. The schema and table arguments will do a 'LIKE' search if a 
-percent sign (%) or an underscore (_) are detected in the argument.
-The $type argument accepts a value of either "TABLE" or "VIEW" 
+Supported by this driver as proposed by DBI. This method returns all tables
+and views visible to the current user. The $catalog argument is currently
+unused. The schema and table arguments will do a C<LIKE> search if a
+percent sign (C<%>) or an underscore (C<_>) is detected in the argument.
+The $type argument accepts a value of either "TABLE" or "VIEW"
 (using both is the default action).
 
-If your database supports tablespaces (version 8.0 or greater), two additional 
-columns are returned named "pg_tablespace_name" and "pg_tablespace_location" 
-which contain the name and location of the tablespace associated with 
-this table. Tables that have not been assigned to a particular tablespace 
-will return undef for both of these columns.
+If your database supports tablespaces (version 8.0 or greater), two additional
+columns are returned, named "pg_tablespace_name" and "pg_tablespace_location",
+that contain the name and location of the tablespace associated with
+this table. Tables that have not been assigned to a particular tablespace
+will return C<undef> for both of these columns.
 
 =item B<primary_key_info>
 
   $sth = $dbh->primary_key_info( $catalog, $schema, $table, \%attr );
 
-Supported by this driver as proposed by DBI. The $catalog argument is 
-currently unused, and the $schema argument has no effect against 
-servers running version 7.2 or less. There are no search patterns allowed, 
-but leaving the $schema argument blank will cause the first table 
-found in the schema search path to be used. An additional field, DATA_TYPE, 
-is returned and shows the data type for each of the arguments in the 
-COLUMN_NAME field.
+Supported by this driver as proposed by DBI. The $catalog argument is
+currently unused, and the $schema argument has no effect against
+servers running version 7.2 or older. There are no search patterns allowed,
+but leaving the $schema argument blank will cause the first table
+found in the schema search path to be used. An additional field, "DATA_TYPE",
+is returned and shows the data type for each of the arguments in the
+"COLUMN_NAME" field.
 
-This will also return tablespace information for servers that support it. 
-See the table_info entry for more information.
+This method will also return tablespace information for servers that support
+tablespaces. See the C<table_info> entry for more information.
 
-In addition to the standard format of returning one row for each column 
-found for the primary key, you can pass the argument "pg_onerow" to force 
-a single row to be used. If the primary key has multiple columns, the 
-KEY_SEQ, COLUMN_NAME, and DATA_TYPE fields will return a comma-delimited 
-string. If "pg_onerow" is set to "2", the fields will be returned as an 
-arrayref, which can be useful when multiple columns are involved:
+In addition to the standard format of returning one row for each column
+found for the primary key, you can pass the C<pg_onerow> attribute to force
+a single row to be used. If the primary key has multiple columns, the
+"KEY_SEQ", "COLUMN_NAME", and "DATA_TYPE" fields will return a comma-delimited
+string. If the C<pg_onerow> attribute is set to "2", the fields will be
+returned as an arrayref, which can be useful when multiple columns are
+involved:
 
   $sth = $dbh->primary_key_info('', '', 'dbd_pg_test', {pg_onerow => 2});
   if (defined $sth) {
@@ -2051,39 +2090,37 @@ arrayref, which can be useful when multiple columns are involved:
 
 Supported by this driver as proposed by DBI.
 
-
 =item B<foreign_key_info>
 
   $sth = $dbh->foreign_key_info( $pk_catalog, $pk_schema, $pk_table,
                                  $fk_catalog, $fk_schema, $fk_table );
 
-Supported by this driver as proposed by DBI, using the SQL/CLI variant. 
-This function returns undef for PostgreSQL servers earlier than version 
-7.3. There are no search patterns allowed, but leaving the $schema argument 
-blank will cause the first table found in the schema search path to be 
-used. Two additional fields, UK_DATA_TYPE and FK_DATA_TYPE, are returned 
-which show the data type for the unique and foreign key columns. Foreign 
-keys which have no named constraint (where the referenced column only has 
-an unique index) will return undef for the UK_NAME field.
+Supported by this driver as proposed by DBI, using the SQL/CLI variant.
+This function returns C<undef> for PostgreSQL servers earlier than version
+7.3. There are no search patterns allowed, but leaving the $schema argument
+blank will cause the first table found in the schema search path to be
+used. Two additional fields, "UK_DATA_TYPE" and "FK_DATA_TYPE", are returned
+to show the data type for the unique and foreign key columns. Foreign
+keys that have no named constraint (where the referenced column only has
+an unique index) will return C<undef> for the "UK_NAME" field.
 
 =item B<tables>
 
   @names = $dbh->tables( $catalog, $schema, $table, $type, \%attr );
 
-Supported by this driver as proposed by DBI. This method returns all tables 
-and/or views which are visible to the current user: see the table_info() 
-for more information about the arguments. If the database is version 7.3 
-or higher, the name of the schema appears before the table or view name. This 
-can be turned off by adding in the "pg_noprefix" attribute:
+Supported by this driver as proposed by DBI. This method returns all tables
+and/or views which are visible to the current user: see C<table_info()>
+for more information about the arguments. If the database is version 7.3
+or later, the name of the schema appears before the table or view name. This
+can be turned off by adding in the C<pg_noprefix> attribute:
 
   my @tables = $dbh->tables( '', '', 'dbd_pg_test', '', {pg_noprefix => 1} );
-
 
 =item B<type_info_all>
 
   $type_info_all = $dbh->type_info_all;
 
-Supported by this driver as proposed by DBI. Information is only provided for 
+Supported by this driver as proposed by DBI. Information is only provided for
 SQL datatypes and for frequently used datatypes. The mapping between the
 PostgreSQL typename and the SQL92 datatype (if possible) has been done
 according to the following table:
@@ -2112,7 +2149,7 @@ according to the following table:
   +---------------+------------------------------------+
 
 For further details concerning the PostgreSQL specific datatypes please read
-the L<pgbuiltin>.
+L<pgbuiltin|pgbuiltin>.
 
 =item B<type_info>
 
@@ -2124,7 +2161,7 @@ Implemented by DBI, no driver-specific impact.
 
   $sql = $dbh->quote($value, $data_type);
 
-This module implements its own quote method. In addition to the DBI method it
+This module implements its own C<quote> method. In addition to the DBI method it
 also doubles the backslash, because PostgreSQL treats a backslash as an escape
 character.
 
@@ -2143,7 +2180,7 @@ type is officially deprecated. Use C<PG_BYTEA> with C<bind_param()> instead:
 =item B<AutoCommit>  (boolean)
 
 Supported by this driver as proposed by DBI. According to the classification of
-DBI, PostgreSQL is a database, in which a transaction must be explicitly
+DBI, PostgreSQL is a database in which a transaction must be explicitly
 started. Without starting a transaction, every change to the database becomes
 immediately permanent. The default of AutoCommit is on, which corresponds to
 the default behavior of PostgreSQL. When setting AutoCommit to off, a
@@ -2157,10 +2194,10 @@ Implemented by DBI, no driver-specific impact.
 
 =item B<Name>  (string, read-only)
 
-The default method of DBI is overridden by a driver specific method, which
-returns only the database name. Anything else from the connection string is
-stripped off. Note, that here the method is read-only in contrast to the DBI
-specs.
+The default DBI method is overridden by a driver specific method that returns
+only the database name. Anything else from the connection string is stripped
+off. Note that, in contrast to the DBI specs, the DBD::Pg implementation fo
+this method is read-only .
 
 =item B<RowCacheSize>  (integer)
 
@@ -2174,41 +2211,38 @@ parameters will be escaped in the following way:
   escape quote with a quote (SQL)
   escape backslash with a backslash
 
-The default is on. Note, that PostgreSQL also accepts quotes, which are
+The default is on. Note that PostgreSQL also accepts quotes that are
 escaped by a backslash. Any other ASCII character can be used directly in a
 string constant.
 
 =item B<pg_enable_utf8> (boolean)
 
-PostgreSQL specific attribute.  If true, then the utf8 flag will be
-turned for returned character data (if the data is valid utf8).  For
-details about the utf8 flag, see L<Encode>.  This is only relevant under
-perl 5.8 and higher.
+PostgreSQL specific attribute. If true, then the C<utf8> flag will be turned
+for returned character data (if the data is valid UTF-8). For details about
+the C<utf8> flag, see L<Encode|Encode>. This attribute only relevant under
+perl 5.8 and later.
 
 B<NB>: This attribute is experimental and may be subject to change.
 
 =item B<pg_INV_READ> (integer, read-only)
 
-Constant to be used for the mode in lo_creat and lo_open.
+Constant to be used for the mode in C<lo_creat> and C<lo_open>.
 
 =item B<pg_INV_WRITE> (integer, read-only)
 
-Constant to be used for the mode in lo_creat and lo_open.
+Constant to be used for the mode in C<lo_creat> and C<lo_open>.
 
 =item B<pg_bool_tf> (boolean)
 
-PostgreSQL specific attribute. If true, boolean values will be returned 
+PostgreSQL specific attribute. If true, boolean values will be returned
 as the characters 't' and 'f' instead of '1' and '0'.
 
 =item B<pg_protocol> (integer, read-only)
 
-PostgreSQL specific attribute. Returns the version of the PostgreSQL server. 
-If DBD::Pg is unable to figure out the version (e.g. it was compiled 
-against pre 7.4 libraries), it will return a "0". Otherwise, servers below 
+PostgreSQL specific attribute. Returns the version of the PostgreSQL server.
+If DBD::Pg is unable to figure out the version (e.g. it was compiled
+against pre 7.4 libraries), it will return a "0". Otherwise, servers below
 version 7.4 return a "2", and (currently) 7.4 and above return a "3".
-
-Many things were introduced with version 3 of the protocol, including 
-server-side prepares and advanced error codes.
 
 =item B<pg_db> (string, read-only)
 
@@ -2216,38 +2250,38 @@ PostgreSQL specific attribute. Returns the name of the current database.
 
 =item B<pg_user> (string, read-only)
 
-PostgreSQL specific attribute. Returns the name of the user that 
+PostgreSQL specific attribute. Returns the name of the user that
 connected to the server.
 
 =item B<pg_pass> (string, read-only)
 
-PostgreSQL specific attribute. Returns the password used to connect 
+PostgreSQL specific attribute. Returns the password used to connect
 to the server.
 
 =item B<pg_host> (string, read-only)
 
-PostgreSQL specific attribute. Returns the host of the current 
-server connection. Locally connected hosts will return an empty 
+PostgreSQL specific attribute. Returns the host of the current
+server connection. Locally connected hosts will return an empty
 string.
 
 =item B<pg_port> (integer, read-only)
 
-PostgreSQL specific attribute. Returns the port of the connection to 
+PostgreSQL specific attribute. Returns the port of the connection to
 the server.
 
 =item B<pg_options> (string, read-only)
 
-PostgreSQL specific attribute. Returns the command-line options passed 
+PostgreSQL specific attribute. Returns the command-line options passed
 to the server. May be an empty string.
 
 =item B<pg_socket> (number, read-only)
 
-PostgreSQL specific attribute. Returns the file description number of 
+PostgreSQL specific attribute. Returns the file description number of
 the connection socket to the server.
 
 =item B<pg_pid> (number, read-only)
 
-PostgreSQL specific attribute. Returns the process id (PID) of the 
+PostgreSQL specific attribute. Returns the process id (PID) of the
 backend server process handling the connection.
 
 =back
@@ -2262,29 +2296,29 @@ backend server process handling the connection.
 
   $rv = $sth->bind_param($param_num, $bind_value, \%attr);
 
-Allows the user to bind a value and/or a data type to a placeholder. This is 
-especially important when using the new server-side prepare system. See 
-the prepare() method for more information.
+Allows the user to bind a value and/or a data type to a placeholder. This is
+especially important when using the new server-side prepare system with
+PostgreSQL 7.4. See the C<prepare()> method for more information.
 
-The value of "$param_num" is a number if using the '?' or '$1' style 
-placeholders. If using ":foo" style placeholders, the complete name 
-(e.g. ":foo") must be given. For numeric values, you can either use a 
-number, or use a literal '$1'. See the examples below.
+The value of $param_num is a number if using the '?' or '$1' style
+placeholders. If using ":foo" style placeholders, the complete name
+(e.g. ":foo") must be given. For numeric values, you can either use a
+number or use a literal '$1'. See the examples below.
 
-The $bind_value is fairly self-explanatory. A value of undef will 
-bind a NULL to the placeholder. Using undef is useful when you want 
-to change just the type, and will be overwriting the value later. 
-(Any value is actually usable, but undef is easy and efficient).
+The $bind_value argument is fairly self-explanatory. A value of C<undef> will
+bind a C<NULL> to the placeholder. Using C<undef> is useful when you want
+to change just the type and will be overwriting the value later.
+(Any value is actually usable, but C<undef> is easy and efficient).
 
-The %attr hash is used to indicate the data type of the placeholder. 
-The default value is "varchar". If you need something else, you must 
-use one of the value provided by DBI or by DBD::Pg. To use a SQL value, 
+The %attr hash is used to indicate the data type of the placeholder.
+The default value is "varchar". If you need something else, you must
+use one of the values provided by DBI or by DBD::Pg. To use a SQL value,
 modify your "use DBI" statement at the top of your script as follows:
 
   use DBI qw(:sql_types);
 
-This will import some constants into your script. You can plug those 
-directly into the bind_param call. Some common ones that you will 
+This will import some constants into your script. You can plug those
+directly into the C<bind_param> call. Some common ones that you will
 encounter are:
 
   SQL_INTEGER
@@ -2293,13 +2327,13 @@ To use PostgreSQL data types, import the list of values like this:
 
   use DBD::Pg qw(:pg_types);
 
-You can then set the data types but setting the value of the "pg_type" 
-key in the hash passed to bind_param.
+You can then set the data types by setting the value of the C<pg_type>
+key in the hash passed to C<bind_param>.
 
-Data types are "sticky" in that once a data type is set to a certain placeholder, 
-it will remain for that placeholder, unless it is explicitly set to something 
-else afterwards. If the statement has already been prepared, and you switch the 
-data type to something else, DBD::Pg will re-prepare the statement for you before 
+Data types are "sticky," in that once a data type is set to a certain placeholder,
+it will remain for that placeholder, unless it is explicitly set to something
+else afterwards. If the statement has already been prepared, and you switch the
+data type to something else, DBD::Pg will re-prepare the statement for you before
 doing the next execute.
 
 Examples:
@@ -2331,26 +2365,25 @@ Examples:
 
   ## We also got the wrong value, so we change that as well.
   ## Because the data type is sticky, we don't need to change it
-  $sth->bind_param(1,567);
+  $sth->bind_param(1, 567);
 
-  ## This runs the statement with 567 (integer) and "Zool" (varchar)
+  ## This executes the statement with 567 (integer) and "Zool" (varchar)
   $sth->execute();
-
 
 =item B<bind_param_inout>
 
-Not supported by this driver.
+Currently not supported by this driver.
 
 =item B<execute>
 
   $rv = $sth->execute(@bind_values);
 
-Executes a previously prepared statement. In addition to 'UPDATE', 'DELETE', 
-'INSERT' statements, for which it returns always the number of affected rows,
-the execute method can also be used for 'SELECT ... INTO table' statements.
+Executes a previously prepared statement. In addition to C<UPDATE>, C<DELETE>,
+C<INSERT> statements, for which it returns always the number of affected rows,
+the C<execute> method can also be used for C<SELECT ... INTO table> statements.
 
-The "prepare/bind/execute" process has changed significantly for PostgreSQL 
-servers 7.4 and up: please see the prepare() and bind_param() entries for 
+The "prepare/bind/execute" process has changed significantly for PostgreSQL
+servers 7.4 and later: please see the C<prepare()> and C<bind_param()> entries for
 much more information.
 
 =item B<fetchrow_arrayref>
@@ -2419,20 +2452,21 @@ This method seems to be heavily influenced by the current implementation of
 blobs in Oracle. Nevertheless we try to be as compatible as possible. Whereas
 Oracle suffers from the limitation that blobs are related to tables and every
 table can have only one blob (datatype LONG), PostgreSQL handles its blobs
-independent of any table by using so called object identifiers. This explains
-why the blob_read method is blessed into the STATEMENT package and not part of
+independent of any table by using so-called object identifiers. This explains
+why the C<blob_read> method is blessed into the STATEMENT package and not part of
 the DATABASE package. Here the field parameter has been used to handle this
-object identifier. The offset and len parameter may be set to zero, in which
+object identifier. The offset and len parameters may be set to zero, in which
 case the driver fetches the whole blob at once.
 
-Starting with PostgreSQL-6.5 every access to a blob has to be put into a
+Starting with PostgreSQL 6.5, every access to a blob has to be put into a
 transaction. This holds even for a read-only access.
 
-See also the PostgreSQL-specific functions concerning blobs which are
-available via the func-interface.
+See also the PostgreSQL-specific functions concerning blobs. which are
+available via the C<func> interface.
 
 For further information and examples about blobs, please read the chapter
-about Large Objects in the PostgreSQL Programmer's Guide.
+about Large Objects in the PostgreSQL Programmer's Guide at
+L<http://www.postgresql.org/docs/current/static/largeobjects.html>.
 
 =back
 
@@ -2478,19 +2512,19 @@ Supported by this driver as proposed by DBI
 
 =item B<PRECISION>  (array-ref, read-only)
 
-Supported by this driver. NUMERIC types will return the precision. 
-Types of CHAR and VARCHAR will return their size (number of characters). 
-Other types will return the number of *bytes*.
+Supported by this driver. C<NUMERIC> types will return the precision. Types of
+C<CHAR> and C<VARCHAR> will return their size (number of characters). Other
+types will return the number of I<bytes>.
 
 =item B<SCALE>  (array-ref, read-only)
 
-Supported by this driver as proposed by DBI. The only type 
-that will return a value currently is NUMERIC.
+Supported by this driver as proposed by DBI. The only type
+that will return a value currently is C<NUMERIC>.
 
 =item B<NULLABLE>  (array-ref, read-only)
 
-Supported by this driver as proposed by DBI. This is only available for 
-servers version 7.3 and up. Others will return "2" for all columns.
+Supported by this driver as proposed by DBI. This is only available for
+servers version 7.3 and later. Others will return "2" for all columns.
 
 =item B<CursorName>  (string, read-only)
 
@@ -2503,8 +2537,8 @@ Implemented by DBI, no driver-specific impact.
 
 =item C<ParamValues>  (hash ref, read-only)
 
-Supported by this driver as proposed by DBI. If called before execute, the 
-literal values passed in are returned. If called after the execute, then 
+Supported by this driver as proposed by DBI. If called before C<execute>, the
+literal values passed in are returned. If called after C<execute>, then
 the quoted versions of the values are shown.
 
 =item B<Statement>  (string, read-only)
@@ -2533,7 +2567,7 @@ PostgreSQL specific attribute. It returns the OID of the last INSERT command.
 =item B<pg_cmd_status> (integer, read-only)
 
 PostgreSQL specific attribute. It returns the type of the last
-command. Possible types are: INSERT, DELETE, UPDATE, SELECT.
+command. Possible types are: "INSERT", "DELETE", "UPDATE", "SELECT".
 
 =back
 
@@ -2541,39 +2575,42 @@ command. Possible types are: INSERT, DELETE, UPDATE, SELECT.
 
 =head2 Transactions
 
-The transaction behavior is now controlled with the attribute AutoCommit. For
-a complete definition of AutoCommit please refer to the DBI documentation.
+Transaction behavior is controlled via the C<AutoCommit> attribute. For a
+complete definition of C<AutoCommit> please refer to the DBI documentation.
 
-According to the DBI specification the default for AutoCommit is TRUE. In this
-mode, any change to the database becomes valid immediately. Any 'begin',
-'commit' or 'rollback' statements will be rejected. DBD::Pg implements AutoCommit 
-by issuing a "begin" immediately before a statement, and a "commit" afterwards.
+According to the DBI specification the default for C<AutoCommit> is a true
+value. In this mode, any change to the database becomes valid immediately. Any
+C<BEGIN>, C<COMMIT> or C<ROLLBACK> statements will be rejected. DBD::Pg
+implements C<AutoCommit> by issuing a C<BEGIN> statement immediately before
+executing a statement, and a C<COMMIT> afterwards.
 
 =head2 Large Objects
 
-This driver supports all large-objects related functions provided by libpq via
-the func-interface. Please note, that starting with PostgreSQL 6.5 any access
-to a large object - even read-only - has to be put into a transaction!
+This driver supports all largeobject functions provided by libpq via the
+C<func> method. Please note that, starting with PostgreSQL 6.5, any access to
+a large object -- even read-only large objects -- must to be put into a
+transaction!
 
 =head2 Cursors
 
 Although PostgreSQL has a cursor concept, it has not been used in the current
 implementation. Cursors in PostgreSQL can only be used inside a transaction
 block. Because only one transaction block at a time is allowed, this would
-have implied the restriction, not to use any nested SELECT statements. Hence
-the execute method fetches all data at once into data structures located in
-the frontend application. This has to be considered when selecting large
-amounts of data!
+have implied the restriction not to use any nested C<SELECT> statements. Hence
+the C<execute> method fetches all data at once into data structures located in
+the front-end application. This approach must to be considered when selecting
+large amounts of data!
 
 =head2 Datatype bool
 
 The current implementation of PostgreSQL returns 't' for true and 'f' for
-false. From the Perl point of view a rather unfortunate choice. The DBD::Pg
-module translates the result for the data-type bool in a perl-ish like manner:
-'f' -> '0' and 't' -> '1'. This way the application does not have to check the
-database-specific returned values for the data-type bool, because Perl treats
-'0' as false and '1' as true. You may set the pg_bool_tf attribute to change 
-the values back to 't' and 'f' if you wish.
+false. From the Perl point of view, this is a rather unfortunate
+choice. DBD::Pg therefore translates the result for the C<BOOL> data type in a
+Perlish manner: 'f' -> '0' and 't' -> '1'. This way the application does
+not have to check the database-specific returned values for the data-type
+C<BOOL> because Perl treats '0' as false and '1' as true. You may set the
+C<pg_bool_tf> attribute to a true value to change the values back to 't' and
+'f' if you wish.
 
 Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
 '1' for true and FALSE, 'f', 'false', 'n', 'no' or '0' for false.
@@ -2581,17 +2618,17 @@ Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
 =head2 Schema support
 
 PostgreSQL version 7.3 introduced schema support. Note that the PostgreSQL
-schema concept may differ to that of other databases. In a nutshell, a schema 
+schema concept may differ from those of other databases. In a nutshell, a schema
 is a named collection of objects within a single database. Please refer to the
 PostgreSQL documentation for more details.
 
-Currently DBD::Pg does not provide explicit support for PostgreSQL schemas.
+Currently, DBD::Pg does not provide explicit support for PostgreSQL schemas.
 However, schema functionality may be used without any restrictions by
 explicitly addressing schema objects, e.g.
 
   my $res = $dbh->selectall_arrayref("SELECT * FROM my_schema.my_table");
 
-or by manipulating the schema search path with SET search_path, e.g.
+or by manipulating the schema search path with C<SET search_path>, e.g.
 
   $dbh->do("SET search_path TO my_schema, public");
 
@@ -2604,7 +2641,7 @@ L<DBI>
 DBI and DBD-Oracle by Tim Bunce (Tim.Bunce@ig.co.uk)
 
 DBD-Pg by Edmund Mergl (E.Mergl@bawue.de) and Jeffrey W. Baker
-(jwbaker@acm.org). By David Wheeler <david@wheeler.net>, Jason
+(jwbaker@acm.org). By David Wheeler <david@justatheory.com>, Jason
 Stewart <jason@openinformatics.com> and Bruce Momjian
 <pgman@candle.pha.pa.us> and others after v1.13.
 
@@ -2620,8 +2657,8 @@ with the name: C<gmane.comp.db.postgresql.dbdpg>
 
 B<Bug Reports>
 
-If you feel certain you have found a bug, you can report it here:
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=DBD-Pg>
+If you feel certain you have found a bug, you can report it by sending
+an email to <bug-dbd-pg@rt.cpan.org>.
 
 =head1 COPYRIGHT
 
