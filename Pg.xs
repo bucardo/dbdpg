@@ -132,7 +132,7 @@ pg_notifies(dbh)
     CODE:
     D_imp_dbh(dbh);
 
-    ST(0) = dbd_db_pg_notifies(dbh, imp_dbh);
+    ST(0) = (SV*) dbd_db_pg_notifies(dbh, imp_dbh);
 
 void
 commit(dbh)
