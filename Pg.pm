@@ -81,10 +81,13 @@ $DBD::Pg::VERSION = '1.30';
 		return 1; ## versions are equal
 	}
 
+	## Version 7.3 and up uses schemas, so add a "pg_catalog." to system tables
 	sub _pg_use_catalog {
 		my $dbh = shift;
+		return $dbh->{pg_use_catalog} if defined $dbh->{pg_use_catalog};
 		my $version = DBD::Pg::_pg_server_version($dbh);
-		return DBD::Pg::_pg_check_version(7.3, $version) ? "pg_catalog." : "";
+		$dbh->{pg_use_catalog} = DBD::Pg::_pg_check_version(7.3, $version) ? "pg_catalog." : "";
+		return $dbh->{pg_use_catalog};
 	}
 
 	1;
@@ -1054,19 +1057,6 @@ $DBD::Pg::VERSION = '1.30';
 	my %no_escape = map { $_ => 1 }
 		DBI::SQL_INTEGER, DBI::SQL_SMALLINT, DBI::SQL_DECIMAL,
 		DBI::SQL_FLOAT, DBI::SQL_REAL, DBI::SQL_DOUBLE, DBI::SQL_NUMERIC;
-
-	sub _old_quote {
-		my ($dbh, $str, $data_type) = @_;
-		return "NULL" unless defined $str;
-		return $str if $data_type && $no_escape{$data_type};
-
-		$dbh->DBI::set_err(1, "Use of SQL_BINARY invalid in quote()")
-		if $data_type && $data_type == DBI::SQL_BINARY;
-
-		$str =~ s/(['\\\0])/$esc{$1}/g;
-		return "'$str'";
-	}
-
 
 	sub get_info {
 
