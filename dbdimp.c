@@ -191,10 +191,10 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	/* Figure out how large our connection string is going to be */
 	connect_string_size = strlen(dbname);
 	if (strlen(uid)) {
-		connect_string_size += strlen(" user=") + 2*strlen(uid);
+		connect_string_size += strlen(" user=''") + 2*strlen(uid);
 	}
 	if (strlen(pwd)) {
-		connect_string_size += strlen(" password=") + 2*strlen(pwd);
+		connect_string_size += strlen(" password=''") + 2*strlen(pwd);
 	}
 
 	New(0, conn_str, connect_string_size+1, char); /* freed below */
