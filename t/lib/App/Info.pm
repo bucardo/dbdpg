@@ -56,7 +56,7 @@ use App::Info::Handler;
 use App::Info::Request;
 use vars qw($VERSION);
 
-$VERSION = '0.23';
+$VERSION = '0.27';
 
 ##############################################################################
 ##############################################################################
@@ -1097,8 +1097,7 @@ But I get ahead of myself...
 
 =head1 BUGS
 
-Report all bugs via the CPAN Request Tracker at
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=App-Info>.
+Please send bug reports to <bug-app-info@rt.cpan.org>.
 
 =head1 AUTHOR
 
@@ -1159,7 +1158,7 @@ App::Info::Handler subclasses.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2002, David Wheeler. All Rights Reserved.
+Copyright (c) 2002-2004, David Wheeler. All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

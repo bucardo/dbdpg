@@ -44,7 +44,8 @@ use App::Info::RDBMS;
 use App::Info::Util;
 use vars qw(@ISA $VERSION);
 @ISA = qw(App::Info::RDBMS);
-$VERSION = '0.22';
+$VERSION = '0.27';
+use constant WIN32 => $^O eq 'MSWin32';
 
 my $u = App::Info::Util->new;
 
@@ -91,6 +92,8 @@ directories:
 
 =item /bin
 
+=item C:\Program Files\PostgreSQL\bin
+
 =back
 
 B<Events:>
@@ -122,27 +125,32 @@ sub new {
     my @paths = ($u->path,
       qw(/usr/local/pgsql/bin
          /usr/local/postgres/bin
+         /usr/lib/postgresql/bin
          /opt/pgsql/bin
          /usr/local/bin
          /usr/local/sbin
          /usr/bin
          /usr/sbin
-         /bin));
+         /bin),
+      'C:\Program Files\PostgreSQL\bin');
 
     unshift @paths, "$ENV{POSTGRES_HOME}/bin" if exists $ENV{POSTGRES_HOME};
     unshift @paths, "$ENV{POSTGRES_LIB}/../bin" if exists $ENV{POSTGRES_LIB};
 
-    if (my $cfg = $u->first_cat_exe('pg_config', @paths)) {
+    my $exe = 'pg_config';
+    $exe .= '.exe' if WIN32;
+
+    if (my $cfg = $u->first_cat_exe($exe, @paths)) {
         # We found it. Confirm.
         $self->{pg_config} = $self->confirm( key      => 'pg_config',
-                                             prompt   => 'Path to pg_config?',
+                                             prompt   => "Path to $exe?",
                                              value    => $cfg,
                                              callback => sub { -x },
                                              error    => 'Not an executable');
     } else {
         # Handle an unknown value.
         $self->{pg_config} = $self->unknown( key      => 'pg_config',
-                                             prompt   => 'Path to pg_config?',
+                                             prompt   => "Path to $exe?",
                                              callback => sub { -x },
                                              error    => 'Not an executable');
     }
@@ -252,10 +260,11 @@ my $get_version = sub {
     if ($version) {
         my ($x, $y, $z) = $version =~ /(\d+)\.(\d+).(\d+)/;
         if (defined $x and defined $y and defined $z) {
+            # Beta/devel/release candidates are treated as patch level "0"
             @{$self}{qw(version major minor patch)} =
               ($version, $x, $y, $z);
-				## Beta/devel/release candidate versions are treated as patch level "0"
         } elsif ($version =~ /(\d+)\.(\d+)/) {
+            # New versions, such as "7.4", are treated as patch level "0"
             @{$self}{qw(version major minor patch)} =
               ($version, $1, $2, 0);
         } else {
@@ -688,9 +697,9 @@ sub so_lib_dir {
 
   my $configure = $pg->configure;
 
-Returns the options the PostgreSQL server was configured with.
-App::Info::RDBMS::PostgreSQL gathers the path from the system call
-C<`pg_config --configure`>.
+Returns the options with which the PostgreSQL server was
+configured. App::Info::RDBMS::PostgreSQL gathers the configure data from the
+system call C<`pg_config --configure`>.
 
 B<Events:>
 
@@ -719,10 +728,9 @@ sub configure {
         if (my $conf = $get_data->($self, '--configure')) {
             $self->{configure} = $conf;
         } else {
-            # Handle an unknown value.
-            $self->error("Cannot find configuration information");
-            $self->{configure} =
-              $self->unknown( key      => 'PostgreSQL configuration information');
+            # Configure can be empty, so just make sure it exists and is
+            # defined. Don't prompt.
+            $self->{configure} = '';
         }
     }
 
@@ -780,7 +788,7 @@ L<http://www.postgresql.org/> is the PostgreSQL home page.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2002, David Wheeler. All Rights Reserved.
+Copyright (c) 2002-2004, David Wheeler. All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it under the
 same terms as Perl itself.
