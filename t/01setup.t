@@ -21,12 +21,17 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 ok( defined $dbh, "Connect to database for test table creation");
 
 # Remove the test table if it exists
-# This assumes that pg_class is the one in the pg_catalog schema for > 7.3
-# This is a pretty safe assumption, as making your own pg_class table
-# is a very, very bad idea...
+my $schema = DBD::Pg::_pg_use_catalog($dbh);
+my $SQL = "SELECT COUNT(*) FROM pg_class WHERE relname='dbd_pg_test'";
+if ($schema) {
+	$schema = exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public';
+	$dbh->do("SET search_path TO " . $dbh->quote_identifier($schema));
+	$SQL = "SELECT COUNT(*) FROM pg_catalog.pg_class c, pg_catalog.pg_namespace n ".
+		"WHERE c.relnamespace=n.oid AND c.relname='dbd_pg_test' AND n.nspname=".
+			$dbh->quote($schema);
+}
 
 # Implicit tests of prepare, execute, fetchall_arrayref, and do
-my $SQL = "SELECT COUNT(*) FROM pg_class WHERE relname='dbd_pg_test'";
 my $sth = $dbh->prepare($SQL);
 $sth->execute();
 my $count = $sth->fetchall_arrayref()->[0][0];

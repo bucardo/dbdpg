@@ -22,6 +22,12 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 1, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for statement handle method testing");
 
+my $got73 = DBD::Pg::_pg_use_catalog($dbh);
+if ($got73) {
+	$dbh->do("SET search_path TO " . $dbh->quote_identifier
+					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
+}
+
 $dbh->do("DELETE FROM dbd_pg_test");
 my ($SQL, $sth, $result, @result, $expected, $warning, $rows);
 
@@ -38,7 +44,7 @@ ok( $sth->bind_param(1, 'foo'), 'Statement handle method "bind_param" works when
 # We assume that older servers are okay
 my $pgversion = DBD::Pg::_pg_server_version($dbh);
 my $client_level = '';
-if (DBD::Pg::_pg_check_version(7.3, $pgversion)) {
+if ($got73) {
 	$sth = $dbh->prepare("SHOW client_min_messages");
 	$sth->execute();
 	$client_level = $sth->fetchall_arrayref()->[0][0];
@@ -312,7 +318,7 @@ $sth->execute();
 $result = $sth->{pg_type};
 $expected = [qw(int4 varchar text float8 bpchar timestamp bool)];
 # Hack for old servers
-$expected->[5] = 'datetime' if (! DBD::Pg::_pg_check_version(7.3, $pgversion));
+$expected->[5] = 'datetime' unless $got73;
 is_deeply( $result, $expected, 'Statement handle method "pg_type" works');
 $sth->finish();
 

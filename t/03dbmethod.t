@@ -27,6 +27,13 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 1, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for database handle method testing");
 
+my $schema = '';
+my $got73 = DBD::Pg::_pg_use_catalog($dbh);
+if ($got73) {
+	$schema = exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public';
+	$dbh->do("SET search_path TO " . $dbh->quote_identifier($schema));
+}
+
 my ($SQL, $sth, $result, @result, $expected, $warning, $rows);
 
 # Populate the testing table for later use
@@ -354,20 +361,16 @@ $sth = $dbh->foreign_key_info(undef,undef,undef,undef,undef,undef);
 is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: no pk / no fk');
 
 ## All foreign_key_info tests are meaningless for old servers
-my $pgversion = DBD::Pg::_pg_server_version($dbh);
-if (! DBD::Pg::_pg_check_version(7.3, $pgversion)) {
+if (! $got73) {
  SKIP: {
 		skip qq{Cannot test DB handle method "foreign_key_info" on pre-7.3 servers.}, 16;
 	}
 }
 else {
 
-## Allow a custom schema, or default to "public"
-my $schema = exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public';
-$dbh->do("SET search_path TO " . $dbh->quote_identifier($schema));
-
 # Drop any tables that may exist
-$SQL = "SELECT relname FROM pg_catalog.pg_class WHERE relkind='r' AND relname LIKE 'dbd_pg_test_'";
+my $fktables = join "," => map { "'dbd_pg_test$_'" } (1..3);
+$SQL = "SELECT relname FROM pg_catalog.pg_class WHERE relkind='r' AND relname IN ($fktables)";
 for (@{$dbh->selectall_arrayref($SQL)}) {
 	$dbh->do("DROP TABLE $_->[0] CASCADE");
 }
@@ -613,12 +616,6 @@ $dbh->do("DROP TABLE dbd_pg_test3");
 $dbh->do("DROP TABLE dbd_pg_test2");
 $dbh->do("DROP TABLE dbd_pg_test1");
 
-# Reset the search path by reconnecting
-$dbh->disconnect();
-
-$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
-										{RaiseError => 1, PrintError => 0, AutoCommit => 0});
-
 } # end giant foreign_key_info bypass
 
 #
@@ -782,7 +779,7 @@ ok( $result, 'DB handle method "lo_unlink" works');
 #
 
 # Older servers cannot handle column names in COPY
-if (! DBD::Pg::_pg_check_version(7.3, $pgversion)) {
+if (! $got73) {
  SKIP: {
 		skip qq{Cannot test DB handle method "putline" on pre-7.3 servers.}, 2;
 	}
@@ -809,7 +806,7 @@ is_deeply( $result, $expected, 'DB handle method "putline" copies strings to the
 # Test of the "getline" database handle method
 #
 
-if (! DBD::Pg::_pg_check_version(7.3, $pgversion)) {
+if (! $got73) {
  SKIP: {
 		skip qq{Cannot test DB handle method "getline" on pre-7.3 servers.}, 4;
 	}

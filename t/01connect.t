@@ -65,10 +65,13 @@ ok( $@, 'Execute fails on a disconnected statement');
 
 END {
 	my $pv = sprintf("%vd", $^V);
+	my $schema = exists $ENV{DBD_SCHEMA} ? 
+		"\nDBD_SCHEMA        $ENV{DBD_SCHEMA}" : '';
 	diag "\n".
 		"Program           Version\n".
 		"Perl              $pv ($^O)\n".
 		"DBD::Pg           $DBD::Pg::VERSION\n".
 		"PostgreSQL        $pgversion\n".
-		"DBI               $DBI::VERSION";
+		"DBI               $DBI::VERSION\n".
+		"DBI_DSN           $ENV{DBI_DSN}$schema\n";
 }

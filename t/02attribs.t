@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 93;
+	plan tests => 92;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -17,6 +17,12 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 0, PrintError => 0, AutoCommit => 0});
 
 ok( defined $dbh, "Connect to database for handle attributes testing");
+
+my $got73 = DBD::Pg::_pg_use_catalog($dbh);
+if ($got73) {
+	$dbh->do("SET search_path TO " . $dbh->quote_identifier
+					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
+}
 
 my $attributes_tested = q{
 
@@ -74,11 +80,7 @@ my ($attrib,$SQL,$sth);
 
 #
 # Test of the database handle attribute "Statement"
-# This should be the first test as it must be run before any 'prepare'
 #
-
-$attrib = $dbh->{Statement};
-ok( !defined $attrib, 'DB handle attribute "Statement" returns undef when no query has been prepared');
 
 $SQL = "SELECT 123";
 $sth = $dbh->prepare($SQL);
@@ -122,6 +124,10 @@ $dbh->commit();
 
 my $dbh2 = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 												{RaiseError => 0, PrintError => 0, AutoCommit => 1});
+if ($got73) {
+	$dbh2->do("SET search_path TO " . $dbh2->quote_identifier
+					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
+}
 
 ok( defined $dbh2, "Connect to database with second database handle, AutoCommit on");
 

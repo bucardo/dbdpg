@@ -17,6 +17,11 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
                        {RaiseError => 1, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for array testing");
 
+if (DBD::Pg::_pg_use_catalog($dbh)) {
+	$dbh->do("SET search_path TO " . $dbh->quote_identifier
+					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
+}
+
 SKIP: {
     # XXX Until all the array stuff is working, skip all tests.
     # Should really be a TODO, but these tests will die.
