@@ -17,7 +17,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 135;
+	plan tests => 137;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -200,6 +200,9 @@ else {
 	$dbh->rollback();
 	ok( ! length $warning, 'DB handle method "rollback" gives no warning when AutoCommit is off');
 
+	ok( $dbh->commit, 'DB handle method "commit" returns true');
+	ok( $dbh->rollback, 'DB handle method "rollback" returns true');
+
 	$dbh->{AutoCommit}=1;
 	$warning="";
 	$dbh->commit();
@@ -207,6 +210,8 @@ else {
 	$warning="";
 	$dbh->rollback();
 	ok( length $warning, 'DB handle method "rollback" gives a warning when AutoCommit is on');
+
+
 }
 
 #

@@ -401,7 +401,7 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	}
 
 	if (!imp_dbh->done_begin)
-		return 0;
+		return 1;
 
 	status = _result(imp_dbh, action);
 		
