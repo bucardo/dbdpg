@@ -1,3 +1,14 @@
+/*
+
+   $Id$
+
+   Copyright (c) 2003-2004 PostgreSQL Global Development Group
+   
+   You may distribute under the terms of either the GNU General Public
+   License or the Artistic License, as specified in the Perl README file.
+
+*/
+
 #include "quote.h"
 
 #include "Pg.h"
