@@ -1453,7 +1453,7 @@ $backend_pid ] of asynchronous notifications received.
   $fd = $dbh->func('getfd');
 
 Returns fd of the actual connection to server. Can be used with select() and
-func('pg_notifies').
+func('pg_notifies'). Deprecated in favor of $dbh->{pg_socket}.
 
 =back
 
@@ -1969,7 +1969,7 @@ Constant to be used for the mode in lo_creat and lo_open.
 PostgreSQL specific attribute. If true, boolean values will be returned 
 as the characters 't' and 'f' instead of '1' and '0'.
 
-=item B<pg_protocol> (integer)
+=item B<pg_protocol> (integer, read-only)
 
 PostgreSQL specific attribute. Returns the version of the PostgreSQL server. 
 If DBD::Pg is unable to figure out the version (e.g. it was compiled 
@@ -1978,6 +1978,46 @@ version 7.4 return a "2", and (currently) 7.4 and above return a "3".
 
 Many things were introduced with version 3 of the protocol, including 
 server-side prepares and advanced error codes.
+
+=item B<pg_db> (string, read-only)
+
+PostgreSQL specific attribute. Returns the name of the current database.
+
+=item B<pg_user> (string, read-only)
+
+PostgreSQL specific attribute. Returns the name of the user that 
+connected to the server.
+
+=item B<pg_pass> (string, read-only)
+
+PostgreSQL specific attribute. Returns the password used to connect 
+to the server.
+
+=item B<pg_host> (string, read-only)
+
+PostgreSQL specific attribute. Returns the host of the current 
+server connection. Locally connected hosts will return an empty 
+string.
+
+=item B<pg_port> (integer, read-only)
+
+PostgreSQL specific attribute. Returns the port of the connection to 
+the server.
+
+=item B<pg_options> (string, read-only)
+
+PostgreSQL specific attribute. Returns the command-line options passed 
+to the server. May be an empty string.
+
+=item B<pg_socket> (number, read-only)
+
+PostgreSQL specific attribute. Returns the file description number of 
+the connection socket to the server.
+
+=item B<pg_pid> (number, read-only)
+
+PostgreSQL specific attribute. Returns the process id (PID) of the 
+backend server process handling the connection.
 
 =back
 

@@ -486,6 +486,7 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 	STRLEN kl;
 	char *key = SvPV(keysv,kl);
 	SV *retsv = Nullsv;
+	char *host = NULL;
 	
 	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_FETCH\n"); }
 	
@@ -509,6 +510,28 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 		retsv = newSViv((IV)imp_dbh->server_prepare);
 	} else if (kl==11 && strEQ(key, "prepare_now")) {
 		retsv = newSViv((IV)imp_dbh->prepare_now);
+	} 
+	/* All the following are called too infrequently to bother caching */
+
+	else if (kl==5 && strEQ(key, "pg_db")) {
+		retsv = newSVpv(PQdb(imp_dbh->conn),0);
+	} else if (kl==7 && strEQ(key, "pg_user")) {
+		retsv = newSVpv(PQuser(imp_dbh->conn),0);
+	} else if (kl==7 && strEQ(key, "pg_pass")) {
+		retsv = newSVpv(PQpass(imp_dbh->conn),0);
+	} else if (kl==7 && strEQ(key, "pg_host")) {
+		host = PQhost(imp_dbh->conn); /* May return null */
+		if (NULL==host)
+			host = "\0";
+		retsv = newSVpv(host,0);
+	} else if (kl==7 && strEQ(key, "pg_port")) {
+		retsv = newSVpv(PQport(imp_dbh->conn),0);
+	} else if (kl==10 && strEQ(key, "pg_options")) {
+		retsv = newSVpv(PQoptions(imp_dbh->conn),0);
+	} else if (kl==9 && strEQ(key, "pg_socket")) {
+		retsv = newSViv((IV)PQsocket(imp_dbh->conn));
+	} else if (kl==6 && strEQ(key, "pg_pid")) {
+		retsv = newSViv((IV)PQbackendPID(imp_dbh->conn));
 	}
 	
 	if (!retsv)
@@ -551,9 +574,6 @@ int dbd_db_getfd (dbh, imp_dbh)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
 {
-	char id;
-	SV* retsv;
-	
 	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_getfd\n"); }
 	
 	return PQsocket(imp_dbh->conn);
@@ -703,7 +723,6 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 		5. "prepare_now" (via arguments) is not false (0)
 		5. There are no placeholders OR "prepare_now" (via args/dbh) is on
 	*/
-
 	if (imp_sth->is_dml && 
 			!imp_sth->direct &&
 			imp_dbh->pg_protocol >= 3 &&
