@@ -1,8 +1,9 @@
-  - Rewrote the primary_key_info() and primary_key() methods to 
-    cleanly handle multi-column primary keys. Also added a "onerow" 
-    attribute to allow primary_key_info() to return a single 
-    row containing multiple-column information.
-  - Switched commit behavior from commit->execute->begin 
+1.32_1 Fri Feb 13 16:46:48 UTC 2004
+	- Rewrote the primary_key_info() and primary_key() methods to 
+	    cleanly handle multi-column primary keys. Also added a "onerow" 
+	    attribute to allow primary_key_info() to return a single 
+	    row containing multiple-column information.
+	- Switched commit behavior from commit->execute->begin 
 		to begin->execute->commit
 		[xelah-junk@xelah.com]
 	- Made the _pg_use_catalog subroutine use {private_dbgpg}.
