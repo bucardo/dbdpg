@@ -1007,6 +1007,7 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 			croak ("No memory");
 		newseg->nextseg = NULL;
 		newseg->bind_type = NULL;
+		newseg->boundbyclient=0;
 		newseg->quoted = newseg->value = NULL;
 		New(0, newseg->segment, newsize+1, char);
 		if (!newseg->segment)
@@ -1064,6 +1065,7 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 			croak ("No memory");
 		newseg->nextseg = NULL;
 		newseg->bind_type = NULL;
+		newseg->boundbyclient=0;
 		newseg->quoted = newseg->value = newseg->placeholder = NULL;
 		New(0, newseg->segment, newsize+1, char);
 		if (!newseg->segment)
@@ -1426,6 +1428,9 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		OR
 		5b. All placeholders are bound (and "pg_server_prepare" is 2)
 	*/
+	if (dbis->debug >= 6) {
+		PerlIO_printf(DBILOGFP, "  dbdpg: server_side prepare args: dml=%d, direct=%d, protocol=%d, server_prepare=%d numbound=%d, numphs=%d\n", imp_sth->is_dml, imp_sth->direct, imp_dbh->pg_protocol, imp_sth->server_prepare, imp_sth->numbound, imp_sth->numphs);
+	}
 	if (imp_sth->is_dml && 
 			!imp_sth->direct &&
 			imp_dbh->pg_protocol >= 3 &&
