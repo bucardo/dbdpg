@@ -1,3 +1,5 @@
+	- Added tablespace support for table_info and primary_key_info.
+		[Greg Sabino Mullane]
 	- Add new attributes to $dbh: pg_db, pg_user, pg_pass,
 		pg_host, pg_port, pg_options, pg_socket, pg_pid
 		[Greg Sabino Mullane]
