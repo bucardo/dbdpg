@@ -22,7 +22,10 @@ t/03dbmethod.t
 t/03smethod.t
 t/04misc.t
 t/05arrays.t
+t/06bytea.t
+t/07copy.t
 t/12placeholders.t
+t/20savepoints.t
 t/99_pod.t
 t/99cleanup.t
 t/lib/App/Info.pm
