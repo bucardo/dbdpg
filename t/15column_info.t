@@ -102,8 +102,7 @@ ok($dbh->do("COMMENT ON COLUMN dbd_pg_test.name IS 'Success'"), 'comment on dbd_
 	is($row->{REMARKS},'Success','column_info REMARKS') or diag Dumper($row);
 	$sth = undef;
 
-
- 	is($row->{COLUMN_DEF},"'Testing Default'",'column_info default value') or diag Dumper($row);
+ 	like($row->{COLUMN_DEF},"/^'Testing Default'(?:::character varying)?\$/",'column_info default value') or diag Dumper($row);
 
 	cmp_ok($row->{COLUMN_SIZE},'==', 20, 'column_info field size for type varchar');
 
