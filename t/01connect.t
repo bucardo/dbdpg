@@ -53,7 +53,7 @@ ok( $dbh2 = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 												 {RaiseError => 1, PrintError => 0, AutoCommit => 0}),
 		'Connected with second database handle');
 
-my $sth = $dbh->prepare('SELECT * FROM dbd_pg_test');
+my $sth = $dbh->prepare('SELECT 123');
 ok ( $dbh->disconnect(), 'Disconnect with first database handle');
 ok ( $dbh2->disconnect(), 'Disconnect with second database handle');
 ok ( $dbh2->disconnect(), 'Disconnect again with second database handle');
