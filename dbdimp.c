@@ -163,7 +163,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	int connect_string_size;
 	char inquote = 0;
 	
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_login\n"); }
+	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_db_login\n"); }
 	
 	/* DBD::Pg syntax: 'dbname=dbname;host=host;port=port' */
 	/* libpq syntax: 'dbname=dbname host=host port=port user=uid password=pwd' */
@@ -206,7 +206,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 		strcat(conn_str, pwd);
 	}
 	
-	if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_login: conn_str = >%s<\n", conn_str); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_login: conn_str = >%s<\n", conn_str); }
 	
 	/* Make a connection to the database */
 	
@@ -261,7 +261,7 @@ int dbd_db_ping (dbh)
 
 	/* XXX Todo: can we just look at status directly? Whole test better? */
 
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_ping\n"); }
+	if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_ping\n"); }
 	
 	if (NULL == imp_dbh->conn)
 		return 0;
@@ -306,7 +306,7 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	PGTransactionStatusType tstatus;
 	ExecStatusType status;
 
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "%s\n", action); }
+	if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "%s\n", action); }
 	
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (FALSE != DBIc_has(imp_dbh, DBIcf_AutoCommit)))
@@ -320,19 +320,19 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	if (PQTRANS_IDLE == tstatus) { /* Not in a transaction */
 		if (imp_dbh->done_begin) {
 			/* We think we ARE in a tranaction but we really are not */
-			if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "Warning: invalid done_begin turned off\n"); }
+			if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "Warning: invalid done_begin turned off\n"); }
 			imp_dbh->done_begin = 0;
 		}
 	}
 	else if (PQTRANS_UNKNOWN != tstatus) { /* In a transaction */
 		if (!imp_dbh->done_begin) {
 			/* We think we are NOT in a transaction but we really are */
-			if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "Warning: invalid done_begin turned on\n"); }
+			if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "Warning: invalid done_begin turned on\n"); }
 			imp_dbh->done_begin = 1;
 		}
 	}
 	else { /* Something is wrong: transation status unknown */
-		if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "Warning: cannot determine transaction status\n"); }
+		if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "Warning: cannot determine transaction status\n"); }
 	}
 #endif
 
@@ -383,7 +383,7 @@ int dbd_db_disconnect (dbh, imp_dbh)
 	dTHR;
 	ExecStatusType status;
 	
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_disconnect\n"); }
+	if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_disconnect\n"); }
 
 	/* We assume that disconnect will always work	
 		 since most errors imply already disconnected. */
@@ -392,7 +392,7 @@ int dbd_db_disconnect (dbh, imp_dbh)
 	
 	if (NULL != imp_dbh->conn) {
 		/* Rollback if needed */
-		if (dbd_db_rollback(dbh, imp_dbh) && dbis->debug >= 2)
+		if (dbd_db_rollback(dbh, imp_dbh) && dbis->debug >= 3)
 			PerlIO_printf(DBILOGFP, "dbd_db_disconnect: AutoCommit=off -> rollback\n");
 		
 		PQfinish(imp_dbh->conn);
@@ -415,7 +415,7 @@ void dbd_db_destroy (dbh, imp_dbh)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
 {
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_destroy\n"); }
+	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_db_destroy\n"); }
 
 	Safefree(imp_dbh->sqlstate);
 
@@ -442,7 +442,7 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 	int newval = SvTRUE(valuesv);
 	int oldval;
 
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_STORE\n"); }
+	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_db_STORE\n"); }
 	
 	if (kl==10 && strEQ(key, "AutoCommit")) {
 		oldval = DBIc_has(imp_dbh, DBIcf_AutoCommit);
@@ -450,7 +450,7 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 			return 1;
 		if (oldval) {
 			/* Commit if necessary */
-			if (dbd_db_commit(dbh, imp_dbh) && dbis->debug >= 2)
+			if (dbd_db_commit(dbh, imp_dbh) && dbis->debug >= 4)
 				PerlIO_printf(DBILOGFP, "dbd_db_STORE: AutoCommit on forced a commit\n");
 		}
 		DBIc_set(imp_dbh, DBIcf_AutoCommit, newval);
@@ -499,7 +499,7 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 	SV *retsv = Nullsv;
 	char *host = NULL;
 	
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_FETCH\n"); }
+	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_db_FETCH\n"); }
 	
 	if (kl==10 && strEQ(key, "AutoCommit")) {
 		retsv = boolSV(DBIc_has(imp_dbh, DBIcf_AutoCommit));
@@ -564,7 +564,7 @@ int dbd_discon_all (drh, imp_drh)
 {
 	dTHR;
 	
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_discon_all\n"); }
+	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_discon_all\n"); }
 	
 	/* The disconnect_all concept is flawed and needs more work */
 	if (!dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
@@ -585,7 +585,7 @@ int dbd_db_getfd (dbh, imp_dbh)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
 {
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_getfd\n"); }
+	if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_getfd\n"); }
 	
 	return PQsocket(imp_dbh->conn);
 
@@ -604,7 +604,7 @@ SV * dbd_db_pg_notifies (dbh, imp_dbh)
 	SV* retsv;
 	int status;
 	
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_pg_notifies\n"); }
+	if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_pg_notifies\n"); }
 	
 	status = PQconsumeInput(imp_dbh->conn);
 	if (0 == status) { 
@@ -648,9 +648,9 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	unsigned int mypos=0, wordstart, newsize; /* Used to find and set firstword */
 	SV **svp; /* To help parse the arguments */
 
-	if (dbis->debug >= 1)
+	if (dbis->debug >= 3)
 		PerlIO_printf(DBILOGFP, "dbd_st_prepare: >%s<\n", statement);
-	
+
 	/* Must have at least one character */
 	if (NULL == statement) {
 		fprintf(stderr, "NULL statement!\n");
@@ -747,7 +747,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 			0 != imp_sth->server_prepare &&
 			(0==imp_sth->numphs || imp_sth->prepare_now)
 			) {
-		if (dbis->debug >= 2)
+		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg: immediate prepare\n");
 
 		if (dbd_st_prepare_statement(sth, imp_sth)) {
@@ -783,7 +783,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	sprintf(imp_sth->prepare_name,"dbdpg_%d", imp_dbh->prepare_number);
 	imp_sth->prepare_name[strlen(imp_sth->prepare_name)]='\0';
 
-	if (dbis->debug >= 2)
+	if (dbis->debug >= 4)
 		PerlIO_printf(DBILOGFP, "  dbdpg: new statement name \"%s\"\n",
 									imp_sth->prepare_name);
 
@@ -840,7 +840,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 		}
 	}
 	statement[execsize] = '\0';
-	if (dbis->debug >= 2)
+	if (dbis->debug >= 4)
 		PerlIO_printf(DBILOGFP, "  dbdpg: \"%s\"\n", statement);
 
 	status = _result(imp_dbh, statement);
@@ -877,7 +877,7 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 	seg_t *newseg, *currseg;
 	imp_sth->seg = currseg = newseg = NULL;
 
-	if (dbis->debug >= 1)
+	if (dbis->debug >= 3)
 		PerlIO_printf(DBILOGFP, "dbd_st_split_statement\n");
 
 	/* It's okay to split non-DML as we will never PREPARE it, but we may want to prepare it */
@@ -1036,7 +1036,7 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 		}
 		newseg->placeholder[newsize]='\0';
 
-		if (dbis->debug >= 2)
+		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg segment: \"%s\"  placeholder: \"%s\"\n",
 										newseg->segment, newseg->placeholder);
 
@@ -1071,7 +1071,7 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 		Move(statement-(mypos-sectionstart+2),newseg->segment,newsize,char);
 		newseg->segment[newsize]='\0';
 
-		if (dbis->debug >= 2)
+		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg segment: \"%s\"  placeholder: \"%s\"\n",
 										newseg->segment, newseg->placeholder);
 
@@ -1116,7 +1116,7 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 			}
 		}
 		imp_sth->numphs = topdollar;
-		if (dbis->debug >= 1)
+		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "Reset number of placeholders to %d\n", topdollar);
 	}
 
@@ -1154,7 +1154,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	seg_t *currseg;
 	bool reprepare = 0;
 	
-	if (dbis->debug >= 1)
+	if (dbis->debug >= 3)
 		PerlIO_printf(DBILOGFP, "dbd_bind_ph\n");
 	
 	if (is_inout)
@@ -1199,12 +1199,14 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	}
 	if ((SvROK(newvalue) &&!IS_DBI_HANDLE(newvalue) &&!SvAMAGIC(newvalue))) {
 		/* dbi handle allowed for cursor variables */
-		croak("Cannot bind a reference (%s)", neatsvpv(newvalue,0));
+		/* XXXXX **/
+		croak("Cannot bind a reference (%s) (%s) (%d) type=%d %d %d %d", neatsvpv(newvalue,0), SvAMAGIC(newvalue),
+					SvTYPE(SvRV(newvalue)) == SVt_PVAV ? 1 : 0, SvTYPE(newvalue), SVt_PVAV, SVt_PV, 0);
 	}
 	if (SvTYPE(newvalue) == SVt_PVLV && is_inout) {
 		croak("Cannot bind ``lvalue'' mode scalar as inout parameter (currently)");
 	}
-	if (dbis->debug >= 1) {
+	if (dbis->debug >= 4) {
 		PerlIO_printf(DBILOGFP, "		 bind %s <== %s (type %ld", name, neatsvpv(newvalue,0), (long)sql_type);
 		if (is_inout) {
 			PerlIO_printf(DBILOGFP, ", inout 0x%lx, maxlen %ld", (long)newvalue, (long)maxlen);
@@ -1339,19 +1341,19 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 		croak("Cannot bind unknown placeholder '%s' (%s)", name, neatsvpv(ph_name,0));
 
 	if (reprepare) {
-		if (dbis->debug >= 2)
+		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg: binding has forced a re-prepare\n");
 		/* Deallocate sets the prepare_name to NULL */
 		if (dbd_st_deallocate_statement(sth, imp_sth)) {
 			/* Deallocation failed. Let's mark it and move on */
 			imp_sth->prepare_name = NULL;
-			if (dbis->debug >= 1)
+			if (dbis->debug >= 3)
 				PerlIO_printf(DBILOGFP, "  dbdpg: failed to deallocate!\n");
 		}
 		assert(NULL == imp_sth->prepare_name);
 	}
 
-	if (dbis->debug >= 3)
+	if (dbis->debug >= 4)
 		PerlIO_printf(DBILOGFP, "  dbdpg: placeholder \"%s\" bound as type \"%s\", value of \"%s\"\n",
 									name, bind_type->type_name, value_string);
 
@@ -1375,7 +1377,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	unsigned int execsize;
 	int x,y,z;
 
-	if (dbis->debug >= 1)
+	if (dbis->debug >= 2)
 		PerlIO_printf(DBILOGFP, "dbd_st_execute\n");
 	
 	if (NULL == imp_dbh->conn) {
@@ -1439,7 +1441,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		/* Prepare if it has not already been prepared (or it needs repreparing) */
 		if (NULL == imp_sth->prepare_name) {
 			if (imp_sth->prepared_by_us) {
-				if (dbis->debug >= 3)
+				if (dbis->debug >= 4)
 					PerlIO_printf(DBILOGFP, "  dbdpg: re-preparing statement\n");
 			}
 			if (dbd_st_prepare_statement(sth, imp_sth)) {
@@ -1447,7 +1449,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			}
 		} /* end prepare this named statement */
 		else {
-			if (dbis->debug >= 3)
+			if (dbis->debug >= 4)
 				PerlIO_printf(DBILOGFP, "  dbdpg: using previously prepared statement \"%s\"\n", imp_sth->prepare_name);
 		}
 
@@ -1460,7 +1462,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			}
 		}
 
-		if (dbis->debug >= 3)
+		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg: calling PQexecPrepared\n");
 
 		/* XXX This is still text-only */
@@ -1505,7 +1507,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		}			
 		statement[execsize] = '\0';
 
-		if (dbis->debug >= 3)
+		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg: calling PQexec\n");
 
 		imp_sth->result = PQexec(imp_dbh->conn, statement);
@@ -1531,7 +1533,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	cmdStatus = imp_sth->result ? (char *)PQcmdStatus(imp_sth->result) : "";
 	cmdTuples = imp_sth->result ? (char *)PQcmdTuples(imp_sth->result) : "";
 	
-	if (dbis->debug >= 3)
+	if (dbis->debug >= 4)
 		PerlIO_printf(DBILOGFP, "  dbdpg: received a status of %d\n", status);
 
 	if (PGRES_TUPLES_OK == status) {
@@ -1540,13 +1542,13 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		DBIc_NUM_FIELDS(imp_sth) = num_fields;
 		DBIc_ACTIVE_on(imp_sth);
 		ret = PQntuples(imp_sth->result);
-		if (dbis->debug >= 3)
+		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg: status was PGRES_TUPLES_OK, fields=%d, tuples=%d\n",
 										num_fields, ret);
 	}
 	else if (PGRES_COMMAND_OK == status) {
 		/* non-select statement */
-		if (dbis->debug >= 3)
+		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg: status was PGRES_COMMAND_OK\n");
 		if (! strncmp(cmdStatus, "DELETE", 6) || ! strncmp(cmdStatus, "INSERT", 6) || ! strncmp(cmdStatus, "UPDATE", 6)) {
 			ret = atoi(cmdTuples);
@@ -1596,7 +1598,7 @@ AV * dbd_st_fetch (sth, imp_sth)
 	AV *av;
 	D_imp_dbh_from_sth;
 	
-	if (dbis->debug >= 1)
+	if (dbis->debug >= 3)
 		PerlIO_printf(DBILOGFP, "dbd_st_fetch\n");
 
 	/* Check that execute() was executed sucessfully */
@@ -1691,7 +1693,7 @@ int dbd_st_rows (sth, imp_sth)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
 {
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_rows\n"); }
+	if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_st_rows\n"); }
 	
 	return imp_sth->rows;
 
@@ -1706,7 +1708,7 @@ int dbd_st_finish (sth, imp_sth)
 {
 	dTHR;
 	
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_finish\n"); }
+	if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_st_finish\n"); }
 	
 	if (DBIc_ACTIVE(imp_sth) && imp_sth->result) {
 		PQclear(imp_sth->result);
@@ -1732,7 +1734,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 	PGTransactionStatusType tstatus;
 	D_imp_dbh_from_sth;
 	
-	if (dbis->debug >= 1)
+	if (dbis->debug >= 3)
 		PerlIO_printf(DBILOGFP, "dbd_st_deallocate_statement\n");
 
 	if (NULL == imp_dbh->conn || NULL == imp_sth->prepare_name)
@@ -1740,18 +1742,18 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 	
 	/* What is our status? */
 	tstatus = dbd_db_txn_status(imp_dbh);
-	if (dbis->debug >= 3)
+	if (dbis->debug >= 4)
 		PerlIO_printf(DBILOGFP, "  dbdpg: transaction status is %d\n", tstatus);
 
 	/* If we are in a failed transaction, rollback before deallocating */
 	if (PQTRANS_INERROR == tstatus) {
-		if (dbis->debug >= 2)
+		if (dbis->debug >= 3)
 			PerlIO_printf(DBILOGFP, "  dbdpg: Issuing rollback before deallocate\n", tstatus);
 
 		status = _result(imp_dbh, "rollback");
 		if (PGRES_COMMAND_OK != status) {
 			/* This is not fatal, it just means we cannot deallocate */
-			if (dbis->debug >= 1)
+			if (dbis->debug >= 3)
 				PerlIO_printf(DBILOGFP, "  dbdpg: Rollback failed, so no deallocate\n");
 			return 1;
 		}
@@ -1764,7 +1766,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 
 	sprintf(stmt, "DEALLOCATE %s", imp_sth->prepare_name);
 
-	if (dbis->debug >= 2)
+	if (dbis->debug >= 4)
 		PerlIO_printf(DBILOGFP, "  dbdpg: deallocating \"%s\"\n", imp_sth->prepare_name);
 
 	status = _result(imp_dbh, stmt);
@@ -1790,7 +1792,7 @@ void dbd_st_destroy (sth, imp_sth)
 
 	seg_t *currseg, *nextseg;
 
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_destroy\n"); }
+	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_st_destroy\n"); }
 
 	if (NULL == imp_sth->seg) { /* Already been destroyed! */
 		croak("dbd_st_destroy called twice!");
@@ -1800,7 +1802,7 @@ void dbd_st_destroy (sth, imp_sth)
 	/* Deallocate only if we named this statement ourselves */
 	if (imp_sth->prepared_by_us) {
 		if (dbd_st_deallocate_statement(sth, imp_sth)) {
-			if (dbis->debug >= 1)
+			if (dbis->debug >= 3)
 				PerlIO_printf(DBILOGFP, "  dbdpg: could not deallocate\n");
 		}
 	}	
@@ -1844,7 +1846,7 @@ int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 	STRLEN vl;
 	char *value = SvPV(valuesv,vl);
 
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_STORE\n"); }
+	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_st_STORE\n"); }
 	
 	if (17==kl && strEQ(key, "pg_server_prepare")) {
 		imp_sth->server_prepare = strEQ(value,"0") ? 0 : 1;
@@ -1881,7 +1883,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 	char *type_name;
 	sql_type_info_t *type_info;
 
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_FETCH\n"); }
+	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_st_FETCH\n"); }
 	
 	/* Some can be done before the execute */
 	if (kl==15 && strEQ(key, "pg_prepare_name")) {
