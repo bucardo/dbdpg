@@ -71,6 +71,7 @@ struct imp_sth_st {
 	PGresult  *result;      /* result structure from the executed query */
 	int        cur_tuple;   /* current tuple being fetched */
 	int        rows;        /* number of affected rows */
+	sql_type_info_t **type_info; /* type of each column in result */
 
 	char  server_prepare;   /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
 	char  *prepare_name;    /* name of the prepared query; NULL if not prepared */
