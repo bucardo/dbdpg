@@ -8,6 +8,8 @@
 # "take_imp_data"
 # "lo_import"
 # "lo_export"
+# "pg_savepoint", "pg_release", "pg_rollback_to"
+# "pg_putline", "pg_getline", "pg_endcopy"
 
 use Test::More;
 use DBI qw(:sql_types);
@@ -15,7 +17,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 141;
+	plan tests => 135;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -65,7 +67,7 @@ eval {
 ok( $@, 'DB handle method "last_insert_id" given an error when no arguments are given');
 
 eval {
-	$result = $dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistent_sequence_test'});
+	$result = $dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistentsequence_test'});
 };
 ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent sequence');
 $dbh->rollback();
@@ -409,10 +411,12 @@ else {
 # Drop any tables that may exist
 my $fktables = join "," => map { "'dbd_pg_test$_'" } (1..3);
 $SQL = "SELECT relname FROM pg_catalog.pg_class WHERE relkind='r' AND relname IN ($fktables)";
-for (@{$dbh->selectall_arrayref($SQL)}) {
-	$dbh->do("DROP TABLE $_->[0] CASCADE");
+{
+	local $SIG{__WARN__} = sub {};
+	for (@{$dbh->selectall_arrayref($SQL)}) {
+		$dbh->do("DROP TABLE $_->[0] CASCADE");
+	}
 }
-
 ## Invalid primary table
 $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test9',undef,undef,undef);
 is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: bad pk / no fk');
@@ -650,9 +654,11 @@ $expected = [$fk3,$fk1,$fk2,$fk5,$fk6,$fk7];
 is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for multi-column keys');
 
 # Clean everything up
-$dbh->do("DROP TABLE dbd_pg_test3");
-$dbh->do("DROP TABLE dbd_pg_test2");
-$dbh->do("DROP TABLE dbd_pg_test1");
+{
+	$dbh->do("DROP TABLE dbd_pg_test3");
+	$dbh->do("DROP TABLE dbd_pg_test2");
+	$dbh->do("DROP TABLE dbd_pg_test1");
+}
 
 } # end giant foreign_key_info bypass
 
@@ -816,60 +822,6 @@ ok( $result, 'DB handle method "lo_close" works after read');
 
 $result = $dbh->func($object, 'lo_unlink');
 ok( $result, 'DB handle method "lo_unlink" works');
-
-#
-# Test of the "putline" database handle method
-#
-
-# Older servers cannot handle column names in COPY
-if (! $got73) {
- SKIP: {
-		skip qq{Cannot test DB handle method "putline" on pre-7.3 servers.}, 2;
-	}
-}
-else {
-
-$dbh->do("COPY dbd_pg_test (id, val) FROM STDIN");
-$result = $dbh->func("13\tOlive\n", 'putline');
-$result = $dbh->func("14\tStrawberry\n", 'putline');
-$result = $dbh->func("15\tBlueberry\n", 'putline');
-is( $result, 1,'DB handle method "putline" works when inserting a line');
-$dbh->func("\\.\n", 'putline');
-$dbh->func('endcopy');
-$dbh->commit();
-
-$expected = [[13 => 'Olive'],[14 => 'Strawberry'],[15 => 'Blueberry']];
-$result = $dbh->selectall_arrayref("SELECT id,val FROM dbd_pg_test WHERE id BETWEEN 13 AND 15 ORDER BY id ASC");
-is_deeply( $result, $expected, 'DB handle method "putline" copies strings to the database');
-
-}
-
-
-#
-# Test of the "getline" database handle method
-#
-
-if (! $got73) {
- SKIP: {
-		skip qq{Cannot test DB handle method "getline" on pre-7.3 servers.}, 4;
-	}
-}
-else {
-
-$dbh->do("COPY dbd_pg_test (id, val) TO STDOUT");
-my ($buffer,$badret,$badval) = ('',0,0);
-while ($result = $dbh->func($buffer, 100, 'getline')) {
-	$badret++ if $result !=1;
-	$badval++ if $buffer !~ /^\d+\t\w+$/o;
-}
-$dbh->func('endcopy');
-$dbh->commit();
-is( $result, '', 'DB handle method "getline" returns empty string when finished');
-is( $buffer, '\.', qq{DB handle method "getline" returns '\\.' when finished});
-ok( !$badret, 'DB handle method "getline" returns a 1 for each row fetched');
-ok( !$badval, 'DB handle method "getline" properly retrieved every row');
-
-}
 
 #
 # Test of the "pg_notifies" database handle method
