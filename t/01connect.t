@@ -14,6 +14,9 @@ if (defined $ENV{DBI_DSN}) {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file.';
 }
 
+## Define this here in case we get to the END block before a connection is made.
+my $pgversion = '?';
+
 # Trapping a connection error can be tricky, but we only have to do it 
 # this thoroughly one time. We are trapping two classes of errors:
 # the first is when we truly do not connect, usually a bad DBI_DSN;
@@ -36,7 +39,7 @@ if ($@) {
 
 pass('Established a connection to the database');
 
-my $pgversion = DBD::Pg::_pg_server_version($dbh);
+$pgversion = DBD::Pg::_pg_server_version($dbh);
 
 ok( $dbh->disconnect(), 'Disconnect from the database');
 
@@ -61,10 +64,11 @@ eval {
 ok( $@, 'Execute fails on a disconnected statement');
 
 END {
+	my $pv = sprintf("%vd", $^V);
 	diag "\n".
-	 "Program       Version\n".
-	 "DBD::Pg       $DBD::Pg::VERSION\n".
-	 "PostgreSQL    $pgversion\n".
-	 "DBI           $DBI::VERSION";
+		"Program           Version\n".
+		"Perl              $pv ($^O)\n".
+		"DBD::Pg           $DBD::Pg::VERSION\n".
+		"PostgreSQL        $pgversion\n".
+		"DBI               $DBI::VERSION";
 }
-
