@@ -25,7 +25,7 @@
 	- Moved the quoting of bind values out of execute() and into
 		bind -- as there is no need to requote the value every time execute 
 		is called.
-	- :veryverylongplaceholdername == Long walk, Sort pier -- fixed.
+	- :veryverylongplaceholdername == Long walk, short pier -- fixed.
 	- quote() is now in C and uses same code as bind_param.
 	- Quoting and dequoting now use libpq quoting functions where available
 		(I still need to take the libpq functions swiped out of quote.c and move 
@@ -54,7 +54,7 @@
 	- Fix PG_TEXT parameter binding
 	- Doc cleanups [Greg Sabino Mullane]
 	- Fix warning from func($table, 'table_attributes') [Greg Sabino Mullane]
-	- Added suppport for schemas [Greg Sabino Mullane]
+	- Added support for schemas [Greg Sabino Mullane]
 	- Fix binary to a bytea field conversion [Chris Dunlop <chris@onthe.net.au>]
 
 1.21 Sun Jan 12 21:00:44 EST 2003
@@ -85,11 +85,11 @@
 		[Jason E. Stewart]
 	- Added eg/lotest.pl as a demonstration of using large objects in buffers
 		rather than files. Contributed by Garth Webb.
-	- Added LISTEN/NOTIFY functionality. Congributed by Alex Pilosov.
+	- Added LISTEN/NOTIFY functionality. Contributed by Alex Pilosov.
 	- Added constants for common PostgreSQL data types, plus simple tests to
 		make sure that they work. These are exportable via 
 		"use DBD::Pg qw(:pg_types);". [David Wheeler]
-	- Deprecatated the undocumented (and invalid) use of SQL_BINARY in
+	- Deprecated the undocumented (and invalid) use of SQL_BINARY in
 		bind_param() and documented the correct approach: "bind_param($num,
 		$val { pg_type => PG_BYTEA });". Use of SQL_BINARY in bind_param() will
 		now issue a warning if $h->{Warn} is true. [David Wheeler]
@@ -106,12 +106,12 @@
 	
 2002-04-09 Jeffrey W. Baker <jwbaker@acm.org>
 	- Pg.pm, dbdimp.c: Applied patch from
-		Thomas A. Lowery <tlowery@stlowery.net> concerning metadatain
+		Thomas A. Lowery <tlowery@stlowery.net> concerning metadata in
 		table_info and so forth.
 
 2002-03-06 Jeffrey W. Baker <jwbaker@acm.org>
 	- Pg.pm (quote): Applied patch from David Wheeler <david@wheeler.net>
-		to simplfiy and speed up quoting.
+		to simplify and speed up quoting.
 	- t/11quoting.t: Tests for above patch.
 	- t/12placeholders.t: Tests for placeholder parsing in quoted strings.
 
@@ -153,7 +153,7 @@
 		variable holding the scalar value
 	- updated test.pl to create a test blob larger than 256 bytes 
 		(now 128 Kbytes)
-	- apply patch from Tom Lane, which fixes a seg-fault when
+	- apply patch from Tom Lane, which fixes a segmentation fault when
 		inserting large amounts of text.
 	- apply patch from Peter Haworth pmh@edison.ioppublishing.com,
 		which removes the newlines from the error messages and which 
@@ -169,7 +169,7 @@
 		which fixes a bug with escaping a backslash except for 
 		octal presentation
 	- applied patch from Francis J. Lacoste <francis.lacoste@iNsu.COM
-		which fixes a segmentation fault when all binded parameters are NULL
+		which fixes a segmentation fault when all bound parameters are NULL
 	- adapt test.pl to avoid warnings with postgresql-7.0
 	- added support for 'COPY FROM STDIN' and 'COPY TO STDOUT'
 	- added patch from Mark Stosberg <mark@summersault.com>
@@ -185,7 +185,7 @@
 		from Scott Williams <scott@james.com>.
 	- fix type definitions for type_info_all().
 		bug spotted by "carlos" <emarcet@intramed.net.ar>.
-	- now the Pg-specific quote() method also evaluates the data-type paramater.
+	- now the Pg-specific quote() method also evaluates the data-type parameter.
 
 0.92 Jun 16, 1999
 	- proposal from Philip Warner <pjw@rhyme.com.au>:
@@ -367,8 +367,8 @@
 0.4 Jun 24, 1997
 	- adapted to DBI-0.84:
 		o new syntax for DBI->connect !
-		o execute returns 0E0 -> n for SELECT stmt
-			-1 for non SELECT stmt
+		o execute returns 0E0 -> n for SELECT statement
+			-1 for non SELECT statement
 			-2 on error
 	- new attribute $sth->{'OID_STATUS'}
 	- new attribute $sth->{'CMD_STATUS'}
