@@ -77,7 +77,6 @@ MODULE=DBD::Pg     PACKAGE = DBD::Pg::db
 #TODO: make quote(foo, {pg_type=>DBD::Pg::PG_INTEGER}) work  #rl
 SV*
 quote(dbh, to_quote_sv, type_sv=Nullsv)
-    SV* dbh
     SV* to_quote_sv
     SV* type_sv
 
@@ -131,24 +130,17 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 # ------------------------------------------------------------
 MODULE = DBD::Pg  PACKAGE = DBD::Pg::db
 
-SV* state(dbh)
+void state(dbh)
 	SV *dbh
 	CODE:
 	D_imp_dbh(dbh);
 	ST(0) = newSVpvn(imp_dbh->sqlstate, 5);
 
-int
+void
 _ping(dbh)
     SV * dbh
     CODE:
-    int ret;
-    ret = dbd_db_ping(dbh);
-    if (ret == 0) {
-        XST_mUNDEF(0);
-    }
-    else {
-        XST_mIV(0, ret);
-    }
+    ST(0) = dbd_db_ping(dbh) ? &sv_yes : &sv_no;
 
 void
 getfd(dbh)
@@ -156,7 +148,6 @@ getfd(dbh)
     CODE:
     int ret;
     D_imp_dbh(dbh);
-
     ret = dbd_db_getfd(dbh, imp_dbh);
     ST(0) = sv_2mortal( newSViv( ret ) );
 
@@ -164,7 +155,6 @@ void
 pg_endcopy(dbh)
     SV * dbh
     CODE:
-    D_imp_dbh(dbh);
 		ST(0) = pg_db_endcopy(dbh) ? &sv_no : &sv_yes;
 
 void
@@ -172,7 +162,6 @@ pg_notifies(dbh)
     SV * dbh
     CODE:
     D_imp_dbh(dbh);
-
     ST(0) = dbd_db_pg_notifies(dbh, imp_dbh);
 
 void
@@ -378,27 +367,23 @@ pg_server_untrace(dbh)
     CODE:
         pg_db_pg_server_untrace(dbh);
 
-int
+void
 _pg_type_info (type_sv=Nullsv)
-    SV* type_sv
-    CODE:
-    {
-    	# int type_num = VARCHAROID;
-    	int type_num = 0;
-        sql_type_info_t *type_info;
+	SV* type_sv
+	CODE:
+	{
+		# int type_num = VARCHAROID;
+		int type_num = 0;
+		sql_type_info_t *type_info;
 
-        if(type_sv && SvOK(type_sv)) {
-                if SvMAGICAL(type_sv)
-                        mg_get(type_sv);
-
-                type_info = pg_type_data(SvIV(type_sv));
-                type_num = type_info ? type_info->type.sql : SQL_VARCHAR;
-        } 
-	RETVAL = type_num;
-        XST_mIV(0, RETVAL);
-    }
-# ST(0) = (-1 != type_num) ? &sv_yes : &sv_no; */
-
+		if (type_sv && SvOK(type_sv)) {
+			if SvMAGICAL(type_sv)
+				mg_get(type_sv);
+			type_info = pg_type_data(SvIV(type_sv));
+			type_num = type_info ? type_info->type.sql : SQL_VARCHAR;
+		}
+		ST(0) = sv_2mortal( newSViv( type_num ) );
+  }
 
 # -- end of DBD::Pg::db
 
@@ -408,9 +393,9 @@ _pg_type_info (type_sv=Nullsv)
 # ------------------------------------------------------------
 MODULE = DBD::Pg  PACKAGE = DBD::Pg::st
 
-SV* state(sth)
+void state(sth)
 	SV *sth;
-	CODE:
+ 	CODE:
 	D_imp_sth(sth);
 	D_imp_dbh_from_sth;
 	ST(0) = newSVpvn(imp_dbh->sqlstate, 5);

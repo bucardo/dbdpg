@@ -155,146 +155,74 @@ PQescapeBytea(const unsigned char *bintext, STRLEN binlen, STRLEN *bytealen)
  *
  */
 #if PGLIBVERSION < 70300
-unsigned char *
-PQunescapeBytea2(const unsigned char *strtext, STRLEN *retbuflen)
-{
-	STRLEN strtextlen, buflen, i, j;
-	unsigned char *buffer, *tmpbuf;
-	int byte;
-	
-	if (NULL == strtext) {
-		return NULL;
-	}
-	
-	strtextlen = strlen(strtext);
-	/* will shrink, also we discover if strtext isn't NULL terminated */
-	
-	New(0, buffer, strtextlen, unsigned char);
-	if (NULL == buffer)
-		return NULL;
-	
-	for (i = j = buflen = 0; i < strtextlen;)
-		{
-			switch (strtext[i])
-				{
-				case '\\':
-					i++;
-					if ('\\' == strtext[i])
-						buffer[j++] = strtext[i++];
-					else
-						{
-							if ((isDIGIT(strtext[i])) &&
-									(isDIGIT(strtext[i+1])) &&
-									(isDIGIT(strtext[i+2])))
-								{
-									byte = VAL(strtext[i++]);
-									byte = (byte << 3) + VAL(strtext[i++]);
-									buffer[j++] = (byte << 3) + VAL(strtext[i++]);
-								}
-						}
-					break;
-					
-				default:
-					buffer[j++] = strtext[i++];
-				}
-		}
-	buflen = j; /* buflen is the length of the unquoted data */
-	Renew(buffer,buflen,char);
-	
-	if (!tmpbuf)
-		{
-			Safefree(buffer);
-			return 0;
-		}
-	
-	*retbuflen = buflen;
-	return tmpbuf;
-}
 
-
-
-
-
-
+#define ISFIRSTOCTDIGIT(CH) ((CH) >= '0' && (CH) <= '3')
+#define ISOCTDIGIT(CH) ((CH) >= '0' && (CH) <= '7')
+#define OCTVAL(CH) ((CH) - '0')
 
 unsigned char *
-PQunescapeBytea(unsigned char *strtext, STRLEN *retbuflen)
+PQunescapeBytea(const unsigned char *strtext, STRLEN *retbuflen)
 {
-	STRLEN		buflen;
-	unsigned char *buffer,
-		*sp,
-		*bp;
-	unsigned int state = 0;
+	STRLEN strtextlen, buflen;
+	unsigned char *buffer;
+	unsigned int i,j;
 	
 	if (NULL == strtext)
 		return NULL;
-	buflen = strlen(strtext);	/* will shrink, also we discover if
-														 * strtext */
-	New(0, buffer, buflen, unsigned char);
+
+	strtextlen = strlen((char *)strtext);
+
+	/*
+	 * Length of input is max length of output, but add one to avoid
+	 * unportable malloc(0) if input is zero-length.
+	 */
+	New(0, buffer, strtextlen+1, unsigned char);
 	if (NULL == buffer)
 		return NULL;
-	for (bp = buffer, sp = strtext; *sp != '\0'; bp++, sp++)
-		{
-			switch (state)
-				{
-				case 0:
-					if ('\\' == *sp)
-						state = 1;
-					*bp = *sp;
-					break;
-				case 1:
-					if ('\'' == *sp)	/* state=5 */
-						{				/* replace \' with 39 */
-							bp--;
-							*bp = '\'';
-							buflen--;
-							state = 0;
-						}
-					else if ('\\' == *sp)	/* state=6 */
-						{				/* replace \\ with 92 */
-							bp--;
-							*bp = '\\';
-							buflen--;
-							state = 0;
-						}
-					else
-						{
-							if (isDIGIT(*sp))
-								state = 2;
-							else
-								state = 0;
-							*bp = *sp;
-						}
-					break;
-				case 2:
-					if (isDIGIT(*sp))
-						state = 3;
-					else
-						state = 0;
-					*bp = *sp;
-					break;
-				case 3:
-					if (isDIGIT(*sp))		/* state=4 */
-						{
-							unsigned int v;
-							
-							bp -= 3;
-							sscanf(sp - 2, "%03o", &v);
-							*bp = v;
-							buflen -= 3;
-							state = 0;
-						}
-					else
-						{
-							*bp = *sp;
-							state = 0;
-						}
-					break;
+
+	for (i = j = 0; i < strtextlen;) {
+		switch (strtext[i]) {
+		case '\\':
+			i++;
+			if (strtext[i] == '\\')
+				buffer[j++] = strtext[i++];
+			else {
+				if ((ISFIRSTOCTDIGIT(strtext[i])) &&
+						(ISOCTDIGIT(strtext[i + 1])) &&
+						(ISOCTDIGIT(strtext[i + 2]))) {
+					int			byte;
+
+					byte = OCTVAL(strtext[i++]);
+					byte = (byte << 3) + OCTVAL(strtext[i++]);
+					byte = (byte << 3) + OCTVAL(strtext[i++]);
+					buffer[j++] = byte;
 				}
+			}
+
+			/*
+			 * Note: if we see '\' followed by something that isn't a
+			 * recognized escape sequence, we loop around having done
+			 * nothing except advance i.  Therefore the something will
+			 * be emitted as ordinary data on the next cycle. Corner
+			 * case: '\' at end of string will just be discarded.
+			 */
+			break;
+
+		default:
+			buffer[j++] = strtext[i++];
+			break;
 		}
-	Renew(buffer,buflen,char);
-	if (NULL == buffer)
+	}
+	buflen = j;	/* buflen is the length of the dequoted data */
+
+	/* Shrink the buffer to be no larger than necessary */
+	/* +1 avoids unportable behavior when buflen==0 */
+	Renew(buffer,buflen+1,unsigned char);
+
+	if (NULL == buffer) {
+		Safefree(buffer);
 		return NULL;
+	}
 	
 	*retbuflen = buflen;
 	return buffer;

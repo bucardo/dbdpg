@@ -50,6 +50,8 @@ PGresult *PQexecParams() { croak("Called wrong PQexecParams\n"); }
 Oid PQftable() { return InvalidOid; }
 int PQftablecol() { return 0; }
 int PQsetErrorVerbosity() { return 0; }
+int PQprotocolVersion() { return 0; }
+PGTransactionStatusType PQtransactionStatus() { return PQTRANS_UNKNOWN; }
 #define PG_DIAG_SQLSTATE 'C'
 #endif
 
@@ -377,7 +379,9 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	/* We only perform these actions if we need to. For newer servers, we 
 		 ask it for the status directly and double-check things */
 
-#if PGLIBVERSION >= 70400
+#if PGLIBVERSION < 70400
+	tstatus = 0; /* Make compiler happy */
+#else
 	tstatus = dbd_db_txn_status(imp_dbh);
 	if (PQTRANS_IDLE == tstatus) { /* Not in a transaction */
 		if (imp_dbh->done_begin) {
@@ -546,9 +550,7 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 			imp_dbh->prepare_now = newval ? 1 : 0;
 		}
 	}
-	else {
-		return 0;
-	}
+	return 0;
 
 } /* end of dbd_db_STORE_attrib */
 
@@ -639,8 +641,7 @@ int dbd_discon_all (drh, imp_drh)
 		sv_setiv(DBIc_ERR(imp_drh), (IV)1);
 		sv_setpv(DBIc_ERRSTR(imp_drh),
 						 (char*)"disconnect_all not implemented");
-		DBIh_EVENT2(drh, ERROR_event,
-								DBIc_ERR(imp_drh), DBIc_ERRSTR(imp_drh));
+		DBIh_EVENT2(drh, ERROR_event, DBIc_ERR(imp_drh), DBIc_ERRSTR(imp_drh));
 	}
 	return DBDPG_FALSE;
 
@@ -1304,7 +1305,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	SV **svp;
 	bool reprepare = 0;
 	int pg_type = 0;
-	char *value_string;
+	char *value_string = NULL;
 
 	if (dbis->debug >= 4) {
 		PerlIO_printf(DBILOGFP, "dbd_bind_ph\n");
@@ -1482,7 +1483,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	ph_t *currph;
 	ExecStatusType status = -1;
 	STRLEN execsize, x;
-	const char **paramValues;
+	const char **paramValues = NULL;
 	int *paramLengths = NULL, *paramFormats = NULL;
 	Oid *paramTypes = NULL;
 	seg_t *currseg;
@@ -1803,7 +1804,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 
 /* ================================================================== */
-is_high_bit_set(val)
+int is_high_bit_set(val)
 		 char *val;
 {
 	while (*val++)
@@ -1821,7 +1822,7 @@ AV * dbd_st_fetch (sth, imp_sth)
 	int num_fields;
 	char *value;
 	char *p;
-	int i, pg_type, chopblanks;
+	int i, chopblanks;
 	STRLEN value_len;
 	STRLEN len;
 	AV *av;
@@ -1900,7 +1901,7 @@ AV * dbd_st_fetch (sth, imp_sth)
 				case TEXTOID:
 				case BPCHAROID:
 				case VARCHAROID:
-					if (is_high_bit_set(value) && is_utf8_string(value, value_len)) {
+					if (is_high_bit_set(value) && is_utf8_string((unsigned char*)value, value_len)) {
 						SvUTF8_on(sv);
 					}
 				}
@@ -1955,7 +1956,6 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 		 imp_sth_t *imp_sth;
 {
 	char *stmt;
-	PGresult *result;
 	ExecStatusType status;
 	PGTransactionStatusType tstatus;
 	D_imp_dbh_from_sth;
@@ -1978,7 +1978,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 			/* If a savepoint has been set, rollback to the last savepoint instead of the entire transaction */
 			I32	alen = av_len(imp_dbh->savepoints);
 			if (alen > -1) {
-				SV		*sp;
+				SV		*sp = Nullsv;
 				char	*cmd;
 				New(0, cmd, SvLEN(sp) + 13, char); /* Freed below */
 				if (dbis->debug >= 4)
@@ -2109,9 +2109,7 @@ int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 		Copy(value, imp_sth->prepare_name, vl, char);
 		imp_sth->prepare_name[vl] = '\0';
 	}
-	else {
-		return 0;
-	}
+	return 0;
 
 } /* end of sbs_st_STORE_attrib */
 
@@ -2306,6 +2304,7 @@ pg_db_putline (dbh, buffer)
 #if PGLIBVERSION < 70400
 		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg: PQputline\n");
+		result = 0; /* Make compilers happy */
 		return PQputline(imp_dbh->conn, buffer);
 #else
 		if (dbis->debug >= 4)
@@ -2349,6 +2348,7 @@ pg_db_getline (dbh, buffer, length)
 			PQendcopy(imp_dbh->conn);
 			return -1;
 		}
+		tempbuf = NULL; /* Make compilers happy */
 		return result;
 #else
 		result = PQgetCopyData(imp_dbh->conn, &tempbuf, 0);
@@ -2378,7 +2378,6 @@ pg_db_endcopy (dbh)
 		D_imp_dbh(dbh);
 		int res;
 		PGresult *result;
-		ExecStatusType status;
 
 		if (0==imp_dbh->copystate)
 			croak("pg_endcopy cannot be called until a COPY is issued");
@@ -2388,6 +2387,7 @@ pg_db_endcopy (dbh)
 #if PGLIBVERSION < 70400
 		if (PGRES_COPY_IN == imp_dbh->copystate)
 			PQputline(imp_dbh->conn, "\\.\n");
+		result = 0; /* Make compiler happy */
 		res = PQendcopy(imp_dbh->conn);
 #else
 		if (PGRES_COPY_IN == imp_dbh->copystate) {
@@ -2447,7 +2447,6 @@ pg_db_savepoint (dbh, imp_dbh, savepoint)
 		 imp_dbh_t *imp_dbh;
 		 char * savepoint;
 {
-	PGTransactionStatusType tstatus;
 	ExecStatusType status;
 	char *action;
 
@@ -2496,7 +2495,6 @@ int pg_db_rollback_to (dbh, imp_dbh, savepoint)
 		 imp_dbh_t *imp_dbh;
 		 char * savepoint;
 {
-	PGTransactionStatusType tstatus;
 	ExecStatusType status;
 	I32 i;
 	char *action;
@@ -2541,7 +2539,6 @@ int pg_db_release (dbh, imp_dbh, savepoint)
 		 imp_dbh_t *imp_dbh;
 		 char * savepoint;
 {
-	PGTransactionStatusType tstatus;
 	ExecStatusType status;
 	I32 i;
 	char *action;
