@@ -16,7 +16,7 @@
 TODO:   - expand this for use with type_info() 
 	- map all types to closest sql type.
 	- set up quote functions for remaining types
-	- autogeneratet this file.
+	- autogenerate this file.
 */
 
 static sql_type_info_t pg_types[] = {
