@@ -6,7 +6,7 @@ DBD::Pg  --  the DBI PostgreSQL interface for Perl
 DESCRIPTION:
 ------------
 
-This is version 1.33 of DBD-Pg.  The web site for this interface is at:
+This is version 1.40 of DBD-Pg.  The web site for this interface is at:
 
 	http://gborg.postgresql.org/project/dbdpg/projdisplay.php
 
@@ -22,10 +22,10 @@ For information about PostgreSQL, visit:
 COPYRIGHT:
 ----------
 
-	Portions Copyright (c) 1994-1997 Tim Bunce
-	Copyright (c) 1997-2001 Edmund Mergl
-	Copyright (c) 2002 Jeffrey W. Baker
 	Copyright (c) 2002-2004 PostgreSQL Global Development Group
+	Portions Copyright (c) 2002 Jeffrey W. Baker
+	Portions Copyright (c) 1997-2001 Edmund Mergl
+	Portions Copyright (c) 1994-1997 Tim Bunce
 
 You may distribute under the terms of either the GNU General Public
 License or the Artistic License, as specified in the Perl README file.
