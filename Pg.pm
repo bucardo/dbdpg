@@ -142,39 +142,376 @@ $DBD::Pg::VERSION = '1.13';
         return $ret;
     }
 
+	# Column expected in statement handle returned.
+	# table_cat, table_schem, table_name, column_name, data_type, type_name,
+	# column_size, buffer_length, DECIMAL_DIGITS, NUM_PREC_RADIX, NULLABLE,
+	# REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB, CHAR_OCTET_LENGTH,
+	# ORDINAL_POSITION, IS_NULLABLE
+	# The result set is ordered by TABLE_CAT, TABLE_SCHEM, 
+	# TABLE_NAME and ORDINAL_POSITION.
+
+	sub column_info {
+		my ($dbh) = shift;
+		my @attrs = @_;
+		# my ($dbh, $catalog, $schema, $table, $column) = @_;
+
+		my @wh = ();
+		my @flds = qw/catname u.usename c.relname a.attname/;
+
+		for my $idx (0 .. $#attrs) {
+			next if ($flds[$idx] eq 'catname'); # Skip catalog
+			if(defined $attrs[$idx]) {
+				if ($attrs[$idx] =~ m/[,%]/) {
+					# contains a meta character.
+					push( @wh, q{( } . join ( " OR "
+						, map { m/\%/ 
+							? qq{$flds[$idx] LIKE $_ }
+							: qq{$flds[$idx]    = $_ }
+							} (split /,/, $attrs[$idx]) )
+							. q{ )}
+						);
+				}
+				else {
+					push( @wh, qq{$flds[$idx] = $attrs[$idx]} );
+				}
+			}
+		}
+
+		my $wh = ();
+		$wh = join( " and ", ,'', @wh ) if (@wh);
+		my $col_info_sql = qq{
+			select
+				  NULL::text    AS "TABLE_CAT"
+				, u.usename     AS "TABLE_SCHEM"
+				, c.relname		AS "TABLE_NAME"
+				, a.attname		AS "COLUMN_NAME"
+				, t.typname		AS "DATA_TYPE"
+				, NULL::text	AS "TYPE_NAME"
+				, a.attlen		AS "COLUMN_SIZE"
+				, NULL::text	AS "BUFFER_LENGTH"
+				, NULL::text	AS "DECIMAL_DIGITS"
+				, NULL::text	AS "NUM_PREC_RADIX"
+				, a.attnotnull	AS "NULLABLE"
+				, NULL::text	AS "REMARKS"
+				, a.atthasdef	AS "COLUMN_DEF"
+				, NULL::text	AS "SQL_DATA_TYPE"
+				, NULL::text	AS "SQL_DATETIME_SUB"
+				, NULL::text	AS "CHAR_OCTET_LENGTH"
+				, a.attnum		AS "ORDINAL_POSITION"
+				, a.attnotnull  AS "IS_NULLABLE"
+				, a.atttypmod	as atttypmod
+				, a.attnotnull	as attnotnull
+				, a.atthasdef	as atthasdef
+				, a.attnum		as attnum
+			from 
+				  pg_attribute	a
+				, pg_class		c
+				, pg_type		t
+				, pg_user		u
+			where
+					a.attrelid = c.oid
+				and a.attnum  >= 0
+				and t.oid      = a.atttypid
+				and c.relkind  = 'r'
+				and c.relname !~ '^pg_'
+				and c.relowner = u.usesysid 
+				$wh
+			order by u.usename, c.relname, a.attnum
+		};
+
+		my $sth = $dbh->prepare( $col_info_sql ) or
+			return undef;
+        $sth->execute();
+
+        return $sth;
+	}
+
+	sub primary_key_info {
+        my $dbh = shift;
+		my ($catalog, $schema, $table) = @_;
+		my @attrs = @_;
+
+		# TABLE_CAT:, TABLE_SCHEM:, TABLE_NAME:, COLUMN_NAME:, KEY_SEQ:
+		# , PK_NAME:
+
+		my @wh = (); my @dat = ();  # Used to hold data for the attributes.
+		my @flds = qw/catname u.usename bc.relname/;
+
+		for my $idx (0 .. $#attrs) {
+			next if ($flds[$idx] eq 'catname'); # Skip catalog
+			if(defined $attrs[$idx]) {
+				if ($attrs[$idx] =~ m/[,%_?]/) {
+					# contains a meta character.
+					push( @wh, q{( } . join ( " OR "
+						, map { push(@dat, $_);
+							m/[%_?]/ 
+							? qq{$flds[$idx] iLIKE ? }
+							: qq{$flds[$idx]    = ?  }
+							} (split /,/, $attrs[$idx]) )
+							. q{ )}
+						);
+				}
+				else {
+					push( @dat, $attrs[$idx] );
+					push( @wh, qq{$flds[$idx] = ? } );
+				}
+			}
+		}
+
+		my $wh = ();
+		$wh = join( " and ", ,'', @wh ) if (@wh);
+
+		# Base primary key selection query borrowed from phpPgAdmin.
+		my $pri_key_sql = qq{
+			SELECT
+				NULL::text		AS "TABLE_CAT"
+				, u.usename		AS "TABLE_SCHEM"
+				, bc.relname	AS "TABLE_NAME"
+				, a.attname		AS "COLUMN_NAME"
+				, a.attnum		AS "KEY_SEQ"
+				, ic.relname	AS "PK_NAME"
+			FROM
+				  pg_class bc
+				, pg_class ic
+				, pg_index i
+				, pg_attribute a
+				, pg_user	u
+			WHERE
+				i.indrelid = bc.oid
+			and i.indexrelid = ic.oid
+			and
+			(
+				i.indkey[0] = a.attnum
+				or
+				i.indkey[1] = a.attnum
+				or
+				i.indkey[2] = a.attnum
+				or
+				i.indkey[3] = a.attnum
+				or
+				i.indkey[4] = a.attnum
+				or
+				i.indkey[5] = a.attnum
+				or
+				i.indkey[6] = a.attnum
+				or
+				i.indkey[7] = a.attnum
+				or
+				i.indkey[8] = a.attnum
+				or
+				i.indkey[9] = a.attnum
+				or
+				i.indkey[10] = a.attnum
+				or
+				i.indkey[11] = a.attnum
+				or
+				i.indkey[12] = a.attnum
+			)
+			and a.attrelid = bc.oid
+			and i.indproc = '0'::oid
+			and i.indisprimary = 't' 
+			and bc.relowner    =  u.usesysid
+			$wh
+			order by
+				u.usename, bc.relname, a.attnum
+		};
+
+        my $sth = $dbh->prepare( $pri_key_sql ) or
+			return undef;
+        $sth->execute(@dat);
+
+        return $sth;
+	}
+
 
     sub table_info {         # DBI spec: TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS
-        my($dbh) = @_;
+        my $dbh = shift;
+		my ($catalog, $schema, $table, $type) = @_;
+		my @attrs = @_;
 
-        my $sth = $dbh->prepare(qq{
-            SELECT NULL::text    AS "TABLE_CAT"
-                 , u.usename     AS "TABLE_SCHEM"
-                 , c.relname     AS "TABLE_NAME"
-                 , 'TABLE'       AS "TABLE_TYPE"
-                 , d.description AS "REMARKS"
-            FROM pg_user  u
-               , pg_class c LEFT OUTER JOIN pg_description AS d ON c.relfilenode = d.objoid and d.objsubid = 0
-            WHERE c.relkind     =  'r'
-              AND c.relhasrules =  FALSE
-              AND c.relname     !~ '^pg_'
-              AND c.relname     !~ '^xin[vx][0-9]+'
-              AND c.relowner    =  u.usesysid
-            UNION
-            SELECT NULL::text
-	             , u.usename
-	             , c.relname
-	             , 'VIEW'
-	             , d.description 
-            FROM pg_user u
-               , pg_class c LEFT OUTER JOIN pg_description AS d ON c.relfilenode = d.objoid and d.objsubid = 0
-            WHERE c.relkind = 'v' 
-            AND   c.relhasrules = TRUE
-            AND   c.relname !~ '^pg_' 
-            AND   c.relname !~ '^xin[vx][0-9]+' 
-            AND   c.relowner = u.usesysid 
-            ORDER BY 2, 3, 4
-        }) or return undef;
+		my $tbl_sql = ();
 
+		if ( # Rules 19a
+			    (defined $catalog and $catalog eq '%')
+			and (defined $schema  and $schema  eq  '')
+			and (defined $table   and $table   eq  '')
+			) {
+				$tbl_sql = q{
+					SELECT 
+					   NULL::text    AS "TABLE_CAT"
+					 , NULL::text    AS "TABLE_SCHEM"
+					 , NULL::text    AS "TABLE_NAME"
+					 , NULL::text    AS "TABLE_TYPE"
+					 , NULL::text    AS "REMARKS"
+					};
+		}
+		elsif (# Rules 19b
+			    (defined $catalog and $catalog eq  '')
+			and (defined $schema  and $schema  eq '%')
+			and (defined $table   and $table   eq  '')
+			) {
+				$tbl_sql = q{
+					SELECT 
+					   NULL::text    AS "TABLE_CAT"
+					 , u.usename     AS "TABLE_SCHEM"
+					 , NULL::text    AS "TABLE_NAME"
+					 , NULL::text    AS "TABLE_TYPE"
+					 , NULL::text    AS "REMARKS"
+					from pg_user u
+					order by u.usename
+				};
+		}
+		elsif (# Rules 19c
+			    (defined $catalog and $catalog eq  '')
+			and (defined $schema  and $schema  eq  '')
+			and (defined $table   and $table   eq  '')
+			and (defined $type    and $type    eq  '%')
+			) {
+				# From the postgresql 7.2.1 manual 3.5 pg_class
+				#  'r' = ordinary table
+				#, 'i' = index
+				#, 'S' = sequence
+				#, 'v' = view
+				#, 's' = special
+				#, 't' = secondary TOAST table 
+				$tbl_sql = q{
+					SELECT 
+					   NULL::text    AS "TABLE_CAT"
+					 , NULL::text    AS "TABLE_SCHEM"
+					 , NULL::text    AS "TABLE_NAME"
+					 , 'table'       AS "TABLE_TYPE"
+					 , 'ordinary table - r'    AS "REMARKS"
+					union
+					SELECT 
+					   NULL::text    AS "TABLE_CAT"
+					 , NULL::text    AS "TABLE_SCHEM"
+					 , NULL::text    AS "TABLE_NAME"
+					 , 'index'       AS "TABLE_TYPE"
+					 , 'index - i'    AS "REMARKS"
+					union
+					SELECT 
+					   NULL::text    AS "TABLE_CAT"
+					 , NULL::text    AS "TABLE_SCHEM"
+					 , NULL::text    AS "TABLE_NAME"
+					 , 'sequence'       AS "TABLE_TYPE"
+					 , 'sequence - S'    AS "REMARKS"
+					union
+					SELECT 
+					   NULL::text    AS "TABLE_CAT"
+					 , NULL::text    AS "TABLE_SCHEM"
+					 , NULL::text    AS "TABLE_NAME"
+					 , 'view'       AS "TABLE_TYPE"
+					 , 'view - v'    AS "REMARKS"
+					union
+					SELECT 
+					   NULL::text    AS "TABLE_CAT"
+					 , NULL::text    AS "TABLE_SCHEM"
+					 , NULL::text    AS "TABLE_NAME"
+					 , 'special'       AS "TABLE_TYPE"
+					 , 'special - s'    AS "REMARKS"
+					union
+					SELECT 
+					   NULL::text    AS "TABLE_CAT"
+					 , NULL::text    AS "TABLE_SCHEM"
+					 , NULL::text    AS "TABLE_NAME"
+					 , 'secondary'   AS "TABLE_TYPE"
+					 , 'secondary TOAST table - t'    AS "REMARKS"
+				};
+		}
+		else {
+				# Default SQL
+				$tbl_sql = qq{
+				SELECT NULL::text    AS "TABLE_CAT"
+					 , u.usename     AS "TABLE_SCHEM"
+					 , c.relname     AS "TABLE_NAME"
+					 , CASE
+					 	 WHEN c.relkind = 'v' THEN 'VIEW'
+					  	 ELSE 'TABLE'
+						END			 AS "TABLE_TYPE"
+					 , d.description AS "REMARKS"
+				FROM pg_user		AS u
+				   , pg_class		AS c LEFT OUTER JOIN 
+					 pg_description	AS d 
+						ON c.relfilenode = d.objoid and d.objsubid = 0
+				WHERE 
+					  ((c.relkind     =  'r'
+				  AND c.relhasrules =  FALSE) OR
+					  (c.relkind     =  'v'
+				  AND c.relhasrules =  TRUE))
+				  AND c.relname     !~ '^pg_'
+				  AND c.relname     !~ '^xin[vx][0-9]+'
+				  AND c.relowner    =  u.usesysid
+				ORDER BY 2, 3
+				};
+
+			# Did we receive any arguments?
+			if (@attrs) {
+				my @wh = ();
+				my @flds = qw/catname u.usename c.relname c.relkind/;
+
+				for my $idx (0 .. $#attrs) {
+					next if ($flds[$idx] eq 'catname'); # Skip catalog
+					if(defined $attrs[$idx]) {
+						# Change the "name" of the types to the real value.
+						if ($flds[$idx]  =~ m/relkind/) {
+							$attrs[$idx] =~ s/^\'?table\'?/'r'/i;
+							$attrs[$idx] =~ s/^\'?index\'?/'i'/i;
+							$attrs[$idx] =~ s/^\'?sequence\'?/'S'/i;
+							$attrs[$idx] =~ s/^\'?view\'?/'v'/i;
+							$attrs[$idx] =~ s/^\'?special\'?/'s'/i;
+							$attrs[$idx] =~ s/^\'?secondary\'?/'t'/i;
+						}
+						if ($attrs[$idx] =~ m/[,%]/) {
+							# contains a meta character.
+							push( @wh, q{( } . join ( " OR "
+								, map { m/\%/ 
+									? qq{$flds[$idx] LIKE $_ }
+									: qq{$flds[$idx]    = $_ }
+									} (split /,/, $attrs[$idx]) )
+									. q{ )}
+								);
+						}
+						else {
+							push( @wh, qq{$flds[$idx] = $attrs[$idx]} );
+						}
+					}
+				}
+
+				my $wh = ();
+				if (@wh) {
+					$wh = join( " and ", ,'', @wh );
+
+					$tbl_sql = qq{
+					SELECT NULL::text    AS "TABLE_CAT"
+						 , u.usename     AS "TABLE_SCHEM"
+						 , c.relname     AS "TABLE_NAME"
+						 , CASE
+							 WHEN c.relkind = 'r' THEN 'TABLE'
+							 WHEN c.relkind = 'v' THEN 'VIEW'
+							 WHEN c.relkind = 'i' THEN 'INDEX'
+							 WHEN c.relkind = 'S' THEN 'SEQUENCE'
+							 WHEN c.relkind = 's' THEN 'SPECIAL'
+							 WHEN c.relkind = 't' THEN 'SECONDARY'
+							 ELSE 'UNKNOWN'
+							END			 AS "TABLE_TYPE"
+						 , d.description AS "REMARKS"
+					FROM pg_user		AS u
+					   , pg_class		AS c LEFT OUTER JOIN 
+						 pg_description	AS d 
+							ON c.relfilenode = d.objoid and d.objsubid = 0
+					WHERE 
+						  c.relname     !~ '^pg_'
+					  AND c.relname     !~ '^xin[vx][0-9]+'
+					  AND c.relowner    =  u.usesysid
+					  $wh
+					ORDER BY 2, 3
+					};
+				}
+			}
+		}
+
+        my $sth = $dbh->prepare( $tbl_sql ) or
+			return undef;
         $sth->execute();
 
         return $sth;
@@ -211,24 +548,45 @@ $DBD::Pg::VERSION = '1.13';
               from pg_attribute a,
                    pg_class     c,
                    pg_type      t
-              where c.relname  = '$table'
+              where c.relname  = ?
                 and a.attrelid = c.oid
                 and a.attnum  >= 0
                 and t.oid      = a.atttypid
                 order by 1 
-             ");
+             ", undef, $table);
     
         return $result unless scalar(@$attrs);
 
+	# Select the array value for tables primary key.
+	my $pk_key_sql = qq{SELECT pg_index.indkey
+                            FROM   pg_class, pg_index
+                            WHERE
+                                   pg_class.oid          = pg_index.indrelid
+                            AND    pg_class.relname      = '$table'
+                            AND    pg_index.indisprimary = 't'
+			};
+	# Expand this (returned as a string) a real array.
+	my @pk;
+	foreach (split( /\s+/, $dbh->selectrow_array( $pk_key_sql)))
+	{
+		push @pk, $_;
+	}
+
+	my $pk_bt = 
+		(@pk)   ? "AND    pg_attribute.attnum in (" . join ( ", ", @pk ) . ")"
+			: "";
+		
         # Get the primary key
-        my ($pri_key) = $dbh->selectrow_array("SELECT pg_attribute.attname
+        my $pri_key = $dbh->selectcol_arrayref("SELECT pg_attribute.attname
                                                FROM   pg_class, pg_attribute, pg_index
                                                WHERE  pg_class.oid          = pg_attribute.attrelid 
                                                AND    pg_class.oid          = pg_index.indrelid 
-                                               AND    pg_index.indkey[0]    = pg_attribute.attnum
+					       $pk_bt
                                                AND    pg_index.indisprimary = 't'
-                                               AND    pg_class.relname      = '$table'");
-        $pri_key = '' unless $pri_key;
+                                               AND    pg_class.relname      = ?
+					       order by pg_attribute.attnum
+					       ", undef, $table );
+        $pri_key = [] unless $pri_key;
 
         foreach my $attr (reverse @$attrs) {
             my ($col_name, $col_type, $size, $mod, $notnull, $hasdef, $attnum) = @$attr;
@@ -256,7 +614,7 @@ $DBD::Pg::VERSION = '1.13';
             $constraint = '' unless $constraint;
 
             # Check to see if this is the primary key
-            my $is_primary_key = (lc $pri_key eq lc $col_name) ? 1 : 0;
+            my $is_primary_key = scalar(grep { /^$col_name$/i } @$pri_key) ? 1 : 0;
 
             push @$result,
                 { NAME        => $col_name,
