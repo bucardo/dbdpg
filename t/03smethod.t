@@ -13,7 +13,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 57;
+	plan tests => 59;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -46,6 +46,11 @@ $dbh->{pg_server_prepare} = 1;
 $sth = $dbh->prepare($SQL);
 $sth->execute(1);
 ok( $sth->execute, 'Prepare/execute with pg_server_prepare on at database handle works');
+
+# Make sure that undefs are converted to NULL.
+$sth = $dbh->prepare('INSERT INTO dbd_pg_test (pdate) VALUES (?)');
+ok( $sth->execute(undef), "Prepare/execute with undef converted to NULL");
+
 $sth = $dbh->prepare($SQL, {pg_server_prepare => 0});
 $sth->execute(1);
 ok( $sth->execute, 'Prepare/execute with pg_server_prepare off at statement handle works');
