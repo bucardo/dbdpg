@@ -35,3 +35,4 @@ t/lib/App/Info/Util.pm
 TODO
 types.c
 types.h
+META.yml                                 Module meta-data (added by MakeMaker)
