@@ -1382,10 +1382,15 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	(void)SvUPGRADE(newvalue, SVt_PV);
 	value_string = SvPV(newvalue, currph->valuelen);
 
-	New(0, currph->value, currph->valuelen+1, char);
-	Copy(value_string, currph->value, currph->valuelen, char);
-	currph->value[currph->valuelen] = '\0';
-
+	if (SvOK(newvalue)) {
+		New(0, currph->value, currph->valuelen+1, char);
+		Copy(value_string, currph->value, currph->valuelen, char);
+		currph->value[currph->valuelen] = '\0';
+	}
+	else {
+		currph->value = NULL;
+		currph->valuelen = 0;
+	}
 
 	if (reprepare) {
 		if (dbis->debug >= 5)
