@@ -367,9 +367,14 @@ $attrib = $dbh->{PrintError};
 is( $attrib, '', 'Database handle attribute "PrintError" is set properly');
 
 # Make sure that warnings are sent back to the client
-$sth = $dbh->prepare("SHOW client_min_messages");
-$sth->execute();
-my $client_level = $sth->fetchall_arrayref()->[0][0];
+# We assume that older servers are okay
+my $pgversion = DBD::Pg::_pg_server_version($dbh);
+my $client_level = '';
+if (DBD::Pg::_pg_check_version(7.3, $pgversion)) {
+	$sth = $dbh->prepare("SHOW client_min_messages");
+	$sth->execute();
+	$client_level = $sth->fetchall_arrayref()->[0][0];
+}
 
 if ($client_level eq "error") {
  SKIP: {

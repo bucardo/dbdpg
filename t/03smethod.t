@@ -35,9 +35,14 @@ ok( $sth->bind_param(1, 1), 'Statement handle method "bind_param" works when bin
 ok( $sth->bind_param(1, 'foo'), 'Statement handle method "bind_param" works when rebinding an int column with a string');
 
 # Check if the server is sending us warning messages
-$sth = $dbh->prepare("SHOW client_min_messages");
-$sth->execute();
-my $client_level = $sth->fetchall_arrayref()->[0][0];
+# We assume that older servers are okay
+my $pgversion = DBD::Pg::_pg_server_version($dbh);
+my $client_level = '';
+if (DBD::Pg::_pg_check_version(7.3, $pgversion)) {
+	$sth = $dbh->prepare("SHOW client_min_messages");
+	$sth->execute();
+	$client_level = $sth->fetchall_arrayref()->[0][0];
+}
 
 # Make sure that we get warnings when we try to use SQL_BINARY.
 if ($client_level eq "error") {
@@ -299,6 +304,8 @@ is_deeply( $result, $expected, 'Statement handle method "pg_size" works');
 $sth->execute();
 $result = $sth->{pg_type};
 $expected = [qw(int4 varchar text float8 bpchar timestamp bool)];
+# Hack for old servers
+$expected->[5] = 'datetime' if (! DBD::Pg::_pg_check_version(7.3, $pgversion));
 is_deeply( $result, $expected, 'Statement handle method "pg_type" works');
 $sth->finish();
 
