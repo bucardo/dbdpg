@@ -325,12 +325,12 @@ dbd_db_commit (dbh, imp_dbh)
 			status = result ? PQresultStatus(result) : -1;
 			PQclear(result);
 
+			imp_dbh->done_begin = 0;
 			/* check result */
 			if (status != PGRES_COMMAND_OK) {
 				pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 				return 0;
 			}
-			imp_dbh->done_begin = 0;
 		}
 		return 1;
 	}
@@ -463,6 +463,7 @@ dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 					result = PQexec(imp_dbh->conn, "commit");
 					status = result ? PQresultStatus(result) : -1;
 					PQclear(result);
+					imp_dbh->done_begin = 0;
 					if (status != PGRES_COMMAND_OK) {
 						pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 						return 0;
