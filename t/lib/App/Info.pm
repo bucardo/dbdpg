@@ -56,7 +56,7 @@ use App::Info::Handler;
 use App::Info::Request;
 use vars qw($VERSION);
 
-$VERSION = '0.27';
+$VERSION = '0.45';
 
 ##############################################################################
 ##############################################################################
@@ -83,7 +83,7 @@ my $croak = sub {
 my $set_handlers = sub {
     my $on_key = shift;
     # Default is to do nothing.
-    return [] unless $on_key;
+    return unless $on_key;
     my $ref = ref $on_key;
     if ($ref) {
         $on_key = [$on_key] unless $ref eq 'ARRAY';
@@ -98,10 +98,10 @@ my $set_handlers = sub {
             }
         }
         # Return 'em!
-        return $on_key;
+        return @$on_key;
     } else {
         # Look up the handler.
-        return [ App::Info::Handler->new( key => $on_key) ];
+        return App::Info::Handler->new( key => $on_key);
     }
 };
 
@@ -119,10 +119,63 @@ This section documents the public interface of App::Info.
   my $app = App::Info::Category::FooApp->new(@params);
 
 Constructs an App::Info object and returns it. The @params arguments define
-how the App::Info object will respond to certain events, and correspond to
+attributes that can be used to help the App::Info object search for
+application information on the file system, as well as how the App::Info
+object will respond to certain events. The event parameters correspond to
 their like-named methods. See the L<"Event Handler Object Methods"> section
-for more information on App::Info events and how to handle them. The
-parameters to C<new()> for the different types of App::Info events are:
+for more information on App::Info events and how to handle them. The search
+parameters that can be passed to C<new()> are:
+
+=over
+
+=item search_exe_names
+
+An array reference of possible names for binary executables. These may be used
+by subclases to search for application programs that can be used to retreive
+application information, such as version numbers. The subclasses generally
+provide reasonable defaults for most cases.
+
+=item search_bin_dirs
+
+An array reference of local directories in which to search for executables.
+These may be used to search for the value of the C<bin_dir> attribute in
+addition to and in preference to the defaults used by each subclass.
+
+=item search_lib_names
+
+An array reference of possible names for library files. These may be used by
+subclases to search for library files for the application. The subclasses
+generally provide reasonable defaults for most cases.
+
+=item search_so_lib_names
+
+An array reference of possible names for shared object library files. These
+may be used by subclases to search for shared object library files for the
+application. The subclasses generally provide reasonable defaults for most
+cases.
+
+=item search_lib_dirs
+
+An array reference of local directories in which to search for libraries.
+These may be used to search for the value of the C<lib_dir> and C<so_lib_dir>
+attributes in addition to and in preference to the defaults used by each
+subclass.
+
+=item search_inc_names
+
+An array reference of possible names for include files. These may be used by
+subclases to search for include files for the application. The subclasses
+generally provide reasonable defaults for most cases.
+
+=item search_inc_dirs
+
+An array reference of local directories in which to search for include
+files. These may be used to search for the value of the C<inc_dir> attribute
+in addition to and in preference to the defaults used by each subclass.
+
+=back
+
+The parameters to C<new()> for the different types of App::Info events are:
 
 =over 4
 
@@ -151,7 +204,18 @@ sub new {
 
     # Set up handlers.
     for (qw(on_error on_unknown on_info on_confirm)) {
-        $p{$_} = $set_handlers->($p{$_});
+        $p{$_} = [$set_handlers->($p{$_})];
+    }
+
+    # Set up search defaults.
+    for (qw(bin_dirs lib_dirs inc_dirs exe_names lib_names inc_names
+            so_lib_names)) {
+        local $_ = "search_$_";
+        if (exists $p{$_}) {
+            $p{$_} = [$p{$_}] unless ref $p{$_} eq 'ARRAY';
+        } else {
+            $p{$_} = [];
+        }
     }
 
     # Do it!
@@ -271,6 +335,18 @@ sub bin_dir { $croak->(shift, 'bin_dir') }
 
 ##############################################################################
 
+=head3 executable
+
+  my $executable = $app->executable;
+
+Returns the full path the application's bin directory, if it exists.
+
+=cut
+
+sub executable { $croak->(shift, 'executable') }
+
+##############################################################################
+
 =head3 inc_dir
 
   my $inc_dir = $app->inc_dir;
@@ -333,6 +409,110 @@ sub download_url  { $croak->(shift, 'download_url') }
 ##############################################################################
 ##############################################################################
 
+=head2 Search Attributes
+
+These methods return lists of things to look for on the local file system when
+searching for appliation programs, library files, and include files. They are
+empty by default, since each subclass generally relies on its own settings,
+but you can add your own as preferred search parameters by specifying them
+as parameters to the C<new()> constructor.
+
+=head3 exe_names
+
+  my @search_exe_names = $app->search_exe_names;
+
+Returns a list of possible names for an executable. Typically used by the
+C<new()> constructor to search fo an executable to execute and collect
+application info.
+
+=cut
+
+sub search_exe_names { @{shift->{search_exe_names}} }
+
+##############################################################################
+
+=head3 search_bin_dirs
+
+  my @search_bin_dirs = $app->search_bin_dirs;
+
+Returns a list of possible directories in which to search an executable.
+Typically used by the C<new()> constructor to find an executable to execute
+and collect application info. The found directory will also generally then
+be returned by the C<bin_dir> method.
+
+=cut
+
+sub search_bin_dirs { @{shift->{search_bin_dirs}} }
+
+##############################################################################
+
+=head3 lib_names
+
+  my @search_lib_names = $app->search_lib_names;
+
+Returns a list of possible names for library files. Typically used by the
+C<lib_dir()> method to find library files.
+
+=cut
+
+sub search_lib_names { @{shift->{search_lib_names}} }
+
+##############################################################################
+
+=head3 so_lib_names
+
+  my @search_so_lib_names = $app->search_so_lib_names;
+
+Returns a list of possible names for library files. Typically used by the
+C<so_lib_dir()> method to find shared object library files.
+
+=cut
+
+sub search_so_lib_names { @{shift->{search_so_lib_names}} }
+
+##############################################################################
+
+=head3 search_lib_dirs
+
+  my @search_lib_dirs = $app->search_lib_dirs;
+
+Returns a list of possible directories in which to search for libraries.
+Typically used by the C<lib_dir()> and C<so_lib_dir()> methods to find
+library files.
+
+=cut
+
+sub search_lib_dirs { @{shift->{search_lib_dirs}} }
+
+##############################################################################
+
+=head3 inc_names
+
+  my @search_inc_names = $app->search_inc_names;
+
+Returns a list of possible names for include files. Typically used by the
+C<inc_dir()> method to find include files.
+
+=cut
+
+sub search_inc_names { @{shift->{search_inc_names}} }
+
+##############################################################################
+
+=head3 search_inc_dirs
+
+  my @search_inc_dirs = $app->search_inc_dirs;
+
+Returns a list of possible directories in which to search for includes.
+Typically used by the C<inc_dir()> method to find include files.
+
+=cut
+
+sub search_inc_dirs { @{shift->{search_inc_dirs}} }
+
+##############################################################################
+##############################################################################
+
 =head2 Event Handler Object Methods
 
 These methods provide control over App::Info event handling. Events can be
@@ -379,7 +559,7 @@ App::Info distribution to have info messages print to STDOUT:
 
 sub on_info {
     my $self = shift;
-    $self->{on_info} = $set_handlers->(\@_) if @_;
+    @{ $self->{on_info} } = $set_handlers->(\@_) if @_;
     return @{ $self->{on_info} };
 }
 
@@ -415,7 +595,7 @@ purpose:
 
 sub on_error {
     my $self = shift;
-    $self->{on_error} = $set_handlers->(\@_) if @_;
+    @{ $self->{on_error} } = $set_handlers->(\@_) if @_;
     return @{ $self->{on_error} };
 }
 
@@ -443,7 +623,7 @@ on how it works.
 
 sub on_unknown {
     my $self = shift;
-    $self->{on_unknown} = $set_handlers->(\@_) if @_;
+    @{ $self->{on_unknown} } = $set_handlers->(\@_) if @_;
     return @{ $self->{on_unknown} };
 }
 
@@ -470,7 +650,7 @@ help out:
 
 sub on_confirm {
     my $self = shift;
-    $self->{on_confirm} = $set_handlers->(\@_) if @_;
+    @{ $self->{on_confirm} } = $set_handlers->(\@_) if @_;
     return @{ $self->{on_confirm} };
 }
 
@@ -556,7 +736,7 @@ my $handler = sub {
         last if $eh->handler($req);
     }
 
-    # Return the requst.
+    # Return the request.
     return $req;
 };
 
@@ -1097,11 +1277,12 @@ But I get ahead of myself...
 
 =head1 BUGS
 
-Please send bug reports to <bug-app-info@rt.cpan.org>.
+Please send bug reports to <bug-app-info@rt.cpan.org> or file them at
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=App-Info>.
 
 =head1 AUTHOR
 
-David Wheeler <L<david@wheeler.net|"david@wheeler.net">>
+David Wheeler <david@justatheory.com>
 
 =head1 SEE ALSO
 

@@ -44,10 +44,13 @@ use App::Info::RDBMS;
 use App::Info::Util;
 use vars qw(@ISA $VERSION);
 @ISA = qw(App::Info::RDBMS);
-$VERSION = '0.27';
+$VERSION = '0.45';
 use constant WIN32 => $^O eq 'MSWin32';
 
 my $u = App::Info::Util->new;
+my @EXES = qw(postgres createdb createlang createuser dropdb droplang
+              dropuser initdb pg_dump pg_dumpall pg_restore postmaster
+              vacuumdb psql);
 
 =head1 INTERFACE
 
@@ -60,39 +63,47 @@ my $u = App::Info::Util->new;
 Returns an App::Info::RDBMS::PostgreSQL object. See L<App::Info|App::Info> for
 a complete description of argument parameters.
 
-When it called, C<new()> searches the file system for the F<pg_config>
-application. If found, F<pg_config> will be called by the object methods below
-to gather the data necessary for each. If F<pg_config> cannot be found, then
-PostgreSQL is assumed not to be installed, and each of the object methods will
-return C<undef>.
+When it called, C<new()> searches the file system for an executable named for
+the list returned by C<search_exe_names()>, usually F<pg_config>, in the list
+of directories returned by C<search_bin_dirs()>. If found, F<pg_config> will
+be called by the object methods below to gather the data necessary for
+each. If F<pg_config> cannot be found, then PostgreSQL is assumed not to be
+installed, and each of the object methods will return C<undef>.
 
-App::Info::RDBMS::PostgreSQL searches for F<pg_config> along your path, as
-defined by C<File::Spec-E<gt>path>. Failing that, it searches the following
-directories:
+C<new()> also takes a number of optional parameters in addition to those
+documented for App::Info. These parameters allow you to specify alternate
+names for PostgreSQL executables (other than F<pg_config>, which you specify
+via the C<search_exe_names> parameter). These parameters are:
 
-=over 4
+=over
 
-=item $ENV{POSTGRES_HOME}/bin (if $ENV{POSTGRES_HOME} exists)
+=item search_postgres_names
 
-=item $ENV{POSTGRES_LIB}/../bin (if $ENV{POSTGRES_LIB} exists)
+=item search_createdb_names
 
-=item /usr/local/pgsql/bin
+=item search_createlang_names
 
-=item /usr/local/postgres/bin
+=item search_createuser_names
 
-=item /opt/pgsql/bin
+=item search_dropd_names
 
-=item /usr/local/bin
+=item search_droplang_names
 
-=item /usr/local/sbin
+=item search_dropuser_names
 
-=item /usr/bin
+=item search_initdb_names
 
-=item /usr/sbin
+=item search_pg_dump_names
 
-=item /bin
+=item search_pg_dumpall_names
 
-=item C:\Program Files\PostgreSQL\bin
+=item search_pg_restore_names
+
+=item search_postmaster_names
+
+=item search_psql_names
+
+=item search_vacuumdb_names
 
 =back
 
@@ -122,37 +133,33 @@ sub new {
 
     # Find pg_config.
     $self->info("Looking for pg_config");
-    my @paths = ($u->path,
-      qw(/usr/local/pgsql/bin
-         /usr/local/postgres/bin
-         /usr/lib/postgresql/bin
-         /opt/pgsql/bin
-         /usr/local/bin
-         /usr/local/sbin
-         /usr/bin
-         /usr/sbin
-         /bin),
-      'C:\Program Files\PostgreSQL\bin');
 
-    unshift @paths, "$ENV{POSTGRES_HOME}/bin" if exists $ENV{POSTGRES_HOME};
-    unshift @paths, "$ENV{POSTGRES_LIB}/../bin" if exists $ENV{POSTGRES_LIB};
+    my @paths = $self->search_bin_dirs;
+    my @exes = $self->search_exe_names;
 
-    my $exe = 'pg_config';
-    $exe .= '.exe' if WIN32;
-
-    if (my $cfg = $u->first_cat_exe($exe, @paths)) {
+    if (my $cfg = $u->first_cat_exe(\@exes, @paths)) {
         # We found it. Confirm.
         $self->{pg_config} = $self->confirm( key      => 'pg_config',
-                                             prompt   => "Path to $exe?",
+                                             prompt   => "Path to pg_config?",
                                              value    => $cfg,
                                              callback => sub { -x },
                                              error    => 'Not an executable');
     } else {
         # Handle an unknown value.
         $self->{pg_config} = $self->unknown( key      => 'pg_config',
-                                             prompt   => "Path to $exe?",
+                                             prompt   => "Path to pg_config?",
                                              callback => sub { -x },
                                              error    => 'Not an executable');
+    }
+
+    # Set up search defaults.
+    for my $exe (@EXES) {
+        my $attr = "search_$exe\_names";
+        if (exists $self->{$attr}) {
+            $self->{$attr} = [$self->{$attr}] unless ref $self->{$attr} eq 'ARRAY';
+        } else {
+            $self->{$attr} = [];
+        }
     }
 
     return $self;
@@ -244,7 +251,7 @@ my $get_version = sub {
     my $data = $get_data->($self, '--version');
     unless ($data) {
         $self->error("Failed to find PostgreSQL version with ".
-                     "`$self->{pg_config} --version");
+                     "`$self->{pg_config} --version`");
             return;
     }
 
@@ -499,6 +506,83 @@ sub patch_version {
       unless defined $self->{patch};
     return $self->{patch};
 }
+
+##############################################################################
+
+=head3 executable
+
+  my $exe = $pg->executable;
+
+Returns the full path to the PostgreSQL server executable, which is named
+F<postgres>.  This method does not use the executable names returned by
+C<search_exe_names()>; those executable names are used to search for
+F<pg_config> only (in C<new()>).
+
+When it called, C<executable()> checks for an executable named F<postgres> in
+the directory returned by C<bin_dir()>.
+
+Note that C<executable()> is simply an alias for C<postgres()>.
+
+B<Events:>
+
+=over 4
+
+=item info
+
+Looking for postgres executable
+
+=item confirm
+
+Path to postgres executable?
+
+=item unknown
+
+Path to postgres executable?
+
+=back
+
+=cut
+
+my $find_exe = sub  {
+    my ($self, $key) = @_;
+    my $exe = $key . (WIN32 ? '.exe' : '');
+    my $meth = "search_$key\_names";
+
+    # Find executable.
+    $self->info("Looking for $key");
+
+    unless ($self->{$key}) {
+        my $bin = $self->bin_dir or return;
+        if (my $exe = $u->first_cat_exe([$self->$meth(), $exe], $bin)) {
+            # We found it. Confirm.
+            $self->{$key} = $self->confirm(
+                key      => $key,
+                prompt   => "Path to $key executable?",
+                value    => $exe,
+                callback => sub { -x },
+                error    => 'Not an executable'
+            );
+        } else {
+            # Handle an unknown value.
+            $self->{$key} = $self->unknown(
+                key      => $key,
+                prompt   => "Path to $key executable?",
+                callback => sub { -x },
+                error    => 'Not an executable'
+            );
+        }
+    }
+
+    return $self->{$key};
+};
+
+for my $exe (@EXES) {
+    no strict 'refs';
+    *{$exe} = sub { shift->$find_exe($exe) };
+    *{"search_$exe\_names"} = sub { @{ shift->{"search_$exe\_names"} } }
+}
+
+*executable = \&postgres;
 
 ##############################################################################
 
@@ -761,18 +845,203 @@ Returns the PostgreSQL download URL.
 
 sub download_url { "http://www.postgresql.org/mirrors-ftp.html" }
 
+##############################################################################
+
+=head3 search_exe_names
+
+  my @search_exe_names = $app->search_exe_names;
+
+Returns a list of possible names for F<pg_config> executable. By default, only
+F<pg_config> is returned (or F<pg_config.exe> on Win32).
+
+Note that this method is not used to search for the PostgreSQL server
+executable, only F<pg_config>.
+
+=cut
+
+sub search_exe_names {
+    my $self = shift;
+    my $exe = 'pg_config';
+    $exe .= '.exe' if WIN32;
+    return ($self->SUPER::search_exe_names, $exe);
+}
+
+##############################################################################
+
+=head3 search_bin_dirs
+
+  my @search_bin_dirs = $app->search_bin_dirs;
+
+Returns a list of possible directories in which to search an executable. Used
+by the C<new()> constructor to find an executable to execute and collect
+application info. The found directory will also be returned by the C<bin_dir>
+method.
+
+The list of directories by default consists of the path as defined by
+C<< File::Spec->path >>, as well as the following directories:
+
+=over 4
+
+=item $ENV{POSTGRES_HOME}/bin (if $ENV{POSTGRES_HOME} exists)
+
+=item $ENV{POSTGRES_LIB}/../bin (if $ENV{POSTGRES_LIB} exists)
+
+=item /usr/local/pgsql/bin
+
+=item /usr/local/postgres/bin
+
+=item /opt/pgsql/bin
+
+=item /usr/local/bin
+
+=item /usr/local/sbin
+
+=item /usr/bin
+
+=item /usr/sbin
+
+=item /bin
+
+=item C:\Program Files\PostgreSQL\bin
+
+=back
+
+=cut
+
+sub search_bin_dirs {
+    return shift->SUPER::search_bin_dirs,
+      ( exists $ENV{POSTGRES_HOME}
+          ? ($u->catdir($ENV{POSTGRES_HOME}, "bin"))
+          : ()
+      ),
+      ( exists $ENV{POSTGRES_LIB}
+          ? ($u->catdir($ENV{POSTGRES_LIB}, $u->updir, "bin"))
+          : ()
+      ),
+      $u->path,
+      qw(/usr/local/pgsql/bin
+         /usr/local/postgres/bin
+         /usr/lib/postgresql/bin
+         /opt/pgsql/bin
+         /usr/local/bin
+         /usr/local/sbin
+         /usr/bin
+         /usr/sbin
+         /bin),
+      'C:\Program Files\PostgreSQL\bin';
+}
+
+##############################################################################
+
+=head2 Other Executable Methods
+
+These methods function just like the C<executable()> method, except that they
+return different executables. PostgreSQL comes with a fair number of them; we
+provide these methods to provide a path to a subset of them. Each method, when
+called, checks for an executable in the directory returned by C<bin_dir()>.
+The name of the executable must be one of the names returned by the
+corresponding C<search_*_names> method.
+
+The available executable methods are:
+
+=over
+
+=item postgres
+
+=item createdb
+
+=item createlang
+
+=item createuser
+
+=item dropdb
+
+=item droplang
+
+=item dropuser
+
+=item initdb
+
+=item pg_dump
+
+=item pg_dumpall
+
+=item pg_restore
+
+=item postmaster
+
+=item psql
+
+=item vacuumdb
+
+=back
+
+And the corresponding search names methods are:
+
+=over
+
+=item search_postgres_names
+
+=item search_createdb_names
+
+=item search_createlang_names
+
+=item search_createuser_names
+
+=item search_dropd_names
+
+=item search_droplang_names
+
+=item search_dropuser_names
+
+=item search_initdb_names
+
+=item search_pg_dump_names
+
+=item search_pg_dumpall_names
+
+=item search_pg_restore_names
+
+=item search_postmaster_names
+
+=item search_psql_names
+
+=item search_vacuumdb_names
+
+=back
+
+B<Events:>
+
+=over 4
+
+=item info
+
+Looking for executable
+
+=item confirm
+
+Path to executable?
+
+=item unknown
+
+Path to executable?
+
+=back
+
+=cut
+
 1;
 __END__
 
 =head1 BUGS
 
-Report all bugs via the CPAN Request Tracker at
+Please send bug reports to <bug-app-info@rt.cpan.org> or file them at
 L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=App-Info>.
 
 =head1 AUTHOR
 
-David Wheeler <L<david@wheeler.net|"david@wheeler.net">> based on code by Sam
-Tregar <L<sam@tregar.com|"sam@tregar.com">>.
+David Wheeler <david@justatheory.com> based on code by Sam Tregar
+<sam@tregar.com>.
 
 =head1 SEE ALSO
 

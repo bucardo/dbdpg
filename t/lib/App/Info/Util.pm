@@ -46,9 +46,10 @@ class offers methods that simplify those tasks.
 
 use strict;
 use File::Spec ();
+use Config;
 use vars qw(@ISA $VERSION);
 @ISA = qw(File::Spec);
-$VERSION = '0.27';
+$VERSION = '0.45';
 
 my %path_dems = (MacOS   => qr',',
                  MSWin32 => qr';',
@@ -428,17 +429,37 @@ sub multi_search_file {
     return wantarray ? @ret{@regexen} : \@ret{@regexen};
 }
 
+=head2 lib_dirs
+
+  my @dirs = $util->lib_dirs;
+
+Returns a list of possible library directories to be searched. These are
+gathered from the C<libsdirs> and C<loclibpth> Config settings. These are
+useful for passing to C<first_cat_dir()> to search typical directories for
+library files.
+
+=cut
+
+sub lib_dirs {
+    grep { defined and length }
+    map { split ' ' }
+    grep { defined }
+    $Config{libsdirs},
+    $Config{loclibpth},
+    '/sw/lib';
+}
+
 1;
 __END__
 
 =head1 BUGS
 
-Report all bugs via the CPAN Request Tracker at
+Please send bug reports to <bug-app-info@rt.cpan.org> or file them at
 L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=App-Info>.
 
 =head1 AUTHOR
 
-David Wheeler <L<david@wheeler.net|"david@wheeler.net">>
+David Wheeler <david@justatheory.com>
 
 =head1 SEE ALSO
 
