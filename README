@@ -15,7 +15,7 @@ For further information about DBI look at:
 	http://dbi.perl.org/
 
 For information about PostgreSQL, visit:
-    
+
 	http://www.postgresql.org/
 
 COPYRIGHT:
@@ -24,8 +24,8 @@ COPYRIGHT:
 	Portions Copyright (c) 1994,1995,1996,1997 Tim Bunce
 	Copyright (c) 1997,1998,1999,2000 Edmund Mergl
 	Copyright (c) 2002 Jeffrey W. Baker
-	Copyright (c) 2002 PostgreSQL Global Development Group
-   
+	Copyright (c) 2002,2003 PostgreSQL Global Development Group
+
 You may distribute under the terms of either the GNU General Public
 License or the Artistic License, as specified in the Perl README file.
 
@@ -41,8 +41,8 @@ or
 
 	http://www.perl.com/CPAN/modules/by-module/DBD/
 
-Note, that this request will be redirected automatically to the 
-nearest CPAN site. 
+Note that this request will be redirected automatically to the 
+nearest CPAN site.
 
 
 IF YOU HAVE PROBLEMS:
@@ -61,19 +61,19 @@ REQUIREMENTS:
 	build, test, and install Perl 5         (at least 5.005)
 	build, test, and install the DBI module (at least 1.30)
 	build, test, and install PostgreSQL     (at least 7.3)
-        build, test, and install Test::Simple   (at least 0.17)
+	build, test, and install Test::Simple   (at least 0.17)
 
 INSTALLATION:
 -------------
 
 By default Makefile.PL uses App:Info to find the location of the
 PostgreSQL library and include directories.  However, if you want to
-control it yourself, define the environment variables POSTGRES_INCLUDE
+control it yourself, define the environment variables POSTGRES_INCLUDE 
 and POSTGRES_LIB, or POSTGRES_HOME. Note that if you've compiled
 PostgreSQL with SSL support, you must define the POSTGRES_LIB
 environment varable and add "-lssl" to it, like this:
 
-  export POSTGRES_LIB="/usr/local/pgsql/lib -lssl"
+	export POSTGRES_LIB="/usr/local/pgsql/lib -lssl"
 
 Now, take the usual steps to install DBD::Pg:
 
@@ -91,20 +91,25 @@ TESTING:
 The tests are designed to connect to a live database.  The following
 environment variables must be set for the tests to run:
 
-        DBI_DSN=dbi:Pg:dbname=<database>
-        DBI_USER=<username>
-        DBI_PASS=<password>
+	DBI_DSN=dbi:Pg:dbname=<database>
+	DBI_USER=<username>
+	DBI_PASS=<password>
+
+If you are running on a non-standard port, you must add it 
+to the DBI_DSN variable like this:
+
+	DBI_DSN=dbi:Pg:dbname=<database>;port=<port#>
 
 If you are using the shared library libpq.so check if your dynamic
-loader  finds libpq.so. With Linux the command /sbin/ldconfig -v should
-tell you,  where it finds libpq.so. If ldconfig does not find libpq.so,
-either add an  appropriate entry to /etc/ld.so.conf and re-run ldconfig
-or add the path to  the environment variable LD_LIBRARY_PATH.
+loader finds libpq.so. With Linux the command /sbin/ldconfig -v should
+tell you where it finds libpq.so. If ldconfig does not find libpq.so,
+either add an appropriate entry to /etc/ld.so.conf and re-run ldconfig
+or add the path to the environment variable LD_LIBRARY_PATH.
 
 A typical error message resulting from not finding libpq.so is: 
 
 	install_driver(Pg) failed: Can't load './blib/arch/auto/DBD/Pg/Pg.so' 
-	for module DBD::Pg: File not found at 
+	for module DBD::Pg: File not found at
 
 If you get an error message like:
 
@@ -113,28 +118,30 @@ If you get an error message like:
 	symbol: PQconnectdb
 
 when you call DBI->connect, then your libpq.so was probably not seen at
-build-time. This should have caused 'make test' to fail; did you really
+build-time.  This should have caused 'make test' to fail; did you really
 run it and look at the output? Check the setting of POSTGRES_LIB and
 recompile DBD-Pg.
  
-Some linux distributions have incomplete perl installations. If you have
+Some linux distributions have incomplete perl installations.  If you have
 compile errors like "XS_VERSION_BOOTCHECK undeclared", do:
 
 	find .../lib/perl5 -name XSUB.h -print
 
 If this file is not present, you need to recompile and re-install perl.
 
+
 SGI users: if you get segmentation faults make sure, you use the malloc
-which  comes with perl when compiling perl (the default is not to).
+which comes with perl when compiling perl (the default is not to).
 "David R. Noble" <drnoble@engsci.sandia.gov>
+
 
 HP users: if you get error messages like:
 
 	can't open shared library: .../lib/libpq.sl
 	No such file or directory
 
-when running the test script, try to replace the  'shared' option in the
-LDDFLAGS with 'archive'. Dan Lauterbach <danla@dimensional.com>
+when running the test script, try to replace the 'shared' option in the
+LDDFLAGS with 'archive'.  Dan Lauterbach <danla@dimensional.com>
 
 
 FreeBSD users: if you get during make test the error message:
@@ -145,8 +152,8 @@ recompile the DBI module and the DBD-Pg module and disable optimization.
 This error message is due to the broken optimization in gcc-2.7.2.1.
 
 If you get compiler errors like:
-       In function `XS_DBD__Pg__dr_discon_all_'
-    `sv_yes' undeclared (first use in this function)
+	In function `XS_DBD__Pg__dr_discon_all_'
+	`sv_yes' undeclared (first use in this function)
 
 It may be because there is a 'patchlevel.h' file from another package 
 (such as 'hdf') in your POSTGRES_INCLUDE dir.  The presence of this file 
@@ -162,6 +169,7 @@ Sun Users: if you get compile errors like:
 then you need to remove from pgsql/include/libpq-fe.h the define for
 strerror, which clashes with the definition in the standard include
 file.
+
 
 Win32 Users: Running DBD-Pg scripts on Win32 needs some configuration work
 on the server side:
