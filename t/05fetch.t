@@ -19,9 +19,9 @@ sub main {
     
     print "ok $n\n"; $n++;
 
-    $dbh->do(q{INSERT INTO test (id, name, value) VALUES (1, 'foo', 'horse')});
-    $dbh->do(q{INSERT INTO test (id, name, value) VALUES (2, 'bar', 'chicken')});
-    $dbh->do(q{INSERT INTO test (id, name, value) VALUES (3, 'baz', 'pig')});
+    $dbh->do(q{INSERT INTO test (id, name, val) VALUES (1, 'foo', 'horse')});
+    $dbh->do(q{INSERT INTO test (id, name, val) VALUES (2, 'bar', 'chicken')});
+    $dbh->do(q{INSERT INTO test (id, name, val) VALUES (3, 'baz', 'pig')});
     $dbh->commit();
 
     print "ok $n\n"; $n++;

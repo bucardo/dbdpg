@@ -39,9 +39,9 @@ sub main {
     
     print "ok $n\n"; $n++;
         
-    $dbh1->do(q{INSERT INTO test (id, name, value) VALUES (1, 'foo', 'horse')});
-    $dbh1->do(q{INSERT INTO test (id, name, value) VALUES (2, 'bar', 'chicken')});
-    $dbh1->do(q{INSERT INTO test (id, name, value) VALUES (3, 'baz', 'pig')});
+    $dbh1->do(q{INSERT INTO test (id, name, val) VALUES (1, 'foo', 'horse')});
+    $dbh1->do(q{INSERT INTO test (id, name, val) VALUES (2, 'bar', 'chicken')});
+    $dbh1->do(q{INSERT INTO test (id, name, val) VALUES (3, 'baz', 'pig')});
 
     $rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
     if ($rows != 3) {

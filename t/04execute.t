@@ -125,7 +125,8 @@ sub main {
         });
         $sth->execute(1);
     };
-    if ($@) {
+    # this test should fail
+    if (!$@) {
         print "not ok $n\n"; $n++;
     } else {
         print "ok $n\n"; $n++;

@@ -25,7 +25,7 @@ sub main {
         $dbh->do(q{DROP TABLE test});
     }
 
-    $dbh->do(q{CREATE TABLE test (id int, name varchar, value varchar, score float, date datetime default 'now()')});
+    $dbh->do(q{CREATE TABLE test (id int, name text, val text, score float, date timestamp default 'now()')});
     
     print "ok $n\n"; $n++;
     

@@ -21,9 +21,9 @@ sub main {
     print "ok $n\n"; $n++;
 
     $dbh1->do(q{DELETE FROM test});
-    $dbh1->do(q{INSERT INTO test (id, name, value) VALUES (1, 'foo', 'horse')});
-    $dbh1->do(q{INSERT INTO test (id, name, value) VALUES (2, 'bar', 'chicken')});
-    $dbh1->do(q{INSERT INTO test (id, name, value) VALUES (3, 'baz', 'pig')});
+    $dbh1->do(q{INSERT INTO test (id, name, val) VALUES (1, 'foo', 'horse')});
+    $dbh1->do(q{INSERT INTO test (id, name, val) VALUES (2, 'bar', 'chicken')});
+    $dbh1->do(q{INSERT INTO test (id, name, val) VALUES (3, 'baz', 'pig')});
     $dbh1->commit();
     
     print "ok $n\n"; $n++;
@@ -82,9 +82,9 @@ sub main {
     
     print "ok $n\n"; $n++;
 
-    $dbh1->do(q{INSERT INTO test (id, name, value) VALUES (1, 'foo', 'horse')});
-    $dbh1->do(q{INSERT INTO test (id, name, value) VALUES (2, 'bar', 'chicken')});
-    $dbh1->do(q{INSERT INTO test (id, name, value) VALUES (3, 'baz', 'pig')});
+    $dbh1->do(q{INSERT INTO test (id, name, val) VALUES (1, 'foo', 'horse')});
+    $dbh1->do(q{INSERT INTO test (id, name, val) VALUES (2, 'bar', 'chicken')});
+    $dbh1->do(q{INSERT INTO test (id, name, val) VALUES (3, 'baz', 'pig')});
     
     print "ok $n\n"; $n++;
 
