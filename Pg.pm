@@ -816,12 +816,14 @@ $DBD::Pg::VERSION = '1.21';
                             AND    pg_index.indisprimary = 't'
 			};
 	# Expand this (returned as a string) a real array.
-	my @pk;
-	foreach (split( /\s+/, $dbh->selectrow_array( $pk_key_sql)))
-	{
-		push @pk, $_;
-	}
-
+	my @pk = ();
+    my $pkeys = $dbh->selectrow_array( $pk_key_sql );
+    if (defined $pkeys) {
+    	foreach (split( /\s+/, $pkeys))
+	    {
+		    push @pk, $_;
+	    }
+    }
 	my $pk_bt = 
 		(@pk)   ? "AND    pg_attribute.attnum in (" . join ( ", ", @pk ) . ")"
 			: "";
