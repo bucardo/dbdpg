@@ -86,6 +86,9 @@ if ($major_ver == 7) {
 if ($major_ver > 7 or ($major_ver == 7 and $minor_ver >= 4)) {
 	$comp_opts .= " -DHAVE_PQprotocol";
 }
+if ($major_ver >= 8) {
+	$comp_opts .= " -DPG_VERSION8";
+}
 
 my %opts = (
     NAME         => 'DBD::Pg',
