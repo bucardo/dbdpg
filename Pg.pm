@@ -61,10 +61,10 @@ $DBD::Pg::VERSION = '1.31_8';
 	## Used by both the dr and db packages
 	sub _pg_server_version {
 		my $dbh = shift;
-		return $dbh->{pg_server_version} if defined $dbh->{pg_server_version};
+		return $dbh->{private_dbdpg}->{server_version} if defined $dbh->{private_dbdpg}->{server_version};
 		my ($version) = $dbh->selectrow_array("SELECT version();");
-		$dbh->{pg_server_version} = ($version =~ /^PostgreSQL ([\d\.]+)/) ? $1 : 0;
-		return $dbh->{pg_server_version};
+		$dbh->{private_dbdpg}->{server_version} = ($version =~ /^PostgreSQL ([\d\.]+)/) ? $1 : 0;
+		return $dbh->{private_dbdpg}->{server_version};
 	}
 
 	## Is the second version greater than or equal to the first?
