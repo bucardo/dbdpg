@@ -1,7 +1,36 @@
-2002-10-15 Bruce Momjian <pgman@candle.pha.pa.us>
+1.20  Wed Nov 27 16:19:26 2002
+      - Maintenance transferred to GBorg,
+        http://gborg.postgresql.org/project/dbdpg/projdisplay.php. Incremented
+        version number to reflect new management. [Bruce Momjian]
+      - README cleaned up. [Bruce Momjian]
+      - Added t/15funct.t, a series of tests that determine if the meta data
+        is working. [Thomas Lowery]
+      - Added implementations of column_info() and table_info(), and
+        primary_key_info(). [Thomas Lowery]
+      - The POD formatting was cleaned up. [David Wheeler]
+      - The preparser was updated to better handle escaped characters. [Rudy
+        Lippan]
+      - Removed redundant use of strlen() in pg_error() (Jason E. Stewart).
+      - Test suite cleaned up, converted to use Test::More, and updated to use
+        standard DBI environment variables for connecting to a test database.
+        [Jason E. Stewart]
+      - Added eg/lotest.pl as a demonstration of using large objects in buffers
+        rather than files. Contributed by Garth Webb.
+      - Added LISTEN/NOTIFY functionality. Congributed by Alex Pilosov.
+      - Added constants for common PostgreSQL data types, plus simple tests to
+	make sure that they work. These are exportable via "use DBD::Pg
+	qw(:pg_types);". [David Wheeler]
+      - Deprecatated the undocumented (and invalid) use of SQL_BINARY in
+	bind_param() and documented the correct approach: "bind_param($num,
+	$val { pg_type => PG_BYTEA });". Use of SQL_BINARY in bind_param() will
+        now issue a warning if $h->{Warn} is true. [David Wheeler]
+      - Removed invalid (and broken) support for SQL_BINARY in quote(). [David
+	Wheeler]
+      - Added App::Info::RDBMS::PostgreSQL to the distribution (but it won't
+        be installed) to help Makefile.PL find the PostgreSQL include and
+        library files. [David Wheeler]
+      - Fixed compile-time warnings. [David Wheeler and Jason E. Stewart]
 
-    * distribution moved to http://gborg.postgresql.org/project/dbdpg/projdisplay.php
-    
 2002-04-27 Jeffrey W. Baker <jwbaker@acm.org>
 
     * dbdimp.c: Add default at end of switch statement for pg_type attrib.
