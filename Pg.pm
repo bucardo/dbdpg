@@ -450,40 +450,40 @@ $DBD::Pg::VERSION = '1.31';
 	# SQL to find primary/unique keys of a table
 	my $pkey_sql = qq{
 	SELECT
-	NULL::text AS PKTABLE_CAT,
-	pknam.nspname AS PKTABLE_SCHEM,
-	pkc.relname AS PKTABLE_NAME,
-	pka.attname AS PKCOLUMN_NAME,
-	NULL::text AS FKTABLE_CAT,
-	NULL::text AS FKTABLE_SCHEM,
-	NULL::text AS FKTABLE_NAME,
-	NULL::text AS FKCOLUMN_NAME,
-	pkcon.conkey[1] AS KEY_SEQ,
+	NULL::text AS "PKTABLE_CAT",
+	pknam.nspname AS "PKTABLE_SCHEM",
+	pkc.relname AS "PKTABLE_NAME",
+	pka.attname AS "PKCOLUMN_NAME",
+	NULL::text AS "FKTABLE_CAT",
+	NULL::text AS "FKTABLE_SCHEM",
+	NULL::text AS "FKTABLE_NAME",
+	NULL::text AS "FKCOLUMN_NAME",
+	pkcon.conkey[1] AS "KEY_SEQ",
 	CASE
 		WHEN pkcon.confupdtype = 'c' THEN 0
 		WHEN pkcon.confupdtype = 'r' THEN 1
 		WHEN pkcon.confupdtype = 'n' THEN 2
 		WHEN pkcon.confupdtype = 'a' THEN 3
 		WHEN pkcon.confupdtype = 'd' THEN 4
-	END AS UPDATE_RULE,
+	END AS "UPDATE_RULE",
 	CASE
 		WHEN pkcon.confdeltype = 'c' THEN 0
 		WHEN pkcon.confdeltype = 'r' THEN 1
 		WHEN pkcon.confdeltype = 'n' THEN 2
 		WHEN pkcon.confdeltype = 'a' THEN 3
 		WHEN pkcon.confdeltype = 'd' THEN 4
-	END AS DELETE_RULE,
-	NULL::text AS FK_NAME,
-	pkcon.conname AS PK_NAME,
+	END AS "DELETE_RULE",
+	NULL::text AS "FK_NAME",
+	pkcon.conname AS "PK_NAME",
 	CASE
 		WHEN pkcon.condeferrable = 'f' THEN 7
 		WHEN pkcon.condeferred = 't' THEN 6
 		WHEN pkcon.condeferred = 'f' THEN 5
-	END AS DEFERRABILITY,
+	END AS "DEFERRABILITY",
 	CASE
 		WHEN pkcon.contype = 'p' THEN 'PRIMARY'
 		WHEN pkcon.contype = 'u' THEN 'UNIQUE'
-	END AS UNIQUE_OR_PRIMARY
+	END AS "UNIQUE_OR_PRIMARY"
 	FROM
 		pg_constraint AS pkcon
 	JOIN
@@ -497,40 +497,40 @@ $DBD::Pg::VERSION = '1.31';
 	# SQL to find foreign keys of a table
 	my $fkey_sql = qq{
 	SELECT
-	NULL::text AS PKTABLE_CAT,
-	pknam.nspname AS PKTABLE_SCHEM,
-	pkc.relname AS PKTABLE_NAME,
-	pka.attname AS PKCOLUMN_NAME,
-	NULL::text AS FKTABLE_CAT,
-	fknam.nspname AS FKTABLE_SCHEM,
-	fkc.relname AS FKTABLE_NAME,
-	fka.attname AS FKCOLUMN_NAME,
-	fkcon.conkey[1] AS KEY_SEQ,
+	NULL::text AS "PKTABLE_CAT",
+	pknam.nspname AS "PKTABLE_SCHEM",
+	pkc.relname AS "PKTABLE_NAME",
+	pka.attname AS "PKCOLUMN_NAME",
+	NULL::text AS "FKTABLE_CAT",
+	fknam.nspname AS "FKTABLE_SCHEM",
+	fkc.relname AS "FKTABLE_NAME",
+	fka.attname AS "FKCOLUMN_NAME",
+	fkcon.conkey[1] AS "KEY_SEQ",
 	CASE
 		WHEN fkcon.confupdtype = 'c' THEN 0
 		WHEN fkcon.confupdtype = 'r' THEN 1
 		WHEN fkcon.confupdtype = 'n' THEN 2
 		WHEN fkcon.confupdtype = 'a' THEN 3
 		WHEN fkcon.confupdtype = 'd' THEN 4
-	END AS UPDATE_RULE,
+	END AS "UPDATE_RULE",
 	CASE
 		WHEN fkcon.confdeltype = 'c' THEN 0
 		WHEN fkcon.confdeltype = 'r' THEN 1
 		WHEN fkcon.confdeltype = 'n' THEN 2
 		WHEN fkcon.confdeltype = 'a' THEN 3
 		WHEN fkcon.confdeltype = 'd' THEN 4
-	END AS DELETE_RULE,
-	fkcon.conname AS FK_NAME,
-	pkcon.conname AS PK_NAME,
+	END AS "DELETE_RULE",
+	fkcon.conname AS "FK_NAME",
+	pkcon.conname AS "PK_NAME",
 	CASE
 		WHEN fkcon.condeferrable = 'f' THEN 7
 		WHEN fkcon.condeferred = 't' THEN 6
 		WHEN fkcon.condeferred = 'f' THEN 5
-	END AS DEFERRABILITY,
+	END AS "DEFERRABILITY",
 	CASE
 		WHEN pkcon.contype = 'p' THEN 'PRIMARY'
 		WHEN pkcon.contype = 'u' THEN 'UNIQUE'
-	END AS UNIQUE_OR_PRIMARY
+	END AS "UNIQUE_OR_PRIMARY"
 	FROM
 		pg_constraint AS fkcon
 	JOIN
