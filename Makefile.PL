@@ -27,42 +27,23 @@ print "Remember to actually read the README file!\n";
 my $POSTGRES_INCLUDE;
 my $POSTGRES_LIB;
 
-my ($major_ver, $minor_ver, $patch);
+# We need the version information to properly set compiler options later
+# Use App::Info to get the data we need.
+require App::Info::RDBMS::PostgreSQL;
+require App::Info::Handler::Prompt;
+my $p = App::Info::Handler::Prompt->new;
+my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $p);
+my ($major_ver, $minor_ver, $patch) = map {$pg->$_} qw/major_version minor_version patch_version/;
+
 if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
-    # Use App::Info to get the data we need.
-    require App::Info::RDBMS::PostgreSQL;
-    require App::Info::Handler::Prompt;
-    my $p = App::Info::Handler::Prompt->new;
-    my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $p);
     $POSTGRES_INCLUDE = $pg->inc_dir;
     $POSTGRES_LIB     = $pg->lib_dir;
-    ($major_ver, $minor_ver, $patch) = map {$pg->$_} qw/major_version minor_version patch_version/;
 } elsif ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and $ENV{POSTGRES_HOME}) {
     $POSTGRES_INCLUDE = "$ENV{POSTGRES_HOME}/include";
     $POSTGRES_LIB     = "$ENV{POSTGRES_HOME}/lib";
 } else {
     $POSTGRES_INCLUDE = "$ENV{POSTGRES_INCLUDE}";
     $POSTGRES_LIB     = "$ENV{POSTGRES_LIB}";
-}
-
-## Try to determine the version unless it was set above
-if (! defined $major_ver) {
-	## Locate the postmaster binary
-	my $postmaster;
-	if (exists $ENV{POSTGRES_HOME} and -e "$ENV{POSTGRES_HOME}/bin/postmaster") {
-		$postmaster = "$ENV{POSTGRES_HOME}/bin/postmaster";
-	}
-	else {
-		$postmaster = "postmaster"; ## Rely on the OS to have it in the path
-	}
-	my $res = `$postmaster --version`;
-	if ($res =~ /\(PostgreSQL\) (\d+)\.(\d+)\.(\d+)/) {
-		$major_ver = $1; $minor_ver = $2; $patch = $3;
-	}
-	else { ## Throw a warning and assume version 7.3.3
-		print "Warning: Unable to determine the exact version of PostgreSQL\n";
-		$major_ver = 7; $minor_ver = 3; $patch = 3;
-	}
 }
 
 my $os = $^O;
