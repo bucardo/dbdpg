@@ -1161,7 +1161,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	if (SvTYPE(newvalue) > SVt_PVLV) { /* hook for later array logic	*/
 		croak("Cannot bind a non-scalar value (%s)", neatsvpv(newvalue,0));
 	}
-	if ((SvROK(newvalue) &&!IS_DBI_HANDLE(newvalue) &&!SvMAGIC(newvalue))) {
+	if ((SvROK(newvalue) &&!IS_DBI_HANDLE(newvalue) &&!SvAMAGIC(newvalue))) {
 		/* dbi handle allowed for cursor variables */
 		croak("Cannot bind a reference (%s)", neatsvpv(newvalue,0));
 	}
