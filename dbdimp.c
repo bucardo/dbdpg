@@ -19,6 +19,7 @@
 #define DBDPG_TRUE 1
 #define DBDPG_FALSE 0
 
+/* Force preprocessors to use this variable. Default to something valid yet noticeable */
 #ifndef PGLIBVERSION
 #define PGLIBVERSION 80009
 #endif
