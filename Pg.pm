@@ -254,7 +254,7 @@ $DBD::Pg::VERSION = '1.30';
 				AND t.oid = a.atttypid
 				AND c.relkind IN ('r','v')
 				$wh
-			ORDER BY 2, 3, 4
+			ORDER BY 2, c.relname, a.attnum
 		};
 
 		my $sth = $dbh->prepare( $col_info_sql ) or return undef;
