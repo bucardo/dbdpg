@@ -1,6 +1,8 @@
+1.40 
+	- Add $dbh->{pg_errorlevel}. [Greg Sabino Mullane]
 	- Fix utf8 quote() support [Dominic Mitchell <dom@semantico.com>]
 	- Add explicit support for types SQL_BOOLEAN, DATE, TIME, 
-		TIMESTAMP, and TIMESTAMPTZ. REturn correct values for 
+		TIMESTAMP, and TIMESTAMPTZ. Return correct values for 
 		DATEOID and TIMEOID. [Greg Sabino Mullane]
 	- Added tablespace support for table_info and primary_key_info.
 		[Greg Sabino Mullane]
@@ -12,10 +14,9 @@
 	- Add support for SQLSTATE via $dbh->state and $sth->state
 		[Greg Sabino Mullane]
 	- Major overhaul of prepare/execute to handle new server-side 
-		prepare system. See Pg,pm for details. [Greg Sabino Mullane]
-	- Add DBD_TRACE to all tests for better debugging.
+		prepare system. See Pg.pm for details. [Greg Sabino Mullane]
 	- Make the tests honor the DBD_SCHEMA variable instead of 
-		assuming that "public" is available.
+		assuming that the "public" schema is available.
 		[Rainer Weikusat]
 	- dbdimp.c cleanups: better error messages, ensure commit
 		is only called once after a transaction fails.
