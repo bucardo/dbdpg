@@ -72,14 +72,6 @@
 
 	* Pg.pm: cleanup.
 
-2002-11-26 10:15  Bruce Momjian <pgman@candle.pha.pa.us>
-
-	* Pg.pm: Oops, stamp 1.20, per David.
-
-2002-11-26 10:14  Bruce Momjian <pgman@candle.pha.pa.us>
-
-	* Pg.pm, README: Stamp 2.0.
-
 2002-11-25 22:42  David Wheeler <david@wheeler.net>
 
 	* t/15funct.t: Changed TODO tests to SKIP to support older versions
@@ -238,10 +230,6 @@
 	working. Normally found in t t/15funct.t
 	
 	tlowery
-
-2002-11-06 08:46  Bruce Momjian <pgman@candle.pha.pa.us>
-
-	* MANIFEST: Remove MANIFEST file.
 
 2002-10-15 13:56  Bruce Momjian <pgman@candle.pha.pa.us>
 
