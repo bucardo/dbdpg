@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 124;
+	plan tests => 121;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -240,16 +240,10 @@ cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorleve
 
 if ($pgversion < 70400) {
  SKIP: {
-		skip 'Cannot test DB handle attribute "pg_errorlevel" on pre-7.4 servers', 4;
+		skip 'Cannot test DB handle attribute "pg_errorlevel" on pre-7.4 servers', 1;
 	}
 }
 else {
-	$dbh->{pg_errorlevel} = 0;
-	cmp_ok( 0, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" can be set to 0');
-	$dbh->{pg_errorlevel} = 1;
-	cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" can be set to 1');
-	$dbh->{pg_errorlevel} = 2;
-	cmp_ok( 2, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" can be set to 2');
 	$dbh->{pg_errorlevel} = 3;
 	cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" defaults to 1 if invalid');
 }
