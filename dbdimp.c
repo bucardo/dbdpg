@@ -18,6 +18,11 @@
 #define DBDPG_TRUE 1
 #define DBDPG_FALSE 0
 
+/* strcasecmp() does not exist on Windows (!) */
+#ifdef WIN32
+#define strcasecmp(s1,s2) lstrcmpiA((s1), (s2))
+#endif
+
 /* XXX DBI should provide a better version of this */
 #define IS_DBI_HANDLE(h) (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV && SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
@@ -279,7 +284,6 @@ int dbd_db_ping (dbh)
 		 SV *dbh;
 {
 	D_imp_dbh(dbh);
-	PGresult *result;
 	ExecStatusType status;
 
 	/* Since this is a very explicit call, we do not rely on PQstatus,
@@ -406,7 +410,6 @@ int dbd_db_disconnect (dbh, imp_dbh)
 		 imp_dbh_t *imp_dbh;
 {
 	dTHR;
-	ExecStatusType status;
 	
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_disconnect\n"); }
 
@@ -461,7 +464,6 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 		 SV *keysv;
 		 SV *valuesv;
 {
-	ExecStatusType status;
 	STRLEN kl;
 	char *key = SvPV(keysv,kl);
 	int oldval, newval = SvTRUE(valuesv);
@@ -618,10 +620,9 @@ SV * dbd_db_pg_notifies (dbh, imp_dbh)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
 {
-	char id;
-	PGnotify* notify;
-	AV* ret;
-	SV* retsv;
+	PGnotify *notify;
+	AV *ret;
+	SV *retsv;
 	int status;
 	
 	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_db_pg_notifies\n"); }
