@@ -12,8 +12,6 @@ if (defined $ENV{DBI_DSN}) {
 my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
                        {RaiseError => 1, AutoCommit => 0}
                       );
-diag "DBD::Pg version: $DBD::Pg::VERSION";
-
 ok(defined $dbh,
    'connect with transaction'
   );
