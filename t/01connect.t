@@ -6,6 +6,7 @@
 use Test::More;
 use DBI;
 use strict;
+select((select(STDERR),$|=1)[0]);
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
