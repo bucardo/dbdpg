@@ -1243,7 +1243,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
   $dbh = DBI->connect("dbi:Pg:dbname=$dbname", "", "");
 
   # for some advanced uses you may need PostgreSQL type values:
-  use DBD::Oracle qw(:pg_types);
+  use DBD::Pg qw(:pg_types);
 
   # See the DBI module documentation for full details
 
