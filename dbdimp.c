@@ -19,6 +19,10 @@
 #define DBDPG_TRUE 1
 #define DBDPG_FALSE 0
 
+#ifndef PGLIBVERSION
+#define PGLIBVERSION 80009
+#endif
+
 /* strcasecmp() does not exist on Windows (!) */
 #ifdef WIN32
 #define strcasecmp(s1,s2) lstrcmpiA((s1), (s2))
