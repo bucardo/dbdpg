@@ -336,6 +336,12 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	}
 #endif
 
+	/* If begin_work has been called, turn AutoCommit back on and BeginWork off */
+	if (DBIc_has(imp_dbh, DBIcf_BegunWork)) {
+		DBIc_set(imp_dbh, DBIcf_AutoCommit, 1);
+		DBIc_set(imp_dbh, DBIcf_BegunWork, 0);
+	}
+
 	if (!imp_dbh->done_begin)
 		return 0;
 
