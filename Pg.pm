@@ -68,6 +68,10 @@ $DBD::Pg::VERSION = '1.31_8';
 	}
 
 	## Is the second version greater than or equal to the first?
+    # Returns:
+    # 0 if first version is greater
+    # 1 if they are equal
+    # 2 if second version is greater 
 	sub _pg_check_version($$) {
 		## Check each section from left to right
 		my @uno = split (/\./ => $_[0]);
@@ -1284,6 +1288,9 @@ This method returns for the given table a reference to an array of hashes:
   CONSTRAINT  constraint
   PRIMARY_KEY flag is_primary_key
   REMARKS     attribute description
+
+The REMARKS field will be returned as NULL for Postgres versions 7.1.x and
+older.
 
   $lobjId = $dbh->func($mode, 'lo_creat');
 
