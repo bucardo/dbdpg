@@ -99,9 +99,9 @@ sub main {
         $sth->execute();
     };
     if ($@) {
-        print "ok $n\n"; $n++;
-    } else {
         print "not ok $n\n"; $n++;
+    } else {
+        print "ok $n\n"; $n++;
     }
 
     $sth = $dbh->prepare(q{
@@ -126,9 +126,9 @@ sub main {
         $sth->execute(1);
     };
     if ($@) {
-        print "ok $n\n"; $n++;
-    } else {
         print "not ok $n\n"; $n++;
+    } else {
+        print "ok $n\n"; $n++;
     }
 
     $sth->finish();
