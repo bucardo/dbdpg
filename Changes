@@ -1,3 +1,4 @@
+	- Fix utf8 quote() support [Dominic Mitchell <dom@semantico.com>]
 	- Add explicit support for types SQL_BOOLEAN, DATE, TIME, 
 		TIMESTAMP, and TIMESTAMPTZ. REturn correct values for 
 		DATEOID and TIMEOID. [Greg Sabino Mullane]
