@@ -153,8 +153,8 @@ sub new {
 # We'll use this code reference as a common way of collecting data.
 my $get_data = sub {
     return unless $_[0]->{pg_config};
-    $_[0]->info("Executing `$_[0]->{pg_config} $_[1]`");
-    my $info = `$_[0]->{pg_config} $_[1]`;
+    $_[0]->info(qq{Executing `"$_[0]->{pg_config}" $_[1]`});
+    my $info = `"$_[0]->{pg_config}" $_[1]`;
     chomp $info;
     return $info;
 };
