@@ -1506,7 +1506,7 @@ transaction. A disconnect will issue a 'rollback' statement.
 =head2 Large Objects
 
 The driver supports all large-objects related functions provided by libpq via
-the func-interface. Please note, that starting with PoostgreSQL-65. any access
+the func-interface. Please note, that starting with PostgreSQL 6.5 any access
 to a large object - even read-only - has to be put into a transaction!
 
 =head2 Cursors
@@ -1522,16 +1522,38 @@ amounts of data!
 =head2 Data-Type bool
 
 The current implementation of PostgreSQL returns 't' for true and 'f' for
-false. From the perl point of view a rather unfortunate choice. The DBD-Pg
+false. From the Perl point of view a rather unfortunate choice. The DBD::Pg
 module translates the result for the data-type bool in a perl-ish like manner:
 'f' -> '0' and 't' -> '1'. This way the application does not have to check the
-database-specific returned values for the data-type bool, because perl treats
+database-specific returned values for the data-type bool, because Perl treats
 '0' as false and '1' as true.
 
-PostgreSQL Version 6.2 considers the input 't' as true and anything else as
-false. PostgreSQL Version 6.3 considers the input 't', '1' and 1 as true and
-anything else as false. PostgreSQL Version 6.4 considers the input 't', '1'
-and 'y' as true and any other character as false.
+Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
+'1' for true and FALSE, 'f', 'false', 'n', 'no' or '0' for false.
+
+=head2 Schema support
+
+PostgreSQL version 7.3 introduced schema support. Note that the PostgreSQL
+schema concept may differ to that of other databases. Please refer to the
+PostgreSQL documentation for more details.
+
+Currently DBD::Pg does not provide explicit support for PostgreSQL schemas.
+However, schema functionality may be used without any restrictions by
+explicitly addressing schema objects, e.g.
+
+  my $res = $dbh->selectall_arrayref("SELECT * FROM my_schema.my_table");
+
+or by manipulating the schema search path with SET search_path, e.g.
+
+  $dbh->do("SET search_path TO my_schema, public");
+
+B<NOTE:> If you create an object with the same name as a PostgreSQL system
+object (as contained in the pg_catalog schema) and explicitly set the search
+path so that pg_catalog comes after the new object's schema, some DBD::Pg
+methods (particularly those querying PostgreSQL system objects) may fail.
+This problem should be fixed in a future release of DBD::Pg. Creating objects
+with the same name as system objects (or beginning with 'pg_') is not
+recommended practice and should be avoided in any case.
 
 =head1 SEE ALSO
 
