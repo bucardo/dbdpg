@@ -1259,7 +1259,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	else {
 		if (imp_sth->numbound) {
 			params = imp_sth->numphs;
-			paramTypes = calloc(imp_sth->numphs, sizeof(*paramTypes));
+			Newz(0, paramTypes, imp_sth->numphs, Oid);
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 				paramTypes[x++] = currph->defaultval ? 0 : currph->bind_type->type_id;
 			}
@@ -1556,7 +1556,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	}
 	else { /* We are using a server that can handle PQexecParams/PQexecPrepared */
 		/* Put all values into an array to pass to PQexecPrepared */
-		paramValues = calloc(imp_sth->numphs, sizeof(*paramValues));
+		Newz(0, paramValues, imp_sth->numphs, const char *); /* freed below */
 		for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 			paramValues[x++] = currph->value;
 		}
@@ -1564,8 +1564,8 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		/* Binary or regular? */
 
 		if (imp_sth->has_binary) {
-			paramLengths = calloc(imp_sth->numphs, sizeof(*paramLengths));
-			paramFormats = calloc(imp_sth->numphs, sizeof(*paramFormats));
+			Newz(0, paramLengths, imp_sth->numphs, int); /* freed below */
+			Newz(0, paramFormats, imp_sth->numphs, int); /* freed below */
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
 				if (BYTEAOID==currph->bind_type->type_id) {
 					paramLengths[x] = currph->valuelen;
@@ -1680,7 +1680,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			statement[execsize] = '\0';
 			
 			/* Populate paramTypes */
-			paramTypes = calloc(imp_sth->numphs, sizeof(*paramTypes));
+			Newz(0, paramTypes, imp_sth->numphs, Oid);
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 				paramTypes[x++] = currph->defaultval ? 0 : currph->bind_type->type_id;
 			}
@@ -1850,7 +1850,7 @@ AV * dbd_st_fetch (sth, imp_sth)
 
 	/* Set up the type_info array if we have not seen it yet */
 	if (NULL==imp_sth->type_info) {
-		imp_sth->type_info = calloc(num_fields, sizeof(*imp_sth->type_info)); /* freed in dbd_st_destroy */
+		Newz(0, imp_sth->type_info, num_fields, sql_type_info_t*); /* freed in dbd_st_destroy */
 		for (i = 0; i < num_fields; ++i) {
 			imp_sth->type_info[i] = pg_type_data(PQftype(imp_sth->result, i));
 		}
