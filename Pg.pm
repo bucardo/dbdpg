@@ -613,8 +613,8 @@ $DBD::Pg::VERSION = '1.30';
 
 		if ( # Rules 19a
 				(defined $catalog and $catalog eq '%')
-			and (defined $schema  and $schema  eq  '')
-			and (defined $table   and $table   eq  '')
+			and (defined $schema and $schema eq '')
+			and (defined $table  and $table  eq '')
 			) {
 				$tbl_sql = q{
 					SELECT 
@@ -627,8 +627,8 @@ $DBD::Pg::VERSION = '1.30';
 		}
 		elsif (# Rules 19b
 				(defined $catalog and $catalog eq '')
-			and (defined $schema  and $schema  eq '%')
-			and (defined $table   and $table   eq '')
+			and (defined $schema and $schema eq '%')
+			and (defined $table  and $table  eq '')
 			) {
 				$tbl_sql = DBD::Pg::_pg_check_version(7.3, $version) ? 
 					q{SELECT 
@@ -650,9 +650,9 @@ $DBD::Pg::VERSION = '1.30';
 		}
 		elsif (# Rules 19c
 				(defined $catalog and $catalog eq '')
-			and (defined $schema  and $schema  eq '')
-			and (defined $table   and $table   eq '')
-			and (defined $type    and $type    eq '%')
+			and (defined $schema and $schema eq '')
+			and (defined $table  and $table  eq '')
+			and (defined $type   and $type   eq '%')
 			) {
 				# From the postgresql 7.2.1 manual 3.5 pg_class
 				#  'r' = ordinary table
@@ -713,7 +713,7 @@ $DBD::Pg::VERSION = '1.30';
 			my $has_objsubid = DBD::Pg::_pg_check_version(7.2, $version) ? 
 				"AND d.objsubid = 0" : "";
 			$tbl_sql = qq{
-				SELECT NULL::text   AS "TABLE_CAT"
+				SELECT NULL::text AS "TABLE_CAT"
 					 , $showschema  AS "TABLE_SCHEM"
 					 , c.relname    AS "TABLE_NAME"
 					 , CASE
@@ -775,7 +775,7 @@ $DBD::Pg::VERSION = '1.30';
 				if (@wh) {
 					$wh = join( " AND ",'', @wh );
 					$tbl_sql = qq{
-					SELECT NULL::text    AS "TABLE_CAT"
+					SELECT NULL::text  AS "TABLE_CAT"
 						 , $showschema   AS "TABLE_SCHEM"
 						 , c.relname     AS "TABLE_NAME"
 						 , CASE
@@ -824,10 +824,10 @@ $DBD::Pg::VERSION = '1.30';
 			ORDER BY 1,2"
 			:
 			"SELECT relname AS \"TABLE_NAME\"
-			FROM    pg_class 
-			WHERE   relkind = 'r'
-			AND     relname !~ '^pg_'
-			AND     relname !~ '^xin[vx][0-9]+'
+			FROM   pg_class 
+			WHERE  relkind = 'r'
+			AND    relname !~ '^pg_'
+			AND    relname !~ '^xin[vx][0-9]+'
 			ORDER BY 1";
 		my $sth = $dbh->prepare($SQL) or return undef;
 		$sth->execute or return undef;
@@ -2015,14 +2015,6 @@ or by manipulating the schema search path with SET search_path, e.g.
 
   $dbh->do("SET search_path TO my_schema, public");
 
-B<NOTE:> If you create an object with the same name as a PostgreSQL system
-object (as contained in the pg_catalog schema) and explicitly set the search
-path so that pg_catalog comes after the new object's schema, some DBD::Pg
-methods (particularly those querying PostgreSQL system objects) may fail.
-This problem should be fixed in a future release of DBD::Pg. Creating objects
-with the same name as system objects (or beginning with 'pg_') is not
-recommended practice and should be avoided in any case.
-
 =head1 SEE ALSO
 
 L<DBI>
@@ -2049,4 +2041,3 @@ the Perl README file.
 See also B<DBI/ACKNOWLEDGMENTS>.
 
 =cut
-
