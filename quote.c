@@ -542,9 +542,9 @@ dequote_sql_binary (string, retlen)
 {
 	/* We are going to retun a dequote_bytea(), JIC */
 	warn("Use of SQL_BINARY invalid in dequote()");
-	return dequote_bytea(string, retlen);
-
-	*retlen = strlen(string);
+	dequote_bytea(string, retlen);
+	return;
+	/* Put dequote_sql_binary function here at some point */
 }
 
 
