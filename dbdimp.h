@@ -31,7 +31,6 @@ struct imp_dbh_st {
 
 	PGconn  *conn;           /* connection structure */
 	bool    done_begin;      /* have we done a begin? (e.g. are we in a transaction?) */
-	bool    pg_auto_escape;  /* initialize AutoEscape  XXX used? -gsm */
 	bool    pg_bool_tf;      /* do bools return 't'/'f'? */
 	bool    pg_enable_utf8;  /* should we attempt to make utf8 strings? */
 	int     pg_protocol;     /* value of PQprotocolVersion usually 0, 2, or 3 */
@@ -39,31 +38,36 @@ struct imp_dbh_st {
 	int     prepare_number;  /* internal prepared statement name modifier */
 	bool    prepare_now;     /* force immediate prepares, even with placeholders */
   char    *sqlstate;       /* from the last result */
-	char    errorlevel;      /* PQsetErrorVerbosity, defaults to 0 */
+	char    errorlevel;      /* PQsetErrorVerbosity, defaults to 1 */
 };
 
 
 /* Each statement is broken up into segments */
 struct seg_st {
-	char *segment;       /* non-placeholder string segment */
-	char *placeholder;   /* final name of matching placeholder e.g. "$1" */
-	char *value;         /* literal value passed in */
-	char *quoted;        /* for old-style execute, the quoted value */
-	int  quoted_len;     /* length of the quoted value */
-	bool boundbyclient;  /* bound by the client, not us */
-
-	sql_type_info_t* bind_type; /* type information for this placeholder */
-
+	char *segment;          /* non-placeholder string segment */
+	int placeholder;        /* which placeholder this points to, 0=none */
+	struct ph_st *ph;       /* points to the relevant ph structure */
 	struct seg_st *nextseg; /* linked lists are fun */
 };
 typedef struct seg_st seg_t;
+
+/* The placeholders are also a linked list */
+struct ph_st {
+	char *fooname;              /* Name if using :foo style */
+	char *value;                /* the literal passed-in value, may be binary */
+	int valuelen;               /* length of the value */
+	char *quoted;               /* quoted version of the value, for PQexec only */
+	int quotedlen;              /* length of the quoted value */
+	sql_type_info_t* bind_type; /* type information for this placeholder */
+	struct ph_st *nextph;       /* more linke dlist goodness */
+};
+typedef struct ph_st ph_t;
 
 /* Define sth implementor data structure */
 struct imp_sth_st {
 	dbih_stc_t com;         /* MUST be first element in structure */
 
-	PGresult*  result;      /* result structure from the executed query */
-	PGresult*  result2;      /* result structure from the executed query */
+	PGresult  *result;      /* result structure from the executed query */
 	int        cur_tuple;   /* current tuple being fetched */
 	int        rows;        /* number of affected rows */
 
@@ -74,12 +78,15 @@ struct imp_sth_st {
 	bool  direct;           /* allow bypassing of the statement parsing */
 	char  *firstword;       /* first word of the statement */
 	bool  is_dml;           /* is this SELECT/INSERT/UPDATE/DELETE? */
+	bool  has_binary;       /* does it have one or more binary placeholders? */
 	int   numsegs;          /* how many segments this statement has */
 	int   numphs;           /* how many placeholders this statement has */
 	int   numbound;         /* how many placeholders were explicitly bound by the client, not us */
-	int   totalsize;        /* total string length of the statement */
+	int   totalsize;        /* total string length of the statement (with no placeholders)*/
 	char  placeholder_type; /* which style is being used 1=? 2=$1 3=:foo */
 	seg_t *seg;             /* linked list of segments */
+	ph_t  *ph;              /* linked list of placeholders */
+  char  *statement;       /* the rewritten statement, for passing to PQexecP.. */
 };
 
 /* Other functions we have added to dbdimp.c (large object ones are in large_object.h) */
@@ -91,4 +98,3 @@ int pg_db_getline ();
 int pg_db_endcopy ();
 
 /* end of dbdimp.h */
-
