@@ -2132,12 +2132,12 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 	}
 	else if (8==kl && strEQ(key, "NULLABLE")) {
 		AV *av = newAV();
-		retsv = newRV(sv_2mortal((SV*)av));
-		PGresult* result;
+		PGresult *result;
 		PGTransactionStatusType status;
 		D_imp_dbh_from_sth;
 		char *statement;
 		int nullable; /* 0 = not nullable, 1 = nullable 2 = unknown */
+		retsv = newRV(sv_2mortal((SV*)av));
 
 		New(0, statement, 100, char); /* freed below */
 		if (!statement)
