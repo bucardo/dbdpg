@@ -22,7 +22,7 @@
 
 DBISTATE_DECLARE;
 
-MODULE = DBD::Pg	PACKAGE = DBD::Pg
+MODULE = DBD::Pg   PACKAGE = DBD::Pg
 
 
 I32
@@ -52,9 +52,9 @@ constant(name=Nullch)
     PG_TIMESTAMP = 1296
     CODE:
     if (!ix) {
-	if (!name) name = GvNAME(CvGV(cv));
-	croak("Unknown DBD::Pg constant '%s'", name);
-    }
+        if (!name) name = GvNAME(CvGV(cv));
+            croak("Unknown DBD::Pg constant '%s'", name);
+        }
     else RETVAL = ix;
     OUTPUT:
     RETVAL
@@ -70,7 +70,7 @@ MODULE=DBD::Pg     PACKAGE = DBD::Pg::db
 
 #TODO: make quote(foo, {type=>SQL_INTEGER}) work  #rl
 #TODO: make quote(foo, {pg_type=>DBD::Pg::PG_INTEGER}) work  #rl
-#TODO: remove dbd_quote() into thsi function.
+#TODO: remove dbd_quote() into this function.
 void
 quote(dbh, to_quote_sv, type_sv=Nullsv)
     SV* dbh
@@ -84,16 +84,15 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
         STRLEN retlen=0;
         int type_num;
         char *quoted;
-	sql_type_info_t *type_info;
+        sql_type_info_t *type_info;
 
 
         if(type_sv && SvOK(type_sv)) {
                 if SvMAGICAL(type_sv)
                         mg_get(type_sv);
 
-		type_info = sql_type_data(SvIV(type_sv));
-        	type_num = type_info->type.pg;
-
+                type_info = sql_type_data(SvIV(type_sv));
+                type_num = type_info->type.pg;
         } else {
                 /* default to varchar */
                 type_num = VARCHAROID;
@@ -119,11 +118,11 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 # ------------------------------------------------------------
 # database level interface PG specific
 # ------------------------------------------------------------
-MODULE = DBD::Pg	PACKAGE = DBD::Pg::db
+MODULE = DBD::Pg  PACKAGE = DBD::Pg::db
 
 int
 _ping(dbh)
-    SV *	dbh
+    SV * dbh
     CODE:
     int ret;
     ret = dbd_db_ping(dbh);
@@ -136,7 +135,7 @@ _ping(dbh)
 
 void
 getfd(dbh)
-    SV *	dbh
+    SV * dbh
     CODE:
     int ret;
     D_imp_dbh(dbh);
@@ -146,7 +145,7 @@ getfd(dbh)
 
 void
 pg_notifies(dbh)
-    SV *	dbh
+    SV * dbh
     CODE:
     D_imp_dbh(dbh);
 
@@ -154,48 +153,48 @@ pg_notifies(dbh)
 
 void
 lo_open(dbh, lobjId, mode)
-    SV *	dbh
-    unsigned int	lobjId
-    int	mode
+    SV * dbh
+    unsigned int lobjId
+    int mode
     CODE:
         int ret = pg_db_lo_open(dbh, lobjId, mode);
         ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
 
 void
 lo_close(dbh, fd)
-    SV *	dbh
-    int	fd
+    SV * dbh
+    int fd
     CODE:
         ST(0) = (-1 != pg_db_lo_close(dbh, fd)) ? &sv_yes : &sv_no;
 
 
 void
 lo_read(dbh, fd, buf, len)
-	    SV *	dbh
-	    int	fd
-	    char *	buf
-	    int	len
-	PREINIT:
-	    SV *bufsv = SvROK(ST(2)) ? SvRV(ST(2)) : ST(2);
-	    int ret;
-	CODE:
-	    buf = SvGROW(bufsv, len + 1);
-	    ret = pg_db_lo_read(dbh, fd, buf, len);
-	    if (ret > 0) {
-	        SvCUR_set(bufsv, ret);
-	        *SvEND(bufsv) = '\0';
-	        sv_setpvn(ST(2), buf, ret);
-	        SvSETMAGIC(ST(2));
-	    }
-	    ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+        SV * dbh
+        int fd
+        char * buf
+        int len
+    PREINIT:
+        SV *bufsv = SvROK(ST(2)) ? SvRV(ST(2)) : ST(2);
+        int ret;
+    CODE:
+        buf = SvGROW(bufsv, len + 1);
+        ret = pg_db_lo_read(dbh, fd, buf, len);
+        if (ret > 0) {
+            SvCUR_set(bufsv, ret);
+            *SvEND(bufsv) = '\0';
+            sv_setpvn(ST(2), buf, ret);
+            SvSETMAGIC(ST(2));
+        }
+        ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
 
 
 void
 lo_write(dbh, fd, buf, len)
-    SV *	dbh
-    int	fd
-    char *	buf
-    int	len
+    SV * dbh
+    int fd
+    char * buf
+    int len
     CODE:
         int ret = pg_db_lo_write(dbh, fd, buf, len);
         ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
@@ -203,10 +202,10 @@ lo_write(dbh, fd, buf, len)
 
 void
 lo_lseek(dbh, fd, offset, whence)
-    SV *	dbh
-    int	fd
-    int	offset
-    int	whence
+    SV * dbh
+    int fd
+    int offset
+    int whence
     CODE:
         int ret = pg_db_lo_lseek(dbh, fd, offset, whence);
         ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
@@ -214,8 +213,8 @@ lo_lseek(dbh, fd, offset, whence)
 
 void
 lo_creat(dbh, mode)
-    SV *	dbh
-    int	mode
+    SV * dbh
+    int mode
     CODE:
         int ret = pg_db_lo_creat(dbh, mode);
         ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
@@ -223,8 +222,8 @@ lo_creat(dbh, mode)
 
 void
 lo_tell(dbh, fd)
-    SV *	dbh
-    int	fd
+    SV * dbh
+    int fd
     CODE:
         int ret = pg_db_lo_tell(dbh, fd);
         ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
@@ -232,16 +231,16 @@ lo_tell(dbh, fd)
 
 void
 lo_unlink(dbh, lobjId)
-    SV *	dbh
-    unsigned int	lobjId
+    SV * dbh
+    unsigned int lobjId
     CODE:
         ST(0) = (-1 != pg_db_lo_unlink(dbh, lobjId)) ? &sv_yes : &sv_no;
 
 
 void
 lo_import(dbh, filename)
-    SV *	dbh
-    char *	filename
+    SV * dbh
+    char * filename
     CODE:
         unsigned int ret = pg_db_lo_import(dbh, filename);
         ST(0) = (ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
@@ -249,17 +248,17 @@ lo_import(dbh, filename)
 
 void
 lo_export(dbh, lobjId, filename)
-    SV *	dbh
-    unsigned int	lobjId
-    char *	filename
+    SV * dbh
+    unsigned int lobjId
+    char * filename
     CODE:
         ST(0) = (-1 != pg_db_lo_export(dbh, lobjId, filename)) ? &sv_yes : &sv_no;
 
 
 void
 putline(dbh, buf)
-    SV *	dbh
-    char *	buf
+    SV * dbh
+    char * buf
     CODE:
         int ret = pg_db_putline(dbh, buf);
         ST(0) = (-1 != ret) ? &sv_yes : &sv_no;
@@ -270,22 +269,22 @@ getline(dbh, buf, len)
     PREINIT:
         SV *bufsv = SvROK(ST(1)) ? SvRV(ST(1)) : ST(1);
     INPUT:
-        SV *	dbh
-        int	len
-        char *	buf = sv_grow(bufsv, len);
+        SV * dbh
+        int len
+        char * buf = sv_grow(bufsv, len);
     CODE:
         int ret = pg_db_getline(dbh, buf, len);
         if (*buf == '\\' && *(buf+1) == '.') {
             ret = -1;
         }
-	sv_setpv((SV*)ST(1), buf);
-	SvSETMAGIC(ST(1));
+    sv_setpv((SV*)ST(1), buf);
+    SvSETMAGIC(ST(1));
         ST(0) = (-1 != ret) ? &sv_yes : &sv_no;
 
 
 void
 endcopy(dbh)
-    SV *	dbh
+    SV * dbh
     CODE:
         ST(0) = (-1 != pg_db_endcopy(dbh)) ? &sv_yes : &sv_no;
 
