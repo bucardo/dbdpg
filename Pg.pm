@@ -225,9 +225,12 @@ $DBD::Pg::VERSION = '1.31_8';
 		my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
 			"JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
 
-        my $remarks = DBD::Pg::_pg_check_version(7.2, $version) ?
-            "${CATALOG}col_description(a.attrelid, a.attnum)" : "NULL::text";
-
+        # Create a join to get the correct description (for Pg < 7.2 or >= 7.2)                                                              
+       my $pg_description_join = DBD::Pg::_pg_check_version(7.2, $version)                                                                  
+            ? "LEFT JOIN ${CATALOG}pg_description d  ON (a.attnum = d.objsubid)\n".                                                      
+              "\t\t\t\tLEFT JOIN ${CATALOG}pg_class       dc ON (dc.oid = d.objoid )"                                                    
+            : "LEFT JOIN ${CATALOG}pg_description d ON (a.oid = d.objoid )";                                                             
+                                                                                                                                                    
 		my $col_info_sql = qq!
 			SELECT
 				NULL::text AS "TABLE_CAT"
@@ -241,7 +244,7 @@ $DBD::Pg::VERSION = '1.31_8';
 				, NULL::text AS "DECIMAL_DIGITS"
 				, NULL::text AS "NUM_PREC_RADIX"
 				, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
-				, $remarks AS "REMARKS"
+				, d.description AS "REMARKS"
 				, af.adsrc AS "COLUMN_DEF"
 				, NULL::text AS "SQL_DATA_TYPE"
 				, NULL::text AS "SQL_DATETIME_SUB"
@@ -257,6 +260,7 @@ $DBD::Pg::VERSION = '1.31_8';
 				JOIN ${CATALOG}pg_class c ON (a.attrelid = c.oid)
 				LEFT JOIN ${CATALOG}pg_attrdef af ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
 				$schemajoin
+                $pg_description_join  
 			WHERE
 				a.attnum >= 0
 				AND c.relkind IN ('r','v')
@@ -1289,9 +1293,6 @@ This method returns for the given table a reference to an array of hashes:
   PRIMARY_KEY flag is_primary_key
   REMARKS     attribute description
 
-The REMARKS field will be returned as NULL for Postgres versions 7.1.x and
-older.
-
   $lobjId = $dbh->func($mode, 'lo_creat');
 
 Creates a new large object and returns the object-id. $mode is a bit-mask
@@ -1555,9 +1556,6 @@ Also, four additional non-standard fields are returned:
   pg_type_only
   pg_attypmod
   pg_constraint - holds column constraint definition
-
-The REMARKS field will be returned as NULL for Postgres versions 7.1.x and
-older.
 
 =item B<table_info>
 
