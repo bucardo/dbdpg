@@ -1972,11 +1972,11 @@ Major parts of this package have been copied from DBI and DBD-Oracle.
 
 B<Mailing List>
 
-The current maintainers may be reached through the 'dbdpg-general' mailing list:
-http://gborg.postgresql.org/mailman/listinfo/dbdpg-general
+The current maintainers may be reached through the 'dbdpg-general' mailing
+list: L<http://gborg.postgresql.org/mailman/listinfo/dbdpg-general/>.
 
-This list is available through Gmane (http://www.gmane.org) as a newsgroup with the name:
-C<gmane.comp.db.postgresql.dbdpg>
+This list is available through Gmane (L<http://www.gmane.org/>) as a newsgroup
+with the name: C<gmane.comp.db.postgresql.dbdpg>
 
 =head1 COPYRIGHT
 
