@@ -98,5 +98,7 @@ int dbd_db_ping ();
 int pg_db_putline ();
 int pg_db_getline ();
 int pg_db_endcopy ();
+void pg_db_server_trace ();
+void pg_db_no_server_trace ();
 
 /* end of dbdimp.h */

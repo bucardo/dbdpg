@@ -305,6 +305,19 @@ endcopy(dbh)
     CODE:
         ST(0) = (-1 != pg_db_endcopy(dbh)) ? &sv_yes : &sv_no;
 
+void
+server_trace(dbh,fh)
+    SV * dbh
+    FILE * fh
+    CODE:
+        pg_db_server_trace(dbh,fh);
+
+void
+no_server_trace(dbh)
+    SV * dbh
+    CODE:
+        pg_db_no_server_trace(dbh);
+
 int
 _pg_type_info (type_sv=Nullsv)
     SV* type_sv

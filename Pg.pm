@@ -1503,7 +1503,7 @@ Implemented by DBI, no driver-specific impact.
 =item B<func>
 
 This driver supports a variety of driver specific functions accessible via the
-C<func> method.
+C<func> method. Note that the name of the function comes last, after the arguments.
 
 =over
 
@@ -1515,8 +1515,8 @@ The C<table_attributes> function is no longer recommended. Instead,
 you can use the more portable C<column_info> and C<primary_key> methods
 to access the same information.
 
-The C<func> method returns, for the given table argument, a reference to an
-array of hashes, each of which contains the following keys:
+The C<table_attributes> method returns, for the given table argument, a 
+reference to an array of hashes, each of which contains the following keys:
 
   NAME        attribute name
   TYPE        attribute type
@@ -1529,6 +1529,32 @@ array of hashes, each of which contains the following keys:
 
 The REMARKS field will be returned as C<NULL> for Postgres versions 7.1.x and
 older.
+
+=item server_trace
+
+  $dbh->func($filehandle, 'server_trace');
+
+Writes debugging information from the PostgreSQL backend to a file. This is 
+not the same as the trace() method and you should not use this method unless 
+you know what you are doing. If you do enable this, be aware that the file 
+will grow very large, very quick. To stop logging to the file, use the 
+C<no_server_trace> function. The first argument must be a file handle, not 
+a filename. Example:
+
+  my $pid = $dbh->{pg_pid};
+  my $file = "pgbackend.$pid.debug.log";
+  open($fh, ">$file") or die qq{Could not open "$file": $!\n};
+  $dbh->func($fh, 'server_trace');
+  ## Run code you want to trace here
+  $dbh->func('no_server_trace');
+  close($fh);
+
+=item no_server_trace
+
+  $dbh->func('no_server_trace');
+
+Stop server logging to a previously opened file.
+
 
 =item lo_create
 
@@ -2480,7 +2506,7 @@ case the driver fetches the whole blob at once.
 Starting with PostgreSQL 6.5, every access to a blob has to be put into a
 transaction. This holds even for a read-only access.
 
-See also the PostgreSQL-specific functions concerning blobs. which are
+See also the PostgreSQL-specific functions concerning blobs, which are
 available via the C<func> interface.
 
 For further information and examples about blobs, please read the chapter

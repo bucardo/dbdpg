@@ -281,6 +281,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 } /* end of dbd_db_login */
 
 
+
 /* ================================================================== */
 
 int dbd_db_ping (dbh)
@@ -2283,6 +2284,27 @@ pg_db_endcopy (dbh)
 {
 		D_imp_dbh(dbh);
 		return PQendcopy(imp_dbh->conn);
+}
+
+
+void
+pg_db_server_trace (dbh, fh)
+		SV *dbh;
+		FILE *fh;
+{
+		D_imp_dbh(dbh);
+
+		PQtrace(imp_dbh->conn, fh);
+}
+
+
+void
+pg_db_no_server_trace (dbh)
+		 SV *dbh;
+{
+	D_imp_dbh(dbh);
+
+	PQuntrace(imp_dbh->conn);
 }
 
 /* end of dbdimp.c */
