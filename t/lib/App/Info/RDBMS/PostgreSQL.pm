@@ -250,6 +250,10 @@ my $get_version = sub {
         if (defined $x and defined $y and defined $z) {
             @{$self}{qw(version major minor patch)} =
               ($version, $x, $y, $z);
+				## Beta versions are treated as patch level "0"
+        } elsif ($version =~ /(\d+)\.(\d+)beta\d+/) {
+            @{$self}{qw(version major minor patch)} =
+              ($version, $1, $2, 0);
         } else {
             $self->error("Failed to parse PostgreSQL version parts from " .
                          "string '$version'");
