@@ -27,6 +27,7 @@ print "Remember to actually read the README file !\n";
 my $POSTGRES_INCLUDE;
 my $POSTGRES_LIB;
 
+my ($major_ver, $minor_ver, $patch);
 if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
     # Use App::Info to get the data we need.
     require App::Info::RDBMS::PostgreSQL;
@@ -35,6 +36,7 @@ if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
     my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $p);
     $POSTGRES_INCLUDE = $pg->inc_dir;
     $POSTGRES_LIB     = $pg->lib_dir;
+    ($major_ver, $minor_ver, $patch) = map {$pg->$_} qw/major_version minor_version patch_version/
 } elsif ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and $ENV{POSTGRES_HOME}) {
     $POSTGRES_INCLUDE = "$ENV{POSTGRES_HOME}/include";
     $POSTGRES_LIB     = "$ENV{POSTGRES_HOME}/lib";
@@ -53,6 +55,24 @@ if ($os eq 'MSWin32') {
     $dbi_arch_dir = dbd_dbi_arch_dir();
 }
 
+
+my $comp_opts;
+if ($major_ver = 7) {
+    if ($minor_ver >= 2) {
+        $comp_opts .= " -DHAVE_PQescapeString";
+        $comp_opts .= " -DHAVE_PQescapeBytea";
+    }
+    if ($minor_ver >= 3) {
+              $comp_opts .= " -DHAVE_PQunescapeBytea";
+    }
+} elsif ($major_ver > 7) {
+        $comp_opts .= " -DHAVE_PQescapeString -DHAVE_PQescapeBytea";
+        $comp_opts .= " -DHAVE_PQunescapeBytea";
+}
+
+#print "Version Detected: $major_ver $minor_ver $patch using Compilor opts $comp_opts\n";
+
+
 my %opts = (
     NAME         => 'DBD::Pg',
     VERSION_FROM => 'Pg.pm',
@@ -61,8 +81,10 @@ my %opts = (
     LIBS         => ["-L$POSTGRES_LIB -lpq"],
     AUTHOR       => 'http://gborg.postgresql.org/project/dbdpg/projdisplay.php',
     ABSTRACT     => 'PostgreSQL database driver for the DBI module',
-    PREREQ_PM	 => { 'Test::Simple' => 0.17 }, # Need Test::More
+    PREREQ_PM	 => { 'Test::Simple' => 0.17 }, # Need Test::More,
+    CCFLAGS	 => $comp_opts,
 );
+
 
 if ($os eq 'hpux') {
     my $osvers = $Config{osvers};

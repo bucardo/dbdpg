@@ -6,9 +6,6 @@
  *	These are not being set automatically so I have set them
  *	assuming libpq has them.  bjm 2003-04-01
  */
-#define HAVE_PQescapeString
-#define HAVE_PQescapeBytea
-#define HAVE_PQunescapeBytea
 
 /* #include"pg_functions.c" */
 
