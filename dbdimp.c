@@ -132,7 +132,7 @@ void pg_error (h, error_num, error_msg)
 	D_imp_xxh(h);
 	D_imp_dbh(h);
 	char *err, *src, *dst; 
-	int len = strlen(error_msg);
+	STRLEN len = strlen(error_msg);
 	
 	New(0, err, len+1, char); /* freed below */
 	if (!err)
@@ -181,7 +181,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	dTHR;
 	
 	char *conn_str, *src, *dest, inquote = 0;
-	int connect_string_size;
+	STRLEN connect_string_size;
 	
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_login\n"); }
 	
@@ -683,7 +683,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 {
 
 	D_imp_dbh_from_sth;
-	unsigned int mypos=0, wordstart, newsize; /* Used to find and set firstword */
+	STRLEN mypos=0, wordstart, newsize; /* Used to find and set firstword */
 	SV **svp; /* To help parse the arguments */
 
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_prepare: >%s<\n", statement); }
@@ -814,7 +814,8 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 
 	/* Builds the "segment" and "placeholder" structures for a statement handle */
 
-	unsigned int mypos, sectionstart, sectionstop, newsize, backslashes, topdollar, x;
+	STRLEN mypos, sectionstart, sectionstop, newsize;
+	unsigned int backslashes, topdollar, x;
 	char ch, block, quote, placeholder_type, found;
 	seg_t *newseg, *currseg = NULL;
 	ph_t *newph, *thisph, *currph = NULL;
@@ -1131,7 +1132,8 @@ int dbd_st_prepare_statement (sth, imp_sth)
 
 	D_imp_dbh_from_sth;
 	char *statement;
-	unsigned int execsize, x;
+	unsigned int x;
+	STRLEN execsize;
 	PGresult *result;
 	ExecStatusType status;
 	seg_t *currseg;
@@ -1453,9 +1455,8 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	D_imp_dbh_from_sth;
 	ph_t *currph;
 	ExecStatusType status = -1;
-	unsigned int execsize;
+	STRLEN execsize, x;
 	const char **paramValues;
-	unsigned int x;
 	int *paramLengths = NULL, *paramFormats = NULL;
 	Oid *paramTypes = NULL;
 	seg_t *currseg;
@@ -1784,7 +1785,9 @@ AV * dbd_st_fetch (sth, imp_sth)
 	int num_fields;
 	char *value;
 	char *p;
-	int i, pg_type, value_len, chopblanks, len;
+	int i, pg_type, chopblanks;
+	STRLEN value_len;
+	STRLEN len;
 	AV *av;
 	D_imp_dbh_from_sth;
 	
@@ -2247,7 +2250,7 @@ pg_db_putline (dbh, buffer)
 {
 		D_imp_dbh(dbh);
 		int result;
-		int buglen = strlen(buffer);
+		STRLEN buglen = strlen(buffer);
 
 		if (imp_dbh->pg_protocol >= 3) {
 			if (dbis->debug >= 4)

@@ -15,8 +15,8 @@
 
 /* This section was stolen from libpq */
 #ifndef HAVE_PQescapeString
-size_t
-PQescapeString(char *to, const char *from, size_t length)
+STRLEN
+PQescapeString(char *to, const char *from, STRLEN length)
 {
 	const char *source = from;
 	char *target = to;
@@ -73,13 +73,13 @@ PQescapeString(char *to, const char *from, size_t length)
  */
 #ifndef HAVE_PQescapeBytea
 unsigned char *
-PQescapeBytea(const unsigned char *bintext, size_t binlen, size_t *bytealen)
+PQescapeBytea(const unsigned char *bintext, STRLEN binlen, STRLEN *bytealen)
 {
 	const unsigned char *vp;
 	unsigned char *rp;
 	unsigned char *result;
-	size_t		i;
-	size_t		len;
+	STRLEN		i;
+	STRLEN		len;
 	
 	/*
 	 * empty string has 1 char ('\0')
@@ -156,11 +156,11 @@ PQescapeBytea(const unsigned char *bintext, size_t binlen, size_t *bytealen)
  */
 #ifndef HAVE_PQunescapeBytea
 unsigned char *
-PQunescapeBytea2(const unsigned char *strtext, size_t *retbuflen)
+PQunescapeBytea2(const unsigned char *strtext, STRLEN *retbuflen)
 {
-	size_t strtextlen, buflen;
+	STRLEN strtextlen, buflen, i, j;
 	unsigned char *buffer, *tmpbuf;
-	int i, j, byte;
+	int byte;
 	
 	if (NULL == strtext) {
 		return NULL;
@@ -218,9 +218,9 @@ PQunescapeBytea2(const unsigned char *strtext, size_t *retbuflen)
 
 
 unsigned char *
-PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
+PQunescapeBytea(unsigned char *strtext, STRLEN *retbuflen)
 {
-	size_t		buflen;
+	STRLEN		buflen;
 	unsigned char *buffer,
 		*sp,
 		*bp;
@@ -276,7 +276,7 @@ PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 				case 3:
 					if (isDIGIT(*sp))		/* state=4 */
 						{
-							int			v;
+							unsigned int v;
 							
 							bp -= 3;
 							sscanf(sp - 2, "%03o", &v);
@@ -306,8 +306,8 @@ PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 char *
 null_quote(string, len, retlen)
 	void *string;
-	size_t len;
-	size_t *retlen;
+	STRLEN len;
+	STRLEN *retlen;
 {
 	char *result;
 	New(0, result, len+1, char);
@@ -321,10 +321,10 @@ null_quote(string, len, retlen)
 char *
 quote_varchar(string, len, retlen)
 		 char *string;
-		 size_t len;
-		 size_t *retlen;
+		 STRLEN len;
+		 STRLEN *retlen;
 {
-	size_t	outlen;
+	STRLEN	outlen;
 	char *result;
 
 	New(0, result, len*2+3, char);
@@ -343,10 +343,10 @@ quote_varchar(string, len, retlen)
 char *
 quote_char(string, len, retlen)
 		 void *string;
-		 size_t len;
-		 size_t *retlen;
+		 STRLEN len;
+		 STRLEN *retlen;
 {
-	size_t	outlen;
+	STRLEN	outlen;
 	char *result;
 	
 	New(0, result, len*2+3, char);
@@ -369,11 +369,11 @@ quote_char(string, len, retlen)
 char *
 quote_bytea(string, len, retlen)
 		 void* string;
-		 size_t len;
-		 size_t *retlen;
+		 STRLEN len;
+		 STRLEN *retlen;
 {
 	char *result;
-	size_t resultant_len = 0;
+	STRLEN resultant_len = 0;
 	unsigned char *intermead, *dest;
 	
 	intermead = PQescapeBytea(string, len, &resultant_len);
@@ -400,12 +400,12 @@ quote_bytea(string, len, retlen)
 char *
 quote_sql_binary( string, len, retlen)
 		 void *string;
-		 size_t	len;
-		 size_t	*retlen;
+		 STRLEN	len;
+		 STRLEN	*retlen;
 {
 	char *result;
 	char *dest;
-	int max_len = 0, i;
+	STRLEN max_len = 0, i;
 	
 	/* We are going to retun a quote_bytea() for backwards compat but
 		 we warn first */
@@ -440,12 +440,12 @@ quote_sql_binary( string, len, retlen)
 char *
 quote_bool(value, len, retlen) 
 		 void *value;
-		 size_t	len;
-		 size_t	*retlen;
+		 STRLEN	len;
+		 STRLEN	*retlen;
 {
 	char *result;
 	long int int_value;
-	size_t	max_len=6;
+	STRLEN	max_len=6;
 	
 	if (isDIGIT(*(char*)value)) {
  		/* For now -- will go away when quote* take SVs */
@@ -473,11 +473,11 @@ quote_bool(value, len, retlen)
 char *
 quote_integer(value, len, retlen) 
 		 void *value;
-		 size_t	len;
-		 size_t	*retlen;
+		 STRLEN	len;
+		 STRLEN	*retlen;
 {
 	char *result;
-	size_t	max_len=6;
+	STRLEN	max_len=6;
 	
 	New(0, result, max_len, char);
 	
@@ -497,7 +497,7 @@ quote_integer(value, len, retlen)
 void
 dequote_char(string, retlen)
 		 char *string;
-		 int *retlen;
+		 STRLEN *retlen;
 {
 	/* TODO: chop_blanks if requested */
 	*retlen = strlen(string);
@@ -507,7 +507,7 @@ dequote_char(string, retlen)
 void
 dequote_varchar (string, retlen)
 		 char *string;
-		 int *retlen;
+		 STRLEN *retlen;
 {
 	*retlen = strlen(string);
 }
@@ -517,7 +517,7 @@ dequote_varchar (string, retlen)
 void
 dequote_bytea(string, retlen)
 		 char *string;
-		 int *retlen;
+		 STRLEN *retlen;
 {
 	char *s, *p;
 	int c1,c2,c3;
@@ -556,7 +556,7 @@ dequote_bytea(string, retlen)
 void
 dequote_sql_binary (string, retlen)
 		 char *string;
-		 int *retlen;
+		 STRLEN *retlen;
 {
 	/* We are going to retun a dequote_bytea(), JIC */
 	warn("Use of SQL_BINARY invalid in dequote()");
@@ -570,7 +570,7 @@ dequote_sql_binary (string, retlen)
 void
 dequote_bool (string, retlen)
 		 char *string;
-		 int *retlen;
+		 STRLEN *retlen;
 {
 	switch(*string){
 	case 'f': *string = '0'; break;
@@ -586,7 +586,7 @@ dequote_bool (string, retlen)
 void
 null_dequote (string, retlen)
 		 char *string;
-		 int *retlen;
+		 STRLEN *retlen;
 {
 	*retlen = strlen(string);
 }

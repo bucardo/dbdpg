@@ -53,12 +53,12 @@ typedef struct seg_st seg_t;
 
 /* The placeholders are also a linked list */
 struct ph_st {
-	char *fooname;              /* Name if using :foo style */
-	char *value;                /* the literal passed-in value, may be binary */
+	char  *fooname;             /* Name if using :foo style */
+	char  *value;               /* the literal passed-in value, may be binary */
 	STRLEN valuelen;            /* length of the value */
-	char *quoted;               /* quoted version of the value, for PQexec only */
-	int quotedlen;              /* length of the quoted value */
-	bool referenced;            /* used for PREPARE AS construction */
+	char  *quoted;              /* quoted version of the value, for PQexec only */
+	STRLEN quotedlen;           /* length of the quoted value */
+	bool   referenced;          /* used for PREPARE AS construction */
 	sql_type_info_t* bind_type; /* type information for this placeholder */
 	struct ph_st *nextph;       /* more linked list goodness */
 };
@@ -73,22 +73,22 @@ struct imp_sth_st {
 	int        rows;        /* number of affected rows */
 	sql_type_info_t **type_info; /* type of each column in result */
 
-	char  server_prepare;   /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
-	char  *prepare_name;    /* name of the prepared query; NULL if not prepared */
-	bool  prepare_now;      /* prepare this statement right away, even if it has placeholders */
-	bool  prepared_by_us;   /* false if {prepare_name} set directly */
-	bool  direct;           /* allow bypassing of the statement parsing */
-	char  *firstword;       /* first word of the statement */
-	bool  is_dml;           /* is this SELECT/INSERT/UPDATE/DELETE? */
-	bool  has_binary;       /* does it have one or more binary placeholders? */
-	int   numsegs;          /* how many segments this statement has */
-	int   numphs;           /* how many placeholders this statement has */
-	int   numbound;         /* how many placeholders were explicitly bound by the client, not us */
-	int   totalsize;        /* total string length of the statement (with no placeholders)*/
-	char  placeholder_type; /* which style is being used 1=? 2=$1 3=:foo */
-	seg_t *seg;             /* linked list of segments */
-	ph_t  *ph;              /* linked list of placeholders */
-  char  *statement;       /* the rewritten statement, for passing to PQexecP.. */
+	char   server_prepare;   /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
+	char   *prepare_name;    /* name of the prepared query; NULL if not prepared */
+	bool   prepare_now;      /* prepare this statement right away, even if it has placeholders */
+	bool   prepared_by_us;   /* false if {prepare_name} set directly */
+	bool   direct;           /* allow bypassing of the statement parsing */
+	char   *firstword;       /* first word of the statement */
+	bool   is_dml;           /* is this SELECT/INSERT/UPDATE/DELETE? */
+	bool   has_binary;       /* does it have one or more binary placeholders? */
+	int    numsegs;          /* how many segments this statement has */
+	int    numphs;           /* how many placeholders this statement has */
+	int    numbound;         /* how many placeholders were explicitly bound by the client, not us */
+	STRLEN totalsize;        /* total string length of the statement (with no placeholders)*/
+	char   placeholder_type; /* which style is being used 1=? 2=$1 3=:foo */
+	seg_t  *seg;             /* linked list of segments */
+	ph_t   *ph;              /* linked list of placeholders */
+  char   *statement;       /* the rewritten statement, for passing to PQexecP.. */
 };
 
 /* Other functions we have added to dbdimp.c (large object ones are in large_object.h) */
