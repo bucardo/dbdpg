@@ -251,7 +251,7 @@ my $get_version = sub {
             @{$self}{qw(version major minor patch)} =
               ($version, $x, $y, $z);
 				## Beta/devel/release candidate versions are treated as patch level "0"
-        } elsif ($version =~ /(\d+)\.(\d+)\w+\d+/) {
+        } elsif ($version =~ /(\d+)\.(\d+)/) {
             @{$self}{qw(version major minor patch)} =
               ($version, $1, $2, 0);
         } else {
