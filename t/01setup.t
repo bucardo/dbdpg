@@ -3,7 +3,7 @@ use DBI;
 use Test::More;
 
 if (defined $ENV{DBI_DSN}) {
-  plan tests => 4;
+  plan tests => 5;
 } else {
   plan skip_all => 'cannot test without DB info';
 }
@@ -32,6 +32,7 @@ ok($dbh->do($sql),
    'create table'
   );
 
+# First, test that we can trap warnings.
 eval { local $dbh->{PrintError} = 0; $dbh->do( "drop table test2" ) };
 {
     my $warning;
@@ -43,6 +44,19 @@ eval { local $dbh->{PrintError} = 0; $dbh->do( "drop table test2" ) };
 	 'PQsetNoticeProcessor working' );
 }
 eval { local $dbh->{PrintError} = 0; $dbh->do( "drop table test2" ) };
+
+# Next, test that we can disable warnings using $dbh.
+eval { local $dbh->{PrintError} = 0; $dbh->do( "drop table test3" ) };
+{
+    my $warning;
+    local $SIG{__WARN__} = sub { $warning = "@_" };
+    local $dbh->{Warn} = 0;
+    $dbh->do( "create table test3 (id integer primary key)" );
+    # XXX This will have to be updated if PostgreSQL ever changes its
+    # warnings...
+    is( $warning, undef, 'PQsetNoticeProcessor respects dbh->{Warn}' );
+}
+eval { local $dbh->{PrintError} = 0; $dbh->do( "drop table test3" ) };
 
 ok($dbh->disconnect(),
    'disconnect'

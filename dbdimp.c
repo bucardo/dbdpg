@@ -76,7 +76,10 @@ pg_warn (arg, message)
     void *arg;
     const char *message;
 {
-    warn( message );
+    D_imp_dbh( sv_2mortal(newRV((SV*)arg)) );
+
+    if (DBIc_WARN(imp_dbh))
+	warn( message );
 }
 
 /* Database specific error handling. */
@@ -178,7 +181,7 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
     }
 
     /* Enable warnings to go through perl */
-    PQsetNoticeProcessor(imp_dbh->conn, pg_warn, NULL);
+    PQsetNoticeProcessor(imp_dbh->conn, pg_warn, (void *)SvRV(dbh));
 
     /* Quick basic version check -- not robust a'tall TODO: rewrite */
     pgres_ret = PQexec(imp_dbh->conn, "SELECT version()");
