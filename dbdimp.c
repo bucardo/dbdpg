@@ -55,7 +55,7 @@ void dbd_st_split_statement();
 int dbd_st_prepare_statement();
 int dbd_db_transaction_status();
 int dbd_st_deallocate_statement();
-
+PGTransactionStatusType dbd_db_txn_status();
 #include "large_object.c"
 
 
@@ -275,7 +275,7 @@ int dbd_db_ping (dbh)
 
 
 /* ================================================================== */
-int dbd_db_txn_status (imp_dbh)
+PGTransactionStatusType dbd_db_txn_status (imp_dbh)
 		 imp_dbh_t *imp_dbh;
 {
 
@@ -1678,7 +1678,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 	char *stmt;
 	PGresult *result;
 	ExecStatusType status;
-	int tstatus; /* Make a real return type when DBD::Pg is pure > 7.3! */
+	PGTransactionStatusType tstatus;
 	D_imp_dbh_from_sth;
 	
 	if (dbis->debug >= 1)
