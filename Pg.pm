@@ -12,7 +12,7 @@
 
 use 5.006001;
 
-$DBD::Pg::VERSION = '1.31_1';
+$DBD::Pg::VERSION = '1.31_2';
 
 {
 	package DBD::Pg;
