@@ -86,6 +86,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
         sql_type_info_t *type_info;
 
 
+				SvGETMAGIC(to_quote_sv);
         if(type_sv && SvOK(type_sv)) {
                 if SvMAGICAL(type_sv)
                         mg_get(type_sv);
