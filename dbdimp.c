@@ -1800,7 +1800,7 @@ AV * dbd_st_fetch (sth, imp_sth)
 
 		sv = AvARRAY(av)[i];
 		if (PQgetisnull(imp_sth->result, imp_sth->cur_tuple, i)) {
-			sv_setsv(sv, &sv_undef);
+			SvROK(sv) ? sv_unref(sv) : SvOK_off(sv);
 		}
 		else {
 			value = (char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
