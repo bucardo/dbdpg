@@ -11,7 +11,7 @@
 
 require 5.6.1;
 
-$DBD::Pg::VERSION = '1.30_1';
+$DBD::Pg::VERSION = '1.30_2';
 
 {
     package DBD::Pg;
