@@ -118,6 +118,11 @@ if ($os eq 'hpux') {
         $opts{LINKTYPE} = 'static';
     }
 }
+elsif ($os =~ /Win32/) {
+	my $msdir = $POSTGRES_LIB;
+	$msdir =~ s#"$#/ms"#;
+	$opts{LIBS}[0] .= " -L$msdir";
+}
 
 if ($Config{dlsrc} =~ /dl_none/) {
     $opts{LINKTYPE} = 'static';
