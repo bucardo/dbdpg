@@ -4,7 +4,7 @@
 use ExtUtils::MakeMaker;
 use Config;
 use strict;
-use 5.006000;
+use 5.006001;
 use DBI 1.00;
 use DBI::DBD;
 
