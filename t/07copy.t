@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 25;
+	plan tests => 24;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -100,59 +100,60 @@ $dbh->commit();
 # Test of the pg_getline method
 #
 
-## pg_getline should fail unless we are in a COPY OUT state
-eval {
-	$dbh->pg_getline($data[0], 100);
-};
-ok($@, 'pg_getline fails when issued without a preceding COPY command');
+SKIP: {
+	skip "Cannot test pg_getline on pre-7.4 servers", 10 if $pglibversion < 70400;
 
+	## pg_getline should fail unless we are in a COPY OUT state
+	eval {
+		$dbh->pg_getline($data[0], 100);
+	};
+	ok($@, 'pg_getline fails when issued without a preceding COPY command');
 
-$dbh->do("COPY $table TO STDOUT");
-my ($buffer,$badret,$badval) = ('',0,0);
-$result = $dbh->pg_getline($data[0], 100);
-is ($result, 1, 'pg_getline returned a 1');
+	$dbh->do("COPY $table TO STDOUT");
+	my ($buffer,$badret,$badval) = ('',0,0);
+	$result = $dbh->pg_getline($data[0], 100);
+	is ($result, 1, 'pg_getline returned a 1');
 
-## Commands are not allowed while in a COPY OUT state
-eval {
+	## Commands are not allowed while in a COPY OUT state
+	eval {
+		$dbh->do("SELECT 'dbdpg_copytest'");
+	};
+	ok($@, 'do() fails while in a COPY OUT state');
+
+	## pg_putline is not allowed as we are in a COPY OUT state
+	eval {
+		$dbh->pg_putline("99\tBogusberry");
+	};
+	ok($@, 'pg_putline fails while in a COPY OUT state');
+
+	$result = $dbh->pg_getline($data[1], 100);
+	is ($result, 1, 'pg_getline returned a 1');
+	$result = $dbh->pg_getline($data[2], 100);
+	is ($result, 1, 'pg_getline returned a 1');
+
+	$result = $dbh->pg_getline($data[3], 100);
+	is ($result, '', 'pg_getline returns empty on final call');
+
+	$result = \@data;
+	$expected = ["12\tMulberry\n","13\tStrawberry\n","14\tBlueberry\n",""];
+	is_deeply( $result, $expected, 'getline returned all rows successfuly');
+
+	## Make sure we can issue normal commands again
 	$dbh->do("SELECT 'dbdpg_copytest'");
-};
-ok($@, 'do() fails while in a COPY OUT state');
 
-## pg_putline is not allowed as we are in a COPY OUT state
-eval {
-	$dbh->pg_putline("99\tBogusberry");
-};
-ok($@, 'pg_putline fails while in a COPY OUT state');
+	## Make sure we are out of the COPY OUT state and pg_getline no longer works
+	eval {
+		$dbh->pg_getline($data[5], 100);
+	};
+	ok($@, 'pg_getline fails when issued after pg_endcopy called');
 
-$result = $dbh->pg_getline($data[1], 100);
-is ($result, 1, 'pg_getline returned a 1');
-$result = $dbh->pg_getline($data[2], 100);
-is ($result, 1, 'pg_getline returned a 1');
+	## pg_endcopy should fail because we are no longer in a COPY state
+	eval {
+		$dbh->pg_endcopy;
+	};
+	ok($@, 'pg_endcopy fails when called twice after COPY OUT');
 
-$result = $dbh->pg_getline($data[3], 100);
-is ($result, '', 'pg_getline returns empty on final call');
-
-$result = $dbh->pg_endcopy;
-is ($result, 1, 'pg_endcopy returned a 1');
-
-$result = \@data;
-$expected = ["12\tMulberry","13\tStrawberry","14\tBlueberry", "\\\."];
-is_deeply( $result, $expected, 'getline returned all rows successfuly');
-
-## Make sure we can issue normal commands again
-$dbh->do("SELECT 'dbdpg_copytest'");
-
-## Make sure we are out of the COPY OUT state and pg_getline no longer works
-eval {
-	$dbh->pg_getline($data[5], 100);
-};
-ok($@, 'pg_getline fails when issued after pg_endcopy called');
-
-## pg_endcopy should fail because we are no longer in a COPY state
-eval {
-	$dbh->pg_endcopy;
-};
-ok($@, 'pg_endcopy fails when called twice after COPY OUT');
+} ## end SKIP
 
 #
 # Keep oldstyle calls around for backwards compatibility
@@ -167,7 +168,6 @@ $dbh->do("COPY $table TO STDOUT");
 $result = $dbh->func($data[0], 100, 'getline');
 is ($result, 1, "old-style dbh->func(var, length, 'getline') still works");
 1 while ($result = $dbh->func($data[0], 100, 'getline'));
-$dbh->pg_endcopy;
 
 $dbh->do("DROP TABLE $table");
 $dbh->commit();
