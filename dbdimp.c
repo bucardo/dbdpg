@@ -285,7 +285,6 @@ int
 dbd_db_ping (dbh)
 		 SV *dbh;
 {
-	char id;
 	D_imp_dbh(dbh);
 	PGresult* result;
 	ExecStatusType status;
