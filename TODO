@@ -1,6 +1,5 @@
 Known Issues: 
 
-- new pg_bool_tf attribute is broken.
 - quote("stuff", {typeinfo }) is broken (only when hashref is passed in)
 - has some // style comments around debug statements that need to be 
   converted into logging statements
@@ -12,10 +11,14 @@ Known Issues:
    they exist?
 - Code is not as clean as it should be -- some kludgeness in there.
 - Documentation has not been updated.
-- Needs more tests.
-
 
 TODO: 
+
+- Implement last_insert_id()
+- Support for server-side prepare
+- Support for new error messages
+- Use new protocol for COPY
+
 
 - Change quote and dequote functions to take Sv instead of string so that
    things like arrays can be serialized by the quote function.  This will
@@ -35,7 +38,6 @@ TODO:
 - quoting/dequoting of arrays.
 - allow user callbacks to quote user-defined types?
 - move typeinfo into C and pull off of typeinfo struct.
-- foreign_key_info()
 - write up quote_identifier()
 - rename functions and add defines to avoid problems with static linking of
   multi DBDs
