@@ -29,6 +29,10 @@ PQescapeString(char *to, const char *from, size_t length)
 				/* target and remaining are updated below. */
 				break;
 
+			case 0:
+				remaining = 0;
+				continue; /* exit the while loop */
+
 			default:
 				*target = *source;
 				/* target and remaining are updated below. */
