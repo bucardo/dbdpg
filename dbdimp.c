@@ -1381,6 +1381,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			imp_sth->is_dml && 
 			(1==imp_sth->server_prepare || 
 			 (2==imp_sth->server_prepare && imp_dbh->pg_protocol >= 3))) {
+		const char **paramValues;
 	
 		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg: new-style prepare\n");
@@ -1401,7 +1402,6 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		}
 
 		/* If none are binary, life is simpler */
-		const char **paramValues;
 		x=0; y=0; z=0;
 		paramValues = calloc(imp_sth->numphs, sizeof(*paramValues));
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
@@ -1426,7 +1426,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 		/* Use PQexecParams someday? */
 
-		// Go through and quote each value, then turn into a giant statement
+		/* Go through and quote each value, then turn into a giant statement */
 		execsize = imp_sth->totalsize;
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 			if (NULL != currseg->placeholder) {
@@ -1568,11 +1568,12 @@ AV * dbd_st_fetch (sth, imp_sth)
 	chopblanks = DBIc_has(imp_sth, DBIcf_ChopBlanks);
 	
 	for(i = 0; i < num_fields; ++i) {
-		
+		SV *sv;
+
 		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg: fetching a field\n");
 
-		SV *sv = AvARRAY(av)[i];
+		sv = AvARRAY(av)[i];
 		if (PQgetisnull(imp_sth->result, imp_sth->cur_tuple, i)) {
 			sv_setsv(sv, &sv_undef);
 		}
