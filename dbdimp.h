@@ -99,9 +99,15 @@ struct imp_sth_st {
 
 SV * dbd_db_pg_notifies (SV *dbh, imp_dbh_t *imp_dbh);
 int dbd_db_ping ();
+int dbd_db_getfd ();
 int pg_db_putline ();
 int pg_db_getline ();
 int pg_db_endcopy ();
+int pg_db_savepoint ();
+int pg_db_rollback_to ();
+int pg_db_release ();
+void pg_db_pg_server_trace ();
+void pg_db_pg_server_untrace ();
 void pg_db_server_trace ();
 void pg_db_no_server_trace ();
 

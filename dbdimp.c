@@ -254,7 +254,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	}
 	
 	/* Enable warnings to go through perl */
-	PQsetNoticeProcessor(imp_dbh->conn, pg_warn, (void *)SvRV(dbh));
+	PQsetNoticeProcessor(imp_dbh->conn, pg_warn, (void *)SvRV(dbh)); /* XXX this causes a problem with nmake */
 	
 	/* Figure out what protocol this server is using */
 	imp_dbh->pg_protocol = PGLIBVERSION >= 70400 ? PQprotocolVersion(imp_dbh->conn) : 0;
@@ -840,7 +840,7 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 	/* Builds the "segment" and "placeholder" structures for a statement handle */
 
 	STRLEN mypos, sectionstart, sectionstop, newsize;
-	unsigned int backslashes, topdollar, x;
+	int backslashes, topdollar, x;
 	char ch, block, quote, placeholder_type, found;
 	seg_t *newseg, *currseg = NULL;
 	ph_t *newph, *thisph, *currph = NULL;
@@ -1979,12 +1979,14 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 			I32	alen = av_len(imp_dbh->savepoints);
 			if (alen > -1) {
 				SV		*sp;
-				char	cmd[SvLEN(sp) + 13];
+				char	*cmd;
+				New(0, cmd, SvLEN(sp) + 13, char); /* Freed below */
 				if (dbis->debug >= 4)
 					PerlIO_printf(DBILOGFP, "  dbdpg: Issuing rollback before deallocate\n", tstatus);
 				sp = av_pop(imp_dbh->savepoints);
 				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
 				status = _result(imp_dbh, cmd);
+				Safefree(cmd);
 			}
 			else {
 				status = _result(imp_dbh, "ROLLBACK");
@@ -2447,7 +2449,11 @@ pg_db_savepoint (dbh, imp_dbh, savepoint)
 {
 	PGTransactionStatusType tstatus;
 	ExecStatusType status;
-	char action[strlen(savepoint) + 11];
+	char *action;
+
+	New(0, action, strlen(savepoint) + 11, char); /* freed below */
+	if (!action)
+		croak("No memory");
 
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
@@ -2472,6 +2478,7 @@ pg_db_savepoint (dbh, imp_dbh, savepoint)
 	}
 
 	status = _result(imp_dbh, action);
+	Safefree(action);
 
 	if (PGRES_COMMAND_OK != status) {
 		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
@@ -2492,7 +2499,11 @@ int pg_db_rollback_to (dbh, imp_dbh, savepoint)
 	PGTransactionStatusType tstatus;
 	ExecStatusType status;
 	I32 i;
-	char action[strlen(savepoint) + 13];
+	char *action;
+
+	New(0, action, strlen(savepoint) + 13, char);
+	if (!action)
+		croak("No memory!");
 
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
@@ -2507,6 +2518,7 @@ int pg_db_rollback_to (dbh, imp_dbh, savepoint)
 		return 0;
 
 	status = _result(imp_dbh, action);
+	Safefree(action);
 
 	if (PGRES_COMMAND_OK != status) {
 		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
@@ -2532,7 +2544,11 @@ int pg_db_release (dbh, imp_dbh, savepoint)
 	PGTransactionStatusType tstatus;
 	ExecStatusType status;
 	I32 i;
-	char action[strlen(savepoint) + 9];
+	char *action;
+
+	New(0, action, strlen(savepoint) + 9, char);
+	if (!action)
+		croak("No memory!");
 
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
@@ -2547,6 +2563,7 @@ int pg_db_release (dbh, imp_dbh, savepoint)
 		return 0;
 
 	status = _result(imp_dbh, action);
+	Safefree(action);
 
 	if (PGRES_COMMAND_OK != status) {
 		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
