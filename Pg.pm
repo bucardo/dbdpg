@@ -1839,7 +1839,7 @@ percent sign (%) or an underscore (_) are detected in the argument.
 The $type argument accepts a value of either "TABLE" or "VIEW" 
 (using both is the default action).
 
-If your database supports tablespaces (version 7.5 or greater), two additional 
+If your database supports tablespaces (version 8.0 or greater), two additional 
 columns are returned named "pg_tablespace_name" and "pg_tablespace_location" 
 which contain the name and location of the tablespace associated with 
 this table. Tables that have not been assigned to a particular tablespace 
