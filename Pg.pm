@@ -448,245 +448,240 @@ $DBD::Pg::VERSION = '1.31';
 		return defined $sth ? @{$sth->fetchall_arrayref()->[0][3]} : undef;
 	}
 
+
 	sub foreign_key_info {
-	# todo: verify schema work as expected
-	# add code to handle multiple-column keys correctly
-	# return something nicer for pre-7.3?
-	# try to clean up SQL, perl code
 
-	my $dbh = shift;
-	my ($pk_catalog, $pk_schema, $pk_table,
-		$fk_catalog, $fk_schema, $fk_table) = @_;
+		my $dbh = shift;
 
-	# this query doesn't work for Postgres before 7.3
-	my $version = DBD::Pg::_pg_server_version($dbh);
-	return undef unless DBD::Pg::_pg_check_version(7.3, $version);
+		## PK: catalog, schema, table, FK: catalog, schema, table, attr
 
-	# Used to hold data for the attributes.
-	my @dat = ();
+		## Each of these may be undef or empty
+		my $pschema = $_[1] || '';
+		my $ptable = $_[2] || '';
+		my $fschema = $_[4] || '';
+		my $ftable = $_[5] || '';
+		my $args = $_[6];
 
-	# SQL to find primary/unique keys of a table
-	my $pkey_sql = qq{
-	SELECT
-	NULL::text AS "PKTABLE_CAT",
-	pknam.nspname AS "PKTABLE_SCHEM",
-	pkc.relname AS "PKTABLE_NAME",
-	pka.attname AS "PKCOLUMN_NAME",
-	NULL::text AS "FKTABLE_CAT",
-	NULL::text AS "FKTABLE_SCHEM",
-	NULL::text AS "FKTABLE_NAME",
-	NULL::text AS "FKCOLUMN_NAME",
-	pkcon.conkey[1] AS "KEY_SEQ",
-	CASE
-		WHEN pkcon.confupdtype = 'c' THEN 0
-		WHEN pkcon.confupdtype = 'r' THEN 1
-		WHEN pkcon.confupdtype = 'n' THEN 2
-		WHEN pkcon.confupdtype = 'a' THEN 3
-		WHEN pkcon.confupdtype = 'd' THEN 4
-	END AS "UPDATE_RULE",
-	CASE
-		WHEN pkcon.confdeltype = 'c' THEN 0
-		WHEN pkcon.confdeltype = 'r' THEN 1
-		WHEN pkcon.confdeltype = 'n' THEN 2
-		WHEN pkcon.confdeltype = 'a' THEN 3
-		WHEN pkcon.confdeltype = 'd' THEN 4
-	END AS "DELETE_RULE",
-	NULL::text AS "FK_NAME",
-	pkcon.conname AS "PK_NAME",
-	CASE
-		WHEN pkcon.condeferrable = 'f' THEN 7
-		WHEN pkcon.condeferred = 't' THEN 6
-		WHEN pkcon.condeferred = 'f' THEN 5
-	END AS "DEFERRABILITY",
-	CASE
-		WHEN pkcon.contype = 'p' THEN 'PRIMARY'
-		WHEN pkcon.contype = 'u' THEN 'UNIQUE'
-	END AS "UNIQUE_OR_PRIMARY"
-	FROM
-		pg_constraint AS pkcon
-	JOIN
-		pg_class pkc ON pkc.oid=pkcon.conrelid
-	JOIN
-		pg_namespace pknam ON pkcon.connamespace=pknam.oid
-	JOIN
-		pg_attribute pka ON pka.attnum=pkcon.conkey[1] AND pka.attrelid=pkc.oid
-	};
+		## No way to currently specify it, but we are ready when there is
+		my $odbc = 0;
 
-	# SQL to find foreign keys of a table
-	my $fkey_sql = qq{
-	SELECT
-	NULL::text AS "PKTABLE_CAT",
-	pknam.nspname AS "PKTABLE_SCHEM",
-	pkc.relname AS "PKTABLE_NAME",
-	pka.attname AS "PKCOLUMN_NAME",
-	NULL::text AS "FKTABLE_CAT",
-	fknam.nspname AS "FKTABLE_SCHEM",
-	fkc.relname AS "FKTABLE_NAME",
-	fka.attname AS "FKCOLUMN_NAME",
-	fkcon.conkey[1] AS "KEY_SEQ",
-	CASE
-		WHEN fkcon.confupdtype = 'c' THEN 0
-		WHEN fkcon.confupdtype = 'r' THEN 1
-		WHEN fkcon.confupdtype = 'n' THEN 2
-		WHEN fkcon.confupdtype = 'a' THEN 3
-		WHEN fkcon.confupdtype = 'd' THEN 4
-	END AS "UPDATE_RULE",
-	CASE
-		WHEN fkcon.confdeltype = 'c' THEN 0
-		WHEN fkcon.confdeltype = 'r' THEN 1
-		WHEN fkcon.confdeltype = 'n' THEN 2
-		WHEN fkcon.confdeltype = 'a' THEN 3
-		WHEN fkcon.confdeltype = 'd' THEN 4
-	END AS "DELETE_RULE",
-	fkcon.conname AS "FK_NAME",
-	pkcon.conname AS "PK_NAME",
-	CASE
-		WHEN fkcon.condeferrable = 'f' THEN 7
-		WHEN fkcon.condeferred = 't' THEN 6
-		WHEN fkcon.condeferred = 'f' THEN 5
-	END AS "DEFERRABILITY",
-	CASE
-		WHEN pkcon.contype = 'p' THEN 'PRIMARY'
-		WHEN pkcon.contype = 'u' THEN 'UNIQUE'
-	END AS "UNIQUE_OR_PRIMARY"
-	FROM
-		pg_constraint AS fkcon
-	JOIN
-		pg_constraint AS pkcon ON fkcon.confrelid=pkcon.conrelid
-			AND fkcon.confkey=pkcon.conkey
-	JOIN
-		pg_class fkc ON fkc.oid=fkcon.conrelid
-	JOIN
-		pg_class pkc ON pkc.oid=fkcon.confrelid
-	JOIN
-		pg_namespace pknam ON pkcon.connamespace=pknam.oid
-	JOIN
-		pg_namespace fknam ON fkcon.connamespace=fknam.oid
-	JOIN
-		pg_attribute fka ON fka.attnum=fkcon.conkey[1] AND fka.attrelid=fkc.oid
-	JOIN
-		pg_attribute pka ON pka.attnum=pkcon.conkey[1] AND pka.attrelid=pkc.oid
-	};
+		## Must have at least one named table
+		return undef if !$ptable and !$ftable;
 
-	# if schema are provided, use this SQL
-	my $pk_schema_sql = " AND pknam.nspname = ? ";
-	my $fk_schema_sql = " AND fknam.nspname = ? ";
+		## Versions 7.2 or less have no pg_constraint table, so we cannot support
+		my $version = DBD::Pg::_pg_server_version($dbh);
+		return undef unless DBD::Pg::_pg_check_version(7.3, $version);
 
-	my $key_sql;
+		my $C = 'pg_catalog.';
 
-	# if $fk_table: generate SQL stub, which will be same
-	# whether or not $pk_table supplied
-	if ($fk_table)
-	{
-		$key_sql = $fkey_sql . qq{
-		WHERE
-			fkc.relname = ?
-		};
-		push @dat, $fk_table;
+		## If only the primary table is given, we return only those columns 
+		## that are used as foreign keys, even if that means that we return 
+		## unique keys but not primary one. We also return all the foreign 
+		## tables/columns that are referencing them, of course.
 
-		if ($fk_schema)
-		{
-			$key_sql .= $fk_schema_sql;
-			push @dat,$fk_schema;
-		}
-	}
-
-	# if $fk_table and $pk_table: (defined by DBI, not SQL/CLI)
-	# return foreign key of $fk_table that refers to $pk_table
-	# (if any)
-	if ($pk_table and $fk_table)
-	{
-		$key_sql .= qq{
-		AND
-			pkc.relname = ?
-		};
-		push @dat, $pk_table;
-
-		if ($pk_schema)
-		{
-			$key_sql .= $pk_schema_sql;
-			push @dat,$pk_schema;
-		}
-	}
-
-	# if $fk_table but no $pk_table:
-	# return all foreign keys of $fk_table, and all
-	# primary keys of tables to which $fk_table refers
-	if (!$pk_table and $fk_table)
-	{
-		# find primary/unique keys referenced by $fk_table
-		# (this one is a little tricky)
-		$key_sql .= ' UNION ' . $pkey_sql . qq{
-		WHERE
-			pkcon.conname IN
-		(
-		SELECT
-			pkcon.conname
-		FROM
-			pg_constraint AS fkcon
-		JOIN
-			pg_constraint AS pkcon ON 
-				fkcon.confrelid=pkcon.conrelid AND fkcon.confkey=pkcon.conkey
-		JOIN
-			pg_class fkc ON fkc.oid=fkcon.conrelid
-		WHERE
-			fkc.relname = ?
-		)	
-		};
-		push @dat, $fk_table;
-
-		if ($fk_schema)
-		{
-			$key_sql .= $pk_schema_sql;
-			push @dat,$fk_schema;
-		}
-	}
-
-	# if $pk_table but no $fk_table:
-	# return primary key of $pk_table and all foreign keys
-	# that reference $pk_table
-	# question: what about unique keys?
-	# (DBI and SQL/CLI both state to omit unique keys)
-
-	if ($pk_table and !$fk_table)
-	{
-		# find primary key (only!) of $pk_table
-		$key_sql = $pkey_sql . qq{
-		WHERE
-			pkc.relname = ?
-		AND
-			pkcon.contype = 'p'
-		};
-		@dat = ($pk_table);
-
-		if ($pk_schema)
-		{
-			$key_sql .= $pk_schema_sql;
-			push @dat,$pk_schema;
+		## The first step is to find the oid of each specific table in the args:
+		## Return undef if no matching relation found
+		my %oid;
+		for ([$ptable, $pschema, 'P'], [$ftable, $fschema, 'F']) {
+			if (length $_->[0]) {
+				my $SQL = "SELECT c.oid AS schema FROM ${C}pg_class c, ${C}pg_namespace n\n".
+					"WHERE c.relnamespace = n.oid AND c.relname = " . $dbh->quote($_->[0]);
+				if (length $_->[1]) {
+					$SQL .= " AND n.nspname = " . $dbh->quote($_->[1]);
+				}
+				my $info = $dbh->selectall_arrayref($SQL);
+				return undef if ! @$info;
+				$oid{$_->[2]} = $info->[0][0];
+			}
 		}
 
-		# find all foreign keys that reference $pk_table
-		$key_sql .= 'UNION ' . $fkey_sql . qq{
-		WHERE
-			pkc.relname = ?
-		AND
-			pkcon.contype = 'p'
-		};
-		push @dat, $pk_table;
-
-		if ($pk_schema)
-		{
-			$key_sql .= $fk_schema_sql;
-			push @dat,$pk_schema;
+		## We now need information about each constraint we care about.
+		## Foreign table: only 'f' / Primary table: only 'p' or 'u'
+		my $WHERE = $odbc ? "((contype  = 'p'" : "((contype IN ('p','u')";
+		if (length $ptable) {
+			$WHERE .= " AND conrelid=$oid{'P'}::oid";
 		}
-	}
+		else {
+			$WHERE .= " AND conrelid IN (SELECT DISTINCT confrelid FROM ${C}pg_constraint WHERE conrelid=$oid{'F'}::oid)";
+			if (length $pschema) {
+				$WHERE .= " AND n2.nspname = " . $dbh->quote($pschema);
+			}
+		}
 
-	return undef unless $key_sql;
-	my $sth = $dbh->prepare( $key_sql ) or
-		return undef;
-	$sth->execute(@dat);
+		$WHERE .= ")\n \t\t\t\tOR \n \t\t\t\t(contype = 'f'";
+		if (length $ftable) {
+			$WHERE .= " AND conrelid=$oid{'F'}::oid";
+			if (length $ptable) {
+				$WHERE .= " AND confrelid=$oid{'P'}::oid";
+			}
+		}
+		else {
+			$WHERE .= " AND confrelid = $oid{'P'}::oid";
+			if (length $fschema) {
+				$WHERE .= " AND n2.nspname = " . $dbh->quote($fschema);
+			}
+		}
+		$WHERE .= "))";
 
-	return $sth;
+		## Grab everything except specific column names:
+		my $fk_sql = qq{
+		SELECT conrelid, confrelid, contype, conkey, confkey,
+			${C}quote_ident(c.relname) AS t_name, ${C}quote_ident(n2.nspname) AS t_schema,
+			${C}quote_ident(n.nspname) AS c_schema, ${C}quote_ident(conname) AS c_name,
+			CASE
+				WHEN confupdtype = 'c' THEN 0
+				WHEN confupdtype = 'r' THEN 1
+				WHEN confupdtype = 'n' THEN 2
+				WHEN confupdtype = 'a' THEN 3
+				WHEN confupdtype = 'd' THEN 4
+				ELSE -1
+			END AS update,
+			CASE
+				WHEN confdeltype = 'c' THEN 0
+				WHEN confdeltype = 'r' THEN 1
+				WHEN confdeltype = 'n' THEN 2
+				WHEN confdeltype = 'a' THEN 3
+				WHEN confdeltype = 'd' THEN 4
+				ELSE -1
+			END AS delete,
+			CASE
+				WHEN condeferrable = 'f' THEN 7
+				WHEN condeferred = 't' THEN 6
+				WHEN condeferred = 'f' THEN 5
+				ELSE -1
+			END AS defer
+			FROM ${C}pg_constraint k, ${C}pg_class c, ${C}pg_namespace n, ${C}pg_namespace n2
+			WHERE $WHERE
+				AND k.connamespace = n.oid
+				AND k.conrelid = c.oid
+				AND c.relnamespace = n2.oid
+				ORDER BY conrelid ASC
+				};
+		my $sth = $dbh->prepare($fk_sql);
+		$sth->execute();
+		my $info = $sth->fetchall_arrayref({});
+		return undef if ! defined $info or ! @$info;
+
+		## Return undef if just ptable given but no fk found
+		return undef if ! length $ftable and ! grep { $_->{'contype'} eq 'f'} @$info;
+
+		## Figure out which columns we need information about
+		my %colnum;
+		for (@$info) {
+			$colnum{$_->{'conrelid'}}{$1}++ while $_->{'conkey'} =~ /(\d+)/go;
+			if ($_->{'contype'} eq 'f') {
+				$colnum{$_->{'confrelid'}}{$1}++ while $_->{'confkey'} =~ /(\d+)/go;
+			}				
+		}
+
+		## Get the information about the columns computed above
+		my $SQL = qq{
+			SELECT a.attrelid, a.attnum, ${C}quote_ident(a.attname) AS colname, 
+				${C}quote_ident(t.typname) AS typename
+			FROM ${C}pg_attribute a, ${C}pg_type t
+			WHERE a.atttypid = t.oid
+			AND (\n};
+
+		$SQL .= join "\n\t\t\t\tOR\n" => map {
+			my $cols = join ',' => keys %{$colnum{$_}};
+			"\t\t\t\t( a.attrelid = '$_' AND a.attnum IN ($cols) )"
+		} sort keys %colnum;
+
+		$sth = $dbh->prepare(qq{$SQL \)});
+		$sth->execute();
+		my $attribs = $sth->fetchall_arrayref({});
+
+		## Make a lookup hash
+		my %attinfo;
+		for (@$attribs) {
+			$attinfo{"$_->{'attrelid'}"}{"$_->{'attnum'}"} = $_;
+		}
+
+		## This is an array in case we have identical oid/column combos. Lowest oid wins
+		my %ukey;
+		for my $c (grep { $_->{'contype'} ne 'f' } @$info) {
+			## Munge multi-column keys into sequential order
+			my $multi = join ' ' => sort split/\s*/, $c->{'conkey'};
+			push @{$ukey{$c->{'conrelid'}}{$multi}}, $c;
+		}
+		
+		## Finally, return as a SQL/CLI structure:
+		my $fkinfo = [];
+		my $x=0;
+		for my $t (sort { $a->{'c_name'} cmp $b->{'c_name'} } grep { $_->{'contype'} eq 'f' } @$info) {
+
+			## We need to find which constraint row (if any) matches our confrelid-confkey combo
+			## by checking out ukey hash. We sort for proper matching of { 1 2 } vs. { 2 1 }
+			## No match means we have a pure index constraint
+			my $u;
+			my $multi = join ' ' => sort split/\s*/, $t->{'confkey'};
+			if (exists $ukey{$t->{'confrelid'}}{$multi}) {
+				$u = $ukey{$t->{'confrelid'}}{$multi}->[0];
+			}
+			else {
+				## Mark this as an index so we can fudge things later on
+				$multi = "index";
+				## Grab the first one found, modify later on as needed
+				$u = (values %{$ukey{$t->{'confrelid'}}})[0]->[0];
+			}
+
+			## ODBC is primary keys only
+			next if $odbc and ($u->{'contype'} ne 'p' or $multi eq 'index');
+
+			my (@conkey, @confkey);
+			push (@conkey, $1) while $t->{'conkey'} =~ /(\d+)/go;
+			push (@confkey, $1) while $t->{'confkey'} =~ /(\d+)/go;
+			for (my $y=0; $conkey[$y]; $y++) {
+				# UK_TABLE_CAT
+				$fkinfo->[$x][0] = undef;
+				# UK_TABLE_SCHEM
+				$fkinfo->[$x][1] = $u->{'t_schema'};
+				# UK_TABLE_NAME
+				$fkinfo->[$x][2] = $u->{'t_name'};
+				# UK_COLUMN_NAME
+				$fkinfo->[$x][3] = $attinfo{$t->{'confrelid'}}{$confkey[$y]}{'colname'};
+				# FK_TABLE_CAT
+				$fkinfo->[$x][4] = undef;
+				# FK_TABLE_SCHEM
+				$fkinfo->[$x][5] = $t->{'t_schema'};
+				# FK_TABLE_NAME
+				$fkinfo->[$x][6] = $t->{'t_name'};
+				# FK_COLUMN_NAME
+				$fkinfo->[$x][7] = $attinfo{$t->{'conrelid'}}{$conkey[$y]}{'colname'};
+				# ORDINAL_POSITION
+				$fkinfo->[$x][8] = $conkey[$y];
+				# UPDATE_RULE
+				$fkinfo->[$x][9] = "$t->{'update'}";
+				# DELETE_RULE
+				$fkinfo->[$x][10] = "$t->{'delete'}";
+				# FK_NAME
+				$fkinfo->[$x][11] = $t->{'c_name'};
+				# UK_NAME (may be undef if an index with no named constraint)
+				$fkinfo->[$x][12] = $multi eq 'index' ? undef : $u->{'c_name'};
+				# DEFERRABILITY
+				$fkinfo->[$x][13] = "$t->{'defer'}";
+				# UNIQUE_OR_PRIMARY
+				$fkinfo->[$x][14] = ($u->{'contype'} eq 'p' and $multi ne 'index') ? 'PRIMARY' : 'UNIQUE';
+				# UK_DATA_TYPE
+				$fkinfo->[$x][15] = $attinfo{$t->{'confrelid'}}{$confkey[$y]}{'typename'};
+				# FK_DATA_TYPE
+				$fkinfo->[$x][16] = $attinfo{$t->{'conrelid'}}{$conkey[$y]}{'typename'};
+				$x++;
+			} ## End each column in this foreign key
+		} ## End each foreign key
+
+		my @CLI_cols = (qw(UK_TABLE_CAT UK_TABLE_SCHEM UK_TABLE_NAME UK_COLUMN_NAME
+									 FK_TABLE_CAT FK_TABLE_SCHEM FK_TABLE_NAME FK_COLUMN_NAME
+									 ORDINAL_POSITION UPDATE_RULE DELETE_RULE FK_NAME UK_NAME 
+									 DEFERABILITY UNIQUE_OR_PRIMARY UK_DATA_TYPE FK_DATA_TYPE));
+
+		my @ODBC_cols = (qw(PKTABLE_CAT PKTABLE_SCHEM PKTABLE_NAME PKCOLUMN_NAME
+									 FKTABLE_CAT FKTABLE_SCHEM FKTABLE_NAME FKCOLUMN_NAME
+									 KEY_SEQ UPDATE_RULE DELETE_RULE FK_NAME PK_NAME 
+									 DEFERABILITY UNIQUE_OR_PRIMARY PK_DATA_TYPE FKDATA_TYPE));
+
+		return _prepare_from_data('foreign_key_info', $fkinfo, $odbc ? \@ODBC_cols : \@CLI_cols);
+
 	}
 
 
@@ -1621,9 +1616,14 @@ Supported by the driver as proposed by DBI.
   $sth = $dbh->foreign_key_info( $pk_catalog, $pk_schema, $pk_table,
                                  $fk_catalog, $fk_schema, $fk_table );
 
-Supported by the driver as proposed by DBI. Unimplemented for Postgres
-servers before 7.3 (returns undef).  Currently only returns information
-about first column of any multiple-column keys.
+Supported by the driver as proposed by DBI, using the SQL/CLI variant. 
+This function returns undef for PostgreSQL servers earlier than version 
+7.3. There are no search patterns allowed, but leaving the $schema argument 
+blank will cause the first table found in the schema search path to be 
+used. Two additional fields, UK_DATA_TYPE and FK_DATA_TYPE, are returned 
+which show the data type for the unique and foreign key columns. Foreign 
+keys which have no named constraint (where the referenced column only has 
+an unique index) will return undef for the UK_NAME field.
 
 =item B<tables>
 
