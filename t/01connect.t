@@ -5,8 +5,7 @@ use Test::More;
 if (defined $ENV{DBI_DSN}) {
 	plan tests => 2;
 } else {
-	print STDOUT "Bail out! DBI_DSN must be set: see the README file\n";
-	plan skip_all => 'Cannot test without DB info';
+	plan skip_all => "DBI_DSN must be set: see the README file";
 }
 
 my $dbh;

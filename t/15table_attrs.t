@@ -6,9 +6,9 @@ use Data::Dumper;
 use strict;
 use Test::More;
 if (defined $ENV{DBI_DSN}) {
-  plan tests => 11;
+    plan tests => 11;
 } else {
-  plan skip_all => 'cannot test without DB info';
+    plan skip_all => "DBI_DSN must be set: see the README file";
 }
 
 my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
