@@ -1,4 +1,4 @@
-#!/usr/bin/perl -I./t
+#!/usr/bin/perl -w -I./t
 $| = 1;
 
 # vim:ts=2:sw=2:ai:aw:nu:
@@ -6,7 +6,6 @@ use DBI qw(:sql_types);
 use Data::Dumper;
 
 use strict;
-use warnings;
 
 my ($pf, $sf);
 
@@ -94,10 +93,10 @@ $sth = undef;
 
 # Quote
  eval {
-	 my $val = $dbh->quote();
+	my $val = $dbh->quote();
  	die unless $val;
  };
-ok ($@, "quote error expected, $@ " .  $dbh->errstr );
+ok ($@, "quote error expected, $@ " . $dbh->errstr );
 $sth = undef;
 # Tests for quote:
 my @qt_vals = (1, 2, undef, 'NULL', "ThisIsAString", "This is Another String");

@@ -177,7 +177,7 @@ $DBD::Pg::VERSION = '1.13';
 			}
 		}
 
-		my $wh = ();
+		my $wh = ""; # ();
 		$wh = join( " and ", '', @wh ) if (@wh);
 		my $col_info_sql = qq{
 			select
