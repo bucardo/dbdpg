@@ -35,6 +35,7 @@ $sth->execute();
 my $count = $sth->fetchall_arrayref()->[0][0];
 if ($count == 1) {
 	$dbh->do("DROP TABLE dbd_pg_test");
+	$dbh->commit();
 }
 
 pass('The testing table "dbd_pg_test" has been dropped');
