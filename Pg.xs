@@ -70,7 +70,7 @@ MODULE=DBD::Pg     PACKAGE = DBD::Pg::db
 
 #TODO: make quote(foo, {type=>SQL_INTEGER}) work  #rl
 #TODO: make quote(foo, {pg_type=>DBD::Pg::PG_INTEGER}) work  #rl
-void
+SV*
 quote(dbh, to_quote_sv, type_sv=Nullsv)
     SV* dbh
     SV* to_quote_sv
@@ -104,17 +104,19 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
         if (!SvOK(to_quote_sv))  {
                 quoted = "NULL";
                 len = 4;
-                ST(0) =  sv_2mortal(newSVpv(quoted,len));
+                RETVAL = newSVpvn(quoted,len);
         } else {
                 if (SvMAGICAL(to_quote_sv))
                         mg_get(to_quote_sv);
 
                 to_quote = SvPV(to_quote_sv, len);
                 quoted = type_info->quote(to_quote, len, &retlen);
-                ST(0) =  sv_2mortal(newSVpv(quoted, retlen));
-                free (quoted);
+                RETVAL = newSVpvn(quoted, retlen);
+                Safefree (quoted);
         }
     }
+    OUTPUT:
+    	RETVAL
 
 
 

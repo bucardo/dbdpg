@@ -1,4 +1,6 @@
-1.32_1 Fri Feb 13 16:46:48 UTC 2004
+1.32_2 Thu Feb 19 02:33:24 UTC 2004
+	- Bugfix for memory allocation problems on win systems
+		[Rafael Kitover <caelum@debian.org>]
 	- Rewrote the foreign_key_info() method to handle 
 		multi-column keys. [Greg Sabino Mullane]
 	- Rewrote the primary_key_info() and primary_key() methods to 

@@ -373,7 +373,11 @@ quote_bytea(string, len, retlen)
 	strcpy(dest,intermead);
 	strcat(dest,"\'");
 
-	safefree(intermead);
+#ifdef HAVE_PQfreemem
+	PQfreemem(intermead);
+#else
+	free(intermead);
+#endif
 	*retlen=strlen(result);
 	assert(*retlen+1 <= resultant_len+2);
 	
