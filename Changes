@@ -32,6 +32,13 @@
 	- Fixed many heap buffer overruns.
 	- Added support for the get_info() method [Greg Sabino Mullane]
         - Added tests for POD validation [Mark Stosberg]
+    - Several improvements to column_info, including:                                                                         
+        - Fixed column_info so NULLABLE field shows correctly. [kevin@sysexperts.com] 
+        - REMARKS field works now [Mark Stosberg]                                                                             
+        - COLUMN_DEF fixed                                                                                                    
+        - COLUMN_SIZE fixed                                                                                                   
+        - pg_constraint column added to display column constraints                                                            
+        - additional documentation and tests added  
 
 1.22 Wed Mar 26 22:33:44 EST 2003
 	- Win32 compile fix for snprintf [Joe Spears]
