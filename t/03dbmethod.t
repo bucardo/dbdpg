@@ -623,7 +623,7 @@ $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 @result = $dbh->tables('', '', 'dbd_pg_test', '');
 like( $result[0], qr/dbd_pg_test/, 'DB handle method "tables" works');
 
-@result = $dbh->tables('', '', 'dbd_pg_test', '', {npg_oprefix => 1});
+@result = $dbh->tables('', '', 'dbd_pg_test', '', {pg_noprefix => 1});
 is( $result[0], 'dbd_pg_test', 'DB handle method "tables" works with a "pg_noprefix" attribute');
 
 #
