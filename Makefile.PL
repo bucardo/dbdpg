@@ -4,6 +4,7 @@
 use ExtUtils::MakeMaker;
 use Config;
 use strict;
+
 use DBI 1.00;
 use DBI::DBD;
 use lib q(inc);
@@ -46,7 +47,7 @@ my %opts = (
     INC          => "-I$POSTGRES_INCLUDE -I$dbi_arch_dir",
     OBJECT       => "Pg\$(OBJ_EXT) dbdimp\$(OBJ_EXT)",
     LIBS         => ["-L$POSTGRES_LIB -lpq"],
-    AUTHOR       => 'Edmund Mergl (E.Mergl@bawue.de) and Jeffrey W. Baker (jwbaker@acm.org)',
+    AUTHOR       => 'http://gborg.postgresql.org/project/dbdpg/projdisplay.php',
     ABSTRACT     => 'PostgreSQL database driver for the DBI module',
 );
 
@@ -61,7 +62,6 @@ if ($os eq 'hpux') {
 if ($Config{dlsrc} =~ /dl_none/) {
     $opts{LINKTYPE} = 'static';
 }
-
 
 WriteMakefile(%opts);
 
