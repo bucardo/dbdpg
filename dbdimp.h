@@ -11,10 +11,6 @@
 
 #include "types.h"
 
-/* Override mistake
-SV *dbd_db_last_insert_id _((SV *dbh, imp_dbh_t *imp_dbh, SV *catalog, SV *schema, SV *table, SV *field, SV *attr));
-*/
-
 #ifdef WIN32
 #define snprintf _snprintf
 #endif
