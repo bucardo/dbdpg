@@ -187,3 +187,14 @@ on the server side:
 OS X Users: You may need to add "-lssl" and "-lcrypto" to your LIB 
 variable before compiling. <rob at cabrion dot com>
 
+SCO Users: If the 'make test' gives an error about a symbol not being 
+found, you can correct the problem by manually running ld after the 
+'make' command:
+
+LD_RUN_PATH="/usr/local/pgsql/lib" ld -G -L/usr/local/lib Pg.o \
+dbdimp.o -o blib/arch/auto/DBD/Pg/Pg.so -L/usr/local/pgsql/lib -lpq \
+-L/opt/K/SKUNK2000/Gcc/2.95.2pl1/usr/local/lib/gcc-lib/i386-pc-sco3.2v5.0.5/2.95.2/ \
+-lgcc
+
+Once this is done, 'make test' succeeds properly. <jmore at remote-print.com>
+
