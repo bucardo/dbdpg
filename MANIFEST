@@ -32,6 +32,7 @@ t/06disconnect.t
 t/07reuse.t
 t/08txn.t
 t/09autocommit.t
+t/10chopblanks.t
 t/11quoting.t
 t/12placeholders.t
 t/13pgtype.t
