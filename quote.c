@@ -372,15 +372,14 @@ quote_bytea(string, len, retlen)
 		 STRLEN len;
 		 STRLEN *retlen;
 {
-	char *result;
+	char *result, *dest;
 	STRLEN resultant_len = 0;
-	unsigned char *intermead, *dest;
+	unsigned char *intermead;
 	
 	intermead = PQescapeBytea(string, len, &resultant_len);
 	New(0, result, resultant_len+2, char);
 	
-	
-	dest = result;
+ 	dest = result;
 	
 	Copy("'", dest++,1,char);
 	strcpy(dest,intermead);

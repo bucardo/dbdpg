@@ -1978,10 +1978,11 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 			/* If a savepoint has been set, rollback to the last savepoint instead of the entire transaction */
 			I32	alen = av_len(imp_dbh->savepoints);
 			if (alen > -1) {
-		if (dbis->debug >= 4)
-			PerlIO_printf(DBILOGFP, "  dbdpg: Issuing rollback before deallocate2\n", tstatus);
-				SV		*sp = av_pop(imp_dbh->savepoints);
+				SV		*sp;
 				char	cmd[SvLEN(sp) + 13];
+				if (dbis->debug >= 4)
+					PerlIO_printf(DBILOGFP, "  dbdpg: Issuing rollback before deallocate\n", tstatus);
+				sp = av_pop(imp_dbh->savepoints);
 				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
 				status = _result(imp_dbh, cmd);
 			}
