@@ -1,9 +1,9 @@
 # -*-cperl-*-
 #  $Id$
 #
-#  Copyright (c) 1997-2001 Edmund Mergl
-#  Copyright (c) 2002 Jeffrey W. Baker
-#  Copyright (c) 2002-2004 PostgreSQL Global Development Group
+#  Copyright (c) 2002-2005 PostgreSQL Global Development Group
+#  Portions Copyright (c) 2002 Jeffrey W. Baker
+#  Portions Copyright (c) 1997-2001 Edmund Mergl
 #  Portions Copyright (c) 1994-1997 Tim Bunce
 #
 #  You may distribute under the terms of either the GNU General Public
