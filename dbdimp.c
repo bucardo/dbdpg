@@ -805,7 +805,6 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 				croak("No memory");
 			Copy(statement, imp_sth->seg->segment, newsize, char);
 			imp_sth->seg->segment[newsize] = '\0';
-			imp_sth->seg->placeholder = 0;
 		}
 		else {
 			imp_sth->seg->segment = NULL;
@@ -966,6 +965,7 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 				newph->bind_type = NULL;
 				newph->value = NULL;
 				newph->quoted = NULL;
+				newph->referenced = 0;
 				New(0, newph->fooname, newsize+1, char); /* freed in dbd_st_destroy */
 				if (!newph->fooname)
 					croak("No memory");
@@ -1055,6 +1055,7 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 			newph->bind_type = NULL;
 			newph->value = NULL;
 			newph->quoted = NULL;
+			newph->referenced = 0;
 			newph->fooname = NULL;
 			/* Let the correct segment point to it */
 			while (!currseg->placeholder)
@@ -1125,8 +1126,6 @@ int dbd_st_prepare_statement (sth, imp_sth)
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 			if (!currseg->placeholder)
 				continue;
-			/* The parameter type */
-			execsize += strlen(currseg->ph->bind_type->type_name);
 			/* The parameter itself: dollar sign plus digit(s) */
 			for (x=1; x<7; x++) {
 				if (currseg->placeholder < 10^x)
@@ -1135,6 +1134,10 @@ int dbd_st_prepare_statement (sth, imp_sth)
 			if (x>=7)
 				croak("Too many placeholders!");
 			execsize += x+1;
+			/* The parameter type, only once per number please */
+			if (!currseg->ph->referenced)
+				execsize += strlen(currseg->ph->bind_type->type_name);
+			currseg->ph->referenced = 1;
 		}
 	}
 
@@ -1146,11 +1149,12 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	if (imp_sth->numphs) {
 		strcat(statement, "(");
 		for (x=0, currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-			if (currseg->placeholder) {
+			if (currseg->placeholder && currseg->ph->referenced) {
 				if (x)
 					strcat(statement, ",");
 				strcat(statement, currseg->ph->bind_type->type_name);
 				x=1;
+				currseg->ph->referenced = 0;
 			}
 		}
 		strcat(statement, ")");
@@ -2160,9 +2164,4 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 
 
 /* end of dbdimp.c */
-
-
-
-
-
 

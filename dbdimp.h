@@ -58,6 +58,7 @@ struct ph_st {
 	int valuelen;               /* length of the value */
 	char *quoted;               /* quoted version of the value, for PQexec only */
 	int quotedlen;              /* length of the quoted value */
+	bool referenced;            /* used for PREPARE AS construction */
 	sql_type_info_t* bind_type; /* type information for this placeholder */
 	struct ph_st *nextph;       /* more linke dlist goodness */
 };
