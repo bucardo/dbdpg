@@ -61,6 +61,7 @@ my %opts = (
     LIBS         => ["-L$POSTGRES_LIB -lpq"],
     AUTHOR       => 'http://gborg.postgresql.org/project/dbdpg/projdisplay.php',
     ABSTRACT     => 'PostgreSQL database driver for the DBI module',
+    PREREQ_PM	 => { 'Test::Simple' => 0.17 }, # Need Test::More
 );
 
 if ($os eq 'hpux') {
