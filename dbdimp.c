@@ -149,7 +149,6 @@ void pg_error (h, error_num, error_msg)
 	sv_setiv(DBIc_ERR(imp_xxh), (IV)error_num);		 /* set err early */
 	sv_setpv(DBIc_ERRSTR(imp_xxh), (char*)err);
 	sv_setpvn(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate, 5);
-	DBIh_EVENT2(h, ERROR_event, DBIc_ERR(imp_xxh), DBIc_ERRSTR(imp_xxh));
 	if (dbis->debug >= 3) {
 		PerlIO_printf(DBILOGFP, "%s error %d recorded: %s\n",
 									err, error_num, SvPV_nolen(DBIc_ERRSTR(imp_xxh)));
@@ -641,7 +640,6 @@ int dbd_discon_all (drh, imp_drh)
 		sv_setiv(DBIc_ERR(imp_drh), (IV)1);
 		sv_setpv(DBIc_ERRSTR(imp_drh),
 						 (char*)"disconnect_all not implemented");
-		DBIh_EVENT2(drh, ERROR_event, DBIc_ERR(imp_drh), DBIc_ERRSTR(imp_drh));
 	}
 	return DBDPG_FALSE;
 
