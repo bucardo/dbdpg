@@ -3,7 +3,7 @@ use DBI;
 use Test::More;
 
 if (defined $ENV{DBI_DSN}) {
-  plan tests => 10;
+  plan tests => 11;
 } else {
   plan skip_all => 'cannot test without DB info';
 }
@@ -17,10 +17,16 @@ ok(defined $dbh,
 
 $dbh->do(q{INSERT INTO dbd_pg_test (id, name, val) VALUES (1, 'foo', 'horse')});
 $dbh->do(q{INSERT INTO dbd_pg_test (id, name, val) VALUES (2, 'bar', 'chicken')});
-$dbh->do(q{INSERT INTO dbd_pg_test (id, name, val) VALUES (3, 'baz', 'pig')});
+my $sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id, name, val) VALUES (3, 'baz', 'pig')});
+$sth->execute();
+##$dbh->do(q{INSERT INTO dbd_pg_test (id, name, val) VALUES (3, 'baz', 'pig')});
 ok($dbh->commit(),
    'commit'
    );
+
+## Quick test of the pg_oid_status call
+my $value = $sth->{pg_oid_status};
+ok($value =~ /^\d+$/, 'call to $sth->{pg_oid_status} got a numeric value');
 
 my $sql = <<SQL;
   SELECT id
