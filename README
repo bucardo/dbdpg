@@ -1,24 +1,12 @@
 
-DBD::Pg  --  a PostgreSQL interface for Perl 5.
+DBD::Pg  --  the DBI PostgreSQL interface for Perl
 
-   $Id$
-
-   Portions Copyright (c) 1994,1995,1996,1997 Tim Bunce
-   Copyright (c) 1997,1998,1999,2000 Edmund Mergl
-   Copyright (c) 2002 Jeffrey W. Baker
-   Copyright (c) 2002 PostgreSQL Global Development Group
-   
-   You may distribute under the terms of either the GNU General Public
-   License or the Artistic License, as specified in the Perl README file.
-
+# $Id$
 
 DESCRIPTION:
 ------------
 
-This is version 1.13 of DBD-Pg. DBD-Pg is a PostgreSQL interface for
-Perl5 using DBI.
-
-The web site for this interface is at:
+This is version 1.13 of DBD-Pg.  The web site for this interface is at:
 
 	http://gborg.postgresql.org/project/dbdpg/projdisplay.php
 
@@ -33,6 +21,11 @@ For information about PostgreSQL, visit:
 COPYRIGHT:
 ----------
 
+	Portions Copyright (c) 1994,1995,1996,1997 Tim Bunce
+	Copyright (c) 1997,1998,1999,2000 Edmund Mergl
+	Copyright (c) 2002 Jeffrey W. Baker
+	Copyright (c) 2002 PostgreSQL Global Development Group
+   
 You may distribute under the terms of either the GNU General Public
 License or the Artistic License, as specified in the Perl README file.
 
