@@ -1457,12 +1457,6 @@ to the database "template1" will be made on the localhost without any user
 authentication. Other preferences can only be set with the environment
 variables C<PGHOST>, C<PGPORT>, C<DBI_USER>, and C<DBI_PASS>.
 
-=item B<trace>
-
-  DBI->trace($trace_level, $trace_file)
-
-Implemented by DBI, no driver-specific impact.
-
 =back
 
 =head1 METHODS COMMON TO ALL HANDLES
