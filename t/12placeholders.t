@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 9;
+	plan tests => 14;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -23,7 +23,23 @@ if (DBD::Pg::_pg_use_catalog($dbh)) {
 					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
 }
 
+# Make sure that quoting works properly.
 my $quo = $dbh->quote("\\'?:");
+is( $quo, "'\\\\''?:'", "Properly quoted");
+
+# Make sure that quoting works with a function call.
+# It has to be in this function, otherwise it doesn't fail the
+# way described in https://rt.cpan.org/Ticket/Display.html?id=4996.
+sub checkquote {
+    my $str = shift;
+    is( $dbh->quote(substr($str, 0, 10)), "'$str'", "First function quote");
+}
+
+checkquote('one');
+checkquote('two');
+checkquote('three');
+checkquote('four');
+
 my $sth = $dbh->prepare(qq{INSERT INTO dbd_pg_test (id,pname) VALUES (100,$quo)});
 $sth->execute();
 
