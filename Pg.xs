@@ -53,10 +53,14 @@ constant(name=Nullch)
     PG_TIMESTAMP = 1296
     CODE:
     if (!ix) {
-        if (!name) name = GvNAME(CvGV(cv));
-            Perl_croak("Unknown DBD::Pg constant '%s'", name);
-        }
-    else RETVAL = ix;
+			if (!name) {
+				name = GvNAME(CvGV(cv));
+			}
+			Perl_croak("Unknown DBD::Pg constant '%s'", name);
+		}
+    else {
+			RETVAL = ix;
+		}
     OUTPUT:
     RETVAL
 
