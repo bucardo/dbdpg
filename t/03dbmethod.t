@@ -18,7 +18,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 123;
+	plan tests => 139;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -338,13 +338,84 @@ is_deeply( \@result, $expected, 'DB handle method "primary_key" works');
 # Test of the "foreign_key_info" database handle method
 #
 
+## Neither pktable nor fktable specified
+$sth = $dbh->foreign_key_info(undef,undef,undef,undef,undef,undef);
+is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: no pk / no fk');
+
+## All foreign_key_info tests are meaningless for old servers
+my $pgversion = DBD::Pg::_pg_server_version($dbh);
+if (! DBD::Pg::_pg_check_version(7.3, $pgversion)) {
+ SKIP: {
+		skip qq{Cannot test DB handle method "foreign_key_info" on pre-7.3 servers.}, 16;
+	}
+}
+else {
+
+# Since the schema name is part of our test, let's encourage 'public':
+$dbh->do("SET search_path TO 'public'");
+
+# Drop any tables that may exist
+$SQL = "SELECT relname FROM pg_catalog.pg_class WHERE relkind='r' AND relname LIKE 'dbd_pg_test_'";
+for (@{$dbh->selectall_arrayref($SQL)}) {
+	$dbh->do("DROP TABLE $_->[0] CASCADE");
+}
+
+## Invalid primary table
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test9',undef,undef,undef);
+is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: bad pk / no fk');
+
+## Invalid foreign table
+$sth = $dbh->foreign_key_info(undef,undef,undef,undef,undef,'dbd_pg_test9');
+is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: no pk / bad fk');
+
+## Both primary and foreign are invalid
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test9',undef,undef,'dbd_pg_test9');
+is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: bad fk / bad fk');
+
+## Create a pk table
+{
+	local $SIG{__WARN__} = sub {};
+	$dbh->do("CREATE TABLE dbd_pg_test1 (a INT, b INT NOT NULL, c INT NOT NULL, ".
+					 "CONSTRAINT dbd_pg_test1_pk PRIMARY KEY (a))");
+	$dbh->do("ALTER TABLE dbd_pg_test1 ADD CONSTRAINT dbd_pg_test1_uc1 UNIQUE (b)");
+	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test1_index_c ON dbd_pg_test1(c)");
+	$dbh->commit();
+}
+
+## Good primary with no foreign keys
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,undef);
+is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: good pk (but unreferenced)');
+
+## Create a simple foreign key table
+{
+	local $SIG{__WARN__} = sub {};
+	$dbh->do("CREATE TABLE dbd_pg_test2 (f1 INT PRIMARY KEY, f2 INT NOT NULL, f3 INT NOT NULL)");
+	$dbh->do("ALTER TABLE dbd_pg_test2 ADD CONSTRAINT dbd_pg_test2_fk1 FOREIGN KEY(f2) REFERENCES dbd_pg_test1(a)");
+	$dbh->commit();
+}
+
+## Bad primary with good foreign
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test9',undef,undef,'dbd_pg_test2');
+is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: bad pk / good fk');
+
+## Good primary, good foreign, bad schemas
+my $testschema = "dbd_pg_test_badschema11";
+$sth = $dbh->foreign_key_info(undef,$testschema,'dbd_pg_test1',undef,undef,'dbd_pg_test2');
+is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: good pk / good fk / bad pk schema');
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,$testschema,'dbd_pg_test2');
+is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: good pk / good fk / bad fk schema');
+
+## Good primary
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,undef);
+$result = $sth->fetchall_arrayref({});
+
 # Check required minimum fields
-$sth = $dbh->foreign_key_info('','','dbd_pg_test');
 $result = $sth->fetchall_arrayref({});
 @required = 
-	(qw(PKTABLE_CAT PKTABLE_SCHEM PKTABLE_NAME PKCOLUMN_NAME 
-			FKTABLE_CAT FKTABLE_SCHEM FKTABLE_NAME FKCOLUMN_NAME 
-			KEY_SEQ));
+	(qw(UK_TABLE_CAT UK_TABLE_SCHEM UK_TABLE_NAME PK_COLUMN_NAME 
+			FK_TABLE_CAT FK_TABLE_SCHEM FK_TABLE_NAME FK_COLUMN_NAME 
+			ORDINAL_POSITION UPDATE_RULE DELETE_RULE FK_NAME UK_NAME
+			DEFERABILITY UNIQUE_OR_PRIMARY UK_DATA_TYPE FK_DATA_TYPE));
 undef %missing;
 for my $r (@$result) {
 	for (@required) {
@@ -352,6 +423,191 @@ for my $r (@$result) {
 	}
 }
 is_deeply( \%missing, {}, 'DB handle method "foreign_key_info" returns fields required by DBI');
+
+## Good primary
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,undef);
+$result = $sth->fetchall_arrayref();
+my $fk1 = [
+					 undef,
+					 'public',
+					 'dbd_pg_test1',
+					 'a',
+					 undef,
+					 'public',
+					 'dbd_pg_test2',
+					 'f2',
+					 2,
+					 3,
+					 3,
+					 'dbd_pg_test2_fk1',
+					 'dbd_pg_test1_pk',
+					 '7',
+					 'PRIMARY',
+					 'int4',
+					 'int4'
+					];
+$expected = [$fk1];
+is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good pk');
+
+## Same with explicit table
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,'dbd_pg_test2');
+$result = $sth->fetchall_arrayref();
+is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good pk / good fk');
+
+## Foreign table only
+$sth = $dbh->foreign_key_info(undef,undef,undef,undef,undef,'dbd_pg_test2');
+$result = $sth->fetchall_arrayref();
+is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good fk');
+
+## Add a foreign key to an explicit unique constraint
+{
+	local $SIG{__WARN__} = sub {};
+	$dbh->do("ALTER TABLE dbd_pg_test2 ADD CONSTRAINT dbd_pg_test2_fk2 FOREIGN KEY (f3) ".
+					 "REFERENCES dbd_pg_test1(b) ON DELETE SET NULL ON UPDATE CASCADE");
+}
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,undef);
+$result = $sth->fetchall_arrayref();
+my $fk2 = [
+					 undef,
+					 'public',
+					 'dbd_pg_test1',
+					 'b',
+					 undef,
+					 'public',
+					 'dbd_pg_test2',
+					 'f3',
+					 '3',
+					 '0', ## cascade
+					 '2', ## set null
+					 'dbd_pg_test2_fk2',
+					 'dbd_pg_test1_uc1',
+					 '7',
+					 'UNIQUE',
+					 'int4',
+					 'int4'
+          ];
+$expected = [$fk1,$fk2];
+is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good pk / explicit fk');
+
+## Add a foreign key to an implicit unique constraint (a unique index on a column)
+{
+	local $SIG{__WARN__} = sub {};
+	$dbh->do("ALTER TABLE dbd_pg_test2 ADD CONSTRAINT dbd_pg_test2_aafk3 FOREIGN KEY (f3) ".
+					 "REFERENCES dbd_pg_test1(c) ON DELETE RESTRICT ON UPDATE SET DEFAULT");
+}
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,undef);
+$result = $sth->fetchall_arrayref();
+my $fk3 = [
+					 undef,
+					 'public',
+					 'dbd_pg_test1',
+					 'c',
+					 undef,
+					 'public',
+					 'dbd_pg_test2',
+					 'f3',
+					 '3',
+					 '4', ## set default
+					 '1', ## restrict
+					 'dbd_pg_test2_aafk3',
+					 undef, ## plain indexes have no named constraint
+					 '7',
+					 'UNIQUE',
+					 'int4',
+					 'int4'
+          ];
+$expected = [$fk3,$fk1,$fk2];
+is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good pk / implicit fk');
+
+## Create another foreign key table to point to the first (primary) table
+{
+	local $SIG{__WARN__} = sub {};
+	$dbh->do("CREATE TABLE dbd_pg_test3 (ff1 INT NOT NULL)");
+	$dbh->do("ALTER TABLE dbd_pg_test3 ADD CONSTRAINT dbd_pg_test3_fk1 FOREIGN KEY(ff1) REFERENCES dbd_pg_test1(a)");
+	$dbh->commit();
+}
+
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,undef);
+$result = $sth->fetchall_arrayref();
+my $fk4 = [
+					 undef,
+					 'public',
+					 'dbd_pg_test1',
+					 'a',
+					 undef,
+					 'public',
+					 'dbd_pg_test3',
+					 'ff1',
+					 '1',
+					 '3',
+					 '3',
+					 'dbd_pg_test3_fk1',
+					 'dbd_pg_test1_pk',
+					 '7',
+					 'PRIMARY',
+					 'int4',
+					 'int4'
+          ];
+$expected = [$fk3,$fk1,$fk2,$fk4];
+is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for multiple fks');
+
+## Test that explicit naming two tables brings back only those tables
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,'dbd_pg_test3');
+$result = $sth->fetchall_arrayref();
+$expected = [$fk4];
+is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good pk / good fk (only)');
+
+## Multi-column madness
+{
+	local $SIG{__WARN__} = sub {};
+	$dbh->do("ALTER TABLE dbd_pg_test1 ADD CONSTRAINT dbd_pg_test1_uc2 UNIQUE (b,c,a)");
+	$dbh->do("ALTER TABLE dbd_pg_test2 ADD CONSTRAINT dbd_pg_test2_fk4 " . 
+					 "FOREIGN KEY (f1,f3,f2) REFERENCES dbd_pg_test1(c,a,b)");
+}
+
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,'dbd_pg_test2');
+$result = $sth->fetchall_arrayref();
+## "dbd_pg_test2_fk4" FOREIGN KEY (f1, f3, f2) REFERENCES dbd_pg_test1(c, a, b)
+my $fk5 = [
+					 undef,
+					 'public',
+					 'dbd_pg_test1',
+					 'c',
+					 undef,
+					 'public',
+					 'dbd_pg_test2',
+					 'f1',
+					 '1',
+					 '3',
+					 '3',
+					 'dbd_pg_test2_fk4',
+					 'dbd_pg_test1_uc2',
+					 '7',
+					 'UNIQUE',
+					 'int4',
+					 'int4'
+          ];
+# For the rest of the multi-column, only change:
+# primary column name [3]
+# foreign column name [7]
+# ordinal position [8]
+my @fk6 = @$fk5; my $fk6 = \@fk6; $fk6->[3] = 'a'; $fk6->[7] = 'f3'; $fk6->[8] = 3;
+my @fk7 = @$fk5; my $fk7 = \@fk7; $fk7->[3] = 'b'; $fk7->[7] = 'f2'; $fk7->[8] = 2;
+$expected = [$fk3,$fk1,$fk2,$fk5,$fk6,$fk7];
+is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for multi-column keys');
+
+# Clean everything up
+$dbh->do("DROP TABLE dbd_pg_test3");
+$dbh->do("DROP TABLE dbd_pg_test2");
+$dbh->do("DROP TABLE dbd_pg_test1");
+
+# Reset the search path by reconnecting
+$dbh->disconnect();
+
+$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+										{RaiseError => 1, PrintError => 0, AutoCommit => 0});
+
+} # end giant foreign_key_info bypass
 
 #
 # Test of the "tables" database handle method
