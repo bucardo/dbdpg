@@ -1,63 +1,94 @@
 
-$Id$
+How to get a working DBD::Pg on Windows
 
+Start with:
+MS VC++.Net Standard Edition
+MS VC++ Toolkit 2003
+Latest PostgreSQL (e.g. postgresql-8.00.rc2.tar.gz)
+Latest Perl (e.g. perl-5.8.6.tar.gz)
+Latest DBI (e.g. DBI-1.46.tar.gz)
+Latest DBD::Pg (1.40 or higher)
+Custom "win32.mak" file (included with DBD::Pg)
 
-Here is a step-by-step procedure for getting DBD-Pg to work on Windows
-NT. This Port has been done by Bob Kline <bkline@rksystems.com>. 
+Unpack the .tar.gz files in c:\tmp
 
+Save win32.mak as src\bin\pg_config\win32.mak in postgres tree.
 
-prerequisites:	(older versions might also work, but these are the 
---------------   versions I used)
+1. In Windows command window, set up to compile:
 
-	o Windows NT4 SP4
-	o Visual Studio 6.0
-	o ActivePerl-5_6_0_613 with DBI-1.13
-	o postgresql-7.0.2
-	o DBD-Pg-0.95
+set PATH=C:\Program Files\Microsoft Visual Studio .NET 2003\Vc7\bin;%PATH%
+set PATH=C:\Program Files\Microsoft Visual C++ Toolkit 2003\bin;%PATH%
+vcvars32
 
-Here we assume, that perl and postgresql have been installed in C:\. Now
-perform the following steps:
+2. Run win32 make for postgresql:
 
+cd \tmp\postgresql-8.0.0rc2\src
+nmake -f win32.mak
 
-1. compile libpq
-----------------
+3. Make pg_config.exe (not part of standard MSVC build), and copy it out:
 
-set POSTGRES_HOME=C:\postgresql-7.0.2
-cd postgresql-7.0.2
-mkdir lib
-mkdir include
-cd src
-copy include\port\win32.h include\os.h
-edit interfaces\libpq\fe-connect.c and add as first statement in connectDBStart() the following code:
-  #ifdef WIN32
-      static int WeHaveCalledWSAStartup;
-      if (!WeHaveCalledWSAStartup) {
-          WSADATA wsaData;
-          if (WSAStartup(MAKEWORD(1, 1), &wsaData)) {
-              printfPQExpBuffer(&conn->errorMessage, "WSAStartup failed: errno=%d\n", h_errno);
-              goto connect_errReturn;
-          }
-          WeHaveCalledWSAStartup = 1;
-      }
-  #endif
-edit interfaces\libpq\win32.mak and change the flag /ML to /MD:   CPP_PROJ=/nologo /MD ...
-nmake /f win32.mak
-cd ..
-copy src\interfaces\libpq\Release\libpq.lib  lib
-copy src\interfaces\libpq\libpq-fe.h         include
-copy src\include\postgres_ext.h              include
-cd ..
+cd bin\pg_config
+nmake -f win32.mak
+copy Release\pg_config.exe ..\..\..\..\dbdpg
 
+4. Install lib and include to some permanent location like this:
 
-2. build DBD-Pg
----------------
+mkdir c:\postgres
+mkdir c:\postgres\lib
+mkdir c:\postgres\include
+cd ..\..\interfaces\libpq\Release
+copy libpq* c:\postgres\lib
+cd ..\..\..
+xcopy /s include c:\postgres\include
 
-cd DBD-Pg
-perl Makefile.PL CAPI=TRUE
+5. Make a non-threaded perl, like this:
+
+cd \tmp\perl-5.8.6\win32
+
+in Makefile, 
+.. change the install location thus:
+      INST_TOP        = $(INST_DRV)\myperl
+.. comment out the following lines
+  USE_MULTI = define
+  USE_ITHREADS = define
+  USE_IMP_SYS = define
+.. change both instances of deprecated '-Gf' flag to '-GF'
+
+then just run:
+
 nmake
-set the environment variable PGHOST to the name of the postgresql server: set PGHOST=myserver
-add on the server a postgres user with the same name as the NT-User (eg Administrator)
-make sure, that your pg_hba.conf on the server is configured, such that a connection from another host will be accepted
-mkdir C:\tmp
-nmake test   (expect to get errors concerning blobs)
+nmake test
 nmake install
+  
+5. Add new perl to path:
+
+set PATH=c:\myperl\bin;%PATH%
+
+6. Make and install DBI:
+
+cd \tmp\DBI-1.46
+perl Makefile.PL
+nmake
+nmake test
+nmake install
+
+7. Set up environment for DBD::Pg:
+
+set POSTGRES_LIB=c:\postgres\lib
+set POSTGRES_INCLUDE=c:\postgres\include
+
+8. Build DBD::Pg:
+
+perl Makefile.PL (when asked for pg_config path, say: .\pg_config.exe )
+nmake
+
+9. Test and install
+
+You should now be able to set things up for normal DBD::Pg testing, 
+which you can invoke via "nmake test"
+
+Then install using "nmake install"
+
+If you have any problems or questions, please email the DBD::Pg 
+mailing list: dbdpg-general@gborg.postgresql.org
+
