@@ -28,12 +28,12 @@ ok(defined $sth,
 
 $sth->bind_param(1, 1);
 ok($sth->execute(),
-   'exectute with one bind param'
+   'execute with one bind param'
   );
 
 $sth->bind_param(1, 2);
 ok($sth->execute(),
-   'exectute with rebinding one param'
+   'execute with rebinding one param'
   );
 
 $sql = <<SQL;
@@ -51,7 +51,7 @@ ok(defined $sth,
 $sth->bind_param(1, 2);
 $sth->bind_param(2, 'foo');
 ok($sth->execute(),
-   'exectute with two bind params'
+   'execute with two bind params'
   );
 
 eval {
