@@ -1971,7 +1971,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 	/* If we are in a failed transaction, rollback before deallocating */
 	if (PQTRANS_INERROR == tstatus) {
 		if (dbis->debug >= 4)
-			PerlIO_printf(DBILOGFP, "  dbdpg: Issuing rollback before deallocate\n", tstatus);
+			PerlIO_printf(DBILOGFP, "  dbdpg: Issuing rollback before deallocate\n");
 		{
 			/* If a savepoint has been set, rollback to the last savepoint instead of the entire transaction */
 			I32	alen = av_len(imp_dbh->savepoints);
@@ -2290,7 +2290,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 int
 pg_db_putline (dbh, buffer)
 		SV *dbh;
-		char *buffer;
+		const char *buffer;
 {
 		D_imp_dbh(dbh);
 		int result;
