@@ -533,6 +533,8 @@ while ($result = $dbh->func($buffer, 100, 'getline')) {
 	$badret++ if $result !=1;
 	$badval++ if $buffer !~ /^\d+\t\w+$/o;
 }
+$dbh->func('endcopy');
+$dbh->commit();
 is( $result, '', 'DB handle method "getline" returns empty string when finished');
 is( $buffer, '\.', qq{DB handle method "getline" returns '\\.' when finished});
 ok( !$badret, 'DB handle method "getline" returns a 1 for each row fetched');
