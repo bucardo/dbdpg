@@ -2,14 +2,6 @@
 #include "types.h"
 #include <assert.h>
 
-/*
- *	These are not being set automatically so I have set them
- *	assuming libpq has them.  bjm 2003-04-01
- */
-
-/* #include"pg_functions.c" */
-
-
 /* This section was stolen from libpq */
 #ifndef HAVE_PQescapeString
 size_t
