@@ -41,7 +41,7 @@ struct imp_dbh_st {
 	int     pg_server_version; /* Server version e.g. 80100 */
 	int     prepare_number;    /* internal prepared statement name modifier */
 	char    *sqlstate;         /* from the last result */
-	int     copystate;         /* 0=none 1=COPY_OUT 2=COPY_IN */
+	int     copystate;         /* 0=none PGRES_COPY_IN PGRES_COPY_OUT */
 };
 
 

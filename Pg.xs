@@ -185,6 +185,7 @@ pg_savepoint(dbh,name)
       warn("savepoint ineffective with AutoCommit enabled");
     ST(0) = pg_db_savepoint(dbh, imp_dbh, name) ? &sv_yes : &sv_no;
 
+
 void
 pg_rollback_to(dbh,name)
     SV * dbh
@@ -314,14 +315,14 @@ pg_putline(dbh, buf)
     SV * dbh
     char * buf
     CODE:
-      ST(0) = pg_db_putline(dbh, buf) ? &sv_yes : &sv_no;
+      ST(0) = pg_db_putline(dbh, buf) ? &sv_no : &sv_yes;
 
 void
 putline(dbh, buf)
     SV * dbh
     char * buf
     CODE:
-      ST(0) = pg_db_putline(dbh, buf) ? &sv_yes : &sv_no;
+      ST(0) = pg_db_putline(dbh, buf) ? &sv_no : &sv_yes;
 
 void
 pg_getline(dbh, buf, len)
@@ -335,9 +336,6 @@ pg_getline(dbh, buf, len)
 				if (len > 3)
 					buf = SvGROW(bufsv, len);
         int ret = pg_db_getline(dbh, buf, len);
-        if (*buf == '\\' && *(buf+1) == '.') {
-            ret = -1;
-        }
     sv_setpv((SV*)ST(1), buf);
     SvSETMAGIC(ST(1));
         ST(0) = (-1 != ret) ? &sv_yes : &sv_no;
@@ -355,9 +353,6 @@ getline(dbh, buf, len)
 				if (len > 3)
 					buf = SvGROW(bufsv, len);
         int ret = pg_db_getline(dbh, buf, len);
-        if (*buf == '\\' && *(buf+1) == '.') {
-            ret = -1;
-        }
     sv_setpv((SV*)ST(1), buf);
     SvSETMAGIC(ST(1));
         ST(0) = (-1 != ret) ? &sv_yes : &sv_no;

@@ -2644,7 +2644,7 @@ DBD::Pg supports the COPY command through three functions: pg_putline,
 pg_getline, and pg_endcopy. The COPY command allows data to be quickly 
 loaded or read from a table. The basic process is to issue a COPY 
 command via $dbh->do(), do either $dbh->pg_putline or $dbh->pg_getline, 
-and then issue a $dbh->pg_endcopy.
+and then issue a $dbh->pg_endcopy (for pg_putline only).
 
 The first step is to put the server into "COPY" mode. This is done by 
 sending a complete COPY command to the server, by using the do() method. 
@@ -2700,15 +2700,22 @@ a 1 on success, and an empty string when the last row has been fetched. Example:
   my @data;
   my $x=0;
   1 while($dbh->pg_getline($data[$x++], 100));
-  $dbh->pg_endcopy;
   pop @data; ## Remove final "\\.\n" line
+
+If DBD::Pg is compiled with pre-7.4 libraries, this function will not work: you 
+will have to use the old $dbh->func($data, 100, 'getline') command, and call 
+pg_getline manually. Users are highly encouraged to upgrade to a newer version 
+of PostgreSQL if this is the case.
 
 =item B<pg_endcopy>
 
-When done with pg_putline or pg_getline, call pg_endcopy to put the server back in 
+When done with pg_putline, call pg_endcopy to put the server back in 
 a normal state. Returns a 1 on success. This method will fail if called when not 
 in a COPY IN or COPY OUT state. Note that you no longer need to send "\\.\n" when 
 in COPY IN mode: pg_endcopy will do this for you automatically as needed.
+pg_endcopy is only needed after getline if you are using the old-style method, 
+$dbh->func($data, 100, 'getline').
+
 
 =back
 

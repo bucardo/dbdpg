@@ -40,18 +40,17 @@ typedef enum
 	PQTRANS_INERROR,			/* idle, within failed transaction */
 	PQTRANS_UNKNOWN				/* cannot determine status */
 } PGTransactionStatusType;
-PGresult *PQexecPrepared() { }
-PGresult *PQexecParams() { }
+PGresult *PQexecPrepared() { croak("Called wrong PQexecPrepared\n"); }
+PGresult *PQexecParams() { croak("Called wrong PQexecParams\n"); }
 Oid PQftable() { return InvalidOid; }
 int PQftablecol() { return 0; }
-int PQputCopyData() { return 0; }
 int PQsetErrorVerbosity() { return 0; }
 #define PG_DIAG_SQLSTATE 'C'
 #endif
 
 /* an important feature was left out of libpq for 7.4, so we need this check */
 #if PGLIBVERSION < 80000
-PGresult *PQprepare() { }
+PGresult *PQprepare() { croak ("Called wrong PQprepare"); }
 #endif
 
 #ifndef PGErrorVerbosity
@@ -1781,7 +1780,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	}
 	else if (PGRES_COPY_OUT == status || PGRES_COPY_IN == status) {
 		/* Copy Out/In data transfer in progress */
-		imp_dbh->copystate = PGRES_COPY_OUT == status ? 1 : 2;
+		imp_dbh->copystate = status;
 		return -1;
 	}
 	else {
@@ -2292,26 +2291,28 @@ pg_db_putline (dbh, buffer)
 		D_imp_dbh(dbh);
 		int result;
 
-		/* We must be in COPY_IN state */
-		if (2 != imp_dbh->copystate)
+		/* We must be in COPY IN state */
+		if (PGRES_COPY_IN != imp_dbh->copystate)
 			croak("pg_putline can only be called directly after issuing a COPY command\n");
 
-		if (imp_dbh->pg_protocol >= 3) {
-			if (dbis->debug >= 4)
-				PerlIO_printf(DBILOGFP, "  dbdpg: PQputCopyData\n");
-			result = PQputCopyData(imp_dbh->conn, buffer, strlen(buffer));
-			if (-1 == result) {
-				pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
-				return 0;
-			}
-			else if (1 != result) {
-				croak("PQputCopyData gave a value of %d\n", result);
-			}
-			return 1;
+#if PGLIBVERSION < 70400
+		if (dbis->debug >= 4)
+			PerlIO_printf(DBILOGFP, "  dbdpg: PQputline\n");
+		return PQputline(imp_dbh->conn, buffer);
+#else
+		if (dbis->debug >= 4)
+			PerlIO_printf(DBILOGFP, "  dbdpg: PQputCopyData\n");
+
+		result = PQputCopyData(imp_dbh->conn, buffer, strlen(buffer));
+		if (-1 == result) {
+			pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+			return 0;
 		}
-		else {
-			return ! PQputline(imp_dbh->conn, buffer); // XXX Fix me!
+		else if (1 != result) {
+			croak("PQputCopyData gave a value of %d\n", result);
 		}
+		return 0;
+#endif
 }
 
 
@@ -2323,14 +2324,41 @@ pg_db_getline (dbh, buffer, length)
 		int length;
 {
 		D_imp_dbh(dbh);
+		int result;
+		char *tempbuf;
 
-		/* We must be in COPY_IN state */
-		if (1 != imp_dbh->copystate)
+		/* We must be in COPY OUT state */
+		if (PGRES_COPY_OUT != imp_dbh->copystate)
 			croak("pg_getline can only be called directly after issuing a COPY command\n");
 
-		return PQgetline(imp_dbh->conn, buffer, length);
+		if (dbis->debug >= 4)
+			PerlIO_printf(DBILOGFP, "  dbdpg: PQgetline\n");
 
-		/* Someday use PQgetCopyData when we are not supporting 7.2 */
+#if PGLIBVERSION < 70400
+		result = PQgetline(imp_dbh->conn, buffer, length);
+		if (result < 0 || (*buffer == '\\' && *(buffer+1) == '.')) {
+			imp_dbh->copystate=0;
+			PQendcopy(imp_dbh->conn);
+			return -1;
+		}
+		return result;
+#else
+		result = PQgetCopyData(imp_dbh->conn, &tempbuf, 0);
+		if (-1 == result) {
+			*buffer = '\0';
+			imp_dbh->copystate=0;
+			return -1;
+		}
+		else if (result < 1) {
+			pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+		}
+		else {
+			strcpy(buffer, tempbuf);
+			PQfreemem(tempbuf);
+		}
+		return 0;
+#endif
+
 }
 
 
@@ -2340,20 +2368,44 @@ pg_db_endcopy (dbh)
 		SV *dbh;
 {
 		D_imp_dbh(dbh);
+		int res;
+		PGresult *result;
+		ExecStatusType status;
 
 		if (0==imp_dbh->copystate)
 			croak("pg_endcopy cannot be called until a COPY is issued");
 
-		if (imp_dbh->pg_protocol < 3 && imp_dbh->copystate==2) {
-			PQputline(imp_dbh->conn, "\\.\n");
-		}
-		if (PQendcopy(imp_dbh->conn)) {
-			pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
-			return 1;
-		}
+		if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_pg_endcopy\n"); }
 
+#if PGLIBVERSION < 70400
+		if (PGRES_COPY_IN == imp_dbh->copystate)
+			PQputline(imp_dbh->conn, "\\.\n");
+		res = PQendcopy(imp_dbh->conn);
+#else
+		if (PGRES_COPY_IN == imp_dbh->copystate) {
+			if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_pg_endcopy: PQputCopyEnd\n"); }
+			res = PQputCopyEnd(imp_dbh->conn, NULL);
+			if (-1 == res) {
+				pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+				return 1;
+			}
+			else if (1 != res)
+				croak("PQputCopyEnd returned a value of %d\n", res);
+			/* Get the final result of the copy */
+			result = PQgetResult(imp_dbh->conn);
+			if (1 != PQresultStatus(result)) {
+				pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+				return 1;
+			}
+			PQclear(result);
+			res = 0;;
+		}
+		else {
+			res = PQendcopy(imp_dbh->conn);
+		}
+#endif
 		imp_dbh->copystate = 0;
-		return 0;
+		return res;
 }
 
 
