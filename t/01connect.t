@@ -39,7 +39,8 @@ if ($@) {
 
 pass('Established a connection to the database');
 
-$pgversion = DBD::Pg::_pg_server_version($dbh);
+my $intversion = DBD::Pg::_pg_server_version($dbh);
+$pgversion = $dbh->{private_dbdpg}{dotted_version};
 
 ok( $dbh->disconnect(), 'Disconnect from the database');
 

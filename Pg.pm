@@ -63,37 +63,33 @@ $DBD::Pg::VERSION = '1.33';
 	## Used by both the dr and db packages
 	sub _pg_server_version {
 		my $dbh = shift;
-		return $dbh->{private_dbdpg}{server_version} if defined $dbh->{private_dbdpg}{server_version};
-		my ($version) = $dbh->selectrow_array("SELECT version()");
-		$dbh->{private_dbdpg}{server_version} = ($version =~ /^PostgreSQL ([\d\.]+)/) ? $1 : 0;
-		return $dbh->{private_dbdpg}{server_version};
+		return $dbh->{private_dbdpg}{server_version} if defined $dbh->{private_dbdpg}{server_version};		
+		$dbh->{private_dbdpg}{full_version} = $dbh->selectrow_array("SELECT version()");
+		if ($dbh->{private_dbdpg}{full_version} =~ /(\d+)\.(\d+)\.?(\d*)/) {
+			$dbh->{private_dbdpg}{dotted_version} = "$1.$2.".$3||0;
+			$dbh->{private_dbdpg}{server_version} = int sprintf("%02d%02d%02d",$1,$2,$3||0);
+		}
+		$dbh->{private_dbdpg}{server_version}||=0;
 	}
 
-	## Is the second version greater than or equal to the first?
-	# Returns:
-	# 0 if first version is greater
-	# 1 if they are equal
-	# 2 if second version is greater 
+	## Deprecated, but keep around just in case
 	sub _pg_check_version($$) {
-		## Check each section from left to right
-		my @uno = split (/\./ => $_[0]);
-		my @dos = split (/\./ => $_[1]);
-		for (my $i=0; defined $uno[$i] or defined $dos[$i]; $i++) {
-			$uno[$i] = 0 if ! defined $uno[$i];
-			$dos[$i] = 0 if ! defined $dos[$i];
-			return 2 if $uno[$i] < $dos[$i];
-			return 0 if $uno[$i] > $dos[$i];
+		my $old = shift;
+		if ($old =~ /(\d+)\.(\d+)\.?(\d*)/) {
+			$old = int sprintf("%02d%02d%02d",$1,$2,$3||0);
 		}
-		return 1; ## versions are equal
+		my $new = shift;
+		if ($old =~ /(\d+)\.(\d+)\.?(\d*)/) {
+			$old = int sprintf("%02d%02d%02d",$1,$2,$3||0);
+		}
+		warn "_pg_check_version is deprecated, please do not use it\n";
+		return $old <=> $new;
 	}
 
 	## Version 7.3 and up uses schemas, so add a "pg_catalog." to system tables
 	sub _pg_use_catalog {
-		my $dbh = shift;
 		return $dbh->{private_dbdpg}{pg_use_catalog} if defined $dbh->{private_dbdpg}{pg_use_catalog};
-		my $version = DBD::Pg::_pg_server_version($dbh);
-		$dbh->{private_dbdpg}{pg_use_catalog} = DBD::Pg::_pg_check_version(7.3, $version) ? "pg_catalog." : "";
-		return $dbh->{private_dbdpg}{pg_use_catalog};
+		$dbh->{private_dbdpg}{pg_use_catalog} = DBD::Pg::_pg_server_version(shift) >= 70300 ? 'pg_catalog.' : '';
 	}
 
 	1;
@@ -237,7 +233,7 @@ $DBD::Pg::VERSION = '1.33';
 
 		my @search;
 		## If the schema or table has an underscore or a %, use a LIKE comparison
-		if (defined $schema and length $schema and DBD::Pg::_pg_check_version(7.3, $version)) {
+		if (defined $schema and length $schema and $version >= 70300) {
 			push @search, "n.nspname " . ($schema =~ /[_%]/ ? "LIKE " : "= ") . 
 				$dbh->quote($schema);
 		}
@@ -252,14 +248,13 @@ $DBD::Pg::VERSION = '1.33';
 
 		my $whereclause = join "\n\t\t\t\tAND ", "", @search;
 
-		my $showschema = DBD::Pg::_pg_check_version(7.3, $version) ? 
-			"n.nspname" : "NULL::text";
+		my $showschema = $version >= 70300 ? "n.nspname" : "NULL::text";
 
-		my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
+		my $schemajoin = $version >= 70300 ? 
 			"JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
 
 		# col_description is not available for Pg < 7.2
-		my $remarks = DBD::Pg::_pg_check_version(7.2, $version) ?
+		my $remarks = $version < 70200 ? 
 			"${CATALOG}col_description(a.attrelid, a.attnum)" : "NULL::text";
 
 		my $col_info_sql = qq!
@@ -330,7 +325,7 @@ $DBD::Pg::VERSION = '1.33';
 			/);
 		
 		my $oldconstraint_sth;
-		if (!DBD::Pg::_pg_check_version(7.3, $version)) {
+		if ($version < 70300) {
 			my $constraint_query = "SELECT rcsrc FROM pg_relcheck WHERE rcname = ?";
 			$oldconstraint_sth = $dbh->prepare($constraint_query);
 		}
@@ -349,7 +344,7 @@ $DBD::Pg::VERSION = '1.33';
 			$w = $row->[$col_map{DATA_TYPE}];
 			
 			# Add pg_constraint
-			if (DBD::Pg::_pg_check_version(7.3, $version)) {
+			if ($version >= 70300) {
 				my $SQL = "SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND ".
 					"conrelid = $aid AND conkey = '{$attnum}'";
 				my $info = $dbh->selectall_arrayref($SQL);
@@ -398,8 +393,7 @@ $DBD::Pg::VERSION = '1.33';
 		my $whereclause = "AND c.relname = " . $dbh->quote($table);
 
 		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
-		my $gotschema = DBD::Pg::_pg_check_version
-			(7.3, DBD::Pg::_pg_server_version($dbh)) ? 1 : 0;
+		my $gotschema = $version >= 70300 ? 1 : 0;
 		if (defined $schema and length $schema and $gotschema) {
 			$whereclause .= "\n\t\t\tAND n.nspname = " . $dbh->quote($schema);
 		}
@@ -408,7 +402,7 @@ $DBD::Pg::VERSION = '1.33';
 			"LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
 		my $showtablespace = '';
 		my $tablespacejoin = '';
-		if (DBD::Pg::_pg_check_version(7.5, $version)) {
+		if ($version >= 70500) {
 			$tablespacejoin = 'LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
 			$showtablespace = ', quote_ident(t.spcname), quote_ident(t.spclocation)';
 		}
@@ -480,6 +474,11 @@ $DBD::Pg::VERSION = '1.33';
 
 			# TABLE_CAT
 			$info->[0] = undef;
+			# TABLESPACES
+			if ($tablespacejoin) {
+				$info->[7] = $info->[5];
+				$info->[8] = $info->[6];
+			}
 			# PK_NAME
 			$info->[5] = $info->[3];
 			# COLUMN_NAME
@@ -494,6 +493,7 @@ $DBD::Pg::VERSION = '1.33';
 			$info->[4] = 2==$attr->{'pg_onerow'} ? 
 				[ split /\s+/, $info->[4] ] :
 					join ', ', split /\s+/, $info->[4];
+
 			$pkinfo = [$info];
 		}
 
@@ -532,7 +532,7 @@ $DBD::Pg::VERSION = '1.33';
 
 		## Versions 7.2 or less have no pg_constraint table, so we cannot support
 		my $version = DBD::Pg::_pg_server_version($dbh);
-		return undef unless DBD::Pg::_pg_check_version(7.3, $version);
+		return undef unless $version >= 70300;
 
 		my $C = 'pg_catalog.';
 
@@ -775,7 +775,7 @@ $DBD::Pg::VERSION = '1.33';
 					 and (defined $schema and $schema eq '%')
 					 and (defined $table and $table eq '')
 					) {
-			$tbl_sql = DBD::Pg::_pg_check_version(7.3, $version) ? 
+			$tbl_sql = $version >= 70300 ? 
 				q{SELECT 
 						 NULL::text AS "TABLE_CAT"
 					 , n.nspname  AS "TABLE_SCHEM"
@@ -823,18 +823,18 @@ $DBD::Pg::VERSION = '1.33';
 			my $tablespacejoin = '';
 			my $showtablespace = '';
 			my @search;
-			if (DBD::Pg::_pg_check_version(7.3, $version)) {
+			if ($version >= 70300) {
 				$showschema = "n.nspname";
 				$schemajoin = "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)";
 				$has_objsubid = "AND d.objsubid = 0";
 			}
-			if (DBD::Pg::_pg_check_version(7.5, $version)) {
+			if ($version >= 70500) {
 				$tablespacejoin = 'LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
 				$showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(t.spclocation) AS "pg_tablespace_location"';
 			}
 
 			## If the schema or table has an underscore or a %, use a LIKE comparison
-			if (defined $schema and length $schema and DBD::Pg::_pg_check_version(7.3, $version)) {
+			if (defined $schema and length $schema and $version >= 70300) {
 					push @search, "n.nspname " . ($schema =~ /[_%]/ ? "LIKE " : "= ") . $dbh->quote($schema);
 			}
 			if (defined $table and length $table) {
@@ -853,7 +853,7 @@ $DBD::Pg::VERSION = '1.33';
 			push @search, "c.relkind $typesearch";
 			
 			my $whereclause = join "\n\t\t\t\t\t AND " => @search;
-			my $schemacase = DBD::Pg::_pg_check_version(7.3, $version) ? "n.nspname" : "c.relname";
+			my $schemacase = $version >= 70300 ? "n.nspname" : "c.relname";
 			$tbl_sql = qq{
 				SELECT NULL::text AS "TABLE_CAT"
 					 , $showschema AS "TABLE_SCHEM"
@@ -885,7 +885,7 @@ $DBD::Pg::VERSION = '1.33';
 			my $sth = $dbh->table_info(@args) or return;
 			my $tables = $sth->fetchall_arrayref() or return;
 			my $version = DBD::Pg::_pg_server_version($dbh);
-			my @tables = map { (DBD::Pg::_pg_check_version(7.3, $version) 
+			my @tables = map { ($version >= 70300
 					and (! (ref $attr eq "HASH" and $attr->{pg_noprefix}))) ? 
 						"$_->[1].$_->[2]" : $_->[2] } @$tables;
 			return @tables;
@@ -1152,10 +1152,10 @@ $DBD::Pg::VERSION = '1.33';
 		my $ans = $t{$type};
  
 		if ($ans eq 'NAMEDATALEN') {
-			return DBD::Pg::_pg_check_version(7.3, $version) ? 63 : 31;
+			return $version >= 70300 ? 63 : 31;
 		}
 		elsif ($ans eq 'ODBCVERSION') {
-			return sprintf "%02d.%02d.%1d%1d%1d%1d", split (/\./, "$version.0.0.0.0.0.0");
+			return sprintf "%02d.%02d.%1d%1d%1d%1d", split (/\./, "$dbh->{private_dbdpg}{dotted_version}.0.0.0.0.0.0");
 		}
 		elsif ($ans eq 'DBDVERSION') {
 			my $simpleversion = $DBD::Pg::VERSION;
@@ -1166,7 +1166,7 @@ $DBD::Pg::VERSION = '1.33';
 			return "dbi:Pg:dbname=$dbh->{Name}";
 		}
 		elsif ($ans eq 'SCHEMAUSAGE') {
-			return 0 if ! DBD::Pg::_pg_check_version(7.3, $version);
+			return 0 if $version < 70300;
 			my %bitmask = (
 				SQL_SU_DML_STATEMENT        => 1,
 				SQL_SU_PROCEDURE_INVOCATION => 2,
@@ -1177,7 +1177,7 @@ $DBD::Pg::VERSION = '1.33';
 			return 31; ## all of the above
 		}
 		elsif ($ans eq 'CREATESCHEMA') {
-			return 0 if ! DBD::Pg::_pg_check_version(7.3, $version);
+			return 0 if $version < 70300;
 			my %bitmask = (
 				SQL_CS_CREATE_SCHEMA         => 1,
 	 			SQL_CS_AUTHORIZATION         => 2,
@@ -1186,7 +1186,7 @@ $DBD::Pg::VERSION = '1.33';
 			return $bitmask{SQL_CS_CREATE_SCHEMA} + $bitmask{SQL_CS_AUTHORIZATION};
 		 }
 		 elsif ($ans eq 'DROPSCHEMA') {
-			return 0 if ! DBD::Pg::_pg_check_version(7.3, $version);
+			return 0 if $version < 70300;
 			my %bitmask = (
 				SQL_DS_DROP_SCHEMA => 1,
 	 			SQL_DS_RESTRICT    => 2,
