@@ -263,7 +263,7 @@ int dbd_db_ping (dbh)
 
 	/* XXX Todo: can we just look at status directly? Whole test better? */
 
-	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_db_ping\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_ping\n"); }
 	
 	if (NULL == imp_dbh->conn)
 		return 0;
@@ -308,7 +308,7 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	PGTransactionStatusType tstatus;
 	ExecStatusType status;
 
-	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "%s\n", action); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "%s\n", action); }
 	
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (FALSE != DBIc_has(imp_dbh, DBIcf_AutoCommit)))
@@ -385,7 +385,7 @@ int dbd_db_disconnect (dbh, imp_dbh)
 	dTHR;
 	ExecStatusType status;
 	
-	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_db_disconnect\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_disconnect\n"); }
 
 	/* We assume that disconnect will always work	
 		 since most errors imply already disconnected. */
@@ -587,7 +587,7 @@ int dbd_db_getfd (dbh, imp_dbh)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
 {
-	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_db_getfd\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_getfd\n"); }
 	
 	return PQsocket(imp_dbh->conn);
 
@@ -606,7 +606,7 @@ SV * dbd_db_pg_notifies (dbh, imp_dbh)
 	SV* retsv;
 	int status;
 	
-	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_db_pg_notifies\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_pg_notifies\n"); }
 	
 	status = PQconsumeInput(imp_dbh->conn);
 	if (0 == status) { 
@@ -1383,8 +1383,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	unsigned int execsize;
 	int x,y,z;
 
-	if (dbis->debug >= 3)
-		PerlIO_printf(DBILOGFP, "dbd_st_execute\n");
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_execute\n"); }
 	
 	if (NULL == imp_dbh->conn) {
 		pg_error(sth, -1, "execute on disconnected handle");
@@ -1608,8 +1607,7 @@ AV * dbd_st_fetch (sth, imp_sth)
 	AV *av;
 	D_imp_dbh_from_sth;
 	
-	if (dbis->debug >= 4)
-		PerlIO_printf(DBILOGFP, "dbd_st_fetch\n");
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_fetch\n"); }
 
 	/* Check that execute() was executed sucessfully */
 	if ( !DBIc_ACTIVE(imp_sth) ) {
@@ -1703,7 +1701,7 @@ int dbd_st_rows (sth, imp_sth)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
 {
-	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_st_rows\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_rows\n"); }
 	
 	return imp_sth->rows;
 
@@ -1718,7 +1716,7 @@ int dbd_st_finish (sth, imp_sth)
 {
 	dTHR;
 	
-	if (dbis->debug >= 3) { PerlIO_printf(DBILOGFP, "dbd_st_finish\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_finish\n"); }
 	
 	if (DBIc_ACTIVE(imp_sth) && imp_sth->result) {
 		PQclear(imp_sth->result);
@@ -1744,8 +1742,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 	PGTransactionStatusType tstatus;
 	D_imp_dbh_from_sth;
 	
-	if (dbis->debug >= 4)
-		PerlIO_printf(DBILOGFP, "dbd_st_deallocate_statement\n");
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_deallocate_statement\n"); }
 
 	if (NULL == imp_dbh->conn || NULL == imp_sth->prepare_name)
 		return 0;
