@@ -183,3 +183,7 @@ on the server side:
       (eg Administrator)
     o make sure, that your pg_hba.conf on the server is configured,
       such that a connection from another host will be accepted
+
+OS X Users: You may need to add "-lssl" and "-lcrypto" to your LIB 
+variable before compiling. <rob at cabrion dot com>
+
