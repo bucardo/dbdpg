@@ -55,7 +55,7 @@ typedef struct seg_st seg_t;
 struct ph_st {
 	char *fooname;              /* Name if using :foo style */
 	char *value;                /* the literal passed-in value, may be binary */
-	int valuelen;               /* length of the value */
+	STRLEN valuelen;            /* length of the value */
 	char *quoted;               /* quoted version of the value, for PQexec only */
 	int quotedlen;              /* length of the quoted value */
 	bool referenced;            /* used for PREPARE AS construction */
