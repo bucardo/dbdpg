@@ -18,7 +18,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 148;
+	plan tests => 149;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -293,6 +293,7 @@ is_deeply( \%missing, {}, 'DB handle method "column_info" returns fields require
 
 # Check that pg_constraint was populated
 $result = $result->[0];
+use Data::Dumper; open(T, ">trace") and print T (Dumper $result);
 like( $result->{pg_constraint}, qr/score/, qq{DB handle method "column info" 'pg_constraint' returns a value for constrained columns});
 
 # Check that it is not populated for non-constrained columns
@@ -900,6 +901,12 @@ like( $result, qr/^\d+$/, qq{DB handle attribute "pg_socket" returns a value});
 
 $result = $dbh->{pg_pid};
 like( $result, qr/^\d+$/, qq{DB handle attribute "pg_pid" returns a value});
+
+
+## Test of the "state" database handle method
+
+$result = $dbh->state();
+like( $result, qr/^[A-Z0-9]{5}$/, qq{DB handle method returns a five-character code});
 
 
 #

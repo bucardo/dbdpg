@@ -322,7 +322,16 @@ _pg_type_info (type_sv=Nullsv)
 # -- end of DBD::Pg::db
 
 
+# ------------------------------------------------------------
+# statement level interface PG specific
+# ------------------------------------------------------------
+MODULE = DBD::Pg  PACKAGE = DBD::Pg::st
 
-
+SV* state(sth)
+	SV *sth;
+	CODE:
+	D_imp_sth(sth);
+	D_imp_dbh_from_sth;
+	ST(0) = newSVpvn(imp_dbh->sqlstate, 5);
 
 # end of Pg.xs

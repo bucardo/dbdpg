@@ -1330,10 +1330,9 @@ related to the current handle.
 
 =item B<state>
 
-  $str = $dbh->state;
+  $str = $h->state;
 
-Supported by this driver. Not that currently this is only available for the 
-database handle, not the statement handle. Returns a five-character code. 
+Supported by this driver. Returns a five-character "SQLSTATE" code. 
 Databases before version 7.4 will always return a generic "S1000" code. 
 Success is indicated by a "00000" code.
 

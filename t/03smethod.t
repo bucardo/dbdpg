@@ -13,7 +13,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 46;
+	plan tests => 47;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -337,7 +337,11 @@ for ("INSERT INTO dbd_pg_test (id,val) VALUES (400, 'lime')",
 	like ( $result, qr/^$expected/, qq{Statement handle attribute "pg_cmd_status" works for '$expected'});
 }
 
+
+## Test of the "state" statement handle method
+
+$result = $sth->state();
+like( $result, qr/^[A-Z0-9]{5}$/, qq{Statement handle method returns a five-character code});
+
+
 $dbh->disconnect();
-
-
-
