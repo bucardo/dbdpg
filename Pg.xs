@@ -301,7 +301,7 @@ _pg_type_info (type_sv=Nullsv)
                         mg_get(type_sv);
 
                 type_info = pg_type_data(SvIV(type_sv));
-                type_num = type_info ? type_info->type.sql : VARCHAROID;
+                type_num = type_info ? type_info->type.sql : SQL_VARCHAR;
         } 
 	RETVAL = type_num;
 
