@@ -11,10 +11,16 @@ if (defined $ENV{DBI_DSN}) {
 my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 		       {RaiseError => 1, AutoCommit => 0}
 		      );
-ok(defined $dbh and $dbh->disconnect(),'connect with transaction');
 
+ok((defined $dbh and $dbh->disconnect()),
+   'connect with transaction'
+  );
+
+undef $dbh;
 $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 		    {RaiseError => 1, AutoCommit => 1});
-$dbh->disconnect();
-ok(defined $dbh and $dbh->disconnect(),'connect without transaction');
+
+ok((defined $dbh and $dbh->disconnect()),
+   'connect without transaction'
+  );
 
