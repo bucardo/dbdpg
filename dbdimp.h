@@ -6,9 +6,11 @@
 
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.
-
 */
 
+#ifdef WIN32
+#define snprintf _snprintf
+#endif
 
 /* Define drh implementor data structure */
 struct imp_drh_st {

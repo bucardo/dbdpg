@@ -1,7 +1,12 @@
-1.21
+1.21  Sun Jan 12 21:00:44 EST 2003
       - System tables no longer returned by tables(). [Dave Rolsky]
       -	Fix table_attributes to handle removal of pg_relcheck in 7.3,
 	from Ian Barwick <barwick@gmx.net>
+      - Properly reset transaction status after failed transaction when
+        autocommit is off.  Properly report transaction failure message.
+        Kai <kai@xs4all.nl>
+      - New pg_bool_tf database handle that when set to true booleans are
+        returned as 't'/'f' rather than 1/0.
 
 1.20  Wed Nov 27 16:19:26 2002
       - Maintenance transferred to GBorg,
