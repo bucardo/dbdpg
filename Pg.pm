@@ -1,10 +1,10 @@
-
+# -*-cperl-*-
 #  $Id$
 #
 #  Copyright (c) 1997-2001 Edmund Mergl
 #  Copyright (c) 2002 Jeffrey W. Baker
 #  Copyright (c) 2002-2004 PostgreSQL Global Development Group
-#  Portions Copyright (c) 1994,1995,1996,1997 Tim Bunce
+#  Portions Copyright (c) 1994-1997 Tim Bunce
 #
 #  You may distribute under the terms of either the GNU General Public
 #  License or the Artistic License, as specified in the Perl README file.
@@ -12,14 +12,15 @@
 
 use 5.006001;
 
-$DBD::Pg::VERSION = '1.33';
-
 {
 	package DBD::Pg;
+
+	our $VERSION = '1.33';
 
 	use DBI ();
 	use DynaLoader ();
 	use Exporter ();
+	use vars qw(@ISA %EXPORT_TAGS $err $errstr $sqlstate $drh $dbh);
 	@ISA = qw(DynaLoader Exporter);
 
 	%EXPORT_TAGS = (
@@ -37,6 +38,7 @@ $DBD::Pg::VERSION = '1.33';
 
 	$err = 0;		# holds error code for DBI::err
 	$errstr = "";	# holds error string for DBI::errstr
+	$sqlstate = "";
 	$drh = undef;	# holds driver handle once initialized
 
 	sub CLONE {
@@ -56,6 +58,7 @@ $DBD::Pg::VERSION = '1.33';
 			'Version' => $VERSION,
 			'Err' => \$DBD::Pg::err,
 			'Errstr' => \$DBD::Pg::errstr,
+			'State' => \$DBD::Pg::sqlstate,
 			'Attribution' => 'PostgreSQL DBD by Edmund Mergl',
 		});
 	}
@@ -908,7 +911,7 @@ $DBD::Pg::VERSION = '1.33';
 
 		my $attrs = $sth->fetchall_arrayref(\%convert);
 
-		foreach my $row (@$attrs) {
+		for my $row (@$attrs) {
 			# switch the column names
 			for my $name (keys %$row) {
 				$row->{ $convert{$name} } = $row->{$name};
@@ -1206,27 +1209,27 @@ $DBD::Pg::VERSION = '1.33';
 	sub bind_param_array {
 		my $sth = shift;
 		my ($p_id, $value_array, $attr) = @_;
-
+		
 		return $sth->set_err(1, "Value for parameter $p_id must be a scalar or an arrayref, not a ".ref($value_array))
-	    if defined $value_array and ref $value_array and ref $value_array ne 'ARRAY';
+			if defined $value_array and ref $value_array and ref $value_array ne 'ARRAY';
 
 		return $sth->set_err(1, "Can't use named placeholders for non-driver supported bind_param_array")
-	    unless DBI::looks_like_number($p_id); # because we rely on execute(@ary) here
+			unless DBI::looks_like_number($p_id); # because we rely on execute(@ary) here
 
 		# get/create arrayref to hold params
 		my $hash_of_arrays = $sth->{ParamArrays} ||= { };
 
 		if (ref $value_array eq 'ARRAY') {
-	    # check that input has same length as existing
-	    # find first arrayref entry (if any)
-	    foreach (keys %$hash_of_arrays) {
+			# check that input has same length as existing
+			# find first arrayref entry (if any)
+			for (keys %$hash_of_arrays) {
 				my $v = $$hash_of_arrays{$_};
 				next unless ref $v eq 'ARRAY';
-				return $sth->set_err(1,
-														 "Arrayref for parameter $p_id has ".@$value_array." elements"
-														 ." but parameter $_ has ".@$v)
+				return $sth->set_err
+					(1,"Arrayref for parameter $p_id has ".@$value_array." elements"
+					 ." but parameter $_ has ".@$v)
 					if @$value_array != @$v;
-	    }
+			}
 		}
 
 		$$hash_of_arrays{$p_id} = $value_array;
