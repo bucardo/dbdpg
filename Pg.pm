@@ -716,8 +716,7 @@ $DBD::Pg::VERSION = '1.30';
 					  	 ELSE $schemacase
 						END			 AS "TABLE_TYPE"
 					 , d.description AS "REMARKS"
-				FROM ${CATALOG}pg_user		AS u
-				   , ${CATALOG}pg_class		AS c
+				FROM ${CATALOG}pg_class		AS c
 					 LEFT JOIN 
 					 ${CATALOG}pg_description	AS d 
 						ON (c.relfilenode = d.objoid AND d.objsubid = 0)
