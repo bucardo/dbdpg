@@ -76,7 +76,7 @@ d InactiveDestroy (must be the last one tested)
 
 };
 
-my ($attrib,$SQL,$sth);
+my ($attrib,$SQL,$sth,$warning);
 
 #
 # Test of the database handle attribute "Statement"
@@ -93,10 +93,13 @@ is( $attrib, $SQL, 'DB handle attribute "Statement" returns the last prepared qu
 # Test of bogus database/statement handle attributes
 #
 
+## DBI switched from error to warnign in 1.43
+$warning="";
 eval {
+	local $SIG{__WARN__} = sub { $warning = shift; };
 	$dbh->{CrazyDiamond}=1;
 };
-ok( $@, 'Error raised when setting an invalid database handle attribute');
+ok( (length $warning or $@), 'Error or warning when setting an invalid database handle attribute');
 
 eval {
 	$dbh->{private_dbdpg_CrazyDiamond}=1;
@@ -105,10 +108,12 @@ ok( !$@, 'Setting a private attribute on a database handle does not throw an err
 
 $sth = $dbh->prepare('SELECT 123');
 
+$warning="";
 eval {
+	local $SIG{__WARN__} = sub { $warning = shift; };
 	$sth->{CrazyDiamond}=1;
 };
-ok( $@, 'Error raised when setting an invalid statement handle attribute');
+ok( (length $warning or $@), 'Error or warning when setting an invalid statement handle attribute');
 
 eval {
 	$sth->{private_dbdpg_CrazyDiamond}=1;
@@ -385,8 +390,6 @@ ok( !$attrib, 'Database handle attribute "CompatMode" is set properly');
 # Test of the handle attribute PrintError
 #
 
-my $warning;
-
 $attrib = $dbh->{PrintError};
 is( $attrib, '', 'Database handle attribute "PrintError" is set properly');
 
@@ -414,6 +417,7 @@ if ($client_level eq "error") {
 else {
 	$SQL = "Testing the DBD::Pg modules error handling -?-";
 	{
+		$warning = '';
 		local $SIG{__WARN__} = sub { $warning = shift; };
 		$dbh->{RaiseError} = 0;
 		
