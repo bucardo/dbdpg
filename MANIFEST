@@ -23,7 +23,7 @@ t/01constants.t
 t/01setup.t
 t/02attribs.t
 t/03dbmethod.t
-t/04smethod.t
+t/03smethod.t
 t/04misc.t
 t/05arrays.t
 t/12placeholders.t
