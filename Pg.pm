@@ -1099,7 +1099,7 @@ the C<-i> option (TCP/IP sockets).
 
 The options parameter specifies runtime options for the Postgres
 backend. Common usage is to increase the number of buffers with the C<-B>
-option. Also important is the C<-F> option, which disables automatiic fsync()
+option. Also important is the C<-F> option, which disables automatic fsync()
 call after each transaction. For further details please refer to the
 L<postgres>.
 
@@ -1120,7 +1120,7 @@ Implemented by DBI, no driver-specific impact.
 
   @data_sources = DBI->data_sources('Pg');
 
-The driver supports this method. Note, that the necessary database connect to
+The driver supports this method. Note that the necessary database connection to
 the database template1 will be done on the localhost without any
 user-authentication. Other preferences can only be set with the environment
 variables PGHOST, DBI_USER and DBI_PASS.
@@ -1252,7 +1252,7 @@ otherwise.
 
 Used together with the SQL-command 'COPY table FROM STDIN' to copy large
 amount of data into a table avoiding the overhead of using single
-insert-comands. The application must explicitly send the two characters "\."
+insert commands. The application must explicitly send the two characters "\."
 to indicate to the backend that it has finished sending its data. See test.pl
 for an example on how to use this function.
 
@@ -1353,9 +1353,27 @@ Implemented by DBI, no driver-specific impact.
 
 Implemented by DBI, no driver-specific impact.
 
+=item B<selectrow_arrayref>
+
+  $ary_ref = $dbh->selectrow_arrayref($statement, \%attr, @bind_values);
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<selectrow_hashref>
+
+  $hash_ref = $dbh->selectrow_hashref($statement, \%attr, @bind_values);
+
+Implemented by DBI, no driver-specific impact.
+
 =item B<selectall_arrayref>
 
   $ary_ref = $dbh->selectall_arrayref($statement, \%attr, @bind_values);
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<selectall_hashref>
+
+  $hash_ref = $dbh->selectall_hashref($statement, $key_field);
 
 Implemented by DBI, no driver-specific impact.
 
@@ -1420,7 +1438,7 @@ result status.
   $sth = $dbh->table_info;
 
 Supported by the driver as proposed by DBI. This method returns all tables and
-views which are owned by the current user. It does not select any indices and
+views which are owned by the current user. It does not select any indexes and
 sequences. Also System tables are not selected. As TABLE_QUALIFIER the reltype
 attribute is returned and the REMARKS are undefined.
 
@@ -1438,8 +1456,8 @@ about first column of any multiple-column keys.
   @names = $dbh->tables;
 
 Supported by the driver as proposed by DBI. This method returns all tables and
-views which are owned by the current user. It does not select any indices and
-sequences. Also system tables are not selected.
+views which are owned by the current user. It does not select any indexes and
+sequences, or system tables.
 
 =item B<type_info_all>
 
