@@ -100,6 +100,16 @@ to the DBI_DSN variable like this:
 
 	DBI_DSN=dbi:Pg:dbname=<database>;port=<port#>
 
+The tests need to create and remove certain tables. Please make 
+sure that the following tables do NOT exist before running 
+the tests:
+
+	test
+	test1
+	test2
+	test3
+	tt
+
 If you are using the shared library libpq.so check if your dynamic
 loader finds libpq.so. With Linux the command /sbin/ldconfig -v should
 tell you where it finds libpq.so. If ldconfig does not find libpq.so,
@@ -114,7 +124,7 @@ A typical error message resulting from not finding libpq.so is:
 If you get an error message like:
 
 	perl: error while loading shared libraries:
-	/usr/lib/perl5/site_perl/5.6.0/i386-linux/auto/DBD/Pg/Pg.so: undefined
+	/usr/lib/perl5/site_perl/5.6.1/i386-linux/auto/DBD/Pg/Pg.so: undefined
 	symbol: PQconnectdb
 
 when you call DBI->connect, then your libpq.so was probably not seen at
