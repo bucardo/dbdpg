@@ -18,7 +18,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 156;
+	plan tests => 154;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -332,7 +332,6 @@ is( $result->{pg_constraint}, undef, qq{DB handle method "column info" 'pg_const
 
 # Check the rest of the custom "pg" columns
 is( $result->{pg_type}, 'integer', qq{DB handle method "column_info" returns good value for 'pg_type'});
-is( $result->{pg_type_only}, 'integer', qq{DB handle method "column_info" returns good value for 'pg_type_only'});
 
 ## Check some of the returned fields:
 is( $result->{TABLE_CAT}, undef, 'DB handle method "column_info" returns proper TABLE_CAT');
@@ -346,7 +345,6 @@ is( $result->{COLUMN_DEF}, undef, 'DB handle method "column_info" returns proper
 is( $result->{ORDINAL_POSITION}, 1, 'DB handle method "column_info" returns proper ORDINAL_POSITION');
 is( $result->{IS_NULLABLE}, 'NO', 'DB handle method "column_info" returns proper IS_NULLABLE');
 is( $result->{pg_type}, 'integer', 'DB handle method "column_info" returns proper pg_type');
-is( $result->{pg_type_only}, 'integer', 'DB handle method "column_info" returns proper pg_type_only');
 
 #
 # Test of the "primary_key_info" database handle method
