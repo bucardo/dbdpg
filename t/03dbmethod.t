@@ -18,7 +18,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 139;
+	plan tests => 140;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -340,6 +340,10 @@ cmp_ok( $result->{KEY_SEQ}, '>=', 1, 'DB handle method "primary_key_info" return
 @result = $dbh->primary_key('', '', 'dbd_pg_test');
 $expected = ['id'];
 is_deeply( \@result, $expected, 'DB handle method "primary_key" works');
+
+@result = $dbh->primary_key('', '', 'dbd_pg_test_do_not_create_this_table');
+$expected = [];
+is_deeply( \@result, $expected, 'DB handle method "primary_key" returns empty list for invalid table');
 
 #
 # Test of the "foreign_key_info" database handle method

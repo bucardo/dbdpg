@@ -1,3 +1,5 @@
+	- primary_key() returns empty list not undef if no match.
+		[Julian Mehnle]
 	- Added the pg_protocol database handle attribute
 		[Greg Sabino Mullane]
 	- Changed "noprefix" to pg_noprefix

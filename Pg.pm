@@ -449,7 +449,7 @@ $DBD::Pg::VERSION = '1.32';
 
 	sub primary_key {
 		my $sth = primary_key_info(@_[0..3], {pg_onerow => 2});
-		return defined $sth ? @{$sth->fetchall_arrayref()->[0][3]} : undef;
+		return defined $sth ? @{$sth->fetchall_arrayref()->[0][3]} : ();
 	}
 
 
