@@ -80,7 +80,7 @@ if ($major_ver == 7) {
     }
 } elsif ($major_ver > 7) {
         $comp_opts .= " -DHAVE_PQescapeString -DHAVE_PQescapeBytea";
-        $comp_opts .= " -DHAVE_PQunescapeBytea";
+        $comp_opts .= " -DHAVE_PQunescapeBytea -DHAVE_PQfreemem";
 }
 
 my %opts = (
