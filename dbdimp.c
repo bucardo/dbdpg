@@ -688,7 +688,9 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 				!strcasecmp(imp_sth->firstword, "COMMIT") ||
 				!strcasecmp(imp_sth->firstword, "ROLLBACK")
 				) {
-			croak ("Please use DBI functions for transaction handling");
+			if (!imp_sth->direct)
+				croak ("Please use DBI functions for transaction handling");
+			imp_sth->is_dml = 1; /* Close enough for our purposes */
 		}
 		/* Note whether this is preparable DML */
 		if (!strcasecmp(imp_sth->firstword, "SELECT") ||
