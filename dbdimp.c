@@ -180,7 +180,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 {
 	dTHR;
 	
-	char *conn_str, *src, *dest, inquote = 0;
+	char *conn_str, *dest, inquote = 0;
 	STRLEN connect_string_size;
 	
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_login\n"); }
@@ -191,10 +191,10 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	/* Figure out how large our connection string is going to be */
 	connect_string_size = strlen(dbname);
 	if (strlen(uid)) {
-		connect_string_size += strlen(" user=") + strlen(uid);
+		connect_string_size += strlen(" user=") + 2*strlen(uid);
 	}
 	if (strlen(pwd)) {
-		connect_string_size += strlen(" password=") + strlen(pwd);
+		connect_string_size += strlen(" password=") + 2*strlen(pwd);
 	}
 
 	New(0, conn_str, connect_string_size+1, char); /* freed below */
@@ -202,28 +202,45 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 		croak("No memory");
 	
 	/* Change all semi-colons in dbname to a space, unless quoted */
-	src = dbname;
 	dest = conn_str;
-	while (*src) {
-		if (';' == *src && !inquote)
+	while (*dbname) {
+		if (';' == *dbname && !inquote)
 			*dest++ = ' ';
 		else {
-			if ('\'' == *src)
+			if ('\'' == *dbname)
 				inquote = !inquote;
-			*dest++ = *src;
+			*dest++ = *dbname;
 		}
-		src++;
+		dbname++;
 	}
 	*dest = '\0';
-	
-	/* Add in the user and/or password if they exist */
+
+	/* Add in the user and/or password if they exist, escaping single quotes and backslashes */
 	if (strlen(uid)) {
-		strcat(conn_str, " user=");
-		strcat(conn_str, uid);
+		strcat(conn_str, " user='");
+		dest = conn_str;
+		while(*dest)
+			dest++;
+		while(*uid) {
+			if ('\''==*uid || '\\'==*uid)
+				*(dest++)='\\';
+			*(dest++)=*(uid++);
+		}
+		*dest = '\0';
+		strcat(conn_str, "'");
 	}
 	if (strlen(pwd)) {
-		strcat(conn_str, " password=");
-		strcat(conn_str, pwd);
+		strcat(conn_str, " password='");
+		dest = conn_str;
+		while(*dest)
+			dest++;
+		while(*pwd) {
+			if ('\''==*pwd || '\\'==*pwd)
+				*(dest++)='\\';
+			*(dest++)=*(pwd++);
+		}
+		*dest = '\0';
+		strcat(conn_str, "'");
 	}
 
 	if (dbis->debug >= 5)
