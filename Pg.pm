@@ -1441,7 +1441,7 @@ failure.
 Imports a Unix file as large object and returns the object id of the new
 object or undef upon failure.
 
-  $ret = $dbh->func($lobjId, 'lo_export', 'filename');
+  $ret = $dbh->func($lobjId, $filename, 'lo_export');
 
 Exports a large object into a Unix file. Returns false upon failure, true
 otherwise.
