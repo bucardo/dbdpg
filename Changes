@@ -1,3 +1,7 @@
+  - Rewrote the primary_key_info() and primary_key() methods to 
+    cleanly handle multi-column primary keys. Also added a "onerow" 
+    attribute to allow primary_key_info() to return a single 
+    row containing multiple-column information.
   - Switched commit behavior from commit->execute->begin 
 		to begin->execute->commit
 		[xelah-junk@xelah.com]

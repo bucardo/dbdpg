@@ -336,98 +336,116 @@ $DBD::Pg::VERSION = '1.31';
 		return $sth;
 	}
 
-
-
 	sub primary_key_info {
+
 		my $dbh = shift;
-		my ($catalog, $schema, $table) = @_;
-		my @attrs = @_;
+		my ($catalog, $schema, $table, $attr) = @_;
+
+		## Catalog is ignored, but table is mandatory
+		return undef unless defined $table and length $table;
+
+		my $whereclause = "AND c.relname = " . $dbh->quote($table);
+
 		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
-
-		# TABLE_CAT:, TABLE_SCHEM:, TABLE_NAME:, COLUMN_NAME:, KEY_SEQ:
-		# , PK_NAME:
-
-		my @wh = (); my @dat = (); # Used to hold data for the attributes.
-
-		my $version = DBD::Pg::_pg_server_version($dbh);
-
-		my @flds = qw/catname n.nspname bc.relname/;
-
-		for my $idx (0 .. $#attrs) {
-			next if $flds[$idx] eq 'catname'; # Skip catalog
-			next if $flds[$idx] eq 'n.nspname' and ! DBD::Pg::_pg_check_version(7.3, $version);
-			if(defined $attrs[$idx] and length $attrs[$idx]) {
-				push( @dat, $attrs[$idx] );
-				push( @wh, qq{$flds[$idx] = ? } );
-			}
+		my $gotschema = DBD::Pg::_pg_check_version
+			(7.3, DBD::Pg::_pg_server_version($dbh)) ? 1 : 0;
+		if (defined $schema and length $schema and $gotschema) {
+			$whereclause .= "\n\t\t\tAND n.nspname = " . $dbh->quote($schema);
 		}
-
-		my $wh = '';
-		$wh = join( " AND ", '', @wh ) if (@wh);
-
-		# Base primary key selection query borrowed from phpPgAdmin.
-		my $showschema = DBD::Pg::_pg_check_version(7.3, $version) ? 
-			"n.nspname" : "NULL::text";
-		my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
-			"LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = bc.relnamespace)" : "";
-		my $indexjoin = DBD::Pg::_pg_check_version(7.4, $version) ?
-			"i.indexprs IS NULL" : "i.indproc = '0'::oid";
+		my $showschema = $gotschema ? "quote_ident(n.nspname)" : "NULL::text";
+		my $schemajoin = $gotschema ? 
+			"LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
 		my $pri_key_sql = qq{
 			SELECT
-				NULL::text    AS "TABLE_CAT"
-				, $showschema AS "TABLE_SCHEM"
-				, bc.relname  AS "TABLE_NAME"
-				, a.attname   AS "COLUMN_NAME"
-				, a.attnum    AS "KEY_SEQ"
-				, ic.relname  AS "PK_NAME"
+				  c.oid
+				, $showschema
+				, quote_ident(c.relname)
+				, quote_ident(c2.relname)
+				, i.indkey
 			FROM
-				${CATALOG}pg_index i
-				, ${CATALOG}pg_attribute a
-				, ${CATALOG}pg_class ic
-				, ${CATALOG}pg_class bc
+				${CATALOG}pg_class c
+				JOIN ${CATALOG}pg_index i ON (i.indrelid = c.oid)
+				JOIN ${CATALOG}pg_class c2 ON (c2.oid = i.indexrelid)
 				$schemajoin
 			WHERE
-				i.indrelid = bc.oid
-			AND i.indexrelid = ic.oid
-			AND
-			(
-				i.indkey[0] = a.attnum
-				OR
-				i.indkey[1] = a.attnum
-				OR
-				i.indkey[2] = a.attnum
-				OR
-				i.indkey[3] = a.attnum
-				OR
-				i.indkey[4] = a.attnum
-				OR
-				i.indkey[5] = a.attnum
-				OR
-				i.indkey[6] = a.attnum
-				OR
-				i.indkey[7] = a.attnum
-				OR
-				i.indkey[8] = a.attnum
-				OR
-				i.indkey[9] = a.attnum
-				OR
-				i.indkey[10] = a.attnum
-				OR
-				i.indkey[11] = a.attnum
-				OR
-				i.indkey[12] = a.attnum
-			)
-			AND a.attrelid = bc.oid
-			AND $indexjoin
-			AND i.indisprimary = 't' 
-			$wh
-			ORDER BY 2, 3, 5
+				i.indisprimary IS TRUE
+			$whereclause
 		};
 
-		my $sth = $dbh->prepare( $pri_key_sql ) or return undef;
-		$sth->execute(@dat);
+		my $sth = $dbh->prepare($pri_key_sql) or return undef;
+		$sth->execute();
+		my $info = $sth->fetchall_arrayref()->[0];
+		return undef if ! defined $info;
 
-		return $sth;
+		# Get the attribute information
+		my $indkey = join ',', split /\s+/, $info->[4];
+		my $sql = qq{
+			SELECT a.attnum, ${CATALOG}quote_ident(a.attname) AS colname,
+				${CATALOG}quote_ident(t.typname) AS typename
+			FROM ${CATALOG}pg_attribute a, ${CATALOG}pg_type t
+			WHERE a.attrelid = '$info->[0]'
+			AND a.atttypid = t.oid
+			AND attnum IN ($indkey);
+		};
+		$sth = $dbh->prepare($sql) or return undef;
+		$sth->execute();
+		my $attribs = $sth->fetchall_hashref('attnum');
+
+		my $pkinfo = [];
+
+		## Normal way: complete "row" per column in the primary key
+		if (!exists $attr->{'onerow'}) {
+			my $x=0;
+			my @key_seq = split/\s+/, $info->[4];
+			for (@key_seq) {
+				# TABLE_CAT
+				$pkinfo->[$x][0] = undef;
+				# SCHEMA_NAME
+				$pkinfo->[$x][1] = $info->[1];
+				# TABLE_NAME
+				$pkinfo->[$x][2] = $info->[2];
+				# COLUMN_NAME
+				$pkinfo->[$x][3] = $attribs->{$_}{colname};
+				# KEY_SEQ
+				$pkinfo->[$x][4] = $_;
+				# PK_NAME
+				$pkinfo->[$x][5] = $info->[3];
+				# DATA_TYPE
+				$pkinfo->[$x][6] = $attribs->{$_}{typename};
+				$x++;
+			}
+		}
+		else { ## Nicer way: return only one row
+
+			# TABLE_CAT
+			$info->[0] = undef;
+			# PK_NAME
+			$info->[5] = $info->[3];
+			# COLUMN_NAME
+			$info->[3] = $attr->{'onerow'} == 2 ? 
+				[ map { $attribs->{$_}{colname} } split /\s+/, $info->[4] ] :
+					join ', ', map { $attribs->{$_}{colname} } split /\s+/, $info->[4]; 
+			# DATA_TYPE
+			$info->[6] = $attr->{'onerow'} == 2 ? 
+				[ map { $attribs->{$_}{typename} } split /\s+/, $info->[4] ] : 
+					join ', ', map { $attribs->{$_}{typename} } split /\s+/, $info->[4];
+			# KEY_SEQ
+			$info->[4] = $attr->{'onerow'} == 2 ? 
+				[ split /\s+/, $info->[4] ] :
+					join ', ', split /\s+/, $info->[4];
+			$pkinfo = [$info];
+		}
+
+		my @cols = (qw(TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME
+									 KEY_SEQ PK_NAME DATA_TYPE));
+
+		return _prepare_from_data('primary_key_info', $pkinfo, \@cols);
+
+	}
+
+	sub primary_key {
+		my $sth = primary_key_info(@_[0..3], {onerow => 2});
+		return defined $sth ? @{$sth->fetchall_arrayref()->[0][3]} : undef;
 	}
 
 	sub foreign_key_info {
@@ -1564,6 +1582,39 @@ unused. The schema and table arguments will do a 'LIKE' search if a
 percent sign (%) or an underscore (_) are detected in the argument.
 The $type argument accepts a value of wither "TABLE" or "VIEW" 
 (using both is the default action).
+
+=item B<primary_key_info>
+
+  $sth = $dbh->primary_key_info( $catalog, $schema, $table, \%attr );
+
+Supported by the driver as proposed by DBI. The $catalog argument is 
+curently unused, and the $schema argument has no effect against 
+servers running version 7.2 or less. There are no search patterns allowed, 
+but leaving the $schema argument blank will cause the first table 
+found in the schema search path to be used. An additional field, DATA_TYPE, 
+is returned and shows the data type for each of the arguments in the 
+COLUMN_NAME field.
+
+In addition to the standard format of returning one row for each column 
+found for the primary key, you can pass the argument "onerow" to force 
+a single row to be used. If the primary key has multiple columns, the 
+KEY_SEQ, COLUMN_NAME, and DATA_TYPE fields will return a comma-delimited 
+string. If "onerow" is set to "2", the fields will be returned as an 
+arrayref, which can be useful when multiple columns are involved:
+
+  $sth = $dbh->primary_key_info('', '', 'dbd_pg_test', {onerow => 2});
+  if (defined $sth) {
+    my $pk = $sth->fetchall_arrayref()->[0];
+    print "Table $pk->[2] has a primary key on these columns:\n";
+    for (my $x=0; defined $pk->[3][$x]; $x++) {
+      print "Column: $pk->[3][$x]  (data type: $pk->[6][$x])\n";
+    }
+  }
+
+=item B<primary_key>
+
+Supported by the driver as proposed by DBI.
+
 
 =item B<foreign_key_info>
 

@@ -309,15 +309,15 @@ is( $result->{pg_type_only}, 'integer', 'DB handle method "column_info" returns 
 $sth = $dbh->primary_key_info('','','dbd_pg_test');
 $result = $sth->fetchall_arrayref({});
 @required = 
-	(qw(TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME KEY_SEQ
-			PK_NAME));
+	(qw(TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME KEY_SEQ 
+			PK_NAME DATA_TYPE));
 undef %missing;
 for my $r (@$result) {
 	for (@required) {
 		$missing{$_}++ if ! exists $r->{$_};
 	}
 }
-is_deeply( \%missing, {}, 'DB handle method "primary_key_info" returns fields required by DBI');
+is_deeply( \%missing, {}, 'DB handle method "primary_key_info" returns required fields');
 
 ## Check some of the returned fields:
 $result = $result->[0];
