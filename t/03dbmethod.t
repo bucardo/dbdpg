@@ -42,7 +42,7 @@ $dbh->do("DELETE FROM dbd_pg_test");
 $SQL = "INSERT INTO dbd_pg_test(id,val) VALUES (?,?)";
 
 $sth = $dbh->prepare($SQL);
-$sth->bind_param(1, '', SQL_INTEGER);
+$sth->bind_param(1, 1, SQL_INTEGER);
 $sth->execute(10,'Roseapple');
 $sth->execute(11,'Pineapple');
 $sth->execute(12,'Kiwi');
@@ -84,7 +84,6 @@ eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef);
 };
 ok( ! $@, 'DB handle method "last_insert_id" works when called twice (cached) given a valid table');
-
 
 #
 # Test of the "selectrow_array" database handle method
@@ -895,7 +894,8 @@ $result = $dbh->{pg_bool_tf}=0;
 is( $result, 0, 'DB handle method "pg_bool_tf" starts as 0');
 
 $sth = $dbh->prepare("SELECT ?::bool");
-$sth->execute(1);
+$sth->bind_param(1,1,SQL_BOOLEAN);
+$sth->execute();
 $result = $sth->fetchall_arrayref()->[0][0];
 is( $result, "1", qq{DB handle method "pg_bool_tf" returns '1' for true when on});
 $sth->execute(0);
