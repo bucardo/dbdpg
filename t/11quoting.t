@@ -31,11 +31,8 @@ foreach my $test (keys %tests) {
   $ref = $tests{$test}->[1];
   $quo = $dbh->quote($unq);
 
-  ok($quo eq $ref,
-     "$test: $unq -> expected " .
-     (defined $ref ? $ref : '[undef]') .
-     " got " . defined $quo ? $quo : '[undef]'
-    );
+  # If the test fails, Test::More will print out what was compared to what.
+  is($quo, $ref, "Compare quote $test");
 }
 
 # Make sure that SQL_BINARY doesn't work.
