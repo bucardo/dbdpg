@@ -389,7 +389,6 @@ use 5.006001;
 				, a.attnum AS "ORDINAL_POSITION"
 				, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
 				, ${CATALOG}format_type(a.atttypid, a.atttypmod) AS "pg_type"
-				, ${CATALOG}format_type(a.atttypid, NULL) AS "pg_type_only"
 				, a.attrelid AS "pg_attrelid"
 				, a.attnum AS "pg_attnum"
 				, a.atttypmod AS "pg_atttypmod"
@@ -431,8 +430,7 @@ use 5.006001;
 			ORDINAL_POSITION     16
 			IS_NULLABLE          17
 			pg_type              18
-			pg_type_only         19
-			pg_constraint        20
+			pg_constraint        19
 			/);
 		
 		my $oldconstraint_sth;
@@ -460,17 +458,17 @@ use 5.006001;
 					"conrelid = $aid AND conkey = '{$attnum}'";
 				my $info = $dbh->selectall_arrayref($SQL);
 				if (@$info) {
-					$row->[20] = $info->[0][0];
+					$row->[19] = $info->[0][0];
 				}
 				else {
-					$row->[20] = undef;
+					$row->[19] = undef;
 				}
 			}
 			else { 
 				$oldconstraint_sth->execute("$row->[$col_map{TABLE_NAME}]_$row->[$col_map{COLUMN_NAME}]");
-				($row->[20]) = $oldconstraint_sth->fetchrow_array;
+				($row->[19]) = $oldconstraint_sth->fetchrow_array;
 			}
-			$col_map{pg_constraint} = 20;
+			$col_map{pg_constraint} = 19;
 		}
 
 		# get rid of atttypmod that we no longer need
@@ -858,7 +856,7 @@ use 5.006001;
 	}
 
 
-	sub table_info {	# DBI spec: TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS
+	sub table_info {
 		my $dbh = shift;
 		my ($catalog, $schema, $table, $type) = @_;
 
@@ -2018,8 +2016,8 @@ result status.
 
   $sth = $dbh->column_info( $catalog, $schema, $table, $column );
 
-Supported by this driver as proposed by the DBI with the follow exceptions.
-These fields are currently always returned with C<NULL> values:
+Supported by this driver as proposed by DBI with the follow exceptions.
+These fields are currently always returned with NULL (C<undef>) values:
 
    TABLE_CAT
    BUFFER_LENGTH
@@ -2029,15 +2027,14 @@ These fields are currently always returned with C<NULL> values:
    SQL_DATETIME_SUB
    CHAR_OCTET_LENGTH
 
-Also, four additional non-standard fields are returned:
+Also, two additional non-standard fields are returned:
 
-  pg_type
-  pg_type_only
-  pg_attypmod
+  pg_type - data type with additional info i.e. "character varying(20)"
   pg_constraint - holds column constraint definition
 
-The REMARKS field will be returned as C<NULL> for PostgreSQL versions 7.1.x
-and older.
+The REMARKS field will be returned as NULL (C<undef> for PostgreSQL versions 
+older than 7.2. The TABLE_SCHEM field will be returned as NULL (C<undef>) for 
+versions older than 7.4.
 
 =item B<table_info>
 
@@ -2045,16 +2042,19 @@ and older.
 
 Supported by this driver as proposed by DBI. This method returns all tables
 and views visible to the current user. The $catalog argument is currently
-unused. The schema and table arguments will do a C<LIKE> search if a
-percent sign (C<%>) or an underscore (C<_>) is detected in the argument.
-The $type argument accepts a value of either "TABLE" or "VIEW"
-(using both is the default action).
+unused. The schema and table arguments will do a C<LIKE> search if a percent 
+sign (C<%>) or an underscore (C<_>) is detected in the argument. The $type 
+argument accepts a value of either "TABLE" or "VIEW" (using both is the 
+default action).
+
+The TABLE_CAT field will always return NULL (C<undef>). The TABLE_SCHEM field 
+returns NULL (C<undef>) if the server is older than version 7.4.
 
 If your database supports tablespaces (version 8.0 or greater), two additional
-columns are returned, named "pg_tablespace_name" and "pg_tablespace_location",
+columns are returned, "pg_tablespace_name" and "pg_tablespace_location",
 that contain the name and location of the tablespace associated with
 this table. Tables that have not been assigned to a particular tablespace
-will return C<undef> for both of these columns.
+will return NULL (C<undef>) for both of these columns.
 
 =item B<primary_key_info>
 
