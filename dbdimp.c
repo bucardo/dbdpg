@@ -1215,7 +1215,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 			}
 		}
 		else {
-			croak("Cannot bind %s unknown pg_type %", IVdf, name, pg_type);
+			croak("Cannot bind %s unknown pg_type %" IVdf, name, pg_type);
 		}
 	}
 	else if (sql_type) {
@@ -1225,10 +1225,10 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 			 the insert.
 		*/
 		if (!(bind_type = sql_type_data(sql_type))) {
-			croak("Cannot bind %s unknown sql_type %i", name, sql_type);
+			croak("Cannot bind %s unknown sql_type %" IVdf, name, sql_type);
 		}
 		if (!(bind_type = pg_type_data(bind_type->type.pg))) {
-			croak("Cannot find a pg_type for %i", sql_type);
+			croak("Cannot find a pg_type for %" IVdf, sql_type);
 		}
  	}
 	else {

@@ -91,7 +91,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 
                 type_info = sql_type_data(SvIV(type_sv));
 		if (!type_info) {
-			warn("Unknown type %i, "
+			warn("Unknown type %" IVdf ", "
 			    "defaulting to VARCHAR",SvIV(type_sv));
 
 			type_info = pg_type_data(VARCHAROID);
