@@ -1942,8 +1942,8 @@ been used in the current database connection.
 
 If you do not know the name of the sequence, you can provide a table name and
 DBD::Pg will attempt to return the correct value. To do this, there must be at
-least one column in the table with a C<NOT NULL> constraint, has a unique
-constraint, and uses a sequence as a default value. If more than one column
+least one column in the table with a C<NOT NULL> constraint, that has a unique
+constraint, and which uses a sequence as a default value. If more than one column
 meets these conditions, the primary key will be used. This involves some
 looking up of things in the system table, so DBD::Pg will cache the sequence
 name for susequent calls. If you need to disable this caching for some reason,
