@@ -251,7 +251,8 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	imp_dbh->pg_protocol = 0;
 #endif	
 
-	New(0, imp_dbh->sqlstate, 6, char); /* freed in dbd_db_destroy */
+	Safefree(imp_dbh->sqlstate);
+	New(0, imp_dbh->sqlstate, 6, char); /* freed in dbd_db_destroy (and above) */
 	if (!imp_dbh->sqlstate)
 		croak("No memory");	
 	imp_dbh->sqlstate[0] = '\0';
@@ -825,7 +826,8 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 	if (imp_sth->direct) { /* User has specifically asked that we not parse placeholders */
 		imp_sth->numsegs = 1;
 		imp_sth->numphs = 0;
-		New(0, imp_sth->seg, 1, seg_t); /* freed in dbd_st_destroy */
+		Safefree(imp_sth->seg);
+		New(0, imp_sth->seg, 1, seg_t); /* freed in dbd_st_destroy (and above) */
 		if (!imp_sth->seg)
 			croak ("No memory");
 		imp_sth->seg->nextseg = NULL;
@@ -1146,7 +1148,8 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	oldprepare = 0;
 #endif
 
-	New(0, imp_sth->prepare_name, 25, char); /* freed in dbd_st_destroy */
+	Safefree(imp_sth->prepare_name); /* in case re-prepared */
+	New(0, imp_sth->prepare_name, 25, char); /* freed in dbd_st_destroy (and above) */
 	if (!imp_sth->prepare_name)
 		croak("No memory");
 
@@ -1411,10 +1414,10 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	/* upgrade to at least string */
 	(void)SvUPGRADE(newvalue, SVt_PV);
 
-
 	if (SvOK(newvalue)) {
 		value_string = SvPV(newvalue, currph->valuelen);
-		New(0, currph->value, currph->valuelen+1, char);
+		Safefree(currph->value);
+		New(0, currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy (and above) */
 		Copy(value_string, currph->value, currph->valuelen, char);
 		currph->value[currph->valuelen] = '\0';
 	}
@@ -1439,7 +1442,6 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 		PerlIO_printf(DBILOGFP, "  dbdpg: placeholder \"%s\" bound as type \"%s\"(%d), length %d, value of \"%s\"\n",
 									name, currph->bind_type->type_name, currph->bind_type->type_id, currph->valuelen,
 									BYTEAOID==currph->bind_type->type_id ? "(binary, not shown)" : value_string);
-
 
 	return 1;
 
@@ -1505,7 +1507,8 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	if (imp_dbh->pg_protocol < 3) {
 		for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 			if (NULL == currph->value) {
-				New(0, currph->quoted, 5, char); /* freed in dbd_st_execute */
+				Safefree(currph->quoted);
+				New(0, currph->quoted, 5, char); /* freed in dbd_st_execute (and above) */
 				if (!currph->quoted)
 					croak("No memory");
 				currph->quoted[0] = '\0';
@@ -2056,7 +2059,8 @@ int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 		imp_sth->prepare_now = strEQ(value,"0") ? 0 : 1;
 	}
 	else if (15==kl && strEQ(key, "pg_prepare_name")) {
-		New(0, imp_sth->prepare_name, vl+1, char); /* freed in dbd_st_destroy */
+		Safefree(imp_sth->prepare_name);
+		New(0, imp_sth->prepare_name, vl+1, char); /* freed in dbd_st_destroy (and above) */
 		if (!imp_sth->prepare_name)
 			croak("No memory");
 		Copy(value, imp_sth->prepare_name, vl, char);
