@@ -100,6 +100,10 @@ to the DBI_DSN variable like this:
 
 	DBI_DSN='dbi:Pg:dbname=<database>;port=<port#>'
 
+Put double quotes around the dbname if it has a semicolon in it:
+
+	DBI_DSN='dbi:Pg:dbname="<data;base>"'
+
 If you are using the shared library libpq.so check if your dynamic
 loader finds libpq.so. With Linux the command /sbin/ldconfig -v should
 tell you where it finds libpq.so. If ldconfig does not find libpq.so,

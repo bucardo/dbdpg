@@ -130,6 +130,7 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
     char *conn_str;
     char *src;
     char *dest;
+		int inquote;
 
     PGresult *pgres_ret;
     char *vstring, *vstart, *vnext; /* Stuff for getting version info */
@@ -146,15 +147,19 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
         return 0;
     }
 
+
     src  = dbname;
     dest = conn_str;
+		// Change all semi-colons to a space, unless quoted
     while (*src) {
-        if (*src != ';') {
-            *dest++ = *src++;
-            continue;
-        }
-        *dest++ = ' ';
-        src++;
+			if (*src == '"')
+				inquote = ! inquote;
+			else
+				if (*src == ';' && inquote)
+					*dest++ = ' ';
+			else
+				*dest++ = *src;
+			src++;
     }
     *dest = '\0';
 

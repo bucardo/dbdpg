@@ -26,8 +26,6 @@ TODO:
 - finish all type mappings  in types.c 
 - support for begin_work() method.
 - clean logging and trace levels.
-- dblogin to handle user names, table table names and other
-   names that contain ';'s
 - add attributes to control preparing of statements.
 - rewrite hacked version detection code (and get format for string so 
    it is done correctly with patch level &c.).

@@ -121,8 +121,9 @@ $DBD::Pg::VERSION = '1.30';
 		# create a 'blank' dbh
 
 		my $Name = $dbname;
-		$Name =~ s/^.*dbname\s*=\s*//;
-		$Name =~ s/\s*;.*$//;
+    if ($dbname =~ m#dbname\s*=\s*\"([^\"]+)\"# or $dbname =~ m#dbname\s*=\s*([^;]+)#) {
+      $Name = $1;
+    }
 
 		$user = "" unless defined($user);
 		$auth = "" unless defined($auth);
