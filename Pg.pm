@@ -307,7 +307,7 @@ use 5.006001;
 		}
 
 		$sth = $dbh->prepare("SELECT currval(?)");
-		$sth->execute($sequence) or die "$DBI::errstr";
+		$sth->execute($sequence);
 		return $sth->fetchall_arrayref()->[0][0];
 
 	} ## end of last_insert_id
