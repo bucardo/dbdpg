@@ -101,7 +101,7 @@ $dbh->commit();
 #
 
 SKIP: {
-	skip "Cannot test pg_getline on pre-7.4 servers", 10 if $pglibversion < 70400;
+	skip "Cannot test pg_getline with DBD::Pg compiled with pre-7.4 libraries", 10 if $pglibversion < 70400;
 
 	## pg_getline should fail unless we are in a COPY OUT state
 	eval {
