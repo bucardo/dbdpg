@@ -290,10 +290,11 @@ while( my ($catalog, $schema, $table) = $sth->fetchrow_array ) {
 ok( $cnt > 0, "At least one table has a primary key." );
 
 #rl: TODO: Clean this up.
-$sth = # $dbh->primary_key_info(undef, qq{'$ENV{DBI_USER}'}, undef );
+my $schema = exists $ENV{DBI_USER} ? $ENV{DBI_USER} : "";
+$sth = # $dbh->primary_key_info(undef, $schema, undef );
 ok(1
 #   defined $sth
-   , "Getting primary keys for tables owned by $ENV{DBI_USER}");
+   , "Getting primary keys for tables");  ## owned by $ENV{DBI_USER}
 #DBI::dump_results($sth) if defined $sth;
 undef $sth;
 
