@@ -1,51 +1,43 @@
-if (!exists($ENV{DBDPG_MAINTAINER})) {
-    print "1..0\n";
-    exit;
-}
-
 use strict;
 use DBI;
+use Test::More;
 
-main();
-
-sub main {
-    my ($n, $dbh, $sth, @types);
-    
-    print "1..2\n";
-    
-    $n = 1;
-    
-    $dbh = DBI->connect("dbi:Pg:dbname=$ENV{DBDPG_TEST_DB};host=$ENV{DBDPG_TEST_HOST}", $ENV{DBDPG_TEST_USER}, $ENV{DBDPG_TEST_PASS}, {RaiseError => 1, AutoCommit => 0});    
-    eval {
-        local $dbh->{PrintError} = 0;
-        $dbh->do(q{DROP TABLE tt});
-        $dbh->commit();
-    };
-    $dbh->rollback();
-        
-    $dbh->do(q{CREATE TABLE tt (blah numeric(5,2), foo text)});
-    $sth = $dbh->prepare(qq{
-        SELECT * FROM tt WHERE FALSE
-    });
-    $sth->execute();
-
-    @types = @{$sth->{pg_type}};
-
-    if ($types[0] ne 'numeric') {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    
-    if ($types[1] ne 'text') {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-
-    $sth->finish();
-    $dbh->rollback();
-    $dbh->disconnect();
+if (defined $ENV{DBI_DSN}) {
+  plan tests => 3;
+} else {
+  plan skip_all => 'cannot test without DB info';
 }
 
-1;
+my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+		       {RaiseError => 1, AutoCommit => 0}
+		      );
+ok(defined $dbh,
+   'connect with transaction'
+  );
+
+eval {
+  local $dbh->{PrintError} = 0;
+  $dbh->do(q{DROP TABLE tt});
+  $dbh->commit();
+};
+$dbh->rollback();
+
+$dbh->do(q{CREATE TABLE tt (blah numeric(5,2), foo text)});
+my $sth = $dbh->prepare(qq{
+			   SELECT * FROM tt WHERE FALSE
+			  });
+$sth->execute();
+
+my @types = @{$sth->{pg_type}};
+
+ok($types[0] eq 'numeric',
+   'type numeric'
+  );
+
+ok($types[1] eq 'text',
+   'type text'
+  );
+
+$sth->finish();
+$dbh->rollback();
+$dbh->disconnect();
