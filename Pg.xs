@@ -118,12 +118,16 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
     OUTPUT:
     	RETVAL
 
-
-
 # ------------------------------------------------------------
 # database level interface PG specific
 # ------------------------------------------------------------
 MODULE = DBD::Pg  PACKAGE = DBD::Pg::db
+
+SV* state(dbh)
+	SV *dbh
+	CODE:
+	D_imp_dbh(dbh);
+	ST(0) = newSVpvn(imp_dbh->sqlstate, 5);
 
 int
 _ping(dbh)
