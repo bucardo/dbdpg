@@ -50,6 +50,14 @@ my $os = $^O;
 print "OS: $os\n";
 print "PostgreSQL version: $major_ver.$minor_ver.$patch\n";
 
+## Warn about older versions
+if ($major_ver < 7 or ($major_ver == 7 and $minor_ver < 2)) {
+	print "\n****************\n";
+	print "WARNING! DBD::Pg no longer supports versions less than 7.2.\n";
+	print "It is highly recommended that you upgrade PostgreSQL to a newer version.\n";
+	print "****************\n\n";
+}
+
 my $dbi_arch_dir;
 if ($os eq 'MSWin32') {
 	$dbi_arch_dir = "\$(INSTALLSITEARCH)/auto/DBI";
@@ -57,7 +65,6 @@ if ($os eq 'MSWin32') {
 else {
   $dbi_arch_dir = dbd_dbi_arch_dir();
 }
-
 
 my $comp_opts;
 if ($major_ver == 7) {
