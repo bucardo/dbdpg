@@ -458,9 +458,6 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 		DBIc_set(imp_dbh, DBIcf_AutoCommit, newval);
 		return 1;
 	}
-	else if (kl==14 && strEQ(key, "pg_auto_escape")) {
-		imp_dbh->pg_auto_escape = newval ? 1 : 0;
-	} 
 	else if (kl==10 && strEQ(key, "pg_bool_tf")) {
 		imp_dbh->pg_bool_tf = newval ? 1 : 0;
 #ifdef is_utf8_string
