@@ -48,7 +48,7 @@ nearest CPAN site.
 IF YOU HAVE PROBLEMS:
 ---------------------
 
-Please send comments and bug-reports to <dbd-general@gborg.postgresql.org>
+Please send comments and bug-reports to <dbdpg-general@gborg.postgresql.org>
 
 Please include the output of perl -v and perl -V, the version of PostgreSQL,
 the version of DBD-Pg, the version of DBI, and details about your platform
