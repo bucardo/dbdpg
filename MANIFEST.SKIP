@@ -1,0 +1,11 @@
+^_build
+^Build$
+^Makefile$
+^Makefile\.old$
+^blib
+~$
+\.bak$
+^MANIFEST\.SKIP$
+^DBD-Pg
+.cvsignore
+CVS
