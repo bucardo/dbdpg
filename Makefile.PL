@@ -70,7 +70,10 @@ if ($os eq 'MSWin32') {
 	$dbi_arch_dir = "\$(INSTALLSITEARCH)/auto/DBI";
 }
 else {
-  $dbi_arch_dir = dbd_dbi_arch_dir();
+	{
+		local *STDOUT; ## Prevent duplicate debug info as WriteMakefile also calls this
+		$dbi_arch_dir = dbd_dbi_arch_dir();
+  }
 }
 
 my $comp_opts = $Config{q{ccflags}} . " -DPGLIBVERSION=$serverversion";
