@@ -820,7 +820,7 @@ dbd_preparse (imp_sth, statement)
 static int pg_sql_needquote (sql_type)
     int sql_type;
 {
-    if (sql_type > 1000 || sql_type == 17 ) { 
+    if (sql_type > 1000 || sql_type == 17 || sql_type == 25 ) { 
         return 1;
     }
     return 0;
