@@ -179,8 +179,15 @@ ok( !defined $attrib, 'Setting DB handle attribute "RowCacheSize" has no effect'
 # Test of the database handle attribute "Username"
 #
 
-$attrib = $dbh->{Username};
-is( $attrib, $ENV{DBI_USER}, 'DB handle attribute "Username" returns the same value as DBI_USER');
+if ($DBI::VERSION < 1.36) {
+ SKIP: {
+		skip 'DBI must be at least version 1.36 to test the DB handle attribute "Username"', 1;
+	}
+}
+else {
+	$attrib = $dbh->{Username};
+	is( $attrib, $ENV{DBI_USER}, 'DB handle attribute "Username" returns the same value as DBI_USER');
+}
 
 #
 # Test of the database handle attributes "pg_INV_WRITE" and "pg_INV_READ"

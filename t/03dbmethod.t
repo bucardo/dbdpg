@@ -126,9 +126,16 @@ $result = $dbh->selectcol_arrayref($SQL, {Columns=>[2,1]});
 $expected = ['Roseapple',10,'Pineapple',11,'Kiwi',12];
 is_deeply($result, $expected, 'DB handle method "selectcol_arrayref" works with the Columns attribute');
 
-$result = $dbh->selectcol_arrayref($SQL, {Columns=>[2], MaxRows => 1});
-$expected = ['Roseapple'];
-is_deeply($result, $expected, 'DB handle method "selectcol_arrayref" works with the MaxRows attribute');
+if ($DBI::VERSION < 1.36) {
+ SKIP: {
+		skip 'DBI must be at least version 1.36 to test "selectcol_arrayref" with "MaxRows"', 1;
+	}
+}
+else {
+	$result = $dbh->selectcol_arrayref($SQL, {Columns=>[2], MaxRows => 1});
+	$expected = ['Roseapple'];
+	is_deeply($result, $expected, 'DB handle method "selectcol_arrayref" works with the MaxRows attribute');
+}
 
 #
 # Test of the "commit" and "rollback" database handle methods
