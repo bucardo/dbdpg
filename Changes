@@ -1,17 +1,33 @@
-  - pg_notifies now catches and reports when PQconsumeInput fails.
-    [nmueller@cs.wisc.edu]
+
+	- Added the "noprefix" attribute to prevent the tables() method 
+		from prepending the schema name. [Greg Sabino Mullane]
+	- Rewrote the testing suite. Many more tests are performed.
+		Servers with a low client_min_messages are handled correctly.
+		[Greg Sabino Mullane]
+	- Fixed bug causing '$\d' to be picked up as a placeholder. 
+		[Greg Sabino Mullane]
+	- pg_notifies now catches and reports when PQconsumeInput fails.
+		[nmueller@cs.wisc.edu]
+	- Enabled the "pg_bool_tf" database handle [Greg Sabino Mullane]
+	- Added required fields to the type_info() method:
+		SQL_DATA_TYPE, SQL_DATETIME_SUB, and INTERVAL PRECISION
+		[Greg Sabino Mullane]
+	- Fixed bug where the table_attributes() method was incorrectly 
+		removing the NULLABLE column. [Greg Sabino Mullane]
+	- Fixed bug where case was not being preserved by the 
+		foreign_key_info() method [Greg Sabino Mullane]
 	- a fetch on any column that had a type that did not have an entry
-	  in the type_info array would segfault DBD::Pg.  [reported by: TODO]
+		in the type_info array would segfault DBD::Pg.[reported by: TODO]
 	- Duplicate rows bug with column_info() REMARKS has been fixed. However,
-	  support for Postgres 7.1.x which worked briefly for 1.31 has now been
-	  dropped for this feature. (Mark Stosberg)
-    - Bumped required Perl version to 5.6.1 in Makefile.PL. We were already
-      already requiring for Pg.pm since 1.31.
+		support for Postgres 7.1.x which worked briefly for 1.31 has now been
+		dropped for this feature. (Mark Stosberg)
+	- Bumped required Perl version to 5.6.1 in Makefile.PL. We were already
+		already requiring 5.6.1 for Pg.pm since 1.31.
 
 1.31 Mon Nov 17 21:21:21 UTC 2003
 	- $dbh->{TYPE} now returns SQL_TYPE_TIMESTAMP instead of 1114 for 
-	  timestamp columns.  (In 1.31_x {x| x<8} $sth->{TYPE} returned 0
-	  but reported by ["Hirche, Joachim" <Joachim.Hirche@cimconcepts.com>]).
+		timestamp columns. (In 1.31_x {x| x<8} $sth->{TYPE} returned 0
+		but reported by ["Hirche, Joachim" <Joachim.Hirche@cimconcepts.com>]).
 	- Raised required versions to Perl 5.6.1 and DBI 1.35
 	- Fix syntax error related to pg_server_version (CPAN bugs #2492 and #2755)
 	- Cache multiple calls to pg_server_version.
