@@ -24,11 +24,14 @@ use 5.006001;
 	@ISA = qw(DynaLoader Exporter);
 
 	%EXPORT_TAGS = (
-	pg_types => [ qw(
-		PG_BOOL PG_BYTEA PG_CHAR PG_INT8 PG_INT2 PG_INT4 PG_TEXT PG_OID
-		PG_FLOAT4 PG_FLOAT8 PG_ABSTIME PG_RELTIME PG_TINTERVAL PG_BPCHAR
-		PG_VARCHAR PG_DATE PG_TIME PG_DATETIME PG_TIMESPAN PG_TIMESTAMP
-	)]);
+									pg_types => 
+									[ 
+									 qw(
+											PG_BOOL PG_BYTEA PG_CHAR PG_INT8 PG_INT2 PG_INT4 PG_TEXT PG_OID
+											PG_FLOAT4 PG_FLOAT8 PG_ABSTIME PG_RELTIME PG_TINTERVAL PG_BPCHAR
+											PG_VARCHAR PG_DATE PG_TIME PG_DATETIME PG_TIMESPAN PG_TIMESTAMP
+										 )]
+								 );
 
 	Exporter::export_ok_tags('pg_types');
 
@@ -46,7 +49,7 @@ use 5.006001;
 	}
 
 	sub driver{
-		return $drh if $drh;
+		return $drh if defined $drh;
 		my($class, $attr) = @_;
 
 		$class .= "::dr";
@@ -83,20 +86,6 @@ use 5.006001;
 		$dbh->{private_dbdpg}{server_version}||=0;
 	}
 
-	## Deprecated, but keep around just in case
-	sub _pg_check_version($$) {
-		my $old = shift;
-		if ($old =~ /(\d+)\.(\d+)\.?(\d*)/) {
-			$old = int sprintf("%02d%02d%02d",$1,$2,$3||0);
-		}
-		my $new = shift;
-		if ($old =~ /(\d+)\.(\d+)\.?(\d*)/) {
-			$old = int sprintf("%02d%02d%02d",$1,$2,$3||0);
-		}
-		warn "_pg_check_version is deprecated, please do not use it\n";
-		return $old <=> $new;
-	}
-
 	## Version 7.3 and up uses schemas, so add a "pg_catalog." to system tables
 	sub _pg_use_catalog {
 		return $dbh->{private_dbdpg}{pg_use_catalog} if defined $dbh->{private_dbdpg}{pg_use_catalog};
@@ -118,7 +107,7 @@ use 5.006001;
 		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
 		my $SQL = "SELECT ${CATALOG}quote_ident(datname) FROM ${CATALOG}pg_database ORDER BY 1";
 		my $sth = $dbh->prepare($SQL);
-		$sth->execute();
+		$sth->execute() or die $DBI::errstr;
 		my @sources = map { "dbi:Pg:dbname=$_->[0]" } @{$sth->fetchall_arrayref()};
 		$dbh->disconnect;
 		return @sources;
