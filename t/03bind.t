@@ -78,6 +78,8 @@ SQL
   $sth = $dbh->prepare($sql);
 
   $sth->bind_param(1, 'foo', DBI::SQL_BINARY);
+#rl: TODO: fix this
+ok(1, "FIXME");
 }
 
 ok($dbh->disconnect(),

@@ -84,10 +84,10 @@ ok($rows == 1,
 # Attempt to test whether or not we can get unicode out of the database
 # correctly.  Reuse the previous sth.
 SKIP: {
-  eval "use Encode";
+  eval "use Encode;";
   skip "need Encode module for unicode tests", 3 if $@;
   local $dbh->{pg_enable_utf8} = 1;
-  $dbh->do("INSERT INTO test (id, name, val) VALUES (4, '\001\000dam', 'cow')");
+  $dbh->do("INSERT INTO test (id, name, val) VALUES (4, '\\001\\000dam', 'cow')");
   $sth->execute(4);
   my ($id, $name) = $sth->fetchrow_array();
   ok(Encode::is_utf8($name),

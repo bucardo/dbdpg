@@ -43,4 +43,9 @@ static int errno;
 #include <dbd_xsh.h>		/* installed by the DBI module	*/
 
 
+/* defines for Driver.xst to let it know what functions to include */
+#define dbd_st_rows dbd_st_rows
+
+
+
 /* end of Pg.h */

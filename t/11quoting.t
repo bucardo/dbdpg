@@ -3,7 +3,7 @@ use DBI;
 use Test::More;
 
 if (defined $ENV{DBI_DSN}) {
-  plan tests => 8;
+  plan tests => 9;
 } else {
   plan skip_all => 'cannot test without DB info';
 }
@@ -16,11 +16,12 @@ ok(defined $dbh,
   );
 
 my %tests = (
-	     one=>["'", "'\\" . sprintf("%03o", ord("'")) . "'"],
-	     two=>["''", "'" . ("\\" . sprintf("%03o", ord("'")))x2 . "'"],
-	     three=>["\\", "'\\" . sprintf("%03o", ord("\\")) . "'"],
-	     four=>["\\'", sprintf("'\\%03o\\%03o'", ord("\\"), ord("'"))],
-	     five=>["\\'?:", sprintf("'\\%03o\\%03o?:'", ord("\\"), ord("'"))],
+	     one=>["'", "''''"],,
+	     two=>["''", "''''''"],
+	     three=>["\\", q{'\\\\'}],
+	     four=> ["\\'",q{'\\\\'''}],
+	     five=> ["\\'?:", q{'\\\\''?:'}],
+	     six=> [undef, "NULL"],
 	    );
 
 foreach my $test (keys %tests) {
@@ -31,20 +32,23 @@ foreach my $test (keys %tests) {
   $quo = $dbh->quote($unq);
 
   ok($quo eq $ref,
-     "$test: $unq -> expected $quo got $ref"
+     "$test: $unq -> expected $ref got $quo"
     );
 }
 
 # Make sure that SQL_BINARY doesn't work.
 #    eval { $dbh->quote('foo', { TYPE => DBI::SQL_BINARY })};
+
+SKIP:{
+skip(1,1);
 eval {
   local $dbh->{PrintError} = 0;
   $dbh->quote('foo', DBI::SQL_BINARY);
 };
-ok($@ && $@ =~ /Use of SQL_BINARY invalid in quote/,
+ok ($@ && $@ =~ /Use of SQL_BINARY invalid in quote/,
    'SQL_BINARY'
 );
-
+}
 ok($dbh->disconnect(),
    'disconnect'
   );

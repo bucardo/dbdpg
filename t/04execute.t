@@ -60,7 +60,7 @@ eval {
   $sth->bind_param(1, 2);
   $sth->execute();
 };
-ok(!$@,
+ok($@,
   'execute with only first of two params bound'
   );
 
@@ -70,7 +70,7 @@ eval {
   $sth->bind_param(2, 'foo');
   $sth->execute();
 };
-ok(!$@,
+ok($@,
   'execute with only second of two params bound'
   );
 
@@ -79,7 +79,7 @@ eval {
   $sth = $dbh->prepare($sql);
   $sth->execute();
 };
-ok(!$@,
+ok($@,
   'execute with neither of two params bound'
   );
 

@@ -20,17 +20,19 @@
 */
 
 #include "Pg.h"
+#include<assert.h>
+#include"types.h"
 
 /* XXX DBI should provide a better version of this */
 #define IS_DBI_HANDLE(h)  (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV && SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
 DBISTATE_DECLARE;
 
-/* hard-coded array delimiter */
-static char* array_delimiter = ",";
 
-static void dbd_preparse  (imp_sth_t *imp_sth, char *statement);
+void pg_error();
 
+#include "large_object.c"
+#include "prescan_stmt.c"
 
 void
 dbd_init (dbistate)
@@ -97,42 +99,11 @@ pg_error (h, error_num, error_msg)
     free(err);
 }
 
-static int
-pgtype_bind_ok (dbtype)
-    int dbtype;
-{
-    /* basically we support types that can be returned as strings */
-    switch(dbtype) {
-    case   16:	/* bool		*/
-    case   17:	/* bytea	*/
-    case   18:	/* char		*/
-    case   20:	/* int8		*/
-    case   21:	/* int2		*/
-    case   23:	/* int4		*/
-    case   25:	/* text		*/
-    case   26:	/* oid		*/
-    case  700:	/* float4	*/
-    case  701:	/* float8	*/
-    case  702:	/* abstime	*/
-    case  703:	/* reltime	*/
-    case  704:	/* tinterval	*/
-    case 1042:	/* bpchar	*/
-    case 1043:	/* varchar	*/
-    case 1082:	/* date		*/
-    case 1083:	/* time		*/
-    case 1184:	/* datetime	*/
-    case 1186:	/* timespan	*/
-    case 1296:	/* timestamp	*/
-        return 1;
-    }
-    return 0;
-}
-
 
 /* ================================================================== */
 
 int
-pg_db_login (dbh, imp_dbh, dbname, uid, pwd)
+dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
     SV *dbh;
     imp_dbh_t *imp_dbh;
     char *dbname;
@@ -144,6 +115,10 @@ pg_db_login (dbh, imp_dbh, dbname, uid, pwd)
     char *conn_str;
     char *src;
     char *dest;
+
+    PGresult *pgres_ret;
+    char *vstring, *vstart, *vnext; /* Stuff for getting version info */
+
 
     if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "pg_db_login\n"); }
 
@@ -189,6 +164,30 @@ pg_db_login (dbh, imp_dbh, dbname, uid, pwd)
         PQfinish(imp_dbh->conn);
         return 0;
     }
+
+    /* Quick basic version check -- not robust a'tall TODO: rewrite */
+    pgres_ret = PQexec(imp_dbh->conn, "SELECT version()");
+    if (pgres_ret && PQresultStatus(pgres_ret)  == PGRES_TUPLES_OK) {
+        vstring = PQgetvalue(pgres_ret, 0,0); /* Tuple 0 ,filed 0 */
+        vstart = index(vstring, ' ');
+
+        imp_dbh->version.major = strtol(vstart, &vnext, 10);
+        imp_dbh->version.minor = strtol(vnext+1, NULL, 10);
+        imp_dbh->version.ver = strtod(vstart, NULL);
+
+    } else {
+        imp_dbh->version.major = 0;
+        imp_dbh->version.minor = 0;
+        imp_dbh->version.ver = 0.0;
+    }
+    PQclear(pgres_ret);
+
+     /* PerlIO_printf(DBILOGFP, "v.ma: %i, v.mi: %i v.ver: %f\n",
+          imp_dbh->version.major, imp_dbh->version.minor, imp_dbh->version.ver);
+
+       if(imp_dbh->version.ver >= 7.3)
+           PerlIO_printf(DBILOGFP, "Greater than 7.3\n");
+     */
 
     imp_dbh->init_commit = 1;			/* initialize AutoCommit */
     imp_dbh->pg_auto_escape = 1;		/* initialize pg_auto_escape */
@@ -319,6 +318,7 @@ dbd_db_commit (dbh, imp_dbh)
 }
 
 
+/* TODO: Tx fix that was done to commit needs to be done here also. #rl */
 int
 dbd_db_rollback (dbh, imp_dbh)
     SV *dbh;
@@ -340,6 +340,8 @@ dbd_db_rollback (dbh, imp_dbh)
         status = result ? PQresultStatus(result) : -1;
         PQclear(result);
 
+        /*TODO Correct error message. If returning on error 
+          will screw up transaction state? Begin will not get called! */
         /* check result */
         if (status != PGRES_COMMAND_OK) {
             pg_error(dbh, status, "rollback failed\n");
@@ -372,7 +374,10 @@ dbd_db_disconnect (dbh, imp_dbh)
     if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_disconnect\n"); }
 
     /* We assume that disconnect will always work	*/
-    /* since most errors imply already disconnected.	*/
+    /* since most errors imply already disconnected.
+     * XXX: Um we turn active off, then return 0 on a rollback failing? 
+     * Check to see what happenens -- will we leak memory? :rl
+     */
     DBIc_ACTIVE_off(imp_dbh);
 
     if (NULL != imp_dbh->conn) {
@@ -521,147 +526,6 @@ dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 }
 
 
-/* driver specific functins */
-
-
-int
-pg_db_lo_open (dbh, lobjId, mode)
-    SV *dbh;
-    unsigned int lobjId;
-    int mode;
-{
-    D_imp_dbh(dbh);
-    return lo_open(imp_dbh->conn, lobjId, mode);
-}
-
-
-int
-pg_db_lo_close (dbh, fd)
-    SV *dbh;
-    int fd;
-{
-    D_imp_dbh(dbh);
-    return lo_close(imp_dbh->conn, fd);
-}
-
-
-int
-pg_db_lo_read (dbh, fd, buf, len)
-    SV *dbh;
-    int fd;
-    char *buf;
-    int len;
-{
-    D_imp_dbh(dbh);
-    return lo_read(imp_dbh->conn, fd, buf, len);
-}
-
-
-int
-pg_db_lo_write (dbh, fd, buf, len)
-    SV *dbh;
-    int fd;
-    char *buf;
-    int len;
-{
-    D_imp_dbh(dbh);
-    return lo_write(imp_dbh->conn, fd, buf, len);
-}
-
-
-int
-pg_db_lo_lseek (dbh, fd, offset, whence)
-    SV *dbh;
-    int fd;
-    int offset;
-    int whence;
-{
-    D_imp_dbh(dbh);
-    return lo_lseek(imp_dbh->conn, fd, offset, whence);
-}
-
-
-unsigned int
-pg_db_lo_creat (dbh, mode)
-    SV *dbh;
-    int mode;
-{
-    D_imp_dbh(dbh);
-    return lo_creat(imp_dbh->conn, mode);
-}
-
-
-int
-pg_db_lo_tell (dbh, fd)
-    SV *dbh;
-    int fd;
-{
-    D_imp_dbh(dbh);
-    return lo_tell(imp_dbh->conn, fd);
-}
-
-
-int
-pg_db_lo_unlink (dbh, lobjId)
-    SV *dbh;
-    unsigned int lobjId;
-{
-    D_imp_dbh(dbh);
-    return lo_unlink(imp_dbh->conn, lobjId);
-}
-
-
-unsigned int
-pg_db_lo_import (dbh, filename)
-    SV *dbh;
-    char *filename;
-{
-    D_imp_dbh(dbh);
-    return lo_import(imp_dbh->conn, filename);
-}
-
-
-int
-pg_db_lo_export (dbh, lobjId, filename)
-    SV *dbh;
-    unsigned int lobjId;
-    char *filename;
-{
-    D_imp_dbh(dbh);
-    return lo_export(imp_dbh->conn, lobjId, filename);
-}
-
-
-int
-pg_db_putline (dbh, buffer)
-    SV *dbh;
-    char *buffer;
-{
-    D_imp_dbh(dbh);
-    return PQputline(imp_dbh->conn, buffer);
-}
-
-
-int
-pg_db_getline (dbh, buffer, length)
-    SV *dbh;
-    char *buffer;
-    int length;
-{
-    D_imp_dbh(dbh);
-    return PQgetline(imp_dbh->conn, buffer, length);
-}
-
-
-int
-pg_db_endcopy (dbh)
-    SV *dbh;
-{
-    D_imp_dbh(dbh);
-    return PQendcopy(imp_dbh->conn);
-}
-
-
 /* ================================================================== */
 
 
@@ -675,7 +539,13 @@ dbd_st_prepare (sth, imp_sth, statement, attribs)
     if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_prepare: statement = >%s<\n", statement); }
 
     /* scan statement for '?', ':1' and/or ':foo' style placeholders */
-    dbd_preparse(imp_sth, statement);
+    if((dbd_preparse(sth, imp_sth, statement)) == 0)
+        return 0;
+
+    if (is_tx_stmt(statement)) {
+        warn("please use DBI functions for transaction handling");
+        return(0);
+    }
 
     /* initialize new statement handle */
     imp_sth->result    = 0;
@@ -686,351 +556,144 @@ dbd_st_prepare (sth, imp_sth, statement, attribs)
 }
 
 
-static void
-dbd_preparse (imp_sth, statement)
-    imp_sth_t *imp_sth;
-    char *statement;
-{
-    bool in_literal = FALSE;
-    char in_comment = '\0';
-    char *src, *start, *dest;
-    phs_t phs_tpl;
-    SV *phs_sv;
-    int idx=0;
-    char *style="", *laststyle=Nullch;
-    STRLEN namelen;
-
-    if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_preparse: statement = >%s<\n", statement); }
-
-    /* allocate room for copy of statement with spare capacity	*/
-    /* for editing '?' or ':1' into ':p1'.			*/
-    /*								*/
-    /* Note: the calculated length used here for the safemalloc	*/
-    /* isn't related in any way to the actual worst case length	*/
-    /* of the translated statement, but allowing for 3 times	*/
-    /* the length of the original statement should be safe...	*/
-    imp_sth->statement = (char*)safemalloc(strlen(statement) * 3 + 1);
-
-    /* initialise phs ready to be cloned per placeholder	*/
-    memset(&phs_tpl, 0, sizeof(phs_tpl));
-    phs_tpl.ftype = 1043;	/* VARCHAR */
-
-    src  = statement;
-    dest = imp_sth->statement;
-    while(*src) {
-
-        if (in_comment) {
-            /* SQL-style and C++-style */ 
-            if ((in_comment == '-' || in_comment == '/') && *src == '\n') {
-                in_comment = '\0';
-            }
-            /* C-style */
-            else if (in_comment == '*' && *src == '*' && *(src+1) == '/') {
-                *dest++ = *src++; /* avoids asterisk-slash-asterisk issues */
-                in_comment = '\0';
-            }
-            *dest++ = *src++;
-            continue;
-        }
-
-        if (in_literal) {
-            /* check if literal ends but keep quotes in literal */
-            if (*src == in_literal) {
-                int bs=0;
-                char *str;
-                str = src-1;
-                while (*(str-bs) == '\\')
-                bs++;
-                if (!(bs & 1))
-                    in_literal = 0;
-            }
-            *dest++ = *src++;
-            continue;
-        }
-
-        /* Look for comments: SQL-style or C++-style or C-style	*/
-        if ((*src == '-' && *(src+1) == '-') ||
-            (*src == '/' && *(src+1) == '/') ||
-            (*src == '/' && *(src+1) == '*'))
-        {
-            in_comment = *(src+1);
-            /* We know *src & the next char are to be copied, so do */
-            /* it. In the case of C-style comments, it happens to */
-            /* help us avoid slash-asterisk-slash oddities. */
-            *dest++ = *src++;
-            *dest++ = *src++;
-            continue;
-        }
-
-        /* check if no placeholders */
-        if (*src != ':' && *src != '?') {
-            if (*src == '\'' || *src == '"') {
-                in_literal = *src;
-            }
-            *dest++ = *src++;
-            continue;
-        }
-
-        /* check for cast operator */
-        if (*src == ':' && (*(src-1) == ':' || *(src+1) == ':')) {
-            *dest++ = *src++;
-            continue;
-        }
-
-        /* only here for : or ? outside of a comment or literal and no cast */
-
-        start = dest;			/* save name inc colon	*/ 
-        *dest++ = *src++;
-        if (*start == '?') {		/* X/Open standard	*/
-            sprintf(start,":p%d", ++idx); /* '?' -> ':p1' (etc)	*/
-            dest = start+strlen(start);
-            style = "?";
-
-        } else if (isDIGIT(*src)) {	/* ':1'		*/
-            idx = atoi(src);
-            *dest++ = 'p';		/* ':1'->':p1'	*/
-            if (idx <= 0) {
-                croak("Placeholder :%d invalid, placeholders must be >= 1", idx);
-            }
-            while(isDIGIT(*src)) {
-                *dest++ = *src++;
-            }
-            style = ":1";
-
-        } else if (isALNUM(*src)) {	/* ':foo'	*/
-            while(isALNUM(*src)) {	/* includes '_'	*/
-                *dest++ = *src++;
-            }
-            style = ":foo";
-        } else {			/* perhaps ':=' PL/SQL construct */
-            continue;
-        }
-        *dest = '\0';			/* handy for debugging	*/
-        namelen = (dest-start);
-        if (laststyle && style != laststyle) {
-            croak("Can't mix placeholder styles (%s/%s)",style,laststyle);
-        }
-        laststyle = style;
-        if (imp_sth->all_params_hv == NULL) {
-            imp_sth->all_params_hv = newHV();
-        }
-        phs_tpl.sv = &sv_undef;
-        phs_sv = newSVpv((char*)&phs_tpl, sizeof(phs_tpl)+namelen+1);
-        hv_store(imp_sth->all_params_hv, start, namelen, phs_sv, 0);
-        strcpy( ((phs_t*)(void*)SvPVX(phs_sv))->name, start);
-    }
-    *dest = '\0';
-    if (imp_sth->all_params_hv) {
-        DBIc_NUM_PARAMS(imp_sth) = (int)HvKEYS(imp_sth->all_params_hv);
-        if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "    dbd_preparse scanned %d distinct placeholders\n", (int)DBIc_NUM_PARAMS(imp_sth)); }
-    }
-}
-
-
-/* if it LOOKS like a string, this function will determine whether the type needs to be surrounded in single quotes */
-static int pg_sql_needquote (sql_type)
-    int sql_type;
-{
-    if (sql_type > 1000 || sql_type == 17 || sql_type == 25 ) { 
-        return 1;
-    }
-    return 0;
-}
-
-
-
-static int
-pg_sql_type (imp_sth, name, sql_type)
-    imp_sth_t *imp_sth;
-    char *name;
-    int sql_type;
-{
-    switch (sql_type) {
-        case SQL_CHAR:
-            return 1042;	/* bpchar */
-        case SQL_NUMERIC:
-            return 700;		/* float4 */
-        case SQL_DECIMAL:
-            return 700;		/* float4 */
-        case SQL_INTEGER:
-            return 23;		/* int4	*/
-        case SQL_SMALLINT:
-            return 21;		/* int2	*/
-        case SQL_FLOAT:
-            return 700;		/* float4 */
-        case SQL_REAL:
-            return 701;		/* float8 */
-        case SQL_DOUBLE:
-            return 20;		/* int8 */
-        case SQL_VARCHAR:
-            return 1043;	/* varchar */
-        case SQL_BINARY:
-            return 17;		/* bytea */
-        default:
-            if (DBIc_WARN(imp_sth) && imp_sth && name) {
-                warn("SQL type %d for '%s' is not fully supported, bound as VARCHAR instead",
-						sql_type, name);
-            }
-            return pg_sql_type(imp_sth, name, SQL_VARCHAR);
-    }
-}
-
-static int
-sql_pg_type (imp_sth, name, sql_type)
-    imp_sth_t *imp_sth;
-    char *name;
-    int sql_type;
-{
-    if (dbis->debug >= 1) { 
-		PerlIO_printf(DBILOGFP, "sql_pg_type name '%s' type '%d'\n", name, sql_type ); 
-	}
-
-    switch (sql_type) {
-        case   17:		/* bytea */
-        	return SQL_BINARY;
-        case   20:		/* int8 */
-        	return SQL_DOUBLE;
-        case   21:		/* int2	*/
-        	return SQL_SMALLINT;
-        case   23:		/* int4	*/
-        	return SQL_INTEGER;
-        case  700:		/* float4 */
-        	return SQL_NUMERIC;
-        case  701:		/* float8 */
-        	return SQL_REAL;
-        case 1042:	/* bpchar */
-        	return SQL_CHAR;
-        case 1043:	/* varchar */
-        	return SQL_VARCHAR;
-        case 1082:	/* date */
-        	return SQL_DATE;
-        case 1083:	/* time */
-        	return SQL_TIME;
-        case 1296:	/* date */
-        	return SQL_TIMESTAMP;
-
-        default:
-			return sql_type;
-    }
-}
-
-
-static int
-dbd_rebind_ph (sth, imp_sth, phs)
+int
+dbd_preparse (sth, imp_sth, statement)
     SV *sth;
     imp_sth_t *imp_sth;
-    phs_t *phs;
+    const char *statement;
 {
-    STRLEN value_len;
+    static unsigned int prep_stmt_id = 0;
+    int place_holder_count, stmt_len, status;
+    int digits, i;
+    int offset = 0;
+    D_imp_dbh_from_sth;
 
-    if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_rebind\n"); }
+    ++prep_stmt_id;
+    digits = 0;
+    i = prep_stmt_id;
+    do {
+            ++digits;
+            i /=10;
+    } while (i>0);     /* 12*/
 
-    /* convert to a string ASAP */
-    if (!SvPOK(phs->sv) && SvOK(phs->sv)) {
-        sv_2pv(phs->sv, &na);
+    //PerlIO_printf(DBILOGFP, "Statement: %s \n", statement);
+    prescan_stmt(statement, &stmt_len, &place_holder_count);
+
+    //PerlIO_printf(DBILOGFP, "Place holders: %i \n", place_holder_count);
+    /* add space for placeholders candidates */
+    stmt_len += calc_ph_space(place_holder_count);
+
+
+    offset += strlen ("PREPARE \"DBD::ChurlPg::cached_query \" (");
+    offset += digits; /* number of digits in prep_statement_id */
+    offset += place_holder_count*strlen("varchar, ");
+    offset += strlen(") AS");
+
+    stmt_len  += offset;
+    ++stmt_len; /* for term \0 */
+
+    //PerlIO_printf(DBILOGFP, "Smt len:%i Offset %i\n", stmt_len, offset);
+
+    Newc(0, imp_sth->statement, stmt_len, char, char);
+    memset(imp_sth->statement, ' ', offset+1);
+    if (place_holder_count) {
+            /* +1 so we can use a 1 based idx (placeholders start from 1)*/
+            Newc(0, imp_sth->place_holders, place_holder_count+1,
+                phs_t**, phs_t*);
+    } else {
+            imp_sth->place_holders = 0;
     }
 
-    if (dbis->debug >= 2) {
-        char *val = neatsvpv(phs->sv,0);
-        PerlIO_printf(DBILOGFP, "       bind %s <== %.1000s (", phs->name, val);
-        if (SvOK(phs->sv)) {
-             PerlIO_printf(DBILOGFP, "size %ld/%ld/%ld, ", (long)SvCUR(phs->sv),(long)SvLEN(phs->sv),phs->maxlen);
-        } else {
-            PerlIO_printf(DBILOGFP, "NULL, ");
-        }
-        PerlIO_printf(DBILOGFP, "ptype %d, otype %d%s)\n", (int)SvTYPE(phs->sv), phs->ftype, (phs->is_inout) ? ", inout" : "");
-    }
+    place_holder_count = rewrite_placeholders(imp_sth, statement, imp_sth->statement+offset,0);
+    imp_sth->phc = place_holder_count;
 
-    /* At the moment we always do sv_setsv() and rebind.        */
-    /* Later we may optimise this so that more often we can     */
-    /* just copy the value & length over and not rebind.        */
+    // PerlIO_printf(DBILOGFP, "Rewritten stmt: %s\n", imp_sth->statement+offset);
 
-    if (phs->is_inout) {        /* XXX */
-        if (SvREADONLY(phs->sv)) {
-            croak(no_modify);
-        }
-        /* phs->sv _is_ the real live variable, it may 'mutate' later   */
-        /* pre-upgrade high to reduce risk of SvPVX realloc/move        */
-        (void)SvUPGRADE(phs->sv, SVt_PVNV);
-        /* ensure room for result, 28 is magic number (see sv_2pv)      */
-        SvGROW(phs->sv, (phs->maxlen < 28) ? 28 : phs->maxlen+1);
-    }
-    else {
-        /* phs->sv is copy of real variable, upgrade to at least string */
-        (void)SvUPGRADE(phs->sv, SVt_PV);
-    }
+    assert(strlen(imp_sth->statement)+1 <= stmt_len);
+    /* if not dml, no need to continue, As we are not going to
+       server side prepare this statement TODO: remalloc*/
+    if (!is_dml(imp_sth->statement+offset) || imp_dbh->version.ver < 7.3)
+            return 1;
 
-    /* At this point phs->sv must be at least a PV with a valid buffer, */
-    /* even if it's undef (null)                                        */
-    /* Here we set phs->progv, phs->indp, and value_len.                */
-    if (SvOK(phs->sv)) {
-        phs->progv = SvPV(phs->sv, value_len);
-        phs->indp  = 0;
-    }
-    else {        /* it's null but point to buffer in case it's an out var */
-        phs->progv = SvPVX(phs->sv);
-        phs->indp  = -1;
-        value_len  = 0;
-    }
-    phs->sv_type = SvTYPE(phs->sv);        /* part of mutation check    */
-    phs->maxlen  = SvLEN(phs->sv)-1;       /* avail buffer space        */
-    if (phs->maxlen < 0) {                 /* can happen with nulls     */
-        phs->maxlen = 0;
-    }
+    /* 1 == PREPARE -- TODO: Fix ugly number thing*/
+    build_preamble(imp_sth->statement, 1, place_holder_count, prep_stmt_id);
 
-    phs->alen = value_len + phs->alen_incnull;
+    //PerlIO_printf(DBILOGFP, "Rewritten stmt: %s\n", imp_sth->statement);
 
-    imp_sth->all_params_len += SvOK(phs->sv) ? phs->alen : 4; /* NULL */
-
-    if (dbis->debug >= 3) {
-        PerlIO_printf(DBILOGFP, "       bind %s <== '%.*s' (size %ld/%ld, otype %d, indp %d)\n",
-            phs->name,
-            (int)(phs->alen>SvIV(DBIS->neatsvpvlen) ? SvIV(DBIS->neatsvpvlen) : phs->alen),
-            (phs->progv) ? phs->progv : "",
-            (long)phs->alen, (long)phs->maxlen, phs->ftype, phs->indp);
+    imp_sth->result = PQexec(imp_dbh->conn, imp_sth->statement);
+    status = imp_sth->result ? PQresultStatus(imp_sth->result) : -1;
+    if (status != PGRES_COMMAND_OK) {
+            pg_error(sth,status, PQerrorMessage(imp_dbh->conn));
+            return 0;
     }
+    if (imp_sth->result)
+            PQclear(imp_sth->result);
 
+    /* 2 == EXECUTE -- TODO: Fix ugly number thing & remalloc*/
+    build_preamble(imp_sth->statement, 2, place_holder_count, prep_stmt_id);
+    //PerlIO_printf(DBILOGFP, "Rewritten stmt: %s\n", imp_sth->statement);
+    imp_sth->server_prepared = 1;
+
+    assert(strlen(imp_sth->statement)+1 <= stmt_len);
     return 1;
 }
 
 
-void dereference(value)
-SV** value;
+
+int
+deallocate_statement (sth, imp_sth)
+        SV *sth;
+        imp_sth_t *imp_sth;
 {
-       AV* buf;
-       SV* val;
-          char *src;
-       int is_ref;
-          STRLEN len;
+    int status, max_len;
+    char *stmt, *dest, *start;
+    PGresult *result;
+    D_imp_dbh_from_sth;
 
-       if (SvTYPE(SvRV(*value)) != SVt_PVAV)
-               croak("Not an array reference (%s)", neatsvpv(*value,0));
+    if (NULL == imp_dbh->conn)
+            return 1;
 
-       buf = (AV *) SvRV(*value);
-       sv_setpv(*value, "{");
-               while ( SvOK(val = av_shift(buf)) ) {
-                       is_ref = SvROK(val);
-                       if (is_ref)
-                               dereference(&val);
-                       else
-                               sv_catpv(*value, "\"");
-                       /* Quote */
-                       src = SvPV(val, len);
-                       while (len--) {
-                               if (!is_ref && *src == '\"')
-                                       sv_catpv(*value, "\\");
-                               sv_catpvn(*value, src++, 1);
-                       }
-                       /* End of quote */
-                       if (!is_ref)
-                               sv_catpv(*value, "\"");
-                       if (av_len(buf) > -1)
-                                       sv_catpv(*value, array_delimiter);
-               }
-       sv_catpv(*value, "}");
-       av_clear(buf);
+    max_len = strlen(imp_sth->statement)+strlen("DEALLOCATE ")+2;
+    Newc(0,stmt, max_len, char, char);
+
+    start = strstr(imp_sth->statement, "\"DBD::ChurlPg::cached_query");
+
+    if(!start) {
+            pg_error(sth, -1, "Could not  Deallocate statment... Preamble"
+              "not found");
+            return -1;
+    }
+
+    sprintf(stmt, "DEALLOCATE ");
+
+    dest =  stmt+11;
+
+    *dest++ = *start++;
+    while ((*dest++ = *start++))
+            if ('"' == *(dest-1))
+                    break;
+
+    *dest = '\0';
+
+    // PerlIO_printf(DBILOGFP, "Rewritten stmt: %s, Max Len: %i, Act Len:%i\n", stmt, max_len, strlen(stmt));
+
+    result = PQexec(imp_dbh->conn, stmt);
+    Safefree(stmt);
+
+    status = result ? PQresultStatus(result) : -1;
+    PQclear(result);
+
+    if (PGRES_COMMAND_OK != status) {
+            pg_error(sth,status, PQerrorMessage(imp_dbh->conn));
+            return -1;
+    }
+    return 1;
+
 }
 
+
+
+/* TODO: break this sub up. */
 int
 dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, maxlen)
     SV *sth;
@@ -1043,15 +706,24 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
     IV maxlen;
 {
     SV **phs_svp;
+    SV **svp;
     STRLEN name_len;
-    char *name;
+    char *name = Nullch;
     char namebuf[30];
     phs_t *phs;
+    sql_type_info_t *sql_type_info;
+    int pg_type, bind_type;
+        char *value_string;
+        int value_len;
+
 
     if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_bind_ph\n"); }
 
-    /* check if placeholder was passed as a number        */
+        if (is_inout)
+                croak("bind_inout not supported by this driver");
 
+
+    /* check if placeholder was passed as a number        */
     if (SvGMAGICAL(ph_namesv)) { /* eg if from tainted expression */
         mg_get(ph_namesv);
     }
@@ -1059,24 +731,25 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
         name = SvPV(ph_namesv, name_len);
     }
     if (SvNIOKp(ph_namesv) || (name && isDIGIT(name[0]))) {
-        sprintf(namebuf, ":p%d", (int)SvIV(ph_namesv));
+        sprintf(namebuf, "$%d", (int)SvIV(ph_namesv));
         name = namebuf;
         name_len = strlen(name);
+        assert(name_len < sizeof(namebuf));
     }
     assert(name != Nullch);
 
-    if (SvTYPE(newvalue) > SVt_PVLV) { /* hook for later array logic	*/
+    if (SvTYPE(newvalue) > SVt_PVLV) { /* hook for later array logic    */
         croak("Can't bind a non-scalar value (%s)", neatsvpv(newvalue,0));
     }
     if (SvROK(newvalue) && !IS_DBI_HANDLE(newvalue)) {
         /* dbi handle allowed for cursor variables */
-               dereference(&newvalue);
+        croak("Can't bind a reference (%s)", neatsvpv(newvalue,0));
     }
-    if (SvTYPE(newvalue) == SVt_PVLV && is_inout) {	/* may allow later */
+    if (SvTYPE(newvalue) == SVt_PVLV && is_inout) {     /* may allow later */
         croak("Can't bind ``lvalue'' mode scalar as inout parameter (currently)");
     }
 
-   if (dbis->debug >= 2) {
+    if (dbis->debug >= 2) {
         PerlIO_printf(DBILOGFP, "         bind %s <== %s (type %ld", name, neatsvpv(newvalue,0), (long)sql_type);
         if (is_inout) {
             PerlIO_printf(DBILOGFP, ", inout 0x%lx, maxlen %ld", (long)newvalue, (long)maxlen);
@@ -1087,81 +760,97 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
         PerlIO_printf(DBILOGFP, ")\n");
     }
 
+
+    // XXX this is broken: bind_param(1,1,{TYPE=>SQL_INTEGER});
+    if (attribs) {
+            if (sql_type)
+                    croak ("Cannot specify both sql_type and pg_type");
+
+             if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_type", 7, 0))==NULL)
+                    croak("DBD::ChurlPg only knows about the pg_type attribute");
+
+            pg_type = SvIV(*svp);
+
+
+            if ((sql_type_info = pg_type_data(pg_type))) {
+                    if (!sql_type_info->bind_ok) {
+                            croak("Can't bind %s, pg_type %s not supported"
+                                "by DBD::ChurlPg",
+                                name, sql_type_info->type_name);
+                    }
+            }
+            bind_type = sql_type_info->type_id;
+
+    } else if (sql_type) {
+
+            if ((sql_type_info = sql_type_data(sql_type))) {
+             /* always bind as pg_type, because we know we are inserting
+                into a pg database... It would make no sense to quote
+                something to sql semantics and break the insert.
+              */
+                    bind_type = sql_type_info->type.pg;
+                } else {
+                    croak("Cannot bind %s unknown sql_type %i",
+                       name, sql_type);
+            }
+
+    } else {
+            sql_type_info = pg_type_data(VARCHAROID);
+            if (!sql_type_info)
+                    croak("Default type is bad!!!!???");
+
+            bind_type = sql_type_info->type_id;
+    }
+
+
+    /* get the place holder */
     phs_svp = hv_fetch(imp_sth->all_params_hv, name, name_len, 0);
     if (phs_svp == NULL) {
-        croak("Can't bind unknown placeholder '%s' (%s)", name, neatsvpv(ph_namesv,0));
+            croak("Can't bind unknown placeholder '%s' (%s)",
+                name, neatsvpv(ph_namesv,0));
     }
-    phs = (phs_t*)(void*)SvPVX(*phs_svp);	/* placeholder struct	*/
+    phs = (phs_t*)(void*)SvPVX(*phs_svp);
 
-    if (phs->sv == &sv_undef) { /* first bind for this placeholder	*/
-        phs->ftype    = 1043;		 /* our default type VARCHAR	*/
-        phs->is_inout = is_inout;
-        if (is_inout) {
-            /* phs->sv assigned in the code below */
-            ++imp_sth->has_inout_params;
-            /* build array of phs's so we can deal with out vars fast	*/
-            if (!imp_sth->out_params_av) {
-                imp_sth->out_params_av = newAV();
-            }
-            av_push(imp_sth->out_params_av, SvREFCNT_inc(*phs_svp));
-        } 
 
-        if (attribs) {	/* only look for pg_type on first bind of var	*/
-            SV **svp;
-            /* Setup / Clear attributes as defined by attribs.		*/
-            /* XXX If attribs is EMPTY then reset attribs to default?	*/
-            if ( (svp = hv_fetch((HV*)SvRV(attribs), "pg_type", 7,  0)) != NULL) {
-                int pg_type = SvIV(*svp);
-                if (!pgtype_bind_ok(pg_type)) {
-                    croak("Can't bind %s, pg_type %d not supported by DBD::Pg", phs->name, pg_type);
-                }
-                if (sql_type) {
-                    croak("Can't specify both TYPE (%d) and pg_type (%d) for %s", sql_type, pg_type, phs->name);
-                }
-                phs->ftype = pg_type;
-            }
-        }
-        if (sql_type) {
-            /* SQL_BINARY (-2) is deprecated. */
-            if (sql_type == -2 && DBIc_WARN(imp_sth)) {
-                warn("Use of SQL type SQL_BINARY (%d) is deprecated. Use { pg_type => DBD::Pg::PG_BYTEA } instead.", sql_type);
-            }
-            phs->ftype = pg_sql_type(imp_sth, phs->name, sql_type);
-        }
-    }   /* was first bind for this placeholder  */
-
-        /* check later rebinds for any changes */
-    else if (is_inout || phs->is_inout) {
-        croak("Can't rebind or change param %s in/out mode after first bind (%d => %d)", phs->name, phs->is_inout , is_inout);
-    }
-    else if (sql_type && phs->ftype != pg_sql_type(imp_sth, phs->name, sql_type)) {
-        croak("Can't change TYPE of param %s to %d after initial bind", phs->name, sql_type);
+    if (phs->is_bound && phs->ftype != bind_type) {
+            croak("Can't change TYPE of param %s to %d after initial bind",
+                phs->name, sql_type);
+    } else {
+            phs->ftype = bind_type;
     }
 
-    phs->maxlen = maxlen;		/* 0 if not inout		*/
+    /* convert to a string ASAP */
+    if (!SvPOK(newvalue) && SvOK(newvalue)) {
+            sv_2pv(newvalue, &na);
+    }
+    /* phs->sv is copy of real variable, upgrade to at least string */
+    (void)SvUPGRADE(newvalue, SVt_PV);
 
-    if (!is_inout) {	/* normal bind to take a (new) copy of current value	*/
-        if (phs->sv == &sv_undef) {     /* (first time bind) */
-            phs->sv = newSV(0);
-        }
-        sv_setsv(phs->sv, newvalue);
-    } else if (newvalue != phs->sv) {
-        if (phs->sv) {
-            SvREFCNT_dec(phs->sv);
-        }
-        phs->sv = SvREFCNT_inc(newvalue);	/* point to live var	*/
+
+    if (!SvOK(newvalue)) {
+            phs->quoted = strdup("NULL");
+            if (NULL == phs->quoted)
+                croak("No memory");
+            phs->quoted_len = strlen(phs->quoted);
+    } else {
+            value_string = SvPV(newvalue, value_len);
+            phs->quoted = sql_type_info->quote(
+                value_string, value_len, &phs->quoted_len
+            );
     }
 
-    return dbd_rebind_ph(sth, imp_sth, phs);
+    phs->is_bound = 1;
+    return 1;
+
 }
 
 
-int
+/*TODO: make smaller */
 dbd_st_execute (sth, imp_sth)   /* <= -2:error, >=0:ok row count, (-1=unknown count) */
     SV *sth;
     imp_sth_t *imp_sth;
 {
-    dTHR;
+    //dTHR;
 
     D_imp_dbh_from_sth;
     ExecStatusType status = -1;
@@ -1170,184 +859,54 @@ dbd_st_execute (sth, imp_sth)   /* <= -2:error, >=0:ok row count, (-1=unknown co
     char *statement;
     int ret = -2;
     int num_fields;
-    int i;
-    STRLEN len;
-    bool in_literal = FALSE;
-    char in_comment = '\0';
-    char *src;
-    char *dest;
-    char *val;
-    char namebuf[30];
-    phs_t *phs;
-    SV **svp;
+    int  max_len =0;
 
     if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_execute\n"); }
 
-    /*
-    here we get the statement from the statement handle where
-    it has been stored when creating a blank sth during prepare
-    svp = hv_fetch((HV *)SvRV(sth), "Statement", 9, FALSE);
-    statement = SvPV(*svp, na);
-    */
-
     if (NULL == imp_dbh->conn) {
-        pg_error(sth, -1, "execute on disconnected handle");        
+        pg_error(sth, -1, "execute on disconnected handle");
         return -2;
-    }   
-    
-    statement = imp_sth->statement;
-    if (! statement) {
-        /* are we prepared ? */
+    }
+
+    if (! imp_sth->statement) {
         pg_error(sth, -1, "statement not prepared\n");
         return -2;
     }
 
+    max_len = strlen(imp_sth->statement)+1;
     /* do we have input parameters ? */
     if ((int)DBIc_NUM_PARAMS(imp_sth) > 0) {
-	/*
-	we have to allocate some additional memory for possible escaping
-	quotes and backslashes:
-	   max_len = length of statement
-	   + total length of all params allowing for worst case all
-	     characters binary-escaped (\\xxx)
-	   + null terminator
-	Note: parameters look like :p1 at this point, so there's no
-	need to explicitly allow for surrounding quotes because '' is
-	shorter than :p1
-	*/
-        int max_len = strlen(imp_sth->statement) + imp_sth->all_params_len * 5 + 1;
-        statement = (char*)safemalloc( max_len );
-        dest = statement;
-        src  = imp_sth->statement;
-        /* scan statement for ':p1' style placeholders */
-        while(*src) {
-
-            if (in_comment) {
-                /* SQL-style and C++-style */ 
-                if ((in_comment == '-' || in_comment == '/') && *src == '\n') {
-                    in_comment = '\0';
+        /* How much do we need to malloc to hold resultant string */
+        HV *hv = imp_sth->all_params_hv;
+        SV *sv;
+        char *key;
+        I32 retlen;
+        hv_iterinit(hv);
+        //PerlIO_printf(DBILOGFP, "b4 max_len: %i\n", max_len);
+        while( (sv = hv_iternextsv(hv, &key, &retlen)) != NULL ) {
+            if (sv != &sv_undef) {
+                phs_t *phs_tpl = (phs_t*)(void*)SvPVX(sv);
+                if (!phs_tpl->is_bound) {
+                        pg_error(sth, -1,
+                            "Execute called with unbound placeholder");
+                        return -2;
                 }
-                /* C-style */
-                else if (in_comment == '*' && *src == '*' && *(src+1) == '/') {
-                    *dest++ = *src++; /* avoids asterisk-slash-asterisk issues */
-                    in_comment = '\0';
-                }
-                *dest++ = *src++;
-                continue;
-            }
-
-            if (in_literal) {
-                /* check if literal ends but keep quotes in literal */
-                if (*src == in_literal) {
-                    int bs=0;
-                    char *str;
-                    str = src-1;
-                    while (*(str-bs) == '\\')
-                    bs++;
-                    if (!(bs & 1))
-                        in_literal = 0;
-                }
-                *dest++ = *src++;
-                continue;
-            }
-
-            /* Look for comments: SQL-style or C++-style or C-style	*/
-            if ((*src == '-' && *(src+1) == '-') ||
-                (*src == '/' && *(src+1) == '/') ||
-                (*src == '/' && *(src+1) == '*'))
-            {
-                in_comment = *(src+1);
-                /* We know *src & the next char are to be copied, so do */
-                /* it. In the case of C-style comments, it happens to */
-                /* help us avoid slash-asterisk-slash oddities. */
-                *dest++ = *src++;
-                *dest++ = *src++;
-                continue;
-            }
-
-            /* check if no placeholders */
-            if (*src != ':' && *src != '?') {
-                if (*src == '\'' || *src == '"') {
-                    in_literal = *src;
-                }
-                *dest++ = *src++;
-                continue;
-            }
-
-            /* check for cast operator */
-            if (*src == ':' && (*(src-1) == ':' || *(src+1) == ':')) {
-                *dest++ = *src++;
-                continue;
-            }
-
-
-            i = 0;
-            namebuf[i++] = *src++; /* ':' */
-            namebuf[i++] = *src++; /* 'p' */
-
-            while (isDIGIT(*src) && i < (sizeof(namebuf)-1) ) {
-                namebuf[i++] = *src++;
-            }
-            if ( i == (sizeof(namebuf) - 1)) {
-                pg_error(sth, -1, "namebuf buffer overrun\n");
-                return -2;
-            }
-            namebuf[i] = '\0';
-            svp = hv_fetch(imp_sth->all_params_hv, namebuf, i, 0);
-            if (svp == NULL) {
-                pg_error(sth, -1, "parameter unknown\n");
-                return -2;
-            }
-            /* get attribute */
-            phs = (phs_t*)(void*)SvPVX(*svp);
-            /* replace undef with NULL */
-            if(!SvOK(phs->sv)) {
-                val = "NULL";
-                len = 4;
-            } else {
-                val = SvPV(phs->sv, len);
-            }
-            /* quote string attribute */
-            if(!SvNIOK(phs->sv) && SvOK(phs->sv) && pg_sql_needquote(phs->ftype)) { /* avoid quoting NULL, tpf: bind_param as numeric  */
-                *dest++ = '\''; 
-            }
-            while (len--) {
-                if (imp_dbh->pg_auto_escape) {
-                    /* if the parameter was bound as PG_BYTEA, escape nonprintables */
-                    if (phs->ftype == 17 && !isPRINT(*val)) { /* escape null character */
-                        dest+=snprintf(dest, (statement + max_len) - dest, "\\\\%03o", *((unsigned char *)val));
-			if (dest > statement + max_len) {
-			    pg_error(sth, -1, "statement buffer overrun\n");
-			    return -2;
-			}
-                        val++;
-                        continue; /* do not copy the null */
-                    }
-                    /* escape quote */
-                    if (*val == '\'') {
-                            *dest++ = '\'';
-                    }
-                    /* escape backslash */
-                    if (*val == '\\') {
-                        if (phs->ftype == 17) { /* four backslashes. really. */
-                            *dest++ = '\\'; 
-                            *dest++ = '\\'; 
-                            *dest++ = '\\'; 
-                        } else {
-                            *dest++ = '\\';
-	                }
-                    }
-                }
-                /* copy attribute to statement */
-                *dest++ = *val++;
-            }
-            /* quote string attribute */
-            if(!SvNIOK(phs->sv) && SvOK(phs->sv) && pg_sql_needquote(phs->ftype)) { /* avoid quoting NULL, tpf: bind_param as numeric  */
-                *dest++ = '\''; 
+                max_len += phs_tpl->quoted_len * phs_tpl->count;
             }
         }
-        *dest = '\0';
-    }
+
+        Newc(0, statement, max_len, char, char);
+
+        /* scan statement for '$1' style placeholders and replace with values*/
+        if ((ret = rewrite_execute_stmt(sth, imp_sth, statement, sth)) < 0)
+                return ret;
+        } else {
+            statement = imp_sth->statement;
+        }
+
+        assert(strlen(statement)+1 <= max_len);
+
+
 
     if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_st_execute: statement = >%s<\n", statement); }
 
@@ -1398,23 +957,23 @@ dbd_st_execute (sth, imp_sth)   /* <= -2:error, >=0:ok row count, (-1=unknown co
 }
 
 
-int
-is_high_bit_set(val)
-    char *val;
-{
-    while (*val++)
-	if (*val & 0x80) return 1;
-    return 0;
-}
+
+
+
+
+/*TODO: pg_bool_tf && chob_blanks
+
+*/
 
 AV *
 dbd_st_fetch (sth, imp_sth)
     SV *sth;
     imp_sth_t *imp_sth;
 {
-    D_imp_dbh_from_sth;
+    sql_type_info_t *type_info;
     int num_fields;
-    int i;
+    char *value;
+    int i, pg_type, value_len;
     AV *av;
 
     if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_fetch\n"); }
@@ -1422,7 +981,7 @@ dbd_st_fetch (sth, imp_sth)
     /* Check that execute() was executed sucessfully */
     if ( !DBIc_ACTIVE(imp_sth) ) {
         pg_error(sth, 1, "no statement executing\n");
-        
+
         return Nullav;
     }
 
@@ -1441,53 +1000,17 @@ dbd_st_fetch (sth, imp_sth)
         if (PQgetisnull(imp_sth->result, imp_sth->cur_tuple, i)) {
             sv_setsv(sv, &sv_undef);
         } else {
-            char *val   = (char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i);
-            int val_len = strlen(val);
-            int  type   = PQftype(imp_sth->result, i); /* hopefully these hard coded values will not change */
-            if (16 == type && ! imp_dbh->pg_bool_tf) {
-               *val = (*val == 'f') ? '0' : '1'; /* bool: translate postgres into perl */
-            }
-            if (17 == type) {  /* decode \001 -> chr(1), etc, in-place */
-                char *p = val; /* points to next available pos */
-                char *s = val; /* points to current scanning pos */
-                int c1,c2,c3;
-                while (*s) {
-                    if (*s == '\\') {
-                        if (*(s+1) == '\\') { /* double backslash */ 
-                            *p++ = '\\';
-                            s += 2;
-                            continue;
-                        }
-                        else if ( isdigit(c1=(*(s+1))) &&
-		                  isdigit(c2=(*(s+2))) &&
-		                  isdigit(c3=(*(s+3))) ) {
-                            *p++ = (c1 - '0') * 64 + (c2 - '0') * 8 + (c3 - '0');
-                            s += 4;
-                            continue;
-                        }
-                    }
-                    *p++ = *s++;
-                }
-                val_len = (p - val);
-            }
-            else if (1042 == type && DBIc_has(imp_sth,DBIcf_ChopBlanks)) {
-                char *str = val;
-                while((val_len > 0) && (str[val_len-1] == ' ')) {
-                    val_len--;
-                }
-                val[val_len] = '\0';
-            }
-            sv_setpvn(sv, val, val_len);
-#ifdef SvUTF8_off
-	    if (imp_dbh->pg_enable_utf8) {
-		SvUTF8_off(sv);
-		/* XXX Is this all the character data types? */
-		if (18 == type || 25 == type || 1042 ==type || 1043 == type) {
-		    if (is_high_bit_set(val) && is_utf8_string(val, val_len))
-			SvUTF8_on(sv);
-		}
-	    }
-#endif
+            value = (char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
+
+            pg_type   = PQftype(imp_sth->result, i);
+            type_info = pg_type_data(pg_type);
+
+            if (type_info)
+                type_info->dequote(value, &value_len); /* dequote in place */
+            else
+                value_len = strlen(value);
+
+            sv_setpvn(sv, value, value_len);
         }
     }
 
@@ -1497,118 +1020,7 @@ dbd_st_fetch (sth, imp_sth)
 }
 
 
-int
-dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
-    SV *sth;
-    imp_sth_t *imp_sth;
-    int lobjId;
-    long offset;
-    long len;
-    SV *destrv;
-    long destoffset;
-{
-    D_imp_dbh_from_sth;
-    int ret, lobj_fd, nbytes, nread;
-    PGresult* result;
-    ExecStatusType status;
-    SV *bufsv;
-    char *tmp;
-
-    if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_blob_read\n"); }
-    /* safety check */
-    if (lobjId <= 0) {
-        pg_error(sth, -1, "dbd_st_blob_read: lobjId <= 0");
-        return 0;
-    }
-    if (offset < 0) {
-        pg_error(sth, -1, "dbd_st_blob_read: offset < 0");
-        return 0;
-    }
-    if (len < 0) {
-        pg_error(sth, -1, "dbd_st_blob_read: len < 0");
-        return 0;
-    }
-    if (! SvROK(destrv)) {
-        pg_error(sth, -1, "dbd_st_blob_read: destrv not a reference");
-        return 0;
-    }
-    if (destoffset < 0) {
-        pg_error(sth, -1, "dbd_st_blob_read: destoffset < 0");
-        return 0;
-    }
-
-    /* dereference destination and ensure it's writable string */
-    bufsv = SvRV(destrv);
-    if (! destoffset) {
-        sv_setpvn(bufsv, "", 0);
-    }
-
-    /* execute begin
-    result = PQexec(imp_dbh->conn, "begin");
-    status = result ? PQresultStatus(result) : -1;
-    PQclear(result);
-    if (status != PGRES_COMMAND_OK) {
-        pg_error(sth, status, PQerrorMessage(imp_dbh->conn));
-        return 0;
-    }
-    */
-
-    /* open large object */
-    lobj_fd = lo_open(imp_dbh->conn, lobjId, INV_READ);
-    if (lobj_fd < 0) {
-        pg_error(sth, -1, PQerrorMessage(imp_dbh->conn));
-        return 0;
-    }
-
-    /* seek on large object */
-    if (offset > 0) {
-        ret = lo_lseek(imp_dbh->conn, lobj_fd, offset, SEEK_SET);
-        if (ret < 0) {
-            pg_error(sth, -1, PQerrorMessage(imp_dbh->conn));
-            return 0;
-        }
-    }
-
-    /* read from large object */
-    nread = 0;
-    SvGROW(bufsv, destoffset + nread + BUFSIZ + 1);
-    tmp = (SvPVX(bufsv)) + destoffset + nread;
-    while ((nbytes = lo_read(imp_dbh->conn, lobj_fd, tmp, BUFSIZ)) > 0) {
-        nread += nbytes;
-        /* break if user wants only a specified chunk */
-        if (len > 0 && nread > len) {
-            nread = len;
-            break;
-        }
-        SvGROW(bufsv, destoffset + nread + BUFSIZ + 1);
-        tmp = (SvPVX(bufsv)) + destoffset + nread;
-    }
-
-    /* terminate string */
-    SvCUR_set(bufsv, destoffset + nread);
-    *SvEND(bufsv) = '\0';
-
-    /* close large object */
-    ret = lo_close(imp_dbh->conn, lobj_fd);
-    if (ret < 0) {
-        pg_error(sth, -1, PQerrorMessage(imp_dbh->conn));
-        return 0;
-    }
-
-    /* execute end 
-    result = PQexec(imp_dbh->conn, "end");
-    status = result ? PQresultStatus(result) : -1;
-    PQclear(result);
-    if (status != PGRES_COMMAND_OK) {
-        pg_error(sth, status, PQerrorMessage(imp_dbh->conn));
-        return 0;
-    }
-    */
-
-    return nread;
-}
-
-
+/* TODO: test for rows and define rows so that this rows() will be used */
 int
 dbd_st_rows (sth, imp_sth)
     SV *sth;
@@ -1649,14 +1061,20 @@ dbd_st_destroy (sth, imp_sth)
 
     /* Free off contents of imp_sth */
 
+    if (imp_sth->server_prepared)
+        if (deallocate_statement(sth, imp_sth) < 1)
+                warn("Something Ugly Happened. And whatever it was, it caused"
+                    "us not to be able to deallocate the prepared statement. "
+                    "Prolly a tx went bad or something like that");
+
     Safefree(imp_sth->statement);
+    if (imp_sth->place_holders)
+        Safefree(imp_sth->place_holders);
+
     if (imp_sth->result) {
         PQclear(imp_sth->result);
         imp_sth->result = 0;
     }
-
-    if (imp_sth->out_params_av)
-        sv_free((SV*)imp_sth->out_params_av);
 
     if (imp_sth->all_params_hv) {
         HV *hv = imp_sth->all_params_hv;
@@ -1667,7 +1085,8 @@ dbd_st_destroy (sth, imp_sth)
         while( (sv = hv_iternextsv(hv, &key, &retlen)) != NULL ) {
             if (sv != &sv_undef) {
                 phs_t *phs_tpl = (phs_t*)(void*)SvPVX(sv);
-                sv_free(phs_tpl->sv);
+                /* sv_free(phs_tpl->sv); */
+                free(phs_tpl->quoted);
             }
         }
         sv_free((SV*)imp_sth->all_params_hv);
@@ -1700,6 +1119,9 @@ dbd_st_FETCH_attrib (sth, imp_sth, keysv)
     char *key = SvPV(keysv,kl);
     int i, sz;
     SV *retsv = Nullsv;
+    char *type_name;
+    sql_type_info_t *type_info;
+
 
     if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_FETCH\n"); }
 
@@ -1720,10 +1142,9 @@ dbd_st_FETCH_attrib (sth, imp_sth, keysv)
         AV *av = newAV();
         retsv = newRV(sv_2mortal((SV*)av));
         while(--i >= 0) {
-            av_store(av, i, newSViv(sql_pg_type( imp_sth,
-        						PQfname(imp_sth->result, i),
-								PQftype(imp_sth->result, i))));
-		}
+            type_info = sql_type_data(PQftype(imp_sth->result, i));
+            av_store(av, i, newSViv( type_info ? type_info->type.sql : 0 ) );
+	}
     } else if (kl==9 && strEQ(key, "PRECISION")) {
         AV *av = newAV();
         retsv = newRV(sv_2mortal((SV*)av));
@@ -1755,259 +1176,14 @@ dbd_st_FETCH_attrib (sth, imp_sth, keysv)
         }
     } else if (kl==7 && strEQ(key, "pg_type")) {
         AV *av = newAV();
-        char *type_nam;
         retsv = newRV(sv_2mortal((SV*)av));
+
         while(--i >= 0) {
-            switch (PQftype(imp_sth->result, i)) {
-            case 16:
-                type_nam = "bool";
-                break;
-            case 17:
-                type_nam = "bytea";
-                break;
-            case 18:
-                type_nam = "char";
-                break;
-            case 19:
-                type_nam = "name";
-                break;
-            case 20:
-                type_nam = "int8";
-                break;
-            case 21:
-                type_nam = "int2";
-                break;
-            case 22:
-                type_nam = "int28";
-                break;
-            case 23:
-                type_nam = "int4";
-                break;
-            case 24:
-                type_nam = "regproc";
-                break;
-            case 25:
-                type_nam = "text";
-                break;
-            case 26:
-                type_nam = "oid";
-                break;
-            case 27:
-                type_nam = "tid";
-                break;
-            case 28:
-                type_nam = "xid";
-                break;
-            case 29:
-                type_nam = "cid";
-                break;
-            case 30:
-                type_nam = "oid8";
-                break;
-            case 32:
-                type_nam = "SET";
-                break;
-            case 210:
-                type_nam = "smgr";
-                break;
-            case 600:
-                type_nam = "point";
-                break;
-            case 601:
-                type_nam = "lseg";
-                break;
-            case 602:
-                type_nam = "path";
-                break;
-            case 603:
-                type_nam = "box";
-                break;
-            case 604:
-                type_nam = "polygon";
-                break;
-            case 605:
-                type_nam = "filename";
-                break;
-            case 628:
-                type_nam = "line";
-                break;
-            case 629:
-                type_nam = "_line";
-                break;
-            case 700:
-                type_nam = "float4";
-                break;
-            case 701:
-                type_nam = "float8";
-                break;
-            case 702:
-                type_nam = "abstime";
-                break;
-            case 703:
-                type_nam = "reltime";
-                break;
-            case 704:
-                type_nam = "tinterval";
-                break;
-            case 705:
-                type_nam = "unknown";
-                break;
-            case 718:
-                type_nam = "circle";
-                break;
-            case 719:
-                type_nam = "_circle";
-                break;
-            case 790:
-                type_nam = "money";
-                break;
-            case 791:
-                type_nam = "_money";
-                break;
-            case 810:
-                type_nam = "oidint2";
-                break;
-            case 910:
-                type_nam = "oidint4";
-                break;
-            case 911:
-                type_nam = "oidname";
-                break;
-            case 1000:
-                type_nam = "_bool";
-                break;
-            case 1001:
-                type_nam = "_bytea";
-                break;
-            case 1002:
-                type_nam = "_char";
-                break;
-            case 1003:
-                type_nam = "_name";
-                break;
-            case 1005:
-                type_nam = "_int2";
-                break;
-            case 1006:
-                type_nam = "_int28";
-                break;
-            case 1007:
-                type_nam = "_int4";
-                break;
-            case 1008:
-                type_nam = "_regproc";
-                break;
-            case 1009:
-                type_nam = "_text";
-                break;
-            case 1028:
-                type_nam = "_oid";
-                break;
-            case 1010:
-                type_nam = "_tid";
-                break;
-            case 1011:
-                type_nam = "_xid";
-                break;
-            case 1012:
-                type_nam = "_cid";
-                break;
-            case 1013:
-                type_nam = "_oid8";
-                break;
-            case 1014:
-                type_nam = "_lock";
-                break;
-            case 1015:
-                type_nam = "_stub";
-                break;
-            case 1016:
-                type_nam = "_ref";
-                break;
-            case 1017:
-                type_nam = "_point";
-                break;
-            case 1018:
-                type_nam = "_lseg";
-                break;
-            case 1019:
-                type_nam = "_path";
-                break;
-            case 1020:
-                type_nam = "_box";
-                break;
-            case 1021:
-                type_nam = "_float4";
-                break;
-            case 1022:
-                type_nam = "_float8";
-                break;
-            case 1023:
-                type_nam = "_abstime";
-                break;
-            case 1024:
-                type_nam = "_reltime";
-                break;
-            case 1025:
-                type_nam = "_tinterval";
-                break;
-            case 1026:
-                type_nam = "_filename";
-                break;
-            case 1027:
-                type_nam = "_polygon";
-                break;
-            case 1033:
-                type_nam = "aclitem";
-                break;
-            case 1034:
-                type_nam = "_aclitem";
-                break;
-            case 1042:
-                type_nam = "bpchar";
-                break;
-            case 1043:
-                type_nam = "varchar";
-                break;
-            case 1082:
-                type_nam = "date";
-                break;
-            case 1083:
-                type_nam = "time";
-                break;
-            case 1182:
-                type_nam = "_date";
-                break;
-            case 1183:
-                type_nam = "_time";
-                break;
-            case 1184:
-                type_nam = "datetime";
-                break;
-            case 1185:
-                type_nam = "_datetime";
-                break;
-            case 1186:
-                type_nam = "timespan";
-                break;
-            case 1187:
-                type_nam = "_timespan";
-                break;
-            case 1231:
-                type_nam = "_numeric";
-                break;
-            case 1296:
-                type_nam = "timestamp";
-                break;
-            case 1700:
-                type_nam = "numeric";
-                break;
-                
-            default:
-                type_nam = "unknown";
-                
-            }
-            av_store(av, i, newSVpv(type_nam, 0));
+
+            type_info = pg_type_data(PQftype(imp_sth->result,i));
+            type_name = (type_info) ?  type_info->type_name : "unknown";
+            av_store(av, i, newSVpv(type_name, 0));
+
         }
     } else if (kl==13 && strEQ(key, "pg_oid_status")) {
         retsv = newSVpv((char *)PQoidStatus(imp_sth->result), 0);

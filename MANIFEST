@@ -1,5 +1,6 @@
 Changes
 MANIFEST
+TODO
 Makefile.PL
 Pg.h
 Pg.pm
@@ -9,6 +10,14 @@ README.win32
 dbd-pg.pod
 dbdimp.c
 dbdimp.h
+large_object.c
+large_object.h
+prescan_stmt.c
+quote.c
+quote.h
+types.c
+types.h
+pg_typeOID.h
 eg/ApacheDBI.pl
 eg/lotest.pl
 eg/notify_test.patch

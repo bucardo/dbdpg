@@ -57,7 +57,7 @@ my %opts = (
     NAME         => 'DBD::Pg',
     VERSION_FROM => 'Pg.pm',
     INC          => "-I$POSTGRES_INCLUDE -I$dbi_arch_dir",
-    OBJECT       => "Pg\$(OBJ_EXT) dbdimp\$(OBJ_EXT)",
+    OBJECT       => "Pg\$(OBJ_EXT) dbdimp\$(OBJ_EXT) quote\$(OBJ_EXT) types\$(OBJ_EXT)",
     LIBS         => ["-L$POSTGRES_LIB -lpq"],
     AUTHOR       => 'http://gborg.postgresql.org/project/dbdpg/projdisplay.php',
     ABSTRACT     => 'PostgreSQL database driver for the DBI module',
@@ -75,6 +75,9 @@ if ($os eq 'hpux') {
 if ($Config{dlsrc} =~ /dl_none/) {
     $opts{LINKTYPE} = 'static';
 }
+
+sub MY::postamble { return &dbd_postamble; }
+
 
 WriteMakefile(%opts);
 

@@ -1,3 +1,30 @@
+1.30_1 
+    - $dbh->prepare() rewrites the SQL statement into an internal for
+      striping out comments and whitespace, and if PostgreSQL > 7.3 takes the 
+      stripped statement and passes that to postgress' PREPARE statement, 
+      then rewrites the statement as 'EXECUTE "DBD::PG::cached_query n"  
+      ($1, $2, ... $n, $n+1)' for DBD::Pg's execute.  -- Currently disabled
+      until PREPARE works a little better
+    - Allows the use of :n and :foo bind params. So: (SELECT * FROM foo where 
+      1 = :this and 2 = :that) will now work.
+    - Complains on execute when unbound bind params are submitted (instead of 
+      defaulting to NULL)
+    - Switched over to use driver.xst.
+    - pg_error() only removes \n's don't truncate message on first \n
+    - fixed statement scan problem where the preparse of
+      "SELECT foo[3:33] from bar"  was scanning :33 as a placeholder
+    - moved the quoting of bind values out of execute() and into
+      bind -- as there is no need to requote the value every time execute 
+      is called. 
+    - :veryverylongplaceholdername ==  Long walk. Sort pier -- fixed.
+    - quote() is now in C and uses same code as bind_param.
+    - quoting and dequoting now use libpq quoting functions where available 
+      (I still need to take the libpq functions swiped out of quote.c and move 
+      it into libpqswip.c with license info &c., and switch ifndefs to ifdefs)
+    - bind_param() will convert from 1,0 to TRUE/FALSE when pg_type is 
+      PGBOOLOID.
+    - fixed many heap buffer overruns.
+
 1.21  Sun Jan 12 21:00:44 EST 2003
       - System tables no longer returned by tables(). [Dave Rolsky]
       -	Fix table_attributes to handle removal of pg_relcheck in 7.3,

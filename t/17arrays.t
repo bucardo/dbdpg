@@ -1,25 +1,28 @@
 use strict;
 use DBI;
 use Test::More;
+use Data::Dumper;
 
 if (defined $ENV{DBI_DSN}) {
-  plan tests => 15;
+  plan tests => 16;
 } else {
   plan skip_all => 'cannot test without DB info';
 }
 
 my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
-		       {RaiseError => 1, AutoCommit => 0}
+		       {RaiseError => 1, AutoCommit => 1}
 		      );
 ok(defined $dbh,
    'connect with transaction'
   );
 
 # Insert into array
-my $values = [["a,b", 'c","d', "e'"], ['f', 'g', 'h']];
+my $values = [["a,b", 'c","d', "e'", '\\"'], ['f', 'g', 'h']];
+print Data::Dumper::Dumper($values);
 ok($dbh->do(q{INSERT INTO test (id, name, array) VALUES (?, ?, ?)}, {}, 1, 'array1', $values),
 	'insert statement with references'
   );
+print Data::Dumper::Dumper($values);
 
 my $sql = <<SQL;
    SELECT array[1][1],array[1][2],array[1][3],
@@ -59,6 +62,9 @@ ok($result[1] eq 'c","d',
   );
 
 ok($result[2] eq "e'",
+    'values are equal'
+  );
+ok($result[2] eq q{\\\\\"}, 
     'values are equal'
   );
 

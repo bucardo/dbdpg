@@ -28,6 +28,27 @@ struct imp_dbh_st {
 #ifdef SvUTF8_off
     int         pg_enable_utf8;	/* should we attempt to make utf8 strings? */
 #endif
+    struct {
+        int    major;
+	int    minor;
+	double ver;
+    } version;
+};
+
+
+#define sword  signed int
+#define sb2    signed short
+#define ub2    unsigned short
+typedef struct phs_st phs_t;    /* scalar placeholder   */
+
+struct phs_st {  	/* scalar placeholder EXPERIMENTAL	*/
+    int ftype;          /* field type */
+    char *quoted;       /* Quoted value bound to placeholder*/
+    size_t quoted_len;
+    unsigned int count;
+    bool is_bound;
+
+    char name[1];	/* struct is malloc'd bigger as needed	*/
 };
 
 /* Define sth implementor data structure */
@@ -41,40 +62,13 @@ struct imp_sth_st {
     /* Input Details	*/
     char      *statement;	/* sql (see sth_scan)		*/
     HV        *all_params_hv;	/* all params, keyed by name	*/
-    AV        *out_params_av;	/* quick access to inout params	*/
-    int        pg_pad_empty;	/* convert ""->" " when binding	*/
-    int        all_params_len;  /* length-sum of all params     */
 
-    /* (In/)Out Parameter Details */
-    bool  has_inout_params;
+    bool     server_prepared;  /* Did we prepare this server side?*/
+    phs_t   **place_holders;
+    unsigned int phc;
+
+    /*char *orig_statement; */  /*? Origional SQL statement for debug?? ?*/
 };
-
-
-#define sword  signed int
-#define sb2    signed short
-#define ub2    unsigned short
-
-typedef struct phs_st phs_t;    /* scalar placeholder   */
-
-struct phs_st {  	/* scalar placeholder EXPERIMENTAL	*/
-    sword ftype;        /* external OCI field type		*/
-
-    SV	*sv;		/* the scalar holding the value		*/
-    int sv_type;	/* original sv type at time of bind	*/
-    bool is_inout;
-
-    IV  maxlen;		/* max possible len (=allocated buffer)	*/
-
-    /* these will become an array */
-    sb2 indp;		/* null indicator			*/
-    char *progv;
-    ub2 arcode;
-    IV alen;		/* effective length ( <= maxlen )	*/
-
-    int alen_incnull;	/* 0 or 1 if alen should include null	*/
-    char name[1];	/* struct is malloc'd bigger as needed	*/
-};
-
 
 SV * dbd_db_pg_notifies (SV *dbh, imp_dbh_t *imp_dbh);
 

@@ -70,9 +70,9 @@ $sql = <<SQL;
            FROM test
          WHERE id = ?
            AND name = ?
-           AND value = ?
+           AND val = ?
            AND score = ?
-           and data = ?
+           and date = ?
 SQL
 
 ok($dbh->prepare($sql),

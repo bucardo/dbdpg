@@ -63,7 +63,8 @@ $sql = <<SQL;
 SQL
 $sth = $dbh->prepare($sql);
 
-$sth->execute("\\'?:");
+$sth->bind_param(":1", "\\'?:");
+$sth->execute();
 
 ($retr) = $sth->fetchrow_array();
 ok((defined($retr) && $retr eq "\\'?:"),
