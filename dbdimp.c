@@ -793,7 +793,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 		2. The attribute "direct" is false
 		3. We can handle server-side prepares
 		4. The attribute "pg_server_prepare" is not 0
-		5. The attribute "pg_prepare_now" is true
+		5. The attribute "pg_prepare_now" is true and we are a PG8 or up compiled server
 	*/
 	if (imp_sth->is_dml && 
 			!imp_sth->direct &&
@@ -1517,7 +1517,9 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	execsize = imp_sth->totalsize; /* Total of all segments */
 
 	/* If using plain old PQexec, we need to quote each value ourselves */
-	if (imp_dbh->pg_protocol < 3) {
+	if (imp_dbh->pg_protocol < 3 || 
+			(1 != imp_sth->server_prepare && 
+			 imp_sth->numbound != imp_sth->numphs)) {
 		for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 			if (NULL == currph->value) {
 				Renew(currph->quoted, 5, char); /* freed in dbd_st_execute (and above) */
@@ -1628,7 +1630,10 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 		/* PQexecParams */
 
-		if (imp_dbh->pg_protocol >= 3 && imp_sth->numphs) {
+		if (imp_dbh->pg_protocol >= 3 &&
+				imp_sth->numphs &&
+				(1 == imp_sth->server_prepare || 
+				 imp_sth->numbound == imp_sth->numphs)) {
 
 			if (dbis->debug >= 5)
 				PerlIO_printf(DBILOGFP, "  dbdpg: using PQexecParams\n");
