@@ -6,16 +6,6 @@
 
 	* t/15funct.t: Removed skip because table_info *is* now supported.
 
-2002-11-27 09:54  David Wheeler <david@wheeler.net>
-
-	* Changes: Updated in preparation for release today. We've made a
-	lot of changes!
-
-2002-11-27 09:53  David Wheeler <david@wheeler.net>
-
-	* MANIFEST: Updated to include ChangeLog and to exclude
-	t/10transition.t.
-
 2002-11-27  Jason E. Stewart  <jason@openinformatics.com>
 	* t/15funct.t (Repository): 
 	uses standard DBI testing env vars, e.g. DBI_DSN, DBI_USER, DBI_PASS
@@ -55,10 +45,6 @@
 	dbd_bind_ph. It now issues a warning when $h->{Warn} is true and
 	SQL_BINARY is used. Added tests for these changes.
 
-2002-11-26 12:57  David Wheeler <david@wheeler.net>
-
-	* MANIFEST: Updated MANIFEST.
-
 2002-11-26 12:47  David Wheeler <david@wheeler.net>
 
 	* Makefile.PL, t/lib/App/Info.pm, t/lib/App/Info/Handler.pm,
@@ -67,10 +53,6 @@
 	t/lib/App/Info/RDBMS/PostgreSQL.pm: Moved App::Info classes from
 	inc to t/lib. This will prevent them from begin indexed by
 	search.cpan.org.
-
-2002-11-26 10:15  Bruce Momjian <pgman@candle.pha.pa.us>
-
-	* Pg.pm: cleanup.
 
 2002-11-25 22:42  David Wheeler <david@wheeler.net>
 
@@ -88,22 +70,9 @@
 
 	* Pg.pm: Fixed bogus assignment of a list to a scalar.
 
-2002-11-25 21:00  Bruce Momjian <pgman@candle.pha.pa.us>
-
-	* t/15funct.t: cleanups.
-
-2002-11-25 18:40  Bruce Momjian <pgman@candle.pha.pa.us>
-
-	* Pg.pm, t/15funct.t: More regression cleanups.  Almost done.
-
 2002-11-25 17:11  Bruce Momjian <pgman@candle.pha.pa.us>
 
-	* t/: 01setup.t, 04execute.t, 05fetch.t, 08txn.t, 09autocommit.t,
-	10transition.t: Make most regression tests pass.
-
-2002-11-25 16:19  Bruce Momjian <pgman@candle.pha.pa.us>
-
-	* README: Update readme.
+	Make all regression tests work.
 
 2002-11-25 15:52  David Wheeler <david@wheeler.net>
 
@@ -123,10 +92,6 @@
 
 	* Makefile.PL: Added inc/ directory containing necessary parts of
 	App::Info to use it during the build process.
-
-2002-11-22 23:16  tlowery
-
-	* MANIFEST: Added MANIFEST back, prevents bundle for complaining.
 
 2002-11-22 23:14  tlowery
 
