@@ -109,6 +109,7 @@ void pg_error (h, error_num, error_msg)
 		 char *error_msg;
 {
 	D_imp_xxh(h);
+	D_imp_dbh(h);
 	char *err, *src, *dst; 
 	int len = strlen(error_msg);
 	
@@ -127,6 +128,7 @@ void pg_error (h, error_num, error_msg)
 	
 	sv_setiv(DBIc_ERR(imp_xxh), (IV)error_num);		 /* set err early */
 	sv_setpv(DBIc_ERRSTR(imp_xxh), (char*)err);
+	sv_setpvn(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate, 5);
 	DBIh_EVENT2(h, ERROR_event, DBIc_ERR(imp_xxh), DBIc_ERRSTR(imp_xxh));
 	if (dbis->debug >= 3) {
 		PerlIO_printf(DBILOGFP, "%s error %d recorded: %s\n",
@@ -567,7 +569,7 @@ int dbd_discon_all (drh, imp_drh)
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_discon_all\n"); }
 	
 	/* The disconnect_all concept is flawed and needs more work */
-	if (!dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
+	if (!PL_dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
 		sv_setiv(DBIc_ERR(imp_drh), (IV)1);
 		sv_setpv(DBIc_ERRSTR(imp_drh),
 						 (char*)"disconnect_all not implemented");
@@ -1558,19 +1560,20 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		if (! strncmp(cmdStatus, "DELETE", 6) || ! strncmp(cmdStatus, "INSERT", 6) || ! strncmp(cmdStatus, "UPDATE", 6)) {
 			ret = atoi(cmdTuples);
 		} else {
-			ret = -1;
+			return -1;
 		}
 	}
 	else if (PGRES_COPY_OUT == status || PGRES_COPY_IN == status) {
 		/* Copy Out/In data transfer in progress */
-		ret = -1;
+		return -1;
 	}
 	else {
 		pg_error(sth, status, PQerrorMessage(imp_dbh->conn));
-		ret = -2;
+		return -2;
 	}
 	
 	/* store the number of affected rows */
+	
 	imp_sth->rows = ret;
 	
 	return ret;
