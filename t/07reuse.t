@@ -1,37 +1,28 @@
-if (!exists($ENV{DBDPG_MAINTAINER})) {
-    print "1..0\n";
-    exit;
-}
-
 use strict;
 use DBI;
+use Test::More;
 
-main();
-
-sub main {
-    my ($n, $dbh, $sth);
-    
-    print "1..3\n";
-    
-    $n = 1;
-    
-    $dbh = DBI->connect("dbi:Pg:dbname=$ENV{DBDPG_TEST_DB};host=$ENV{DBDPG_TEST_HOST}", $ENV{DBDPG_TEST_USER}, $ENV{DBDPG_TEST_PASS}, {RaiseError => 1, PrintError => 0, AutoCommit => 0});
-    
-    print "ok $n\n"; $n++;
-    
-    $sth = $dbh->prepare(q{SELECT * FROM test});
-    $dbh->disconnect();
-        
-    print "ok $n\n"; $n++;
-
-    eval {
-        $sth->execute();
-    };
-    if (!$@) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
+if (defined $ENV{DBI_DSN}) {
+  plan tests => 3;
+} else {
+  plan skip_all => 'cannot test without DB info';
 }
 
-1;
+my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+		       {RaiseError => 1, PrintError => 0, AutoCommit => 0}
+		      );
+ok(defined $dbh,
+   'connect with transaction'
+  );
+
+my $sth = $dbh->prepare(q{SELECT * FROM test});
+ok($dbh->disconnect(),
+   'disconnect with un-finished statement'
+  );
+
+eval {
+  $sth->execute();
+};
+ok($@,
+   'execute on disconnected statement'
+  );
