@@ -70,7 +70,8 @@ $DBD::Pg::VERSION = '1.21';
     sub pg_use_catalog {
       my $dbh = shift;
       my $version = DBD::Pg::pg_server_version($dbh);
-      return $version < 7.3 ? "" : "pg_catalog.";
+		$version =~ /^(\d+\.\d+)/;
+      return $1 < 7.3 ? "" : "pg_catalog.";
     }
 
     1;
@@ -255,7 +256,12 @@ $DBD::Pg::VERSION = '1.21';
 		# , PK_NAME:
 
 		my @wh = (); my @dat = ();  # Used to hold data for the attributes.
+
+		my $version = DBD::Pg::pg_server_version($dbh);
+		$version =~ /^(\d+)\.(\d)/;
+
 		my @flds = qw/catname u.usename bc.relname/;
+		$flds[1] = 'n.nspname' unless ($1.$2 < 73);
 
 		for my $idx (0 .. $#attrs) {
 			next if ($flds[$idx] eq 'catname'); # Skip catalog
@@ -282,7 +288,6 @@ $DBD::Pg::VERSION = '1.21';
 		$wh = join( " AND ", '', @wh ) if (@wh);
 
 		# Base primary key selection query borrowed from phpPgAdmin.
-		my $version = DBD::Pg::pg_server_version($dbh);
 		my $showschema = $version < 7.3 ? "NULL::text" : "n.nspname";
         my $schemajoin = $version < 7.3 ? "" : "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = bc.relnamespace)";
 		my $pri_key_sql = qq{
@@ -355,8 +360,8 @@ $DBD::Pg::VERSION = '1.21';
 		$fk_catalog, $fk_schema, $fk_table) = @_;
 
 	# this query doesn't work for Postgres before 7.3
-	my ($version) = $dbh->selectrow_array("SELECT version()");
-	$version =~ /^PostgreSQL (\d+)\.(\d)/;
+	my $version = $dbh->pg_server_version;
+	$version =~ /^(\d+)\.(\d)/;
 	return undef if ($1.$2 < 73);
 
 	# Used to hold data for the attributes.
