@@ -37,19 +37,14 @@ foreach my $test (keys %tests) {
 }
 
 # Make sure that SQL_BINARY doesn't work.
-#    eval { $dbh->quote('foo', { TYPE => DBI::SQL_BINARY })};
 
-TODO:{
-  local $TODO = "No SQL_BINARY quote check yet";
-
-  eval {
-    local $dbh->{PrintError} = 0;
-    $dbh->quote('foo', DBI::SQL_BINARY);
-  };
-  ok ($@ && $@ =~ /Use of SQL_BINARY invalid in quote/,
-    'SQL_BINARY'
-  );
-}
+eval {
+  local $dbh->{PrintError} = 0;
+  $dbh->quote('foo', DBI::SQL_BINARY);
+};
+ok ($@ && $@ =~ /Use of SQL_BINARY invalid in quote/,
+  'SQL_BINARY'
+);
 
 ok($dbh->disconnect(),
    'disconnect'
