@@ -1,19 +1,18 @@
 1.40 
-	- Added $dbh->func($filehandle, 'server_trace')
-		[Greg Sabino Mullane]
+	- Added $dbh->pg_server_trace($fh) [Greg Sabino Mullane]
 	- Added $dbh->{pg_errorlevel}. [Greg Sabino Mullane]
 	- Fix utf8 quote() support [Dominic Mitchell <dom@semantico.com>]
-	- Add explicit support for types SQL_BOOLEAN, DATE, TIME, 
+	- Added explicit support for types SQL_BOOLEAN, DATE, TIME, 
 		TIMESTAMP, and TIMESTAMPTZ. Return correct values for 
 		DATEOID and TIMEOID. [Greg Sabino Mullane]
 	- Added tablespace support for table_info and primary_key_info.
 		[Greg Sabino Mullane]
-	- Add new attributes to $dbh: pg_db, pg_user, pg_pass,
+	- Added new attributes to $dbh: pg_db, pg_user, pg_pass,
 		pg_host, pg_port, pg_options, pg_socket, pg_pid
 		[Greg Sabino Mullane]
 	- Minor fixes in quote.c, dbdimp.c, and types.h
 		[Christophe Martin: schplurtz at free.fr]
-	- Add support for SQLSTATE via $dbh->state and $sth->state
+	- Added support for SQLSTATE via $dbh->state and $sth->state
 		[Greg Sabino Mullane]
 	- Major overhaul of prepare/execute to handle new server-side 
 		prepare system. See Pg.pm for details. [Greg Sabino Mullane]

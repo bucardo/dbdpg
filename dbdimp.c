@@ -2288,7 +2288,7 @@ pg_db_endcopy (dbh)
 
 
 void
-pg_db_server_trace (dbh, fh)
+pg_db_pg_server_trace (dbh, fh)
 		SV *dbh;
 		FILE *fh;
 {
@@ -2299,7 +2299,7 @@ pg_db_server_trace (dbh, fh)
 
 
 void
-pg_db_no_server_trace (dbh)
+pg_db_pg_server_untrace (dbh)
 		 SV *dbh;
 {
 	D_imp_dbh(dbh);

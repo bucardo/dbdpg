@@ -61,6 +61,13 @@ use 5.006001;
 			'State' => \$DBD::Pg::sqlstate,
 			'Attribution' => 'PostgreSQL DBD by Edmund Mergl',
 		});
+
+
+		DBD::Pg::db->install_method("pg_server_trace");
+		DBD::Pg::db->install_method("pg_server_untrace");
+
+		$drh;
+
 	}
 
 	## Used by both the dr and db packages
@@ -1530,32 +1537,6 @@ reference to an array of hashes, each of which contains the following keys:
 The REMARKS field will be returned as C<NULL> for Postgres versions 7.1.x and
 older.
 
-=item server_trace
-
-  $dbh->func($filehandle, 'server_trace');
-
-Writes debugging information from the PostgreSQL backend to a file. This is 
-not the same as the trace() method and you should not use this method unless 
-you know what you are doing. If you do enable this, be aware that the file 
-will grow very large, very quick. To stop logging to the file, use the 
-C<no_server_trace> function. The first argument must be a file handle, not 
-a filename. Example:
-
-  my $pid = $dbh->{pg_pid};
-  my $file = "pgbackend.$pid.debug.log";
-  open(my $fh, ">$file") or die qq{Could not open "$file": $!\n};
-  $dbh->func($fh, 'server_trace');
-  ## Run code you want to trace here
-  $dbh->func('no_server_trace');
-  close($fh);
-
-=item no_server_trace
-
-  $dbh->func('no_server_trace');
-
-Stop server logging to a previously opened file.
-
-
 =item lo_create
 
   $lobjId = $dbh->func($mode, 'lo_creat');
@@ -2204,6 +2185,32 @@ type is officially deprecated. Use C<PG_BYTEA> with C<bind_param()> instead:
 
   $rv = $sth->bind_param($param_num, $bind_value,
                          { pg_type => DBD::Pg::PG_BYTEA });
+
+
+=item B<pg_server_trace>
+
+  $dbh->pg_server_trace($filehandle);
+
+Writes debugging information from the PostgreSQL backend to a file. This is 
+not the same as the trace() method and you should not use this method unless 
+you know what you are doing. If you do enable this, be aware that the file 
+will grow very large, very quick. To stop logging to the file, use the 
+C<pg_server_untrace> function. The first argument must be a file handle, not 
+a filename. Example:
+
+  my $pid = $dbh->{pg_pid};
+  my $file = "pgbackend.$pid.debug.log";
+  open(my $fh, ">$file") or die qq{Could not open "$file": $!\n};
+  $dbh->pg_server_trace($fh);
+  ## Run code you want to trace here
+  $dbh->pg_server_untrace;
+  close($fh);
+
+=item B<pg_server_untrace>
+
+  $dbh->pg_server_untrace
+
+Stop server logging to a previously opened file.
 
 =back
 
