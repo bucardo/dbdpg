@@ -71,6 +71,10 @@ directories:
 
 =over 4
 
+=item $ENV{POSTGRES_HOME}/bin (if $ENV{POSTGRES_HOME} exists)
+
+=item $ENV{POSTGRES_LIB}/../bin (if $ENV{POSTGRES_LIB} exists)
+
 =item /usr/local/pgsql/bin
 
 =item /usr/local/postgres/bin
@@ -680,6 +684,54 @@ sub so_lib_dir {
 
 ##############################################################################
 
+=head3 configure options
+
+  my $configure = $pg->configure;
+
+Returns the options the PostgreSQL server was configured with.
+App::Info::RDBMS::PostgreSQL gathers the path from the system call
+C<`pg_config --configure`>.
+
+B<Events:>
+
+=over 4
+
+=item info
+
+Executing `pg_config --configure`
+
+=item error
+
+Cannot find configure information
+
+=item unknown
+
+Enter PostgreSQL configuration options
+
+=back
+
+=cut
+
+sub configure {
+    my $self = shift;
+    return unless $self->{pg_config};
+    unless (exists $self->{configure} ) {
+        if (my $conf = $get_data->($self, '--configure')) {
+            $self->{configure} = $conf;
+        } else {
+            # Handle an unknown value.
+            $self->error("Cannot find configuration information");
+            $self->{configure} =
+              $self->unknown( key      => 'PostgreSQL configuration information',
+                              callback => { length }
+        }
+    }
+
+    return $self->{configure};
+}
+
+##############################################################################
+
 =head3 home_url
 
   my $home_url = $pg->home_url;
@@ -700,7 +752,7 @@ Returns the PostgreSQL download URL.
 
 =cut
 
-sub download_url { "http://www.ca.postgresql.org/sitess.html" }
+sub download_url { "http://www.postgresql.org/mirrors-ftp.html" }
 
 1;
 __END__
