@@ -222,6 +222,8 @@ file.
 
 * Win32 issues:
 
+For installation, please see the README.win32 file.
+
 Running DBD-Pg scripts on Win32 needs some configuration work
 on the server side:
 
