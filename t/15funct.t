@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w -I./t
+# vim:ts=2:sw=2:aw:ai:sta:
 $| = 1;
 
 use DBI qw(:sql_types);
@@ -6,7 +7,7 @@ use Data::Dumper;
 use strict;
 use Test::More;
 if (defined $ENV{DBI_DSN}) {
-  plan tests => 71;
+  plan tests => 73;
 } else {
   plan skip_all => 'cannot test without DB info';
 }
@@ -34,7 +35,7 @@ ok ( !$@, "Ping Tested" );
  eval {
 	 $sth = $dbh->get_info();
  };
-ok ($@, "Call to get_info with 0 arguements, error expected: $@" );
+ok ($@, "Call to get_info with 0 arguments, error expected: $@" );
 $sth = undef;
 
 # Table Info
@@ -45,11 +46,9 @@ ok ((!$@ and defined $sth), "table_info tested" );
 $sth = undef;
 
 # Column Info
- eval {
-	 $sth = $dbh->column_info();
- };
-ok ((!$@ and defined $sth), "column_info tested" );
-#ok ($@, "Call to column_info with 0 arguements, error expected: $@" );
+ eval { $sth = $dbh->column_info(); };
+
+ok ((!$@ and defined $sth), "column_info with no arguments") or diag $@;
 $sth = undef;
 
 
@@ -126,43 +125,42 @@ for (keys %get_info) {
 }
 
 # Test Table Info
-$sth = $dbh->table_info( undef, undef, undef );
-ok( defined $sth, "table_info(undef, undef, undef) tested" );
-DBI::dump_results($sth) if defined $sth;
+eval {
+	$sth = $dbh->table_info( undef, undef, undef );
+};
+ok( defined $sth, "table_info(undef, undef, undef) tested" ) or diag $@;
+
 $sth = undef;
 
-$sth = $dbh->table_info( undef, undef, undef, "VIEW" );
+eval { $sth = $dbh->table_info( undef, undef, undef, "VIEW" ) };
 ok( defined $sth, "table_info(undef, undef, undef, \"VIEW\") tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 # Test Table Info Rule 19a
-$sth = $dbh->table_info( '%', '', '');
+eval { $sth = $dbh->table_info( '%', '', ''); };
 ok( defined $sth, "table_info('%', '', '',) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 # Test Table Info Rule 19b
-$sth = $dbh->table_info( '', '%', '');
+eval { $sth = $dbh->table_info( '', '%', ''); };
 ok( defined $sth, "table_info('', '%', '',) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 # Test Table Info Rule 19c
-$sth = $dbh->table_info( '', '', '', '%');
+eval { $sth = $dbh->table_info( '', '', '', '%') };
 ok( defined $sth, "table_info('', '', '', '%',) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 # Test to see if this database contains any of the defined table types.
-$sth = $dbh->table_info( '', '', '', '%');
+eval { $sth = $dbh->table_info( '', '', '', '%'); };
 ok( defined $sth, "table_info('', '', '', '%',) tested" );
 if ($sth) {
-	my $ref = $sth->fetchall_hashref( 'TABLE_TYPE' );
+	my $ref; 
+	eval { $ref = $sth->fetchall_hashref( 'TABLE_TYPE' ) };
+	ok((defined $ref), "fetchall_hashref('TABLE_TYPE')");
 	foreach my $type ( sort keys %$ref ) {
 		my $tsth = $dbh->table_info( undef, undef, undef, $type );
 		ok( defined $tsth, "table_info(undef, undef, undef, $type) tested" );
-		DBI::dump_results($tsth) if defined $tsth;
 		$tsth->finish;
 	}
 	$sth->finish;
@@ -172,72 +170,58 @@ $sth = undef;
 # Test Column Info
 $sth = $dbh->column_info( undef, undef, undef, undef );
 ok( defined $sth, "column_info(undef, undef, undef, undef) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'auser'", undef, undef );
 ok( defined $sth, "column_info(undef, 'auser', undef, undef) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'ause%'", undef, undef );
 ok( defined $sth, "column_info(undef, 'ause%', undef, undef) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'auser','replicator'", undef, undef );
 ok( defined $sth, "column_info(undef, 'auser','replicator', undef, undef) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'auser','repl%'", undef, undef );
 ok( defined $sth, "column_info(undef, 'auser','repl%', undef, undef) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'fred','repl%'", undef, undef );
 ok( defined $sth, "column_info(undef, 'fred','repl%', undef, undef) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'fred','jim'", undef, undef );
 ok( defined $sth, "column_info(undef, 'fred','jim', undef, undef) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'auser'", "'pga_schema'", undef );
 ok( defined $sth, "column_info(undef, 'auser', 'pga_schema', undef) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'auser'", "'pga_%'", undef );
 ok( defined $sth, "column_info(undef, 'auser', 'pga_%', undef) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'ause%'", "'pga_%'", undef );
 ok( defined $sth, "column_info(undef, 'ause%', 'pga_%', undef) tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'auser'", "'pga_schema'", "'schemaname'" );
 ok( defined $sth, "column_info(undef, 'auser', 'pga_schema', 'schemaname') tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'auser'", "'pga_schema'", "'schema%'" );
 ok( defined $sth, "column_info(undef, 'auser', 'pga_schema', 'schema%') tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'auser'", "'pga_%'", "'schema%'" );
 ok( defined $sth, "column_info(undef, 'auser', 'pga_%', 'schema%') tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 $sth = $dbh->column_info( undef, "'ause%'", "'pga_%'", "'schema%'" );
 ok( defined $sth, "column_info(undef, 'ause%', 'pga_%', 'schema%') tested" );
-DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
 # Test call to primary_key_info
@@ -249,7 +233,7 @@ eval {
     $sth = $dbh->primary_key_info();
     die unless $sth;
 };
-ok ($@, "Call to primary_key_info with 0 arguements, error expected: $@" );
+ok ($@, "Call to primary_key_info with 0 arguments, error expected: $@" );
 $sth = undef;
 
 # Primary Key
@@ -257,7 +241,7 @@ eval {
     $sth = $dbh->primary_key();
     die unless $sth;
 };
-ok ($@, "Call to primary_key with 0 arguements, error expected: $@" );
+ok ($@, "Call to primary_key with 0 arguments, error expected: $@" );
 $sth = undef;
 
 $sth = $dbh->primary_key_info(undef, undef, undef );
@@ -280,18 +264,19 @@ ok( defined $sth, "Statement handle defined for primary_key_info()" );
 my ( %catalogs, %schemas, %tables);
 
 my $cnt = 0;
-while( my ($catalog, $schema, $table) = $sth->fetchrow_array ) {
-    local $^W = 0;
-    $catalogs{$catalog}++	if $catalog;
-    $schemas{$schema}++		if $schema;
-    $tables{$table}++			if $table;
-    $cnt++;
-}
-ok( $cnt > 0, "At least one table has a primary key." );
+eval {
+	while( my ($catalog, $schema, $table) = $sth->fetchrow_array ) {
+		local $^W = 0;
+		$catalogs{$catalog}++	if $catalog;
+		$schemas{$schema}++		if $schema;
+		$tables{$table}++			if $table;
+		$cnt++;
+	}
+};
+ok((!$@ and ($cnt > 0)), "At least one table has a primary key." );
 
 #rl: TODO: Clean this up.
-my $schema = exists $ENV{DBI_USER} ? $ENV{DBI_USER} : "";
-$sth = # $dbh->primary_key_info(undef, $schema, undef );
+#$sth = # $dbh->primary_key_info(undef, qq{'$ENV{DBI_USER}'}, undef );
 ok(1
 #   defined $sth
    , "Getting primary keys for tables");  ## owned by $ENV{DBI_USER}
@@ -314,7 +299,59 @@ else {
 }
 $sth = undef;
 
-ok( $dbh->disconnect, "Disconnect from database" );
+ok($dbh->do("COMMENT ON COLUMN dbd_pg_test.name IS 'Success'"), 'comment on dbd_pg_test_table');
+
+# Testing column_info some more
+#	my $row;
+#	eval {	
+#		$sth = $dbh->column_info( undef, undef, 'dbd_pg_test','name' );
+#		$row = $sth->fetchrow_hashref;
+#	};	
+#	ok(!$@, 'column_info called without dying');
+#	use Data::Dumper;
+#	is($row->{REMARKS},'Success','column_info REMARKS') or diag Dumper($row);
+#	$sth = undef;
+#
+#
+# 	is($row->{COLUMN_DEF},"'Testing Default'",'column_info default value') or diag Dumper($row);
+#
+#	cmp_ok($row->{COLUMN_SIZE},'==', 20, 'column_info field size for type varchar');
+#
+#	$sth = $dbh->column_info( undef, undef, 'dbd_pg_test','score' );
+#	$row = $sth->fetchrow_hashref;
+#	like($row->{pg_constraint}
+#		, qr/\(\(\(score\s+=\s+1(?:::double\s+precision)?\)\s+OR\s+\(score\s+=\s+2(?:::double precision)?\)\)\s+OR\s+\(score\s+=\s+3(?:::double precision)?\)\)/i
+#		, 'table_attributes constraints');
+#
+
+
+# Testing table_attributes
+
+#	my $attrs;
+#	eval { local $dbh->{RaiseError} = 1; $attrs = $dbh->func('dbd_pg_test', 'table_attributes') };
+#	ok(!$@, 'basic table_attributes test') or diag $@;
+#
+# 	is($attrs->[0]->{NAME},'id','table_attributes ordering');
+#
+# 	cmp_ok($attrs->[0]->{NOTNULL}, '==',1,'table_attributes NOTNULL 1');
+# 	cmp_ok($attrs->[1]->{NOTNULL}, '==',0,'table_attributes NOTNULL 0');
+# 
+# 
+# 	cmp_ok($attrs->[1]->{SIZE},'==',20,'table_attributes basic SIZE check');
+# 
+#	like($attrs->[3]->{CONSTRAINT}
+#		, qr/\(\(\(score\s+=\s+1(?:::double\s+precision)?\)\s+OR\s+\(score\s+=\s+2(?:::double precision)?\)\)\s+OR\s+\(score\s+=\s+3(?:::double precision)?\)\)/i
+#		, 'table_attributes constraints');
+# 
+# 	cmp_ok(scalar @$attrs, '==', 7, 'table_attributes returns expected number of rows');
+#
+#	 my $any_comments = grep { (defined $_->{REMARKS}) and ($_->{REMARKS} eq 'Success') and ($_->{NAME} eq 'name')  } @$attrs;
+#	 ok($any_comments, 'found comment on column name');
+
+ok($dbh->disconnect, 'Disconnect');
+
+
+
 
 exit(0);
 

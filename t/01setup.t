@@ -19,11 +19,11 @@ ok(defined $dbh,'connect without transaction');
 
 my $sql = <<SQL;
 CREATE TABLE dbd_pg_test (
-  id int,
-  name text,
+  id int not null primary key,
+  name varchar(20) default 'Testing Default' ,
   val text,
+  score float CHECK(score IN ('1','2','3')),
   fixed character(5),
-  score float,
   date timestamp default 'now()',
   testarray text[][]
 )

@@ -17,7 +17,7 @@ ok(defined $dbh,
 
 my $quo = $dbh->quote("\\'?:");
 my $sth = $dbh->prepare(qq{
-			INSERT INTO dbd_pg_test (name) VALUES ($quo)
+			INSERT INTO dbd_pg_test (id,name) VALUES (100,$quo)
 		       });
 $sth->execute();
 

@@ -231,10 +231,49 @@ $DBD::Pg::VERSION = '1.31_3';
 			:	
 			"   LEFT JOIN ${CATALOG}pg_description d ON (a.oid = d.objoid )";
 
-		my $col_info_sql = qq!
+		my $col_info_sql;
+
+		if (DBD::Pg::_pg_check_version( 7.3, $version) < 2) {
+			$col_info_sql = qq!
+				SELECT
+						NULL::text AS "TABLE_CAT"
+					, NULL::text AS "TABLE_SCHEM"
+					, c.relname AS "TABLE_NAME"
+					, a.attname AS "COLUMN_NAME"
+					, t.typname AS "DATA_TYPE"
+					, NULL::text AS "TYPE_NAME"
+					, a.attlen AS "COLUMN_SIZE"
+					, NULL::text AS "BUFFER_LENGTH"
+					, NULL::text AS "DECIMAL_DIGITS"
+					, NULL::text AS "NUM_PREC_RADIX"
+					, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END  AS "NULLABLE"
+					, col_description(a.attrelid, a.attnum) AS "REMARKS"
+					, af.adsrc AS "COLUMN_DEF"
+					, NULL::text AS "SQL_DATA_TYPE"
+					, NULL::text AS "SQL_DATETIME_SUB"
+					, NULL::text AS "CHAR_OCTET_LENGTH"
+					, a.attnum AS "ORDINAL_POSITION"
+					, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END  AS "IS_NULLABLE"
+					, a.atttypmod    AS "pg_atttypmod"
+				FROM
+								pg_type t
+								LEFT JOIN pg_attribute a
+												ON (t.oid = a.atttypid)
+								LEFT JOIN pg_class c
+										ON (a.attrelid = c.oid)
+								LEFT JOIN pg_attrdef af
+												ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
+				WHERE
+										a.attnum >= 0
+								AND c.relkind IN ('r','v')
+								$wh
+				ORDER BY 2, c.relname, a.attnum
+			!;
+		} else {
+			$col_info_sql = qq!
 			SELECT
 				  NULL::text	AS "TABLE_CAT"
-				, $showschema	AS "TABLE_SCHEM"
+				, n.nspname		AS "TABLE_SCHEM"
 				, c.relname		AS "TABLE_NAME"
 				, a.attname		AS "COLUMN_NAME"
 				, t.typname		AS "DATA_TYPE"
@@ -244,7 +283,7 @@ $DBD::Pg::VERSION = '1.31_3';
 				, NULL::text	AS "DECIMAL_DIGITS"
 				, NULL::text	AS "NUM_PREC_RADIX"
 				, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
-				, d.description	AS "REMARKS"
+				, ${CATALOG}col_description(a.attrelid, a.attnum) AS "REMARKS"
 				, pg_attrdef.adsrc	AS "COLUMN_DEF"
 				, NULL::text	AS "SQL_DATA_TYPE"
 				, NULL::text	AS "SQL_DATETIME_SUB"
@@ -255,10 +294,12 @@ $DBD::Pg::VERSION = '1.31_3';
 			FROM 
 				  ${CATALOG}pg_type		t
 				, ${CATALOG}pg_class c
+				  LEFT JOIN ${CATALOG}pg_namespace n 
+				  	ON (n.oid = c.relnamespace)
 				, ${CATALOG}pg_attribute	a
-			$pg_description_join
-		    LEFT JOIN ${CATALOG}pg_attrdef ON (a.attnum = pg_attrdef.adnum AND a.attrelid = pg_attrdef.adrelid) 
-				$schemajoin
+		    		  LEFT JOIN ${CATALOG}pg_attrdef 
+				  	ON (a.attnum = pg_attrdef.adnum 
+						AND a.attrelid = pg_attrdef.adrelid) 
 			WHERE
 					a.attrelid = c.oid
 				AND a.attnum >= 0
@@ -266,7 +307,53 @@ $DBD::Pg::VERSION = '1.31_3';
 				AND c.relkind IN ('r','v')
 				$wh
 			ORDER BY 2, c.relname, a.attnum
-		!;
+			!;
+
+		# my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
+			# "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
+		}
+# SELECT a.attname, format_type(a.atttypid, a.atttypmod), a.attnotnull, a.atthasdef, a.attnum
+# FROM pg_class c, pg_attribute a
+# WHERE c.relname = 'key_codes'
+#   AND a.attnum > 0 AND a.attrelid = c.oid
+# ORDER BY a.attnum
+
+		# my $col_info_sql = qq!
+		# 	SELECT
+		# 		  NULL::text	AS "TABLE_CAT"
+		# 		, $showschema	AS "TABLE_SCHEM"
+		# 		, c.relname		AS "TABLE_NAME"
+		# 		, a.attname		AS "COLUMN_NAME"
+		# 		, t.typname		AS "DATA_TYPE"
+		# 		, NULL::text	AS "TYPE_NAME"
+		# 		, a.attlen		AS "COLUMN_SIZE"
+		# 		, NULL::text	AS "BUFFER_LENGTH"
+		# 		, NULL::text	AS "DECIMAL_DIGITS"
+		# 		, NULL::text	AS "NUM_PREC_RADIX"
+		# 		, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
+		# 		, ${CATALOG}col_description(a.attrelid, a.attnum)
+		# 		, pg_attrdef.adsrc	AS "COLUMN_DEF"
+		# 		, NULL::text	AS "SQL_DATA_TYPE"
+		# 		, NULL::text	AS "SQL_DATETIME_SUB"
+		# 		, NULL::text	AS "CHAR_OCTET_LENGTH"
+		# 		, a.attnum		AS "ORDINAL_POSITION"
+		# 		, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
+		# 		, a.atttypmod   AS "pg_atttypmod"
+		# 	FROM 
+		# 		  ${CATALOG}pg_type		t
+		# 		, ${CATALOG}pg_class c
+		# 		  $schemajoin
+		# 		, ${CATALOG}pg_attribute	a
+		#     LEFT JOIN ${CATALOG}pg_attrdef ON (a.attnum = pg_attrdef.adnum AND a.attrelid = pg_attrdef.adrelid) 
+		# 	WHERE
+		# 			a.attrelid = c.oid
+		# 		AND a.attnum >= 0
+		# 		AND t.oid = a.atttypid
+		# 		AND c.relkind IN ('r','v')
+		# 		$wh
+		# 	ORDER BY 2, c.relname, a.attnum
+		# !;
+		# 	# $pg_description_join
 
 		my $data = $dbh->selectall_arrayref($col_info_sql) || return undef;
 
@@ -930,7 +1017,7 @@ $DBD::Pg::VERSION = '1.31_3';
 
 		my $attrs = $sth->fetchall_arrayref(\%convert);
 
-        foreach my $row (@$attrs) {
+		foreach my $row (@$attrs) {
 			# switch the column names
 			for my $name (keys %$row) {
 				$row->{ $convert{$name} } = $row->{$name};
@@ -938,14 +1025,16 @@ $DBD::Pg::VERSION = '1.31_3';
 				# The REMARKS column is an exception because the name is the same
 				delete $row->{$name} unless ($name eq 'REMARKS');
 
-				# NOTNULL inverts the sense of NULLABLE
-				$row->{NOTNULL} = $row->{NOTNULL} ? 0 : 1;
 			}
+			# Moved check outside of loop as it was inverting the NOTNULL value for
+			# attribute.
+			# NOTNULL inverts the sense of NULLABLE
+			$row->{NOTNULL} = ($row->{NOTNULL} ? 0 : 1);
 
 			my @pri_keys = ();
 			@pri_keys = $dbh->primary_key( $CATALOG, undef, $table );
             $row->{PRIMARY_KEY} = scalar(grep { /^$row->{NAME}$/i } @pri_keys) ? 1 : 0;
-        }
+		}
 
 		return $attrs;
 
@@ -1225,6 +1314,11 @@ $DBD::Pg::VERSION = '1.31_3';
 }
 
 
+# Ummm, I don't think this extra curly brace should be here,
+# but it quite complaining when I added and things to seem to be working.
+# I'm worried. -mls 07/22/03 
+# }
+
 1;
 
 __END__
@@ -1374,6 +1468,10 @@ This driver supports a variety of driver specific functions accessible via the
 func interface:
 
   $attrs = $dbh->func($table, 'table_attributes');
+
+The C<table_attributes> function is no longer recommended. Instead,
+you can use the more portable C<column_info> and C<primary_key> functions
+to access all the same information.
 
 The C<table_attributes> function is no longer recommended. Instead,
 you can use the more portable C<column_info> and C<primary_key> functions
@@ -1631,6 +1729,26 @@ Supported by the driver as proposed by DBI.
 This driver supports the ping-method, which can be used to check the validity
 of a database-handle. The ping method issues an empty query and checks the
 result status.
+
+=item B<column_info>
+
+	$sth = $dbh->column_info( $catalog, $schema, $table, $column );
+
+Supported by the driver as proposed by the DBI with the follow exceptions.
+These fields are currently always returned with NULL values:
+
+   TABLE_CAT
+   TYPE_NAME
+   BUFFER_LENGTH
+   DECIMAL_DIGITS
+   NUM_PREC_RADIX
+   SQL_DATA_TYPE
+   SQL_DATETIME_SUB
+   CHAR_OCTET_LENGTH
+
+Also, one additional non-standard field is returned:
+
+  pg_constraint - holds column constraint definition
 
 =item B<column_info>
 

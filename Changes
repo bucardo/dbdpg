@@ -30,7 +30,6 @@
 	- bind_param() will convert from 1,0 to TRUE/FALSE when pg_type
 		is PGBOOLOID.
 	- Fixed many heap buffer overruns.
-	- Fixed column_info so NULLABLE field shows correctly. [kevin@sysexperts.com]
 	- Added support for the get_info() method [Greg Sabino Mullane]
         - Added tests for POD validation [Mark Stosberg]
 

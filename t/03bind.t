@@ -82,6 +82,8 @@ SQL
 ok(1, "FIXME");
 }
 
+$sth->finish();
+
 ok($dbh->disconnect(),
    'disconnect'
   );
