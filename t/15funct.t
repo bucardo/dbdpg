@@ -85,7 +85,7 @@ $sth = undef;
 
 # Type Info
  eval {
-	 my @types = $dbh->type_info();
+	my @types = $dbh->type_info();
 	die unless @types;
  };
 ok (!$@, "type_info(undef)");
@@ -96,7 +96,7 @@ $sth = undef;
 	my $val = $dbh->quote();
  	die unless $val;
  };
-ok ($@, "quote error expected, $@ " . $dbh->errstr );
+ok ($@, "quote error expected, $@");
 $sth = undef;
 # Tests for quote:
 my @qt_vals = (1, 2, undef, 'NULL', "ThisIsAString", "This is Another String");
@@ -112,12 +112,12 @@ is( $dbh->quote( 1, SQL_INTEGER() ), 1, "quote(1, SQL_INTEGER)" );
 
 # Quote Identifier
  eval {
-	 my $val = $dbh->quote_identifier();
+	my $val = $dbh->quote_identifier();
  	die unless $val;
  };
-ok ($@, "quote_identifier error expected $@ " .  $dbh->errstr );
+ok ($@, "quote_identifier error expected $@");
 $sth = undef;
-
+ 
 #	, SQL_IDENTIFIER_QUOTE_CHAR	=> 29
 #	, SQL_CATALOG_NAME_SEPARATOR	=> 41
 my $qt  = $dbh->get_info( $get_info->{SQL_IDENTIFIER_QUOTE_CHAR} );
@@ -325,7 +325,6 @@ SKIP: {
 		defined $sth
 		, "Getting primary keys for tables owned by $ENV{DBI_USER}");
 	DBI::dump_results($sth) if defined $sth;
-
 }
 
 undef $sth;
