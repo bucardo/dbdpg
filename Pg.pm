@@ -1450,13 +1450,12 @@ otherwise.
 Used together with the SQL-command 'COPY table FROM STDIN' to copy large
 amount of data into a table avoiding the overhead of using single
 insert commands. The application must explicitly send the two characters "\."
-to indicate to the backend that it has finished sending its data. See test.pl
-for an example on how to use this function.
+to indicate to the backend that it has finished sending its data.
 
   $ret = $dbh->func($buffer, length, 'getline');
 
 Used together with the SQL-command 'COPY table TO STDOUT' to dump a complete
-table. See test.pl for an example on how to use this function.
+table.
 
   $ret = $dbh->func('pg_notifies');
 
