@@ -35,6 +35,11 @@ my $count = $sth->fetchall_arrayref()->[0][0];
 if (1==$count) {
 	$dbh->do(sprintf "DROP TABLE %s%s", $schema ? "$schema." : '', 'dbd_pg_test');
 }
+$sth->execute('dbd_pg_test2');
+$count = $sth->fetchall_arrayref()->[0][0];
+if (1==$count) {
+	$dbh->do(sprintf "DROP TABLE %s%s", $schema ? "$schema." : '', 'dbd_pg_test2');
+}
 $sth->execute('dbd_pg_sequence');
 $count = $sth->fetchall_arrayref()->[0][0];
 if (1==$count) {
