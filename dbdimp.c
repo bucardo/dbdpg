@@ -3,9 +3,9 @@
    $Id$
 
    Copyright (c) 2002-2004 PostgreSQL Global Development Group
-   Copyright (c) 2002 Jeffrey W. Baker
-   Copyright (c) 1997,1998,1999,2000 Edmund Mergl
-   Portions Copyright (c) 1994,1995,1996,1997 Tim Bunce
+   Portions Copyright (c) 2002 Jeffrey W. Baker
+   Portions Copyright (c) 1997-2000 Edmund Mergl
+   Portions Copyright (c) 1994-1997 Tim Bunce
    
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.
@@ -363,7 +363,7 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 			imp_dbh->done_begin = 1;
 		}
 	}
-	else { /* Something is wrong: transation status unknown */
+	else { /* Something is wrong: transaction status unknown */
 		if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "Warning: cannot determine transaction status\n"); }
 	}
 #endif
@@ -689,7 +689,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 
 	/* Set default values for this statement handle */
 	imp_sth->is_dml = 0; /* Not preparable DML until proved otherwise */
-	imp_sth->prepared_by_us = 0; /* Set to 1 when actaully done preparing */
+	imp_sth->prepared_by_us = 0; /* Set to 1 when actually done preparing */
 	imp_sth->has_binary = 0; /* Are any of the params binary? */
 	imp_sth->result	= NULL;
 	imp_sth->cur_tuple = 0;
@@ -1555,7 +1555,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		OR
 		6b. All placeholders are bound (and "pg_server_prepare" is 2)
 	*/
-	if (dbis->debug >= 1) {  // XXX was 6
+	if (dbis->debug >= 6) {
 		PerlIO_printf(DBILOGFP, "  dbdpg: PQexec* choice: dml=%d, direct=%d, protocol=%d, server_prepare=%d numbound=%d, numphs=%d\n", imp_sth->is_dml, imp_sth->direct, imp_dbh->pg_protocol, imp_sth->server_prepare, imp_sth->numbound, imp_sth->numphs);
 	}
 	if (imp_sth->is_dml && 
@@ -1789,7 +1789,7 @@ AV * dbd_st_fetch (sth, imp_sth)
 	
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_fetch\n"); }
 
-	/* Check that execute() was executed sucessfully */
+	/* Check that execute() was executed successfully */
 	if ( !DBIc_ACTIVE(imp_sth) ) {
 		pg_error(sth, 1, "no statement executing\n");	
 		return Nullav;
@@ -1853,7 +1853,6 @@ AV * dbd_st_fetch (sth, imp_sth)
 				}
 			
 #ifdef is_utf8_string
-			/* XXX Under what circumstances is type_info NULL? */
 			if (imp_dbh->pg_enable_utf8 && type_info) {
 				SvUTF8_off(sv);
 				switch(type_info->type_id) {
@@ -2020,7 +2019,7 @@ void dbd_st_destroy (sth, imp_sth)
 	if (imp_sth->prepared_by_us) {
 		if (dbd_st_deallocate_statement(sth, imp_sth)) {
 			if (dbis->debug >= 4)
-				1;//PerlIO_printf(DBILOGFP, "  dbdpg: could not deallocate\n");
+				PerlIO_printf(DBILOGFP, "  dbdpg: could not deallocate\n");
 		}
 	}	
 	Safefree(imp_sth->prepare_name);
