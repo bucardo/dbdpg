@@ -1108,19 +1108,13 @@ $DBD::Pg::VERSION = '1.31';
 			);
 			return 7; ## All of the above
 		 }
- 
 		 return $ans;
- 
 	} # end of get_info
- 
- 
-
 } # end of package DBD::Pg::db
 
 {  package DBD::Pg::st; # ====== STATEMENT ======
 
 	# all done in XS
-
 }
 
 1;
