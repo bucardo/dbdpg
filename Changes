@@ -1,4 +1,5 @@
 1.40 
+  - Raise required DBI version to 1.38
 	- Execute returns 0 (0E0) not -1 for successful DDL commands.
 		[Robert Treat]
 	- Change all string lengths to use STRLEN

@@ -32,7 +32,7 @@ use 5.006001;
 
 	Exporter::export_ok_tags('pg_types');
 
-	require_version DBI 1.35;
+	require_version DBI 1.38;
 
 	bootstrap DBD::Pg $VERSION;
 
