@@ -1,7 +1,7 @@
 #!perl -w
 
 # Simply test that we can load the DBI and DBD::PG modules,
-# Check that we have a valid version retruned from the latter
+# Check that we have a valid version returned from the latter
 
 use Test::More tests => 3;
 use strict;

@@ -18,7 +18,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 140;
+	plan tests => 149;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -26,7 +26,6 @@ if (defined $ENV{DBI_DSN}) {
 my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 1, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for database handle method testing");
-
 $dbh->trace($ENV{DBD_TRACE}) if exists $ENV{DBD_TRACE};
 
 my $schema = '';
@@ -874,6 +873,37 @@ is( $result, 't', qq{DB handle method "pg_bool_tf" returns 't' for true when on}
 $sth->execute(0);
 $result = $sth->fetchall_arrayref()->[0][0];
 is( $result, 'f', qq{DB handle method "pg_bool_tf" returns 'f' for true when on});
+
+
+## Test of all the informational pg_* database handle methods
+
+$result = $dbh->{pg_protocol};
+like( $result, qr/^\d+$/, qq{DB handle method "pg_db" returns at least one character});
+
+$result = $dbh->{pg_db};
+ok( length $result, qq{DB handle method "pg_db" returns at least one character});
+
+$result = $dbh->{pg_user};
+ok( defined $result, qq{DB handle method "pg_user" returns a value});
+
+$result = $dbh->{pg_pass};
+ok( defined $result, qq{DB handle method "pg_pass" returns a value});
+
+$result = $dbh->{pg_host};
+ok( defined $result, qq{DB handle method "pg_host" returns a value});
+
+$result = $dbh->{pg_port};
+like( $result, qr/^\d+$/, qq{DB handle method "pg_port" returns a number});
+
+$result = $dbh->{pg_options};
+ok (defined $result, qq{DB handle method "pg_options" returns a value});
+
+$result = $dbh->{pg_socket};
+like( $result, qr/^\d+$/, qq{DB handle method "pg_socket" returns a value});
+
+$result = $dbh->{pg_pid};
+like( $result, qr/^\d+$/, qq{DB handle method "pg_pid" returns a value});
+
 
 #
 # Test of the "ping" database handle method

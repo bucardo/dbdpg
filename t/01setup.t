@@ -17,8 +17,8 @@ if (defined $ENV{DBI_DSN}) {
 
 my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 0, PrintError => 0, AutoCommit => 1});
-
 ok( defined $dbh, "Connect to database for test table creation");
+$dbh->trace($ENV{DBD_TRACE}) if exists $ENV{DBD_TRACE};
 
 # Remove the test table if it exists
 my $schema = DBD::Pg::_pg_use_catalog($dbh);

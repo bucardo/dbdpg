@@ -21,7 +21,6 @@ if (defined $ENV{DBI_DSN}) {
 my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 1, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for statement handle method testing");
-
 $dbh->trace($ENV{DBD_TRACE}) if exists $ENV{DBD_TRACE};
 
 my $got73 = DBD::Pg::_pg_use_catalog($dbh);
