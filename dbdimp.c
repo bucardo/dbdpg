@@ -192,6 +192,9 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
     imp_dbh->init_commit = 1;			/* initialize AutoCommit */
     imp_dbh->pg_auto_escape = 1;		/* initialize pg_auto_escape */
     imp_dbh->pg_bool_tf = 0;                    /* initialize pg_bool_tf */
+#ifdef is_utf8_string
+    imp_dbh->pg_enable_utf8 = 0;                /* initialize pg_enable_utf8 */
+#endif
 
     DBIc_IMPSET_on(imp_dbh);			/* imp_dbh set up now */
     DBIc_ACTIVE_on(imp_dbh);			/* call disconnect before freeing */
@@ -478,7 +481,7 @@ dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
         imp_dbh->pg_auto_escape = newval;
     } else if (kl==10 && strEQ(key, "pg_bool_tf")) {
 	imp_dbh->pg_bool_tf = newval;
-#if PERL_REVISION >= 5 && PERL_VERSION >= 6 && PERL_SUBVERSION >= 1
+#ifdef is_utf8_string
     } else if (kl==14 && strEQ(key, "pg_enable_utf8")) {
         imp_dbh->pg_enable_utf8 = newval;
 #endif
@@ -506,7 +509,7 @@ dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
         retsv = newSViv((IV)imp_dbh->pg_auto_escape);
     } else if (kl==10 && strEQ(key, "pg_bool_tf")) {
 	retsv = newSViv((IV)imp_dbh->pg_bool_tf);
-#if PERL_REVISION >= 5 && PERL_VERSION >= 6 && PERL_SUBVERSION >= 1
+#ifdef is_utf8_string
     } else if (kl==14 && strEQ(key, "pg_enable_utf8")) {
         retsv = newSViv((IV)imp_dbh->pg_enable_utf8);
 #endif
@@ -975,6 +978,7 @@ dbd_st_fetch (sth, imp_sth)
     char *value;
     int i, pg_type, value_len;
     AV *av;
+    D_imp_dbh_from_sth;
 
     if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_fetch\n"); }
 
@@ -1011,6 +1015,21 @@ dbd_st_fetch (sth, imp_sth)
                 value_len = strlen(value);
 
             sv_setpvn(sv, value, value_len);
+#ifdef is_utf8_string
+	    /* XXX Under what circumstances is type_info NULL? */
+	    if (imp_dbh->pg_enable_utf8 && type_info) {
+		SvUTF8_off(sv);
+		switch(type_info->type_id) {
+		    case CHAROID:
+		    case TEXTOID:
+		    case BPCHAROID:
+		    case VARCHAROID:
+			if (is_high_bit_set(value) && is_utf8_string(value, value_len)) {
+			    SvUTF8_on(sv);
+			}
+		}
+	    }
+#endif
         }
     }
 
@@ -1019,6 +1038,13 @@ dbd_st_fetch (sth, imp_sth)
     return av;
 }
 
+is_high_bit_set(val)
+    char *val;
+{
+    while (*val++)
+       if (*val & 0x80) return 1;
+    return 0;
+}
 
 /* TODO: test for rows and define rows so that this rows() will be used */
 int
