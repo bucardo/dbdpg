@@ -212,7 +212,7 @@ dbd_db_getfd (dbh, imp_dbh)
 }
 
 SV * 
-dbd_db_notifies (dbh, imp_dbh)
+dbd_db_pg_notifies (dbh, imp_dbh)
     SV *dbh;
     imp_dbh_t *imp_dbh;
 {
@@ -221,7 +221,7 @@ dbd_db_notifies (dbh, imp_dbh)
     AV* ret;
     SV* retsv;
 
-    if (dbis->debug >= 1) { fprintf(DBILOGFP, "dbd_db_notifies\n"); }
+    if (dbis->debug >= 1) { fprintf(DBILOGFP, "dbd_db_pg_notifies\n"); }
 
     PQconsumeInput(imp_dbh->conn);
 

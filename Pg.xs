@@ -93,12 +93,12 @@ getfd(dbh)
     ST(0) = sv_2mortal( newSViv( ret ) );
 
 void
-notifies(dbh)
+pg_notifies(dbh)
     SV *	dbh
     CODE:
     D_imp_dbh(dbh);
 
-    ST(0) = dbd_db_notifies(dbh, imp_dbh);
+    ST(0) = dbd_db_pg_notifies(dbh, imp_dbh);
 
 void
 commit(dbh)
