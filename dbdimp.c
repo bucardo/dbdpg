@@ -933,7 +933,7 @@ dbd_st_execute (sth, imp_sth)  /* <= -2:error, >=0:ok row count, (-1=unknown cou
 		status = result ? PQresultStatus(result) : -1;
 		PQclear(result);
 		if (status != PGRES_COMMAND_OK) {
-			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
+			pg_error(sth, status, PQerrorMessage(imp_dbh->conn));
 			return -2;
 		}
 		imp_dbh->done_begin = 1;
