@@ -325,6 +325,249 @@ $DBD::Pg::VERSION = '1.21';
         return $sth;
 	}
 
+    sub foreign_key_info {
+	# todo: verify schema work as expected
+	# add code to handle multiple-column keys correctly
+	# return something nicer for pre-7.3?
+	# try to clean up SQL, perl code
+	# create a test script?
+
+	my $dbh = shift;
+	my ($pk_catalog, $pk_schema, $pk_table,
+		$fk_catalog, $fk_schema, $fk_table) = @_;
+
+	# this query doesn't work for Postgres before 7.3
+	my ($version) = $dbh->selectrow_array("SELECT version()");
+	$version =~ /^PostgreSQL (\d+)\.(\d)/;
+	return undef if ($1.$2 < 73);
+
+	# Used to hold data for the attributes.
+	my @dat = ();
+
+	# SQL to find primary/unique keys of a table
+	my $pkey_sql = qq{
+	SELECT
+	NULL::text AS PKTABLE_CAT,
+	pknam.nspname AS PKTABLE_SCHEM,
+	pkc.relname AS PKTABLE_NAME,
+	pka.attname AS PKCOLUMN_NAME,
+	NULL::text AS FKTABLE_CAT,
+	NULL::text AS FKTABLE_SCHEM,
+	NULL::text AS FKTABLE_NAME,
+	NULL::text AS FKCOLUMN_NAME,
+	pkcon.conkey[1] AS KEY_SEQ,
+	CASE
+		WHEN pkcon.confupdtype = 'c' THEN 0
+		WHEN pkcon.confupdtype = 'r' THEN 1
+		WHEN pkcon.confupdtype = 'n' THEN 2
+		WHEN pkcon.confupdtype = 'a' THEN 3
+		WHEN pkcon.confupdtype = 'd' THEN 4
+		END AS UPDATE_RULE,
+	CASE
+		WHEN pkcon.confdeltype = 'c' THEN 0
+		WHEN pkcon.confdeltype = 'r' THEN 1
+		WHEN pkcon.confdeltype = 'n' THEN 2
+		WHEN pkcon.confdeltype = 'a' THEN 3
+		WHEN pkcon.confdeltype = 'd' THEN 4
+		END AS DELETE_RULE,
+	NULL::text AS FK_NAME,
+	pkcon.conname AS PK_NAME,
+	CASE
+		WHEN pkcon.condeferrable = 'f' THEN 7
+		WHEN pkcon.condeferred = 't' THEN 6
+		WHEN pkcon.condeferred = 'f' THEN 5
+		END AS DEFERRABILITY,
+	CASE
+		WHEN pkcon.contype = 'p' THEN 'PRIMARY'
+		WHEN pkcon.contype = 'u' THEN 'UNIQUE'
+		END AS UNIQUE_OR_PRIMARY
+	FROM
+		pg_constraint AS pkcon
+	JOIN
+		pg_class pkc ON pkc.oid=pkcon.conrelid
+	JOIN
+		pg_namespace pknam ON pkcon.connamespace=pknam.oid
+	JOIN
+		pg_attribute pka ON pka.attnum=pkcon.conkey[1] AND pka.attrelid=pkc.oid
+	};
+
+	# SQL to find foreign keys of a table
+	my $fkey_sql = qq{
+	SELECT
+	NULL::text AS PKTABLE_CAT,
+	pknam.nspname AS PKTABLE_SCHEM,
+	pkc.relname AS PKTABLE_NAME,
+	pka.attname AS PKCOLUMN_NAME,
+	NULL::text AS FKTABLE_CAT,
+	fknam.nspname AS FKTABLE_SCHEM,
+	fkc.relname AS FKTABLE_NAME,
+	fka.attname AS FKCOLUMN_NAME,
+	fkcon.conkey[1] AS KEY_SEQ,
+	CASE
+		WHEN fkcon.confupdtype = 'c' THEN 0
+		WHEN fkcon.confupdtype = 'r' THEN 1
+		WHEN fkcon.confupdtype = 'n' THEN 2
+		WHEN fkcon.confupdtype = 'a' THEN 3
+		WHEN fkcon.confupdtype = 'd' THEN 4
+		END AS UPDATE_RULE,
+	CASE
+		WHEN fkcon.confdeltype = 'c' THEN 0
+		WHEN fkcon.confdeltype = 'r' THEN 1
+		WHEN fkcon.confdeltype = 'n' THEN 2
+		WHEN fkcon.confdeltype = 'a' THEN 3
+		WHEN fkcon.confdeltype = 'd' THEN 4
+		END AS DELETE_RULE,
+	fkcon.conname AS FK_NAME,
+	pkcon.conname AS PK_NAME,
+	CASE
+		WHEN fkcon.condeferrable = 'f' THEN 7
+		WHEN fkcon.condeferred = 't' THEN 6
+		WHEN fkcon.condeferred = 'f' THEN 5
+		END AS DEFERRABILITY,
+	CASE
+		WHEN pkcon.contype = 'p' THEN 'PRIMARY'
+		WHEN pkcon.contype = 'u' THEN 'UNIQUE'
+		END AS UNIQUE_OR_PRIMARY
+	FROM
+		pg_constraint AS fkcon
+	JOIN
+		pg_constraint AS pkcon ON fkcon.confrelid=pkcon.conrelid
+			AND fkcon.confkey=pkcon.conkey
+	JOIN
+		pg_class fkc ON fkc.oid=fkcon.conrelid
+	JOIN
+		pg_class pkc ON pkc.oid=fkcon.confrelid
+	JOIN
+		pg_namespace pknam ON pkcon.connamespace=pknam.oid
+	JOIN
+		pg_namespace fknam ON fkcon.connamespace=fknam.oid
+	JOIN
+		pg_attribute fka ON fka.attnum=fkcon.conkey[1] AND fka.attrelid=fkc.oid
+	JOIN
+		pg_attribute pka ON pka.attnum=pkcon.conkey[1] AND pka.attrelid=pkc.oid
+	};
+
+	# if schema are provided, use this SQL
+	my $pk_schema_sql = " AND pknam.nspname = ? ";
+	my $fk_schema_sql = " AND fknam.nspname = ? ";
+
+	my $key_sql;
+
+	# if $fk_table: generate SQL stub, which will be same
+	# whether or not $pk_table supplied
+	if ($fk_table)
+	{
+		$key_sql = $fkey_sql . qq{
+		WHERE
+			fkc.relname = ?
+		};
+		push @dat, $fk_table;
+
+		if ($fk_schema)
+		{
+			$key_sql .= $fk_schema_sql;
+			push @dat,$fk_schema;
+		}
+	}
+
+	# if $fk_table and $pk_table: (defined by DBI, not SQL/CLI)
+	# return foreign key of $fk_table that refers to $pk_table
+	# (if any)
+	if ($pk_table and $fk_table)
+	{
+		$key_sql .= qq{
+		AND
+			pkc.relname = ?
+		};
+		push @dat, $pk_table;
+
+		if ($pk_schema)
+		{
+			$key_sql .= $pk_schema_sql;
+			push @dat,$pk_schema;
+		}
+	}
+
+	# if $fk_table but no $pk_table:
+	# return all foreign keys of $fk_table, and all
+	# primary keys of tables to which $fk_table refers
+	if (!$pk_table and $fk_table)
+	{
+		# find primary/unique keys referenced by $fk_table
+		# (this one is a little tricky)
+		$key_sql .= ' UNION ' . $pkey_sql . qq{
+		WHERE
+			pkcon.conname IN
+		(
+		SELECT
+			pkcon.conname
+		FROM
+			pg_constraint AS fkcon
+		JOIN
+			pg_constraint AS pkcon ON fkcon.confrelid=pkcon.conrelid AND
+					fkcon.confkey=pkcon.conkey
+		JOIN
+			pg_class fkc ON fkc.oid=fkcon.conrelid
+		WHERE
+			fkc.relname = ?
+		)	
+		};
+		push @dat, $fk_table;
+
+		if ($fk_schema)
+		{
+			$key_sql .= $pk_schema_sql;
+			push @dat,$fk_schema;
+		}
+	}
+
+	# if $pk_table but no $fk_table:
+	# return primary key of $pk_table and all foreign keys
+	# that reference $pk_table
+	# question: what about unique keys?
+	# (DBI and SQL/CLI both state to omit unique keys)
+
+	if ($pk_table and !$fk_table)
+	{
+		# find primary key (only!) of $pk_table
+		$key_sql = $pkey_sql . qq{
+		WHERE
+			pkc.relname = ?
+		AND
+			pkcon.contype = 'p'
+		};
+		@dat = ($pk_table);
+
+		if ($pk_schema)
+		{
+			$key_sql .= $pk_schema_sql;
+			push @dat,$pk_schema;
+		}
+
+		# find all foreign keys that reference $pk_table
+		$key_sql .= 'UNION ' . $fkey_sql . qq{
+		WHERE
+			pkc.relname = ?
+		AND
+			pkcon.contype = 'p'
+		};
+		push @dat, $pk_table;
+
+		if ($pk_schema)
+		{
+			$key_sql .= $fk_schema_sql;
+			push @dat,$pk_schema;
+		}
+	}
+
+	return undef unless $key_sql;
+	my $sth = $dbh->prepare( $key_sql ) or
+		return undef;
+	$sth->execute(@dat);
+
+	return $sth;
+    }
+
 
     sub table_info {         # DBI spec: TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS
         my $dbh = shift;
@@ -1181,6 +1424,15 @@ views which are owned by the current user. It does not select any indices and
 sequences. Also System tables are not selected. As TABLE_QUALIFIER the reltype
 attribute is returned and the REMARKS are undefined.
 
+=item B<foreign_key_info>
+
+  $sth = $dbh->foreign_key_info( $pk_catalog, $pk_schema, $pk_table,
+                                 $fk_catalog, $fk_schema, $fk_table );
+
+Supported by the driver as proposed by DBI. Unimplemented for Postgres
+servers before 7.3 (returns undef).  Currently only returns information
+about first column of any multiple-column keys.
+
 =item B<tables>
 
   @names = $dbh->tables;
@@ -1590,3 +1842,4 @@ the Perl README file.
 See also B<DBI/ACKNOWLEDGMENTS>.
 
 =cut
+
