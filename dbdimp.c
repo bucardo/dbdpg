@@ -473,8 +473,10 @@ dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
         imp_dbh->pg_auto_escape = newval;
     } else if (kl==10 && strEQ(key, "pg_bool_tf")) {
 	imp_dbh->pg_bool_tf = newval;
+#ifdef SvUTF8_off
     } else if (kl==14 && strEQ(key, "pg_enable_utf8")) {
         imp_dbh->pg_enable_utf8 = newval;
+#endif
     } else {
         return 0;
     }
@@ -499,8 +501,10 @@ dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
         retsv = newSViv((IV)imp_dbh->pg_auto_escape);
     } else if (kl==10 && strEQ(key, "pg_bool_tf")) {
 	retsv = newSViv((IV)imp_dbh->pg_bool_tf);
+#ifdef SvUTF8_off
     } else if (kl==14 && strEQ(key, "pg_enable_utf8")) {
         retsv = newSViv((IV)imp_dbh->pg_enable_utf8);
+#endif
     } else if (kl==11 && strEQ(key, "pg_INV_READ")) {
         retsv = newSViv((IV)INV_READ);
     } else if (kl==12 && strEQ(key, "pg_INV_WRITE")) {
@@ -1456,6 +1460,7 @@ dbd_st_fetch (sth, imp_sth)
                 val[val_len] = '\0';
             }
             sv_setpvn(sv, val, val_len);
+#ifdef SvUTF8_off
 	    if (imp_dbh->pg_enable_utf8) {
 		SvUTF8_off(sv);
 		/* XXX Is this all the character data types? */
@@ -1464,6 +1469,7 @@ dbd_st_fetch (sth, imp_sth)
 			SvUTF8_on(sv);
 		}
 	    }
+#endif
         }
     }
 

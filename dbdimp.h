@@ -25,7 +25,9 @@ struct imp_dbh_st {
     int         init_commit;	/* initialize AutoCommit */
     int         pg_auto_escape;	/* initialize AutoEscape */
     int         pg_bool_tf;     /* do bools return 't'/'f' */
+#ifdef SvUTF8_off
     int         pg_enable_utf8;	/* should we attempt to make utf8 strings? */
+#endif
 };
 
 /* Define sth implementor data structure */
