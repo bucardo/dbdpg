@@ -87,7 +87,7 @@ SKIP: {
   eval "use Encode;";
   skip "need Encode module for unicode tests", 3 if $@;
   local $dbh->{pg_enable_utf8} = 1;
-  $dbh->do("INSERT INTO test (id, name, val) VALUES (4, '\\001\\000dam', 'cow')");
+  $dbh->do("INSERT INTO test (id, name, val) VALUES (4, '\x{0100}dam', 'cow')");
   $sth->execute(4);
   my ($id, $name) = $sth->fetchrow_array();
   ok(Encode::is_utf8($name),

@@ -25,72 +25,80 @@
       PGBOOLOID.
     - fixed many heap buffer overruns.
 
+1.22  Wed Mar 26 22:33:44 EST 2003
+	- Win32 compile fix for snprintf [Joe Spears]
+	- Fix memory allocation problem in bytea escaping [Barrie Slaymaker]
+	- Add utf8 support [Dominic Mitchell <dom@semantico.com>]
+	- Transform Perl arrays into PostgreSQL arrays [Alexey Slynko]
+	- Fix for foreign_key_info() [Keith Keller]
+	- Fix PG_TEXT parameter binding
+	- Doc cleanups [turnstep]
+	- Fix warning from func($table, 'table_attributes') [turnstep]
+	- Added suppport for schemas [turnstep]
+	- Fix binary to a bytea field conversion [Chris Dunlop <chris@onthe.net.au>]
+
 1.21  Sun Jan 12 21:00:44 EST 2003
-      - System tables no longer returned by tables(). [Dave Rolsky]
-      -	Fix table_attributes to handle removal of pg_relcheck in 7.3,
+	- System tables no longer returned by tables(). [Dave Rolsky]
+	- Fix table_attributes to handle removal of pg_relcheck in 7.3,
 	from Ian Barwick <barwick@gmx.net>
-      - Properly reset transaction status after failed transaction when
+	- Properly reset transaction status after failed transaction when
         autocommit is off.  Properly report transaction failure message.
         Kai <kai@xs4all.nl>
-      - New pg_bool_tf database handle that when set to true booleans are
+	- New pg_bool_tf database handle that when set to true booleans are
         returned as 't'/'f' rather than 1/0.
 
 1.20  Wed Nov 27 16:19:26 2002
-      - Maintenance transferred to GBorg,
+	- Maintenance transferred to GBorg,
         http://gborg.postgresql.org/project/dbdpg/projdisplay.php. Incremented
         version number to reflect new management. [Bruce Momjian]
-      - README cleaned up. [Bruce Momjian]
-      - Added t/15funct.t, a series of tests that determine if the meta data
+	- README cleaned up. [Bruce Momjian]
+	- Added t/15funct.t, a series of tests that determine if the meta data
         is working. [Thomas Lowery]
-      - Added implementations of column_info() and table_info(), and
+	- Added implementations of column_info() and table_info(), and
         primary_key_info(). [Thomas Lowery]
-      - The POD formatting was cleaned up. [David Wheeler]
-      - The preparser was updated to better handle escaped characters. [Rudy
+	- The POD formatting was cleaned up. [David Wheeler]
+	- The preparser was updated to better handle escaped characters. [Rudy
         Lippan]
-      - Removed redundant use of strlen() in pg_error() (Jason E. Stewart).
-      - Test suite cleaned up, converted to use Test::More, and updated to use
+	- Removed redundant use of strlen() in pg_error() (Jason E. Stewart).
+	- Test suite cleaned up, converted to use Test::More, and updated to use
         standard DBI environment variables for connecting to a test database.
         [Jason E. Stewart]
-      - Added eg/lotest.pl as a demonstration of using large objects in buffers
+	- Added eg/lotest.pl as a demonstration of using large objects in buffers
         rather than files. Contributed by Garth Webb.
-      - Added LISTEN/NOTIFY functionality. Congributed by Alex Pilosov.
-      - Added constants for common PostgreSQL data types, plus simple tests to
+	- Added LISTEN/NOTIFY functionality. Congributed by Alex Pilosov.
+	- Added constants for common PostgreSQL data types, plus simple tests to
 	make sure that they work. These are exportable via "use DBD::Pg
 	qw(:pg_types);". [David Wheeler]
-      - Deprecatated the undocumented (and invalid) use of SQL_BINARY in
+	- Deprecatated the undocumented (and invalid) use of SQL_BINARY in
 	bind_param() and documented the correct approach: "bind_param($num,
 	$val { pg_type => PG_BYTEA });". Use of SQL_BINARY in bind_param() will
         now issue a warning if $h->{Warn} is true. [David Wheeler]
-      - Removed invalid (and broken) support for SQL_BINARY in quote(). [David
+	- Removed invalid (and broken) support for SQL_BINARY in quote(). [David
 	Wheeler]
-      - Added App::Info::RDBMS::PostgreSQL to the distribution (but it won't
+	- Added App::Info::RDBMS::PostgreSQL to the distribution (but it won't
         be installed) to help Makefile.PL find the PostgreSQL include and
         library files. [David Wheeler]
-      - Fixed compile-time warnings. [David Wheeler and Jason E. Stewart]
+	- Fixed compile-time warnings. [David Wheeler and Jason E. Stewart]
 
 2002-04-27 Jeffrey W. Baker <jwbaker@acm.org>
 
-    * dbdimp.c: Add default at end of switch statement for pg_type attrib.
-    * t/13pgtype.t: test for above.
+	- dbdimp.c: Add default at end of switch statement for pg_type attrib.
+	- t/13pgtype.t: test for above.
     
 2002-04-09 Jeffrey W. Baker <jwbaker@acm.org>
 
-    * Pg.pm, dbdimp.c: Applied patch from 
-    Thomas A. Lowery <tlowery@stlowery.net> concerning metadata
-    in table_info and so forth.
+	- Pg.pm, dbdimp.c: Applied patch from 
+	Thomas A. Lowery <tlowery@stlowery.net> concerning metadata
+	in table_info and so forth.
     
 2002-03-06 Jeffrey W. Baker <jwbaker@acm.org>
-
-    * Pg.pm (quote): Applied patch from David Wheeler <david@wheeler.net>
-    to simplfiy and speed up quoting.
-
-    * t/11quoting.t: Tests for above patch.
-    
-    * t/12placeholders.t: Tests for placeholder parsing in quoted strings.
+	- Pg.pm (quote): Applied patch from David Wheeler <david@wheeler.net>
+	to simplfiy and speed up quoting.
+	- t/11quoting.t: Tests for above patch.
+	- t/12placeholders.t: Tests for placeholder parsing in quoted strings.
     
 2002-03-06 Jeffrey W. Baker
-
-    * Version 1.10 uploaded to CPAN.
+	- Version 1.10 uploaded to CPAN.
  
 1.01 Jun 27, 2001
 	- fixed core dump when trying to use a BYTEA value with
