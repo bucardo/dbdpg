@@ -67,6 +67,18 @@ dbd_discon_all (drh, imp_drh)
 }
 
 
+
+
+/* Turn database notices into perl warnings for proper handling. */
+
+static void
+pg_warn (arg, message)
+    void *arg;
+    const char *message;
+{
+    warn( message );
+}
+
 /* Database specific error handling. */
 
 void
@@ -164,6 +176,9 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
         PQfinish(imp_dbh->conn);
         return 0;
     }
+
+    /* Enable warnings to go through perl */
+    PQsetNoticeProcessor(imp_dbh->conn, pg_warn, NULL);
 
     /* Quick basic version check -- not robust a'tall TODO: rewrite */
     pgres_ret = PQexec(imp_dbh->conn, "SELECT version()");

@@ -32,9 +32,9 @@
 	- Transform Perl arrays into PostgreSQL arrays [Alexey Slynko]
 	- Fix for foreign_key_info() [Keith Keller]
 	- Fix PG_TEXT parameter binding
-	- Doc cleanups [turnstep]
-	- Fix warning from func($table, 'table_attributes') [turnstep]
-	- Added suppport for schemas [turnstep]
+	- Doc cleanups [Greg Sabino Mullane]
+	- Fix warning from func($table, 'table_attributes') [Greg Sabino Mullane]
+	- Added suppport for schemas [Greg Sabino Mullane]
 	- Fix binary to a bytea field conversion [Chris Dunlop <chris@onthe.net.au>]
 
 1.21  Sun Jan 12 21:00:44 EST 2003
