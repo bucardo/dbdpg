@@ -22,12 +22,16 @@
 
 DBISTATE_DECLARE;
 
-
 void pg_error();
 
 #include "large_object.c"
 #include "prescan_stmt.c"
 
+#ifdef HAVE_PQprotocol
+int newprotocol = 1;
+#else
+int newprotocl = 0;
+#endif
 
 /* ================================================================== */
 
@@ -128,54 +132,60 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	char *conn_str;
 	char *src;
 	char *dest;
-	int inquote = 0;
+	int connect_string_size;
+	char inquote = 0;
 	
-	PGresult *pgres_ret;
-	char *vstring, *vstart, *vnext; /* Stuff for getting version info */
+	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_login\n"); }
 	
-	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "pg_db_login\n"); }
-	
-	/* build connect string */
-	/* DBD-Pg syntax: 'dbname=dbname;host=host;port=port' */
-	/* pgsql syntax: 'dbname=dbname host=host port=port user=uid password=pwd' */
-	
-	conn_str = (char *)safemalloc(strlen(dbname) + strlen(uid) + strlen(pwd) + 16 + 1);
-	if (! conn_str)
-		return 0;
-	
+	/* DBD::Pg syntax: 'dbname=dbname;host=host;port=port' */
+	/* libpq syntax: 'dbname=dbname host=host port=port user=uid password=pwd' */
+
+	/* Figure out how large our connection string is going to be */
+	connect_string_size = strlen(dbname);
+	if (strlen(uid)) {
+		connect_string_size += strlen(" user=") + strlen(uid);
+	}
+	if (strlen(pwd)) {
+		connect_string_size += strlen(" password=") + strlen(pwd);
+	}
+
+	conn_str = (char *)safemalloc(connect_string_size+1);
+	if (!conn_str)
+		croak("No memory to create a login string");
+
+	/* Change all semi-colons in dbname to a space, unless quoted */
 	src = dbname;
 	dest = conn_str;
-	/* Change all semi-colons to a space, unless quoted */
 	while (*src) {
-		if (*src == ';' && !inquote)
+		if (';' == *src && !inquote)
 			*dest++ = ' ';
 		else {
-			if (*src == '\'')
-				inquote = ! inquote;
+			if ('\'' == *src)
+				inquote = !inquote;
 			*dest++ = *src;
 		}
 		src++;
 	}
 	*dest = '\0';
-	
+
+	/* Add in the user and/or password if they exist */
 	if (strlen(uid)) {
 		strcat(conn_str, " user=");
 		strcat(conn_str, uid);
-		if (strlen(pwd)) {
-			strcat(conn_str, " password=");
-			strcat(conn_str, pwd);
-		}
+	}
+	if (strlen(pwd)) {
+		strcat(conn_str, " password=");
+		strcat(conn_str, pwd);
 	}
 	
-	if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "pg_db_login: conn_str = >%s<\n", conn_str); }
+	if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_login: conn_str = >%s<\n", conn_str); }
 	
-	/* make a connection to the database */
-	
-	imp_dbh->conn = PQconnectdb(conn_str);
+	/* Make a connection to the database */
+ 	imp_dbh->conn = PQconnectdb(conn_str);
 	safefree(conn_str);
 	
-	/* check to see that the backend connection was successfully made */
-	if (PQstatus(imp_dbh->conn) != CONNECTION_OK) {
+	/* Check to see that the backend connection was successfully made */
+	if (CONNECTION_OK != PQstatus(imp_dbh->conn)) {
 		pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
 		PQfinish(imp_dbh->conn);
 		return 0;
@@ -183,42 +193,14 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	
 	/* Enable warnings to go through perl */
 	PQsetNoticeProcessor(imp_dbh->conn, pg_warn, (void *)SvRV(dbh));
-	
-	/* Quick basic version check -- not robust a'tall TODO: rewrite */
-	pgres_ret = PQexec(imp_dbh->conn, "SELECT version()");
-	if (pgres_ret && PQresultStatus(pgres_ret) == PGRES_TUPLES_OK) {
-		vstring = PQgetvalue(pgres_ret, 0,0); /* Tuple 0 ,filed 0 */
-		vstart = index(vstring, ' ');
-		
-		imp_dbh->version.major = strtol(vstart, &vnext, 10);
-		imp_dbh->version.minor = strtol(vnext+1, NULL, 10);
-		imp_dbh->version.ver = strtod(vstart, NULL);
-		
-	} else {
-		imp_dbh->version.major = 0;
-		imp_dbh->version.minor = 0;
-		imp_dbh->version.ver = 0.0;
-	}
-	PQclear(pgres_ret);
-	
-#ifdef HAVE_PQprotocol
-	imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
-#endif
-	
-	/* PerlIO_printf(DBILOGFP, "v.ma: %i, v.mi: %i v.ver: %f\n",
-		 imp_dbh->version.major, imp_dbh->version.minor, imp_dbh->version.ver);
-		 
-		 if(imp_dbh->version.ver >= 7.3)
-		 PerlIO_printf(DBILOGFP, "Greater than 7.3\n");
-	*/
-	
-	imp_dbh->init_commit = 1;			/* initialize AutoCommit */
-	imp_dbh->pg_auto_escape = 1;		/* initialize pg_auto_escape */
-	imp_dbh->pg_bool_tf = 0;					/* initialize pg_bool_tf */
-#ifdef is_utf8_string
-	imp_dbh->pg_enable_utf8 = 0;				/* initialize pg_enable_utf8 */
-#endif
-	
+
+ 	/* Figure out what protocol this server is using */
+	imp_dbh->pg_protocol = newprotocol ? PQprotocolVersion(imp_dbh->conn) : 0;
+
+	imp_dbh->init_commit = 1; /* AutoCommit defaults to on as per DBI spec */
+	imp_dbh->pg_bool_tf = 0; /* By default, do not transform boolean 1/0 to t/f */
+	imp_dbh->pg_enable_utf8 = 0;
+
 	DBIc_IMPSET_on(imp_dbh);			/* imp_dbh set up now */
 	DBIc_ACTIVE_on(imp_dbh);			/* call disconnect before freeing */
 	return 1;
@@ -291,19 +273,17 @@ dbd_db_ping (dbh)
 	
 	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_ping\n"); }
 	
-	if (NULL != imp_dbh->conn) {
-		result = PQexec(imp_dbh->conn, " ");
-		status = result ? PQresultStatus(result) : -1;
-		PQclear(result);
+	if (NULL == imp_dbh->conn)
+		return 0;
+
+	result = PQexec(imp_dbh->conn, " ");
+	status = result ? PQresultStatus(result) : -1;
+	PQclear(result);
 		
-		if (PGRES_EMPTY_QUERY != status) {
-			return 0;
-		}
+	if (PGRES_EMPTY_QUERY != status)
+		return 0;
 		
-		return 1;
-	}
-	
-	return 0;
+	return 1;
 }
 
 
@@ -635,7 +615,7 @@ dbd_preparse (sth, imp_sth, statement)
 	assert(strlen(imp_sth->statement)+1 <= stmt_len);
 	/* if not dml, no need to continue, As we are not going to
 		 server side prepare this statement TODO: remalloc*/
-	if (!is_dml(imp_sth->statement+offset) || imp_dbh->version.ver < 7.3)
+	if (!is_dml(imp_sth->statement+offset) || imp_dbh->pg_protocol >= 3)
 		return 1;
 	
 	/* 1 == PREPARE -- TODO: Fix ugly number thing*/
@@ -1074,8 +1054,6 @@ dbd_st_fetch (sth, imp_sth)
 					}
 				}
 			
-#ifdef is_utf8_string
-			/* XXX Under what circumstances is type_info NULL? */
 			if (imp_dbh->pg_enable_utf8 && type_info) {
 				SvUTF8_off(sv);
 				switch(type_info->type_id) {
@@ -1088,7 +1066,6 @@ dbd_st_fetch (sth, imp_sth)
 					}
 				}
 			}
-#endif
 		}
 	}
 	

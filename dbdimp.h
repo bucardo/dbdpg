@@ -29,14 +29,8 @@ struct imp_dbh_st {
 	int     done_begin;     /* Have we done a begin?
 														 Only used if AutoCommit is off. */
 	int     pg_protocol;
-#ifdef is_utf8_string
 	int     pg_enable_utf8; /* should we attempt to make utf8 strings? */
-#endif
-	struct {
-		int    major;
-		int    minor;
-		double ver;
-	} version;
+
 };
 
 
