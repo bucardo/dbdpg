@@ -114,6 +114,7 @@ $DBD::Pg::VERSION = '1.20';
 
 {   package DBD::Pg::db; # ====== DATABASE ======
     use strict;
+    use Carp ();
 
     sub prepare {
         my($dbh, $statement, @attribs)= @_;
@@ -752,14 +753,18 @@ $DBD::Pg::VERSION = '1.20';
               );
 
     # Set up lookup for SQL types we don't want to escape.
-    my @no_escape = map { $_ => 1 }
+    my %no_escape = map { $_ => 1 }
       DBI::SQL_INTEGER, DBI::SQL_SMALLINT, DBI::SQL_DECIMAL,
       DBI::SQL_FLOAT, DBI::SQL_REAL, DBI::SQL_DOUBLE, DBI::SQL_NUMERIC;
 
     sub quote {
         my ($dbh, $str, $data_type) = @_;
         return "NULL" unless defined $str;
-	return $str if $data_type && $no_escape[$data_type];
+	return $str if $data_type && $no_escape{$data_type};
+
+        $dbh->DBI::set_err(1, "Use of SQL_BINARY invalid in quote()")
+          if $data_type && $data_type == DBI::SQL_BINARY;
+
 	$str =~ s/(['\\\0])/$esc{$1}/g;
 	return "'$str'";
     }

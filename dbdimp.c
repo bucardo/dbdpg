@@ -1058,6 +1058,10 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
             }
         }
         if (sql_type) {
+            /* SQL_BINARY (-2) is deprecated. */
+            if (sql_type == -2 && DBIc_WARN(imp_sth)) {
+                warn("Use of SQL type SQL_BINARY (%d) is deprecated. Use { pg_type => DBD::Pg::PG_BYTEA } instead.", sql_type);
+            }
             phs->ftype = pg_sql_type(imp_sth, phs->name, sql_type);
         }
     }   /* was first bind for this placeholder  */

@@ -11,7 +11,7 @@ main();
 sub main {
     my ($n, $dbh, $sth);
     
-    print "1..5\n";
+    print "1..6\n";
     
     $n = 1;
     
@@ -46,7 +46,23 @@ sub main {
     $sth->finish();
 
     print "ok $n\n"; $n++;
-    
+
+    # Make sure that we get warnings when we try to use SQL_BINARY.
+    {
+        local $SIG{__WARN__} =
+          sub { print $_[0] =~ /^Use of SQL type SQL_BINARY/ ?
+                  "ok $n\n" : "no ok $n\n"; $n++
+          };
+
+        $sth = $dbh->prepare(q{
+            SELECT id
+                 , name
+              FROM test
+             WHERE id = ?
+               AND name = ?
+        });
+        $sth->bind_param(1, 'foo', DBI::SQL_BINARY);
+    }
     $dbh->disconnect();
 
     print "ok $n\n"; $n++;
