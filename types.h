@@ -13,9 +13,8 @@ typedef struct sql_type_info {
 	union	{
 			int pg;
 			int sql;	/* closest SQL/PG_WHATEVER Type */
-		} type;
+	} type;
 } sql_type_info_t;
-
 
 sql_type_info_t* pg_type_data();
 sql_type_info_t* sql_type_data();

@@ -153,7 +153,6 @@ pg_type_data(sql_type)
 
 
 
-
 /* This table only knows about the types that dbd_pg knew about before
    TODO: Put the rest of the sql types in here with mapping.
 */
@@ -176,17 +175,17 @@ sql_type_data(sql_type)
 	int sql_type;
 {
 	switch(sql_type) {
-		case SQL_VARCHAR:	return &sql_types[0];
-		case SQL_CHAR:		return &sql_types[1];
-		case SQL_NUMERIC:	return &sql_types[2];
-		case SQL_DECIMAL:	return &sql_types[3];
-		case SQL_INTEGER:	return &sql_types[4];
-		case SQL_SMALLINT:	return &sql_types[5];
-		case SQL_FLOAT:		return &sql_types[6];
-		case SQL_REAL:		return &sql_types[7];
-		case SQL_DOUBLE:	return &sql_types[8];
+	case SQL_VARCHAR:	return &sql_types[0];
+	case SQL_CHAR:		return &sql_types[1];
+	case SQL_NUMERIC:	return &sql_types[2];
+	case SQL_DECIMAL:	return &sql_types[3];
+	case SQL_INTEGER:	return &sql_types[4];
+	case SQL_SMALLINT:	return &sql_types[5];
+	case SQL_FLOAT:		return &sql_types[6];
+	case SQL_REAL:		return &sql_types[7];
+	case SQL_DOUBLE:	return &sql_types[8];
 		case SQL_BINARY:	return &sql_types[9];
-		default:		return NULL;
+	default: return NULL;
 	}
 }
 
