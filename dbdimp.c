@@ -1030,6 +1030,12 @@ dbd_st_fetch (sth, imp_sth)
 			else
 				value_len = strlen(value);
 			
+			if (type_info && (type_info->type_id == BOOLOID) &&
+					imp_dbh->pg_bool_tf)
+				{
+					*value = (*value == '1') ? 't' : 'f';
+				}
+
 			sv_setpvn(sv, value, value_len);
 			
 			if (type_info && (type_info->type_id == BPCHAROID) && 
