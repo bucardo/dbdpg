@@ -394,6 +394,7 @@ $DBD::Pg::VERSION = '1.33';
 		## Catalog is ignored, but table is mandatory
 		return undef unless defined $table and length $table;
 
+		my $version = DBD::Pg::_pg_server_version($dbh);
 		my $whereclause = "AND c.relname = " . $dbh->quote($table);
 
 		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
@@ -405,18 +406,24 @@ $DBD::Pg::VERSION = '1.33';
 		my $showschema = $gotschema ? "quote_ident(n.nspname)" : "NULL::text";
 		my $schemajoin = $gotschema ? 
 			"LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
+		my $showtablespace = '';
+		my $tablespacejoin = '';
+		if (DBD::Pg::_pg_check_version(7.5, $version)) {
+			$tablespacejoin = 'LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
+			$showtablespace = ', t.spcname, t.spclocation';
+		}
 		my $pri_key_sql = qq{
 			SELECT
 				  c.oid
 				, $showschema
 				, quote_ident(c.relname)
 				, quote_ident(c2.relname)
-				, i.indkey
+				, i.indkey $showtablespace
 			FROM
 				${CATALOG}pg_class c
 				JOIN ${CATALOG}pg_index i ON (i.indrelid = c.oid)
 				JOIN ${CATALOG}pg_class c2 ON (c2.oid = i.indexrelid)
-				$schemajoin
+				$schemajoin $tablespacejoin
 			WHERE
 				i.indisprimary IS TRUE
 			$whereclause
@@ -462,6 +469,10 @@ $DBD::Pg::VERSION = '1.33';
 				$pkinfo->[$x][5] = $info->[3];
 				# DATA_TYPE
 				$pkinfo->[$x][6] = $attribs->{$_}{typename};
+				if ($tablespacejoin) {
+					$pkinfo->[$x][7] = $info->[5];
+					$pkinfo->[$x][8] = $info->[6];
+				}
 				$x++;
 			}
 		}
@@ -488,6 +499,7 @@ $DBD::Pg::VERSION = '1.33';
 
 		my @cols = (qw(TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME
 									 KEY_SEQ PK_NAME DATA_TYPE));
+		push @cols, 'pg_tablespace_name', 'pg_tablespace_location' if $tablespacejoin;
 
 		return _prepare_from_data('primary_key_info', $pkinfo, \@cols);
 
@@ -806,15 +818,21 @@ $DBD::Pg::VERSION = '1.33';
 		else {
 			# Default SQL
 			my $showschema = "NULL::text";
-			my $schemajoin = "";
-			my $has_objsubid = "";
+			my $schemajoin = '';
+			my $has_objsubid = '';
+			my $tablespacejoin = '';
+			my $showtablespace = '';
+			my @search;
 			if (DBD::Pg::_pg_check_version(7.3, $version)) {
 				$showschema = "n.nspname";
 				$schemajoin = "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)";
 				$has_objsubid = "AND d.objsubid = 0";
 			}
+			if (DBD::Pg::_pg_check_version(7.5, $version)) {
+				$tablespacejoin = 'LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
+				$showtablespace = ', t.spcname AS "pg_tablespace_name", t.spclocation AS "pg_tablespace_location"';
+			}
 
-			my @search;
 			## If the schema or table has an underscore or a %, use a LIKE comparison
 			if (defined $schema and length $schema and DBD::Pg::_pg_check_version(7.3, $version)) {
 					push @search, "n.nspname " . ($schema =~ /[_%]/ ? "LIKE " : "= ") . $dbh->quote($schema);
@@ -846,11 +864,11 @@ $DBD::Pg::VERSION = '1.33';
 							ELSE
 								CASE WHEN $schemacase ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END
 						END AS "TABLE_TYPE"
-					 , d.description AS "REMARKS"
+					 , d.description AS "REMARKS" $showtablespace
 				FROM ${CATALOG}pg_class AS c
 					LEFT JOIN ${CATALOG}pg_description AS d 
 						ON (c.relfilenode = d.objoid $has_objsubid)
-					$schemajoin
+					$schemajoin $tablespacejoin
 				WHERE $whereclause
 				ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
 				};
@@ -1290,11 +1308,11 @@ The options parameter specifies runtime options for the Postgres
 backend. Common usage is to increase the number of buffers with the C<-B>
 option. Also important is the C<-F> option, which disables automatic fsync()
 call after each transaction. For further details please refer to the
-L<postgres>.
+L<PostgreSQL> documentation.
 
 For authentication with username and password appropriate entries have to be
-made in pg_hba.conf. Please refer to the L<pg_hba.conf> and the L<pg_passwd>
-for the different types of authentication. Note that for these two parameters
+made in pg_hba.conf. Please refer to the L<pg_hba.conf> and the L<pg_passwd> 
+files for the different types of authentication. Note that for these two parameters
 DBI distinguishes between empty and undefined. If these parameters are
 undefined DBI substitutes the values of the environment variables DBI_USER and
 DBI_PASS if present.
@@ -1628,7 +1646,7 @@ However, there are some drawbacks. First, the server cannot always choose the id
 parse plan because it will not know the arguments before hand. However, for most 
 situations in which you will be executing similar data many times, the default 
 plan will probably work out well. Further discussion on this subject are beyond 
-the scope of these documentations: please consult the pgsql-performance mailing list.
+the scope of this documentation: please consult the pgsql-performance mailing list.
 
 The second drawback to using server-side prepares is that the server is more picky 
 about the data types of the placeholders in the statement, especially when doing 
@@ -1744,7 +1762,7 @@ use different ones for each statement handle you have. Again, this is not encour
   $sth = $dbh->prepare_cached($statement, \%attr);
 
 Implemented by DBI, no driver-specific impact. This method is most useful 
-when using a server that supports server-side perpares, and you have asked 
+when using a server that supports server-side prepares, and you have asked 
 the prepare to happen immediately via the "pg_prepare_now" attribute.
 
 =item B<do>
@@ -1755,7 +1773,7 @@ Prepare and execute a single statement. Because statements with placeholders
 should be calling prepare and execute themselves, calls to do will not 
 use server-side prepares by default. You can force the use of server-side 
 prepares by adding "pg_server_prepare => 1" to the attribute hashref. See the 
-notes on perpare, bind_param, and execute for more information.
+notes on prepare, bind_param, and execute for more information.
 
 =item B<commit>
 
@@ -1818,20 +1836,29 @@ Supported by this driver as proposed by DBI. This method returns all tables
 and views visible to the current user. The $catalog argument is currently 
 unused. The schema and table arguments will do a 'LIKE' search if a 
 percent sign (%) or an underscore (_) are detected in the argument.
-The $type argument accepts a value of wither "TABLE" or "VIEW" 
+The $type argument accepts a value of either "TABLE" or "VIEW" 
 (using both is the default action).
+
+If your database supports tablespaces (version 7.5 or greater), two additional 
+columns are returned named "pg_tablespace_name" and "pg_tablespace_location" 
+which contain the name and location of the tablespace associated with 
+this table. Tables that have not been assigned to a particular tablespace 
+will return undef for both of these columns.
 
 =item B<primary_key_info>
 
   $sth = $dbh->primary_key_info( $catalog, $schema, $table, \%attr );
 
 Supported by this driver as proposed by DBI. The $catalog argument is 
-curently unused, and the $schema argument has no effect against 
+currently unused, and the $schema argument has no effect against 
 servers running version 7.2 or less. There are no search patterns allowed, 
 but leaving the $schema argument blank will cause the first table 
 found in the schema search path to be used. An additional field, DATA_TYPE, 
 is returned and shows the data type for each of the arguments in the 
 COLUMN_NAME field.
+
+This will also return tablespace information for servers that support it. 
+See the table_info entry for more information.
 
 In addition to the standard format of returning one row for each column 
 found for the primary key, you can pass the argument "pg_onerow" to force 
@@ -2086,7 +2113,7 @@ modify your "use DBI" statement at the top of your script as follows:
   use DBI qw(:sql_types);
 
 This will import some constants into your script. You can plug those 
-directly into the bind_param cal. Some common ones that you will 
+directly into the bind_param call. Some common ones that you will 
 encounter are:
 
   SQL_INTEGER
@@ -2100,8 +2127,8 @@ key in the hash passed to bind_param.
 
 Data types are "sticky" in that once a data type is set to a certain placeholder, 
 it will remain for that placeholder, unless it is explicitly set to something 
-else afterwards. If the statement has alredy been prepared, and you switch the 
-data type to something else, DBD::Pg will reprepare the statement for you before 
+else afterwards. If the statement has already been prepared, and you switch the 
+data type to something else, DBD::Pg will re-prepare the statement for you before 
 doing the next execute.
 
 Examples:
@@ -2121,7 +2148,7 @@ Examples:
   ## The "undef" bound above is not used, since we supply params to execute
   $sth->execute(123, "Merk");
 
-  ## Set the first placholder's value and data type
+  ## Set the first placeholder's value and data type
   $sth->bind_param(1, 234, { pg_type => PG_TIMESTAMP });
 
   ## Set the second placeholder's value and data type.
