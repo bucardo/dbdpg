@@ -1,3 +1,5 @@
+  - pg_notifies now catches and reports when PQconsumeInput fails.
+    [nmueller@cs.wisc.edu]
 	- a fetch on any column that had a type that did not have an entry
 	  in the type_info array would segfault DBD::Pg.  [reported by: TODO]
 	- Duplicate rows bug with column_info() REMARKS has been fixed. However,

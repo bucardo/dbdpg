@@ -244,10 +244,15 @@ dbd_db_pg_notifies (dbh, imp_dbh)
 	PGnotify* notify;
 	AV* ret;
 	SV* retsv;
-	
+	int status;
+
 	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_pg_notifies\n"); }
 	
-	PQconsumeInput(imp_dbh->conn);
+	status = PQconsumeInput(imp_dbh->conn);
+	if (status == 0) { 
+		pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+		return 0;
+	}
 	
 	notify = PQnotifies(imp_dbh->conn);
 	
