@@ -1703,6 +1703,11 @@ Constant to be used for the mode in lo_creat and lo_open.
 
 Constant to be used for the mode in lo_creat and lo_open.
 
+=item B<pg_bool_tf> (boolean)
+
+PostgreSQL specific attribute. If true, boolean values will be returned 
+as the characters 't' and 'f' instead of '1' and '0'.
+
 =back
 
 =head1 DBI STATEMENT HANDLE OBJECTS
