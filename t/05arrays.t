@@ -14,7 +14,7 @@ if (defined $ENV{DBI_DSN}) {
 }
 
 my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
-											 {RaiseError => 1, PrintError => 0, AutoCommit => 0});
+                       {RaiseError => 1, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for array testing");
 
 =begin comment
