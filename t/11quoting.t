@@ -34,7 +34,7 @@ foreach my $test (keys %tests) {
   ok($quo eq $ref,
      "$test: $unq -> expected " .
      (defined $ref ? $ref : '[undef]') .
-     "got " . defined $quo ? $quo : '[undef]'
+     " got " . defined $quo ? $quo : '[undef]'
     );
 }
 
