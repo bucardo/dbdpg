@@ -67,7 +67,7 @@ use 5.006001;
 	sub _pg_server_version {
 		my $dbh = shift;
 		return $dbh->{private_dbdpg}{server_version} if defined $dbh->{private_dbdpg}{server_version};		
-		$dbh->{private_dbdpg}{full_version} = $dbh->selectrow_array("SELECT version()");
+		$dbh->{private_dbdpg}{full_version} = $dbh->selectrow_array("SELECT version(), 'DBD::Pg'");
 		if ($dbh->{private_dbdpg}{full_version} =~ /(\d+)\.(\d+)\.?(\d*)/) {
 			$dbh->{private_dbdpg}{dotted_version} = "$1.$2.".$3||0;
 			$dbh->{private_dbdpg}{server_version} = int sprintf("%02d%02d%02d",$1,$2,$3||0);
