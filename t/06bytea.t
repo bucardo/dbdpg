@@ -21,7 +21,6 @@ ok( defined $dbh, "Connect to database for bytea testing");
 my $sth;
 
 $sth = $dbh->prepare(qq{INSERT INTO dbd_pg_test (id,bytetest) VALUES (?,?)});
-$sth->bind_param(1, undef, SQL_INTEGER);
 $sth->bind_param(2, undef, { pg_type => DBD::Pg::PG_BYTEA });
 $sth->execute(400, "a\0b");
 $sth = $dbh->prepare(qq{SELECT bytetest FROM dbd_pg_test WHERE id=?});
