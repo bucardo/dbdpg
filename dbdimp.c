@@ -150,12 +150,13 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	dest = conn_str;
 	/* Change all semi-colons to a space, unless quoted */
 	while (*src) {
-		if (*src == '"')
-			inquote = ! inquote;
-		else if (*src == ';' && !inquote)
+		if (*src == ';' && !inquote)
 			*dest++ = ' ';
-		else
+		else {
+			if (*src == '\'')
+				inquote = ! inquote;
 			*dest++ = *src;
+		}
 		src++;
 	}
 	*dest = '\0';
@@ -172,6 +173,7 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "pg_db_login: conn_str = >%s<\n", conn_str); }
 	
 	/* make a connection to the database */
+
 	imp_dbh->conn = PQconnectdb(conn_str);
 	safefree(conn_str);
 	
