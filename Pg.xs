@@ -56,7 +56,7 @@ constant(name=Nullch)
 			if (!name) {
 				name = GvNAME(CvGV(cv));
 			}
-			Perl_croak("Unknown DBD::Pg constant '%s'", name);
+			croak("Unknown DBD::Pg constant '%s'", name);
 		}
     else {
 			RETVAL = ix;
