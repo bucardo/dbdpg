@@ -130,7 +130,7 @@ void pg_error (h, error_num, error_msg)
 	DBIh_EVENT2(h, ERROR_event, DBIc_ERR(imp_xxh), DBIc_ERRSTR(imp_xxh));
 	if (dbis->debug >= 3) {
 		PerlIO_printf(DBILOGFP, "%s error %d recorded: %s\n",
-									err, error_num, SvPV(DBIc_ERRSTR(imp_xxh),na));
+									err, error_num, SvPV_nolen(DBIc_ERRSTR(imp_xxh)));
 	}
 	Safefree(err);
 
