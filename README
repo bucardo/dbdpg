@@ -6,7 +6,7 @@ DBD::Pg  --  the DBI PostgreSQL interface for Perl
 DESCRIPTION:
 ------------
 
-This is version 1.21 of DBD-Pg.  The web site for this interface is at:
+This is version 1.22 of DBD-Pg.  The web site for this interface is at:
 
 	http://gborg.postgresql.org/project/dbdpg/projdisplay.php
 
@@ -69,7 +69,13 @@ INSTALLATION:
 By default Makefile.PL uses App:Info to find the location of the
 PostgreSQL library and include directories.  However, if you want to
 control it yourself, define the environment variables POSTGRES_INCLUDE
-and POSTGRES_LIB, or POSTGRES_HOME.
+and POSTGRES_LIB, or POSTGRES_HOME. Note that if you've compiled
+PostgreSQL with SSL support, you must define the POSTGRES_LIB
+environment varable and add "-lssl" to it, like this:
+
+  export POSTGRES_LIB="/usr/local/pgsql/lib -lssl"
+
+Now, take the usual steps to install DBD::Pg:
 
 	1.   perl Makefile.PL
 	2.   make
