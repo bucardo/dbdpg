@@ -4,7 +4,7 @@
 use ExtUtils::MakeMaker;
 use Config;
 use strict;
-use 5.006001;
+use 5.006000;
 use DBI 1.00;
 use DBI::DBD;
 
@@ -57,7 +57,7 @@ if ($os eq 'MSWin32') {
 
 
 my $comp_opts;
-if ($major_ver = 7) {
+if ($major_ver == 7) {
     if ($minor_ver >= 2) {
         $comp_opts .= " -DHAVE_PQescapeString";
         $comp_opts .= " -DHAVE_PQescapeBytea";
@@ -70,7 +70,7 @@ if ($major_ver = 7) {
         $comp_opts .= " -DHAVE_PQunescapeBytea";
 }
 
-#print "Version Detected: $major_ver $minor_ver $patch using Compilor opts $comp_opts\n";
+#print "Version Detected: $major_ver $minor_ver $patch using Compiler opts $comp_opts\n";
 
 
 my %opts = (
