@@ -710,7 +710,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	imp_sth->result	= 0;
 	imp_sth->cur_tuple = 0;
 	imp_sth->rows = -1;
-	imp_sth->totalsize = imp_sth->numsegs = imp_sth->numphs = 0;
+	imp_sth->totalsize = imp_sth->numsegs = imp_sth->numphs = imp_sth->numbound=0;
 	imp_sth->prepare_name = NULL;
 
 	/* Break the statement into segments by placeholder */
@@ -1135,7 +1135,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	int pg_type = 0;
 	char *value_string;
 	STRLEN value_len;
-
+	bool default_type = 0;
 	unsigned int x, y;
 	int matches=0;
 	seg_t *currseg;
@@ -1237,6 +1237,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
  	}
 	else {
 		bind_type = pg_type_data(VARCHAROID);
+		default_type = 1;
 		if (!bind_type)
 			croak("Default type is bad!!!!???");
 	}
@@ -1264,6 +1265,11 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 		}
 		for (y=1, currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 			if (x==y++ && NULL != currseg->placeholder) {
+				if (!default_type && 0==currseg->boundbyclient) {
+					currseg->boundbyclient=1;
+					imp_sth->numbound++;
+				}
+
 				/* Do we really need a reprepare? */
 				if (reprepare) {
 					if (NULL != currseg->bind_type &&
