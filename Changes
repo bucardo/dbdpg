@@ -1,8 +1,8 @@
 	- Add new attributes to $dbh: pg_db, pg_user, pg_pass,
 		pg_host, pg_port, pg_options, pg_socket, pg_pid
 		[Greg Sabino Mullane]
-  - Minor pointer increment fix in quote.c
-    [Christophe Martin:  schplurtz at free.fr]
+	- Minor fixes in quote.c, dbdimp.c, and types.h
+		[Christophe Martin: schplurtz at free.fr]
 	- Add support for SQLSTATE via $dbh->state()
 		[Greg Sabino Mullane]
 	- Major overhaul of prepare/execute to handle new server-side 

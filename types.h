@@ -17,7 +17,7 @@ typedef struct sql_type_info {
 } sql_type_info_t;
 
 sql_type_info_t* pg_type_data();
-sql_type_info_t* sql_type_data();
+sql_type_info_t* sql_type_data(int);
 
 #endif /*DBDPGTYEPSH */
 

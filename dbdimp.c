@@ -1215,7 +1215,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 			}
 		}
 		else {
-			croak("Cannot bind %s unknown pg_type %i", name, pg_type);
+			croak("Cannot bind %s unknown pg_type %", IVdf, name, pg_type);
 		}
 	}
 	else if (sql_type) {
