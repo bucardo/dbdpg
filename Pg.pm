@@ -671,7 +671,7 @@ $DBD::Pg::VERSION = '1.21';
 					   NULL::text    AS "TABLE_CAT"
 					 , NULL::text    AS "TABLE_SCHEM"
 					 , NULL::text    AS "TABLE_NAME"
-					 , 'sequence     AS "TABLE_TYPE"
+					 , 'sequence'     AS "TABLE_TYPE"
 					 , 'sequence - S'    AS "REMARKS"
 					union
 					SELECT 
