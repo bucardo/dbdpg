@@ -27,26 +27,22 @@ if ($schema) {
 		"WHERE c.relnamespace=n.oid AND c.relname=? AND n.nspname=".
 			$dbh->quote($schema);
 }
-
-
 my $sth = $dbh->prepare($SQL);
-$sth->execute('dbd_pg_test');
-my $count = $sth->fetchall_arrayref()->[0][0];
-if (1==$count) {
-	$dbh->do(sprintf "DROP TABLE %s%s", $schema ? "$schema." : '', 'dbd_pg_test');
+
+for (3,2,1,'') {
+	my $table = "dbd_pg_test$_";
+	$sth->execute($table);
+	if (1==$sth->fetchall_arrayref()->[0][0]) {
+		$dbh->do(sprintf "DROP TABLE %s$table", $schema ? "$schema." : '');
+	}
 }
-$sth->execute('dbd_pg_test2');
-$count = $sth->fetchall_arrayref()->[0][0];
-if (1==$count) {
-	$dbh->do(sprintf "DROP TABLE %s%s", $schema ? "$schema." : '', 'dbd_pg_test2');
-}
+
 $sth->execute('dbd_pg_sequence');
-$count = $sth->fetchall_arrayref()->[0][0];
-if (1==$count) {
+if (1==$sth->fetchall_arrayref()->[0][0]) {
 	$dbh->do(sprintf "DROP SEQUENCE %s%s", $schema ? "$schema." : '', 'dbd_pg_sequence');
 }
 
-pass('The testing table "dbd_pg_test" has been dropped');
+pass('All testing tables (e.g. "dbd_pg_test*") have been dropped');
 pass('The testing sequence "dbd_pg_sequence" has been dropped');
 
 
