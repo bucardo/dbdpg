@@ -60,10 +60,6 @@ dbd_discon_all (drh, imp_drh)
 						 (char*)"disconnect_all not implemented");
 		DBIh_EVENT2(drh, ERROR_event,
 								DBIc_ERR(imp_drh), DBIc_ERRSTR(imp_drh));
-		return FALSE;
-	}
-	if (perl_destruct_level) {
-		perl_destruct_level = 0;
 	}
 	return FALSE;
 }
