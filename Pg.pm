@@ -734,243 +734,138 @@ $DBD::Pg::VERSION = '1.31_5';
 	sub table_info {	# DBI spec: TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS
 		my $dbh = shift;
 		my ($catalog, $schema, $table, $type) = @_;
-		my @attrs = @_;
 
 		my $tbl_sql = ();
 
 		my $version = DBD::Pg::_pg_server_version($dbh);
 		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
-		my $schemacase = DBD::Pg::_pg_check_version(7.3, $version) ? 
-			"CASE WHEN n.nspname ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END" : 
-			"CASE WHEN c.relname ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END";
 
-		if ( # Rules 19a
+		if ( # Rule 19a
 				(defined $catalog and $catalog eq '%')
-			and (defined $schema and $schema eq '')
-			and (defined $table  and $table  eq '')
-			) {
-				$tbl_sql = q{
+				and (defined $schema and $schema eq '')
+				and (defined $table and $table eq '')
+			 ) {
+			$tbl_sql = q{
 					SELECT 
-					   NULL::text AS "TABLE_CAT"
+						 NULL::text AS "TABLE_CAT"
 					 , NULL::text AS "TABLE_SCHEM"
 					 , NULL::text AS "TABLE_NAME"
 					 , NULL::text AS "TABLE_TYPE"
 					 , NULL::text AS "REMARKS"
 					};
 		}
-		elsif (# Rules 19b
-				(defined $catalog and $catalog eq '')
-			and (defined $schema and $schema eq '%')
-			and (defined $table  and $table  eq '')
-			) {
-				$tbl_sql = DBD::Pg::_pg_check_version(7.3, $version) ? 
-					q{SELECT 
-					   NULL::text AS "TABLE_CAT"
+		elsif (# Rule 19b
+					 (defined $catalog and $catalog eq '')
+					 and (defined $schema and $schema eq '%')
+					 and (defined $table and $table eq '')
+					) {
+			$tbl_sql = DBD::Pg::_pg_check_version(7.3, $version) ? 
+				q{SELECT 
+						 NULL::text AS "TABLE_CAT"
 					 , n.nspname  AS "TABLE_SCHEM"
 					 , NULL::text AS "TABLE_NAME"
 					 , NULL::text AS "TABLE_TYPE"
-					 , NULL::text AS "REMARKS"
+					 , CASE WHEN n.nspname ~ '^pg_' THEN 'system schema' ELSE 'owned by ' || pg_get_userbyid(n.nspowner) END AS "REMARKS"
 					FROM pg_catalog.pg_namespace n
-					ORDER BY 1
+					ORDER BY "TABLE_SCHEM"
 					} : 
-					q{SELECT 
-					   NULL::text AS "TABLE_CAT"
+						q{SELECT 
+						 NULL::text AS "TABLE_CAT"
 					 , NULL::text AS "TABLE_SCHEM"
 					 , NULL::text AS "TABLE_NAME"
 					 , NULL::text AS "TABLE_TYPE"
 					 , NULL::text AS "REMARKS"
 				};
 		}
-		elsif (# Rules 19c
-				(defined $catalog and $catalog eq '')
-			and (defined $schema and $schema eq '')
-			and (defined $table  and $table  eq '')
-			and (defined $type   and $type   eq '%')
-			) {
-				# From the postgresql 7.2.1 manual 3.5 pg_class
-				#  'r' = ordinary table
-				#, 'i' = index
-				#, 'S' = sequence
-				#, 'v' = view
-				#, 's' = special
-				#, 't' = secondary TOAST table 
-				$tbl_sql = q{
+		elsif (# Rule 19c
+					 (defined $catalog and $catalog eq '')
+					 and (defined $schema and $schema eq '')
+					 and (defined $table and $table eq '')
+					 and (defined $type and $type eq '%')
+					) {
+			$tbl_sql = q{
 					SELECT 
-					   NULL::text    AS "TABLE_CAT"
-					 , NULL::text    AS "TABLE_SCHEM"
-					 , NULL::text    AS "TABLE_NAME"
-					 , 'table'       AS "TABLE_TYPE"
-					 , 'ordinary table - r' AS "REMARKS"
+					   NULL::text AS "TABLE_CAT"
+					 , NULL::text AS "TABLE_SCHEM"
+					 , NULL::text AS "TABLE_NAME"
+					 , 'TABLE'    AS "TABLE_TYPE"
+					 , 'relkind: r' AS "REMARKS"
 					UNION
 					SELECT 
-					   NULL::text    AS "TABLE_CAT"
-					 , NULL::text    AS "TABLE_SCHEM"
-					 , NULL::text    AS "TABLE_NAME"
-					 , 'index'       AS "TABLE_TYPE"
-					 , 'index - i'   AS "REMARKS"
-					UNION
-					SELECT 
-					   NULL::text     AS "TABLE_CAT"
-					 , NULL::text     AS "TABLE_SCHEM"
-					 , NULL::text     AS "TABLE_NAME"
-					 , 'sequence'     AS "TABLE_TYPE"
-					 , 'sequence - S' AS "REMARKS"
-					UNION
-					SELECT 
-					   NULL::text     AS "TABLE_CAT"
-					 , NULL::text     AS "TABLE_SCHEM"
-					 , NULL::text     AS "TABLE_NAME"
-					 , 'view'         AS "TABLE_TYPE"
-					 , 'view - v'     AS "REMARKS"
-					UNION
-					SELECT 
-					   NULL::text     AS "TABLE_CAT"
-					 , NULL::text     AS "TABLE_SCHEM"
-					 , NULL::text     AS "TABLE_NAME"
-					 , 'special'      AS "TABLE_TYPE"
-					 , 'special - s'  AS "REMARKS"
-					UNION
-					SELECT 
-					   NULL::text     AS "TABLE_CAT"
-					 , NULL::text     AS "TABLE_SCHEM"
-					 , NULL::text     AS "TABLE_NAME"
-					 , 'secondary'    AS "TABLE_TYPE"
-					 , 'secondary TOAST table - t' AS "REMARKS"
+					   NULL::text AS "TABLE_CAT"
+					 , NULL::text AS "TABLE_SCHEM"
+					 , NULL::text AS "TABLE_NAME"
+					 , 'VIEW'     AS "TABLE_TYPE"
+					 , 'relkind: v' AS "REMARKS"
 				};
 		}
 		else {
 			# Default SQL
-			my $showschema = DBD::Pg::_pg_check_version(7.3, $version) ? "n.nspname" : "NULL::text";
-			my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
-				"LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
-			my $has_objsubid = DBD::Pg::_pg_check_version(7.2, $version) ? 
-				"AND d.objsubid = 0" : "";
+			my $showschema = "NULL::text";
+			my $schemajoin = "";
+			my $has_objsubid = "";
+			if (DBD::Pg::_pg_check_version(7.3, $version)) {
+				$showschema = "n.nspname";
+				$schemajoin = "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)";
+				$has_objsubid = "AND d.objsubid = 0";
+			}
+
+			my @search;
+			## If the schema or table has an underscore or a %, use a LIKE comparison
+				my @flds = qw/catname n.nspname c.relname c.relkind/;
+			if (defined $schema and length $schema and DBD::Pg::_pg_check_version(7.3, $version)) {
+					push @search, "n.nspname " . ($schema =~ /[_%]/ ? "LIKE " : "= ") . $dbh->quote($schema);
+			}
+			if (defined $table and length $table) {
+					push @search, "c.relname " . ($table =~ /[_%]/ ? "LIKE " : "= ") . $dbh->quote($table);
+			}
+			## All we can see is "table" or "view". Default is both
+			my $typesearch = "IN ('r','v')";
+			if (defined $type and length $type) {
+					if ($type =~ /\btable\b/i and $type !~ /\bview\b/i) {
+							$typesearch = "= 'r'";
+					}
+					elsif ($type =~ /\bview\b/i and $type !~ /\btable\b/i) {
+							$typesearch = "= 'v'";
+					}
+			}
+			push @search, "c.relkind $typesearch";
+			
+			my $whereclause = join "\n\t\t\t\t\t AND " => @search;
+			my $schemacase = DBD::Pg::_pg_check_version(7.3, $version) ? "n.nspname" : "c.relname";
 			$tbl_sql = qq{
 				SELECT NULL::text AS "TABLE_CAT"
-					 , $showschema  AS "TABLE_SCHEM"
-					 , c.relname    AS "TABLE_NAME"
+					 , $showschema AS "TABLE_SCHEM"
+					 , c.relname AS "TABLE_NAME"
 					 , CASE
-					 	WHEN c.relkind = 'v' THEN 'VIEW'
-						ELSE $schemacase
+					 		WHEN c.relkind = 'v' THEN
+								CASE WHEN $schemacase ~ '^pg_' THEN 'SYSTEM VIEW' ELSE 'VIEW' END
+							ELSE
+								CASE WHEN $schemacase ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END
 						END AS "TABLE_TYPE"
 					 , d.description AS "REMARKS"
 				FROM ${CATALOG}pg_class AS c
-					LEFT JOIN 
-					${CATALOG}pg_description AS d 
+					LEFT JOIN ${CATALOG}pg_description AS d 
 						ON (c.relfilenode = d.objoid $has_objsubid)
 					$schemajoin
-				WHERE 
-					((c.relkind = 'r'
-				 AND c.relhasrules = FALSE) OR
-					(c.relkind = 'v'
-				 AND c.relhasrules = TRUE))
-				 AND c.relname !~ '^xin[vx][0-9]+'
-				ORDER BY 1, 2, 3
+				WHERE $whereclause
+				ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
 				};
-
-			# Did we receive any arguments?
-			if (@attrs) {
-				my @wh = ();
-				my @flds = qw/catname n.nspname c.relname c.relkind/;
-
-				for my $idx (0 .. $#attrs) {
-					next if $flds[$idx] eq 'catname'; # Skip catalog
-					next if $flds[$idx] eq 'n.nspname' and ! DBD::Pg::_pg_check_version(7.3, $version);
-					if(defined $attrs[$idx] and length $attrs[$idx]) {
-						# Change the "name" of the types to the real value.
-						if ($flds[$idx] =~ m/relkind/) {
-							$attrs[$idx] =~ s/^\'?table\'?/'r'/i;
-							$attrs[$idx] =~ s/^\'?index\'?/'i'/i;
-							$attrs[$idx] =~ s/^\'?sequence\'?/'S'/i;
-							$attrs[$idx] =~ s/^\'?view\'?/'v'/i;
-							$attrs[$idx] =~ s/^\'?special\'?/'s'/i;
-							$attrs[$idx] =~ s/^\'?secondary\'?/'t'/i;
-						}
-						# Insure that the value is enclosed in single quotes.
-						$attrs[$idx] =~ s/^'?(\w+)'?$/'$1'/;
-						if ($attrs[$idx] =~ m/[,%]/) {
-							# contains a meta character.
-							push( @wh, q{( } . join ( " OR "
-								, map { m/\%/ 
-									? qq{$flds[$idx] LIKE $_ }
-									: qq{$flds[$idx] = $_ }
-									} (split /,/, $attrs[$idx]) )
-									. q{ )}
-								);
-						}
-						else {
-							push( @wh, qq{$flds[$idx] = $attrs[$idx]} );
-						}
-					}
-				}
-
-				my $wh = ();
-				if (@wh) {
-					$wh = join( " AND ",'', @wh );
-					$tbl_sql = qq{
-					SELECT NULL::text  AS "TABLE_CAT"
-						 , $showschema   AS "TABLE_SCHEM"
-						 , c.relname     AS "TABLE_NAME"
-						 , CASE
-								WHEN c.relkind = 'r' THEN
-								$schemacase
-								WHEN c.relkind = 'v' THEN 'VIEW'
-								WHEN c.relkind = 'i' THEN 'INDEX'
-								WHEN c.relkind = 'S' THEN 'SEQUENCE'
-								WHEN c.relkind = 's' THEN 'SPECIAL'
-								WHEN c.relkind = 't' THEN 'SECONDARY'
-								ELSE 'UNKNOWN'
-							END	AS "TABLE_TYPE"
-						 , d.description AS "REMARKS"
-					FROM ${CATALOG}pg_class AS c
-						LEFT JOIN
-						${CATALOG}pg_description AS d 
-							ON (c.relfilenode = d.objoid $has_objsubid)
-						$schemajoin
-					WHERE 
-						c.relname !~ '^xin[vx][0-9]+'
-					$wh
-					ORDER BY 2, 3
-					};
-				}
-			}
 		}
-
 		my $sth = $dbh->prepare( $tbl_sql ) or return undef;
 		$sth->execute();
 
 		return $sth;
 	}
 
-
-	sub tables {
-		my($dbh) = @_;
-		my $version = DBD::Pg::_pg_server_version($dbh);
-
-		my $SQL = DBD::Pg::_pg_check_version(7.3, $version) ? 
-			"SELECT n.nspname AS \"SCHEMA_NAME\", c.relname AS \"TABLE_NAME\"
-			FROM pg_catalog.pg_class c
-			LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-			WHERE c.relkind = 'r'
-			AND n.nspname NOT IN ('pg_catalog', 'pg_toast')
-			AND pg_catalog.pg_table_is_visible(c.oid)
-			ORDER BY 1,2"
-			:
-			"SELECT relname AS \"TABLE_NAME\"
-			FROM   pg_class 
-			WHERE  relkind = 'r'
-			AND    relname !~ '^pg_'
-			AND    relname !~ '^xin[vx][0-9]+'
-			ORDER BY 1";
-		my $sth = $dbh->prepare($SQL) or return undef;
-		$sth->execute or return undef;
-		my (@tables, @relname);
-		while (@relname = $sth->fetchrow_array) {
-			push @tables, DBD::Pg::_pg_check_version(7.3, $version) ? 
-			"$relname[0].$relname[1]" : $relname[0];
-		}
-		$sth->finish;
-		return @tables;
+  sub tables {
+			my ($dbh, @args) = @_;
+			my $sth = $dbh->table_info(@args) or return;
+			my $tables = $sth->fetchall_arrayref() or return;
+			my $version = DBD::Pg::_pg_server_version($dbh);
+			my @tables = map { DBD::Pg::_pg_check_version(7.3, $version) ? 
+														 "$_->[1].$_->[2]" : $_->[2] } @$tables;
+			return @tables;
 	}
 
 	sub table_attributes {
