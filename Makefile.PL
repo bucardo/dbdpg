@@ -78,6 +78,9 @@ else {
 
 my $comp_opts = $Config{q{ccflags}} . " -DPGLIBVERSION=$serverversion";
 
+## For debugging only
+# $comp_opts .= " -pedantic";
+
 my %opts = (
     NAME         => 'DBD::Pg',
     VERSION_FROM => 'Pg.pm',
