@@ -221,9 +221,17 @@ $DBD::Pg::VERSION = '1.31_3';
 		$wh = join( " AND ", '', @wh ) if (@wh);
 		my $showschema = DBD::Pg::_pg_check_version(7.3, $version) ? 
 			"n.nspname" : "NULL::text";
+
 		my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
 			"LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
-		my $col_info_sql = qq{
+
+		my $pg_description_join  =  DBD::Pg::_pg_check_version(7.2, $version) ?
+			"  LEFT JOIN ${CATALOG}pg_description d  ON (a.attnum = d.objsubid)
+			   LEFT JOIN ${CATALOG}pg_class       dc ON (dc.oid = d.objoid ) "
+			:	
+			"   LEFT JOIN ${CATALOG}pg_description d ON (a.oid = d.objoid )";
+
+		my $col_info_sql = qq!
 			SELECT
 				  NULL::text	AS "TABLE_CAT"
 				, $showschema	AS "TABLE_SCHEM"
@@ -236,21 +244,20 @@ $DBD::Pg::VERSION = '1.31_3';
 				, NULL::text	AS "DECIMAL_DIGITS"
 				, NULL::text	AS "NUM_PREC_RADIX"
 				, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
-				, NULL::text	AS "REMARKS"
-				, a.atthasdef	AS "COLUMN_DEF"
+				, d.description	AS "REMARKS"
+				, pg_attrdef.adsrc	AS "COLUMN_DEF"
 				, NULL::text	AS "SQL_DATA_TYPE"
 				, NULL::text	AS "SQL_DATETIME_SUB"
 				, NULL::text	AS "CHAR_OCTET_LENGTH"
 				, a.attnum		AS "ORDINAL_POSITION"
 				, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
-				, a.atttypmod	AS atttypmod
-				, a.attnotnull	AS attnotnull
-				, a.atthasdef	AS atthasdef
-				, a.attnum		AS attnum
+				, a.atttypmod   AS "pg_atttypmod"
 			FROM 
-				  ${CATALOG}pg_attribute a
-				, ${CATALOG}pg_type t
+				  ${CATALOG}pg_type		t
 				, ${CATALOG}pg_class c
+				, ${CATALOG}pg_attribute	a
+			$pg_description_join
+		    LEFT JOIN ${CATALOG}pg_attrdef ON (a.attnum = pg_attrdef.adnum AND a.attrelid = pg_attrdef.adrelid) 
 				$schemajoin
 			WHERE
 					a.attrelid = c.oid
@@ -259,13 +266,75 @@ $DBD::Pg::VERSION = '1.31_3';
 				AND c.relkind IN ('r','v')
 				$wh
 			ORDER BY 2, c.relname, a.attnum
-		};
+		!;
 
-		my $sth = $dbh->prepare( $col_info_sql ) or return undef;
-		$sth->execute();
+		my $data = $dbh->selectall_arrayref($col_info_sql) || return undef;
+
+
+		# To turn the data back into a statement handle, we need 
+		# to fetch the data as an array of arrays, and also have a
+		# a matching array of all the column names
+		my %col_map = (qw/
+			TABLE_CAT			  0 
+			TABLE_SCHEM           1 
+			TABLE_NAME            2 
+			COLUMN_NAME           3 
+			DATA_TYPE             4 
+			TYPE_NAME             5 
+			COLUMN_SIZE           6 
+			BUFFER_LENGTH         7 
+			DECIMAL_DIGITS        8 
+			NUM_PREC_RADIX        9 
+			NULLABLE             10
+			REMARKS              11
+			COLUMN_DEF           12
+			SQL_DATA_TYPE        13
+			SQL_DATETIME_SUB     14
+			CHAR_OCTET_LENGTH    15
+			ORDINAL_POSITION     16
+			IS_NULLABLE          17
+			pg_atttypmod		 18
+			/);
+
+		 my $constraint_query = DBD::Pg::_pg_check_version(7.3, $version)
+			 ? "SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND conname = ?" 
+			 : "SELECT rcsrc FROM pg_relcheck WHERE rcname = ?";
+	     my $constraint_sth = $dbh->prepare($constraint_query); 		 
+
+		for my $row (@$data) {
+			$row->[$col_map{COLUMN_SIZE}]   = _calc_col_size($row->[$col_map{pg_atttypmod}],$row->[$col_map{COLUMN_SIZE}]);
+
+			pop @$row;
+
+			# Add pg_constraint
+			$constraint_sth->execute("$row->[$col_map{TABLE_NAME}]_$row->[$col_map{COLUMN_NAME}]");
+			$col_map{pg_constraint} = 18;
+			($row->[$col_map{pg_constraint}]) = $constraint_sth->fetchrow_array; 
+		}
+
+		# get rid of atttypmod that we no longer need
+		delete $col_map{pg_atttypmod};
+
+		# Since we've processed the data in Perl, we have to jump through a hoop
+		# To turn it back into a statement handle 
+		# 
+		my $sth = _prepare_from_data(
+			'column_info', 
+			$data, 
+		    [ sort { $col_map{$a} <=> $col_map{$b}  } keys %col_map]);
+
 
 		return $sth;
 	}
+
+	sub _prepare_from_data {
+		my ($statement, $data, $names, %attr) = @_;
+		my $sponge = DBI->connect("dbi:Sponge:","","",{ RaiseError => 1 });
+		my $sth = $sponge->prepare($statement, { rows=>$data, NAME=>$names, %attr });
+		return $sth;
+	}
+
+
 
 	sub primary_key_info {
 		my $dbh = shift;
@@ -841,118 +910,63 @@ $DBD::Pg::VERSION = '1.31_3';
 			"$relname[0].$relname[1]" : $relname[0];
 		}
 		$sth->finish;
-
 		return @tables;
 	}
 
-
 	sub table_attributes {
 		my ($dbh, $table) = @_;
-		my $version = DBD::Pg::_pg_server_version($dbh);
 		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
-		my $result = [];
-		my $pg_description_join = DBD::Pg::_pg_check_version(7.2, $version) ?
-			"(a.attnum = d.objsubid) AND (c.oid = d.objoid )" : "(a.oid = d.objoid )";
-		my $attrs = $dbh->selectall_arrayref(
-			"SELECT a.attname, t.typname, a.attlen, a.atttypmod, a.attnotnull, a.atthasdef, a.attnum, d.description
-			FROM
-				${CATALOG}pg_class c,
-				${CATALOG}pg_type t,
-				${CATALOG}pg_attribute a
-				LEFT JOIN ${CATALOG}pg_description d ON ($pg_description_join)
-				WHERE c.relname = ?
-				AND a.attrelid = c.oid
-				AND a.attnum >= 0
-				AND t.oid = a.atttypid
-				ORDER BY 1",
-			undef, $table);
-	
-		return $result unless ref $attrs and scalar(@$attrs);
+		my $sth = $dbh->column_info(undef,undef,$table);
 
-		# Select the array value for tables primary key.
-		my $pk_key_sql = qq{SELECT pg_index.indkey
-			FROM ${CATALOG}pg_class, ${CATALOG}pg_index
-			WHERE pg_class.oid = pg_index.indrelid
-			AND pg_class.relname = '$table'
-			AND pg_index.indisprimary = 't'
-		};
-		# Expand this (returned as a string) a real array.
-		my @pk = ();
-		my $pkeys = $dbh->selectrow_array( $pk_key_sql );
-		if (defined $pkeys) {
-			foreach (split( /\s+/, $pkeys))
-			{
-				push @pk, $_;
+		my %convert = (
+			COLUMN_NAME   => 'NAME',
+			DATA_TYPE     => 'TYPE',
+			COLUMN_SIZE   => 'SIZE',
+			NULLABLE 	  => 'NOTNULL',
+			REMARKS       => 'REMARKS',
+			COLUMN_DEF    => 'DEFAULT',
+			pg_constraint => 'CONSTRAINT',
+		);
+
+		my $attrs = $sth->fetchall_arrayref(\%convert);
+
+        foreach my $row (@$attrs) {
+			# switch the column names
+			for my $name (keys %$row) {
+				$row->{ $convert{$name} } = $row->{$name};
+
+				# The REMARKS column is an exception because the name is the same
+				delete $row->{$name} unless ($name eq 'REMARKS');
+
+				# NOTNULL inverts the sense of NULLABLE
+				$row->{NOTNULL} = $row->{NOTNULL} ? 0 : 1;
 			}
+
+			my @pri_keys = ();
+			@pri_keys = $dbh->primary_key( $CATALOG, undef, $table );
+            $row->{PRIMARY_KEY} = scalar(grep { /^$row->{NAME}$/i } @pri_keys) ? 1 : 0;
+        }
+
+		return $attrs;
+
+	}
+
+	sub _calc_col_size { 
+		my $mod = shift;
+		my $size = shift;
+
+		if ((defined $size) and ($size > 0)) {
+			$size;
+		} elsif ($mod > 0xffff) {
+			my $prec = ($mod & 0xffff) - 4;
+			$mod >>= 16;
+			my $dig = $mod;
+			$dig;
+		} elsif ($mod >= 4) {
+			$mod - 4;
+		} else {
+			$mod;
 		}
-		my $pk_bt = 
-			(@pk) ? "AND pg_attribute.attnum in (" . join ( ", ", @pk ) . ")"
-			: "";
-		
-		# Get the primary key
-		my $pri_key = $dbh->selectcol_arrayref(
-			"SELECT pg_attribute.attname
-			FROM ${CATALOG}pg_class, ${CATALOG}pg_attribute, ${CATALOG}pg_index
-			WHERE pg_class.oid = pg_attribute.attrelid 
-			AND pg_class.oid = pg_index.indrelid 
-			$pk_bt
-			AND pg_index.indisprimary = 't'
-			AND pg_class.relname = ?
-			ORDER BY pg_attribute.attnum",
-		undef, $table );
-		$pri_key = [] unless $pri_key;
-
-		foreach my $attr (reverse @$attrs) {
-			my ($col_name, $col_type, $size, $mod, $notnull, $hasdef, $attnum, $remarks) = @$attr;
-			my $col_size = do { 
-			if ($size > 0) {
-				$size;
-			} elsif ($mod > 0xffff) {
-				my $prec = ($mod & 0xffff) - 4;
-				$mod >>= 16;
-				my $dig = $mod;
-				$dig;
-			} elsif ($mod >= 4) {
-				$mod - 4;
-			} else {
-				$mod;
-			}
-		};
-
-		# Get the default value, if any
-		my ($default) = $dbh->selectrow_array("SELECT adsrc FROM ${CATALOG}pg_attrdef WHERE adnum = $attnum") if -1 == $attnum;
-		$default = '' unless $default;
-
-		# Test for any constraints
-		# Note: as of PostgreSQL 7.3 pg_relcheck has been replaced
-		# by pg_constraint. To maintain compatibility, check 
-		# version number and execute appropriate query.
-	
-		my $version = DBD::Pg::_pg_server_version($dbh);
-
-		my $con_query = DBD::Pg::_pg_check_version(7.3, $version)
-			? "SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND conname = '${table}_$col_name'"
-			: "SELECT rcsrc FROM pg_relcheck WHERE rcname = '${table}_$col_name'";
-		my ($constraint) = $dbh->selectrow_array($con_query);
-		$constraint = '' unless $constraint;
-
-		# Check to see if this is the primary key
-		my $is_primary_key = scalar(grep { /^$col_name$/i } @$pri_key) ? 1 : 0;
-
-		push @$result,
-			{
-			NAME        => $col_name,
-			TYPE        => $col_type,
-			SIZE        => $col_size,
-			NOTNULL     => $notnull,
-			DEFAULT     => $default,
-			CONSTRAINT  => $constraint,
-			PRIMARY_KEY => $is_primary_key,
-			REMARKS     => $remarks,
-			};
-		}
-
-		return $result;
 	}
 
 
@@ -1210,6 +1224,7 @@ $DBD::Pg::VERSION = '1.31_3';
 
 }
 
+
 1;
 
 __END__
@@ -1359,6 +1374,10 @@ This driver supports a variety of driver specific functions accessible via the
 func interface:
 
   $attrs = $dbh->func($table, 'table_attributes');
+
+The C<table_attributes> function is no longer recommended. Instead,
+you can use the more portable C<column_info> and C<primary_key> functions
+to access all the same information.
 
 This method returns for the given table a reference to an array of hashes:
 
@@ -1612,6 +1631,26 @@ Supported by the driver as proposed by DBI.
 This driver supports the ping-method, which can be used to check the validity
 of a database-handle. The ping method issues an empty query and checks the
 result status.
+
+=item B<column_info>
+
+	$sth = $dbh->column_info( $catalog, $schema, $table, $column );
+
+Supported by the driver as proposed by the DBI with the follow exceptions.
+These fields are currently always returned with NULL values:
+
+   TABLE_CAT
+   TYPE_NAME
+   BUFFER_LENGTH
+   DECIMAL_DIGITS
+   NUM_PREC_RADIX
+   SQL_DATA_TYPE
+   SQL_DATETIME_SUB
+   CHAR_OCTET_LENGTH
+
+Also, one additional non-standard field is returned:
+
+  pg_constraint - holds column constraint definition
 
 =item B<table_info>
 
@@ -2032,3 +2071,4 @@ the Perl README file.
 See also B<DBI/ACKNOWLEDGMENTS>.
 
 =cut
+
