@@ -46,6 +46,8 @@ PGresult *PQexecPrepared() { };
 PGresult *PQexecParams() { };
 Oid PQftable() { return InvalidOid; };
 int PQftablecol() { return 0; };
+int PQputCopyData() { return 0; }
+int PQsetErrorVerbosity() { return 0; }
 #define PG_DIAG_SQLSTATE 'C'
 #endif
 
@@ -259,7 +261,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	imp_dbh->pg_enable_utf8 = 0;
 	imp_dbh->prepare_number = 1;
 	imp_dbh->prepare_now = 0;
-	imp_dbh->errorlevel = 1; /* Matches PG default */
+	imp_dbh->pg_errorlevel = 1; /* Matches PG default */
 
 	/* If the server can handle it, we default to "smart", otherwise "off" */
 	imp_dbh->server_prepare = imp_dbh->pg_protocol >= 3 ? 
@@ -491,6 +493,17 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 		imp_dbh->pg_enable_utf8 = newval ? 1 : 0;
 	}
 #endif
+	else if (13==kl && strEQ(key, "pg_errorlevel")) {
+		/* Introduced in 7.4 servers */
+		if (imp_dbh->pg_protocol >= 3) {
+			newval = SvIV(valuesv);
+			/* Default to "1" if an invalid value is passed in */
+			imp_dbh->pg_errorlevel = 0==newval ? 0 : 2==newval ? 2 : 1;
+			PQsetErrorVerbosity(imp_dbh->conn, imp_dbh->pg_errorlevel);
+			if (dbis->debug >= 5)
+				PerlIO_printf(DBILOGFP, "Reset error verbosity to %d\n", imp_dbh->pg_errorlevel);
+		}
+	}
 	else if (17==kl && strEQ(key, "pg_server_prepare")) {
 		/* No point changing this if the server does not support it */
 		if (imp_dbh->pg_protocol >= 3) {
@@ -529,6 +542,8 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 		retsv = boolSV(DBIc_has(imp_dbh, DBIcf_AutoCommit));
 	} else if (10==kl && strEQ(key, "pg_bool_tf")) {
 		retsv = newSViv((IV)imp_dbh->pg_bool_tf);
+	} else if (13==kl && strEQ(key, "pg_errorlevel")) {
+		retsv = newSViv((IV)imp_dbh->pg_errorlevel);
 #ifdef is_utf8_string
 	} else if (14==kl && strEQ(key, "pg_enable_utf8")) {
 		retsv = newSViv((IV)imp_dbh->pg_enable_utf8);

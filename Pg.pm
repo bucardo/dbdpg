@@ -2244,6 +2244,18 @@ Constant to be used for the mode in C<lo_creat> and C<lo_open>.
 PostgreSQL specific attribute. If true, boolean values will be returned
 as the characters 't' and 'f' instead of '1' and '0'.
 
+=item B<pg_errorlevel> (integer)
+
+PostgreSQL specific attribute, only works for servers version 7.4 and above. 
+Sets the amount of information returned by the server's error messages. 
+Valid entries are 1,2, and 3. Any other number will be forced to the default 
+value of 2.
+
+A value of 0 ("TERSE") will show severity, primary text, and position only 
+and will usually fit on a single line. A value of 1 ("DEFAULT") will also 
+show any detail, hint, or context fields. A value of 2 ("VERBOSE") will 
+show all available information.
+
 =item B<pg_protocol> (integer, read-only)
 
 PostgreSQL specific attribute. Returns the version of the PostgreSQL server.
