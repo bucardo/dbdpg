@@ -11,6 +11,10 @@
 
 #include "types.h"
 
+/* Override mistake
+SV *dbd_db_last_insert_id _((SV *dbh, imp_dbh_t *imp_dbh, SV *catalog, SV *schema, SV *table, SV *field, SV *attr));
+*/
+
 #ifdef WIN32
 #define snprintf _snprintf
 #endif
@@ -30,8 +34,7 @@ struct imp_dbh_st {
 	dbih_dbc_t com;          /* MUST be first element in structure */
 
 	PGconn  *conn;           /* connection structure */
-	bool    init_commit;     /* have we issued an AutoCommit for this handle? */
-	bool    done_begin;      /* have we done a begin? */
+	bool    done_begin;      /* have we done a begin? (e.g. are we in a transaction?) */
 	bool    pg_auto_escape;  /* initialize AutoEscape  XXX used? -gsm */
 	bool    pg_bool_tf;      /* do bools return 't'/'f'? */
 	bool    pg_enable_utf8;  /* should we attempt to make utf8 strings? */

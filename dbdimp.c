@@ -230,7 +230,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 
 	New(0, imp_dbh->sqlstate, 6, char);
 	strcpy(imp_dbh->sqlstate, "S1000");
-	imp_dbh->init_commit = 1; /* AutoCommit defaults to on as per DBI spec. Shame */
+	imp_dbh->done_begin = 0; /* We are not inside a transaction */
 	imp_dbh->pg_bool_tf = 0;
 	imp_dbh->pg_enable_utf8 = 0;
 	imp_dbh->prepare_number = 1;
@@ -301,21 +301,42 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 		 char * action;
 {
 
+	PGTransactionStatusType tstatus;
 	ExecStatusType status;
 
 	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "%s\n", action); }
 	
-	/* no action if AutoCommit = on */
-	if (DBIc_has(imp_dbh, DBIcf_AutoCommit) != FALSE)
+	/* no action if AutoCommit = on or the connection is invalid */
+	if ((NULL == imp_dbh->conn) || (FALSE != DBIc_has(imp_dbh, DBIcf_AutoCommit)))
 		return 0;
 
-	/* Perform action only if we have a connection and done_begin is true */
+	/* We only perform these actions if we need to. For newer servers, we 
+		 ask it for the status directly and double-check things */
 
-	/* XXX Todo: use transactionStatus */
-		
-	if (NULL == imp_dbh->conn || !imp_dbh->done_begin)
+#ifdef PG74
+	tstatus = dbd_db_txn_status(imp_dbh);
+	if (PQTRANS_IDLE == tstatus) { /* Not in a transaction */
+		if (imp_dbh->done_begin) {
+			/* We think we ARE in a tranaction but we really are not */
+			if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "Warning: invalid done_begin turned off\n"); }
+			imp_dbh->done_begin = 0;
+		}
+	}
+	else if (PQTRANS_UNKNOWN != tstatus) { /* In a transaction */
+		if (!imp_dbh->done_begin) {
+			/* We think we are NOT in a transaction but we really are */
+			if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "Warning: invalid done_begin turned on\n"); }
+			imp_dbh->done_begin = 1;
+		}
+	}
+	else { /* Something is wrong: transation status unknown */
+		if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "Warning: cannot determine transaction status\n"); }
+	}
+#endif
+
+	if (!imp_dbh->done_begin)
 		return 0;
-	
+
 	status = _result(imp_dbh, action);
 		
 	if (PGRES_COMMAND_OK != status) {
@@ -356,23 +377,15 @@ int dbd_db_disconnect (dbh, imp_dbh)
 	
 	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_disconnect\n"); }
 
-	/* We assume that disconnect will always work	*/
-	/* since most errors imply already disconnected.
-	 * XXX: Um we turn active off, then return 0 on a rollback failing? 
-	 * Check to see what happenens -- will we leak memory? :rl
-	 */
+	/* We assume that disconnect will always work	
+		 since most errors imply already disconnected. */
+
 	DBIc_ACTIVE_off(imp_dbh);
 	
 	if (NULL != imp_dbh->conn) {
-		/* rollback if AutoCommit = off and we are in a transaction */
-		if (FALSE == DBIc_has(imp_dbh, DBIcf_AutoCommit) && imp_dbh->done_begin) {
-			status = _result(imp_dbh, "rollback");
-			if (PGRES_COMMAND_OK != status) {
-				pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
-				return 0;
-			}
-			if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_disconnect: AutoCommit=off -> rollback\n"); }
-		}
+		/* Rollback if needed */
+		if (dbd_db_rollback(dbh, imp_dbh) && dbis->debug >= 2)
+			PerlIO_printf(DBILOGFP, "dbd_db_disconnect: AutoCommit=off -> rollback\n");
 		
 		PQfinish(imp_dbh->conn);
 		
@@ -419,37 +432,20 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 	STRLEN kl;
 	char *key = SvPV(keysv,kl);
 	int newval = SvTRUE(valuesv);
-	
+	int oldval;
+
 	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_STORE\n"); }
 	
 	if (kl==10 && strEQ(key, "AutoCommit")) {
-		int oldval = DBIc_has(imp_dbh, DBIcf_AutoCommit);
+		oldval = DBIc_has(imp_dbh, DBIcf_AutoCommit);
+		if (oldval == newval)
+			return 1;
+		if (oldval) {
+			/* Commit if necessary */
+			if (dbd_db_commit(dbh, imp_dbh) && dbis->debug >= 2)
+				PerlIO_printf(DBILOGFP, "dbd_db_STORE: AutoCommit on forced a commit\n");
+		}
 		DBIc_set(imp_dbh, DBIcf_AutoCommit, newval);
-		if (FALSE == oldval && FALSE != newval && imp_dbh->init_commit) {
-			/* do nothing, fall through */
-			if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_STORE: initialize AutoCommit to on\n"); }
-		}
-		else if (FALSE == oldval && FALSE != newval) {
-			if (NULL != imp_dbh->conn) {
-				/* commit any outstanding changes */
-				
-				if (imp_dbh->done_begin) {
-					status = _result(imp_dbh, "commit");
-					imp_dbh->done_begin = 0;
-					if (PGRES_COMMAND_OK != status) {
-						pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
-						return 0;
-					}
-				}
-			}			
-			if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_STORE: switch AutoCommit to on: commit\n"); }
-		}
-		else if ((FALSE != oldval && FALSE == newval) || (FALSE == oldval && FALSE == newval && imp_dbh->init_commit)) {
-			imp_dbh->done_begin = 0;
-			if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_STORE: switch AutoCommit to off: begin\n"); }
-		}
-		/* only needed once */
-		imp_dbh->init_commit = 0;
 		return 1;
 	}
 	else if (kl==14 && strEQ(key, "pg_auto_escape")) {
@@ -1329,6 +1325,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 {
 	D_imp_dbh_from_sth;
 	ExecStatusType status = -1;
+	PGTransactionStatusType tstatus;
 	char *cmdStatus, *cmdTuples, *statement;
 	int ret = -2;
 	int num_fields;
@@ -1359,8 +1356,9 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		}
 	}
 
-	/* start new transaction if necessary XXX Todo: check PQtransactionStatus */
-	if (!imp_dbh->done_begin && DBIc_has(imp_dbh, DBIcf_AutoCommit) == FALSE) {
+	/* Start a new transaction if necessary */
+	/* We could check PQtransactionStatus here, but is it worth the cost? -gsm */
+	if (!imp_dbh->done_begin && FALSE == DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
 		status = _result(imp_dbh, "begin");
 		if (PGRES_COMMAND_OK != status) {
 			pg_error(sth, status, PQerrorMessage(imp_dbh->conn));
@@ -1693,7 +1691,6 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 		PerlIO_printf(DBILOGFP, "  dbdpg: transaction status is %d\n", tstatus);
 
 	/* If we are in a failed transaction, rollback before deallocating */
-	/* XXX This has other repercussions, think about when we rewrite commit/rollback */
 	if (PQTRANS_INERROR == tstatus) {
 		if (dbis->debug >= 2)
 			PerlIO_printf(DBILOGFP, "  dbdpg: Issuing rollback before deallocate\n", tstatus);
