@@ -1,8 +1,17 @@
 1.41
+	- ('Greg' is Greg Sabino Mullane, greg@turnstep.com)
+	- Fix CPAN bug #12004: commit and rollback now return true
+		[Greg] (thanks to ivan-dbdpg@420.am)
+	- Overhaul and update COPY support; use new protocol.
+		New dbh methods: pg_putline, pg_getline, pg_endcopy.
+		[Greg]
+	- Rewrote version detection code. Compiled version and target 
+		version are now available via $dbh->{pg_lib_version} and 
+		$dbh->{pg_server_version} [Greg]
 	- Set our default type_id to 0, not 1043 (VARCHAR) when possible.
 		Suggested by Abhijit Menon-Sen via David Wheeler. [Greg]
-	- Add $dbh methods savepoint(), rollback_to(), and release()
-		[Stephen Clouse]
+	- Add $dbh methods pg_savepoint(), pg_rollback_to(), and pg_release()
+		[Stephen Clouse] [Greg]
 1.40 Tue Feb 22 06:06:45 UTC 2005
 	- Raise required DBI version to 1.38
 	- Execute returns 0 (0E0) not -1 for successful DDL commands.
