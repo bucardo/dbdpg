@@ -4,7 +4,7 @@
 	- Rewrote the foreign_key_info() method to handle 
 		multi-column keys. [Greg Sabino Mullane]
 	- Rewrote the primary_key_info() and primary_key() methods to 
-		cleanly handle multi-column primary keys. Also added a "onerow" 
+		cleanly handle multi-column primary keys. Also added a "pg_onerow" 
 		attribute to allow primary_key_info() to return a single 
 		row containing multiple-column information. [Greg Sabino Mullane]
 	- Switched commit behavior from commit->execute->begin 

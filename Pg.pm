@@ -394,7 +394,7 @@ $DBD::Pg::VERSION = '1.32_2';
 		my $pkinfo = [];
 
 		## Normal way: complete "row" per column in the primary key
-		if (!exists $attr->{'onerow'}) {
+		if (!exists $attr->{'pg_onerow'}) {
 			my $x=0;
 			my @key_seq = split/\s+/, $info->[4];
 			for (@key_seq) {
@@ -422,15 +422,15 @@ $DBD::Pg::VERSION = '1.32_2';
 			# PK_NAME
 			$info->[5] = $info->[3];
 			# COLUMN_NAME
-			$info->[3] = $attr->{'onerow'} == 2 ? 
+			$info->[3] = $attr->{'pg_onerow'} == 2 ? 
 				[ map { $attribs->{$_}{colname} } split /\s+/, $info->[4] ] :
 					join ', ', map { $attribs->{$_}{colname} } split /\s+/, $info->[4]; 
 			# DATA_TYPE
-			$info->[6] = $attr->{'onerow'} == 2 ? 
+			$info->[6] = $attr->{'pg_onerow'} == 2 ? 
 				[ map { $attribs->{$_}{typename} } split /\s+/, $info->[4] ] : 
 					join ', ', map { $attribs->{$_}{typename} } split /\s+/, $info->[4];
 			# KEY_SEQ
-			$info->[4] = $attr->{'onerow'} == 2 ? 
+			$info->[4] = $attr->{'pg_onerow'} == 2 ? 
 				[ split /\s+/, $info->[4] ] :
 					join ', ', split /\s+/, $info->[4];
 			$pkinfo = [$info];
@@ -444,7 +444,7 @@ $DBD::Pg::VERSION = '1.32_2';
 	}
 
 	sub primary_key {
-		my $sth = primary_key_info(@_[0..3], {onerow => 2});
+		my $sth = primary_key_info(@_[0..3], {pg_onerow => 2});
 		return defined $sth ? @{$sth->fetchall_arrayref()->[0][3]} : undef;
 	}
 
@@ -1591,13 +1591,13 @@ is returned and shows the data type for each of the arguments in the
 COLUMN_NAME field.
 
 In addition to the standard format of returning one row for each column 
-found for the primary key, you can pass the argument "onerow" to force 
+found for the primary key, you can pass the argument "pg_onerow" to force 
 a single row to be used. If the primary key has multiple columns, the 
 KEY_SEQ, COLUMN_NAME, and DATA_TYPE fields will return a comma-delimited 
-string. If "onerow" is set to "2", the fields will be returned as an 
+string. If "pg_onerow" is set to "2", the fields will be returned as an 
 arrayref, which can be useful when multiple columns are involved:
 
-  $sth = $dbh->primary_key_info('', '', 'dbd_pg_test', {onerow => 2});
+  $sth = $dbh->primary_key_info('', '', 'dbd_pg_test', {pg_onerow => 2});
   if (defined $sth) {
     my $pk = $sth->fetchall_arrayref()->[0];
     print "Table $pk->[2] has a primary key on these columns:\n";
