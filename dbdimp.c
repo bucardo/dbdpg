@@ -594,10 +594,10 @@ dbd_preparse (sth, imp_sth, statement)
             i /=10;
     } while (i>0);     /* 12*/
 
-    //PerlIO_printf(DBILOGFP, "Statement: %s \n", statement);
+    /* //PerlIO_printf(DBILOGFP, "Statement: %s \n", statement); */
     prescan_stmt(statement, &stmt_len, &place_holder_count);
 
-    //PerlIO_printf(DBILOGFP, "Place holders: %i \n", place_holder_count);
+    /* //PerlIO_printf(DBILOGFP, "Place holders: %i \n", place_holder_count); */
     /* add space for placeholders candidates */
     stmt_len += calc_ph_space(place_holder_count);
 
@@ -610,7 +610,7 @@ dbd_preparse (sth, imp_sth, statement)
     stmt_len  += offset;
     ++stmt_len; /* for term \0 */
 
-    //PerlIO_printf(DBILOGFP, "Smt len:%i Offset %i\n", stmt_len, offset);
+   /* //PerlIO_printf(DBILOGFP, "Smt len:%i Offset %i\n", stmt_len, offset); */
 
     Newc(0, imp_sth->statement, stmt_len, char, char);
     memset(imp_sth->statement, ' ', offset+1);
@@ -625,7 +625,7 @@ dbd_preparse (sth, imp_sth, statement)
     place_holder_count = rewrite_placeholders(imp_sth, statement, imp_sth->statement+offset,0);
     imp_sth->phc = place_holder_count;
 
-    // PerlIO_printf(DBILOGFP, "Rewritten stmt: %s\n", imp_sth->statement+offset);
+   /*  // PerlIO_printf(DBILOGFP, "Rewritten stmt: %s\n", imp_sth->statement+offset); */
 
     assert(strlen(imp_sth->statement)+1 <= stmt_len);
     /* if not dml, no need to continue, As we are not going to
@@ -636,7 +636,7 @@ dbd_preparse (sth, imp_sth, statement)
     /* 1 == PREPARE -- TODO: Fix ugly number thing*/
     build_preamble(imp_sth->statement, 1, place_holder_count, prep_stmt_id);
 
-    //PerlIO_printf(DBILOGFP, "Rewritten stmt: %s\n", imp_sth->statement);
+   /*  //PerlIO_printf(DBILOGFP, "Rewritten stmt: %s\n", imp_sth->statement); */
 
     imp_sth->result = PQexec(imp_dbh->conn, imp_sth->statement);
     status = imp_sth->result ? PQresultStatus(imp_sth->result) : -1;
@@ -649,7 +649,7 @@ dbd_preparse (sth, imp_sth, statement)
 
     /* 2 == EXECUTE -- TODO: Fix ugly number thing & remalloc*/
     build_preamble(imp_sth->statement, 2, place_holder_count, prep_stmt_id);
-    //PerlIO_printf(DBILOGFP, "Rewritten stmt: %s\n", imp_sth->statement);
+   /*  //PerlIO_printf(DBILOGFP, "Rewritten stmt: %s\n", imp_sth->statement); */
     imp_sth->server_prepared = 1;
 
     assert(strlen(imp_sth->statement)+1 <= stmt_len);
@@ -693,7 +693,7 @@ deallocate_statement (sth, imp_sth)
 
     *dest = '\0';
 
-    // PerlIO_printf(DBILOGFP, "Rewritten stmt: %s, Max Len: %i, Act Len:%i\n", stmt, max_len, strlen(stmt));
+    /* // PerlIO_printf(DBILOGFP, "Rewritten stmt: %s, Max Len: %i, Act Len:%i\n", stmt, max_len, strlen(stmt)); */
 
     result = PQexec(imp_dbh->conn, stmt);
     Safefree(stmt);
@@ -779,7 +779,7 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
     }
 
 
-    // XXX this is broken: bind_param(1,1,{TYPE=>SQL_INTEGER});
+   /*  // XXX this is broken: bind_param(1,1,{TYPE=>SQL_INTEGER}); */
     if (attribs) {
             if (sql_type)
                     croak ("Cannot specify both sql_type and pg_type");
@@ -868,7 +868,7 @@ dbd_st_execute (sth, imp_sth)   /* <= -2:error, >=0:ok row count, (-1=unknown co
     SV *sth;
     imp_sth_t *imp_sth;
 {
-    //dTHR;
+    /* //dTHR; */
 
     D_imp_dbh_from_sth;
     ExecStatusType status = -1;
@@ -900,7 +900,7 @@ dbd_st_execute (sth, imp_sth)   /* <= -2:error, >=0:ok row count, (-1=unknown co
         char *key;
         I32 retlen;
         hv_iterinit(hv);
-        //PerlIO_printf(DBILOGFP, "b4 max_len: %i\n", max_len);
+       /*  //PerlIO_printf(DBILOGFP, "b4 max_len: %i\n", max_len); */
         while( (sv = hv_iternextsv(hv, &key, &retlen)) != NULL ) {
             if (sv != &sv_undef) {
                 phs_t *phs_tpl = (phs_t*)(void*)SvPVX(sv);

@@ -10,7 +10,7 @@
 #define HAVE_PQescapeBytea
 #define HAVE_PQunescapeBytea
 
-// #include"pg_functions.c"
+/* #include"pg_functions.c" */
 
 
 /* This section was stolen from libpq */
@@ -290,7 +290,7 @@ quote_varchar(string, len, retlen)
 	Newc(0,result,len*2+3,char, char);
 	outlen = PQescapeString(result+1, string, len);
 
-	// TODO: remalloc outlen
+	/* TODO: remalloc outlen */
 	*result = '\'';
 	outlen++;
 	*(result+outlen)='\'';
@@ -309,11 +309,11 @@ quote_char(string, len, retlen)
 	size_t	outlen;
 	char *result;
 	
-	// TODO: ChopBlanks
+	/* TODO: ChopBlanks */
 	Newc(0,result,len*2+3,char, char);
 	outlen = PQescapeString(result+1, string, len);
 
-	// TODO: remalloc outlen
+	/*  TODO: remalloc outlen */
 	*result = '\'';
 	outlen++;
 	*(result+outlen)='\'';
@@ -446,7 +446,7 @@ dequote_char(string, retlen)
 	char *string;
 	int *retlen;
 {
-	//TODO: chop_blanks if requested
+	/* TODO: chop_blanks if requested */
 	*retlen = strlen(string);
 }
 

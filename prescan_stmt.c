@@ -43,7 +43,7 @@ calc_ph_space (place_holder_count)
 
 	for (i=1; i<=place_holder_count; ++i) {
 		if (i%divisor == 0) {	/* this could be made more eff. */
-			//PerlIO_printf(DBILOGFP, "    \tDigits:%i\n", digits);
+			/* //PerlIO_printf(DBILOGFP, "    \tDigits:%i\n", digits); */
 			divisor *=10;
 			++digits;
 		}
@@ -75,7 +75,7 @@ is_dml (stmt)
 	strncpy (token, stmt, 6);
 	
 	token[6] = '\0';
-	// PerlIO_printf(DBILOGFP, "token: stmt: %s\n", token);
+	/* // PerlIO_printf(DBILOGFP, "token: stmt: %s\n", token); */
 	
 	/* XXX: UPDATE & INSERT are broken. The (varchar) hack does not work
 	   as they actually look at the field type. Until I get a fix for this
@@ -86,10 +86,10 @@ is_dml (stmt)
 	    /*|| !strcasecmp(token, "UPDATE")
 	    || !strcasecmp(token, "INSERT")*/ )
 	{
-		//PerlIO_printf(DBILOGFP, "Is DML\n");
+		/* //PerlIO_printf(DBILOGFP, "Is DML\n"); */
 		return 1;
 	}
-	// PerlIO_printf(DBILOGFP, "Is not DML\n");
+	/* // PerlIO_printf(DBILOGFP, "Is not DML\n"); */
 	return 0;
 }
 
@@ -116,7 +116,7 @@ is_tx_stmt (stmt)
 	strncpy (token, stmt, 8);
 	
 	token[9] = '\0';
-	// PerlIO_printf(DBILOGFP, "token: stmt: %s\n", token);
+	/* // PerlIO_printf(DBILOGFP, "token: stmt: %s\n", token); */
 	
 	if (   !strncasecmp(token, "END",     4)
   	    || !strncasecmp(token, "BEGIN",   5)
@@ -124,10 +124,10 @@ is_tx_stmt (stmt)
 	    || !strncasecmp(token, "COMMIT",  6)
 	    || !strncasecmp(token, "ROLLBACK",8) )
 	{
-		//PerlIO_printf(DBILOGFP, "Is DML\n");
+		/* //PerlIO_printf(DBILOGFP, "Is DML\n"); */
 		return 1;
 	}
-	// PerlIO_printf(DBILOGFP, "Is not DML\n");
+	/* // PerlIO_printf(DBILOGFP, "Is not DML\n"); */
 	return 0;
 }
 
@@ -165,7 +165,7 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 	src = statement;
 	dest = internal;
 
-	// PerlIO_printf(DBILOGFP, "HERE: stmt: %s\n", src);
+	/* // PerlIO_printf(DBILOGFP, "HERE: stmt: %s\n", src); */
 	while ((ch = *src++)) {
 		if (in_comment) {
 			/* SQL-style and C++-style */
@@ -286,8 +286,8 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 			imp_sth->all_params_hv = newHV();
 		}
 
-		//PerlIO_printf(DBILOGFP, "phs name start:%s len: %i Index:%i\n", 
-		 //   ph_name_start,namelen, place_holder_count);
+		/* //PerlIO_printf(DBILOGFP, "phs name start:%s len: %i Index:%i\n",  */
+		 /* //   ph_name_start,namelen, place_holder_count); */
 		
 		hv =hv_fetch(imp_sth->all_params_hv,ph_name_start,namelen,0);
 
@@ -352,7 +352,7 @@ build_preamble (statement, type, place_holder_count, prep_stmt_id)
 	 sprintf(statement, 
 	    "%s \"DBD::ChurlPg::cached_query %i\"", keyword,  prep_stmt_id);
 
-		//PerlIO_printf(DBILOGFP, "statement: %s\n", statement);
+		/* //PerlIO_printf(DBILOGFP, "statement: %s\n", statement); */
 
         if (!place_holder_count) {
 		statement += strlen(statement);
