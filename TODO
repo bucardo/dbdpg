@@ -2,7 +2,6 @@ Known Issues:
 
 - new pg_bool_tf attribute is broken.
 - quote("stuff", {typeinfo }) is broken (only when hashref is passed in)
-- chopblanks is broken.
 - has some // style comments around debug statements that need to be 
   converted into logging statements
 - PREPARE is not bullet-proof casts in RSH of equality  and functions 
