@@ -1274,10 +1274,6 @@ The C<table_attributes> function is no longer recommended. Instead,
 you can use the more portable C<column_info> and C<primary_key> functions
 to access all the same information.
 
-The C<table_attributes> function is no longer recommended. Instead,
-you can use the more portable C<column_info> and C<primary_key> functions
-to access all the same information.
-
 This method returns for the given table a reference to an array of hashes:
 
   NAME        attribute name
@@ -1552,6 +1548,9 @@ Also, four additional non-standard fields are returned:
   pg_type_only
   pg_attypmod
   pg_constraint - holds column constraint definition
+
+The REMARKS field will be returned as NULL for Postgres versions 7.1.x and
+older.
 
 =item B<table_info>
 

@@ -4,6 +4,7 @@ $| = 1;
 use DBI qw(:sql_types);
 use strict;
 use Test::More;
+
 if (defined $ENV{DBI_DSN}) {
     plan tests => 25;
 } else {
@@ -13,9 +14,11 @@ if (defined $ENV{DBI_DSN}) {
 my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 		       {RaiseError => 1, AutoCommit => 0}
 		      );
+
 ok(defined $dbh,
    'connect with transaction'
   );
+
 
 #
 # Test the different methods, so are expected to fail.
@@ -97,7 +100,17 @@ ok($dbh->do("COMMENT ON COLUMN dbd_pg_test.name IS 'Success'"), 'comment on dbd_
 		$row = $sth->fetchrow_hashref;
 	};	
 	ok(!$@, 'column_info called without dying');
-	is($row->{REMARKS},'Success','column_info REMARKS');
+
+    SKIP: {
+        my $ver = DBD::Pg::_pg_server_version($dbh);
+        my $at_least_7_2 = DBD::Pg::_pg_check_version(7.2, $ver);
+        skip "column_info REMARKS will be NULL below 7.2 (Current version: $ver)", 1 unless $at_least_7_2;
+        is($row->{REMARKS},'Success','column_info REMARKS');
+
+    }
+
+
+
 	$sth = undef;
 
  	like($row->{COLUMN_DEF},"/^'Testing Default'(?:::character varying)?\$/",'column_info default value');
