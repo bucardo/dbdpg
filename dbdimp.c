@@ -235,6 +235,8 @@ dbd_db_pg_notifies (dbh, imp_dbh)
 
     av_push(ret, newSVpv(notify->relname,0) );
     av_push(ret, newSViv(notify->be_pid) );
+
+    /* Should free notify memory with PQfreemem() */
  
     retsv = newRV(sv_2mortal((SV*)ret));
 
