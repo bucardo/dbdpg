@@ -336,7 +336,6 @@ is_deeply( \%missing, {}, 'DB handle method "column_info" returns fields require
 
 # Check that pg_constraint was populated
 $result = $result->[0];
-use Data::Dumper; open(T, ">trace") and print T (Dumper $result);
 like( $result->{pg_constraint}, qr/score/, qq{DB handle method "column info" 'pg_constraint' returns a value for constrained columns});
 
 # Check that it is not populated for non-constrained columns
