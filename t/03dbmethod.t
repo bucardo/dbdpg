@@ -859,7 +859,7 @@ like( $result, qr/^\d+$/, 'DB handle method "getfd" returns a number');
 $result = $dbh->{pg_bool_tf}=0;
 is( $result, 0, 'DB handle method "pg_bool_tf" starts as 0');
 
-$sth = $dbh->prepare("SELECT ?::bool", {server_prepare => 0});
+$sth = $dbh->prepare("SELECT ?::bool");
 $sth->execute(1);
 $result = $sth->fetchall_arrayref()->[0][0];
 is( $result, "1", qq{DB handle method "pg_bool_tf" returns '1' for true when on});

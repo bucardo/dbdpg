@@ -1688,14 +1688,14 @@ The following two examples will NOT be prepared right away:
 
 There are times when you may want to prepare a statement yourself. To do this, simply 
 send the PREPARE statement directly to the server (e.g. with "do"). Create a statement 
-handle and set the prepared name. The statement handle can be created with a dummy 
-statement, as this will not be executed. However, it should have the same number 
-of placeholders as your prepared statement. Example:
+handle and set the prepared name via "pg_prepare_name". The statement handle can be 
+created with a dummy statement, as this will not be executed. However, it should have 
+the same number of placeholders as your prepared statement. Example:
 
   $dbh->do("PREPARE mystat AS SELECT COUNT(*) FROM pg_class WHERE reltuples < ?");
   $sth = $dbh->prepare("ABC ?");
   $sth->bind_param(1, 1, SQL_INTEGER);
-  $sth->{prepare_name}="mystat";
+  $sth->{pg_prepare_name} = "mystat";
   $sth->execute(123);
 
 The above will run this query:

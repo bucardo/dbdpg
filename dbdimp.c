@@ -239,8 +239,8 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	imp_dbh->prepare_now = 0;
 	imp_dbh->errorlevel = 1; /* Matches PG default */
 
-	/* Change the below someday to default to "on" */
-	imp_dbh->server_prepare = imp_dbh->pg_protocol >=3 ? 0 : 0;
+	/* If the server can handle it, we default to "smart", otherwise "off" */
+	imp_dbh->server_prepare = imp_dbh->pg_protocol >=3 ? 2 : 0;
 
 	DBIc_IMPSET_on(imp_dbh); /* imp_dbh set up now */
 	DBIc_ACTIVE_on(imp_dbh); /* call disconnect before freeing */
@@ -462,8 +462,11 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 #endif
 	}
 	else if (kl==17 && strEQ(key, "pg_server_prepare")) {
+		/* No point changing this if the server does not support it */
 		if (imp_dbh->pg_protocol >=3) {
-			imp_dbh->server_prepare = newval ? 1 : 0;
+			newval = SvIV(valuesv);
+			/* Default to "2" if an invalid value is passed in */
+			imp_dbh->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
 		}
 	}
 	else if (kl==14 && strEQ(key, "pg_prepare_now")) {
@@ -638,9 +641,6 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	D_imp_dbh_from_sth;
 	unsigned int mypos=0, wordstart, newsize; /* Used to find and set firstword */
 	SV **svp; /* To help parse the arguments */
-	char server_prepare = 2; /* Three states: 0=no 1=yes 2=not set yet */
-	bool direct = 0; /* Allow bypass of splitting and binding */
-	int prepare_now = imp_dbh->prepare_now; /* Force an immediate prepare? */
 
 	if (dbis->debug >= 1)
 		PerlIO_printf(DBILOGFP, "dbd_st_prepare: >%s<\n", statement);
@@ -693,19 +693,28 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	}
 	statement -= mypos; /* Rewind statement */
 
+	/* We inherit the prepare stuff from the database handle */
+	imp_sth->server_prepare = imp_dbh->server_prepare;
+	imp_sth->prepare_now = imp_dbh->prepare_now; /* Force an immediate prepare? */
+
 	/* Parse and set any attributes passed in */
 	if (attribs) {
-		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_server_prepare", 17, 0)) != NULL)
-			server_prepare = 0==SvIV(*svp) ? 0 : 1;
+		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_server_prepare", 17, 0)) != NULL) {
+			if (imp_dbh->pg_protocol >=3) {
+				int newval = SvIV(*svp);
+				/* Default to "2" if an invalid value is passed in */
+				imp_sth->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
+			}
+		}
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_direct", 9, 0)) != NULL)
-			direct = 0==SvIV(*svp) ? 0 : 1;
-		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_prepare_now", 14, 0)) != NULL)
-			prepare_now = 0==SvIV(*svp) ? 0 : 1;
-		/* bind_type is done in Pg.pm for now */
+			imp_sth->direct = 0==SvIV(*svp) ? 0 : 1;
+		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_prepare_now", 14, 0)) != NULL) {
+			if (imp_dbh->pg_protocol >=3) {
+				imp_sth->prepare_now = 0==SvIV(*svp) ? 0 : 1;
+			}
+		}
 	}
 
-	imp_sth->server_prepare = server_prepare;
-	imp_sth->direct = direct;
 	imp_sth->prepared_by_us = 0;
 	imp_sth->result	= 0;
 	imp_sth->cur_tuple = 0;
@@ -719,20 +728,18 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	/*
 		We prepare it right away if:
 		1. The statement is DML
-		2. It's not "direct"
+		2. The attribute "direct" is false
 		3. We can handle server-side prepares
-		4. dbh->{server_prepare} is true
-		5. They have not explicitly turned it off via sth->{pg_server_prepare}
-		6. "prepare_now" (via arguments) is not false (0)
-		7. There are no placeholders OR "prepare_now" (via args/dbh) is on
+		4. The attribute "pg_server_prepare" is not 0
+		5a. The attribute "pg_prepare_now" is true
+		OR
+		5b. there are no placeholders
 	*/
 	if (imp_sth->is_dml && 
 			!imp_sth->direct &&
 			imp_dbh->pg_protocol >= 3 &&
-			imp_dbh->server_prepare == 1 &&
-			imp_sth->server_prepare != 0 &&
-			prepare_now != 0 &&
-			(0==imp_sth->numphs || 1==prepare_now)
+			0 != imp_sth->server_prepare &&
+			(0==imp_sth->numphs || imp_sth->prepare_now)
 			) {
 		if (dbis->debug >= 2)
 			PerlIO_printf(DBILOGFP, "  dbdpg: immediate prepare\n");
@@ -1321,7 +1328,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 			}
 		}
 	}
-		
+
 	if (!matches)
 		croak("Cannot bind unknown placeholder '%s' (%s)", name, neatsvpv(ph_name,0));
 
@@ -1402,13 +1409,22 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		PQclear(imp_sth->result);
 	}
 	
-	/* Are we using new or old style prepare? */
-
-	if (!imp_sth->direct &&
-			imp_sth->is_dml && 
-			imp_dbh->server_prepare >= 1 && 
-			(1==imp_sth->server_prepare || 
-			 (2==imp_sth->server_prepare && imp_dbh->pg_protocol >= 3))) {
+	/* We use the new server_side prepare style if:
+		1. The statement is DML
+		2. The attribute "pg_direct" is false
+		3. We can handle server-side prepares
+		4. The attribute "pg_server_prepare" is not 0
+		5a. The attribute "pg_server_prepare" is 1
+		OR
+		5b. All placeholders are bound (and "pg_server_prepare" is 2)
+	*/
+	if (imp_sth->is_dml && 
+			!imp_sth->direct &&
+			imp_dbh->pg_protocol >= 3 &&
+			0 != imp_sth->server_prepare &&
+			(1 == imp_sth->server_prepare ||
+			 (imp_sth->numbound == imp_sth->numphs)
+			 )){
 		const char **paramValues;
 	
 		if (dbis->debug >= 4)
@@ -1482,6 +1498,9 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			}
 		}			
 		statement[execsize] = '\0';
+
+		if (dbis->debug >= 3)
+			PerlIO_printf(DBILOGFP, "  dbdpg: calling PQexec\n");
 
 		imp_sth->result = PQexec(imp_dbh->conn, statement);
 		Safefree(statement);
@@ -1821,16 +1840,18 @@ int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 
 	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_STORE\n"); }
 	
-	if (kl==17 && strEQ(key, "pg_server_prepare")) {
+	if (17==kl && strEQ(key, "pg_server_prepare")) {
 		imp_sth->server_prepare = strEQ(value,"0") ? 0 : 1;
-		/* Need to fool DBI into thinking we already have a valid statement */
 	}
-	else if (12==kl && strEQ(key, "prepare_name")) {
+	else if (14==kl && strEQ(key, "pg_prepare_now")) {
+		imp_sth->prepare_now = strEQ(value,"0") ? 0 : 1;
+	}
+	else if (15==kl && strEQ(key, "pg_prepare_name")) {
 		New(0, imp_sth->prepare_name, vl+1, char);
 		Copy(value, imp_sth->prepare_name, vl, char);
 		imp_sth->prepare_name[vl] = '\0';
 	}
-	else if (12==kl && strEQ(key, "prepare_args")) {
+	else if (12==kl && strEQ(key, "pg_prepare_args")) {
 		DBIc_NUM_PARAMS(imp_sth) = Atol(value); /* XXX not complete yet */
 	}
 	else {
@@ -1857,12 +1878,16 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_FETCH\n"); }
 	
 	/* Some can be done before the execute */
-	if (kl==12 && strEQ(key, "prepare_name")) {
+	if (kl==15 && strEQ(key, "pg_prepare_name")) {
 		retsv = newSVpv((char *)imp_sth->prepare_name, 0);
 		return retsv;
 	}
 	else if (kl==17 && strEQ(key, "pg_server_prepare")) {
 		retsv = newSViv((IV)imp_sth->server_prepare);
+		return retsv;
+ 	}
+	else if (kl==14 && strEQ(key, "pg_prepare_now")) {
+		retsv = newSViv((IV)imp_sth->prepare_now);
 		return retsv;
  	}
 	else if (kl==11 && strEQ(key, "ParamValues")) {

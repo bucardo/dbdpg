@@ -39,9 +39,9 @@ struct imp_dbh_st {
 	bool    pg_bool_tf;      /* do bools return 't'/'f'? */
 	bool    pg_enable_utf8;  /* should we attempt to make utf8 strings? */
 	int     pg_protocol;     /* value of PQprotocolVersion usually 0, 2, or 3 */
-	bool    server_prepare;  /* do we want to use PQexecPrepared? */
+	char    server_prepare;  /* do we want to use PQexecPrepared? 0=no 1=yes 2=smart */
 	int     prepare_number;  /* internal prepared statement name modifier */
-	bool    prepare_now;     /* force prepare_now on all prepares */
+	bool    prepare_now;     /* force immediate prepares, even with placeholders */
   char    *sqlstate;       /* from the last result */
 	char    errorlevel;      /* PQsetErrorVerbosity, defaults to 0 */
 };
@@ -71,8 +71,9 @@ struct imp_sth_st {
 	int        cur_tuple;   /* current tuple being fetched */
 	int        rows;        /* number of affected rows */
 
-	char  server_prepare;   /* 3 states: 0=no 1=yes 2=not set yet */
+	char  server_prepare;   /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
 	char  *prepare_name;    /* name of the prepared query; NULL if not prepared */
+	bool  prepare_now;      /* prepare this statement right away, even if it has placeholders */
 	bool  prepared_by_us;   /* false if {prepare_name} set directly */
 	bool  direct;           /* allow bypassing of the statement parsing */
 	char  *firstword;       /* first word of the statement */
