@@ -123,8 +123,8 @@ ok( !$@, 'Setting a private attribute on a statement handle does not throw an er
 # Test of the database handle attribute "AutoCommit"
 #
 
-ok( $dbh->do('DELETE FROM dbd_pg_test'), 'Delete all rows from dbd_pg_test');
-$dbh->commit();
+$dbh->do('DELETE FROM dbd_pg_test');
+ok( $dbh->commit(), "Commit after deleting all rows from dbd_pg_test");
 
 my $dbh2 = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 												{RaiseError => 0, PrintError => 0, AutoCommit => 1});
@@ -137,6 +137,7 @@ ok( defined $dbh2, "Connect to database with second database handle, AutoCommit 
 
 ok( $dbh->do("INSERT INTO dbd_pg_test (id, pname, val) VALUES (1, 'Coconut', 'Mango')"),
 		'Insert a row into the database with first database handle');
+
 
 my $rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM dbd_pg_test WHERE id = 1}))[0];
 cmp_ok($rows, '==', 0, 'Second database handle cannot see insert from first');
@@ -153,6 +154,7 @@ $rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM dbd_pg_test WHERE id = 1}
 cmp_ok($rows, '==', 1, 'Second database handle can see insert from first');
 
 ok( $dbh2->disconnect(), 'Disconnect with second database handle');
+
 
 #
 # Test of the database handle attribute "Driver"
@@ -253,7 +255,6 @@ is_deeply( $attrib, $colnames, 'Statement handle attribute "NAME_lc" works corre
 $attrib = $sth->{NAME_uc};
 $colnames = ['SHEEP', 'ID'];
 is_deeply( $attrib, $colnames, 'Statement handle attribute "NAME_uc" works correctly');
-
 $attrib = $sth->{'NAME_hash'};
 $colnames = {'Sheep' => 0, id => 1};
 is_deeply( $attrib, $colnames, 'Statement handle attribute "NAME_hash" works correctly');
@@ -316,10 +317,10 @@ is( $attrib, $dbh, 'Statement handle attribute "Database" matches the database h
 $sth = $dbh->prepare("SELECT id FROM dbd_pg_test WHERE id=?");
 $sth->bind_param(1, 1);
 $attrib = $sth->{ParamValues};
-is_deeply( $attrib, {'$1' => "1"}, qq{Statement handle attribute "ParamValues" works before execute});
+is_deeply( $attrib, {1 => "1"}, qq{Statement handle attribute "ParamValues" works before execute});
 $sth->execute();
 $attrib = $sth->{ParamValues};
-is_deeply( $attrib, {'$1' => "'1'"}, qq{Statement handle attribute "ParamValues" works after execute});
+is_deeply( $attrib, {1 => "1"}, qq{Statement handle attribute "ParamValues" works after execute});
 
 #
 # Test of the statement handle attribute "RowsInCache"
@@ -394,6 +395,7 @@ ok( !$attrib, 'Database handle attribute "CompatMode" is set properly');
 $attrib = $dbh->{PrintError};
 is( $attrib, '', 'Database handle attribute "PrintError" is set properly');
 
+
 # Make sure that warnings are sent back to the client
 # We assume that older servers are okay
 my $pgversion = DBD::Pg::_pg_server_version($dbh);
@@ -426,7 +428,7 @@ else {
 		$sth = $dbh->prepare($SQL);
 		$sth->execute();
 		ok( $warning, 'Warning thrown when database handle attribute "PrintError" is on');
-		
+
 		undef $warning;
 		$dbh->{PrintError} = 0;
 		$sth = $dbh->prepare($SQL);
