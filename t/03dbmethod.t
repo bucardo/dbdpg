@@ -18,7 +18,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 122;
+	plan tests => 123;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -356,8 +356,12 @@ is_deeply( \%missing, {}, 'DB handle method "foreign_key_info" returns fields re
 #
 # Test of the "tables" database handle method
 #
+
 @result = $dbh->tables('', '', 'dbd_pg_test', '');
 like( $result[0], qr/dbd_pg_test/, 'DB handle method "tables" works');
+
+@result = $dbh->tables('', '', 'dbd_pg_test', '', {noprefix => 1});
+is( $result[0], 'dbd_pg_test', 'DB handle method "tables" works with a "noprefix" attribute');
 
 #
 # Test of the "type_info_all" database handle method

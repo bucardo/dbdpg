@@ -799,11 +799,13 @@ $DBD::Pg::VERSION = '1.31';
 
   sub tables {
 			my ($dbh, @args) = @_;
+			my $attr = $args[4];
 			my $sth = $dbh->table_info(@args) or return;
 			my $tables = $sth->fetchall_arrayref() or return;
 			my $version = DBD::Pg::_pg_server_version($dbh);
-			my @tables = map { DBD::Pg::_pg_check_version(7.3, $version) ? 
-														 "$_->[1].$_->[2]" : $_->[2] } @$tables;
+			my @tables = map { (DBD::Pg::_pg_check_version(7.3, $version) 
+					and (! (ref $attr eq "HASH" and $attr->{noprefix}))) ? 
+						"$_->[1].$_->[2]" : $_->[2] } @$tables;
 			return @tables;
 	}
 
@@ -1573,11 +1575,16 @@ about first column of any multiple-column keys.
 
 =item B<tables>
 
-  @names = $dbh->tables( $catalog, $schema, $table, $type );
+  @names = $dbh->tables( $catalog, $schema, $table, $type, \%attr );
 
-Supported by the driver as proposed by DBI. This method returns all tables and
-views which are visible to the current user. If the database is version 7.3 
-or higher, the name of the schema appears before the table or view name.
+Supported by the driver as proposed by DBI. This method returns all tables 
+and/or views which are visible to the current user: see the table_info() 
+for more information about the arguments. If the database is version 7.3 
+or higher, the name of the schema appears before the table or view name. This 
+can be turned off by adding in the "noprefix" attribute:
+
+  my @tables = $dbh->tables( '', '', 'dbd_pg_test', '', {noprefix => 1} );
+
 
 =item B<type_info_all>
 
