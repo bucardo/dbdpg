@@ -12,7 +12,6 @@ Pg.h
 Pg.pm
 Pg.xs
 pg_typeOID.h
-prescan_stmt.c
 quote.c
 quote.h
 README
