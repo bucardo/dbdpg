@@ -7,7 +7,7 @@ use Data::Dumper;
 use strict;
 use Test::More;
 if (defined $ENV{DBI_DSN}) {
-    plan tests => 69;
+    plan tests => 70;
 } else {
     plan skip_all => "DBI_DSN must be set: see the README file";
 }
@@ -283,6 +283,21 @@ ok(1
 #DBI::dump_results($sth) if defined $sth;
 undef $sth;
 
+# Test _pg_use_catalog
+# Schemas should returned for 7.3 and above, but not below
+
+my $ver = DBD::Pg::_pg_server_version($dbh);
+my $should_have_schemas = 0;
+   $should_have_schemas = 1 if DBD::Pg::_pg_check_version(7.3, $ver);
+
+my $has_schemas = 0;
+   $has_schemas = 1 if DBD::Pg::_pg_use_catalog($dbh);
+
+  ok(($should_have_schemas == $has_schemas), 
+    '_pg_use_catalog appropriately detects if schemas are used');
+
+
+
 # Test foreign_key_info
 
 local ($dbh->{Warn}, $dbh->{PrintError});
@@ -300,53 +315,6 @@ else {
 $sth = undef;
 
 ok($dbh->do("COMMENT ON COLUMN dbd_pg_test.name IS 'Success'"), 'comment on dbd_pg_test_table');
-
-# Testing column_info some more
-#	my $row;
-#	eval {	
-#		$sth = $dbh->column_info( undef, undef, 'dbd_pg_test','name' );
-#		$row = $sth->fetchrow_hashref;
-#	};	
-#	ok(!$@, 'column_info called without dying');
-#	use Data::Dumper;
-#	is($row->{REMARKS},'Success','column_info REMARKS') or diag Dumper($row);
-#	$sth = undef;
-#
-#
-# 	is($row->{COLUMN_DEF},"'Testing Default'",'column_info default value') or diag Dumper($row);
-#
-#	cmp_ok($row->{COLUMN_SIZE},'==', 20, 'column_info field size for type varchar');
-#
-#	$sth = $dbh->column_info( undef, undef, 'dbd_pg_test','score' );
-#	$row = $sth->fetchrow_hashref;
-#	like($row->{pg_constraint}
-#		, qr/\(\(\(score\s+=\s+1(?:::double\s+precision)?\)\s+OR\s+\(score\s+=\s+2(?:::double precision)?\)\)\s+OR\s+\(score\s+=\s+3(?:::double precision)?\)\)/i
-#		, 'table_attributes constraints');
-#
-
-
-# Testing table_attributes
-
-#	my $attrs;
-#	eval { local $dbh->{RaiseError} = 1; $attrs = $dbh->func('dbd_pg_test', 'table_attributes') };
-#	ok(!$@, 'basic table_attributes test') or diag $@;
-#
-# 	is($attrs->[0]->{NAME},'id','table_attributes ordering');
-#
-# 	cmp_ok($attrs->[0]->{NOTNULL}, '==',1,'table_attributes NOTNULL 1');
-# 	cmp_ok($attrs->[1]->{NOTNULL}, '==',0,'table_attributes NOTNULL 0');
-# 
-# 
-# 	cmp_ok($attrs->[1]->{SIZE},'==',20,'table_attributes basic SIZE check');
-# 
-#	like($attrs->[3]->{CONSTRAINT}
-#		, qr/\(\(\(score\s+=\s+1(?:::double\s+precision)?\)\s+OR\s+\(score\s+=\s+2(?:::double precision)?\)\)\s+OR\s+\(score\s+=\s+3(?:::double precision)?\)\)/i
-#		, 'table_attributes constraints');
-# 
-# 	cmp_ok(scalar @$attrs, '==', 7, 'table_attributes returns expected number of rows');
-#
-#	 my $any_comments = grep { (defined $_->{REMARKS}) and ($_->{REMARKS} eq 'Success') and ($_->{NAME} eq 'name')  } @$attrs;
-#	 ok($any_comments, 'found comment on column name');
 
 ok($dbh->disconnect, 'Disconnect');
 
