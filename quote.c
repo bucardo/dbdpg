@@ -84,7 +84,7 @@ PQescapeBytea(const unsigned char *bintext, size_t binlen, size_t *bytealen)
 			len++;
 	}
 
-	rp = result = (unsigned char *) malloc(len);
+	rp = result = (unsigned char *) safemalloc(len);
 	if (rp == NULL)
 		return NULL;
 
@@ -153,7 +153,7 @@ PQunescapeBytea2(const unsigned char *strtext, size_t *retbuflen)
 	strtextlen = strlen(strtext);
 	/* will shrink, also we discover if strtext isn't NULL terminated */
 
-	buffer = (unsigned char *)malloc(strtextlen);
+	buffer = (unsigned char *)safemalloc(strtextlen);
 	if (buffer == NULL)
 		return NULL;
 
@@ -183,11 +183,11 @@ PQunescapeBytea2(const unsigned char *strtext, size_t *retbuflen)
 		}
 	}
 	buflen = j; /* buflen is the length of the unquoted data */
-	tmpbuf = realloc(buffer, buflen);
+	tmpbuf = saferealloc(buffer, buflen);
 
 	if (!tmpbuf)
 	{
-		free(buffer);
+		safefree(buffer);
 		return 0;
 	}
 
@@ -214,7 +214,7 @@ PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 		return NULL;
 	buflen = strlen(strtext);	/* will shrink, also we discover if
 								 * strtext */
-	buffer = (unsigned char *) malloc(buflen);	/* isn't NULL terminated */
+	buffer = (unsigned char *) safemalloc(buflen);	/* isn't NULL terminated */
 	if (buffer == NULL)
 		return NULL;
 	for (bp = buffer, sp = strtext; *sp != '\0'; bp++, sp++)
@@ -276,7 +276,7 @@ PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 				break;
 		}
 	}
-	buffer = realloc(buffer, buflen);
+	buffer = saferealloc(buffer, buflen);
 	if (buffer == NULL)
 		return NULL;
 
@@ -421,7 +421,7 @@ quote_bytea(string, len, retlen)
 	strcpy(dest,intermead);
 	strcat(dest,"\'");
 
-	free(intermead);
+	safefree(intermead);
 	*retlen=strlen(result);
 	assert(*retlen+1 <= resultant_len+2);
 	

@@ -96,7 +96,7 @@ pg_error (h, error_num, error_msg)
 	char *err, *src, *dst; 
 	int len = strlen(error_msg);
 	
-	err = (char *)malloc(len + 1);
+	err = (char *)safemalloc(len + 1);
 	if (!err)
 		return;
 	
@@ -116,7 +116,7 @@ pg_error (h, error_num, error_msg)
 		PerlIO_printf(DBILOGFP, "%s error %d recorded: %s\n",
 									err, error_num, SvPV(DBIc_ERRSTR(imp_xxh),na));
 	}
-	free(err);
+	safefree(err);
 }
 
 
@@ -146,7 +146,7 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	/* DBD-Pg syntax: 'dbname=dbname;host=host;port=port' */
 	/* pgsql syntax: 'dbname=dbname host=host port=port user=uid password=pwd' */
 	
-	conn_str = (char *)malloc(strlen(dbname) + strlen(uid) + strlen(pwd) + 16 + 1);
+	conn_str = (char *)safemalloc(strlen(dbname) + strlen(uid) + strlen(pwd) + 16 + 1);
 	if (! conn_str)
 		return 0;
 	
@@ -177,7 +177,7 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	
 	/* make a connection to the database */
 	imp_dbh->conn = PQconnectdb(conn_str);
-	free(conn_str);
+	safefree(conn_str);
 	
 	/* check to see that the backend connection was successfully made */
 	if (PQstatus(imp_dbh->conn) != CONNECTION_OK) {
@@ -1141,7 +1141,7 @@ dbd_st_destroy (sth, imp_sth)
 			if (sv != &sv_undef) {
 				phs_t *phs_tpl = (phs_t*)(void*)SvPVX(sv);
 				/* sv_free(phs_tpl->sv); */
-				free(phs_tpl->quoted);
+				safefree(phs_tpl->quoted);
 			}
 		}
 		sv_free((SV*)imp_sth->all_params_hv);

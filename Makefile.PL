@@ -90,6 +90,7 @@ my %opts = (
     ABSTRACT     => 'PostgreSQL database driver for the DBI module',
     PREREQ_PM    => { 'Test::Simple' => 0.17 }, # Need Test::More,
     CCFLAGS      => $comp_opts,
+    PERL_MALLOC_OK => 1,
 );
 
 if ($os eq 'hpux') {
