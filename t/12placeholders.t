@@ -36,6 +36,7 @@ ok((defined($retr) && $retr eq "\\'?:"),
 
 eval {
   local $dbh->{PrintError} = 0;
+  $sth = $dbh->prepare($sql);
   $sth->execute('foo');
 };
 ok($@,
@@ -76,10 +77,10 @@ $sql = <<SQL;
        FROM test
        WHERE name = '?'
 SQL
-$sth = $dbh->prepare($sql);
 
 eval {
   local $dbh->{PrintError} = 0;
+  $sth = $dbh->prepare($sql);
   $sth->execute('foo');
 };
 ok($@,
@@ -91,10 +92,10 @@ $sql = <<SQL;
        FROM test
        WHERE name = ':1'
 SQL
-$sth = $dbh->prepare($sql);
 
 eval {
   local $dbh->{PrintError} = 0;
+  $sth = $dbh->prepare($sql);
   $sth->execute('foo');
 };
 ok($@,
