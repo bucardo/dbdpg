@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 5;
+	plan tests => 6;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -39,4 +39,19 @@ SKIP: {
 	$sth->finish();
 }
 
+
+#
+# Test of the "data_sources" method
+#
+
+my @result = DBI->data_sources('Pg');
+# This may fail due to the wrong port, etc.
+if (defined $result[0]) {
+	is (grep (/^dbi:Pg:dbname=template1$/, @result), '1', 'The data_sources() method returns a template1 listing');
+}
+else {
+	pass("The data_sources() method returned undef");
+}
+
 $dbh->disconnect();
+
