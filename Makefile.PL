@@ -6,6 +6,7 @@ use Config;
 use strict;
 use DBI 1.00;
 use DBI::DBD;
+use lib q(inc);
 
 print "Configuring Pg\n";
 print "Remember to actually read the README file !\n";
@@ -14,7 +15,7 @@ my $POSTGRES_INCLUDE;
 my $POSTGRES_LIB;
 
 if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
-#    die "please set environment variables POSTGRES_INCLUDE and POSTGRES_LIB !\n";
+    # Use App::Info to get the data we need.
     require App::Info::RDBMS::PostgreSQL;
     require App::Info::Handler::Prompt;
     my $p = App::Info::Handler::Prompt->new;
