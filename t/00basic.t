@@ -1,10 +1,7 @@
-print "1..1\n";
+use Test::More tests => 3;
+BEGIN {
+    use_ok('DBI');
+    use_ok('DBD::Pg');
+};
 
-use DBI;
-use DBD::Pg;
-
-if ($DBD::Pg::VERSION) {
-    print "ok 1\n";
-} else {
-    print "not ok 1\n";
-}
+ok($DBD::Pg::VERSION, 'found DBD::Pg::VERSION');
