@@ -87,10 +87,6 @@ if ($major_ver > 7 or ($major_ver == 7 and $minor_ver >= 4)) {
 	$comp_opts .= " -DHAVE_PQprotocol";
 }
 
-if ($DBI::VERSION >= 1.43) {
-	$comp_opts .= " -D_DBI_IS_143";
-}
-
 my %opts = (
     NAME         => 'DBD::Pg',
     VERSION_FROM => 'Pg.pm',
