@@ -22,7 +22,7 @@ BEGIN {
 
 use lib $lib;
 print "Configuring Pg\n";
-print "Remember to actually read the README file !\n";
+print "Remember to actually read the README file!\n";
 
 my $POSTGRES_INCLUDE;
 my $POSTGRES_LIB;
@@ -36,7 +36,7 @@ if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
     my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $p);
     $POSTGRES_INCLUDE = $pg->inc_dir;
     $POSTGRES_LIB     = $pg->lib_dir;
-    ($major_ver, $minor_ver, $patch) = map {$pg->$_} qw/major_version minor_version patch_version/
+    ($major_ver, $minor_ver, $patch) = map {$pg->$_} qw/major_version minor_version patch_version/;
 } elsif ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and $ENV{POSTGRES_HOME}) {
     $POSTGRES_INCLUDE = "$ENV{POSTGRES_HOME}/include";
     $POSTGRES_LIB     = "$ENV{POSTGRES_HOME}/lib";
@@ -45,14 +45,40 @@ if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
     $POSTGRES_LIB     = "$ENV{POSTGRES_LIB}";
 }
 
+## Try to determine the version unless it was set above
+if (! defined $major_ver) {
+	## Locate the postmaster binary
+	my $postmaster;
+	if (exists $ENV{POSTGRES_HOME} and -e "$ENV{POSTGRES_HOME}/bin/postmaster") {
+		$postmaster = "$ENV{POSTGRES_HOME}/bin/postmaster";
+	}
+	else {
+		$postmaster = "postmaster"; ## Rely on the OS to have it in the path
+	}
+	my $res = `$postmaster --version`;
+	if ($res =~ /\(PostgreSQL\) (\d+)\.(\d+)\.(\d+)/) {
+		$major_ver = $1; $minor_ver = $2; $patch = $3;
+	}
+	else { ## Throw a warning and assume version 7.3.3
+		print "Warning: Unable to determine the exact version of PostgreSQL\n";
+		$major_ver = 7; $minor_ver = 3; $patch = 3;
+	}
+}
+
 my $os = $^O;
 print "OS: $os\n";
+print "PostgreSQL version: $major_ver.$minor_ver.$patch\n";
 
 my $dbi_arch_dir;
 if ($os eq 'MSWin32') {
-    $dbi_arch_dir = "\$(INSTALLSITEARCH)/auto/DBI";
-} else {
-    $dbi_arch_dir = dbd_dbi_arch_dir();
+	$dbi_arch_dir = "\$(INSTALLSITEARCH)/auto/DBI";
+}
+else {
+  ## Hide the message as it appears when we call WriteMakefile below
+	{
+		local STDOUT;
+		$dbi_arch_dir = dbd_dbi_arch_dir();
+	}
 }
 
 
@@ -63,15 +89,12 @@ if ($major_ver == 7) {
         $comp_opts .= " -DHAVE_PQescapeBytea";
     }
     if ($minor_ver >= 3) {
-              $comp_opts .= " -DHAVE_PQunescapeBytea";
+        $comp_opts .= " -DHAVE_PQunescapeBytea";
     }
 } elsif ($major_ver > 7) {
         $comp_opts .= " -DHAVE_PQescapeString -DHAVE_PQescapeBytea";
         $comp_opts .= " -DHAVE_PQunescapeBytea";
 }
-
-#print "Version Detected: $major_ver $minor_ver $patch using Compiler opts $comp_opts\n";
-
 
 my %opts = (
     NAME         => 'DBD::Pg',
@@ -81,10 +104,9 @@ my %opts = (
     LIBS         => ["-L$POSTGRES_LIB -lpq"],
     AUTHOR       => 'http://gborg.postgresql.org/project/dbdpg/projdisplay.php',
     ABSTRACT     => 'PostgreSQL database driver for the DBI module',
-    PREREQ_PM	 => { 'Test::Simple' => 0.17 }, # Need Test::More,
-    CCFLAGS	 => $comp_opts,
+    PREREQ_PM    => { 'Test::Simple' => 0.17 }, # Need Test::More,
+    CCFLAGS      => $comp_opts,
 );
-
 
 if ($os eq 'hpux') {
     my $osvers = $Config{osvers};
