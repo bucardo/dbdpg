@@ -826,7 +826,7 @@ $DBD::Pg::VERSION = '1.32_2';
 	sub table_attributes {
 		my ($dbh, $table) = @_;
 		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
-		my $sth = $dbh->column_info(undef,undef,$table);
+		my $sth = $dbh->column_info(undef,undef,$table,undef);
 
 		my %convert = (
 			COLUMN_NAME   => 'NAME',
