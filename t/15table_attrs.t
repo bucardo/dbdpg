@@ -47,8 +47,14 @@ like($attrs->[3]->{CONSTRAINT}
 # Changed check to 7 because constraint is returning.
 cmp_ok(scalar @$attrs, '==', 7, 'table_attributes returns expected number of rows');
 
-my $any_comments = grep { (defined $_->{REMARKS}) and ($_->{REMARKS} eq 'Success') and ($_->{NAME} eq 'name')  } @$attrs;
-ok($any_comments, 'found comment on column name');
+    SKIP: {
+        my $ver = DBD::Pg::_pg_server_version($dbh);
+        my $at_least_7_2 = DBD::Pg::_pg_check_version(7.2, $ver);
+        skip "table_attributes REMARKS will be NULL below 7.2 (Current version: $ver)", 1 unless $at_least_7_2;
+        my $any_comments = grep { (defined $_->{REMARKS}) and ($_->{REMARKS} eq 'Success') and ($_->{NAME} eq 'name')  } @$attrs;
+        ok($any_comments, 'found comment on column name');
+
+    }
 
 ok($dbh->disconnect, 'Disconnect');
 

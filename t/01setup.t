@@ -3,7 +3,7 @@ use DBI;
 use Test::More;
 
 if (defined $ENV{DBI_DSN}) {
-    plan tests => 5;
+    plan tests => 6;
 } else {
     plan skip_all => "DBI_DSN must be set: see the README file";
 }
@@ -40,7 +40,13 @@ SQL
     ) or print STDOUT qq{Bail out! Could not create temporary table "dbd_pg_test"\n};
   $dbh->{RaiseError}=1;
   like($warning, '/^NOTICE:.*CREATE TABLE/', 'PQsetNoticeProcessor working' );
+
 }
+
+# A second table is needed to test to make sure we return the right number of rows
+# for some joins
+ok($dbh->do(" CREATE TABLE dbd_pg_col_info ( myvalue character varying(20) )"), 'CREATE table dbd_pg_col_Info');
+
 
 # Test that we can disable warnings using $dbh.
 eval { local $dbh->{PrintError} = 0; $dbh->do( "DROP TABLE dbd_pg_test2" ) };
