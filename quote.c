@@ -356,7 +356,6 @@ quote_char(string, len, retlen)
 	size_t	outlen;
 	char *result;
 	
-	/* TODO: ChopBlanks */
 	Newc(0,result,len*2+3,char, char);
 	outlen = PQescapeString(result+1, string, len);
 
