@@ -98,7 +98,7 @@ environment variables must be set for the tests to run:
 If you are running on a non-standard port, you must add it 
 to the DBI_DSN variable like this:
 
-	DBI_DSN=dbi:Pg:dbname=<database>;port=<port#>
+	DBI_DSN='dbi:Pg:dbname=<database>;port=<port#>'
 
 The tests need to create and remove certain tables. Please make 
 sure that the following tables do NOT exist before running 
