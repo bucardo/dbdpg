@@ -231,14 +231,14 @@ $DBD::Pg::VERSION = '1.30_1';
 				, NULL::text	AS "BUFFER_LENGTH"
 				, NULL::text	AS "DECIMAL_DIGITS"
 				, NULL::text	AS "NUM_PREC_RADIX"
-				, a.attnotnull	AS "NULLABLE"
+				, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
 				, NULL::text	AS "REMARKS"
 				, a.atthasdef	AS "COLUMN_DEF"
 				, NULL::text	AS "SQL_DATA_TYPE"
 				, NULL::text	AS "SQL_DATETIME_SUB"
 				, NULL::text	AS "CHAR_OCTET_LENGTH"
 				, a.attnum		AS "ORDINAL_POSITION"
-				, a.attnotnull	AS "IS_NULLABLE"
+				, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
 				, a.atttypmod	as atttypmod
 				, a.attnotnull	as attnotnull
 				, a.atthasdef	as atthasdef
