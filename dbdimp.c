@@ -522,7 +522,7 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 	} else if (kl==7 && strEQ(key, "pg_host")) {
 		host = PQhost(imp_dbh->conn); /* May return null */
 		if (NULL==host)
-			host = "\0";
+			return Nullsv;
 		retsv = newSVpv(host,0);
 	} else if (kl==7 && strEQ(key, "pg_port")) {
 		retsv = newSVpv(PQport(imp_dbh->conn),0);
