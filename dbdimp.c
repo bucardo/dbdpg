@@ -1953,6 +1953,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
 {
+	char tempsqlstate[6];
 	char *stmt;
 	ExecStatusType status;
 	PGTransactionStatusType tstatus;
@@ -1963,6 +1964,8 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 	if (NULL == imp_dbh->conn || NULL == imp_sth->prepare_name)
 		return 0;
 	
+	tempsqlstate[0] = '\0';
+
 	/* What is our status? */
 	tstatus = dbd_db_txn_status(imp_dbh);
 	if (dbis->debug >= 5)
@@ -1979,10 +1982,11 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 				SV		*sp = Nullsv;
 				char	*cmd;
 				New(0, cmd, SvLEN(sp) + 13, char); /* Freed below */
+				sp = *av_fetch(imp_dbh->savepoints, alen, 0);
 				if (dbis->debug >= 4)
-					PerlIO_printf(DBILOGFP, "  dbdpg: Issuing rollback before deallocate\n", tstatus);
-				sp = av_pop(imp_dbh->savepoints);
+					PerlIO_printf(DBILOGFP, "  dbdpg: Rolling back to savepoint %s\n", SvPV_nolen(sp));
 				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
+				strcpy(tempsqlstate, imp_dbh->sqlstate);
 				status = _result(imp_dbh, cmd);
 				Safefree(cmd);
 			}
@@ -2016,6 +2020,8 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 	}
 
 	imp_sth->prepare_name = NULL;
+	if (tempsqlstate[0])
+		strcpy(imp_dbh->sqlstate, tempsqlstate);
 
 	return 0;
 
