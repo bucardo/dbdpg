@@ -1964,9 +1964,17 @@ DBI and DBD-Oracle by Tim Bunce (Tim.Bunce@ig.co.uk)
 DBD-Pg by Edmund Mergl (E.Mergl@bawue.de) and Jeffrey W. Baker
 (jwbaker@acm.org). By David Wheeler <david@wheeler.net>, Jason
 Stewart <jason@openinformatics.com> and Bruce Momjian
-<pgman@candle.pha.pa.us> after v1.13.
+<pgman@candle.pha.pa.us> and others after v1.13.
 
 Major parts of this package have been copied from DBI and DBD-Oracle.
+
+B<Mailing List>
+
+The current maintainers may be reached through the 'dbdpg-general' mailing list:
+http://gborg.postgresql.org/mailman/listinfo/dbdpg-general
+
+This list is available through Gmane (http://www.gmane.org) as a newsgroup with the name:
+C<gmane.comp.db.postgresql.dbdpg>
 
 =head1 COPYRIGHT
 
