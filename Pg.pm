@@ -1593,15 +1593,25 @@ replace all placeholders manually with a quoted version before passing it to
 the server. The new version, only available when DBD::Pg is talking to a 
 PostgreSQL server version 7.4 or greater, offers true PREPARE support: the 
 statement is prepared on the backend, and subsequent executes send the 
-parameters only. This is the default method if DBD::Pg determines that your 
-server can use it. The new "server-side prepare" can be toggled on and off 
-at the database handle level with the "server_prepare" attribute of $sth->prepare. 
-For example, to prepare a statement and force a non server-side prepare:
+parameters only. Currently, the old way is the default method, even for servers 
+that can support the new way. The new "server-side prepare" can be toggled on and off 
+at the database handle level or at the statement handle level (at prepare time) with 
+the "server_prepare" attribute. For example, to enable server-side prepares in all 
+of your statements:
 
-  $sth = $dbh->prepare("SELECT id FROM mytable WHERE val = ?", {server_prepare => 0});
+  $dbh = DBI->connect($DBNAME, $DBUSER, $DBPASS,
+    {AutoCommit=>0, RaiseError=>1, server_prepare=>1 });
 
-You can also set the server-side prepare at the statement level, and even toggle 
-between the two as you go:
+or just set it after your database handle is created:
+
+  $dbh->{server_prepare} = 1;
+
+
+To enable it for just one particular statement:
+
+  $sth = $dbh->prepare("SELECT id FROM mytable WHERE val = ?", {server_prepare => 1});
+
+You can even toggle between the two as you go:
 
   $sth->{server_prepare} = 1;
   $sth->execute(22);
@@ -1620,7 +1630,7 @@ However, there are some drawbacks. First, the server cannot always choose the id
 parse plan because it will not know the arguments before hand. However, for most 
 situations in which you will be executing similar data many times, the default 
 plan will probably work out well. Further discussion on this subject are beyond 
-the score of these documentations: please consult the pgsql-performance mailing list.
+the scope of these documentations: please consult the pgsql-performance mailing list.
 
 The second drawback to using server-side prepares is that the server is more picky 
 about the data types of the placeholders in the statement, especially when doing 
@@ -1632,6 +1642,7 @@ Only certain commands will be sent to a server-side prepare: currently this incl
 SELECT, INSERT, UPDATE, and DELETE. DBD::Pg uses a simple naming scheme for the 
 prepared statements: dbdpg_#,  where "#" starts at 1 and increases. This number is 
 tracked at the database handle level, so multiple statement handles will not collide.
+If you use your own prepare statements, do not name them "dbdpg_"!
 
 The actual PREPARE is not done until the first execute is called, due to the fact 
 that information on the data types (provided by bind_param) may be given after the 
@@ -1647,13 +1658,13 @@ statements to "prepare_now" by setting the attribute on the database handle:
 
   $dbh->{prepare_now} = 1;
 
-Example: these will be prepared right away:
+The following two examples will be prepared right away:
 
   $sth->prepare("SELECT 123"); ## no placeholders
 
   $sth->prepare("SELECT 123, ?", {prepare_now = 1});
 
-Example: these will NOT be prepared right away:
+The following two examples will NOT be prepared right away:
 
   $sth->prepare("SELECT 123, ?"); ## has a placeholder
 

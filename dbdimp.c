@@ -237,8 +237,8 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	imp_dbh->prepare_now = 0;
 	imp_dbh->errorlevel = 1; /* Matches PG default */
 
-	imp_dbh->server_prepare = imp_dbh->pg_protocol >=3 ? 1 : 0;
-	/** XXX Todo: allow override to above in connect string **/
+	/* Change the below someday to default to "on" */
+	imp_dbh->server_prepare = imp_dbh->pg_protocol >=3 ? 0 : 0;
 
 	DBIc_IMPSET_on(imp_dbh); /* imp_dbh set up now */
 	DBIc_ACTIVE_on(imp_dbh); /* call disconnect before freeing */
@@ -719,13 +719,15 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 		1. The statement is DML
 		2. It's not "direct"
 		3. We can handle server-side prepares
-		4. They have not explicitly turned it off via {server_prepare}
-		5. "prepare_now" (via arguments) is not false (0)
-		5. There are no placeholders OR "prepare_now" (via args/dbh) is on
+		4. dbh->{server_prepare} is true
+		5. They have not explicitly turned it off via sth->{server_prepare}
+		6. "prepare_now" (via arguments) is not false (0)
+		7. There are no placeholders OR "prepare_now" (via args/dbh) is on
 	*/
 	if (imp_sth->is_dml && 
 			!imp_sth->direct &&
 			imp_dbh->pg_protocol >= 3 &&
+			imp_dbh->server_prepare == 1 &&
 			imp_sth->server_prepare != 0 &&
 			prepare_now != 0 &&
 			(0==imp_sth->numphs || 1==prepare_now)
@@ -1396,6 +1398,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 	if (!imp_sth->direct &&
 			imp_sth->is_dml && 
+			imp_dbh->server_prepare >= 1 && 
 			(1==imp_sth->server_prepare || 
 			 (2==imp_sth->server_prepare && imp_dbh->pg_protocol >= 3))) {
 		const char **paramValues;
@@ -1499,8 +1502,6 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		PerlIO_printf(DBILOGFP, "  dbdpg: received a status of %d\n", status);
 
 	if (PGRES_TUPLES_OK == status) {
-		if (dbis->debug >= 3)
-			PerlIO_printf(DBILOGFP, "  dbdpg: status was PGRES_TUPLES_OK\n");
 		num_fields = PQnfields(imp_sth->result);
 		imp_sth->cur_tuple = 0;
 		DBIc_NUM_FIELDS(imp_sth) = num_fields;
