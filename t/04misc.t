@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 6;
+	plan tests => 7;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -25,12 +25,13 @@ if (DBD::Pg::_pg_use_catalog($dbh)) {
 # Attempt to test whether or not we can get unicode out of the database
 SKIP: {
 	eval "use Encode;";
-	skip "Encode module is needed for unicode tests", 4 if $@;
+	skip "Encode module is needed for unicode tests", 5 if $@;
 	my $SQL = "SELECT id, pname FROM dbd_pg_test WHERE id = ?";
 	my $sth = $dbh->prepare($SQL);
 	$sth->execute(1);
 	local $dbh->{pg_enable_utf8} = 1;
 	my $utf8_str = chr(0x100).'dam';	# LATIN CAPITAL LETTER A WITH MACRON
+	is( $dbh->quote( $utf8_str ), "'$utf8_str'", 'quote() handles utf8.' );
 	$SQL = "INSERT INTO dbd_pg_test (id, pname, val) VALUES (40, '$utf8_str', 'Orange')";
 	is( $dbh->do($SQL), '1', 'Able to insert unicode character into the database');
 	$sth->execute(40);
