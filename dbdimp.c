@@ -1197,7 +1197,7 @@ dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		AV *av = newAV();
 		retsv = newRV(sv_2mortal((SV*)av));
 		while(--i >= 0) {
-			type_info = sql_type_data(PQftype(imp_sth->result, i));
+			type_info = pg_type_data(PQftype(imp_sth->result, i));
 			av_store(av, i, newSViv( type_info ? type_info->type.sql : 0 ) );
 		}
 	} else if (kl==9 && strEQ(key, "PRECISION")) {
