@@ -4,25 +4,20 @@ $| = 1;
 # vim:ts=2:sw=2:ai:aw:nu:
 use DBI qw(:sql_types);
 use Data::Dumper;
-
 use strict;
-
-BEGIN {
-    if (!exists($ENV{DBDPG_MAINTAINER})) {
-        print "1..0\n";
-        exit;
-    }
+use Test::More;
+if (defined $ENV{DBI_DSN}) {
+  plan tests => 59;
+} else {
+  plan skip_all => 'cannot test without DB info';
 }
 
-use Test::More tests => 59;
-
-my $dbh = DBI->connect("dbi:Pg:dbname=$ENV{DBDPG_TEST_DB};host=$ENV{DBDPG_TEST_HOST}", $ENV{DBDPG_TEST_USER}, $ENV{DBDPG_TEST_PASS}, {RaiseError => 1, AutoCommit => 0});
-
-# Compatability.
-$ENV{DBI_USER} ||= $ENV{DBDPG_TEST_USER};
-
-# my $dbh = DBI->connect() or die "Connect failed: $DBI::errstr\n";
-ok ( defined $dbh, "Connection" ); # print "ok 2\n";
+my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+		       {RaiseError => 1, AutoCommit => 0}
+		      );
+ok(defined $dbh,
+   'connect with transaction'
+  );
 
 #
 # Test the different methods, so are expected to fail.
