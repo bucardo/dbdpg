@@ -412,8 +412,10 @@ quote_sql_binary( string, len, retlen)
 	dest = result;
 	Copy("X'",dest++,2,char);
 	
-	for (i=0 ; i <= len ; ++i, dest+=2) 
-		sprintf(dest, "%X", *((char*)string++));
+	for (i=0 ; i <= len ; ++i, dest+=2) {
+		sprintf(dest, "%X", *((char*)string));
+		string=((char*)string) + 1;
+	}
 	
 	strcat(dest, "\'");
 	

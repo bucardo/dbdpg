@@ -1,3 +1,5 @@
+  - Minor pointer increment fix in quote.c
+    [Christophe Martin:  schplurtz at free.fr]
 	- Add support for SQLSTATE via $dbh->state()
 		[Greg Sabino Mullane]
 	- Major overhaul of prepare/execute to handle new server-side 
