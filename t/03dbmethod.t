@@ -689,8 +689,13 @@ for (keys %quotetests) {
 	$result = $dbh->quote($_);
 	is( $result, $quotetests{$_}, qq{DB handle method "quote" works with a value of "$_"});
 }
-is( $dbh->quote(undef), q{NULL}, 'DB handle method "quote" works with an undefined value');
+my $foo;
+{
+	no warnings; ## Perl does not like undef args
+	is( $dbh->quote($foo), q{NULL}, 'DB handle method "quote" works with an undefined value');
+}
 is( $dbh->quote(1, 4), 1, 'DB handle method "quote" works with a supplied data type argument');
+
 
 #
 # Test of the "quote_identifier" database handle method
