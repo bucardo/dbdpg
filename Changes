@@ -1,9 +1,9 @@
 1.41
 	- ('Greg' is Greg Sabino Mullane, greg@turnstep.com)
-  - Make sure tests remove all temporary tables.
-    [Frank Bax]
-  - Preserve sqlstate if rolling back on deallocate, fix 
-    potential segfault. [Stephen Clouse]
+	- Make sure tests remove all temporary tables.
+		[Frank Bax]
+	- Preserve sqlstate if rolling back on deallocate, fix 
+		potential segfault. [Stephen Clouse]
 	- Fix CPAN bug #12004: commit and rollback now return true
 		[Greg] (thanks to ivan-dbdpg@420.am)
 	- Overhaul and update COPY support; use new protocol.
