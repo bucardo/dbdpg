@@ -29,7 +29,7 @@ TODO:
 */
 
 static sql_type_info_t pg_types[] = {
-	{BOOLOID, "bool", DBDPG_TRUE, quote_bool, dequote_bool, {SQL_INTEGER}},
+	{BOOLOID, "bool", DBDPG_TRUE, quote_bool, dequote_bool, {SQL_BOOLEAN}},
 	{BYTEAOID, "bytea", DBDPG_TRUE, quote_bytea, dequote_bytea, {SQL_BINARY}},
 	{CHAROID, "char", DBDPG_FALSE, quote_char, dequote_char, {0}},
 	{NAMEOID, "name", DBDPG_FALSE, null_quote, null_dequote, {SQL_VARCHAR}},
@@ -182,6 +182,7 @@ static sql_type_info_t sql_types[] = {
 	{SQL_TIME, "SQL_TIME", DBDPG_TRUE, quote_varchar, dequote_varchar, {TIMEOID}},
 	{SQL_TYPE_TIMESTAMP, "SQL_TYPE_TIMESTAMP", DBDPG_TRUE, quote_varchar, dequote_varchar, {TIMESTAMPOID}},
 	{SQL_TYPE_TIMESTAMP_WITH_TIMEZONE, "SQL_TYPE_TIMESTAMP_WITH_TIMEZONE", DBDPG_TRUE, quote_varchar, dequote_varchar, {TIMESTAMPTZOID}},
+	{SQL_BOOLEAN, "SQL_BOOLEAN", DBDPG_TRUE,quote_bool, dequote_bool, {BOOLOID}},
 };
 
 sql_type_info_t*
@@ -203,6 +204,7 @@ sql_type_data(sql_type)
 	case SQL_TIME: return &sql_types[11];
 	case SQL_TYPE_TIMESTAMP: return &sql_types[12];
 	case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE: return &sql_types[13];
+	case SQL_BOOLEAN: return &sql_types[14];
  default: return NULL;
 	}
 }
