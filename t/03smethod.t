@@ -13,7 +13,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 47;
+	plan tests => 57;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -32,6 +32,58 @@ $dbh->do("DELETE FROM dbd_pg_test");
 my ($SQL, $sth, $sth2, $result, @result, $expected, $warning, $rows);
 
 #
+# Test of the prepare flags
+#
+$SQL = "SELECT id FROM dbd_pg_test WHERE id = ?";
+$sth = $dbh->prepare($SQL);
+$sth->execute(1);
+ok( $sth->execute, 'Prepare/execute with no flags works');
+$dbh->{pg_server_prepare} = 0;
+$sth = $dbh->prepare($SQL);
+$sth->execute(1);
+ok( $sth->execute, 'Prepare/execute with pg_server_prepare off at database handle works');
+$dbh->{pg_server_prepare} = 1;
+$sth = $dbh->prepare($SQL);
+$sth->execute(1);
+ok( $sth->execute, 'Prepare/execute with pg_server_prepare on at database handle works');
+$sth = $dbh->prepare($SQL, {pg_server_prepare => 0});
+$sth->execute(1);
+ok( $sth->execute, 'Prepare/execute with pg_server_prepare off at statement handle works');
+$sth = $dbh->prepare($SQL, {pg_server_prepare => 1});
+$sth->execute(1);
+ok( $sth->execute, 'Prepare/execute with pg_server_prepare on at statement handle works');
+$dbh->{pg_prepare_now} = 1;
+$sth = $dbh->prepare($SQL);
+$sth->execute(1);
+ok( $sth->execute, 'Prepare/execute with pg_prepare_now on at database handle works');
+$dbh->{pg_prepare_now} = 0;
+$sth = $dbh->prepare($SQL);
+$sth->execute(1);
+ok( $sth->execute, 'Prepare/execute with pg_prepare_now off at database handle works');
+$sth = $dbh->prepare($SQL, {pg_preoare_now => 0});
+$sth->execute(1);
+ok( $sth->execute, 'Prepare/execute with pg_prepare_now off at statement handle works');
+$sth = $dbh->prepare($SQL, {pg_prepare_now => 1});
+$sth->execute(1);
+ok( $sth->execute, 'Prepare/execute with pg_prepare_now on at statement handle works');
+
+# Test using our own prepared statements
+my $pgversion = DBD::Pg::_pg_server_version($dbh);
+if ($pgversion >= 70400) {
+	my $myname = "dbdpg_test_1";
+	$dbh->do("PREPARE $myname(int) AS SELECT COUNT(*) FROM pg_class WHERE reltuples > \$1", {pg_direct=> 1});
+  $sth = $dbh->prepare("SELECT ?");
+  $sth->bind_param(1, 1, SQL_INTEGER);
+  $sth->{pg_prepare_name} = $myname;
+	ok($sth->execute(1), 'Prepare/execute works with pg_prepare_name');
+	$dbh->do("DEALLOCATE $myname");
+}
+else {
+	pass("Skipping prepare statement tests for old servers");
+}
+
+
+#
 # Test of the "bind_param" statement handle method
 #
 
@@ -42,7 +94,6 @@ ok( $sth->bind_param(1, 'foo'), 'Statement handle method "bind_param" works when
 
 # Check if the server is sending us warning messages
 # We assume that older servers are okay
-my $pgversion = DBD::Pg::_pg_server_version($dbh);
 my $client_level = '';
 if ($got73) {
 	$sth2 = $dbh->prepare("SHOW client_min_messages");

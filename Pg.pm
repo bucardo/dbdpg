@@ -1714,25 +1714,31 @@ Implemented by DBI, no driver-specific impact.
 
   $sth = $dbh->prepare($statement, \%attr);
 
-There are two ways of preparing a statement. The old method, which is used by 
-all versions of Pg.pm prior to 1.34, is to simply store the statement and 
-replace all placeholders manually with a quoted version before passing it to 
-the server. The new version, only available when DBD::Pg is talking to a 
-PostgreSQL server version 7.4 or greater, offers true PREPARE support: the 
-statement is prepared on the backend, and subsequent executes send the 
-parameters only. Currently, the old way is the default method, even for servers 
-that can support the new way. The new "server-side prepare" can be toggled on and off 
-at the database handle level or at the statement handle level (at prepare time) with 
-the "pg_server_prepare" attribute. For example, to enable server-side prepares in all 
-of your statements:
+Prepares a statement for later execution. PostgreSQL supports prepared 
+statements, which enables DBD::Pg to only send the query once, and 
+simply send the arguments for every subsequent call to execute(). 
+DBD::Pg can use these server-side prepared statements, or it can 
+just send the entire query to the server each time. The best way 
+is automatically chosen for each query. This will be sufficient for 
+most users: keep reading for a more detailed explanation and some 
+optional flags.
+
+Deciding whether or not to use prepared statements depends on many 
+factors, but you can force them to be used or not used by passing 
+the "pg_server_prepare" argument to prepare(). A "0" means to never 
+use prepared statements. This is the default when connected to servers 
+less than version 7.4, which is when prepared statements were introduced. 
+Setting pg_server_prepare to "1" means that prepared statements 
+should be used whenever possible. This is the default for servers 
+version 7.4 or higher. This attribute can also be set at connection 
+time like so:
 
   $dbh = DBI->connect($DBNAME, $DBUSER, $DBPASS,
-    {AutoCommit=>0, RaiseError=>1, pg_server_prepare=>1 });
+    {AutoCommit=>0, RaiseError=>1, pg_server_prepare=>0 });
 
-or just set it after your database handle is created:
+or you may set it after your database handle is created:
 
   $dbh->{pg_server_prepare} = 1;
-
 
 To enable it for just one particular statement:
 
@@ -1744,26 +1750,27 @@ You can even toggle between the two as you go:
   $sth->execute(22);
   $sth->{pg_server_prepare} = 0;
   $sth->execute(44);
+  $sth->{pg_server_prepare} = 1;
+  $sth->execute(66);
 
-In the above example, the first execute will use the new PREPARE method. In the second 
-execute, the old one is used. DBD::Pg is smart enough to only call PREPARE once, even 
-if you toggle back and forth repeatedly.
+In the above example, the first execute will use the previously prepared statement. 
+The second execute will not, but will build the query into a single string and send 
+it to the server. The third one will act like the first and only send the arguments.
+Even if you toggle back and forth, a statement is only prepared once.
 
-Server-side preparing is in theory quite a bit faster: not only does the PostgreSQL 
-backend only have to prepare the query once, but DBD::Pg no longer has to worry about 
-quoting each value before sending it to the server.
+Using prepared statements is in theory quite a bit faster: not only does the 
+PostgreSQL backend only have to prepare the query once, but DBD::Pg no longer 
+has to worry about quoting each value before sending it to the server.
 
-However, there are some drawbacks. First, the server cannot always choose the ideal 
+However, there are some drawbacks. The server cannot always choose the ideal 
 parse plan because it will not know the arguments before hand. However, for most 
 situations in which you will be executing similar data many times, the default 
 plan will probably work out well. Further discussion on this subject are beyond 
 the scope of this documentation: please consult the pgsql-performance mailing list.
 
-The second drawback to using server-side prepares is that the server is more picky 
-about the data types of the placeholders in the statement, especially when doing 
-INSERT and UPDATE statements. Therefore, you may need to use bind_param() to specify 
-the exact data types before executing. See the bind_param() section for more 
-information and examples.
+If you are using DBD::Pg with 7.4 libraries, you must set each parameter using 
+bind_param() in order to use prepared statements. This can be a big hassle: 
+upgrading to 8.0 is highly recommended.
 
 Only certain commands will be sent to a server-side prepare: currently this includes 
 SELECT, INSERT, UPDATE, and DELETE. DBD::Pg uses a simple naming scheme for the 

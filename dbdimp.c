@@ -46,6 +46,8 @@ int PQftablecol() { return 0; };
 /* an important feature was left out of libpq for 7.4, so we need this check */
 #ifdef PG_VERSION8
 #define PG8 1
+#else
+PGresult *PQprepare() { };
 #endif
 
 #ifndef PGErrorVerbosity
@@ -255,7 +257,14 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	imp_dbh->errorlevel = 1; /* Matches PG default */
 
 	/* If the server can handle it, we default to "smart", otherwise "off" */
-	imp_dbh->server_prepare = imp_dbh->pg_protocol >= 3 ? 2 : 0;
+	imp_dbh->server_prepare = imp_dbh->pg_protocol >= 3 ? 
+	/* If using 3.0 protocol but not yet version 8, switch to "smart" */
+#ifdef PG8
+1
+#else
+2
+#endif
+: 0;
 
 	DBIc_IMPSET_on(imp_dbh); /* imp_dbh set up now */
 	DBIc_ACTIVE_on(imp_dbh); /* call disconnect before freeing */
@@ -1103,6 +1112,14 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	PGresult* result;
 	ExecStatusType status;
 	seg_t *currseg;
+	bool oldprepare = 1;
+	unsigned int params = 0;
+	Oid *paramTypes = NULL;
+	ph_t *currph;
+
+#ifdef PG8
+	oldprepare = 0;
+#endif
 
 	New(0, imp_sth->prepare_name, 25, char); /* freed in dbd_st_destroy */
 	if (!imp_sth->prepare_name)
@@ -1116,13 +1133,17 @@ int dbd_st_prepare_statement (sth, imp_sth)
 		PerlIO_printf(DBILOGFP, "  dbdpg: new statement name \"%s\"\n",
 									imp_sth->prepare_name);
 
-	/* Compute the size of everything, allocate, and populate */
-	execsize = strlen("PREPARE  AS ") + strlen(imp_sth->prepare_name);
-	execsize += imp_sth->totalsize;
+	/* PQprepare was not added until 8.0 */
+
+	execsize = imp_sth->totalsize;
+	if (oldprepare)
+		execsize += strlen("PREPARE  AS ") + strlen(imp_sth->prepare_name);
 
 	if (imp_sth->numphs) {
-		execsize += strlen("()");
-		execsize += imp_sth->numphs-1; /* for the commas */
+		if (oldprepare) {
+			execsize += strlen("()");
+			execsize += imp_sth->numphs-1; /* for the commas */
+		}
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 			if (!currseg->placeholder)
 				continue;
@@ -1134,34 +1155,39 @@ int dbd_st_prepare_statement (sth, imp_sth)
 			if (x>=7)
 				croak("Too many placeholders!");
 			execsize += x+1;
-			/* The parameter type, only once per number please */
-			if (!currseg->ph->referenced)
-				execsize += strlen(currseg->ph->bind_type->type_name);
-			currseg->ph->referenced = 1;
+			if (oldprepare) {
+				/* The parameter type, only once per number please */
+				if (!currseg->ph->referenced)
+					execsize += strlen(currseg->ph->bind_type->type_name);
+				currseg->ph->referenced = 1;
+			}
 		}
 	}
 
 	New(0, statement, execsize+1, char); /* freed below */
 	if (!statement)
 		croak("No memory");
-	sprintf(statement, "PREPARE %s", imp_sth->prepare_name);
-	
-	if (imp_sth->numphs) {
-		strcat(statement, "(");
-		for (x=0, currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-			if (currseg->placeholder && currseg->ph->referenced) {
-				if (x)
-					strcat(statement, ",");
-				strcat(statement, currseg->ph->bind_type->type_name);
-				x=1;
-				currseg->ph->referenced = 0;
+
+	if (oldprepare) {
+		sprintf(statement, "PREPARE %s", imp_sth->prepare_name);
+		if (imp_sth->numphs) {
+			strcat(statement, "(");
+			for (x=0, currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
+				if (currseg->placeholder && currseg->ph->referenced) {
+					if (x)
+						strcat(statement, ",");
+					strcat(statement, currseg->ph->bind_type->type_name);
+					x=1;
+					currseg->ph->referenced = 0;
+				}
 			}
+			strcat(statement, ")");
 		}
-		strcat(statement, ")");
+		strcat(statement, " AS ");
 	}
-
-	strcat(statement, " AS ");
-
+	else {
+		statement[0] = '\0';
+	}
 	/* Construct the statement, with proper placeholders */
 	for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 		strcat(statement, currseg->segment);
@@ -1174,9 +1200,24 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	if (dbis->debug >= 6)
 		PerlIO_printf(DBILOGFP, "  prepared statement: >%s<\n", statement);
 
-	status = _result(imp_dbh, statement);
+	if (oldprepare) {
+		status = _result(imp_dbh, statement);
+	}
+	else {
+		if (imp_sth->numbound) {
+			params = imp_sth->numphs;
+			paramTypes = calloc(imp_sth->numphs, sizeof(*paramTypes));
+			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
+				paramTypes[x++] = currph->bind_type->type_id;
+			}
+		}
+		result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, paramTypes);
+		Safefree(paramTypes);
+		status = result ? PQresultStatus(result) : -1;
+		if (dbis->debug >= 6)
+			PerlIO_printf(DBILOGFP, "  dbdpg: Using PQprepare\n");
+	}
 	Safefree(statement);
-
 	if (PGRES_COMMAND_OK != status) {
 		pg_error(sth,status,PQerrorMessage(imp_dbh->conn));
 		return -2;

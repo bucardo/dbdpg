@@ -60,7 +60,7 @@ struct ph_st {
 	int quotedlen;              /* length of the quoted value */
 	bool referenced;            /* used for PREPARE AS construction */
 	sql_type_info_t* bind_type; /* type information for this placeholder */
-	struct ph_st *nextph;       /* more linke dlist goodness */
+	struct ph_st *nextph;       /* more linked list goodness */
 };
 typedef struct ph_st ph_t;
 
