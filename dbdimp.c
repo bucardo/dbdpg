@@ -2,7 +2,7 @@
 
    $Id$
 
-   Copyright (c) 2002,2003 PostgreSQL Global Development Group
+   Copyright (c) 2002-2004 PostgreSQL Global Development Group
    Copyright (c) 1997,1998,1999,2000 Edmund Mergl
    Copyright (c) 2002 Jeffrey W. Baker
    Portions Copyright (c) 1994,1995,1996,1997 Tim Bunce
