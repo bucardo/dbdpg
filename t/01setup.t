@@ -18,7 +18,7 @@ ok(defined $dbh,'connect without transaction');
 }
 
 my $sql = <<SQL;
-CREATE TABLE dbd_pg_test (
+CREATE TEMPORARY TABLE dbd_pg_test (
   id int,
   name text,
   val text,
@@ -32,33 +32,33 @@ SQL
 $dbh->{RaiseError}=0;
 ok($dbh->do($sql),
    'create table'
-  ) or print STDOUT qq{Bail out! Could not create table "dbd_pg_test"\n};
+  ) or print STDOUT qq{Bail out! Could not create temporary table "dbd_pg_test"\n};
 $dbh->{RaiseError}=1;
 
 # First, test that we can trap warnings.
-eval { local $dbh->{PrintError} = 0; $dbh->do( "drop table dbd_pg_test2" ) };
+eval { local $dbh->{PrintError} = 0; $dbh->do( "DROP TABLE dbd_pg_test2" ) };
 {
     my $warning;
     local $SIG{__WARN__} = sub { $warning = "@_" };
-    $dbh->do( "create TEMPORARY table dbd_pg_test2 (id integer primary key)" );
+    $dbh->do( "CREATE TEMPORARY TABLE dbd_pg_test2 (id integer primary key)" );
     # XXX This will have to be updated if PostgreSQL ever changes its warnings...
     like($warning, '/^NOTICE:.*CREATE TABLE/',
 	 'PQsetNoticeProcessor working' );
 }
-eval { local $dbh->{PrintError} = 0; $dbh->do( "drop table dbd_pg_test2" ) };
+eval { local $dbh->{PrintError} = 0; $dbh->do( "DROP TABLE dbd_pg_test2" ) };
 
 # Next, test that we can disable warnings using $dbh.
-eval { local $dbh->{PrintError} = 0; $dbh->do( "drop table dbd_pg_test3" ) };
+eval { local $dbh->{PrintError} = 0; $dbh->do( "DROP TABLE dbd_pg_test3" ) };
 {
     my $warning;
     local $SIG{__WARN__} = sub { $warning = "@_" };
     local $dbh->{Warn} = 0;
-    $dbh->do( "create TEMPORARY table dbd_pg_test3 (id integer primary key)" );
+    $dbh->do( "CREATE TEMPORARY TABLE dbd_pg_test3 (id integer primary key)" );
     # XXX This will have to be updated if PostgreSQL ever changes its
     # warnings...
     is( $warning, undef, 'PQsetNoticeProcessor respects dbh->{Warn}' );
 }
-eval { local $dbh->{PrintError} = 0; $dbh->do( "drop table dbd_pg_test3" ) };
+eval { local $dbh->{PrintError} = 0; $dbh->do( "DROP TABLE dbd_pg_test3" ) };
 
 ok($dbh->disconnect(),
    'disconnect'
