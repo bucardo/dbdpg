@@ -575,8 +575,8 @@ dequote_bool (string, retlen)
 
 void
 null_dequote (string, retlen)
-		 void *string;
-		 size_t *retlen;
+		 char *string;
+		 int *retlen;
 {
 	*retlen = strlen(string);
 }
