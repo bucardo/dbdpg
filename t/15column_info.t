@@ -6,7 +6,7 @@ use Data::Dumper;
 use strict;
 use Test::More;
 if (defined $ENV{DBI_DSN}) {
-  plan tests => 23;
+  plan tests => 24;
 } else {
   plan skip_all => 'cannot test without DB info';
 }
@@ -105,6 +105,7 @@ ok($dbh->do("COMMENT ON COLUMN dbd_pg_test.name IS 'Success'"), 'comment on dbd_
  	like($row->{COLUMN_DEF},"/^'Testing Default'(?:::character varying)?\$/",'column_info default value') or diag Dumper($row);
 
 	cmp_ok($row->{COLUMN_SIZE},'==', 20, 'column_info field size for type varchar');
+	cmp_ok($row->{DATA_TYPE},'==', 12, 'column_info data type varchar');
 
 	$sth = $dbh->column_info( undef, undef, 'dbd_pg_test','score' );
 	$row = $sth->fetchrow_hashref;

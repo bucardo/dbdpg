@@ -293,7 +293,8 @@ _pg_type_info (type_sv=Nullsv)
     SV* type_sv
     CODE:
     {
-    	int type_num = VARCHAROID;
+    	# int type_num = VARCHAROID;
+    	int type_num = 0;
         sql_type_info_t *type_info;
 
         if(type_sv && SvOK(type_sv)) {
@@ -304,6 +305,7 @@ _pg_type_info (type_sv=Nullsv)
                 type_num = type_info ? type_info->type.sql : SQL_VARCHAR;
         } 
 	RETVAL = type_num;
+        XST_mIV(0, RETVAL);
     }
 # ST(0) = (-1 != type_num) ? &sv_yes : &sv_no; */
 

@@ -362,7 +362,9 @@ $DBD::Pg::VERSION = '1.31_6';
 			$row->[$col_map{COLUMN_SIZE}]   = _calc_col_size($row->[$col_map{pg_atttypmod}],$row->[$col_map{COLUMN_SIZE}]);
 
 			# Replace the Pg type with the SQL_ type
-			$row->[$col_map{DATA_TYPE}]     = DBD::Pg::db::pg_type_info($dbh,$col_map{DATA_TYPE});
+			my $w = $row->[$col_map{DATA_TYPE}];
+			$row->[$col_map{DATA_TYPE}]     = DBD::Pg::db::pg_type_info($dbh,$row->[$col_map{DATA_TYPE}]);
+			$w = $row->[$col_map{DATA_TYPE}];
 
 			pop @$row;
 
