@@ -68,7 +68,6 @@ int dbd_st_deallocate_statement();
 PGTransactionStatusType dbd_db_txn_status();
 #include "large_object.c"
 
-
 /* ================================================================== */
 
 /* Quick result grabber used throughout this file */
@@ -2208,6 +2207,52 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 
 } /* end of dbd_st_FETCH_attrib */
 
+
+int
+pg_db_putline (dbh, buffer)
+		SV *dbh;
+		char *buffer;
+{
+		D_imp_dbh(dbh);
+		int result;
+		int buglen = strlen(buffer);
+
+		if (imp_dbh->pg_protocol >= 3) {
+			if (dbis->debug >= 4)
+				PerlIO_printf(DBILOGFP, "  dbdpg: PQputCopyData\n");
+			result = PQputCopyData(imp_dbh->conn, buffer, buglen);
+			if (-1 == result) {
+				pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+				return 0;
+			}
+			else if (1 != result) {
+				croak("PQputCopyData gave a value of %d\n", result);
+			}
+		}
+		else {
+			return PQputline(imp_dbh->conn, buffer);
+		}
+}
+
+
+int
+pg_db_getline (dbh, buffer, length)
+		SV *dbh;
+		char *buffer;
+		int length;
+{
+		D_imp_dbh(dbh);
+		return PQgetline(imp_dbh->conn, buffer, length);
+}
+
+
+int
+pg_db_endcopy (dbh)
+		SV *dbh;
+{
+		D_imp_dbh(dbh);
+		return PQendcopy(imp_dbh->conn);
+}
 
 /* end of dbdimp.c */
 

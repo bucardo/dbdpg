@@ -118,36 +118,6 @@ pg_db_lo_export (dbh, lobjId, filename)
 
 
 int
-pg_db_putline (dbh, buffer)
-		SV *dbh;
-		char *buffer;
-{
-		D_imp_dbh(dbh);
-		return PQputline(imp_dbh->conn, buffer);
-}
-
-
-int
-pg_db_getline (dbh, buffer, length)
-		SV *dbh;
-		char *buffer;
-		int length;
-{
-		D_imp_dbh(dbh);
-		return PQgetline(imp_dbh->conn, buffer, length);
-}
-
-
-int
-pg_db_endcopy (dbh)
-		SV *dbh;
-{
-		D_imp_dbh(dbh);
-		return PQendcopy(imp_dbh->conn);
-}
-
-
-int
 dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
 		SV *sth;
 		imp_sth_t *imp_sth;
