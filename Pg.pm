@@ -818,7 +818,7 @@ $DBD::Pg::VERSION = '1.32';
 			my $tables = $sth->fetchall_arrayref() or return;
 			my $version = DBD::Pg::_pg_server_version($dbh);
 			my @tables = map { (DBD::Pg::_pg_check_version(7.3, $version) 
-					and (! (ref $attr eq "HASH" and $attr->{noprefix}))) ? 
+					and (! (ref $attr eq "HASH" and $attr->{pg_noprefix}))) ? 
 						"$_->[1].$_->[2]" : $_->[2] } @$tables;
 			return @tables;
 	}
@@ -1633,9 +1633,9 @@ Supported by the driver as proposed by DBI. This method returns all tables
 and/or views which are visible to the current user: see the table_info() 
 for more information about the arguments. If the database is version 7.3 
 or higher, the name of the schema appears before the table or view name. This 
-can be turned off by adding in the "noprefix" attribute:
+can be turned off by adding in the "pg_noprefix" attribute:
 
-  my @tables = $dbh->tables( '', '', 'dbd_pg_test', '', {noprefix => 1} );
+  my @tables = $dbh->tables( '', '', 'dbd_pg_test', '', {pg_noprefix => 1} );
 
 
 =item B<type_info_all>

@@ -1,3 +1,4 @@
+	- Changed "noprefix" to pg_noprefix
 1.32 Wed Feb 25 18:24:18 UTC 2004
 	- Bugfix for memory allocation problems on win systems
 		[Rafael Kitover <caelum@debian.org>]
