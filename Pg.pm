@@ -161,11 +161,13 @@ $DBD::Pg::VERSION = '1.13';
 		for my $idx (0 .. $#attrs) {
 			next if ($flds[$idx] eq 'catname'); # Skip catalog
 			if(defined $attrs[$idx]) {
+# Insure that the value is enclosed in single quotes.
+				$attrs[$idx] =~ s/^'?(\w+)'?$/'$1'/;
 				if ($attrs[$idx] =~ m/[,%]/) {
 					# contains a meta character.
 					push( @wh, q{( } . join ( " OR "
 						, map { m/\%/ 
-							? qq{$flds[$idx] LIKE $_ }
+							? qq{$flds[$idx] ILIKE $_ }
 							: qq{$flds[$idx]    = $_ }
 							} (split /,/, $attrs[$idx]) )
 							. q{ )}
@@ -178,7 +180,7 @@ $DBD::Pg::VERSION = '1.13';
 		}
 
 		my $wh = ();
-		$wh = join( " and ", ,'', @wh ) if (@wh);
+		$wh = join( " and ", '', @wh ) if (@wh);
 		my $col_info_sql = qq{
 			select
 				  NULL::text    AS "TABLE_CAT"
@@ -212,13 +214,14 @@ $DBD::Pg::VERSION = '1.13';
 					a.attrelid = c.oid
 				and a.attnum  >= 0
 				and t.oid      = a.atttypid
-				and c.relkind  = 'r'
-				and c.relname !~ '^pg_'
+				and c.relkind  in ('r','v')
 				and c.relowner = u.usesysid 
 				$wh
 			order by u.usename, c.relname, a.attnum
 		};
 
+				# and c.relname !~ '^pg_' # Removing the restriction on the
+				# system tables.
 		my $sth = $dbh->prepare( $col_info_sql ) or
 			return undef;
         $sth->execute();
@@ -259,7 +262,7 @@ $DBD::Pg::VERSION = '1.13';
 		}
 
 		my $wh = ();
-		$wh = join( " and ", ,'', @wh ) if (@wh);
+		$wh = join( " and ", '', @wh ) if (@wh);
 
 		# Base primary key selection query borrowed from phpPgAdmin.
 		my $pri_key_sql = qq{
@@ -438,11 +441,13 @@ $DBD::Pg::VERSION = '1.13';
 				  AND c.relhasrules =  FALSE) OR
 					  (c.relkind     =  'v'
 				  AND c.relhasrules =  TRUE))
-				  AND c.relname     !~ '^pg_'
 				  AND c.relname     !~ '^xin[vx][0-9]+'
 				  AND c.relowner    =  u.usesysid
 				ORDER BY 2, 3
 				};
+
+				#   AND c.relname     !~ '^pg_' Removed the restrcition from
+				#   viewing the system tables.
 
 			# Did we receive any arguments?
 			if (@attrs) {
@@ -461,6 +466,8 @@ $DBD::Pg::VERSION = '1.13';
 							$attrs[$idx] =~ s/^\'?special\'?/'s'/i;
 							$attrs[$idx] =~ s/^\'?secondary\'?/'t'/i;
 						}
+# Insure that the value is enclosed in single quotes.
+						$attrs[$idx] =~ s/^'?(\w+)'?$/'$1'/;
 						if ($attrs[$idx] =~ m/[,%]/) {
 							# contains a meta character.
 							push( @wh, q{( } . join ( " OR "
@@ -479,7 +486,7 @@ $DBD::Pg::VERSION = '1.13';
 
 				my $wh = ();
 				if (@wh) {
-					$wh = join( " and ", ,'', @wh );
+					$wh = join( " and ",'', @wh );
 
 					$tbl_sql = qq{
 					SELECT NULL::text    AS "TABLE_CAT"
@@ -500,12 +507,12 @@ $DBD::Pg::VERSION = '1.13';
 						 pg_description	AS d 
 							ON c.relfilenode = d.objoid and d.objsubid = 0
 					WHERE 
-						  c.relname     !~ '^pg_'
-					  AND c.relname     !~ '^xin[vx][0-9]+'
+					  	  c.relname     !~ '^xin[vx][0-9]+'
 					  AND c.relowner    =  u.usesysid
 					  $wh
 					ORDER BY 2, 3
 					};
+# c.relname     !~ '^pg_'
 				}
 			}
 		}
@@ -525,10 +532,10 @@ $DBD::Pg::VERSION = '1.13';
             select relname  AS \"TABLE_NAME\"
             from   pg_class 
             where  relkind = 'r' 
-            and    relname !~ '^pg_' 
             and    relname !~ '^xin[vx][0-9]+' 
             order by 1 
         ") or return undef;
+            # and    relname !~ '^pg_' 
         $sth->execute or return undef;
         my (@tables, @relname);
         while (@relname = $sth->fetchrow_array) {
