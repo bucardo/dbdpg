@@ -203,7 +203,11 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 		imp_dbh->version.ver = 0.0;
 	}
 	PQclear(pgres_ret);
-	
+
+#ifdef HAVE_PQprotocol
+  imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
+#endif
+
 	/* PerlIO_printf(DBILOGFP, "v.ma: %i, v.mi: %i v.ver: %f\n",
 		 imp_dbh->version.major, imp_dbh->version.minor, imp_dbh->version.ver);
 		 
@@ -513,6 +517,8 @@ dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 		retsv = newSViv((IV)INV_READ);
 	} else if (kl==12 && strEQ(key, "pg_INV_WRITE")) {
 		retsv = newSViv((IV)INV_WRITE);
+	} else if (kl==11 && strEQ(key, "pg_protocol")) {
+		retsv = newSViv((IV)imp_dbh->pg_protocol);
 	}
 	
 	if (!retsv)

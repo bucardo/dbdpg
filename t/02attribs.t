@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 92;
+	plan tests => 93;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -36,6 +36,7 @@ d RowCacheSize
 d Username
 d pg_INV_READ
 d pg_INV_WRITE
+d pg_protocol
 
 s NUM_OF_FIELDS, NUM_OF_PARAMS
 s NAME, NAME_lc, NAME_uc, NAME_hash, NAME_lc_hash, NAME_uc_hash
@@ -196,6 +197,13 @@ else {
 
 like( $dbh->{pg_INV_WRITE}, qr/^\d+$/, 'Database handle attribute "pg_INV_WRITE" returns a number');
 like( $dbh->{pg_INV_READ}, qr/^\d+$/, 'Database handle attribute "pg_INV_READ" returns a number');
+
+#
+# Test of the database handle attribute "pg_protocol"
+#
+
+like( $dbh->{pg_protocol}, qr/^\d+$/, 'Database handle attribute "pg_protocol" returns a number');
+
 
 #
 # Use the handle attribute "Warn" to check inheritance
@@ -642,4 +650,3 @@ else {
 		}
 	}
 }
-

@@ -83,6 +83,10 @@ if ($major_ver == 7) {
         $comp_opts .= " -DHAVE_PQunescapeBytea -DHAVE_PQfreemem";
 }
 
+if ($major_ver > 7 or ($major_ver == 7 and $minor_ver >= 4)) {
+	$comp_opts .= " -DHAVE_PQprotocol";
+}
+
 my %opts = (
     NAME         => 'DBD::Pg',
     VERSION_FROM => 'Pg.pm',

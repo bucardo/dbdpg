@@ -1759,6 +1759,16 @@ Constant to be used for the mode in lo_creat and lo_open.
 PostgreSQL specific attribute. If true, boolean values will be returned 
 as the characters 't' and 'f' instead of '1' and '0'.
 
+=item B<pg_protocol> (integer)
+
+PostgreSQL specific attribute. Returns the version of the PostgreSQL server. 
+If DBD::Pg is unable to figure out the version (e.g. it was compiled 
+against pre 7.4 libraries), it will return a "0". Otherwise, servers below 
+version 7.4 return a "2", and (currently) 7.4 and above return a "3".
+
+Many things were introduced with version 3 of the protocol, including 
+server-side prepares and advanced error codes.
+
 =back
 
 =head1 DBI STATEMENT HANDLE OBJECTS
