@@ -685,6 +685,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	imp_sth->prepare_name = NULL;
 	imp_sth->seg = NULL;
 	imp_sth->ph = NULL;
+	imp_sth->type_info = NULL;
 
 	/* We inherit our prepare preferences from the database handle */
 	imp_sth->server_prepare = imp_dbh->server_prepare;
@@ -1791,8 +1792,16 @@ AV * dbd_st_fetch (sth, imp_sth)
 	num_fields = AvFILL(av)+1;
 	
 	chopblanks = DBIc_has(imp_sth, DBIcf_ChopBlanks);
+
+	/* Set up the type_info array if we have not seen it yet */
+	if (NULL==imp_sth->type_info) {
+		imp_sth->type_info = calloc(num_fields, sizeof(*imp_sth->type_info)); /* freed in dbd_st_destroy */
+		for (i = 0; i < num_fields; ++i) {
+			imp_sth->type_info[i] = pg_type_data(PQftype(imp_sth->result, i));
+		}
+	}
 	
-	for(i = 0; i < num_fields; ++i) {
+	for (i = 0; i < num_fields; ++i) {
 		SV *sv;
 
 		if (dbis->debug >= 5)
@@ -1804,25 +1813,19 @@ AV * dbd_st_fetch (sth, imp_sth)
 		}
 		else {
 			value = (char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
-			
-			pg_type = PQftype(imp_sth->result, i);
-			type_info = pg_type_data(pg_type);
-			
-			if (type_info)
+			type_info = imp_sth->type_info[i];
+
+			if (type_info) {
 				type_info->dequote(value, &value_len); /* dequote in place */
+				if (BOOLOID == type_info->type_id && imp_dbh->pg_bool_tf)
+					*value = ('1' == *value) ? 't' : 'f';
+			}
 			else
 				value_len = strlen(value);
 			
-			if (type_info && (BOOLOID == type_info->type_id) &&
-					imp_dbh->pg_bool_tf)
-				{
-					*value = ('1' == *value) ? 't' : 'f';
-				}
-			
 			sv_setpvn(sv, value, value_len);
 			
-			if (type_info && (BPCHAROID == type_info->type_id) && 
-					chopblanks)
+			if (type_info && (BPCHAROID == type_info->type_id) && chopblanks)
 				{
 					p = SvEND(sv);
 					len = SvCUR(sv);
@@ -1969,6 +1972,7 @@ void dbd_st_destroy (sth, imp_sth)
 	if (NULL == imp_sth->seg) /* Already been destroyed! */
 		croak("dbd_st_destroy called twice!");
 
+	Safefree(imp_sth->type_info);
 	Safefree(imp_sth->firstword);
 
 	if (NULL != imp_sth->result) {
