@@ -722,8 +722,7 @@ sub configure {
             # Handle an unknown value.
             $self->error("Cannot find configuration information");
             $self->{configure} =
-              $self->unknown( key      => 'PostgreSQL configuration information',
-                              callback => { length }
+              $self->unknown( key      => 'PostgreSQL configuration information');
         }
     }
 
