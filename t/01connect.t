@@ -61,10 +61,10 @@ eval {
 ok( $@, 'Execute fails on a disconnected statement');
 
 END {
-	diag "";
-	diag "Program       Version";
-	diag "DBD::Pg       $DBD::Pg::VERSION";
-	diag "PostgreSQL    $pgversion";
-	diag "DBI           $DBI::VERSION";
+	diag "\n".
+	 "Program       Version\n".
+	 "DBD::Pg       $DBD::Pg::VERSION\n".
+	 "PostgreSQL    $pgversion\n".
+	 "DBI           $DBI::VERSION";
 }
 
