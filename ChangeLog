@@ -4,6 +4,16 @@
 	Added patch from Dave Rolsky to remove system tables from output
 	   of tables().
 
+2002-11-30  Jason E. Stewart  <jason@openinformatics.com>
+
+	* Pg.pm (Repository): 
+	Added patch from Dave Rolsky to remove system tables from output
+	   of tables().
+
+2002-11-27 10:01  David Wheeler <david@wheeler.net>
+
+	* Makefile.PL: Added Test::More to prerequisites.
+
 2002-11-27 10:01  David Wheeler <david@wheeler.net>
 
 	* Makefile.PL: Added Test::More to prerequisites.

@@ -617,7 +617,17 @@ $DBD::Pg::VERSION = '1.21';
             $default = '' unless $default;
 
             # Test for any constraints
-            my ($constraint) = $dbh->selectrow_array("select rcsrc from pg_relcheck where rcname = '${table}_$col_name'");
+            # Note: as of PostgreSQL 7.3 pg_relcheck has been replaced
+            # by pg_constraint. To maintain compatibility, check 
+            # version number and execute appropriate query.
+	
+            my ($version) = $dbh->selectrow_array("SELECT version()");
+            $version =~ /^PostgreSQL (\d)\.(\d)/;
+            
+            my $con_query = $1.$2 < 73
+             ? "SELECT rcsrc FROM pg_relcheck WHERE rcname = '${table}_$col_name'"
+             : "SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND conname = '${table}_$col_name'";
+            my ($constraint) = $dbh->selectrow_array($con_query);
             $constraint = '' unless $constraint;
 
             # Check to see if this is the primary key
