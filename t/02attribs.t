@@ -3,12 +3,12 @@
 # Test all handle attributes: database, statement, and generic ("any")
 
 use Test::More;
-use DBI;
+use DBI qw(:sql_types);
 use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 93;
+	plan tests => 124;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -22,6 +22,8 @@ if ($got73) {
 	$dbh->do("SET search_path TO " . $dbh->quote_identifier
 					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
 }
+
+my $pgversion = DBD::Pg::_pg_server_version($dbh);
 
 my $attributes_tested = q{
 
@@ -42,6 +44,20 @@ d Username
 d pg_INV_READ
 d pg_INV_WRITE
 d pg_protocol
+d pg_errorlevel
+d pg_bool_tf
+d pg_enable_utf8
+d pg_db
+d pg_user
+d pg_pass
+d pg_port
+d pg_options
+d pg_socket
+d pg_pid
+
+d pg_prepare_now - tested in 03smethod.t
+d pg_server_prepare - tested in 03smethod.t
+d pg_prepare_now - tested in 03smethod.t
 
 s NUM_OF_FIELDS, NUM_OF_PARAMS
 s NAME, NAME_lc, NAME_uc, NAME_hash, NAME_lc_hash, NAME_uc_hash
@@ -75,7 +91,7 @@ d InactiveDestroy (must be the last one tested)
 
 };
 
-my ($attrib,$SQL,$sth,$warning);
+my ($attrib,$SQL,$sth,$warning,$result);
 
 #
 # Test of the database handle attribute "Statement"
@@ -216,6 +232,103 @@ like( $dbh->{pg_INV_READ}, qr/^\d+$/, 'Database handle attribute "pg_INV_READ" r
 
 like( $dbh->{pg_protocol}, qr/^\d+$/, 'Database handle attribute "pg_protocol" returns a number');
 
+#
+# Test of the database handle attribute "pg_errorlevel"
+#
+
+cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" returns the default (1)');
+
+if ($pgversion < 70400) {
+ SKIP: {
+		skip 'Cannot test DB handle attribute "pg_errorlevel" on pre-7.4 servers', 4;
+	}
+}
+else {
+	$dbh->{pg_errorlevel} = 0;
+	cmp_ok( 0, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" can be set to 0');
+	$dbh->{pg_errorlevel} = 1;
+	cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" can be set to 1');
+	$dbh->{pg_errorlevel} = 2;
+	cmp_ok( 2, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" can be set to 2');
+	$dbh->{pg_errorlevel} = 3;
+	cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" defaults to 1 if invalid');
+}
+
+#
+# Test of the database handle attribute "pg_bool_tf"
+#
+
+$result = $dbh->{pg_bool_tf}=0;
+is( $result, 0, 'DB handle method "pg_bool_tf" starts as 0');
+
+$sth = $dbh->prepare("SELECT ?::bool");
+$sth->bind_param(1,1,SQL_BOOLEAN);
+$sth->execute();
+$result = $sth->fetchall_arrayref()->[0][0];
+is( $result, "1", qq{DB handle method "pg_bool_tf" returns '1' for true when on});
+$sth->execute(0);
+$result = $sth->fetchall_arrayref()->[0][0];
+is( $result, "0", qq{DB handle method "pg_bool_tf" returns '0' for false when on});
+
+$dbh->{pg_bool_tf}=1;
+$sth->execute(1);
+$result = $sth->fetchall_arrayref()->[0][0];
+is( $result, 't', qq{DB handle method "pg_bool_tf" returns 't' for true when on});
+$sth->execute(0);
+$result = $sth->fetchall_arrayref()->[0][0];
+is( $result, 'f', qq{DB handle method "pg_bool_tf" returns 'f' for true when on});
+
+
+## Test of all the informational pg_* database handle attributes
+
+$result = $dbh->{pg_protocol};
+like( $result, qr/^\d+$/, qq{DB handle attribute "pg_db" returns at least one character});
+
+$result = $dbh->{pg_db};
+ok( length $result, qq{DB handle attribute "pg_db" returns at least one character});
+
+$result = $dbh->{pg_user};
+ok( defined $result, qq{DB handle attribute "pg_user" returns a value});
+
+$result = $dbh->{pg_pass};
+ok( defined $result, qq{DB handle attribute "pg_pass" returns a value});
+
+$result = $dbh->{pg_port};
+like( $result, qr/^\d+$/, qq{DB handle attribute "pg_port" returns a number});
+
+$result = $dbh->{pg_options};
+ok (defined $result, qq{DB handle attribute "pg_options" returns a value});
+
+$result = $dbh->{pg_socket};
+like( $result, qr/^\d+$/, qq{DB handle attribute "pg_socket" returns a value});
+
+$result = $dbh->{pg_pid};
+like( $result, qr/^\d+$/, qq{DB handle attribute "pg_pid" returns a value});
+
+
+# Attempt to test whether or not we can get unicode out of the database
+SKIP: {
+	eval "use Encode;";
+	skip "Encode module is needed for unicode tests", 5 if $@;
+	my $SQL = "SELECT id, pname FROM dbd_pg_test WHERE id = ?";
+	my $sth = $dbh->prepare($SQL);
+	$sth->execute(1);
+	local $dbh->{pg_enable_utf8} = 1;
+	my $utf8_str = chr(0x100).'dam';	# LATIN CAPITAL LETTER A WITH MACRON
+	is( $dbh->quote( $utf8_str ), "'$utf8_str'", 'quote() handles utf8.' );
+	$SQL = "INSERT INTO dbd_pg_test (id, pname, val) VALUES (40, '$utf8_str', 'Orange')";
+	is( $dbh->do($SQL), '1', 'Able to insert unicode character into the database');
+	$sth->execute(40);
+	my ($id, $name) = $sth->fetchrow_array();
+	ok( Encode::is_utf8($name), 'Able to read unicode (utf8) data from the database');
+	is( length($name), 4, 'Unicode (utf8) data returned from database is not corrupted');
+	$sth->finish();
+	$sth->execute(1);
+	my ($id2, $name2) = $sth->fetchrow_array();
+	ok( !Encode::is_utf8($name2), 'ASCII text returned from database does not have utf8 bit set');
+	$sth->finish();
+}
+
 
 #
 # Use the handle attribute "Warn" to check inheritance
@@ -329,6 +442,67 @@ is_deeply( $attrib, {1 => "1"}, qq{Statement handle attribute "ParamValues" work
 $attrib = $sth->{RowsInCache};
 is( $attrib, undef, 'Statement handle attribute "RowsInCache" returns undef');
 
+
+#
+# Test of the statement handle attribute "pg_size"
+#
+
+$SQL = 'SELECT id, pname, val, score, Fixed, pdate, "CaseTest" FROM dbd_pg_test';
+$sth = $dbh->prepare($SQL);
+$sth->execute();
+$result = $sth->{pg_size};
+$expected = [qw(4 -1 -1 8 -1 8 1)];
+is_deeply( $result, $expected, 'Statement handle attribute "pg_size" works');
+
+#
+# Test of the statement handle attribute "pg_size"
+#
+
+$sth->execute();
+$result = $sth->{pg_type};
+$expected = [qw(int4 varchar text float8 bpchar timestamp bool)];
+# Hack for old servers
+$expected->[5] = 'datetime' unless $got73;
+is_deeply( $result, $expected, 'Statement handle attribute "pg_type" works');
+$sth->finish();
+
+#
+# Test of the statement handle attribute "pg_oid_status"
+#
+
+$SQL = "INSERT INTO dbd_pg_test (id, val) VALUES (?, 'lemon')";
+$sth = $dbh->prepare($SQL);
+$sth->bind_param('$1','',SQL_INTEGER);
+$sth->execute(500);
+$result = $sth->{pg_oid_status};
+like( $result, qr/^\d+$/, 'Statement handle attribute "pg_oid_status" returned a numeric value after insert');
+
+#
+# Test of the statement handle attribute "pg_cmd_status"
+#
+
+## INSERT DELETE UPDATE SELECT
+for ("INSERT INTO dbd_pg_test (id,val) VALUES (400, 'lime')",
+		 "DELETE FROM dbd_pg_test WHERE id=1",
+		 "UPDATE dbd_pg_test SET id=2 WHERE id=2",
+		 "SELECT * FROM dbd_pg_test"
+		) {
+	my $expected = substr($_,0,6);
+	$sth = $dbh->prepare($_);
+	$sth->execute();
+	$result = $sth->{pg_cmd_status};
+	$sth->finish();
+	like ( $result, qr/^$expected/, qq{Statement handle attribute "pg_cmd_status" works for '$expected'});
+}
+
+#
+# Test of the statement handle method "state"
+#
+
+$result = $sth->state();
+like( $result, qr/^[A-Z0-9]{5}$/, qq{Statement handle method "state" returns a five-character code});
+
+
 #
 # Test of the handle attribute "Active"
 #
@@ -398,7 +572,6 @@ is( $attrib, '', 'Database handle attribute "PrintError" is set properly');
 
 # Make sure that warnings are sent back to the client
 # We assume that older servers are okay
-my $pgversion = DBD::Pg::_pg_server_version($dbh);
 my $client_level = '';
 if ($pgversion >= 70300) {
 	$sth = $dbh->prepare("SHOW client_min_messages");

@@ -4,10 +4,7 @@
 # The following methods are *not* currently tested here:
 # "clone"
 # "data_sources"
-# "do"
-# "prepare"
 # "disconnect"
-# "prepare_cached"
 # "take_imp_data"
 # "lo_import"
 # "lo_export"
@@ -18,7 +15,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 154;
+	plan tests => 141;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -35,6 +32,16 @@ if ($got73) {
 }
 
 my ($SQL, $sth, $result, @result, $expected, $warning, $rows);
+
+# Quick simple "tests"
+
+$dbh->do(""); ## This used to break, so we keep it as a test...
+$SQL = "SELECT 123 FROM dbd_pg_test WHERE id=?";
+$sth = $dbh->prepare($SQL);
+$sth->finish();
+$sth = $dbh->prepare_cached($SQL);
+$sth->finish();
+
 
 # Populate the testing table for later use
 
@@ -883,58 +890,6 @@ ok( !$@, 'DB handle method "pg_notifies" does not throw an error');
 
 $result = $dbh->func('getfd');
 like( $result, qr/^\d+$/, 'DB handle method "getfd" returns a number');
-
-#
-# Test of the "pg_bool_tf" database handle attribute
-#
-
-$result = $dbh->{pg_bool_tf}=0;
-is( $result, 0, 'DB handle method "pg_bool_tf" starts as 0');
-
-$sth = $dbh->prepare("SELECT ?::bool");
-$sth->bind_param(1,1,SQL_BOOLEAN);
-$sth->execute();
-$result = $sth->fetchall_arrayref()->[0][0];
-is( $result, "1", qq{DB handle method "pg_bool_tf" returns '1' for true when on});
-$sth->execute(0);
-$result = $sth->fetchall_arrayref()->[0][0];
-is( $result, "0", qq{DB handle method "pg_bool_tf" returns '0' for false when on});
-
-$dbh->{pg_bool_tf}=1;
-$sth->execute(1);
-$result = $sth->fetchall_arrayref()->[0][0];
-is( $result, 't', qq{DB handle method "pg_bool_tf" returns 't' for true when on});
-$sth->execute(0);
-$result = $sth->fetchall_arrayref()->[0][0];
-is( $result, 'f', qq{DB handle method "pg_bool_tf" returns 'f' for true when on});
-
-
-## Test of all the informational pg_* database handle attributes
-
-$result = $dbh->{pg_protocol};
-like( $result, qr/^\d+$/, qq{DB handle attribute "pg_db" returns at least one character});
-
-$result = $dbh->{pg_db};
-ok( length $result, qq{DB handle attribute "pg_db" returns at least one character});
-
-$result = $dbh->{pg_user};
-ok( defined $result, qq{DB handle attribute "pg_user" returns a value});
-
-$result = $dbh->{pg_pass};
-ok( defined $result, qq{DB handle attribute "pg_pass" returns a value});
-
-$result = $dbh->{pg_port};
-like( $result, qr/^\d+$/, qq{DB handle attribute "pg_port" returns a number});
-
-$result = $dbh->{pg_options};
-ok (defined $result, qq{DB handle attribute "pg_options" returns a value});
-
-$result = $dbh->{pg_socket};
-like( $result, qr/^\d+$/, qq{DB handle attribute "pg_socket" returns a value});
-
-$result = $dbh->{pg_pid};
-like( $result, qr/^\d+$/, qq{DB handle attribute "pg_pid" returns a value});
-
 
 ## Test of the "state" database handle method
 

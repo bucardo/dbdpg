@@ -13,7 +13,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 58;
+	plan tests => 50;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -34,6 +34,7 @@ my ($SQL, $sth, $sth2, $result, @result, $expected, $warning, $rows);
 #
 # Test of the prepare flags
 #
+
 $SQL = "SELECT id FROM dbd_pg_test WHERE id = ?";
 $sth = $dbh->prepare($SQL);
 $sth->execute(1);
@@ -68,7 +69,7 @@ $dbh->{pg_prepare_now} = 0;
 $sth = $dbh->prepare($SQL);
 $sth->execute(1);
 ok( $sth->execute, 'Prepare/execute with pg_prepare_now off at database handle works');
-$sth = $dbh->prepare($SQL, {pg_preoare_now => 0});
+$sth = $dbh->prepare($SQL, {pg_prepare_now => 0});
 $sth->execute(1);
 ok( $sth->execute, 'Prepare/execute with pg_prepare_now off at statement handle works');
 $sth = $dbh->prepare($SQL, {pg_prepare_now => 1});
@@ -342,65 +343,6 @@ $sth->fetch();
 $expected = [33, 'Peach'];
 is_deeply( [$bindme, $bindme2], $expected, 'Statement handle method "bind_columns" correctly binds parameters');
 $sth->finish();
-
-#
-# Test of the "pg_size" statement handle attribute
-#
-
-$SQL = 'SELECT id, pname, val, score, Fixed, pdate, "CaseTest" FROM dbd_pg_test';
-$sth = $dbh->prepare($SQL);
-$sth->execute();
-$result = $sth->{pg_size};
-$expected = [qw(4 -1 -1 8 -1 8 1)];
-is_deeply( $result, $expected, 'Statement handle attribute "pg_size" works');
-
-#
-# Test of the "pg_type" statement handle attribute
-#
-
-$sth->execute();
-$result = $sth->{pg_type};
-$expected = [qw(int4 varchar text float8 bpchar timestamp bool)];
-# Hack for old servers
-$expected->[5] = 'datetime' unless $got73;
-is_deeply( $result, $expected, 'Statement handle attribute "pg_type" works');
-$sth->finish();
-
-#
-# Test of the "pg_oid_status" statement handle attribute
-#
-
-$SQL = "INSERT INTO dbd_pg_test (id, val) VALUES (?, 'lemon')";
-$sth = $dbh->prepare($SQL);
-$sth->bind_param('$1','',SQL_INTEGER);
-$sth->execute(500);
-$result = $sth->{pg_oid_status};
-like( $result, qr/^\d+$/, 'Statement handle attribute "pg_oid_status" returned a numeric value after insert');
-
-#
-# Test of the "pg_cmd_status" statement handle attribute
-#
-
-## INSERT DELETE UPDATE SELECT
-for ("INSERT INTO dbd_pg_test (id,val) VALUES (400, 'lime')",
-		 "DELETE FROM dbd_pg_test WHERE id=1",
-		 "UPDATE dbd_pg_test SET id=2 WHERE id=2",
-		 "SELECT * FROM dbd_pg_test"
-		) {
-	my $expected = substr($_,0,6);
-	$sth = $dbh->prepare($_);
-	$sth->execute();
-	$result = $sth->{pg_cmd_status};
-	$sth->finish();
-	like ( $result, qr/^$expected/, qq{Statement handle attribute "pg_cmd_status" works for '$expected'});
-}
-
-#
-# Test of the "state" statement handle method
-#
-
-$result = $sth->state();
-like( $result, qr/^[A-Z0-9]{5}$/, qq{Statement handle method "state" returns a five-character code});
 
 $dbh->disconnect();
 
