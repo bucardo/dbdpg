@@ -17,14 +17,14 @@ ok(defined $dbh,
 
 eval {
   local $dbh->{PrintError} = 0;
-  $dbh->do(q{DROP TABLE tt});
+  $dbh->do(q{DROP TABLE dbd_pg_tt});
   $dbh->commit();
 };
 $dbh->rollback();
 
-$dbh->do(q{CREATE TABLE tt (blah numeric(5,2), foo text)});
+$dbh->do(q{CREATE TEMPORARY TABLE dbd_pg_tt (blah numeric(5,2), foo text)});
 my $sth = $dbh->prepare(qq{
-			   SELECT * FROM tt WHERE FALSE
+			   SELECT * FROM dbd_pg_tt WHERE FALSE
 			  });
 $sth->execute();
 
