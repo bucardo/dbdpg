@@ -61,6 +61,7 @@ struct ph_st {
 	char  *quoted;              /* quoted version of the value, for PQexec only */
 	STRLEN quotedlen;           /* length of the quoted value */
 	bool   referenced;          /* used for PREPARE AS construction */
+	bool   defaultval;          /* is it using a generic 'default' value? */
 	sql_type_info_t* bind_type; /* type information for this placeholder */
 	struct ph_st *nextph;       /* more linked list goodness */
 };
