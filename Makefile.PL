@@ -88,7 +88,9 @@ my %opts = (
     LIBS         => ["-L$POSTGRES_LIB -lpq"],
     AUTHOR       => 'http://gborg.postgresql.org/project/dbdpg/projdisplay.php',
     ABSTRACT     => 'PostgreSQL database driver for the DBI module',
-    PREREQ_PM    => { 'Test::Simple' => 0.17 }, # Need Test::More,
+    PREREQ_PM    => { 'Test::Simple' => '0.17',  # Need Test::More.
+                      'Test::Harness' => '2.03', # Need TODO tests.
+                    },
     CCFLAGS      => $comp_opts,
     PERL_MALLOC_OK => 1,
 );
