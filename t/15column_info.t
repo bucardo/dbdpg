@@ -129,8 +129,13 @@ ok($dbh->do("COMMENT ON COLUMN dbd_pg_test.name IS 'Success'"), 'comment on dbd_
         $row = $sth->fetchrow_hashref;
     };
 
-    # for bug reported to dbdg-general by Joachim, Hirche.
-    is($row->{DATA_TYPE},93, 'timestamp has correct data type');
+    my $ver = DBD::Pg::_pg_server_version($dbh);
+
+    # Modern version of Postgres will create the field as the type SQL_TYPE_TIMESTAMP (93)
+    # Postgres 7.2, 7.1, and presumably earlier, will create the field as SQL_TYPE_TIMESTAMP_WITH_TIMEZONE (95)
+    my $expected_type = DBD::Pg::_pg_check_version(7.3, $ver) ? 93 : 95;
+
+    is($row->{DATA_TYPE},$expected_type, 'timestamp column has expected numeric data type');
     
     ok($dbh->disconnect, 'Disconnect');
 
