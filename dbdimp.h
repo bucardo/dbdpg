@@ -70,4 +70,6 @@ struct phs_st {  	/* scalar placeholder EXPERIMENTAL	*/
 };
 
 
+SV * dbd_db_notifies (SV *dbh, imp_dbh_t *imp_dbh);
+
 /* end of dbdimp.h */

@@ -985,6 +985,16 @@ for an example on how to use this function.
 Used together with the SQL-command 'COPY table TO STDOUT' to dump a complete
 table. See test.pl for an example on how to use this function.
 
+  $ret = $dbh->func('notifies');
+
+Returns either undef or a reference to two-element array 
+[ $table, $backend_pid ] of asynchronous notifications received.
+
+  $fd = $dbh->func('getfd');
+
+Returns fd of the actual connection to server. Can be used with 
+select() and func('notifies').
+
 =back
 
 =head1 ATTRIBUTES COMMON TO ALL HANDLES

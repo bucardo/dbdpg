@@ -198,6 +198,47 @@ pg_db_login (dbh, imp_dbh, dbname, uid, pwd)
 }
 
 
+int 
+dbd_db_getfd (dbh, imp_dbh)
+    SV *dbh;
+    imp_dbh_t *imp_dbh;
+{
+    char id;
+    SV* retsv;
+
+    if (dbis->debug >= 1) { fprintf(DBILOGFP, "dbd_db_getfd\n"); }
+
+    return PQsocket(imp_dbh->conn);
+}
+
+SV * 
+dbd_db_notifies (dbh, imp_dbh)
+    SV *dbh;
+    imp_dbh_t *imp_dbh;
+{
+    char id;
+    PGnotify* notify;
+    AV* ret;
+    SV* retsv;
+
+    if (dbis->debug >= 1) { fprintf(DBILOGFP, "dbd_db_notifies\n"); }
+
+    PQconsumeInput(imp_dbh->conn);
+
+    notify = PQnotifies(imp_dbh->conn);
+
+    if (!notify) return &sv_undef; 
+
+    ret=newAV();
+
+    av_push(ret, newSVpv(notify->relname,0) );
+    av_push(ret, newSViv(notify->be_pid) );
+ 
+    retsv = newRV(sv_2mortal((SV*)ret));
+
+    return retsv;
+}
+
 int
 dbd_db_ping (dbh)
     SV *dbh;

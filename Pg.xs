@@ -83,6 +83,24 @@ _ping(dbh)
     }
 
 void
+getfd(dbh)
+    SV *	dbh
+    CODE:
+    int ret;
+    D_imp_dbh(dbh);
+
+    ret = dbd_db_getfd(dbh, imp_dbh);
+    ST(0) = sv_2mortal( newSViv( ret ) );
+
+void
+notifies(dbh)
+    SV *	dbh
+    CODE:
+    D_imp_dbh(dbh);
+
+    ST(0) = dbd_db_notifies(dbh, imp_dbh);
+
+void
 commit(dbh)
     SV *	dbh
     CODE:
