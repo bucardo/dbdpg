@@ -1,0 +1,29 @@
+2002-11-27  Jason E. Stewart  <jason@openinformatics.com>
+
+	* t/15funct.t (Repository): 
+	uses standard DBI testing env vars, e.g. DBI_DSN, DBI_USER, DBI_PASS
+
+	* t/12placeholders.t (Repository): 
+	* t/11quoting.t (Repository): 
+	* t/09autocommit.t (Repository): 
+	* t/08txn.t (Repository): 
+	* t/13pgtype.t (Repository): 
+	* t/99cleanup.t (Repository): 
+	* t/07reuse.t (Repository): 
+	* t/06disconnect.t (Repository): 
+	* t/05fetch.t (Repository): 
+	* t/04execute.t (Repository): 
+	* t/03bind.t (Repository): 
+	* t/02prepare.t (Repository): 
+	* t/01setup.t (Repository): 
+	* t/01connect.t (Repository): 
+	converted to use Test::More
+	uses standard DBI testing env vars, e.g. DBI_DSN, DBI_USER, DBI_PASS
+
+	* dbdimp.h (Repository): 
+	fixed typo dbd_db_notifies => dbd_db_pg_notifies
+
+	* t/01constants.t (Repository): 
+	converted to use Test::More
+	added descriptive names to tests
+
