@@ -59,7 +59,7 @@ ok((defined($retr) && $retr eq "\\'?:"),
 
 $sql = <<SQL;
        SELECT name
-       FROM dbd-pg_test
+       FROM dbd_pg_test
        WHERE name = :1
 SQL
 $sth = $dbh->prepare($sql);
