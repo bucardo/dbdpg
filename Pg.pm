@@ -259,7 +259,7 @@ $DBD::Pg::VERSION = '1.13';
 			}
 		}
 
-		my $wh = ();
+		my $wh = '';
 		$wh = join( " and ", '', @wh ) if (@wh);
 
 		# Base primary key selection query borrowed from phpPgAdmin.
