@@ -75,7 +75,7 @@ ExecStatusType _result(imp_dbh, com)
 		 imp_dbh_t *imp_dbh;
 		 const char *com;
 {
-	PGresult* result;
+	PGresult *result;
 	ExecStatusType status;
 
 	result = PQexec(imp_dbh->conn, com);
@@ -279,7 +279,7 @@ int dbd_db_ping (dbh)
 		 SV *dbh;
 {
 	D_imp_dbh(dbh);
-	PGresult* result;
+	PGresult *result;
 	ExecStatusType status;
 
 	/* Since this is a very explicit call, we do not rely on PQstatus,
@@ -1108,7 +1108,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	D_imp_dbh_from_sth;
 	char *statement;
 	unsigned int execsize, x;
-	PGresult* result;
+	PGresult *result;
 	ExecStatusType status;
 	seg_t *currseg;
 	bool oldprepare = 1;
@@ -1254,7 +1254,11 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	char *value_string;
 
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_bind_ph\n"); }
-	
+
+	if (dbis->debug >= 4) {
+		PerlIO_printf(DBILOGFP, " bind params: ph_name: %s newvalue: %s(%d)\n", 
+									neatsvpv(ph_name,0), neatsvpv(newvalue,0), SvOK(newvalue));
+	}
 	if (is_inout)
 		croak("bind_inout not supported by this driver");
 
@@ -1379,9 +1383,9 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 
 	/* upgrade to at least string */
 	(void)SvUPGRADE(newvalue, SVt_PV);
-	value_string = SvPV(newvalue, currph->valuelen);
 
 	if (SvOK(newvalue)) {
+		value_string = SvPV(newvalue, currph->valuelen);
 		New(0, currph->value, currph->valuelen+1, char);
 		Copy(value_string, currph->value, currph->valuelen, char);
 		currph->value[currph->valuelen] = '\0';
@@ -1403,12 +1407,12 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 		}
 	}
 
-	/*
-	if (dbis->debug >= 1) // XXXX
+	if (dbis->debug >= 10)
 		PerlIO_printf(DBILOGFP, "  dbdpg: placeholder \"%s\" bound as type \"%s\"(%d), length %d, value of \"%s\"\n",
 									name, currph->bind_type->type_name, currph->bind_type->type_id, currph->valuelen,
 									BYTEAOID==currph->bind_type->type_id ? "(binary, not shown)" : value_string);
-	*/
+
+
 	return 1;
 
 } /* end of dbd_bind_ph */
