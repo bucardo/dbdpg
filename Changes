@@ -1,4 +1,4 @@
-1.31 Sat Aug  9 15:52:12 UTC 2003
+1.31_1 Tue Aug 12 19:50:24 UTC 2003
 	- Raised required versions to Perl 5.6.1 and DBI 1.35
 	- Fix syntax error related to pg_server_version (CPAN bugs #2492 and #2755)
 	- Cache multiple calls to pg_server_version.
