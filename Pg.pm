@@ -66,7 +66,7 @@ $DBD::Pg::VERSION = '1.32';
 	sub _pg_server_version {
 		my $dbh = shift;
 		return $dbh->{private_dbdpg}{server_version} if defined $dbh->{private_dbdpg}{server_version};
-		my ($version) = $dbh->selectrow_array("SELECT version();");
+		my ($version) = $dbh->selectrow_array("SELECT version()");
 		$dbh->{private_dbdpg}{server_version} = ($version =~ /^PostgreSQL ([\d\.]+)/) ? $1 : 0;
 		return $dbh->{private_dbdpg}{server_version};
 	}
@@ -171,11 +171,41 @@ $DBD::Pg::VERSION = '1.32';
 			'Statement' => $statement,
 		});
 
-		DBD::Pg::st::_prepare($sth, $statement, @attribs) or return undef;
+		my $ph = DBD::Pg::st::_prepare($sth, $statement, @attribs) || 0;
+
+		if ($ph < 0) {
+			return undef;
+		}
+
+		if (@attribs and ref $attribs[0] and ref $attribs[0] eq 'HASH') {
+			# Feel ambitious? Move all this to dbdimp.c! :)
+			if (exists $attribs[0]->{bind_types}) {
+				my $bind = $attribs[0]->{bind_types};
+				## Until we are allowed to set just the type, we use a null
+				$sth->bind_param("$1",undef,"foo");
+			}
+		}
 
 		$sth;
 	}
 
+	sub do {
+		my ($dbh, $statement, $attr, @params) = @_;
+
+		return undef unless length $statement;
+
+		## Prevent 'do' from using server-side prepares unless specifically requested
+		if (! defined $attr) {
+			$attr = {server_prepare => 0};
+		}
+		elsif (ref $attr and ref $attr eq "HASH" and ! exists $attr->{server_prepare}) {
+			$attr->{server_prepare} = 0;
+		}
+		my $sth = $dbh->prepare($statement, $attr) or return undef;
+		$sth->execute(@params) or return undef;
+		my $rows = $sth->rows;
+		($rows == 0) ? "0E0" : $rows;
+	}
 
 	sub ping {
 		my($dbh) = @_;
@@ -426,15 +456,15 @@ $DBD::Pg::VERSION = '1.32';
 			# PK_NAME
 			$info->[5] = $info->[3];
 			# COLUMN_NAME
-			$info->[3] = $attr->{'pg_onerow'} == 2 ? 
+			$info->[3] = 2==$attr->{'pg_onerow'} ? 
 				[ map { $attribs->{$_}{colname} } split /\s+/, $info->[4] ] :
 					join ', ', map { $attribs->{$_}{colname} } split /\s+/, $info->[4]; 
 			# DATA_TYPE
-			$info->[6] = $attr->{'pg_onerow'} == 2 ? 
+			$info->[6] = 2==$attr->{'pg_onerow'} ? 
 				[ map { $attribs->{$_}{typename} } split /\s+/, $info->[4] ] : 
 					join ', ', map { $attribs->{$_}{typename} } split /\s+/, $info->[4];
 			# KEY_SEQ
-			$info->[4] = $attr->{'pg_onerow'} == 2 ? 
+			$info->[4] = 2==$attr->{'pg_onerow'} ? 
 				[ split /\s+/, $info->[4] ] :
 					join ', ', split /\s+/, $info->[4];
 			$pkinfo = [$info];
@@ -1136,8 +1166,42 @@ $DBD::Pg::VERSION = '1.32';
 
 { package DBD::Pg::st; # ====== STATEMENT ======
 
-	# all done in XS
-}
+
+	## The DBI version is broken, so we implement a near-copy here
+
+	sub bind_param_array {
+		my $sth = shift;
+		my ($p_id, $value_array, $attr) = @_;
+
+		return $sth->set_err(1, "Value for parameter $p_id must be a scalar or an arrayref, not a ".ref($value_array))
+	    if defined $value_array and ref $value_array and ref $value_array ne 'ARRAY';
+
+		return $sth->set_err(1, "Can't use named placeholders for non-driver supported bind_param_array")
+	    unless DBI::looks_like_number($p_id); # because we rely on execute(@ary) here
+
+		# get/create arrayref to hold params
+		my $hash_of_arrays = $sth->{ParamArrays} ||= { };
+
+		if (ref $value_array eq 'ARRAY') {
+	    # check that input has same length as existing
+	    # find first arrayref entry (if any)
+	    foreach (keys %$hash_of_arrays) {
+				my $v = $$hash_of_arrays{$_};
+				next unless ref $v eq 'ARRAY';
+				return $sth->set_err(1,
+														 "Arrayref for parameter $p_id has ".@$value_array." elements"
+														 ." but parameter $_ has ".@$v)
+					if @$value_array != @$v;
+	    }
+		}
+
+		$$hash_of_arrays{$p_id} = $value_array;
+		return $sth->bind_param($p_id, '', $attr) if $attr; ## This is the big change so -w does not complain
+		1;
+	}
+
+
+} ## end st section
 
 1;
 
@@ -1266,9 +1330,12 @@ related to the current handle.
 
 =item B<state>
 
-  $str = $h->state;
+  $str = $dbh->state;
 
-This driver does not (yet) support the state method.
+Supported by this driver. Not that currently this is only available for the 
+database handle, not the statement handle. Returns a five-character code. 
+Databases before version 7.4 will always return a generic "S1000" code. 
+Success is indicated by a "00000" code.
 
 =item B<trace>
 
@@ -1500,23 +1567,162 @@ Implemented by DBI, no driver-specific impact.
 
   $sth = $dbh->prepare($statement, \%attr);
 
-PostgreSQL does not have the concept of preparing a statement. Hence the
-prepare method just stores the statement after checking for place-holders. No
-information about the statement is available after preparing it.
+There are two ways of preparing a statement. The old method, which is used by 
+all versions of Pg.pm prior to 1.34, is to simply store the statement and 
+replace all placeholders manually with a quoted version before passing it to 
+the server. The new version, only available when DBD::Pg is talking to a 
+PostgreSQL server version 7.4 or greater, offers true PREPARE support: the 
+statement is prepared on the backend, and subsequent executes send the 
+parameters only. This is the default method if DBD::Pg determines that your 
+server can use it. The new "server-side prepare" can be toggled on and off 
+at the database handle level with the "server_prepare" attribute of $sth->prepare. 
+For example, to prepare a statement and force a non server-side prepare:
+
+  $sth = $dbh->prepare("SELECT id FROM mytable WHERE val = ?", {server_prepare => 0});
+
+You can also set the server-side prepare at the statement level, and even toggle 
+between the two as you go:
+
+  $sth->{server_prepare} = 1;
+  $sth->execute(22);
+  $sth->{server_prepare} = 0;
+  $sth->execute(44);
+
+In the above example, the first execute will use the new PREPARE method. In the second 
+execute, the old one is used. DBD::Pg is smart enough to only call PREPARE once, even 
+if you toggle back and forth repeatedly.
+
+Server-side preparing is in theory quite a bit faster: not only does the PostgreSQL 
+backend only have to prepare the query once, but DBD::Pg no longer has to worry about 
+quoting each value before sending it to the server.
+
+However, there are some drawbacks. First, the server cannot always choose the ideal 
+parse plan because it will not know the arguments before hand. However, for most 
+situations in which you will be executing similar data many times, the default 
+plan will probably work out well. Further discussion on this subject are beyond 
+the score of these documentations: please consult the pgsql-performance mailing list.
+
+The second drawback to using server-side prepares is that the server is more picky 
+about the data types of the placeholders in the statement, especially when doing 
+INSERT and UPDATE statements. Therefore, you may need to use bind_param() to specify 
+the exact data types before executing. See the bind_param() section for more 
+information and examples.
+
+Only certain commands will be sent to a server-side prepare: currently this includes 
+SELECT, INSERT, UPDATE, and DELETE. DBD::Pg uses a simple naming scheme for the 
+prepared statements: dbdpg_#,  where "#" starts at 1 and increases. This number is 
+tracked at the database handle level, so multiple statement handles will not collide.
+
+The actual PREPARE is not done until the first execute is called, due to the fact 
+that information on the data types (provided by bind_param) may be given after the 
+prepare but before the execute. 
+
+A server-side prepare can also happen before the first execute. If the server can 
+handle the server-side prepare and the statement has no placeholders, it will 
+be prepared right away. It will also be prepared if the "prepare_now" argument 
+is sent. Similarly, the "prepare_now" argument can be set to 0 to ensure that 
+the statement is NOT prepared immediately, although cases in which you would 
+want this may be rare. Finally, you can set the default behavior of all prepare 
+statements to "prepare_now" by setting the attribute on the database handle:
+
+  $dbh->{prepare_now} = 1;
+
+Example: these will be prepared right away:
+
+  $sth->prepare("SELECT 123"); ## no placeholders
+
+  $sth->prepare("SELECT 123, ?", {prepare_now = 1});
+
+Example: these will NOT be prepared right away:
+
+  $sth->prepare("SELECT 123, ?"); ## has a placeholder
+
+  $sth->prepare("SELECT 123", {prepare_now = 0});
+
+There are times when you may want to prepare a statement yourself. To do this, simply 
+send the PREPARE statement directly to the server (e.g. with "do"). Create a statement 
+handle and set the prepared name. The statement handle can be created with a dummy 
+statement, as this will not be executed. However, it should have the same number 
+of placeholders as your prepared statement. Example:
+
+  $dbh->do("PREPARE mystat AS SELECT COUNT(*) FROM pg_class WHERE reltuples < ?");
+  $sth = $dbh->prepare("ABC ?");
+  $sth->bind_param(1, 1, SQL_INTEGER);
+  $sth->{prepare_name}="mystat";
+  $sth->execute(123);
+
+The above will run this query:
+
+  SELECT COUNT(*) FROM pg_class WHERE reltuples < 123;
+
+Note: DBD::Pg will not escape your custom prepared statement name, so don't 
+use a name that needs escaping! DBD::Pg uses the prepare names "dbdpg_#" 
+internally, so please do not use those either.
+
+=item B<Placeholders>
+
+There are three types of placeholders that can be used in DBD::Pg. The first is 
+the question mark method, in which each placeholder is represented by a single 
+question mark. This is the method recommended by the DBI specs and is the most 
+portable. Each question mark is replaced by a "dollar sign number" in the order 
+in which they appear in the query (important when using bind_param).
+
+The second method is to use "dollar sign numbers" directly. This is the method 
+that PostgreSQL uses internally and is overall probably the best method to use 
+if you do not need compatibility with other database systems. DBD::Pg, like 
+PostgreSQL, allows the same number to be used more than once in the query. 
+Numbers must start with "1" and increment by one value. If the same number 
+appears more than once in a query, it is treated as a single parameter and all 
+instances are replaced at once. Examples:
+
+Not legal:
+
+  $SQL = "SELECT count(*) FROM pg_class WHERE relpages > $2";
+
+  $SQL = "SELECT count(*) FROM pg_class WHERE relpages BETWEEN $1 AND $3";
+
+Legal:
+
+  $SQL = "SELECT count(*) FROM pg_class WHERE relpages > $1";
+
+  $SQL = "SELECT count(*) FROM pg_class WHERE relpages BETWEEN $1 AND $2";
+
+  $SQL = "SELECT count(*) FROM pg_class WHERE relpages BETWEEN $1 AND $2 AND reltuples > $1";
+
+  $SQL = "SELECT count(*) FROM pg_class WHERE relpages > $1 AND reltuples > $1";
+
+In the final statement above, DBI thinks there is only one placeholder, so this 
+statement will replace both placeholders:
+
+  $sth->bind_param(1, 2045);
+
+While execute requires only a single argument as well:
+
+  $sth->execute(2045);
+
+The final placeholder method is the named parameters in the format ":foo". While this 
+is supported by DBD::Pg, its use is highly discouraged.
+
+The different types of placeholders cannot be mixed within a statement, but you may 
+use different ones for each statement handle you have. Again, this is not encouraged.
 
 =item B<prepare_cached>
 
   $sth = $dbh->prepare_cached($statement, \%attr);
 
-Implemented by DBI, no driver-specific impact. This method is not useful for
-this driver, because preparing a statement has no database interaction.
+Implemented by DBI, no driver-specific impact. This method is most useful 
+when using a server that supports server-side perpares, and you have asked 
+the prepare to happen immediately via the "prepare_now" attribute.
 
 =item B<do>
 
   $rv  = $dbh->do($statement, \%attr, @bind_values);
 
-Implemented by DBI, no driver-specific impact. See the notes for the execute
-method elsewhere in this document.
+Prepare and execute a single statement. Because statements with placeholders 
+should be calling prepare and execute themselves, calls to do will not 
+use server-side prepares by default. You can force the use of server-side 
+prepares by adding "server_prepare => 1" to the attribute hashref. See the 
+notes on perpare, bind_param, and execute for more information.
 
 =item B<commit>
 
@@ -1785,13 +1991,80 @@ server-side prepares and advanced error codes.
 
   $rv = $sth->bind_param($param_num, $bind_value, \%attr);
 
-Supported by the driver as proposed by DBI.
+Allows the user to bind a value and/or a data type to a placeholder. This is 
+especially important when using the new server-side prepare system. See 
+the prepare() method for more information.
 
-B<NOTE:> The undocumented (and invalid) support for the C<SQL_BINARY>
-SQL type is officially deprecated. Use C<PG_BYTEA> instead:
+The value of "$param_num" is a number if using the '?' or '$1' style 
+placeholders. If using ":foo" style placeholders, the complete name 
+(e.g. ":foo") must be given. For numeric values, you can either use a 
+number, or use a literal '$1'. See the examples below.
 
-  $rv = $sth->bind_param($param_num, $bind_value,
-                         { pg_type => DBD::Pg::PG_BYTEA });
+The $bind_value is fairly self-explanatory. A value of undef will 
+bind a NULL to the placeholder. Using undef is useful when you want 
+to change just the type, and will be overwriting the value later. 
+(Any value is actually usable, but undef is easy and efficient).
+
+The %attr hash is used to indicate the data type of the placeholder. 
+The default value is "varchar". If you need something else, you must 
+use one of the value provided by DBI or by DBD::Pg. To use a SQL value, 
+modify your "use DBI" statement at the top of your script as follows:
+
+  use DBI qw(:sql_types);
+
+This will import some constants into your script. You can plug those 
+directly into the bind_param cal. Some common ones that you will 
+encounter are:
+
+  SQL_INTEGER
+
+To use PostgreSQL data types, import the list of values like this:
+
+  use DBD::Pg qw(:pg_types);
+
+You can then set the data types but setting the value of the "pg_type" 
+key in the hash passed to bind_param.
+
+Data types are "sticky" in that once a data type is set to a certain placeholder, 
+it will remain for that placeholder, unless it is explicitly set to something 
+else afterwards. If the statement has alredy been prepared, and you switch the 
+data type to something else, DBD::Pg will reprepare the statement for you before 
+doing the next execute.
+
+Examples:
+
+  use DBI qw(:sql_types);
+  use DBD::Pg qw(:pg_types);
+
+  $SQL = "SELECT id FROM ptable WHERE size > ? AND title = ?";
+  $sth = $dbh->prepare($SQL);
+
+  ## Both arguments below are bound to placeholders as "varchar"
+  $sth->execute(123, "Merk");
+
+  ## Reset the datatype for the first placeholder to an integer
+  $sth->bind_param(1, undef, SQL_INTEGER);
+
+  ## The "undef" bound above is not used, since we supply params to execute
+  $sth->execute(123, "Merk");
+
+  ## Set the first placholder's value and data type
+  $sth->bind_param(1, 234, { pg_type => PG_TIMESTAMP });
+
+  ## Set the second placeholder's value and data type.
+  ## We don't send a third argument, so the default "varchar" is used
+  $sth->bind_param("$2", "Zool");
+
+  ## We realize that the wrong data type was set above, so we change it:
+  $sth->bind_param("$1", 234, { pg_type => PG_INTEGER });
+
+  ## We also got the wrong value, so we change that as well.
+  ## Because the data type is sticky, we don't need to change it
+  $sth->bind_param(1,567);
+
+  ## This runs the statement with 567 (integer) and "Zool" (varchar)
+  $sth->execute();
+
 
 =item B<bind_param_inout>
 
@@ -1801,9 +2074,13 @@ Not supported by this driver.
 
   $rv = $sth->execute(@bind_values);
 
-Supported by the driver as proposed by DBI. In addition to 'UPDATE', 'DELETE',
+Executes a previously prepared statement. In addition to 'UPDATE', 'DELETE', 
 'INSERT' statements, for which it returns always the number of affected rows,
 the execute method can also be used for 'SELECT ... INTO table' statements.
+
+The "prepare/bind/execute" process has changed significantly for PostgreSQL 
+servers 7.4 and up: please see the prepare() and bind_param() entries for 
+much more information.
 
 =item B<fetchrow_arrayref>
 
@@ -1972,11 +2249,8 @@ a complete definition of AutoCommit please refer to the DBI documentation.
 
 According to the DBI specification the default for AutoCommit is TRUE. In this
 mode, any change to the database becomes valid immediately. Any 'begin',
-'commit' or 'rollback' statement will be rejected.
-
-If AutoCommit is switched-off, immediately a transaction will be started by
-issuing a 'begin' statement. Any 'commit' or 'rollback' will start a new
-transaction. A disconnect will issue a 'rollback' statement.
+'commit' or 'rollback' statements will be rejected. DBD::Pg implements AutoCommit 
+by issuing a "begin" immediately before a statement, and a "commit" afterwards.
 
 =head2 Large Objects
 
@@ -2010,7 +2284,8 @@ Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
 =head2 Schema support
 
 PostgreSQL version 7.3 introduced schema support. Note that the PostgreSQL
-schema concept may differ to that of other databases. Please refer to the
+schema concept may differ to that of other databases. In a nutshell, a schema 
+is a named collection of objects within a single database. Please refer to the
 PostgreSQL documentation for more details.
 
 Currently DBD::Pg does not provide explicit support for PostgreSQL schemas.
