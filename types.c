@@ -178,7 +178,10 @@ static sql_type_info_t sql_types[] = {
 	{SQL_REAL, "SQL_REAL", DBDPG_TRUE, null_quote, null_dequote, {FLOAT8OID}},
 	{SQL_DOUBLE, "SQL_DOUBLE", DBDPG_TRUE, null_quote, null_dequote, {INT8OID}},
 	{SQL_BINARY, "SQL_BINARY", DBDPG_TRUE, quote_sql_binary, dequote_sql_binary, {BYTEAOID}},
-
+	{SQL_DATE, "SQL_DATE", DBDPG_TRUE, quote_varchar, dequote_varchar, {DATEOID}},
+	{SQL_TIME, "SQL_TIME", DBDPG_TRUE, quote_varchar, dequote_varchar, {TIMEOID}},
+	{SQL_TYPE_TIMESTAMP, "SQL_TYPE_TIMESTAMP", DBDPG_TRUE, quote_varchar, dequote_varchar, {TIMESTAMPOID}},
+	{SQL_TYPE_TIMESTAMP_WITH_TIMEZONE, "SQL_TYPE_TIMESTAMP_WITH_TIMEZONE", DBDPG_TRUE, quote_varchar, dequote_varchar, {TIMESTAMPTZOID}},
 };
 
 sql_type_info_t*
@@ -186,17 +189,21 @@ sql_type_data(sql_type)
 	int sql_type;
 {
 	switch(sql_type) {
-	case SQL_VARCHAR:	return &sql_types[0];
-	case SQL_CHAR:		return &sql_types[1];
-	case SQL_NUMERIC:	return &sql_types[2];
-	case SQL_DECIMAL:	return &sql_types[3];
-	case SQL_INTEGER:	return &sql_types[4];
-	case SQL_SMALLINT:	return &sql_types[5];
-	case SQL_FLOAT:		return &sql_types[6];
-	case SQL_REAL:		return &sql_types[7];
-	case SQL_DOUBLE:	return &sql_types[8];
-		case SQL_BINARY:	return &sql_types[9];
-	default: return NULL;
+	case SQL_VARCHAR: return &sql_types[0];
+	case SQL_CHAR: return &sql_types[1];
+	case SQL_NUMERIC: return &sql_types[2];
+	case SQL_DECIMAL: return &sql_types[3];
+	case SQL_INTEGER: return &sql_types[4];
+	case SQL_SMALLINT: return &sql_types[5];
+	case SQL_FLOAT: return &sql_types[6];
+	case SQL_REAL: return &sql_types[7];
+	case SQL_DOUBLE: return &sql_types[8];
+	case SQL_BINARY: return &sql_types[9];
+	case SQL_DATE: return &sql_types[10];
+	case SQL_TIME: return &sql_types[11];
+	case SQL_TYPE_TIMESTAMP: return &sql_types[12];
+	case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE: return &sql_types[13];
+ default: return NULL;
 	}
 }
 
