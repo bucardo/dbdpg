@@ -1981,8 +1981,8 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 			if (alen > -1) {
 				SV		*sp = Nullsv;
 				char	*cmd;
-				New(0, cmd, SvLEN(sp) + 13, char); /* Freed below */
 				sp = *av_fetch(imp_dbh->savepoints, alen, 0);
+				New(0, cmd, SvLEN(sp) + 13, char); /* Freed below */
 				if (dbis->debug >= 4)
 					PerlIO_printf(DBILOGFP, "  dbdpg: Rolling back to savepoint %s\n", SvPV_nolen(sp));
 				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
