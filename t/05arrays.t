@@ -17,8 +17,9 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 1, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for array testing");
 
+=begin comment
+
 ## Until all the array stuff is working, skip all tests
-my $skip_em_all = q{
 
 # Insert into array
 my $values = [["a,b", 'c","d', "e'", '\\"'], ['f', 'g', 'h']];
@@ -91,6 +92,10 @@ ok($dbh->disconnect(),
    'disconnect'
   );
 
-}; ## end skip_em_all
+=end comment
+
+## end skip_em_all
+
+=cut
 
 ok ($dbh->disconnect(), "Disconnect from database");
