@@ -7,8 +7,20 @@ use strict;
 
 use DBI 1.00;
 use DBI::DBD;
-use lib q(inc);
 
+my $lib;
+BEGIN {
+    my %sep = (MacOS   => ':',
+               MSWin32 => '\\',
+               os2     => '\\',
+               VMS     => '\\',
+               NetWare => '\\',
+               dos     => '\\');
+    my $s = $sep{$^O} || '/';
+    $lib = join $s, 't', 'lib';
+}
+
+use lib $lib;
 print "Configuring Pg\n";
 print "Remember to actually read the README file !\n";
 
@@ -20,7 +32,7 @@ if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
     require App::Info::RDBMS::PostgreSQL;
     require App::Info::Handler::Prompt;
     my $p = App::Info::Handler::Prompt->new;
-    my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $p, on_confirm => $p);
+    my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $p);
     $POSTGRES_INCLUDE = $pg->inc_dir;
     $POSTGRES_LIB     = $pg->lib_dir;
 } elsif ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and $ENV{POSTGRES_HOME}) {
