@@ -32,7 +32,9 @@ foreach my $test (keys %tests) {
   $quo = $dbh->quote($unq);
 
   ok($quo eq $ref,
-     "$test: $unq -> expected $ref got $quo"
+     "$test: $unq -> expected " .
+     (defined $ref ? $ref : '[undef]') .
+     "got " . defined $quo ? $quo : '[undef]'
     );
 }
 

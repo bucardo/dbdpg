@@ -33,7 +33,7 @@ my $sql = <<SQL;
   , name
   FROM dbd_pg_test
 SQL
-my $sth = $dbh->prepare($sql);
+$sth = $dbh->prepare($sql);
 $sth->execute();
 
 my $rows = 0;
