@@ -3,7 +3,7 @@ use DBI;
 use Test::More;
 
 if (defined $ENV{DBI_DSN}) {
-  plan tests => 7;
+  plan tests => 10;
 } else {
   plan skip_all => 'cannot test without DB info';
 }
@@ -80,6 +80,30 @@ $sth->finish();
 ok($rows == 1,
    'fetch one row on id'
   );
+
+# Attempt to test whether or not we can get unicode out of the database
+# correctly.  Reuse the previous sth.
+SKIP: {
+  eval "use Encode";
+  skip "need Encode module for unicode tests", 3 if $@;
+  local $dbh->{pg_enable_utf8} = 1;
+  $dbh->do("INSERT INTO test (id, name, val) VALUES (4, '\x{0100}dam', 'cow')");
+  $sth->execute(4);
+  my ($id, $name) = $sth->fetchrow_array();
+  ok(Encode::is_utf8($name),
+     'returned data has utf8 bit set'
+    );
+  is(length($name), 4,
+     'returned utf8 data is not corrupted'
+    );
+  $sth->finish();
+  $sth->execute(1);
+  my ($id2, $name2) = $sth->fetchrow_array();
+  ok(! Encode::is_utf8($name2),
+     'returned ASCII data has not got utf8 bit set'
+    );
+  $sth->finish();
+}
 
 $sql = <<SQL;
        SELECT id

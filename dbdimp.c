@@ -470,6 +470,8 @@ dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
         imp_dbh->pg_auto_escape = newval;
     } else if (kl==10 && strEQ(key, "pg_bool_tf")) {
 	imp_dbh->pg_bool_tf = newval;
+    } else if (kl==14 && strEQ(key, "pg_enable_utf8")) {
+        imp_dbh->pg_enable_utf8 = newval;
     } else {
         return 0;
     }
@@ -494,6 +496,8 @@ dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
         retsv = newSViv((IV)imp_dbh->pg_auto_escape);
     } else if (kl==10 && strEQ(key, "pg_bool_tf")) {
 	retsv = newSViv((IV)imp_dbh->pg_bool_tf);
+    } else if (kl==14 && strEQ(key, "pg_enable_utf8")) {
+        retsv = newSViv((IV)imp_dbh->pg_enable_utf8);
     } else if (kl==11 && strEQ(key, "pg_INV_READ")) {
         retsv = newSViv((IV)INV_READ);
     } else if (kl==12 && strEQ(key, "pg_INV_WRITE")) {
@@ -1332,6 +1336,15 @@ dbd_st_execute (sth, imp_sth)   /* <= -2:error, >=0:ok row count, (-1=unknown co
 }
 
 
+int
+is_high_bit_set(val)
+    char *val;
+{
+    while (*val++)
+	if (*val & 0x80) return 1;
+    return 0;
+}
+
 AV *
 dbd_st_fetch (sth, imp_sth)
     SV *sth;
@@ -1403,6 +1416,14 @@ dbd_st_fetch (sth, imp_sth)
                 val[val_len] = '\0';
             }
             sv_setpvn(sv, val, val_len);
+	    if (imp_dbh->pg_enable_utf8) {
+		SvUTF8_off(sv);
+		/* XXX Is this all the character data types? */
+		if (18 == type || 25 == type || 1042 ==type || 1043 == type) {
+		    if (is_high_bit_set(val) && is_utf8_string(val, val_len))
+			SvUTF8_on(sv);
+		}
+	    }
         }
     }
 

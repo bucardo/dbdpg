@@ -1288,6 +1288,15 @@ The default is on. Note, that PostgreSQL also accepts quotes, which are
 escaped by a backslash. Any other ASCII character can be used directly in a
 string constant.
 
+=item B<pg_enable_utf8> (boolean)
+
+PostgreSQL specific attribute.  If true, then the utf8 flag will be
+turned for returned character data (if the data is valid utf8).  For
+details about the utf8 flag, see L<Encode>.  This is only relevant under
+perl 5.8 and higher.
+
+B<NB>: This attribute is experimental and may be subject to change.
+
 =item B<pg_INV_READ> (integer, read-only)
 
 Constant to be used for the mode in lo_creat and lo_open.
