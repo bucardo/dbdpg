@@ -478,7 +478,7 @@ dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
         imp_dbh->pg_auto_escape = newval;
     } else if (kl==10 && strEQ(key, "pg_bool_tf")) {
 	imp_dbh->pg_bool_tf = newval;
-#ifdef SvUTF8_off
+#if PERL_REVISION >= 5 && PERL_VERSION >= 6 && PERL_SUBVERSION >= 1
     } else if (kl==14 && strEQ(key, "pg_enable_utf8")) {
         imp_dbh->pg_enable_utf8 = newval;
 #endif
@@ -506,7 +506,7 @@ dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
         retsv = newSViv((IV)imp_dbh->pg_auto_escape);
     } else if (kl==10 && strEQ(key, "pg_bool_tf")) {
 	retsv = newSViv((IV)imp_dbh->pg_bool_tf);
-#ifdef SvUTF8_off
+#if PERL_REVISION >= 5 && PERL_VERSION >= 6 && PERL_SUBVERSION >= 1
     } else if (kl==14 && strEQ(key, "pg_enable_utf8")) {
         retsv = newSViv((IV)imp_dbh->pg_enable_utf8);
 #endif
