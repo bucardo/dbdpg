@@ -67,8 +67,8 @@ END {
 	my $pv = sprintf("%vd", $^V);
 	my $schema = exists $ENV{DBD_SCHEMA} ? 
 		"\nDBD_SCHEMA        $ENV{DBD_SCHEMA}" : '';
-	diag "\n".
-		"Program           Version\n".
+	diag 
+		"\nProgram           Version\n".
 		"Perl              $pv ($^O)\n".
 		"DBD::Pg           $DBD::Pg::VERSION\n".
 		"PostgreSQL        $pgversion\n".
