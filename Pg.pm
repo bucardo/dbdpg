@@ -1474,7 +1474,7 @@ related to the current handle.
   $str = $h->state;
 
 Supported by this driver. Returns a five-character "SQLSTATE" code.
-PostgreSQL servers version 7.4 or less will always return a generic
+PostgreSQL servers version less than 7.4 will always return a generic
 "S1000" code. Success is indicated by a "00000" code.
 
 The list of codes used by PostgreSQL can be found at:
