@@ -13,7 +13,7 @@
 # "lo_export"
 
 use Test::More;
-use DBI;
+use DBI qw(:sql_types);
 use strict;
 $|=1;
 
@@ -26,6 +26,8 @@ if (defined $ENV{DBI_DSN}) {
 my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 1, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for database handle method testing");
+
+$dbh->trace($ENV{DBD_TRACE}) if exists $ENV{DBD_TRACE};
 
 my $schema = '';
 my $got73 = DBD::Pg::_pg_use_catalog($dbh);
@@ -40,7 +42,9 @@ my ($SQL, $sth, $result, @result, $expected, $warning, $rows);
 
 $dbh->do("DELETE FROM dbd_pg_test");
 $SQL = "INSERT INTO dbd_pg_test(id,val) VALUES (?,?)";
+
 $sth = $dbh->prepare($SQL);
+$sth->bind_param(1, '', SQL_INTEGER);
 $sth->execute(10,'Roseapple');
 $sth->execute(11,'Pineapple');
 $sth->execute(12,'Kiwi');
@@ -698,7 +702,7 @@ is( $dbh->quote(1, 4), 1, 'DB handle method "quote" works with a supplied data t
 									q{Ain't misbehaving } => q{"Ain't misbehaving "},
 									NULL => q{"NULL"},
 									"" => q{""},
-								 );
+							);
 for (keys %quotetests) {
 	$result = $dbh->quote_identifier($_);
 	is( $result, $quotetests{$_}, qq{DB handle method "quote_identifier" works with a value of "$_"});
@@ -855,7 +859,7 @@ like( $result, qr/^\d+$/, 'DB handle method "getfd" returns a number');
 $result = $dbh->{pg_bool_tf}=0;
 is( $result, 0, 'DB handle method "pg_bool_tf" starts as 0');
 
-$sth = $dbh->prepare("SELECT ?::bool");
+$sth = $dbh->prepare("SELECT ?::bool", {server_prepare => 0});
 $sth->execute(1);
 $result = $sth->fetchall_arrayref()->[0][0];
 is( $result, "1", qq{DB handle method "pg_bool_tf" returns '1' for true when on});

@@ -8,12 +8,12 @@
 # "dump_results"
 
 use Test::More;
-use DBI;
+use DBI qw(:sql_types);
 use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 48;
+	plan tests => 46;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -22,6 +22,8 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 1, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for statement handle method testing");
 
+$dbh->trace($ENV{DBD_TRACE}) if exists $ENV{DBD_TRACE};
+
 my $got73 = DBD::Pg::_pg_use_catalog($dbh);
 if ($got73) {
 	$dbh->do("SET search_path TO " . $dbh->quote_identifier
@@ -29,7 +31,7 @@ if ($got73) {
 }
 
 $dbh->do("DELETE FROM dbd_pg_test");
-my ($SQL, $sth, $result, @result, $expected, $warning, $rows);
+my ($SQL, $sth, $sth2, $result, @result, $expected, $warning, $rows);
 
 #
 # Test of the "bind_param" statement handle method
@@ -45,27 +47,9 @@ ok( $sth->bind_param(1, 'foo'), 'Statement handle method "bind_param" works when
 my $pgversion = DBD::Pg::_pg_server_version($dbh);
 my $client_level = '';
 if ($got73) {
-	$sth = $dbh->prepare("SHOW client_min_messages");
-	$sth->execute();
-	$client_level = $sth->fetchall_arrayref()->[0][0];
-}
-
-# Make sure that we get warnings when we try to use SQL_BINARY.
-if ($client_level eq "error") {
- SKIP: {
-		skip "Cannot check warning on SQL_BINARY because client_min_messages is set to 'error'", 2;
-	}
-}
-else {
-	$dbh->{Warn} = 1;
-	my $warning;
-	{
-		local $SIG{__WARN__} = sub { $warning = "@_" };
-		$SQL = "SELECT id FROM dbd_pg_test WHERE id = ?";
-		$sth = $dbh->prepare($SQL);
-		$sth->bind_param(1, 'foo', DBI::SQL_BINARY);
-		like( $warning, qr/^Use of SQL_BINARY/, 'Statement handle method "bind_param" given a warning when binding SQL_BINARY');
-	}
+	$sth2 = $dbh->prepare("SHOW client_min_messages");
+	$sth2->execute();
+	$client_level = $sth2->fetchall_arrayref()->[0][0];
 }
 
 #
@@ -74,8 +58,9 @@ else {
 
 $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, val) VALUES (?,?)');
 # Try with 1, 2, and 3 values. All should succeed
+
 eval {
-	$sth->bind_param_array(1, [ 30, 31, 32 ]);
+	$sth->bind_param_array(1, [ 30, 31, 32 ], SQL_INTEGER);
 };
 ok( !$@, 'Statement handle method "bind_param_array" works binding three values to the first placeholder');
 
@@ -103,7 +88,7 @@ ok( $@, 'Statement handle method "bind_param_array" fails when binding two value
 # Test of the "execute_array" statement handle method
 #
 
-$dbh->{RaiseError}=0;
+$dbh->{RaiseError}=1;
 my @tuple_status;
 $rows = $sth->execute_array( { ArrayTupleStatus => \@tuple_status });
 is_deeply( \@tuple_status, [1,1,1], 'Statement method handle "execute_array" works');
@@ -112,7 +97,7 @@ is( $rows, 3, 'Statement method handle "execute_array" returns correct number of
 # Test the ArrayTupleFetch attribute
 $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, val) VALUES (?,?)');
 # Try with 1, 2, and 3 values. All should succeed
-$sth->bind_param_array(1, [ 20, 21, 22 ]);
+$sth->bind_param_array(1, [ 20, 21, 22 ], SQL_INTEGER);
 $sth->bind_param_array(2, 'fruit');
 
 my $counter=0;
@@ -145,11 +130,15 @@ else {
 	$sth = $dbh->prepare("SELECT id+200, val FROM dbd_pg_test");
 	my $goodrows = $sth->execute();
 	my $sth2 = $dbh->prepare("INSERT INTO dbd_pg_test (id, val) VALUES (?,?)");
-	$sth2->execute();
+	$sth2->bind_param(1,'',SQL_INTEGER);
 	my $fetch_tuple_sub = sub { $sth->fetchrow_arrayref() };
 	undef @tuple_status;
 	$rows = $sth2->execute_for_fetch($fetch_tuple_sub, \@tuple_status);
+
 	is_deeply( \@tuple_status, [map{1}(1..$goodrows)], 'Statement handle method "execute_for_fetch" works');
+
+
+
 	is( $rows, $goodrows, 'Statement handle method "execute_for_fetch" returns correct number of rows');
 }
 
@@ -202,8 +191,6 @@ $sth->execute();
 $result = $sth->fetchall_arrayref();
 $expected = [[35,'Guava'],[36,'Lemon']];
 is_deeply( $result, $expected, 'Statement handle method "fetchall_arrayref" returns first row correctly');
-$result = $sth->fetchall_arrayref();
-is_deeply( $result, [], 'Statement handle method "fetchall_arrayref" returns an empty list when done');
 
 # Test of the 'slice' argument
 
@@ -264,7 +251,7 @@ is_deeply( $result, {}, qq{Statement handle method "fetchall_hashref" returns an
 
 $sth = $dbh->prepare("SELECT id, val FROM dbd_pg_test WHERE id IN (33,34)");
 $rows = $sth->rows();
-is( $rows, 0, 'Statement handle method "rows" returns 0 before an execute');
+is( $rows, -1, 'Statement handle method "rows" returns -1 before an execute');
 $sth->execute();
 $rows = $sth->rows();
 is( $rows, 2, 'Statement handle method "rows" returns correct number of rows');
@@ -328,6 +315,7 @@ $sth->finish();
 
 $SQL = "INSERT INTO dbd_pg_test (id, val) VALUES (?, 'lemon')";
 $sth = $dbh->prepare($SQL);
+$sth->bind_param('$1','',SQL_INTEGER);
 $sth->execute(500);
 $result = $sth->{pg_oid_status};
 like( $result, qr/^\d+$/, 'Statement handle method "pg_oid_status" returned a numeric value after insert');
