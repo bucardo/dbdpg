@@ -117,7 +117,7 @@ ok($dbh->do("COMMENT ON COLUMN dbd_pg_test.name IS 'Success'"), 'comment on dbd_
     };
 
     # for bug reported to dbdg-general by Joachim, Hirche.
-    is($row->{DATA_TYPE},1114, 'timestamp has correct data type');
+    is($row->{DATA_TYPE},93, 'timestamp has correct data type');
     
     ok($dbh->disconnect, 'Disconnect');
 
