@@ -111,7 +111,7 @@ ok($dbh->do("COMMENT ON COLUMN dbd_pg_test.name IS 'Success'"), 'comment on dbd_
 	$row = $sth->fetchrow_hashref;
 	like($row->{pg_constraint}
 		, qr/\(\(\(score\s+=\s+1(?:::double\s+precision)?\)\s+OR\s+\(score\s+=\s+2(?:::double precision)?\)\)\s+OR\s+\(score\s+=\s+3(?:::double precision)?\)\)/i
-		, 'table_attributes constraints');
+		, 'column_info constraints');
 
 ok($dbh->disconnect, 'Disconnect');
 

@@ -254,6 +254,8 @@ $DBD::Pg::VERSION = '1.31_3';
 					, NULL::text AS "CHAR_OCTET_LENGTH"
 					, a.attnum AS "ORDINAL_POSITION"
 					, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END  AS "IS_NULLABLE"
+					, format_type(a.atttypid, a.atttypmod)	as "pg_type"
+					, format_type(a.atttypid, NULL)	as "pg_type_only"
 					, a.atttypmod    AS "pg_atttypmod"
 				FROM
 								pg_type t
@@ -276,7 +278,8 @@ $DBD::Pg::VERSION = '1.31_3';
 				, n.nspname		AS "TABLE_SCHEM"
 				, c.relname		AS "TABLE_NAME"
 				, a.attname		AS "COLUMN_NAME"
-				, t.typname		AS "DATA_TYPE"
+				, format_type(a.atttypid, NULL)	as "DATA_TYPE"
+				-- , t.typname		AS "DATA_TYPE"
 				, NULL::text	AS "TYPE_NAME"
 				, a.attlen		AS "COLUMN_SIZE"
 				, NULL::text	AS "BUFFER_LENGTH"
@@ -290,6 +293,8 @@ $DBD::Pg::VERSION = '1.31_3';
 				, NULL::text	AS "CHAR_OCTET_LENGTH"
 				, a.attnum		AS "ORDINAL_POSITION"
 				, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
+				, format_type(a.atttypid, a.atttypmod)	as "pg_type"
+				, format_type(a.atttypid, NULL)	as "pg_type_only"
 				, a.atttypmod   AS "pg_atttypmod"
 			FROM 
 				  ${CATALOG}pg_type		t
@@ -380,7 +385,9 @@ $DBD::Pg::VERSION = '1.31_3';
 			CHAR_OCTET_LENGTH    15
 			ORDINAL_POSITION     16
 			IS_NULLABLE          17
-			pg_atttypmod		 18
+			pg_type							 18
+			pg_type_only				 19
+			pg_atttypmod				 20
 			/);
 
 		 my $constraint_query = DBD::Pg::_pg_check_version(7.3, $version)
@@ -395,12 +402,12 @@ $DBD::Pg::VERSION = '1.31_3';
 
 			# Add pg_constraint
 			$constraint_sth->execute("$row->[$col_map{TABLE_NAME}]_$row->[$col_map{COLUMN_NAME}]");
-			$col_map{pg_constraint} = 18;
+			$col_map{pg_constraint} = 21;
 			($row->[$col_map{pg_constraint}]) = $constraint_sth->fetchrow_array; 
 		}
 
 		# get rid of atttypmod that we no longer need
-		delete $col_map{pg_atttypmod};
+		# delete $col_map{pg_atttypmod};
 
 		# Since we've processed the data in Perl, we have to jump through a hoop
 		# To turn it back into a statement handle 
@@ -1044,18 +1051,22 @@ $DBD::Pg::VERSION = '1.31_3';
 		my $mod = shift;
 		my $size = shift;
 
+
 		if ((defined $size) and ($size > 0)) {
-			$size;
+			return $size;
 		} elsif ($mod > 0xffff) {
 			my $prec = ($mod & 0xffff) - 4;
 			$mod >>= 16;
 			my $dig = $mod;
-			$dig;
+			return "$prec,$dig";
 		} elsif ($mod >= 4) {
-			$mod - 4;
-		} else {
-			$mod;
-		}
+			return $mod - 4;
+		} # else {
+			# $rtn = $mod;
+			# $rtn = undef;
+		# }
+
+		return;
 	}
 
 
