@@ -84,11 +84,9 @@ TESTING:
 The tests are designed to connect to a live database.  The following
 environment variables must be set for the tests to run:
 
-	DBDPG_MAINTAINER=1
-	DBDPG_TEST_HOST=<hostname>
-	DBDPG_TEST_DB=<database>
-	DBDPG_TEST_USER=<user>
-	DBDPG_TEST_PASS=<password>
+        DBI_DSN=dbi:Pg:dbname=<database>
+        DBI_USER=<username>
+        DBI_PASS=<password>
 
 If you are using the shared library libpq.so check if your dynamic
 loader  finds libpq.so. With Linux the command /sbin/ldconfig -v should
