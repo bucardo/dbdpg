@@ -1522,7 +1522,7 @@ reference to an array of hashes, each of which contains the following keys:
 The REMARKS field will be returned as C<NULL> for Postgres versions 7.1.x and
 older.
 
-=item lo_create
+=item lo_creat
 
   $lobjId = $dbh->func($mode, 'lo_creat');
 
@@ -1540,7 +1540,7 @@ Upon failure it returns C<undef>.
   $lobj_fd = $dbh->func($lobjId, $mode, 'lo_open');
 
 Opens an existing large object and returns an object-descriptor for use in
-subsequent C<lo_*> calls. For the mode bits see C<lo_create>. Returns C<undef>
+subsequent C<lo_*> calls. For the mode bits see C<lo_creat>. Returns C<undef>
 upon failure. Note that 0 is a perfectly correct object descriptor!
 
 =item lo_write
