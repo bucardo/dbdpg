@@ -1,6 +1,6 @@
 /* This comes from:
 
-grep '^#define' /data/dnloads/postgresql-7.3/src/include/catalog/pg_type.h |grep OID >pg_typeOID.h
+grep '^#define' pgsrc/src/include/catalog/pg_type.h |grep OID
 
 */
 
@@ -36,6 +36,7 @@ grep '^#define' /data/dnloads/postgresql-7.3/src/include/catalog/pg_type.h |grep
 #define MACADDROID 829
 #define INETOID 869
 #define CIDROID 650
+#define INT4ARRAYOID		1007
 #define ACLITEMOID		1033
 #define BPCHAROID		1042
 #define VARCHAROID		1043
@@ -63,3 +64,4 @@ grep '^#define' /data/dnloads/postgresql-7.3/src/include/catalog/pg_type.h |grep
 #define LANGUAGE_HANDLEROID		2280
 #define INTERNALOID		2281
 #define OPAQUEOID		2282
+#define ANYELEMENTOID	2283
