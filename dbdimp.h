@@ -49,11 +49,12 @@ struct imp_dbh_st {
 
 /* Each statement is broken up into segments */
 struct seg_st {
-	char *segment;     /* non-placeholder string segment */
-	char *placeholder; /* final name of matching placeholder e.g. "$1" */
-	char *value;       /* literal value passed in */
-	char *quoted;      /* for old-style execute, the quoted value */
-	int  quoted_len;   /* length of the quoted value */
+	char *segment;       /* non-placeholder string segment */
+	char *placeholder;   /* final name of matching placeholder e.g. "$1" */
+	char *value;         /* literal value passed in */
+	char *quoted;        /* for old-style execute, the quoted value */
+	int  quoted_len;     /* length of the quoted value */
+	bool boundbyclient;  /* bound by the client, not us */
 
 	sql_type_info_t* bind_type; /* type information for this placeholder */
 
@@ -78,6 +79,7 @@ struct imp_sth_st {
 	bool  is_dml;           /* is this SELECT/INSERT/UPDATE/DELETE? */
 	int   numsegs;          /* how many segments this statement has */
 	int   numphs;           /* how many placeholders this statement has */
+	int   numbound;         /* how many placeholders were explicitly bound by the client, not us */
 	int   totalsize;        /* total string length of the statement */
 	char  placeholder_type; /* which style is being used 1=? 2=$1 3=:foo */
 	seg_t *seg;             /* linked list of segments */
