@@ -17,17 +17,17 @@ ok(defined $dbh,
 
 ok(get('select 1=1') eq 1,'default true is 1');
 ok(get('select 1=0') eq 0,'default false is 0');
-ok(!defined get('select 1=null'),'null');
+ok(!defined get('select null+1=null'),'null');
 
 $dbh->{pg_bool_tf}=0;
 
 ok(get('select 1=1') eq 1,'default true is 1');
 ok(get('select 1=0') eq 0,'default false is 0');
-ok(!defined get('select 1=null'),'null');
+ok(!defined get('select null+1=null'),'null');
 
 $dbh->{pg_bool_tf}=1;
 
-ok(!defined get('select 1=null'),'null');
+ok(!defined get('select null+1=null'),'null');
 
 TODO: {
 
