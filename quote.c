@@ -78,37 +78,38 @@ PQescapeBytea(const unsigned char *bintext, size_t binlen, size_t *bytealen)
 	vp = bintext;
 	for (i = binlen; i > 0; i--, vp++)
 		{
-			if (*vp == 0 || *vp >= 0x80)
+			if (0 == *vp || *vp >= 0x80)
 				len += 5;			/* '5' is for '\\ooo' */
-			else if (*vp == '\'')
+			else if ('\'' == *vp)
 				len += 2;
-			else if (*vp == '\\')
+			else if ('\\' == *vp)
 				len += 4;
 			else
 				len++;
 		}
 	
-	rp = result = (unsigned char *) safemalloc(len);
-	if (rp == NULL)
+	New(0,result,len,unsigned char);
+	if (NULL == rp)
 		return NULL;
+	rp = result;
 	
 	vp = bintext;
 	*bytealen = len;
 	
 	for (i = binlen; i > 0; i--, vp++)
 		{
-			if (*vp == 0 || *vp >= 0x80)
+			if (0 == *vp || *vp >= 0x80)
 				{
 					(void) sprintf(rp, "\\\\%03o", *vp);
 					rp += 5;
 				}
-			else if (*vp == '\'')
+			else if ('\'' == *vp)
 				{
 					rp[0] = '\\';
 					rp[1] = '\'';
 					rp += 2;
 				}
-			else if (*vp == '\\')
+			else if ('\\' == *vp)
 				{
 					rp[0] = '\\';
 					rp[1] = '\\';
@@ -150,15 +151,15 @@ PQunescapeBytea2(const unsigned char *strtext, size_t *retbuflen)
 	unsigned char *buffer, *tmpbuf;
 	int i, j, byte;
 	
-	if (strtext == NULL) {
+	if (NULL == strtext) {
 		return NULL;
 	}
 	
 	strtextlen = strlen(strtext);
 	/* will shrink, also we discover if strtext isn't NULL terminated */
 	
-	buffer = (unsigned char *)safemalloc(strtextlen);
-	if (buffer == NULL)
+	New(0,buffer,strtextlen,unsigned char);
+	if (NULL == buffer)
 		return NULL;
 	
 	for (i = j = buflen = 0; i < strtextlen;)
@@ -167,13 +168,13 @@ PQunescapeBytea2(const unsigned char *strtext, size_t *retbuflen)
 				{
 				case '\\':
 					i++;
-					if (strtext[i] == '\\')
+					if ('\\' == strtext[i])
 						buffer[j++] = strtext[i++];
 					else
 						{
-							if ((isdigit(strtext[i])) &&
-									(isdigit(strtext[i+1])) &&
-									(isdigit(strtext[i+2])))
+							if ((isDIGIT(strtext[i])) &&
+									(isDIGIT(strtext[i+1])) &&
+									(isDIGIT(strtext[i+2])))
 								{
 									byte = VAL(strtext[i++]);
 									byte = (byte << 3) + VAL(strtext[i++]);
@@ -187,11 +188,11 @@ PQunescapeBytea2(const unsigned char *strtext, size_t *retbuflen)
 				}
 		}
 	buflen = j; /* buflen is the length of the unquoted data */
-	tmpbuf = saferealloc(buffer, buflen);
+	Renew(buffer,buflen,char);
 	
 	if (!tmpbuf)
 		{
-			safefree(buffer);
+			Safefree(buffer);
 			return 0;
 		}
 	
@@ -214,31 +215,31 @@ PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 		*bp;
 	unsigned int state = 0;
 	
-	if (strtext == NULL)
+	if (NULL == strtext)
 		return NULL;
 	buflen = strlen(strtext);	/* will shrink, also we discover if
 														 * strtext */
-	buffer = (unsigned char *) safemalloc(buflen);	/* isn't NULL terminated */
-	if (buffer == NULL)
+	New(0,buffer,buflen,unsigned char);
+	if (NULL == buffer)
 		return NULL;
 	for (bp = buffer, sp = strtext; *sp != '\0'; bp++, sp++)
 		{
 			switch (state)
 				{
 				case 0:
-					if (*sp == '\\')
+					if ('\\' == *sp)
 						state = 1;
 					*bp = *sp;
 					break;
 				case 1:
-					if (*sp == '\'')	/* state=5 */
+					if ('\'' == *sp)	/* state=5 */
 						{				/* replace \' with 39 */
 							bp--;
 							*bp = '\'';
 							buflen--;
 							state = 0;
 						}
-					else if (*sp == '\\')	/* state=6 */
+					else if ('\\' == *sp)	/* state=6 */
 						{				/* replace \\ with 92 */
 							bp--;
 							*bp = '\\';
@@ -247,7 +248,7 @@ PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 						}
 					else
 						{
-							if (isdigit(*sp))
+							if (isDIGIT(*sp))
 								state = 2;
 							else
 								state = 0;
@@ -255,14 +256,14 @@ PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 						}
 					break;
 				case 2:
-					if (isdigit(*sp))
+					if (isDIGIT(*sp))
 						state = 3;
 					else
 						state = 0;
 					*bp = *sp;
 					break;
 				case 3:
-					if (isdigit(*sp))		/* state=4 */
+					if (isDIGIT(*sp))		/* state=4 */
 						{
 							int			v;
 							
@@ -280,8 +281,8 @@ PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 					break;
 				}
 		}
-	buffer = saferealloc(buffer, buflen);
-	if (buffer == NULL)
+	Renew(buffer,buflen,char);
+	if (NULL == buffer)
 		return NULL;
 	
 	*retbuflen = buflen;
@@ -298,8 +299,9 @@ null_quote(string, len, retlen)
 	size_t *retlen;
 {
 	char *result;
-	Newc(0,result,len+1,char, char);
-	strncpy(result,string, len);
+	New(0,result,len+1,char);
+	strncpy(result,string,len);
+	result[len]='\0';
 	*retlen = len;
 	return result;
 }
@@ -313,7 +315,6 @@ quote_varchar(string, len, retlen)
 {
 	size_t	outlen;
 	char *result;
-	
 
 	Newc(0,result,len*2+3,char, char);
 	outlen = PQescapeString(result+1, string, len);
@@ -347,6 +348,7 @@ quote_char(string, len, retlen)
 	outlen++;
 	*(result+outlen)='\0';
 	*retlen = outlen;
+
 	return result;
 }
 
@@ -369,18 +371,17 @@ quote_bytea(string, len, retlen)
 	
 	dest = result;
 	
-	memcpy(dest++, "'",1);
+	Copy("'", dest++,1,char);
 	strcpy(dest,intermead);
 	strcat(dest,"\'");
 	
 #ifdef HAVE_PQfreemem
 	PQfreemem(intermead);
 #else
-	free(intermead);
+	Safefree(intermead);
 #endif
 	*retlen=strlen(result);
 	assert(*retlen+1 <= resultant_len+2);
-	
 	
 	return result;
 }
@@ -409,7 +410,7 @@ quote_sql_binary( string, len, retlen)
 	
 	
 	dest = result;
-	memcpy(dest++, "X'",1);
+	Copy("X'",dest++,2,char);
 	
 	for (i=0 ; i <= len ; ++i, dest+=2) 
 		sprintf(dest, "%X", *((char*)string++));
@@ -418,6 +419,7 @@ quote_sql_binary( string, len, retlen)
 	
 	*retlen = strlen(result);
 	assert(*retlen+1 <= max_len);
+
 	return result;
 }
 
@@ -450,7 +452,7 @@ quote_bool(value, len, retlen)
 	
 	*retlen = strlen(result);
 	assert(*retlen+1 <= max_len);
-	
+
 	return result;
 }
 
@@ -467,14 +469,14 @@ quote_integer(value, len, retlen)
 	
 	Newc(0,result,max_len,char,char);
 	
-	if (*((int*)value) == 0)
+	if (0 == *((int*)value) )
 		strcpy(result,"FALSE");
-	if (*((int*)value) == 1)
+	if (1 == *((int*)value))
 		strcpy(result,"TRUE");
 	
 	*retlen = strlen(result);
 	assert(*retlen+1 <= max_len);
-	
+
 	return result;
 }
 
@@ -513,14 +515,14 @@ dequote_bytea(string, retlen)
 	s = string;
 	p = string;
 	while (*s) {
-		if (*s == '\\') {
-			if (*(s+1) == '\\') { /* double backslash */
+		if ('\\' == *s) {
+			if ('\\' == *(s+1)) { /* double backslash */
 				*p++ = '\\';
 				s += 2;
 				continue;
-			} else if ( isdigit(c1=(*(s+1))) &&
-									isdigit(c2=(*(s+2))) &&
-									isdigit(c3=(*(s+3))) ) 
+			} else if ( isDIGIT(c1=(*(s+1))) &&
+									isDIGIT(c2=(*(s+2))) &&
+									isDIGIT(c3=(*(s+3))) ) 
 				{
 					*p++ = (c1-'0') * 64 + (c2-'0') * 8 + (c3-'0');
 					s += 4;
