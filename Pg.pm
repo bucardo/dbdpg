@@ -189,148 +189,88 @@ $DBD::Pg::VERSION = '1.31_6';
 	# column_size, buffer_length, DECIMAL_DIGITS, NUM_PREC_RADIX, NULLABLE,
 	# REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB, CHAR_OCTET_LENGTH,
 	# ORDINAL_POSITION, IS_NULLABLE
-	# The result set is ordered by TABLE_CAT, TABLE_SCHEM, 
-	# TABLE_NAME and ORDINAL_POSITION.
+	# The result set is ordered by TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION.
 
 	sub column_info {
-		my ($dbh) = shift;
-		my @attrs = @_;
-		# my ($dbh, $catalog, $schema, $table, $column) = @_;
-		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
+		my $dbh = shift;
+		my ($catalog, $schema, $table, $column) = @_;
 
+		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
 		my $version = DBD::Pg::_pg_server_version($dbh);
 
-		my @wh = ();
-		my @flds = qw/catname n.nspname c.relname a.attname/;
-
-		for my $idx (0 .. $#attrs) {
-			next if $flds[$idx] eq 'catname'; # Skip catalog
-			next if $flds[$idx] eq 'n.nspname' and ! DBD::Pg::_pg_check_version(7.3, $version);
-			if(defined $attrs[$idx] and length $attrs[$idx]) {
-				# Insure that the value is enclosed in single quotes.
-				$attrs[$idx] =~ s/^'?(\w+)'?$/'$1'/;
-				if ($attrs[$idx] =~ m/[,%]/) {
-					# contains a meta character.
-					push( @wh, q{( } . join ( " OR "
-						, map { m/\%/ 
-							? qq{$flds[$idx] ILIKE $_ }
-							: qq{$flds[$idx] = $_ }
-							} (split /,/, $attrs[$idx]) )
-							. q{ )}
-						);
-				}
-				else {
-					push( @wh, qq{$flds[$idx] = $attrs[$idx]} );
-				}
-			}
+		my @search;
+		## If the schema or table has an underscore or a %, use a LIKE comparison
+		if (defined $schema and length $schema and DBD::Pg::_pg_check_version(7.3, $version)) {
+			push @search, "n.nspname " . ($schema =~ /[_%]/ ? "LIKE " : "= ") . 
+				$dbh->quote($schema);
+		}
+		if (defined $table and length $table) {
+			push @search, "c.relname " . ($table =~ /[_%]/ ? "LIKE " : "= ") .
+				$dbh->quote($table);
+		}
+		if (defined $column and length $column) {
+			push @search, "a.attname " . ($column =~ /[_%]/ ? "LIKE " : "= ") .
+				$dbh->quote($column);
 		}
 
-		my $wh = ""; # ();
-		$wh = join( " AND ", '', @wh ) if (@wh);
-		# my $showschema = DBD::Pg::_pg_check_version(7.3, $version) ? 
-		# 	"n.nspname" : "NULL::text";
+		my $whereclause = join "\n\t\t\t\tAND ", "", @search;
 
-		# my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
-		# 	"LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
+		my $showschema = DBD::Pg::_pg_check_version(7.3, $version) ? 
+			"n.nspname" : "NULL::text";
 
-		# my $pg_description_join  =  DBD::Pg::_pg_check_version(7.2, $version) ?
-		# 	"  LEFT JOIN ${CATALOG}pg_description d  ON (a.attnum = d.objsubid)
-		# 	   LEFT JOIN ${CATALOG}pg_class       dc ON (dc.oid = d.objoid ) "
-		# 	:	
-		# 	"   LEFT JOIN ${CATALOG}pg_description d ON (a.oid = d.objoid )";
+		my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
+			"JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
 
-		my $col_info_sql;
-
-		if (DBD::Pg::_pg_check_version( 7.3, $version) < 2) {
-			$col_info_sql = qq!
+		my $pg_description_join = DBD::Pg::_pg_check_version(7.2, $version) ?
+		 	"LEFT JOIN ${CATALOG}pg_description d  ON (a.attnum = d.objsubid)\n".
+				"\t\t\t\tLEFT JOIN ${CATALOG}pg_class       dc ON (dc.oid = d.objoid )"
+					:
+						"LEFT JOIN ${CATALOG}pg_description d ON (a.oid = d.objoid )";
+		
+		my $col_info_sql = qq!
 			SELECT
-					NULL::text AS "TABLE_CAT"
-				, NULL::text AS "TABLE_SCHEM"
+				NULL::text AS "TABLE_CAT"
+				, $showschema AS "TABLE_SCHEM"
 				, c.relname AS "TABLE_NAME"
 				, a.attname AS "COLUMN_NAME"
-				, a.atttypid 	AS "DATA_TYPE"
-				, format_type(a.atttypid, NULL)	as "TYPE_NAME"
+				, a.atttypid AS "DATA_TYPE"
+				, ${CATALOG}format_type(a.atttypid, NULL) AS "TYPE_NAME"
 				, a.attlen AS "COLUMN_SIZE"
 				, NULL::text AS "BUFFER_LENGTH"
 				, NULL::text AS "DECIMAL_DIGITS"
 				, NULL::text AS "NUM_PREC_RADIX"
-				, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END  AS "NULLABLE"
-				, col_description(a.attrelid, a.attnum) AS "REMARKS"
+				, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
+				, ${CATALOG}col_description(a.attrelid, a.attnum) AS "REMARKS"
 				, af.adsrc AS "COLUMN_DEF"
 				, NULL::text AS "SQL_DATA_TYPE"
 				, NULL::text AS "SQL_DATETIME_SUB"
 				, NULL::text AS "CHAR_OCTET_LENGTH"
 				, a.attnum AS "ORDINAL_POSITION"
-				, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END  AS "IS_NULLABLE"
-				, format_type(a.atttypid, a.atttypmod)	as "pg_type"
-				, format_type(a.atttypid, NULL)	as "pg_type_only"
-				, a.atttypmod    AS "pg_atttypmod"
-			FROM
-				pg_type t
-				LEFT JOIN pg_attribute a
-					ON (t.oid = a.atttypid)
-				LEFT JOIN pg_class c
-					ON (a.attrelid = c.oid)
-				LEFT JOIN pg_attrdef af
-					ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
-			WHERE
-									a.attnum >= 0
-							AND c.relkind IN ('r','v')
-							$wh
-			ORDER BY 2, c.relname, a.attnum
-			!;
-		} else {
-			$col_info_sql = qq!
-			SELECT
-				  NULL::text	AS "TABLE_CAT"
-				, n.nspname		AS "TABLE_SCHEM"
-				, c.relname		AS "TABLE_NAME"
-				, a.attname		AS "COLUMN_NAME"
-				, a.atttypid 	AS "DATA_TYPE"
-				, format_type(a.atttypid, NULL)	as "TYPE_NAME"
-				, a.attlen		AS "COLUMN_SIZE"
-				, NULL::text	AS "BUFFER_LENGTH"
-				, NULL::text	AS "DECIMAL_DIGITS"
-				, NULL::text	AS "NUM_PREC_RADIX"
-				, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
-				, ${CATALOG}col_description(a.attrelid, a.attnum) AS "REMARKS"
-				, pg_attrdef.adsrc	AS "COLUMN_DEF"
-				, NULL::text	AS "SQL_DATA_TYPE"
-				, NULL::text	AS "SQL_DATETIME_SUB"
-				, NULL::text	AS "CHAR_OCTET_LENGTH"
-				, a.attnum		AS "ORDINAL_POSITION"
 				, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
-				, format_type(a.atttypid, a.atttypmod)	as "pg_type"
-				, format_type(a.atttypid, NULL)	as "pg_type_only"
-				, a.atttypmod   AS "pg_atttypmod"
-			FROM 
-				  ${CATALOG}pg_type		t
-				, ${CATALOG}pg_class c
-				  LEFT JOIN ${CATALOG}pg_namespace n 
-				  	ON (n.oid = c.relnamespace)
-				, ${CATALOG}pg_attribute	a
-		    		  LEFT JOIN ${CATALOG}pg_attrdef 
-				  	ON (a.attnum = pg_attrdef.adnum 
-						AND a.attrelid = pg_attrdef.adrelid) 
+				, ${CATALOG}format_type(a.atttypid, a.atttypmod) AS "pg_type"
+				, ${CATALOG}format_type(a.atttypid, NULL) AS "pg_type_only"
+				, a.atttypmod AS "pg_atttypmod"
+			FROM
+				${CATALOG}pg_type t
+				JOIN ${CATALOG}pg_attribute a ON (t.oid = a.atttypid)
+				JOIN ${CATALOG}pg_class c ON (a.attrelid = c.oid)
+				LEFT JOIN ${CATALOG}pg_attrdef af ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
+				$schemajoin
+				$pg_description_join
 			WHERE
-					a.attrelid = c.oid
-				AND a.attnum >= 0
-				AND t.oid = a.atttypid
+				a.attnum >= 0
 				AND c.relkind IN ('r','v')
-				$wh
-			ORDER BY 2, c.relname, a.attnum
+				$whereclause
+			ORDER BY "TABLE_SCHEM", "TABLE_NAME", "ORDINAL_POSITION"
 			!;
 
-		}
-
-		my $data = $dbh->selectall_arrayref($col_info_sql) || return undef;
-
+		my $data = $dbh->selectall_arrayref($col_info_sql) or return undef;
 
 		# To turn the data back into a statement handle, we need 
 		# to fetch the data as an array of arrays, and also have a
 		# a matching array of all the column names
 		my %col_map = (qw/
-			TABLE_CAT			  0 
+			TABLE_CAT             0 
 			TABLE_SCHEM           1 
 			TABLE_NAME            2 
 			COLUMN_NAME           3 
@@ -352,20 +292,21 @@ $DBD::Pg::VERSION = '1.31_6';
 			pg_type_only				 19
 			pg_atttypmod				 20
 			/);
-
-		 my $constraint_query = DBD::Pg::_pg_check_version(7.3, $version)
-			 ? "SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND conname = ?" 
-			 : "SELECT rcsrc FROM pg_relcheck WHERE rcname = ?";
-	     my $constraint_sth = $dbh->prepare($constraint_query); 		 
+		
+		my $constraint_query = DBD::Pg::_pg_check_version(7.3, $version)
+			? "SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND conname = ?" 
+				: "SELECT rcsrc FROM pg_relcheck WHERE rcname = ?";
+		my $constraint_sth = $dbh->prepare($constraint_query); 		 
 
 		for my $row (@$data) {
-			$row->[$col_map{COLUMN_SIZE}]   = _calc_col_size($row->[$col_map{pg_atttypmod}],$row->[$col_map{COLUMN_SIZE}]);
+			$row->[$col_map{COLUMN_SIZE}] = 
+ 				_calc_col_size($row->[$col_map{pg_atttypmod}],$row->[$col_map{COLUMN_SIZE}]);
 
 			# Replace the Pg type with the SQL_ type
 			my $w = $row->[$col_map{DATA_TYPE}];
-			$row->[$col_map{DATA_TYPE}]     = DBD::Pg::db::pg_type_info($dbh,$row->[$col_map{DATA_TYPE}]);
+			$row->[$col_map{DATA_TYPE}] = DBD::Pg::db::pg_type_info($dbh,$row->[$col_map{DATA_TYPE}]);
 			$w = $row->[$col_map{DATA_TYPE}];
-
+			
 			pop @$row;
 
 			# Add pg_constraint
@@ -383,10 +324,7 @@ $DBD::Pg::VERSION = '1.31_6';
 		my $sth = _prepare_from_data(
 			'column_info', 
 			$data, 
-		    [ sort { $col_map{$a} <=> $col_map{$b}  } keys %col_map]);
-
-
-		return $sth;
+				[ sort { $col_map{$a} <=> $col_map{$b}  } keys %col_map]);
 	}
 
 	sub _prepare_from_data {
@@ -814,7 +752,6 @@ $DBD::Pg::VERSION = '1.31_6';
 
 			my @search;
 			## If the schema or table has an underscore or a %, use a LIKE comparison
-				my @flds = qw/catname n.nspname c.relname c.relkind/;
 			if (defined $schema and length $schema and DBD::Pg::_pg_check_version(7.3, $version)) {
 					push @search, "n.nspname " . ($schema =~ /[_%]/ ? "LIKE " : "= ") . $dbh->quote($schema);
 			}
@@ -1606,7 +1543,6 @@ Supported by the driver as proposed by the DBI with the follow exceptions.
 These fields are currently always returned with NULL values:
 
    TABLE_CAT
-   TYPE_NAME
    BUFFER_LENGTH
    DECIMAL_DIGITS
    NUM_PREC_RADIX
@@ -1614,28 +1550,11 @@ These fields are currently always returned with NULL values:
    SQL_DATETIME_SUB
    CHAR_OCTET_LENGTH
 
-Also, one additional non-standard field is returned:
+Also, four additional non-standard fields are returned:
 
-  pg_constraint - holds column constraint definition
-
-=item B<column_info>
-
-	$sth = $dbh->column_info( $catalog, $schema, $table, $column );
-
-Supported by the driver as proposed by the DBI with the follow exceptions.
-These fields are currently always returned with NULL values:
-
-   TABLE_CAT
-   TYPE_NAME
-   BUFFER_LENGTH
-   DECIMAL_DIGITS
-   NUM_PREC_RADIX
-   SQL_DATA_TYPE
-   SQL_DATETIME_SUB
-   CHAR_OCTET_LENGTH
-
-Also, one additional non-standard field is returned:
-
+  pg_type
+  pg_type_only
+  pg_attypmod
   pg_constraint - holds column constraint definition
 
 =item B<table_info>
