@@ -74,6 +74,7 @@ use 5.006001;
 	sub _pg_server_version {
 		my $dbh = shift;
 		return $dbh->{private_dbdpg}{server_version} if defined $dbh->{private_dbdpg}{server_version};		
+		## The second column is simply to help identify DBD::Pg activity in logs for the DBA.
 		$dbh->{private_dbdpg}{full_version} = $dbh->selectrow_array("SELECT version(), 'DBD::Pg'");
 		if ($dbh->{private_dbdpg}{full_version} =~ /(\d+)\.(\d+)\.?(\d*)/) {
 			$dbh->{private_dbdpg}{dotted_version} = "$1.$2.".$3||0;
