@@ -1,23 +1,23 @@
-use strict;
-use DBI;
+#!perl -w
+
+# Cleanup by removing the test table
+
 use Test::More;
+use DBI;
+use strict;
+$|=1;
 
 if (defined $ENV{DBI_DSN}) {
-    plan tests => 4;
+	plan tests => 2;
 } else {
-    plan skip_all => "DBI_DSN must be set: see the README file";
+	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
 
 my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
-		       {RaiseError => 1, AutoCommit => 1}
-		      );
-ok(defined $dbh,
-   'connect with transaction'
-  );
+											 {RaiseError => 1, PrintError => 0, AutoCommit => 0});
+ok( defined $dbh, 'Connect to database for cleanup');
 
-ok($dbh->do(q{DROP TABLE dbd_pg_test}),       'DROP TABLE dbd_pg_test');
-ok($dbh->do( "DROP TABLE dbd_pg_col_info"), 'DROP TABLE dbd_pg_col_info');
+ok( $dbh->do('DROP TABLE dbd_pg_test'), 'The testing table "dbd_pg_test" has been dropped');
 
-ok($dbh->disconnect(),
-   'disconnect'
-  );
+$dbh->disconnect();
+
