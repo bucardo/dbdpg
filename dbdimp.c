@@ -327,7 +327,7 @@ dbd_db_commit (dbh, imp_dbh)
 
 			/* check result */
 			if (status != PGRES_COMMAND_OK) {
-				pg_error(dbh, status, "commit failed\n");
+				pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 				return 0;
 			}
 			imp_dbh->done_begin = 0;
@@ -363,7 +363,7 @@ dbd_db_rollback (dbh, imp_dbh)
 			
 			/* check result */
 			if (status != PGRES_COMMAND_OK) {
-				pg_error(dbh, status, "rollback failed\n");
+				pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 				return 0;
 			}
 			imp_dbh->done_begin = 0;
@@ -400,7 +400,7 @@ dbd_db_disconnect (dbh, imp_dbh)
 			status = result ? PQresultStatus(result) : -1;
 			PQclear(result);
 			if (status != PGRES_COMMAND_OK) {
-				pg_error(dbh, status, "rollback failed\n");
+				pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 				return 0;
 			}
 			if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_disconnect: AutoCommit=off -> rollback\n"); }
@@ -464,7 +464,7 @@ dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 					status = result ? PQresultStatus(result) : -1;
 					PQclear(result);
 					if (status != PGRES_COMMAND_OK) {
-						pg_error(dbh, status, "commit failed\n");
+						pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 						return 0;
 					}
 				}
@@ -933,7 +933,7 @@ dbd_st_execute (sth, imp_sth)  /* <= -2:error, >=0:ok row count, (-1=unknown cou
 		status = result ? PQresultStatus(result) : -1;
 		PQclear(result);
 		if (status != PGRES_COMMAND_OK) {
-			pg_error(sth, status, "begin failed\n");
+			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 			return -2;
 		}
 		imp_dbh->done_begin = 1;
