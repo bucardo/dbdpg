@@ -122,6 +122,9 @@ use 5.006001;
 
 		# create a 'blank' dbh
 
+		## Allow "db" and "database" as synonyms for "dbname"
+		$dbname =~ s/\b(?:db|database)\s*=/dbname=/;
+
 		my $Name = $dbname;
 		if ($dbname =~ m#dbname\s*=\s*[\"\']([^\"\']+)#) {
 			$Name = "'$1'";
@@ -130,6 +133,7 @@ use 5.006001;
 		elsif ($dbname =~ m#dbname\s*=\s*([^;]+)#) {
 			$Name = $1;
 		}
+
 
 		$user = "" unless defined($user);
 		$auth = "" unless defined($auth);
@@ -1407,7 +1411,7 @@ variables and then it uses hard-coded defaults:
   host       PGHOST                local domain socket
   hostaddr*  PGHOSTADDR            local domain socket
   port       PGPORT                5432
-  dbname     PGDATABASE            current userid
+  dbname**   PGDATABASE            current userid
   username   PGUSER                current userid
   password   PGPASSWORD            ""
   options    PGOPTIONS             ""
@@ -1415,6 +1419,8 @@ variables and then it uses hard-coded defaults:
   sslmode*   PGSSLMODE             ""
 
 * Only for servers running version 7.4 or greater
+
+** Can also use "db" or "database"
 
 The options parameter specifies runtime options for the Postgres
 backend. Common usage is to increase the number of buffers with the C<-B>
