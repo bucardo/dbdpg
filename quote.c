@@ -66,9 +66,9 @@ PQescapeString(char *to, const char *from, size_t length)
  */
 #ifndef HAVE_PQescapeBytea
 unsigned char *
-PQescapeBytea(unsigned char *bintext, size_t binlen, size_t *bytealen)
+PQescapeBytea(const unsigned char *bintext, size_t binlen, size_t *bytealen)
 {
-	unsigned char *vp;
+	const unsigned char *vp;
 	unsigned char *rp;
 	unsigned char *result;
 	size_t		i;
@@ -129,6 +129,9 @@ PQescapeBytea(unsigned char *bintext, size_t binlen, size_t *bytealen)
 }
 #endif
 
+
+#define VAL(CH) ((CH) - '0')
+
 /*
  *		PQunescapeBytea - converts the null terminated string representation
  *		of a bytea, strtext, into binary, filling a buffer. It returns a
@@ -136,28 +139,83 @@ PQescapeBytea(unsigned char *bintext, size_t binlen, size_t *bytealen)
  *		buffer in retbuflen. The pointer may subsequently be used as an
  *		argument to the function free(3). It is the reverse of PQescapeBytea.
  *
- *		The following transformations are reversed:
- *		'\0' == ASCII  0 == \000
- *		'\'' == ASCII 39 == \'
- *		'\\' == ASCII 92 == \\
+ *		The following transformations are made:
+ *		\'   == ASCII 39 == '
+ *		\\   == ASCII 92 == \
+ *		\ooo == a byte whose value = ooo (ooo is an octal number)
+ *		\x   == x (x is any character not matched by the above transformations)
  *
- *		States:
- *		0	normal		0->1->2->3->4
- *		1	\			   1->5
- *		2	\0			   1->6
- *		3	\00
- *		4	\000
- *		5	\'
- *		6	\\
  */
 #ifndef HAVE_PQunescapeBytea
+unsigned char *
+PQunescapeBytea2(const unsigned char *strtext, size_t *retbuflen)
+{
+	size_t strtextlen, buflen;
+	unsigned char *buffer, *tmpbuf;
+	int i, j, byte;
+
+	if (strtext == NULL) {
+		return NULL;
+	}
+
+	strtextlen = strlen(strtext);
+	/* will shrink, also we discover if strtext isn't NULL terminated */
+
+	buffer = (unsigned char *)malloc(strtextlen);
+	if (buffer == NULL)
+		return NULL;
+
+	for (i = j = buflen = 0; i < strtextlen;)
+	{
+		switch (strtext[i])
+		{
+			case '\\':
+				i++;
+				if (strtext[i] == '\\')
+					buffer[j++] = strtext[i++];
+				else
+				{
+					if ((isdigit(strtext[i])) &&
+						(isdigit(strtext[i+1])) &&
+						(isdigit(strtext[i+2])))
+					{
+						byte = VAL(strtext[i++]);
+						byte = (byte << 3) + VAL(strtext[i++]);
+						buffer[j++] = (byte << 3) + VAL(strtext[i++]);
+					}
+				}
+				break;
+
+			default:
+				buffer[j++] = strtext[i++];
+		}
+	}
+	buflen = j; /* buflen is the length of the unquoted data */
+	tmpbuf = realloc(buffer, buflen);
+
+	if (!tmpbuf)
+	{
+		free(buffer);
+		return 0;
+	}
+
+	*retbuflen = buflen;
+	return tmpbuf;
+}
+
+
+
+
+
+
+
 unsigned char *
 PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 {
 	size_t		buflen;
 	unsigned char *buffer,
-			   *sp,
-			   *bp;
+			 *sp,
+			 *bp;
 	unsigned int state = 0;
 
 	if (strtext == NULL)
@@ -238,7 +296,7 @@ PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 
 
 char *
-dbd_quote  (string, pg_type, length, retlen)
+dbd_quote (string, pg_type, length, retlen)
 	char *string;
 	int pg_type;
 	size_t length;
@@ -247,8 +305,8 @@ dbd_quote  (string, pg_type, length, retlen)
 	sql_type_info_t *type_info;
 	char *retval;
 
-    if(pg_type == 17)
-	  croak("Use of SQL_BINARY invalid in quote()");
+	if(pg_type == 17)
+		croak("Use of SQL_BINARY invalid in quote()");
 
 	type_info = pg_type_data(pg_type);
 	if(!type_info)
@@ -310,7 +368,7 @@ quote_char(string, len, retlen)
 	Newc(0,result,len*2+3,char, char);
 	outlen = PQescapeString(result+1, string, len);
 
-	/*  TODO: remalloc outlen */
+	/* TODO: remalloc outlen */
 	*result = '\'';
 	outlen++;
 	*(result+outlen)='\'';
@@ -374,7 +432,7 @@ quote_bytea(string, len, retlen)
 
 	free(intermead);
 	*retlen=strlen(result);
-	assert(*retlen+1 <=  resultant_len+2);
+	assert(*retlen+1 <= resultant_len+2);
 	
 
 	return result;
@@ -516,8 +574,7 @@ dequote_bool (string, retlen)
 		case 'f': *string = '0'; break;
 		case 't': *string = '1'; break;
 		default:
-			croak("I do not know how to deal with %c as a bool",
-			    *string);
+			croak("I do not know how to deal with %c as a bool", *string);
 	}
 	*retlen = 1;
 }
