@@ -19,15 +19,15 @@ Known Issues:
 TODO: 
 
 - Change quote and dequote functions to take Sv instead of string so that
-   things like arrays can be seralized by the quote function.  This will
+   things like arrays can be serialized by the quote function.  This will
    take care of broken chopblanks and pg_bool_tf (pass the  quote/dequote 
    options struct to function quote/dequote functions).
 - Export the full list of supported OID types.
 - finish all type mappings  in types.c 
-- supoort for begin_work() method.
+- support for begin_work() method.
 - clean logging and trace levels.
 - dblogin to handle user names, table table names and other
-   names that containg ';'s
+   names that contain ';'s
 - add attributes to control preparing of statements.
 - rewrite hacked version detection code (and get format for string so 
    it is done correctly with patch level &c.).
@@ -37,9 +37,7 @@ TODO:
 - add array OID types
 - quoting/dequoting of arrays.
 - allow user callbacks to quote user-defined types?
-- foregin key info
-- get_info()
-- mvoe tyupeinfo into C and pull off of typeinfo struct.
+- move typeinfo into C and pull off of typeinfo struct.
 - foreign_key_info()
 - write up quote_identifier()
 - rename functions and add defines to avoid problems with static linking of
