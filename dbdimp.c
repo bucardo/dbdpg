@@ -1688,7 +1688,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 		return 0;
 	
 	/* What is our status? */
-	tstatus = dbd_db_txn_status(imp_dbh->conn);
+	tstatus = dbd_db_txn_status(imp_dbh);
 	if (dbis->debug >= 3)
 		PerlIO_printf(DBILOGFP, "  dbdpg: transaction status is %d\n", tstatus);
 
