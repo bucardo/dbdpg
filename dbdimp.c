@@ -768,10 +768,11 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
 	if (SvTYPE(newvalue) > SVt_PVLV) { /* hook for later array logic	*/
 		croak("Can't bind a non-scalar value (%s)", neatsvpv(newvalue,0));
 	}
-	if (SvROK(newvalue) && !IS_DBI_HANDLE(newvalue)) {
+	if ((SvROK(newvalue) &&!IS_DBI_HANDLE(newvalue) &&!SvMAGIC(newvalue))) {
 		/* dbi handle allowed for cursor variables */
 		croak("Can't bind a reference (%s)", neatsvpv(newvalue,0));
 	}
+
 	if (SvTYPE(newvalue) == SVt_PVLV && is_inout) {	 /* may allow later */
 		croak("Can't bind ``lvalue'' mode scalar as inout parameter (currently)");
 	}
@@ -805,6 +806,8 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
 							"by DBD::ChurlPg",
 							name, sql_type_info->type_name);
 			}
+		} else {
+			croak("Cannot bind %s unknown sql_type %i",	name, sql_type);
 		}
 		bind_type = sql_type_info->type_id;
 		
