@@ -1644,12 +1644,15 @@ Also, one additional non-standard field is returned:
 
 =item B<table_info>
 
-  $sth = $dbh->table_info;
+  $sth = $dbh->table_info( $catalog, $schema, $table, $type );
 
-Supported by the driver as proposed by DBI. This method returns all table.
-which are owned by the current user. It does not select any indexes and
-sequences. Also System tables are not selected. As TABLE_QUALIFIER the reltype
-attribute is returned and the REMARKS are undefined.
+Supported by the driver as proposed by DBI. This method returns all tables 
+and views visible to the current user. The $catalog argument is currently 
+unused. The schema and table arguments will do a 'LIKE' search if a 
+percent sign (%) or an underscore (_) are detected in the argument.
+The $type argument accepts a value of wither "TABLE" or "VIEW" 
+(using both is the default action).
+
 
 =item B<foreign_key_info>
 
@@ -1662,11 +1665,13 @@ about first column of any multiple-column keys.
 
 =item B<tables>
 
-  @names = $dbh->tables;
+  @names = $dbh->tables( $catalog, $schema, $table, $type );
 
 Supported by the driver as proposed by DBI. This method returns all tables and
-views which are owned by the current user. It does not select any indexes and
-sequences, or system tables.
+views which are visible to the current user. If the database is version 7.3 
+or higher, the name of the schema appears before the table or view name.
+
+
 
 =item B<type_info_all>
 
