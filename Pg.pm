@@ -989,8 +989,7 @@ $DBD::Pg::VERSION = '1.31';
     6  => ["SQL_DRIVER_NAME",                'DBD/Pg.pm',         ],
    17  => ["SQL_DBMS_NAME",                  'PostgreSQL'         ],
    18  => ["SQL_DBMS_VERSION",               'ODBCVERSION'        ],
-   29  => ["SQL_IDENTIFIER_QUOTE_CHAR",      '\"'                 ],
-   41  => ["SQL_CATALOG_NAME_SEPARATOR",     ''                   ],
+   29  => ["SQL_IDENTIFIER_QUOTE_CHAR",      '"'                  ],
    47  => ["SQL_USER_NAME",                  $dbh->{CURRENT_USER} ],
  
 ## Size limits
@@ -1044,7 +1043,6 @@ $DBD::Pg::VERSION = '1.31';
    14  => ["SQL_SEARCH_PATTERN_ESCAPE",      '\\'                 ],
    22  => ["SQL_CONCAT_NULL_BEHAVIOR",       0                    ], ## SQL_CB_NULL
    28  => ["SQL_IDENTIFIER_CASE",            4                    ], ## SQL_IC_MIXED 
-   29  => ["SQL_IDENTIFIER_QUOTE_CHAR",      '\"'                 ],
    40  => ["SQL_PROCEDURE_TERM",             'Function'           ],
    45  => ["SQL_TABLE_TERM",                 'Table'              ],
    46  => ["SQL_TXN_CAPABLE",                4                    ], ## SQL_TC_ALL
