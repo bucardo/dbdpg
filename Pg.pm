@@ -2618,6 +2618,39 @@ C<BEGIN>, C<COMMIT> or C<ROLLBACK> statements will be rejected. DBD::Pg
 implements C<AutoCommit> by issuing a C<BEGIN> statement immediately before
 executing a statement, and a C<COMMIT> afterwards.
 
+=head2 Savepoints
+
+PostgreSQL version 8.0 introduced the concept of savepoints, which allows 
+transactions to be rolled back to a certain point without affecting the 
+rest of the transaction. DBD::Pg encourages using the following methods to 
+control savepoints:
+
+=over 4
+
+=item B<pg_savepoint>
+
+Creates a savepoint. This will fail unless you are inside of a transaction. The 
+only argument is the name of the savepoint. Note that PostgreSQL does allow 
+multiple savepoints with the same name to exist.
+
+	$dbh->pg_savepoint("mysavepoint");
+
+=item B<pg_rollback_to>
+
+Rolls the database back to a named savepoint, discarding any work performed after 
+that point. If more than one savepoint with that name exists, rolls back to the 
+most recently created one.
+
+	$dbh->pg_rollback_to("mysavepoint");
+
+=item B<pg_release>
+
+Releases (or removes) a named savepoint. If more than one savepoint with that name 
+exists, it will only destroy the most recently created one. Note that all savepoints 
+created after the one being released are also destroyed.
+
+=back
+
 =head2 Large Objects
 
 This driver supports all largeobject functions provided by libpq via the
