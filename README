@@ -105,6 +105,10 @@ or a space inside of it:
 
 	DBI_DSN='dbi:Pg:dbname="<data;base>"'
 
+The tests assume that a schema named "public" is available for 
+7.3 and greater servers. To override this, set the environment 
+variable DBD_SCHEMA to a valid schema before testing.
+
 If you are using the shared library libpq.so check if your dynamic
 loader finds libpq.so. With Linux the command /sbin/ldconfig -v should
 tell you where it finds libpq.so. If ldconfig does not find libpq.so,

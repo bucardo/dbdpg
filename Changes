@@ -1,3 +1,6 @@
+	- Make the tests honor the DBD_SCHEMA variable instead of 
+		assuming that "public" is available.
+		[Rainer Weikusat]
 	- ddbimp.c cleanups: better error messages, ensure commit
 		is only called one after a transaction fails.
 		[Alexey Slynko]

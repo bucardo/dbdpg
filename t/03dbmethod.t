@@ -362,8 +362,9 @@ if (! DBD::Pg::_pg_check_version(7.3, $pgversion)) {
 }
 else {
 
-# Since the schema name is part of our test, let's encourage 'public':
-$dbh->do("SET search_path TO 'public'");
+## Allow a custom schema, or default to "public"
+my $schema = exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public';
+$dbh->do("SET search_path TO " . $dbh->quote_identifier($schema));
 
 # Drop any tables that may exist
 $SQL = "SELECT relname FROM pg_catalog.pg_class WHERE relkind='r' AND relname LIKE 'dbd_pg_test_'";
@@ -440,11 +441,11 @@ $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk1 = [
 					 undef,
-					 'public',
+					 $schema,
 					 'dbd_pg_test1',
 					 'a',
 					 undef,
-					 'public',
+					 $schema,
 					 'dbd_pg_test2',
 					 'f2',
 					 2,
@@ -480,11 +481,11 @@ $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk2 = [
 					 undef,
-					 'public',
+					 $schema,
 					 'dbd_pg_test1',
 					 'b',
 					 undef,
-					 'public',
+					 $schema,
 					 'dbd_pg_test2',
 					 'f3',
 					 '3',
@@ -510,11 +511,11 @@ $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk3 = [
 					 undef,
-					 'public',
+					 $schema,
 					 'dbd_pg_test1',
 					 'c',
 					 undef,
-					 'public',
+					 $schema,
 					 'dbd_pg_test2',
 					 'f3',
 					 '3',
@@ -542,11 +543,11 @@ $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk4 = [
 					 undef,
-					 'public',
+					 $schema,
 					 'dbd_pg_test1',
 					 'a',
 					 undef,
-					 'public',
+					 $schema,
 					 'dbd_pg_test3',
 					 'ff1',
 					 '1',
@@ -581,11 +582,11 @@ $result = $sth->fetchall_arrayref();
 ## "dbd_pg_test2_fk4" FOREIGN KEY (f1, f3, f2) REFERENCES dbd_pg_test1(c, a, b)
 my $fk5 = [
 					 undef,
-					 'public',
+					 $schema,
 					 'dbd_pg_test1',
 					 'c',
 					 undef,
-					 'public',
+					 $schema,
 					 'dbd_pg_test2',
 					 'f1',
 					 '1',
