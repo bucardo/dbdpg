@@ -1,44 +1,22 @@
 Known Issues: 
 
 - quote("stuff", {typeinfo }) is broken (only when hashref is passed in)
-- has some // style comments around debug statements that need to be 
-  converted into logging statements
-- PREPARE is not bullet-proof casts in RSH of equality  and functions 
-   LHS of equality can break serverside prepare, so decide exactly how to 
-   do this and how to get prepares of INSERT statements to work?  Move
-   prepqre to execute and build list column list in bind_param? Add 
-   attributes to prepare to identify the columns and serverside prepare if 
-   they exist?
-- Code is not as clean as it should be -- some kludgeness in there.
-- Documentation has not been updated.
 
 TODO: 
 
-- Implement last_insert_id()
-- Support for server-side prepare
 - Support for new error messages
 - Use new protocol for COPY
-
-
 - Change quote and dequote functions to take Sv instead of string so that
    things like arrays can be serialized by the quote function.  This will
    take care of broken chopblanks and pg_bool_tf (pass the  quote/dequote 
    options struct to function quote/dequote functions).
 - Export the full list of supported OID types.
 - finish all type mappings  in types.c 
-- support for begin_work() method.
-- clean logging and trace levels.
-- add attributes to control preparing of statements.
-- rewrite hacked version detection code (and get format for string so 
-   it is done correctly with patch level &c.).
-- various code cleanups and polishing.
-- Copy over external test cases from DBD::Churlpg and write more tests.
 - Implement a clean UTF-8 support.
 - add array OID types
 - quoting/dequoting of arrays.
 - allow user callbacks to quote user-defined types?
 - move typeinfo into C and pull off of typeinfo struct.
 - write up quote_identifier()
-- rename functions and add defines to avoid problems with static linking of
-  multi DBDs
+- rename functions and add defines to avoid problems with static linking of multi DBDs
 
