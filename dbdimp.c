@@ -1743,7 +1743,8 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		if (! strncmp(cmdStatus, "DELETE", 6) || ! strncmp(cmdStatus, "INSERT", 6) || ! strncmp(cmdStatus, "UPDATE", 6)) {
 			ret = atoi(cmdTuples);
 		} else {
-			return -1;
+			/* We assume that no rows are affected for successful commands (e.g. ALTER TABLE) */
+			return 0;
 		}
 	}
 	else if (PGRES_COPY_OUT == status || PGRES_COPY_IN == status) {
