@@ -206,7 +206,7 @@ dbd_db_getfd (dbh, imp_dbh)
     char id;
     SV* retsv;
 
-    if (dbis->debug >= 1) { fprintf(DBILOGFP, "dbd_db_getfd\n"); }
+    if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_getfd\n"); }
 
     return PQsocket(imp_dbh->conn);
 }
@@ -221,7 +221,7 @@ dbd_db_pg_notifies (dbh, imp_dbh)
     AV* ret;
     SV* retsv;
 
-    if (dbis->debug >= 1) { fprintf(DBILOGFP, "dbd_db_pg_notifies\n"); }
+    if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_pg_notifies\n"); }
 
     PQconsumeInput(imp_dbh->conn);
 
@@ -1107,7 +1107,7 @@ dbd_st_execute (sth, imp_sth)   /* <= -2:error, >=0:ok row count, (-1=unknown co
     int ret = -2;
     int num_fields;
     int i;
-    int len;
+    STRLEN len;
     bool in_literal = FALSE;
     char in_comment = '\0';
     char *src;
