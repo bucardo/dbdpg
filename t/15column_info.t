@@ -2,11 +2,10 @@
 $| = 1;
 
 use DBI qw(:sql_types);
-use Data::Dumper;
 use strict;
 use Test::More;
 if (defined $ENV{DBI_DSN}) {
-    plan tests => 24;
+    plan tests => 25;
 } else {
     plan skip_all => "DBI_DSN must be set: see the README file";
 }
@@ -98,11 +97,10 @@ ok($dbh->do("COMMENT ON COLUMN dbd_pg_test.name IS 'Success'"), 'comment on dbd_
 		$row = $sth->fetchrow_hashref;
 	};	
 	ok(!$@, 'column_info called without dying');
-	use Data::Dumper;
-	is($row->{REMARKS},'Success','column_info REMARKS') or diag Dumper($row);
+	is($row->{REMARKS},'Success','column_info REMARKS');
 	$sth = undef;
 
- 	like($row->{COLUMN_DEF},"/^'Testing Default'(?:::character varying)?\$/",'column_info default value') or diag Dumper($row);
+ 	like($row->{COLUMN_DEF},"/^'Testing Default'(?:::character varying)?\$/",'column_info default value');
 
 	cmp_ok($row->{COLUMN_SIZE},'==', 20, 'column_info field size for type varchar');
 	cmp_ok($row->{DATA_TYPE},'==', 12, 'column_info data type varchar');
@@ -113,9 +111,15 @@ ok($dbh->do("COMMENT ON COLUMN dbd_pg_test.name IS 'Success'"), 'comment on dbd_
 		, qr/\(\(\(score\s+=\s+1(?:::double\s+precision)?\)\s+OR\s+\(score\s+=\s+2(?:::double precision)?\)\)\s+OR\s+\(score\s+=\s+3(?:::double precision)?\)\)/i
 		, 'column_info constraints');
 
-ok($dbh->disconnect, 'Disconnect');
+    eval {
+	    $sth = $dbh->column_info( undef, undef, 'dbd_pg_test','date' );
+        $row = $sth->fetchrow_hashref;
+    };
 
-
+    # for bug reported to dbdg-general by Joachim, Hirche.
+    is($row->{DATA_TYPE},1114, 'timestamp has correct data type');
+    
+    ok($dbh->disconnect, 'Disconnect');
 
 
 exit(0);
