@@ -404,7 +404,6 @@ quote_sql_binary( string, len, retlen)
 		 size_t	*retlen;
 {
 	char *result;
-	char *tstring;
 	char *dest;
 	int max_len = 0, i;
 	
@@ -424,9 +423,8 @@ quote_sql_binary( string, len, retlen)
 	dest = result;
 	Copy("X'",dest++,2,char);
 	
-	tstring = (char*)string;
 	for (i=0 ; i <= len ; ++i, dest+=2) {
-		sprintf(dest, "%X", *((char*)tstring++));
+		sprintf(dest, "%X", *(i+(char*)string));
 	}
 	
 	strcat(dest, "\'");
