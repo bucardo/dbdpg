@@ -1,4 +1,8 @@
 1.40 
+	- Execute returns 0 (0E0) not -1 for successful DDL commands.
+		[Robert Treat]
+	- Change all string lengths to use STRLEN
+		[rink@stack.nl]
 	- Added $dbh->pg_server_trace($fh) [Greg Sabino Mullane]
 	- Added $dbh->{pg_errorlevel}. [Greg Sabino Mullane]
 	- Fix utf8 quote() support [Dominic Mitchell <dom@semantico.com>]
