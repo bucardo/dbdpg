@@ -50,6 +50,12 @@ my $os = $^O;
 print "OS: $os\n";
 print "PostgreSQL version: $major_ver.$minor_ver.$patch\n";
 
+if ($os =~ /Win32/) {
+	for ($POSTGRES_INCLUDE, $POSTGRES_LIB) {
+		$_ = qq{"$_"} if index($_,'"');
+	}
+}
+
 ## Warn about older versions
 if ($major_ver < 7 or ($major_ver == 7 and $minor_ver < 2)) {
 	print "\n****************\n";
