@@ -91,6 +91,7 @@ my %opts = (
                     },
     CCFLAGS      => $comp_opts,
     PERL_MALLOC_OK => 1,
+    clean        => { FILES => 'trace' },
 );
 
 if ($os eq 'hpux') {
