@@ -1,3 +1,6 @@
+	- a fetch on any column that had a type that did not have an entry
+	  in the type_info array would segfault DBD::Pg.  [reported by: TODO]
+
 1.31 Mon Nov 17 21:21:21 UTC 2003
 	- $dbh->{TYPE} now returns SQL_TYPE_TIMESTAMP instead of 1114 for 
 	  timestamp columns.  (In 1.31_x {x| x<8} $sth->{TYPE} returned 0

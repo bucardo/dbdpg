@@ -1036,7 +1036,9 @@ dbd_st_fetch (sth, imp_sth)
 			
 			sv_setpvn(sv, value, value_len);
 			
-			if ((type_info->type_id == BPCHAROID) && chopblanks) {
+			if (type_info && (type_info->type_id == BPCHAROID) && 
+				chopblanks)
+			{
 				p = SvEND(sv);
 				len = SvCUR(sv);
 				while(len && *--p == ' ')
