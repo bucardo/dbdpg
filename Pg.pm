@@ -1360,9 +1360,9 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
   use DBI;
 
-  $dbh = DBI->connect("dbi:Pg:dbname=$dbname", "", "");
+  $dbh = DBI->connect("dbi:Pg:dbname=$dbname", "", "", {AutoCommit => 0});
 
-  # for some advanced uses you may need PostgreSQL type values:
+  # For some advanced uses you may need PostgreSQL type values:
   use DBD::Pg qw(:pg_types);
 
   # See the DBI module documentation for full details
@@ -1398,7 +1398,8 @@ some package-installed versions).
 The following connect statement shows all possible parameters:
 
   $dbh = DBI->connect("dbi:Pg:dbname=$dbname;host=$host;port=$port;" .
-                      "options=$options;tty=$tty", "$username", "$password");
+                      "options=$options", "$username", "$password",
+                      {AutoCommit => 0});
 
 If a parameter is undefined PostgreSQL first looks for specific environment
 variables and then it uses hard-coded defaults:
@@ -1406,10 +1407,9 @@ variables and then it uses hard-coded defaults:
   parameter  environment variable  hard coded default
   --------------------------------------------------
   dbname     PGDATABASE            current userid
-  host       PGHOST                localhost
+  host       PGHOST                local domain socket
   port       PGPORT                5432
   options    PGOPTIONS             ""
-  tty        PGTTY                 ""
   username   PGUSER                current userid
   password   PGPASSWORD            ""
 
@@ -1476,8 +1476,8 @@ related to the current handle.
   $str = $h->state;
 
 Supported by this driver. Returns a five-character "SQLSTATE" code.
-PostgreSQL servers version 7.4 will always return a generic "S1000" code.
-Success is indicated by a "00000" code.
+PostgreSQL servers version 7.4 or less will always return a generic 
+"S1000" code. Success is indicated by a "00000" code.
 
 The list of codes used by PostgreSQL can be found at:
 L<http://www.postgresql.org/docs/current/static/errcodes-appendix.html>
@@ -2182,10 +2182,9 @@ type is officially deprecated. Use C<PG_BYTEA> with C<bind_param()> instead:
 Supported by this driver as proposed by DBI. According to the classification of
 DBI, PostgreSQL is a database in which a transaction must be explicitly
 started. Without starting a transaction, every change to the database becomes
-immediately permanent. The default of AutoCommit is on, which corresponds to
-the default behavior of PostgreSQL. When setting AutoCommit to off, a
-transaction will be started and every commit or rollback will automatically
-start a new transaction. For details see the notes about B<Transactions>
+immediately permanent. The default of AutoCommit is on, but this may change 
+in the future, so it is highly recommended that you explicitly set it when 
+calling C<connect()>. For details see the notes about B<Transactions> 
 elsewhere in this document.
 
 =item B<Driver>  (handle)
@@ -2197,7 +2196,7 @@ Implemented by DBI, no driver-specific impact.
 The default DBI method is overridden by a driver specific method that returns
 only the database name. Anything else from the connection string is stripped
 off. Note that, in contrast to the DBI specs, the DBD::Pg implementation fo
-this method is read-only .
+this method is read-only.
 
 =item B<RowCacheSize>  (integer)
 
