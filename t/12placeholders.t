@@ -39,15 +39,15 @@ checkquote('two');
 checkquote('three');
 checkquote('four');
 
-my $sth = $dbh->prepare(qq{INSERT INTO dbd_pg_test (id,pname) VALUES (?, ?)});
-$sth->execute(100, $quo);
+my $sth = $dbh->prepare(qq{INSERT INTO dbd_pg_test (id,pname) VALUES (?, $quo)});
+$sth->execute(100);
 
 my $sql = "SELECT pname FROM dbd_pg_test WHERE pname = $quo";
 $sth = $dbh->prepare($sql);
 $sth->execute();
 
 my ($retr) = $sth->fetchrow_array();
-ok( (defined($retr) && $retr eq "\\'?:"), 'fetch');
+ok( (defined($retr) && $retr eq "\\'?:"), "fetch");
 
 eval {
 	$sth = $dbh->prepare($sql);
