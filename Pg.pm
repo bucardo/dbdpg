@@ -266,21 +266,8 @@ $DBD::Pg::VERSION = '1.30_1';
 		for my $idx (0 .. $#attrs) {
 			next if ($flds[$idx] eq 'catname'); # Skip catalog
 			if(defined $attrs[$idx] and length $attrs[$idx]) {
-				if ($attrs[$idx] =~ m/[,%_?]/) {
-					# contains a meta character.
-					push( @wh, q{( } . join ( " OR "
-						, map { push(@dat, $_);
-							m/[%_?]/ 
-							? qq{$flds[$idx] iLIKE ? }
-							: qq{$flds[$idx]    = ?  }
-							} (split /,/, $attrs[$idx]) )
-							. q{ )}
-						);
-				}
-				else {
-					push( @dat, $attrs[$idx] );
-					push( @wh, qq{$flds[$idx] = ? } );
-				}
+				push( @dat, $attrs[$idx] );
+				push( @wh, qq{$flds[$idx] = ? } );
 			}
 		}
 
