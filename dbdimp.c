@@ -14,6 +14,7 @@
 
 
 #include "Pg.h"
+#include <math.h>
 
 #define DBDPG_TRUE 1
 #define DBDPG_FALSE 0
@@ -764,7 +765,12 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 			!imp_sth->direct &&
 			imp_dbh->pg_protocol >= 3 &&
 			0 != imp_sth->server_prepare &&
-			imp_sth->prepare_now
+			imp_sth->prepare_now && /* Ugly, but we don't want 7.4 doing a direct prepare */
+#ifdef PG8
+1
+#else
+0
+#endif
 			) {
 		if (dbis->debug >= 5)
 			PerlIO_printf(DBILOGFP, "  dbdpg: immediate prepare\n");
@@ -1149,7 +1155,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 				continue;
 			/* The parameter itself: dollar sign plus digit(s) */
 			for (x=1; x<7; x++) {
-				if (currseg->placeholder < 10^x)
+				if (currseg->placeholder < pow(10,x))
 					break;
 			}
 			if (x>=7)
@@ -1157,7 +1163,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 			execsize += x+1;
 			if (oldprepare) {
 				/* The parameter type, only once per number please */
-				if (!currseg->ph->referenced)
+				if (0==currseg->ph->referenced)
 					execsize += strlen(currseg->ph->bind_type->type_name);
 				currseg->ph->referenced = 1;
 			}
@@ -1173,7 +1179,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 		if (imp_sth->numphs) {
 			strcat(statement, "(");
 			for (x=0, currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-				if (currseg->placeholder && currseg->ph->referenced) {
+				if (currseg->placeholder && 1==currseg->ph->referenced) {
 					if (x)
 						strcat(statement, ",");
 					strcat(statement, currseg->ph->bind_type->type_name);
@@ -1195,6 +1201,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 			sprintf(statement, "%s$%d", statement, currseg->placeholder);
 		}
 	}
+
 	statement[execsize] = '\0';
 
 	if (dbis->debug >= 6)
@@ -1384,6 +1391,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 
 	/* upgrade to at least string */
 	(void)SvUPGRADE(newvalue, SVt_PV);
+
 
 	if (SvOK(newvalue)) {
 		value_string = SvPV(newvalue, currph->valuelen);
@@ -1598,14 +1606,14 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 					continue;
 				/* The parameter itself: dollar sign plus digit(s) */
 				for (x=1; x<7; x++) {
-					if (currseg->placeholder < 10^x)
+					if (currseg->placeholder < pow(10,x))
 						break;
 				}
 				if (x>=7)
 					croak("Too many placeholders!");
 				execsize += x+1;
 			}
-			
+
 			/* Create the statement */
 			New(0, statement, execsize+1, char); /* freed below */
 			if (!statement)
