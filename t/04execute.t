@@ -18,7 +18,7 @@ ok(defined $dbh,
 my $sql = <<SQL;
   SELECT id
   , name
-  FROM test
+  FROM dbd_pg_test
   WHERE id = ?
 SQL
 my $sth = $dbh->prepare($sql);
@@ -39,7 +39,7 @@ ok($sth->execute(),
 $sql = <<SQL;
        SELECT id
        , name
-       FROM test
+       FROM dbd_pg_test
        WHERE id = ?
        AND name = ?
 SQL
@@ -93,7 +93,7 @@ eval {
   $sth = $dbh->prepare(q{
 			 SELECT id
 			 , name
-			 FROM test
+			 FROM dbd_pg_test
 			 WHERE id = ?
 			 AND name = ?
 			});

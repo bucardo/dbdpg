@@ -17,13 +17,13 @@ ok(defined $dbh,
 
 my $quo = $dbh->quote("\\'?:");
 my $sth = $dbh->prepare(qq{
-			INSERT INTO test (name) VALUES ($quo)
+			INSERT INTO dbd_pg_test (name) VALUES ($quo)
 		       });
 $sth->execute();
 
 my $sql = <<SQL;
 	SELECT name
-	FROM test
+	FROM dbd_pg_test
 	WHERE name = $quo;
 SQL
 $sth = $dbh->prepare($sql);
@@ -45,7 +45,7 @@ ok($@,
 
 $sql = <<SQL;
        SELECT name
-       FROM test
+       FROM dbd_pg_test
        WHERE name = ?
 SQL
 $sth = $dbh->prepare($sql);
@@ -59,7 +59,7 @@ ok((defined($retr) && $retr eq "\\'?:"),
 
 $sql = <<SQL;
        SELECT name
-       FROM test
+       FROM dbd-pg_test
        WHERE name = :1
 SQL
 $sth = $dbh->prepare($sql);
@@ -74,7 +74,7 @@ ok((defined($retr) && $retr eq "\\'?:"),
 
 $sql = <<SQL;
        SELECT name
-       FROM test
+       FROM dbd_pg_test
        WHERE name = '?'
 SQL
 
@@ -89,7 +89,7 @@ ok($@,
 
 $sql = <<SQL;
        SELECT name
-       FROM test
+       FROM dbd_pg_test
        WHERE name = ':1'
 SQL
 
@@ -104,7 +104,7 @@ ok($@,
 
 $sql = <<SQL;
        SELECT name
-       FROM test
+       FROM dbd_pg_test
        WHERE name = '\\\\'
        AND name = '?'
 SQL

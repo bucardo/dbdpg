@@ -15,7 +15,7 @@ ok(defined $dbh,
    'connect with transaction'
   );
 
-my $sth = $dbh->prepare(q{SELECT * FROM test});
+my $sth = $dbh->prepare(q{SELECT * FROM dbd_pg_test});
 ok($dbh->disconnect(),
    'disconnect with un-finished statement'
   );

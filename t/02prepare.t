@@ -17,7 +17,7 @@ ok(defined $dbh,
 
 my $sql = <<SQL;
         SELECT *
-          FROM test
+          FROM dbd_pg_test
 SQL
 
 ok($dbh->prepare($sql),
@@ -26,17 +26,7 @@ ok($dbh->prepare($sql),
 
 $sql = <<SQL;
         SELECT id
-          FROM test
-SQL
-
-ok($dbh->prepare($sql),
-   "prepare: $sql"
-  );
-
-$sql = <<SQL;
-        SELECT id
-             , name
-          FROM test
+          FROM dbd_pg_test
 SQL
 
 ok($dbh->prepare($sql),
@@ -46,7 +36,17 @@ ok($dbh->prepare($sql),
 $sql = <<SQL;
         SELECT id
              , name
-          FROM test
+          FROM dbd_pg_test
+SQL
+
+ok($dbh->prepare($sql),
+   "prepare: $sql"
+  );
+
+$sql = <<SQL;
+        SELECT id
+             , name
+          FROM dbd_pg_test
          WHERE id = 1
 SQL
 
@@ -57,7 +57,7 @@ ok($dbh->prepare($sql),
 $sql = <<SQL;
         SELECT id
              , name
-          FROM test
+          FROM dbd_pg_test
          WHERE id = ?
 SQL
 
@@ -67,7 +67,7 @@ ok($dbh->prepare($sql),
 
 $sql = <<SQL;
         SELECT *
-           FROM test
+           FROM dbd_pg_test
          WHERE id = ?
            AND name = ?
            AND val = ?

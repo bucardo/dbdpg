@@ -15,9 +15,9 @@ ok(defined $dbh,
    'connect with transaction'
   );
 
-$dbh->do(q{INSERT INTO test (id, name, val) VALUES (1, 'foo', 'horse')});
-$dbh->do(q{INSERT INTO test (id, name, val) VALUES (2, 'bar', 'chicken')});
-$dbh->do(q{INSERT INTO test (id, name, val) VALUES (3, 'baz', 'pig')});
+$dbh->do(q{INSERT INTO dbd_pg_test (id, name, val) VALUES (1, 'foo', 'horse')});
+$dbh->do(q{INSERT INTO dbd_pg_test (id, name, val) VALUES (2, 'bar', 'chicken')});
+$dbh->do(q{INSERT INTO dbd_pg_test (id, name, val) VALUES (3, 'baz', 'pig')});
 ok($dbh->commit(),
    'commit'
    );
@@ -25,7 +25,7 @@ ok($dbh->commit(),
 my $sql = <<SQL;
   SELECT id
   , name
-  FROM test
+  FROM dbd_pg_test
 SQL
 my $sth = $dbh->prepare($sql);
 $sth->execute();
@@ -44,7 +44,7 @@ ok($rows == 3,
 $sql = <<SQL;
        SELECT id
        , name
-       FROM test
+       FROM dbd_pg_test
        WHERE 1 = 0
 SQL
 $sth = $dbh->prepare($sql);
@@ -63,7 +63,7 @@ ok($rows == 0,
 $sql = <<SQL;
        SELECT id
        , name
-       FROM test
+       FROM dbd_pg_test
        WHERE id = ?
 SQL
 $sth = $dbh->prepare($sql);
@@ -88,7 +88,7 @@ SKIP: {
   skip "need Encode module for unicode tests", 3 if $@;
   local $dbh->{pg_enable_utf8} = 1;
   my $utf8_str = chr(0x100).'dam';	# LATIN CAPITAL LETTER A WITH MACRON
-  $dbh->do("INSERT INTO test (id, name, val) VALUES (4, '$utf8_str', 'cow')");
+  $dbh->do("INSERT INTO dbd_pg_test (id, name, val) VALUES (4, '$utf8_str', 'cow')");
   $sth->execute(4);
   my ($id, $name) = $sth->fetchrow_array();
   ok(Encode::is_utf8($name),
@@ -109,7 +109,7 @@ SKIP: {
 $sql = <<SQL;
        SELECT id
        , name
-       FROM test
+       FROM dbd_pg_test
        WHERE name = ?
 SQL
 $sth = $dbh->prepare($sql);

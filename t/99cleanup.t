@@ -15,7 +15,7 @@ ok(defined $dbh,
    'connect with transaction'
   );
 
-ok($dbh->do(q{DROP TABLE test}),
+ok($dbh->do(q{DROP TABLE dbd_pg_test}),
    'drop'
   );
 

@@ -304,7 +304,7 @@ local ($dbh->{Warn}, $dbh->{PrintError});
 $dbh->{PrintError} = $dbh->{Warn} = 0;
 my $schemas = DBD::Pg::_pg_use_catalog($dbh);
 eval {
-$sth = $dbh->foreign_key_info(undef,undef,'test');
+$sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test');
 };
 if (! $schemas) {
     ok(! defined $sth, "Statement handle defined for foreign_key_info()" );

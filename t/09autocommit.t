@@ -22,30 +22,30 @@ ok(defined $dbh2,
    'connect second dbh'
   );
 
-ok($dbh1->do(q{DELETE FROM test}),
+ok($dbh1->do(q{DELETE FROM dbd_pg_test}),
    'delete'
   );
 
-my $rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+my $rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM dbd_pg_test}))[0];
 ok($rows == 0,
    'fetch on empty table from dbh1'
   );
 
-$rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+$rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM dbd_pg_test}))[0];
 ok($rows == 0,
    'fetch on empty table from dbh2'
   );
 
-ok($dbh1->do(q{INSERT INTO test (id, name, val) VALUES (1, 'foo', 'horse')}),
+ok($dbh1->do(q{INSERT INTO dbd_pg_test (id, name, val) VALUES (1, 'foo', 'horse')}),
    'insert'
   );
 
-$rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+$rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM dbd_pg_test}))[0];
 ok($rows == 1,
    'fetch one row from dbh1'
   );
 
-$rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+$rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM dbd_pg_test}))[0];
 ok($rows == 1,
    'fetch one row from dbh1'
   );
