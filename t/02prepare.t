@@ -1,80 +1,84 @@
-if (!exists($ENV{DBDPG_MAINTAINER})) {
-    print "1..0\n";
-    exit;
-}
-
 use strict;
 use DBI;
+use Test::More;
 
-main();
+if (defined $ENV{DBI_DSN}) {
+  plan tests => 8;
+} else {
+  plan skip_all => 'cannot test without DB info';
+}
 
-sub main {
-    my ($n, $dbh, $sth);
-    
-    print "1..8\n";
-    
-    $n = 1;
-    
-    $dbh = DBI->connect("dbi:Pg:dbname=$ENV{DBDPG_TEST_DB};host=$ENV{DBDPG_TEST_HOST}", $ENV{DBDPG_TEST_USER}, $ENV{DBDPG_TEST_PASS}, {RaiseError => 1, AutoCommit => 0});
-    
-    print "ok $n\n"; $n++;
+my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+		       {RaiseError => 1, AutoCommit => 0}
+		      );
+ok(defined $dbh,
+   'connect with transaction'
+  );
 
-    $sth = $dbh->prepare(q{
+my $sql = <<SQL;
         SELECT *
           FROM test
-    });
-    
-    print "ok $n\n"; $n++;
+SQL
 
-    $sth = $dbh->prepare(q{
+ok($dbh->prepare($sql),
+   "prepare: $sql"
+  );
+
+$sql = <<SQL;
         SELECT id
           FROM test
-    });
-    
-    print "ok $n\n"; $n++;
+SQL
 
-    $sth = $dbh->prepare(q{
+ok($dbh->prepare($sql),
+   "prepare: $sql"
+  );
+
+$sql = <<SQL;
         SELECT id
              , name
           FROM test
-    });
-    
-    print "ok $n\n"; $n++;
+SQL
 
-    $sth = $dbh->prepare(q{
+ok($dbh->prepare($sql),
+   "prepare: $sql"
+  );
+
+$sql = <<SQL;
         SELECT id
              , name
           FROM test
          WHERE id = 1
-    });
-    
-    print "ok $n\n"; $n++;
+SQL
 
-    $sth = $dbh->prepare(q{
+ok($dbh->prepare($sql),
+   "prepare: $sql"
+  );
+
+$sql = <<SQL;
         SELECT id
              , name
           FROM test
          WHERE id = ?
-    });
-    
-    print "ok $n\n"; $n++;
+SQL
 
-    $sth = $dbh->prepare(q{
-        SELECT id
-             , name
-          FROM test
+ok($dbh->prepare($sql),
+   "prepare: $sql"
+  );
+
+$sql = <<SQL;
+        SELECT *
+           FROM test
          WHERE id = ?
            AND name = ?
            AND value = ?
            AND score = ?
            and data = ?
-    });
-    
-    print "ok $n\n"; $n++;
+SQL
 
-    $dbh->disconnect();
-    
-    print "ok $n\n"; $n++;
-}
+ok($dbh->prepare($sql),
+   "prepare: $sql"
+  );
 
-1;
+ok($dbh->disconnect(),
+   'disconnect'
+  );
