@@ -1,120 +1,102 @@
-if (!exists($ENV{DBDPG_MAINTAINER})) {
-    print "1..0\n";
-    exit;
-}
-
 use strict;
 use DBI;
+use Test::More;
 
-main();
-
-sub main {
-    my ($n, $dbh1, $dbh2, $sth1, $sth2, $rows);
-    
-    print "1..16\n";
-    
-    $n = 1;
-    
-    $dbh1 = DBI->connect("dbi:Pg:dbname=$ENV{DBDPG_TEST_DB};host=$ENV{DBDPG_TEST_HOST}", $ENV{DBDPG_TEST_USER}, $ENV{DBDPG_TEST_PASS}, {RaiseError => 1, AutoCommit => 0});
-    $dbh2 = DBI->connect("dbi:Pg:dbname=$ENV{DBDPG_TEST_DB};host=$ENV{DBDPG_TEST_HOST}", $ENV{DBDPG_TEST_USER}, $ENV{DBDPG_TEST_PASS}, {RaiseError => 1, AutoCommit => 0});
-    
-    print "ok $n\n"; $n++;
-
-    $dbh1->do(q{DELETE FROM test});
-    $dbh1->commit();
-    
-    print "ok $n\n"; $n++;
-    
-    $rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
-    if ($rows != 0) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    
-    $rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
-    if ($rows != 0) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-        
-    $dbh1->do(q{INSERT INTO test (id, name, val) VALUES (1, 'foo', 'horse')});
-    $dbh1->do(q{INSERT INTO test (id, name, val) VALUES (2, 'bar', 'chicken')});
-    $dbh1->do(q{INSERT INTO test (id, name, val) VALUES (3, 'baz', 'pig')});
-
-    $rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
-    if ($rows != 3) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    
-    $rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
-    if ($rows != 0) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-
-    $dbh1->commit();
-
-    print "ok $n\n"; $n++;
-
-    $rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
-    if ($rows != 3) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    
-    $rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
-    if ($rows != 3) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-
-    $dbh1->do(q{DELETE FROM test});
-    
-    print "ok $n\n"; $n++;
-
-    $rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
-    if ($rows != 0) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    
-    $rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
-    if ($rows != 3) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    
-    $dbh1->rollback();
-    
-    print "ok $n\n"; $n++;
-
-    $rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
-    if ($rows != 3) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    
-    $rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
-    if ($rows != 3) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-
-    $dbh1->disconnect();
-    $dbh2->disconnect();
-
-    print "ok $n\n";
+if (defined $ENV{DBI_DSN}) {
+  plan tests => 18;
+} else {
+  plan skip_all => 'cannot test without DB info';
 }
 
-1;
+my $dbh1 = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+			{RaiseError => 1, AutoCommit => 0}
+		       );
+ok(defined $dbh1,
+   'connect first dbh'
+  );
+
+my $dbh2 = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+			{RaiseError => 1, AutoCommit => 0}
+		       );
+ok(defined $dbh2,
+   'connect second dbh'
+  );
+
+
+$dbh1->do(q{DELETE FROM test});
+ok($dbh1->commit(),
+   'delete'
+   );
+
+my $rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+ok($rows == 0,
+   'fetch on empty table from dbh1'
+  );
+$rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+ok($rows == 0,
+   'fetch on empty table from dbh2'
+  );
+
+$dbh1->do(q{INSERT INTO test (id, name, val) VALUES (1, 'foo', 'horse')});
+$dbh1->do(q{INSERT INTO test (id, name, val) VALUES (2, 'bar', 'chicken')});
+$dbh1->do(q{INSERT INTO test (id, name, val) VALUES (3, 'baz', 'pig')});
+
+$rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+ok($rows == 3,
+   'fetch three rows on dbh1'
+  );
+
+$rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+ok($rows == 0,
+   'fetch on dbh2 before commit'
+  );
+
+ok($dbh1->commit(),
+   'commit work'
+  );
+
+$rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+ok($rows == 3,
+   'fetch on dbh1 after commit'
+  );
+
+$rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+ok($rows == 3,
+   'fetch on dbh2 after commit'
+  );
+
+ok($dbh1->do(q{DELETE FROM test}),
+   'delete'
+  );
+
+$rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+ok($rows == 0,
+   'fetch on empty table from dbh1'
+  );
+
+$rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+ok($rows == 3,
+   'fetch on from dbh2 without commit'
+  );
+
+ok($dbh1->rollback(),
+   'rollback'
+  );
+
+$rows = ($dbh1->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+ok($rows == 3,
+   'fetch on from dbh1 after rollback'
+  );
+
+$rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM test}))[0];
+ok($rows == 3,
+   'fetch on from dbh2 after rollback'
+  );
+
+ok($dbh1->disconnect(),
+   'disconnect on dbh1'
+);
+
+ok($dbh2->disconnect(),
+   'disconnect on dbh2'
+);
