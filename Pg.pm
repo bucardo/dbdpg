@@ -295,6 +295,8 @@ $DBD::Pg::VERSION = '1.30';
 			"n.nspname" : "NULL::text";
 		my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
 			"LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = bc.relnamespace)" : "";
+		my $indexjoin = DBD::Pg::_pg_check_version(7.4, $version) ?
+			"i.indexprs IS NULL" : "i.indproc = '0'::oid";
 		my $pri_key_sql = qq{
 			SELECT
 				NULL::text    AS "TABLE_CAT"
@@ -341,7 +343,7 @@ $DBD::Pg::VERSION = '1.30';
 				i.indkey[12] = a.attnum
 			)
 			AND a.attrelid = bc.oid
-			AND i.indproc = '0'::oid
+			AND $indexjoin
 			AND i.indisprimary = 't' 
 			$wh
 			ORDER BY 2, 3, 5
