@@ -1,3 +1,6 @@
+1.21
+      - System tables no longer returned by tables(). [Dave Rolsky]
+
 1.20  Wed Nov 27 16:19:26 2002
       - Maintenance transferred to GBorg,
         http://gborg.postgresql.org/project/dbdpg/projdisplay.php. Incremented

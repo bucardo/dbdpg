@@ -6,7 +6,7 @@ DBD::Pg  --  the DBI PostgreSQL interface for Perl
 DESCRIPTION:
 ------------
 
-This is version 1.20 of DBD-Pg.  The web site for this interface is at:
+This is version 1.21 of DBD-Pg.  The web site for this interface is at:
 
 	http://gborg.postgresql.org/project/dbdpg/projdisplay.php
 
@@ -58,10 +58,10 @@ in your bug-report.
 REQUIREMENTS:
 -------------
 
-	build, test and install Perl 5         (at least 5.005)
-	build, test and install the DBI module (at least 1.30)
-	build, test and install PostgreSQL     (at least 7.3)
-
+	build, test, and install Perl 5         (at least 5.005)
+	build, test, and install the DBI module (at least 1.30)
+	build, test, and install PostgreSQL     (at least 7.3)
+        build, test, and install Test::Simple   (at least 0.17)
 
 INSTALLATION:
 -------------
