@@ -63,8 +63,8 @@ $DBD::Pg::VERSION = '1.30';
 		my $dbh = shift;
 		return $dbh->{pg_server_version} if defined $dbh->{pg_server_version};
 		my ($version) = $dbh->selectrow_array("SELECT version();");
-		$dbh{pg_server_version} = ($version =~ /^PostgreSQL ([\d\.]+)/) ? $1 : 0;
-		return $dbh{pg_server_version};
+		$dbh->{pg_server_version} = ($version =~ /^PostgreSQL ([\d\.]+)/) ? $1 : 0;
+		return $dbh->{pg_server_version};
 	}
 
 	## Is the second version greater than or equal to the first?
