@@ -286,6 +286,8 @@ $DBD::Pg::VERSION = '1.32';
 				, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
 				, ${CATALOG}format_type(a.atttypid, a.atttypmod) AS "pg_type"
 				, ${CATALOG}format_type(a.atttypid, NULL) AS "pg_type_only"
+				, a.attrelid AS "pg_attrelid"
+				, a.attnum AS "pg_attnum"
 				, a.atttypmod AS "pg_atttypmod"
 			FROM
 				${CATALOG}pg_type t
@@ -326,29 +328,45 @@ $DBD::Pg::VERSION = '1.32';
 			IS_NULLABLE          17
 			pg_type              18
 			pg_type_only         19
-			pg_atttypmod         20
+			pg_constraint        20
 			/);
 		
-		my $constraint_query = DBD::Pg::_pg_check_version(7.3, $version)
-			? "SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND conname = ?" 
-				: "SELECT rcsrc FROM pg_relcheck WHERE rcname = ?";
-		my $constraint_sth = $dbh->prepare($constraint_query); 		 
+		my $oldconstraint_sth;
+		if (!DBD::Pg::_pg_check_version(7.3, $version)) {
+			my $constraint_query = "SELECT rcsrc FROM pg_relcheck WHERE rcname = ?";
+			$oldconstraint_sth = $dbh->prepare($constraint_query);
+		}
 
 		for my $row (@$data) {
+			my $typmod = pop @$row;
+			my $attnum = pop @$row;
+			my $aid = pop @$row;
+
 			$row->[$col_map{COLUMN_SIZE}] = 
- 				_calc_col_size($row->[$col_map{pg_atttypmod}],$row->[$col_map{COLUMN_SIZE}]);
+ 				_calc_col_size($typmod,$row->[$col_map{COLUMN_SIZE}]);
 
 			# Replace the Pg type with the SQL_ type
 			my $w = $row->[$col_map{DATA_TYPE}];
 			$row->[$col_map{DATA_TYPE}] = DBD::Pg::db::pg_type_info($dbh,$row->[$col_map{DATA_TYPE}]);
 			$w = $row->[$col_map{DATA_TYPE}];
 			
-			pop @$row;
-
 			# Add pg_constraint
-			$constraint_sth->execute("$row->[$col_map{TABLE_NAME}]_$row->[$col_map{COLUMN_NAME}]");
+			if (DBD::Pg::_pg_check_version(7.3, $version)) {
+				my $SQL = "SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND ".
+					"conrelid = $aid AND conkey = '{$attnum}'";
+				my $info = $dbh->selectall_arrayref($SQL);
+				if (@$info) {
+					$row->[20] = $info->[0][0];
+				}
+				else {
+					$row->[20] = undef;
+				}
+			}
+			else { 
+				$oldconstraint_sth->execute("$row->[$col_map{TABLE_NAME}]_$row->[$col_map{COLUMN_NAME}]");
+				($row->[20]) = $oldconstraint_sth->fetchrow_array;
+			}
 			$col_map{pg_constraint} = 20;
-			($row->[$col_map{pg_constraint}]) = $constraint_sth->fetchrow_array; 
 		}
 
 		# get rid of atttypmod that we no longer need
