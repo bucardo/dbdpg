@@ -71,24 +71,13 @@ use 5.006001;
 
 	}
 
-	## Used by both the dr and db packages
-	sub _pg_server_version {
+ 	## Deprecated: use $dbh->{pg_server_version} if possible instead
+ 	sub _pg_use_catalog {
 		my $dbh = shift;
-		return $dbh->{private_dbdpg}{server_version} if defined $dbh->{private_dbdpg}{server_version};
-		## The second column is simply to help identify DBD::Pg activity in logs for the DBA.
-		$dbh->{private_dbdpg}{full_version} = $dbh->selectrow_array("SELECT version(), 'DBD::Pg'");
-		if ($dbh->{private_dbdpg}{full_version} =~ /(\d+)\.(\d+)\.?(\d*)/) {
-			$dbh->{private_dbdpg}{dotted_version} = "$1.$2.".$3||0;
-			$dbh->{private_dbdpg}{server_version} = int sprintf("%02d%02d%02d",$1,$2,$3||0);
-		}
-		$dbh->{private_dbdpg}{server_version}||=0;
-	}
+ 		return $dbh->{private_dbdpg}{pg_use_catalog} if defined $dbh->{private_dbdpg}{pg_use_catalog};
+ 		$dbh->{private_dbdpg}{pg_use_catalog} = $dbh->{private_dbdpg}{version} >= 70300 ? 'pg_catalog.' : '';
+ 	}
 
-	## Version 7.3 and up uses schemas, so add a "pg_catalog." to system tables
-	sub _pg_use_catalog {
-		return $dbh->{private_dbdpg}{pg_use_catalog} if defined $dbh->{private_dbdpg}{pg_use_catalog};
-		$dbh->{private_dbdpg}{pg_use_catalog} = DBD::Pg::_pg_server_version(shift) >= 70300 ? 'pg_catalog.' : '';
-	}
 
 	1;
 }
@@ -98,11 +87,12 @@ use 5.006001;
 
 	use strict;
 
+	our $CATALOG = 123;
+
 	sub data_sources {
 		my $drh = shift;
 		my $dbh = DBD::Pg::dr::connect($drh, 'dbname=template1') or return undef;
 		$dbh->{AutoCommit}=1;
-		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
 		my $SQL = "SELECT ${CATALOG}quote_ident(datname) FROM ${CATALOG}pg_database ORDER BY 1";
 		my $sth = $dbh->prepare($SQL);
 		$sth->execute() or die $DBI::errstr;
@@ -119,7 +109,7 @@ use 5.006001;
 
 		## Allow "db" and "database" as synonyms for "dbname"
 		$dbname =~ s/\b(?:db|database)\s*=/dbname=/;
-
+	
 		my $Name = $dbname;
 		if ($dbname =~ m#dbname\s*=\s*[\"\']([^\"\']+)#) {
 			$Name = "'$1'";
@@ -128,8 +118,8 @@ use 5.006001;
 		elsif ($dbname =~ m#dbname\s*=\s*([^;]+)#) {
 			$Name = $1;
 		}
-
-
+	
+	
 		$user = "" unless defined($user);
 		$auth = "" unless defined($auth);
 
@@ -146,6 +136,12 @@ use 5.006001;
 
 		# Connect to the database..
 		DBD::Pg::db::_login($dbh, $dbname, $user, $auth) or return undef;
+
+		my $version = $dbh->{pg_server_version};
+		$dbh->{private_dbdpg}{version} = $version;
+
+		## If the version is 7.3 or later, fully qualify the system relations
+		$CATALOG = $version >= 70300 ? 'pg_catalog.' : '';
 
 		$dbh;
 	}
@@ -246,9 +242,7 @@ use 5.006001;
 			my @args = ($table);
 
 			## Only 7.3 and up can use schemas
-			my $version = DBD::Pg::_pg_server_version($dbh);
-			my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
-			$schema = '' if $version < 70300;
+			$schema = '' if $dbh->{private_dbdpg}{version} < 70300;
 
 			## Make sure the table in question exists and grab its oid
 			my ($schemajoin,$schemawhere) = ('','');
@@ -257,7 +251,7 @@ use 5.006001;
 				$schemawhere = "\n AND n.nspname = ?";
 				push @args, $schema;
 			}
-			$SQL = "SELECT c.oid FROM ${CATALOG}pg_class c $schemajoin\n WHERE relname = ?$schemawhere";
+			$SQL = "SELECT c.oid FROM ${DBD::Pg::dr::CATALOG}pg_class c $schemajoin\n WHERE relname = ?$schemawhere";
 			$sth = $dbh->prepare($SQL);
 			$count = $sth->execute(@args);
 			if (!defined $count or $count eq '0E0') {
@@ -269,7 +263,7 @@ use 5.006001;
 			my $oid = $sth->fetchall_arrayref()->[0][0];
 			## This table has a primary key. Is there a sequence associated with it via a unique, indexed column?
 			$SQL = "SELECT a.attname, i.indisprimary, substring(d.adsrc for 128) AS def\n".
-				"FROM ${CATALOG}pg_index i, ${CATALOG}pg_attribute a, ${CATALOG}pg_attrdef d\n ".
+				"FROM ${DBD::Pg::dr::CATALOG}pg_index i, ${DBD::Pg::dr::CATALOG}pg_attribute a, ${DBD::Pg::dr::CATALOG}pg_attrdef d\n ".
 					"WHERE i.indrelid = $oid AND d.adrelid=a.attrelid AND d.adnum=a.attnum\n".
 						"  AND a.attrelid=$oid AND i.indisunique IS TRUE\n".
 							"  AND a.atthasdef IS TRUE AND i.indkey[0]=a.attnum\n".
@@ -338,8 +332,7 @@ use 5.006001;
 		my $dbh = shift;
 		my ($catalog, $schema, $table, $column) = @_;
 
-		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
-		my $version = DBD::Pg::_pg_server_version($dbh);
+		my $version = $dbh->{private_dbdpg}{version};
 
 		my @search;
 		## If the schema or table has an underscore or a %, use a LIKE comparison
@@ -365,7 +358,7 @@ use 5.006001;
 
 		# col_description is not available for Pg < 7.2
 		my $remarks = $version < 70200 ? 
-			"${CATALOG}col_description(a.attrelid, a.attnum)" : "NULL::text";
+			"${DBD::Pg::dr::CATALOG}col_description(a.attrelid, a.attnum)" : "NULL::text";
 
 		my $col_info_sql = qq!
 			SELECT
@@ -374,7 +367,7 @@ use 5.006001;
 				, quote_ident(c.relname) AS "TABLE_NAME"
 				, quote_ident(a.attname) AS "COLUMN_NAME"
 				, a.atttypid AS "DATA_TYPE"
-				, ${CATALOG}format_type(a.atttypid, NULL) AS "TYPE_NAME"
+				, ${DBD::Pg::dr::CATALOG}format_type(a.atttypid, NULL) AS "TYPE_NAME"
 				, a.attlen AS "COLUMN_SIZE"
 				, NULL::text AS "BUFFER_LENGTH"
 				, NULL::text AS "DECIMAL_DIGITS"
@@ -387,15 +380,15 @@ use 5.006001;
 				, NULL::text AS "CHAR_OCTET_LENGTH"
 				, a.attnum AS "ORDINAL_POSITION"
 				, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
-				, ${CATALOG}format_type(a.atttypid, a.atttypmod) AS "pg_type"
+				, ${DBD::Pg::dr::CATALOG}format_type(a.atttypid, a.atttypmod) AS "pg_type"
 				, a.attrelid AS "pg_attrelid"
 				, a.attnum AS "pg_attnum"
 				, a.atttypmod AS "pg_atttypmod"
 			FROM
-				${CATALOG}pg_type t
-				JOIN ${CATALOG}pg_attribute a ON (t.oid = a.atttypid)
-				JOIN ${CATALOG}pg_class c ON (a.attrelid = c.oid)
-				LEFT JOIN ${CATALOG}pg_attrdef af ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
+				${DBD::Pg::dr::CATALOG}pg_type t
+				JOIN ${DBD::Pg::dr::CATALOG}pg_attribute a ON (t.oid = a.atttypid)
+				JOIN ${DBD::Pg::dr::CATALOG}pg_class c ON (a.attrelid = c.oid)
+				LEFT JOIN ${DBD::Pg::dr::CATALOG}pg_attrdef af ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
 				$schemajoin
 			WHERE
 				a.attnum >= 0
@@ -497,10 +490,9 @@ use 5.006001;
 		## Catalog is ignored, but table is mandatory
 		return undef unless defined $table and length $table;
 
-		my $version = DBD::Pg::_pg_server_version($dbh);
+		my $version = $dbh->{private_dbdpg}{version};
 		my $whereclause = "AND c.relname = " . $dbh->quote($table);
 
-		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
 		my $gotschema = $version >= 70300 ? 1 : 0;
 		if (defined $schema and length $schema and $gotschema) {
 			$whereclause .= "\n\t\t\tAND n.nspname = " . $dbh->quote($schema);
@@ -522,9 +514,9 @@ use 5.006001;
 				, quote_ident(c2.relname)
 				, i.indkey $showtablespace
 			FROM
-				${CATALOG}pg_class c
-				JOIN ${CATALOG}pg_index i ON (i.indrelid = c.oid)
-				JOIN ${CATALOG}pg_class c2 ON (c2.oid = i.indexrelid)
+				${DBD::Pg::dr::CATALOG}pg_class c
+				JOIN ${DBD::Pg::dr::CATALOG}pg_index i ON (i.indrelid = c.oid)
+				JOIN ${DBD::Pg::dr::CATALOG}pg_class c2 ON (c2.oid = i.indexrelid)
 				$schemajoin $tablespacejoin
 			WHERE
 				i.indisprimary IS TRUE
@@ -539,9 +531,9 @@ use 5.006001;
 		# Get the attribute information
 		my $indkey = join ',', split /\s+/, $info->[4];
 		my $sql = qq{
-			SELECT a.attnum, ${CATALOG}quote_ident(a.attname) AS colname,
-				${CATALOG}quote_ident(t.typname) AS typename
-			FROM ${CATALOG}pg_attribute a, ${CATALOG}pg_type t
+			SELECT a.attnum, ${DBD::Pg::dr::CATALOG}quote_ident(a.attname) AS colname,
+				${DBD::Pg::dr::CATALOG}quote_ident(t.typname) AS typename
+			FROM ${DBD::Pg::dr::CATALOG}pg_attribute a, ${DBD::Pg::dr::CATALOG}pg_type t
 			WHERE a.attrelid = '$info->[0]'
 			AND a.atttypid = t.oid
 			AND attnum IN ($indkey);
@@ -639,7 +631,7 @@ use 5.006001;
 		return undef if !$ptable and !$ftable;
 
 		## Versions 7.2 or less have no pg_constraint table, so we cannot support
-		my $version = DBD::Pg::_pg_server_version($dbh);
+		my $version = $dbh->{private_dbdpg}{version};
 		return undef unless $version >= 70300;
 
 		my $C = 'pg_catalog.';
@@ -865,8 +857,7 @@ use 5.006001;
 
 		my $tbl_sql = ();
 
-		my $version = DBD::Pg::_pg_server_version($dbh);
-		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
+		my $version = $dbh->{private_dbdpg}{version};
 
 		if ( # Rule 19a
 				(defined $catalog and $catalog eq '%')
@@ -977,8 +968,8 @@ use 5.006001;
 								CASE WHEN $schemacase ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END
 						END AS "TABLE_TYPE"
 					 , d.description AS "REMARKS" $showtablespace
-				FROM ${CATALOG}pg_class AS c
-					LEFT JOIN ${CATALOG}pg_description AS d
+				FROM ${DBD::Pg::dr::CATALOG}pg_class AS c
+					LEFT JOIN ${DBD::Pg::dr::CATALOG}pg_description AS d
 						ON (c.relfilenode = d.objoid $has_objsubid)
 					$schemajoin $tablespacejoin
 				WHERE $whereclause
@@ -996,7 +987,7 @@ use 5.006001;
 			my $attr = $args[4];
 			my $sth = $dbh->table_info(@args) or return;
 			my $tables = $sth->fetchall_arrayref() or return;
-			my $version = DBD::Pg::_pg_server_version($dbh);
+			my $version = $dbh->{private_dbdpg}{version};
 			my @tables = map { ($version >= 70300
 					and (! (ref $attr eq "HASH" and $attr->{pg_noprefix}))) ?
 						"$_->[1].$_->[2]" : $_->[2] } @$tables;
@@ -1005,7 +996,7 @@ use 5.006001;
 
 	sub table_attributes {
 		my ($dbh, $table) = @_;
-		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
+
 		my $sth = $dbh->column_info(undef,undef,$table,undef);
 
 		my %convert = (
@@ -1035,7 +1026,7 @@ use 5.006001;
 			$row->{NOTNULL} = ($row->{NOTNULL} ? 0 : 1);
 
 			my @pri_keys = ();
-			@pri_keys = $dbh->primary_key( $CATALOG, undef, $table );
+			@pri_keys = $dbh->primary_key( undef, undef, $table );
 			$row->{PRIMARY_KEY} = scalar(grep { /^$row->{NAME}$/i } @pri_keys) ? 1 : 0;
 		}
 
@@ -1178,7 +1169,7 @@ use 5.006001;
 
 		return undef unless defined $type and length $type;
 
-		my $version = DBD::Pg::_pg_server_version($dbh);
+		my $version = $dbh->{private_dbdpg}{version};
 
 		my %type = (
 
@@ -1267,7 +1258,9 @@ use 5.006001;
 			return $version >= 70300 ? 63 : 31;
 		}
 		elsif ($ans eq 'ODBCVERSION') {
-			return sprintf "%02d.%02d.%1d%1d%1d%1d", split (/\./, "$dbh->{private_dbdpg}{dotted_version}.0.0.0.0.0.0");
+			my $version = $dbh->{private_dbdpg}{version};
+			my $dotted = $version =~ /(\d\d?)\.(\d\d)(\d\d)$/ ? "$1.$2.$4" : "0.0.0";
+			return sprintf "%02d.%02d.%1d%1d%1d%1d", split (/\./, "$dotted.0.0.0.0.0.0");
 		}
 		elsif ($ans eq 'DBDVERSION') {
 			my $simpleversion = $DBD::Pg::VERSION;

@@ -14,7 +14,7 @@
 #include <assert.h>
 
 /* This section was stolen from libpq */
-#ifndef HAVE_PQescapeString
+#if PGLIBVERSION < 70200
 STRLEN
 PQescapeString(char *to, const char *from, STRLEN length)
 {
@@ -71,7 +71,7 @@ PQescapeString(char *to, const char *from, STRLEN length)
  *		'\\' == ASCII 92 == \\\\
  *		anything >= 0x80 ---> \\ooo (where ooo is an octal expression)
  */
-#ifndef HAVE_PQescapeBytea
+#if PGLIBVERSION < 70200
 unsigned char *
 PQescapeBytea(const unsigned char *bintext, STRLEN binlen, STRLEN *bytealen)
 {
@@ -154,7 +154,7 @@ PQescapeBytea(const unsigned char *bintext, STRLEN binlen, STRLEN *bytealen)
  *		\x   == x (x is any character not matched by the above transformations)
  *
  */
-#ifndef HAVE_PQunescapeBytea
+#if PGLIBVERSION < 70300
 unsigned char *
 PQunescapeBytea2(const unsigned char *strtext, STRLEN *retbuflen)
 {
@@ -386,7 +386,7 @@ quote_bytea(string, len, retlen)
 	strcpy(dest,intermead);
 	strcat(dest,"\'");
 	
-#ifdef HAVE_PQfreemem
+#if PGLIBVERSION >= 70400
 	PQfreemem(intermead);
 #else
 	Safefree(intermead);

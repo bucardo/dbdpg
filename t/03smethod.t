@@ -77,7 +77,7 @@ $sth->execute(1);
 ok( $sth->execute, 'Prepare/execute with pg_prepare_now on at statement handle works');
 
 # Test using our own prepared statements
-my $pgversion = DBD::Pg::_pg_server_version($dbh);
+my $pgversion = $dbh->{pg_server_version};
 if ($pgversion >= 70400) {
 	my $myname = "dbdpg_test_1";
 	$dbh->do("PREPARE $myname(int) AS SELECT COUNT(*) FROM pg_class WHERE reltuples > \$1", {pg_direct=> 1});

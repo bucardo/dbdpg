@@ -26,19 +26,20 @@ struct imp_drh_st {
 
 /* Define dbh implementor data structure */
 struct imp_dbh_st {
-	dbih_dbc_t com;          /* MUST be first element in structure */
+	dbih_dbc_t com;            /* MUST be first element in structure */
 
-	bool    pg_bool_tf;      /* do bools return 't'/'f'? Set by user, default is 0 */
-	bool    pg_enable_utf8;  /* should we attempt to make utf8 strings? Set by user, default is 0 */
-	bool    prepare_now;     /* force immediate prepares, even with placeholders. Set by user, default is 0 */
-	char    pg_errorlevel;   /* PQsetErrorVerbosity. Set by user, defaults to 1 */
-	char    server_prepare;  /* do we want to use PQexecPrepared? 0=no 1=yes 2=smart. Can be changed by user */
+	bool    pg_bool_tf;        /* do bools return 't'/'f'? Set by user, default is 0 */
+	bool    pg_enable_utf8;    /* should we attempt to make utf8 strings? Set by user, default is 0 */
+	bool    prepare_now;       /* force immediate prepares, even with placeholders. Set by user, default is 0 */
+	char    pg_errorlevel;     /* PQsetErrorVerbosity. Set by user, defaults to 1 */
+	char    server_prepare;    /* do we want to use PQexecPrepared? 0=no 1=yes 2=smart. Can be changed by user */
 
-	PGconn  *conn;           /* connection structure */
-	bool    done_begin;      /* have we done a begin? (e.g. are we in a transaction?) */
-	int     pg_protocol;     /* value of PQprotocolVersion, usually 0, 2, or 3 */
-	int     prepare_number;  /* internal prepared statement name modifier */
-  char    *sqlstate;       /* from the last result */
+	PGconn  *conn;             /* connection structure */
+	bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */
+	int     pg_protocol;       /* value of PQprotocolVersion, usually 0, 2, or 3 */
+	int     pg_server_version; /* Server version e.g. 80100 */
+	int     prepare_number;    /* internal prepared statement name modifier */
+	char    *sqlstate;         /* from the last result */
 };
 
 

@@ -21,7 +21,7 @@ BEGIN {
 }
 
 use lib $lib;
-print "Configuring Pg\n";
+print "Configuring DBD::Pg\n";
 print "Remember to actually read the README file!\n";
 
 my $POSTGRES_INCLUDE;
@@ -34,6 +34,7 @@ require App::Info::Handler::Prompt;
 my $p = App::Info::Handler::Prompt->new;
 my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $p);
 my ($major_ver, $minor_ver, $patch) = map {$pg->$_} qw/major_version minor_version patch_version/;
+my $serverversion = sprintf("%d%.02d%.02d", $major_ver, $minor_ver, $patch);
 
 if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
     $POSTGRES_INCLUDE = $pg->inc_dir;
@@ -48,7 +49,7 @@ if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
 
 my $os = $^O;
 print "OS: $os\n";
-print "PostgreSQL version: $major_ver.$minor_ver.$patch\n";
+print "PostgreSQL version: $serverversion\n";
 
 if ($os =~ /Win32/) {
 	for ($POSTGRES_INCLUDE, $POSTGRES_LIB) {
@@ -57,7 +58,7 @@ if ($os =~ /Win32/) {
 }
 
 ## Warn about older versions
-if ($major_ver < 7 or ($major_ver == 7 and $minor_ver < 2)) {
+if ($serverversion < 70200) {
 	print "\n****************\n";
 	print "WARNING! DBD::Pg no longer supports versions less than 7.2.\n";
 	print "It is highly recommended that you upgrade PostgreSQL to a newer version.\n";
@@ -72,29 +73,7 @@ else {
   $dbi_arch_dir = dbd_dbi_arch_dir();
 }
 
-my $comp_opts = $Config{q{ccflags}};
-if ($major_ver == 7) {
-    if ($minor_ver >= 2) {
-        $comp_opts .= " -DHAVE_PQescapeString";
-        $comp_opts .= " -DHAVE_PQescapeBytea";
-    }
-    if ($minor_ver >= 3) {
-        $comp_opts .= " -DHAVE_PQunescapeBytea";
-    }
-    if ($minor_ver >= 4) {
-        $comp_opts .= " -DHAVE_PQfreemem";
-    }
-} elsif ($major_ver > 7) {
-        $comp_opts .= " -DHAVE_PQescapeString -DHAVE_PQescapeBytea";
-        $comp_opts .= " -DHAVE_PQunescapeBytea -DHAVE_PQfreemem";
-}
-
-if ($major_ver > 7 or ($major_ver == 7 and $minor_ver >= 4)) {
-	$comp_opts .= " -DHAVE_PQprotocol";
-}
-if ($major_ver >= 8) {
-	$comp_opts .= " -DPG_VERSION8";
-}
+my $comp_opts = $Config{q{ccflags}} . " -DPGLIBVERSION=$serverversion";
 
 my %opts = (
     NAME         => 'DBD::Pg',

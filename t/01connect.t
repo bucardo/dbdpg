@@ -15,7 +15,7 @@ if (defined $ENV{DBI_DSN}) {
 }
 
 ## Define this here in case we get to the END block before a connection is made.
-my $pgversion = '?';
+my ($pgversion,$pglibversion) = ('?','?');
 
 # Trapping a connection error can be tricky, but we only have to do it 
 # this thoroughly one time. We are trapping two classes of errors:
@@ -39,8 +39,8 @@ if ($@) {
 
 pass('Established a connection to the database');
 
-my $intversion = DBD::Pg::_pg_server_version($dbh);
-$pgversion = $dbh->{private_dbdpg}{dotted_version};
+$pgversion = $dbh->{pg_server_version};
+$pglibversion = $dbh->{pglibversion};
 
 ok( $dbh->disconnect(), 'Disconnect from the database');
 
@@ -69,10 +69,11 @@ END {
 	my $schema = exists $ENV{DBD_SCHEMA} ? 
 		"\nDBD_SCHEMA        $ENV{DBD_SCHEMA}" : '';
 	diag 
-		"\nProgram           Version\n".
-		"Perl              $pv ($^O)\n".
-		"DBD::Pg           $DBD::Pg::VERSION\n".
-		"PostgreSQL        $pgversion\n".
-		"DBI               $DBI::VERSION\n".
-		"DBI_DSN           $ENV{DBI_DSN}$schema\n";
+		"\nProgram               Version\n".
+		"Perl                  $pv ($^O)\n".
+		"DBD::Pg               $DBD::Pg::VERSION\n".
+		"PostgreSQL (compiled) $pglibversion\n".
+		"PostgreSQL (target)   $pgversion\n".
+		"DBI                   $DBI::VERSION\n".
+		"DBI_DSN               $ENV{DBI_DSN}$schema\n";
 }

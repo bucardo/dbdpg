@@ -17,13 +17,14 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 0, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for handle attributes testing");
 
-my $got73 = DBD::Pg::_pg_use_catalog($dbh);
+my $version = $dbh->{pg_server_version};
+my $got73 = $version >= 70300 ? 1 : 0;
 if ($got73) {
 	$dbh->do("SET search_path TO " . $dbh->quote_identifier
 					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
 }
 
-my $pgversion = DBD::Pg::_pg_server_version($dbh);
+my $pgversion = $dbh->{pg_server_version};
 
 my $attributes_tested = q{
 

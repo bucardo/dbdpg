@@ -30,9 +30,7 @@
 DBISTATE_DECLARE;
 
 /* Someday, we can abandon pre-7.4 and life will be much easier... */
-#ifdef HAVE_PQprotocol
-#define PG74 1
-#else
+#if PGLIBVERSION < 70400
 /* Limited emulation - use with care! And upgrade already... :) */
 typedef enum
 {
@@ -52,9 +50,7 @@ int PQsetErrorVerbosity() { return 0; }
 #endif
 
 /* an important feature was left out of libpq for 7.4, so we need this check */
-#ifdef PG_VERSION8
-#define PG8 1
-#else
+#if PGLIBVERSION < 80000
 PGresult *PQprepare() { }
 #endif
 
@@ -90,7 +86,7 @@ ExecStatusType _result(imp_dbh, com)
 
 	status = result ? PQresultStatus(result) : -1;
 
-#ifdef PG77
+#if PGLIBVERSION >= 70400
 	strncpy(imp_dbh->sqlstate,
 					NULL == PQresultErrorField(result,PG_DIAG_SQLSTATE) ? "00000" : 
 					PQresultErrorField(result,PG_DIAG_SQLSTATE),
@@ -262,11 +258,36 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	PQsetNoticeProcessor(imp_dbh->conn, pg_warn, (void *)SvRV(dbh));
 	
 	/* Figure out what protocol this server is using */
-#ifdef PG74
-	imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
+	imp_dbh->pg_protocol = PGLIBVERSION >= 70400 ? PQprotocolVersion(imp_dbh->conn) : 0;
+
+	/* Figure out this particular backend's version */
+#if PGLIBVERSION >= 80000
+	imp_dbh->pg_server_version = PQserverVersion(imp_dbh->conn);
 #else
-	imp_dbh->pg_protocol = 0;
-#endif	
+	imp_dbh->pg_server_version = -1;
+	{
+		PGresult *result;
+		ExecStatusType status;
+		int	cnt, vmaj, vmin, vrev;
+	
+		result = PQexec(imp_dbh->conn, "SELECT version(), 'DBD::Pg'");
+		status = result ? PQresultStatus(result) : -1;
+	
+		if (PGRES_TUPLES_OK != status || !PQntuples(result)) {
+			if (dbis->debug >= 4)
+				PerlIO_printf(DBILOGFP, "  Could not get version from the server, status was %d\n", status);
+		}
+		else {
+			cnt = sscanf(PQgetvalue(result,0,0), "PostgreSQL %d.%d.%d", &vmaj, &vmin, &vrev);
+			PQclear(result);
+			if (cnt >= 2) {
+				if (cnt == 2)
+					vrev = 0;
+				imp_dbh->pg_server_version = (100 * vmaj + vmin) * 100 + vrev;
+			}
+		}
+	}
+#endif
 
 	Renew(imp_dbh->sqlstate, 6, char); /* freed in dbd_db_destroy (and above) */
 	if (!imp_dbh->sqlstate)
@@ -283,17 +304,12 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	/* If the server can handle it, we default to "smart", otherwise "off" */
 	imp_dbh->server_prepare = imp_dbh->pg_protocol >= 3 ? 
 	/* If using 3.0 protocol but not yet version 8, switch to "smart" */
-#ifdef PG8
-1
-#else
-2
-#endif
-: 0;
+		PGLIBVERSION >= 80000 ? 1 : 2 : 0;
 
 	DBIc_IMPSET_on(imp_dbh); /* imp_dbh set up now */
 	DBIc_ACTIVE_on(imp_dbh); /* call disconnect before freeing */
 
-	return 1;
+	return imp_dbh->pg_server_version;
 
 } /* end of dbd_db_login */
 
@@ -335,11 +351,7 @@ PGTransactionStatusType dbd_db_txn_status (imp_dbh)
 
 	/* Non - 7.3 *compiled* servers (our PG library) always return unknown */
 
-#ifdef PG74
-	return PQtransactionStatus(imp_dbh->conn);
-#else
-	return PQTRANS_UNKNOWN; /* See PG74 def */
-#endif
+	return PGLIBVERSION >= 70400 ? PQtransactionStatus(imp_dbh->conn) : PQTRANS_UNKNOWN;
 
 } /* end of dbd_db_txn_status */
 
@@ -365,7 +377,7 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	/* We only perform these actions if we need to. For newer servers, we 
 		 ask it for the status directly and double-check things */
 
-#ifdef PG74
+#if PGLIBVERSION >= 70400
 	tstatus = dbd_db_txn_status(imp_dbh);
 	if (PQTRANS_IDLE == tstatus) { /* Not in a transaction */
 		if (imp_dbh->done_begin) {
@@ -576,7 +588,11 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 		retsv = newSViv((IV)imp_dbh->server_prepare);
 	} else if (14==kl && strEQ(key, "pg_prepare_now")) {
 		retsv = newSViv((IV)imp_dbh->prepare_now);
-	} 
+	} else if (12==kl && strEQ(key, "pglibversion")) {
+		retsv = newSViv((IV)PGLIBVERSION);
+	} else if (17==kl && strEQ(key, "pg_server_version")) {
+		retsv = newSViv((IV)imp_dbh->pg_server_version);
+	}
 	/* All the following are called too infrequently to bother caching */
 
 	else if (5==kl && strEQ(key, "pg_db")) {
@@ -677,7 +693,7 @@ SV * dbd_db_pg_notifies (dbh, imp_dbh)
 	av_push(ret, newSVpv(notify->relname,0) );
 	av_push(ret, newSViv(notify->be_pid) );
 	
-#ifdef HAVE_PQfreemem
+#if PGLIBVERSION >= 70400
  	PQfreemem(notify);
 #else
 	Safefree(notify);
@@ -791,20 +807,17 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 		We prepare it right away if:
 		1. The statement is DML
 		2. The attribute "direct" is false
-		3. We can handle server-side prepares
+		3. The backend can handle server-side prepares
 		4. The attribute "pg_server_prepare" is not 0
-		5. The attribute "pg_prepare_now" is true and we are a PG8 or up compiled server
+		5. The attribute "pg_prepare_now" is true
+    6. We are compiled on a 8 or greater server
 	*/
 	if (imp_sth->is_dml && 
 			!imp_sth->direct &&
 			imp_dbh->pg_protocol >= 3 &&
 			0 != imp_sth->server_prepare &&
-			imp_sth->prepare_now && /* Ugly, but we don't want 7.4 doing a direct prepare */
-#ifdef PG8
-1
-#else
-0
-#endif
+			imp_sth->prepare_now &&
+			PGLIBVERSION >= 80000
 			) {
 		if (dbis->debug >= 5)
 			PerlIO_printf(DBILOGFP, "  dbdpg: immediate prepare\n");
@@ -1159,7 +1172,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	Oid *paramTypes = NULL;
 	ph_t *currph;
 
-#ifdef PG8
+#if PGLIBVERSION >= 80000
 	oldprepare = 0;
 #endif
 
@@ -1172,8 +1185,8 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	imp_sth->prepare_name[strlen(imp_sth->prepare_name)]='\0';
 
 	if (dbis->debug >= 5)
-		PerlIO_printf(DBILOGFP, "  dbdpg: new statement name \"%s\"\n",
-									imp_sth->prepare_name);
+		PerlIO_printf(DBILOGFP, "  dbdpg: new statement name \"%s\", oldprepare is %d\n",
+									imp_sth->prepare_name, oldprepare);
 
 	/* PQprepare was not added until 8.0 */
 
@@ -1730,7 +1743,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 	/* We don't want the result cleared yet, so we don't use _result */
 
-#ifdef PG74
+#if PGLIBVERSION >= 70400
 	strncpy(imp_dbh->sqlstate,
 					NULL == PQresultErrorField(imp_sth->result,PG_DIAG_SQLSTATE) ? "00000" : 
 					PQresultErrorField(imp_sth->result,PG_DIAG_SQLSTATE),
