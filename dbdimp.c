@@ -581,8 +581,8 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 		retsv = newSViv((IV)imp_dbh->server_prepare);
 	} else if (14==kl && strEQ(key, "pg_prepare_now")) {
 		retsv = newSViv((IV)imp_dbh->prepare_now);
-	} else if (12==kl && strEQ(key, "pglibversion")) {
-		retsv = newSViv((IV)PGLIBVERSION);
+	} else if (14==kl && strEQ(key, "pg_lib_version")) {
+		retsv = newSViv((IV) PGLIBVERSION );
 	} else if (17==kl && strEQ(key, "pg_server_version")) {
 		retsv = newSViv((IV)imp_dbh->pg_server_version);
 	}
