@@ -71,7 +71,7 @@ PostgreSQL library and include directories.  However, if you want to
 control it yourself, define the environment variables POSTGRES_INCLUDE 
 and POSTGRES_LIB, or POSTGRES_HOME. Note that if you've compiled
 PostgreSQL with SSL support, you must define the POSTGRES_LIB
-environment varable and add "-lssl" to it, like this:
+environment variable and add "-lssl" to it, like this:
 
 	export POSTGRES_LIB="/usr/local/pgsql/lib -lssl"
 
