@@ -41,7 +41,7 @@ if ($@) {
 pass('Established a connection to the database');
 
 $pgversion = $dbh->{pg_server_version};
-$pglibversion = $dbh->{pglibversion};
+$pglibversion = $dbh->{pg_lib_version};
 
 ok( $dbh->disconnect(), 'Disconnect from the database');
 

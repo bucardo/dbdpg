@@ -18,7 +18,7 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 ok( defined $dbh, "Connect to database for bytea testing");
 
 my ($sth,$count,$result,$expected,@data);
-my $pglibversion = $dbh->{pglibversion};
+my $pglibversion = $dbh->{pg_lib_version};
 my $table = 'dbd_pg_test4';
 
 ## (Re)create a second test table with few columns to test a "bare" COPY
