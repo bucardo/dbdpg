@@ -280,25 +280,31 @@ dbd_db_commit (dbh, imp_dbh)
 
     if (NULL != imp_dbh->conn) {
         PGresult* result = 0;
-        ExecStatusType status;
+        ExecStatusType commitstatus, beginstatus;
 
         /* execute commit */
         result = PQexec(imp_dbh->conn, "commit");
-        status = result ? PQresultStatus(result) : -1;
+        commitstatus = result ? PQresultStatus(result) : -1;
         PQclear(result);
 
         /* check result */
-        if (status != PGRES_COMMAND_OK) {
-            pg_error(dbh, status, "commit failed\n");
-            return 0;
+        if (commitstatus != PGRES_COMMAND_OK) {
+	    /* Only put the error message in DBH->errstr */
+	    pg_error(dbh, commitstatus, PQerrorMessage(imp_dbh->conn));
         }
 
         /* start new transaction.  AutoCommit must be FALSE, ref. 20 lines up */
         result = PQexec(imp_dbh->conn, "begin");
-        status = result ? PQresultStatus(result) : -1;
+        beginstatus = result ? PQresultStatus(result) : -1;
         PQclear(result);
-        if (status != PGRES_COMMAND_OK) {
-            pg_error(dbh, status, "begin failed\n");
+        if (beginstatus != PGRES_COMMAND_OK) {
+	    /* Maybe add some loud barf here? Raising some very high error? */
+            pg_error(dbh, beginstatus, "begin failed\n");
+            return 0;
+        }
+
+	/* if the initial COMMIT failed, return 0 now */
+	if (commitstatus != PGRES_COMMAND_OK) {
             return 0;
         }
         
