@@ -2265,6 +2265,19 @@ If DBD::Pg is unable to figure out the version (e.g. it was compiled
 against pre 7.4 libraries), it will return a "0". Otherwise, servers below
 version 7.4 return a "2", and (currently) 7.4 and above return a "3".
 
+=item B<pg_lib_version> (integer, read-only)
+
+PostgreSQL specific attribute. Indicates which version of PostgreSQL that 
+DBD::Pg was compiled against. In other words, which libraries were used. 
+Returns a number with major, minor, and revision together; version 7.4.2 
+would be returned as 70402.
+
+=item B<pg_server_version> (integer, read-only)
+
+PostgreSQL specific attribute. Indicates which version of PostgreSQL that 
+the current database handle is connected to. Returns a number with major, 
+minor, and revision together; version 8.0.1 would be 80001.
+
 =item B<pg_db> (string, read-only)
 
 PostgreSQL specific attribute. Returns the name of the current database.
