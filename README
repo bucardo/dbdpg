@@ -66,10 +66,11 @@ REQUIREMENTS:
 INSTALLATION:
 -------------
 
-The Makefile uses the environment variables POSTGRES_INCLUDE and
-POSTGRES_LIB, or POSTGRES_HOME, to find the library libpq.so and the
-proper include files.
-	 
+By default Makefile.PL uses App:Info to find the location of the
+PostgreSQL library and include directories.  However, if you want to
+control it yourself, define the environment variables POSTGRES_INCLUDE
+and POSTGRES_LIB, or POSTGRES_HOME.
+
 	1.   perl Makefile.PL
 	2.   make
 	3.   make test
