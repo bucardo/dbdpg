@@ -1061,7 +1061,7 @@ $DBD::Pg::VERSION = '1.30_1';
       DBI::SQL_INTEGER, DBI::SQL_SMALLINT, DBI::SQL_DECIMAL,
       DBI::SQL_FLOAT, DBI::SQL_REAL, DBI::SQL_DOUBLE, DBI::SQL_NUMERIC;
 
-    sub quote {
+    sub _old_quote {
         my ($dbh, $str, $data_type) = @_;
         return "NULL" unless defined $str;
 		return $str if $data_type && $no_escape{$data_type};
