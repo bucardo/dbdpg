@@ -276,64 +276,60 @@ ok( defined $sth, "column_info(undef, 'ause%', 'pga_%', 'schema%') tested" );
 DBI::dump_results($sth) if defined $sth;
 $sth = undef;
 
-SKIP: {
-	# Test call to primary_key_info
-	local ($dbh->{Warn}, $dbh->{PrintError});
-	$dbh->{PrintError} = $dbh->{Warn} = 0;
+# Test call to primary_key_info
+local ($dbh->{Warn}, $dbh->{PrintError});
+$dbh->{PrintError} = $dbh->{Warn} = 0;
 
-	# Primary Key Info
-	eval {
-		$sth = $dbh->primary_key_info();
-		die unless $sth;
-	};
-	ok ($@, "Call to primary_key_info with 0 arguements, error expected: $@" );
-	$sth = undef;
+# Primary Key Info
+eval {
+    $sth = $dbh->primary_key_info();
+    die unless $sth;
+};
+ok ($@, "Call to primary_key_info with 0 arguements, error expected: $@" );
+$sth = undef;
 
-	# Primary Key
-	eval {
-		$sth = $dbh->primary_key();
-		die unless $sth;
-	};
-	ok ($@, "Call to primary_key with 0 arguements, error expected: $@" );
-	$sth = undef;
+# Primary Key
+eval {
+    $sth = $dbh->primary_key();
+    die unless $sth;
+};
+ok ($@, "Call to primary_key with 0 arguements, error expected: $@" );
+$sth = undef;
 
-	$sth = $dbh->primary_key_info(undef, undef, undef );
+$sth = $dbh->primary_key_info(undef, undef, undef );
 
-	skip "primary_key_info not supported by provider", 5 unless $sth;
+ok( defined $sth, "Statement handle defined for primary_key_info()" );
 
-	ok( defined $sth, "Statement handle defined for primary_key_info()" );
+if ( defined $sth ) {
+    while( my $row = $sth->fetchrow_arrayref ) {
+        local $^W = 0;
+        # print join( ", ", @$row, "\n" );
+    }
 
-	if ( defined $sth ) {
-		while( my $row = $sth->fetchrow_arrayref ) {
-				local $^W = 0;
-				# print join( ", ", @$row, "\n" );	
-		}
+    undef $sth;
 
-		undef $sth;
-
-	}
-
-	$sth = $dbh->primary_key_info(undef, undef, undef );
-	ok( defined $sth, "Statement handle defined for primary_key_info()" );
-
-	my ( %catalogs, %schemas, %tables);
-
-	my $cnt = 0;
-	while( my ($catalog, $schema, $table) = $sth->fetchrow_array ) {
-		local $^W = 0;
-		$catalogs{$catalog}++	if $catalog;
-		$schemas{$schema}++		if $schema;
-		$tables{$table}++			if $table;
-		$cnt++;
-	}
-	ok( $cnt > 0, "At least one table has a primary key." );
-
-	$sth = $dbh->primary_key_info(undef, qq{'$ENV{DBI_USER}'}, undef );
-	ok( 
-		defined $sth
-		, "Getting primary keys for tables owned by $ENV{DBI_USER}");
-	DBI::dump_results($sth) if defined $sth;
 }
+
+$sth = $dbh->primary_key_info(undef, undef, undef );
+ok( defined $sth, "Statement handle defined for primary_key_info()" );
+
+my ( %catalogs, %schemas, %tables);
+
+my $cnt = 0;
+while( my ($catalog, $schema, $table) = $sth->fetchrow_array ) {
+    local $^W = 0;
+    $catalogs{$catalog}++	if $catalog;
+    $schemas{$schema}++		if $schema;
+    $tables{$table}++			if $table;
+    $cnt++;
+}
+ok( $cnt > 0, "At least one table has a primary key." );
+
+$sth = $dbh->primary_key_info(undef, qq{'$ENV{DBI_USER}'}, undef );
+ok(
+   defined $sth
+   , "Getting primary keys for tables owned by $ENV{DBI_USER}");
+DBI::dump_results($sth) if defined $sth;
 
 undef $sth;
 
