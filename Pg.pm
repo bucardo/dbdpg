@@ -1337,6 +1337,9 @@ database handle, not the statement handle. Returns a five-character code.
 Databases before version 7.4 will always return a generic "S1000" code. 
 Success is indicated by a "00000" code.
 
+The list of codes used by PostgreSQL can be found at:
+http://www.postgresql.org/docs/current/static/errcodes-appendix.html
+
 =item B<trace>
 
   $h->trace($trace_level, $trace_filename);
