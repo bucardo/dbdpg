@@ -87,13 +87,17 @@ if ($major_ver > 7 or ($major_ver == 7 and $minor_ver >= 4)) {
 	$comp_opts .= " -DHAVE_PQprotocol";
 }
 
+if ($DBI::VERSION >= 1.43) {
+	$comp_opts .= " -D_DBI_IS_143";
+}
+
 my %opts = (
     NAME         => 'DBD::Pg',
     VERSION_FROM => 'Pg.pm',
     INC          => "-I$POSTGRES_INCLUDE -I$dbi_arch_dir",
     OBJECT       => "Pg\$(OBJ_EXT) dbdimp\$(OBJ_EXT) quote\$(OBJ_EXT) types\$(OBJ_EXT)",
     LIBS         => ["-L$POSTGRES_LIB -lpq"],
-    AUTHOR       => 'http://gborg.postgresql.org/project/dbdpg/projdisplay.php',
+    AUTHOR       => 'http://gborg.postgresql.org/project/dbdpg/',
     ABSTRACT     => 'PostgreSQL database driver for the DBI module',
     PREREQ_PM    => { 'Test::Simple' => '0.17',  # Need Test::More.
                       'Test::Harness' => '2.03', # Need TODO tests.
