@@ -49,7 +49,6 @@ PQescapeString(char *to, const char *from, size_t length)
 }
 #endif
 
-#ifndef PQescapeBytea
 /*
  *		PQescapeBytea	- converts from binary string to the
  *		minimal encoding necessary to include the string in an SQL
@@ -61,6 +60,7 @@ PQescapeString(char *to, const char *from, size_t length)
  *		'\\' == ASCII 92 == \\\\
  *		anything >= 0x80 ---> \\ooo (where ooo is an octal expression)
  */
+#ifndef PQescapeBytea
 unsigned char *
 PQescapeBytea(unsigned char *bintext, size_t binlen, size_t *bytealen)
 {
