@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 14;
+	plan tests => 15;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -96,6 +96,14 @@ eval {
 	$sth->execute('foo');
 };
 ok( $@, 'execute with quoted ?');
+
+## Test large number of placeholders
+$sql = 'SELECT 1 FROM dbd_pg_test WHERE id IN (' . '?,' x 300 . "?)";
+my @args = map { $_ } (1..301);
+$sth = $dbh->prepare($sql);
+my $count = $sth->execute(@args);
+$sth->finish();
+ok( $count >= 1, 'prepare with large number of parameters works');
 
 $sth->finish();
 $dbh->rollback();
