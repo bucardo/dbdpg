@@ -751,7 +751,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 			PerlIO_printf(DBILOGFP, "  dbdpg: immediate prepare\n");
 
 		if (dbd_st_prepare_statement(sth, imp_sth)) {
-			return -2; /* XXX unlikely, but may want to handle better.. */
+			croak (PQerrorMessage(imp_dbh->conn));
 		}
 	}
 
