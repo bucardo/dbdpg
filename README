@@ -130,12 +130,24 @@ HP users: if you get error messages like:
 when running the test script, try to replace the  'shared' option in the
 LDDFLAGS with 'archive'. Dan Lauterbach <danla@dimensional.com>
 
+
 FreeBSD users: if you get during make test the error message:
 
 	'DBD driver has not implemented the AutoCommit attribute'
 
 recompile the DBI module and the DBD-Pg module and disable optimization.
 This error message is due to the broken optimization in gcc-2.7.2.1.
+
+If you get compiler errors like:
+       In function `XS_DBD__Pg__dr_discon_all_'
+    `sv_yes' undeclared (first use in this function)
+
+It may be because there is a 'patchlevel.h' file from another package 
+(such as 'hdf') in your POSTGRES_INCLUDE dir.  The presence of this file 
+prevents the compiler from finding the perl include file 
+'mach/CORE/patchlevel.h'.  Do 'pg_config --includedir' to identify the 
+POSTGRES_INCLUDE dir.  Rename patchlevel.h whilst you build DBD::Pg. 
+
 
 Sun Users: if you get compile errors like:
 
