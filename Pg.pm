@@ -1543,7 +1543,7 @@ a filename. Example:
 
   my $pid = $dbh->{pg_pid};
   my $file = "pgbackend.$pid.debug.log";
-  open($fh, ">$file") or die qq{Could not open "$file": $!\n};
+  open(my $fh, ">$file") or die qq{Could not open "$file": $!\n};
   $dbh->func($fh, 'server_trace');
   ## Run code you want to trace here
   $dbh->func('no_server_trace');
