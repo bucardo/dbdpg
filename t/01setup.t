@@ -23,7 +23,8 @@ CREATE TABLE test (
   name text,
   val text,
   score float,
-  date timestamp default 'now()'
+  date timestamp default 'now()',
+  array text[][]
 )
 SQL
 

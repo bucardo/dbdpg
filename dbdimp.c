@@ -27,6 +27,8 @@
 
 DBISTATE_DECLARE;
 
+/* hard-coded array delimiter */
+static char* array_delimiter = ",";
 
 static void dbd_preparse  (imp_sth_t *imp_sth, char *statement);
 
@@ -982,6 +984,43 @@ dbd_rebind_ph (sth, imp_sth, phs)
 }
 
 
+void dereference(value)
+SV** value;
+{
+       AV* buf;
+       SV* val;
+          char *src;
+       int is_ref;
+          STRLEN len;
+
+       if (SvTYPE(SvRV(*value)) != SVt_PVAV)
+               croak("Not an array reference (%s)", neatsvpv(*value,0));
+
+       buf = (AV *) SvRV(*value);
+       sv_setpv(*value, "{");
+               while ( SvOK(val = av_shift(buf)) ) {
+                       is_ref = SvROK(val);
+                       if (is_ref)
+                               dereference(&val);
+                       else
+                               sv_catpv(*value, "\"");
+                       /* Quote */
+                       src = SvPV(val, len);
+                       while (len--) {
+                               if (!is_ref && *src == '\"')
+                                       sv_catpv(*value, "\\");
+                               sv_catpvn(*value, src++, 1);
+                       }
+                       /* End of quote */
+                       if (!is_ref)
+                               sv_catpv(*value, "\"");
+                       if (av_len(buf) > -1)
+                                       sv_catpv(*value, array_delimiter);
+               }
+       sv_catpv(*value, "}");
+       av_clear(buf);
+}
+
 int
 dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, maxlen)
     SV *sth;
@@ -1021,7 +1060,7 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
     }
     if (SvROK(newvalue) && !IS_DBI_HANDLE(newvalue)) {
         /* dbi handle allowed for cursor variables */
-        croak("Can't bind a reference (%s)", neatsvpv(newvalue,0));
+               dereference(&newvalue);
     }
     if (SvTYPE(newvalue) == SVt_PVLV && is_inout) {	/* may allow later */
         croak("Can't bind ``lvalue'' mode scalar as inout parameter (currently)");
