@@ -58,8 +58,6 @@ $DBD::Pg::VERSION = '1.33';
 			'Errstr' => \$DBD::Pg::errstr,
 			'Attribution' => 'PostgreSQL DBD by Edmund Mergl',
 		});
-
-		$drh;
 	}
 
 	## Used by both the dr and db packages
@@ -2280,6 +2278,12 @@ Not supported by the driver.
 
 Not supported by the driver. See the note about B<Cursors> elsewhere in this
 document.
+
+=item C<ParamValues>  (hash ref, read-only)
+
+Supported by the driver as proposed by DBI. If this is called before the execute, 
+then the literal values passed in are shown. If called after the execute, then 
+the quoted versions of the values are shown.
 
 =item B<Statement>  (string, read-only)
 

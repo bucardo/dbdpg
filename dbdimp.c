@@ -1857,11 +1857,27 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		retsv = newSViv((IV)imp_sth->server_prepare);
 		return retsv;
  	}
+	else if (kl==11 && strEQ(key, "ParamValues")) {
+		HV *pvhv = newHV();
+		seg_t *currseg;
+		for (i=0,currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg,i++) {
+			if (NULL == currseg->value) {
+				hv_store_ent(pvhv, newSVpv(currseg->placeholder,0), Nullsv, i);
+			}
+			else if (NULL == currseg->quoted) {
+				hv_store_ent(pvhv, newSVpv(currseg->placeholder,0), newSVpv(currseg->value,0),i);
+			}
+			else {
+				hv_store_ent(pvhv, newSVpv(currseg->placeholder,0), newSVpv(currseg->quoted,0),i);
+			}
+		}
+		retsv = newRV_noinc((SV*)pvhv);
+		return retsv;
+	}
 
 	if (! imp_sth->result) {
 		return Nullsv;
 	}
-	
 	i = DBIc_NUM_FIELDS(imp_sth);
 	
 	if (kl == 4 && strEQ(key, "NAME")) {

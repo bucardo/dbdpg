@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 92;
+	plan tests => 93;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -316,9 +316,11 @@ is( $attrib, $dbh, 'Statement handle attribute "Database" matches the database h
 
 $sth = $dbh->prepare("SELECT id FROM dbd_pg_test WHERE id=?");
 $sth->bind_param(1, 1);
+$attrib = $sth->{ParamValues};
+is_deeply( $attrib, {'$1' => "1"}, qq{Statement handle attribute "ParamValues" works before execute});
 $sth->execute();
 $attrib = $sth->{ParamValues};
-is( $attrib, undef, 'Statement handle attribute "ParamValues" returns undef');
+is_deeply( $attrib, {'$1' => "'1'"}, qq{Statement handle attribute "ParamValues" works after execute});
 
 #
 # Test of the statement handle attribute "RowsInCache"
@@ -482,7 +484,7 @@ if ($client_level ne "error") {
 
 
 #
-# Not supported yet: ShowErrorStatement ParamValues
+# Not supported yet: ShowErrorStatement
 #
 
 #

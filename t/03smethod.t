@@ -337,11 +337,14 @@ for ("INSERT INTO dbd_pg_test (id,val) VALUES (400, 'lime')",
 	like ( $result, qr/^$expected/, qq{Statement handle attribute "pg_cmd_status" works for '$expected'});
 }
 
-
-## Test of the "state" statement handle method
+#
+# Test of the "state" statement handle method
+#
 
 $result = $sth->state();
-like( $result, qr/^[A-Z0-9]{5}$/, qq{Statement handle method returns a five-character code});
-
+like( $result, qr/^[A-Z0-9]{5}$/, qq{Statement handle method "state" returns a five-character code});
 
 $dbh->disconnect();
+
+
+
