@@ -1,9 +1,6 @@
 Changes
 dbdimp.c
 dbdimp.h
-eg/ApacheDBI.pl
-eg/lotest.pl
-eg/notify_test.patch
 large_object.c
 large_object.h
 Makefile.PL
