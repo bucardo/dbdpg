@@ -1,5 +1,5 @@
 1.40 
-  - Added $dbh->func($filehandle, 'server_trace')
+	- Added $dbh->func($filehandle, 'server_trace')
 		[Greg Sabino Mullane]
 	- Added $dbh->{pg_errorlevel}. [Greg Sabino Mullane]
 	- Fix utf8 quote() support [Dominic Mitchell <dom@semantico.com>]
