@@ -45,7 +45,6 @@ static int errno;
 
 /* defines for Driver.xst to let it know what functions to include */
 #define dbd_st_rows dbd_st_rows
-
-
+#define dbd_discon_all dbd_discon_all
 
 /* end of Pg.h */
