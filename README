@@ -178,7 +178,7 @@ file.
 Win32 Users: Running DBD-Pg scripts on Win32 needs some configuration work
 on the server side:
 
-	o add a postgres user with the same name as the NT-User 
-	  (eg Administrator)
-	o make sure, that your pg_hba.conf on the server is configured,
-	  such that a connection from another host will be accepted
+    o add a postgres user with the same name as the NT-User 
+      (eg Administrator)
+    o make sure, that your pg_hba.conf on the server is configured,
+      such that a connection from another host will be accepted
