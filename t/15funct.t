@@ -123,8 +123,8 @@ is( $dbh->quote( 1, SQL_INTEGER() ), 1, "quote(1, SQL_INTEGER)" );
 ok ($@, "quote_identifier error expected: $@");
 $sth = undef;
 
-TODO: {
-    local $TODO = "get_info() not yet implemented";
+SKIP: {
+    skip("get_info() not yet implemented", 1);
     #	, SQL_IDENTIFIER_QUOTE_CHAR	=> 29
     #	, SQL_CATALOG_NAME_SEPARATOR	=> 41
     my $qt  = $dbh->get_info( $get_info->{SQL_IDENTIFIER_QUOTE_CHAR} );
@@ -157,8 +157,8 @@ ok ($dbh->ping, "Ping the current connection ..." );
 #	SQL_TABLE_TERM
 #	SQL_USER_NAME
 
-TODO: {
-    local $TODO = "get_info() not yet implemented";
+SKIP: {
+    skip("get_info() not yet implemented", 5);
     foreach my $info (sort keys %$get_info) {
 	my $type =  $dbh->get_info($get_info->{$info});
 	ok( defined $type,  "get_info($info) ($get_info->{$info}) " .
