@@ -126,9 +126,9 @@ void pg_error (h, error_num, error_msg)
 		 char *error_msg;
 {
 	D_imp_xxh(h);
-	D_imp_dbh(h);
 	char *err, *src, *dst; 
 	STRLEN len = strlen(error_msg);
+	imp_dbh_t	*imp_dbh = (imp_dbh_t *)(DBIc_TYPE(imp_xxh) == DBIt_ST ? DBIc_PARENT_COM(imp_xxh) : imp_xxh);
 	
 	New(0, err, len+1, char); /* freed below */
 	if (!err)
@@ -300,6 +300,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	imp_dbh->prepare_number = 1;
 	imp_dbh->prepare_now = 0;
 	imp_dbh->pg_errorlevel = 1; /* Matches PG default */
+  imp_dbh->savepoints = newAV();
 
 	/* If the server can handle it, we default to "smart", otherwise "off" */
 	imp_dbh->server_prepare = imp_dbh->pg_protocol >= 3 ? 
@@ -414,6 +415,7 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 		return 0;
 	}
 
+	av_clear(imp_dbh->savepoints);
 	imp_dbh->done_begin = 0;
 	return 1;
 
@@ -478,6 +480,7 @@ void dbd_db_destroy (dbh, imp_dbh)
 {
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_destroy\n"); }
 
+	av_undef(imp_dbh->savepoints);
 	Safefree(imp_dbh->sqlstate);
 
 	if (DBIc_ACTIVE(imp_dbh)) {
@@ -783,7 +786,9 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 				!strcasecmp(imp_sth->firstword, "BEGIN") ||
 				!strcasecmp(imp_sth->firstword, "ABORT") ||
 				!strcasecmp(imp_sth->firstword, "COMMIT") ||
-				!strcasecmp(imp_sth->firstword, "ROLLBACK")
+				!strcasecmp(imp_sth->firstword, "ROLLBACK") ||
+				!strcasecmp(imp_sth->firstword, "RELEASE") ||
+				!strcasecmp(imp_sth->firstword, "SAVEPOINT")
 				) {
 			if (!imp_sth->direct)
 				croak ("Please use DBI functions for transaction handling");
@@ -1975,15 +1980,26 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 	if (PQTRANS_INERROR == tstatus) {
 		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg: Issuing rollback before deallocate\n", tstatus);
-
-		status = _result(imp_dbh, "rollback");
+		{
+			/* If a savepoint has been set, rollback to the last savepoint instead of the entire transaction */
+			I32	alen = av_len(imp_dbh->savepoints);
+			if (alen > -1) {
+				SV		*sp = av_pop(imp_dbh->savepoints);
+				char	cmd[SvLEN(sp) + 13];
+				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
+				status = _result(imp_dbh, cmd);
+			}
+			else {
+				status = _result(imp_dbh, "ROLLBACK");
+				imp_dbh->done_begin = 0;
+			}
+		}
 		if (PGRES_COMMAND_OK != status) {
 			/* This is not fatal, it just means we cannot deallocate */
 			if (dbis->debug >= 4)
 				PerlIO_printf(DBILOGFP, "  dbdpg: Rollback failed, so no deallocate\n");
 			return 1;
 		}
-		imp_dbh->done_begin = 0;
 	}
 
 	New(0, stmt, strlen("DEALLOCATE ") + strlen(imp_sth->prepare_name) + 1, char); /* freed below */
@@ -2345,5 +2361,114 @@ pg_db_pg_server_untrace (dbh)
 	PQuntrace(imp_dbh->conn);
 }
 
-/* end of dbdimp.c */
 
+int
+pg_db_savepoint (dbh, imp_dbh, savepoint)
+		 SV *dbh;
+		 imp_dbh_t *imp_dbh;
+		 char * savepoint;
+{
+	PGTransactionStatusType tstatus;
+	ExecStatusType status;
+	char action[strlen(savepoint) + 11];
+
+	if (imp_dbh->pg_server_version < 80000)
+		croak("Savepoints are only supported on server version 8.0 or higher");
+
+	sprintf(action,"savepoint %s",savepoint);
+
+	if (dbis->debug >= 4)
+		PerlIO_printf(DBILOGFP, "  dbdpg: %s\n", action);
+
+	/* no action if AutoCommit = on or the connection is invalid */
+	if ((NULL == imp_dbh->conn) || (DBDPG_TRUE == DBIc_has(imp_dbh, DBIcf_AutoCommit)))
+		return 0;
+
+	status = _result(imp_dbh, action);
+
+	if (PGRES_COMMAND_OK != status) {
+		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
+		return 0;
+	}
+
+	av_push(imp_dbh->savepoints, newSVpv(savepoint,0));
+	return 1;
+}
+
+
+int pg_db_rollback_to (dbh, imp_dbh, savepoint)
+		 SV *dbh;
+		 imp_dbh_t *imp_dbh;
+		 char * savepoint;
+{
+	PGTransactionStatusType tstatus;
+	ExecStatusType status;
+	I32 i;
+	char action[strlen(savepoint) + 13];
+
+	if (imp_dbh->pg_server_version < 80000)
+		croak("Savepoints are only supported on server version 8.0 or higher");
+
+	sprintf(action,"rollback to %s",savepoint);
+
+	if (dbis->debug >= 4)
+		PerlIO_printf(DBILOGFP, "  dbdpg: %s\n", action);
+
+	/* no action if AutoCommit = on or the connection is invalid */
+	if ((NULL == imp_dbh->conn) || (DBDPG_TRUE == DBIc_has(imp_dbh, DBIcf_AutoCommit)))
+		return 0;
+
+	status = _result(imp_dbh, action);
+
+	if (PGRES_COMMAND_OK != status) {
+		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
+		return 0;
+	}
+
+	for (i = av_len(imp_dbh->savepoints); i >= 0; i--) {
+		SV	*elem = *av_fetch(imp_dbh->savepoints, i, 0);
+		if (strEQ(SvPV_nolen(elem), savepoint))
+			break;
+		av_pop(imp_dbh->savepoints);
+	}
+	return 1;
+}
+
+int pg_db_release (dbh, imp_dbh, savepoint)
+		 SV *dbh;
+		 imp_dbh_t *imp_dbh;
+		 char * savepoint;
+{
+	PGTransactionStatusType tstatus;
+	ExecStatusType status;
+	I32 i;
+	char action[strlen(savepoint) + 9];
+
+	if (imp_dbh->pg_server_version < 80000)
+		croak("Savepoints are only supported on server version 8.0 or higher");
+
+	sprintf(action,"release %s",savepoint);
+
+	if (dbis->debug >= 4)
+		PerlIO_printf(DBILOGFP, "  dbdpg: %s\n", action);
+
+	/* no action if AutoCommit = on or the connection is invalid */
+	if ((NULL == imp_dbh->conn) || (DBDPG_TRUE == DBIc_has(imp_dbh, DBIcf_AutoCommit)))
+		return 0;
+
+	status = _result(imp_dbh, action);
+
+	if (PGRES_COMMAND_OK != status) {
+		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
+		return 0;
+	}
+
+	for (i = av_len(imp_dbh->savepoints); i >= 0; i--) {
+		SV	*elem = av_pop(imp_dbh->savepoints);
+		if (strEQ(SvPV_nolen(elem), savepoint))
+			break;
+	}
+	return 1;
+}
+
+/* end of dbdimp.c */

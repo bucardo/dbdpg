@@ -36,6 +36,7 @@ struct imp_dbh_st {
 
 	PGconn  *conn;             /* connection structure */
 	bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */
+	AV      *savepoints;       /* list of savepoints */
 	int     pg_protocol;       /* value of PQprotocolVersion, usually 0, 2, or 3 */
 	int     pg_server_version; /* Server version e.g. 80100 */
 	int     prepare_number;    /* internal prepared statement name modifier */

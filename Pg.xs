@@ -169,6 +169,36 @@ pg_notifies(dbh)
     ST(0) = dbd_db_pg_notifies(dbh, imp_dbh);
 
 void
+pg_savepoint(dbh,name)
+    SV * dbh
+    char * name
+    CODE:
+    D_imp_dbh(dbh);
+    if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
+      warn("savepoint ineffective with AutoCommit enabled");
+    ST(0) = pg_db_savepoint(dbh, imp_dbh, name) ? &sv_yes : &sv_no;
+
+void
+pg_rollback_to(dbh,name)
+    SV * dbh
+    char * name
+    CODE:
+    D_imp_dbh(dbh);
+    if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
+      warn("rollback_to ineffective with AutoCommit enabled");
+    ST(0) = pg_db_rollback_to(dbh, imp_dbh, name) ? &sv_yes : &sv_no;
+
+void
+pg_release(dbh,name)
+    SV * dbh
+    char * name
+    CODE:
+    D_imp_dbh(dbh);
+    if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
+      warn("release ineffective with AutoCommit enabled");
+    ST(0) = pg_db_release(dbh, imp_dbh, name) ? &sv_yes : &sv_no;
+
+void
 lo_open(dbh, lobjId, mode)
     SV * dbh
     unsigned int lobjId
