@@ -66,7 +66,7 @@ else {
   $dbi_arch_dir = dbd_dbi_arch_dir();
 }
 
-my $comp_opts;
+my $comp_opts = $Config{q{ccflags}};
 if ($major_ver == 7) {
     if ($minor_ver >= 2) {
         $comp_opts .= " -DHAVE_PQescapeString";
