@@ -22,6 +22,7 @@ struct imp_dbh_st {
     PGconn    * conn;		/* connection structure */
     int         init_commit;	/* initialize AutoCommit */
     int         pg_auto_escape;	/* initialize AutoEscape */
+    int         pg_bool_tf;     /* do bools return 't'/'f' */
 };
 
 /* Define sth implementor data structure */
