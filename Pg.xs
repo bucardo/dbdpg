@@ -92,7 +92,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
                         mg_get(type_sv);
 
                 type_info = sql_type_data(SvIV(type_sv));
-                type_num = type_info->type.pg;
+                type_num = type_info ? type_info->type.pg : VARCHAROID;
         } else {
                 /* default to varchar */
                 type_num = VARCHAROID;
@@ -301,7 +301,7 @@ _pg_type_info (type_sv=Nullsv)
                         mg_get(type_sv);
 
                 type_info = pg_type_data(SvIV(type_sv));
-                type_num = type_info->type.sql;
+                type_num = type_info ? type_info->type.sql : VARCHAROID;
         } 
 	RETVAL = type_num;
 
