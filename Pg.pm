@@ -1962,7 +1962,7 @@ Some examples:
     baz VARCHAR)");
   $SQL = "INSERT INTO lii(baz) VALUES (?)";
   $sth = $dbh->prepare($SQL);
-  for (qw(uno dos tres quattro)) {
+  for (qw(uno dos tres cuatro)) {
     $sth->execute($_);
     my $newid = $dbh->last_insert_id(C<undef>,undef,undef,undef,{sequence=>'lii_seq'});
     print "Last insert id was $newid\n";
@@ -1975,7 +1975,7 @@ If you did not want to worry about the sequence name:
     baz VARCHAR)");
   $SQL = "INSERT INTO lii2(baz) VALUES (?)";
   $sth = $dbh->prepare($SQL);
-  for (qw(uno dos tres quattro)) {
+  for (qw(uno dos tres cuatro)) {
     $sth->execute($_);
     my $newid = $dbh->last_insert_id(undef,undef,"lii2",undef);
     print "Last insert id was $newid\n";
