@@ -1,3 +1,6 @@
+  - Switched commit behavior from commit->execute->begin 
+		to begin->execute->commit
+		[xelah-junk@xelah.com]
 	- Made the _pg_use_catalog subroutine use {private_dbgpg}.
 		(CPAN bug #4841) [Greg Sabino Mullane]
 	- Changed strdup to safemalloc/strcpy in dbdimp.c

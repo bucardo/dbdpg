@@ -311,44 +311,29 @@ dbd_db_commit (dbh, imp_dbh)
 		return 0;
 	}
 	
+	/* Commit only if we have a connection and done_begin is true */
 	if (NULL != imp_dbh->conn) {
 		PGresult* result = 0;
-		ExecStatusType commitstatus, beginstatus;
+		ExecStatusType status;
 		
-		/* execute commit */
-		result = PQexec(imp_dbh->conn, "commit");
-		commitstatus = result ? PQresultStatus(result) : -1;
-		PQclear(result);
-		
-		/* check result */
-		if (commitstatus != PGRES_COMMAND_OK) {
-			/* Only put the error message in DBH->errstr */
-			pg_error(dbh, commitstatus, PQerrorMessage(imp_dbh->conn));
+		if (imp_dbh->done_begin) {
+			result = PQexec(imp_dbh->conn, "commit");
+			status = result ? PQresultStatus(result) : -1;
+			PQclear(result);
+
+			/* check result */
+			if (status != PGRES_COMMAND_OK) {
+				pg_error(dbh, status, "commit failed\n");
+				return 0;
+			}
+			imp_dbh->done_begin = 0;
 		}
-		
-		/* start new transaction. AutoCommit must be FALSE, ref. 20 lines up */
-		result = PQexec(imp_dbh->conn, "begin");
-		beginstatus = result ? PQresultStatus(result) : -1;
-		PQclear(result);
-		if (beginstatus != PGRES_COMMAND_OK) {
-			/* Maybe add some loud barf here? Raising some very high error? */
-			pg_error(dbh, beginstatus, "begin failed\n");
-			return 0;
-		}
-		
-		/* if the initial COMMIT failed, return 0 now */
-		if (commitstatus != PGRES_COMMAND_OK) {
-			return 0;
-		}
-		
 		return 1;
 	}
-	
 	return 0;
 }
 
 
-/* TODO: Tx fix that was done to commit needs to be done here also. #rl */
 int
 dbd_db_rollback (dbh, imp_dbh)
 		 SV *dbh;
@@ -361,35 +346,26 @@ dbd_db_rollback (dbh, imp_dbh)
 		return 0;
 	}
 	
+	/* Rollback only if we have a connection and done_begin is true */
 	if (NULL != imp_dbh->conn) {
 		PGresult* result = 0;
 		ExecStatusType status;
 		
 		/* execute rollback */
-		result = PQexec(imp_dbh->conn, "rollback");
-		status = result ? PQresultStatus(result) : -1;
-		PQclear(result);
-		
-		/*TODO Correct error message. If returning on error 
-			will screw up transaction state? Begin will not get called! */
-		/* check result */
-		if (status != PGRES_COMMAND_OK) {
-			pg_error(dbh, status, "rollback failed\n");
-			return 0;
+		if (imp_dbh->done_begin) {
+			result = PQexec(imp_dbh->conn, "rollback");
+			status = result ? PQresultStatus(result) : -1;
+			PQclear(result);
+			
+			/* check result */
+			if (status != PGRES_COMMAND_OK) {
+				pg_error(dbh, status, "rollback failed\n");
+				return 0;
+			}
+			imp_dbh->done_begin = 0;
 		}
-		
-		/* start new transaction. AutoCommit must be FALSE, ref. 20 lines up */
-		result = PQexec(imp_dbh->conn, "begin");
-		status = result ? PQresultStatus(result) : -1;
-		PQclear(result);
-		if (status != PGRES_COMMAND_OK) {
-			pg_error(dbh, status, "begin failed\n");
-			return 0;
-		}
-		
 		return 1;
 	}
-	
 	return 0;
 }
 
@@ -411,8 +387,9 @@ dbd_db_disconnect (dbh, imp_dbh)
 	DBIc_ACTIVE_off(imp_dbh);
 	
 	if (NULL != imp_dbh->conn) {
-		/* rollback if AutoCommit = off */
-		if (DBIc_has(imp_dbh, DBIcf_AutoCommit) == FALSE) {
+		/* rollback if AutoCommit = off and we are in a transaction */
+		if (DBIc_has(imp_dbh, DBIcf_AutoCommit) == FALSE
+				&& imp_dbh->done_begin) {
 			PGresult* result = 0;
 			ExecStatusType status;
 			result = PQexec(imp_dbh->conn, "rollback");
@@ -475,30 +452,22 @@ dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 		} else if (oldval == FALSE && newval != FALSE) {
 			if (NULL != imp_dbh->conn) {
 				/* commit any outstanding changes */
-				PGresult* result = 0;
-				ExecStatusType status;
-				result = PQexec(imp_dbh->conn, "commit");
-				status = result ? PQresultStatus(result) : -1;
-				PQclear(result);
-				if (status != PGRES_COMMAND_OK) {
-					pg_error(dbh, status, "commit failed\n");
-					return 0;
+
+				if (imp_dbh->done_begin) {
+					PGresult* result = 0;
+					ExecStatusType status;
+					result = PQexec(imp_dbh->conn, "commit");
+					status = result ? PQresultStatus(result) : -1;
+					PQclear(result);
+					if (status != PGRES_COMMAND_OK) {
+						pg_error(dbh, status, "commit failed\n");
+						return 0;
+					}
 				}
 			}			
 			if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_STORE: switch AutoCommit to on: commit\n"); }
 		} else if ((oldval != FALSE && newval == FALSE) || (oldval == FALSE && newval == FALSE && imp_dbh->init_commit)) {
-			if (NULL != imp_dbh->conn) {
-				/* start new transaction */
-				PGresult* result = 0;
-				ExecStatusType status;
-				result = PQexec(imp_dbh->conn, "begin");
-				status = result ? PQresultStatus(result) : -1;
-				PQclear(result);
-				if (status != PGRES_COMMAND_OK) {
-					pg_error(dbh, status, "begin failed\n");
-					return 0;
-				}
-			}
+			imp_dbh->done_begin = 0;
 			if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "dbd_db_STORE: switch AutoCommit to off: begin\n"); }
 		}
 		/* only needed once */
@@ -945,7 +914,21 @@ dbd_st_execute (sth, imp_sth)  /* <= -2:error, >=0:ok row count, (-1=unknown cou
 	if (imp_sth->result) {
 		PQclear(imp_sth->result);
 	}
-	
+
+	/* start new transaction if necessary */
+	if (!imp_dbh->done_begin && DBIc_has(imp_dbh, DBIcf_AutoCommit) == FALSE) {
+		PGresult* result = 0;
+		ExecStatusType status;
+		result = PQexec(imp_dbh->conn, "begin");
+		status = result ? PQresultStatus(result) : -1;
+		PQclear(result);
+		if (status != PGRES_COMMAND_OK) {
+			pg_error(sth, status, "begin failed\n");
+			return -2;
+		}
+		imp_dbh->done_begin = 1;
+	}
+
 	/* execute statement */
 	imp_sth->result = PQexec(imp_dbh->conn, statement);
 	
