@@ -1,6 +1,6 @@
 1.41
   - Set our default type_id to 0, not 1043 (VARCHAR) when possible.
-    [David Wheeler]
+    Suggested by Abhijit Menon-Sen via David Wheeler. [Greg]
   - Add $dbh methods savepoint(), rollback_to(), and release()
     [Stephen Clouse]
 1.40 Tue Feb 22 06:06:45 UTC 2005
