@@ -817,7 +817,7 @@ $DBD::Pg::VERSION = '1.31';
 			COLUMN_NAME   => 'NAME',
 			DATA_TYPE     => 'TYPE',
 			COLUMN_SIZE   => 'SIZE',
-			NULLABLE 	  => 'NOTNULL',
+			NULLABLE 	    => 'NOTNULL',
 			REMARKS       => 'REMARKS',
 			COLUMN_DEF    => 'DEFAULT',
 			pg_constraint => 'CONSTRAINT',
@@ -830,8 +830,8 @@ $DBD::Pg::VERSION = '1.31';
 			for my $name (keys %$row) {
 				$row->{ $convert{$name} } = $row->{$name};
 
-				# The REMARKS column is an exception because the name is the same
-				delete $row->{$name} unless ($name eq 'REMARKS');
+				## Keep some original columns
+				delete $row->{$name} unless ($name eq 'REMARKS' or $name eq 'NULLABLE');
 
 			}
 			# Moved check outside of loop as it was inverting the NOTNULL value for
@@ -1332,7 +1332,7 @@ undef upon failure.
 Closes an existing large object. Returns true upon success and false upon
 failure.
 
-  $lobj_fd = $dbh->func($lobj_fd, 'lo_unlink');
+  $ret = $dbh->func($lobjId, 'lo_unlink');
 
 Deletes an existing large object. Returns true upon success and false upon
 failure.
@@ -1877,7 +1877,7 @@ PostgreSQL specific attribute. It returns a reference to an array of integer
 values for each column. The integer shows the size of the column in
 bytes. Variable length columns are indicated by -1.
 
-=item B<pg_type>  (hash-ref, read-only)
+=item B<pg_type>  (array-ref, read-only)
 
 PostgreSQL specific attribute. It returns a reference to an array of strings
 for each column. The string shows the name of the data_type.
