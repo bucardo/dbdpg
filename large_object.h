@@ -8,7 +8,3 @@ int pg_db_lo_tell ();
 int pg_db_lo_unlink ();
 unsigned int pg_db_lo_import ();
 int pg_db_lo_export ();
-int pg_db_putline ();
-int pg_db_getline ();
-int pg_db_endcopy ();
-int dbd_db_ping ();
