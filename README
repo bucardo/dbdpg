@@ -73,8 +73,9 @@ REQUIREMENTS:
 INSTALLATION:
 -------------
 
-The Makefile checks the environment variables POSTGRES_INCLUDE and
-POSTGRES_LIB, to find the library libpq.so and the proper include files.
+The Makefile uses the environment variables POSTGRES_INCLUDE and
+POSTGRES_LIB, or POSTGRES_HOME, to find the library libpq.so and the
+proper include files.
 	 
 	1.   perl Makefile.PL
 	2.   make

@@ -14,7 +14,7 @@ my $POSTGRES_INCLUDE;
 my $POSTGRES_LIB;
 
 if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
-    die "please set environment variables POSTGRES_INCLUDE and POSTGRES_LIB !\n";
+    die "please set environment variables POSTGRES_INCLUDE and POSTGRES_LIB, or POSTGRES_HOME!\n";
 } elsif ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and $ENV{POSTGRES_HOME}) {
     $POSTGRES_INCLUDE = "$ENV{POSTGRES_HOME}/include";
     $POSTGRES_LIB     = "$ENV{POSTGRES_HOME}/lib";
