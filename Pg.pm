@@ -9,7 +9,7 @@
 #  License or the Artistic License, as specified in the Perl README file.
 
 
-require 5.004;
+require 5.6.1;
 
 $DBD::Pg::VERSION = '1.30_1';
 
@@ -30,7 +30,7 @@ $DBD::Pg::VERSION = '1.30_1';
 
     Exporter::export_ok_tags('pg_types');
 
-    require_version DBI 1.00;
+    require_version DBI 1.35;
 
     bootstrap DBD::Pg $VERSION;
 
