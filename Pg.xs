@@ -41,7 +41,7 @@ BOOT:
 # ------------------------------------------------------------
 MODULE = DBD::Pg	PACKAGE = DBD::Pg::dr
 
-# disconnect_all renamed and ALIAS'd to avoid length clash on VMS :-(
+# disconnect_all renamed and ALIASed to avoid length clash on VMS :-(
 void
 discon_all_(drh)
     SV *	drh
@@ -551,7 +551,7 @@ STORE(sth, keysv, valuesv)
     }
 
 
-# FETCH renamed and ALIAS'd to avoid case clash on VMS :-(
+# FETCH renamed and ALIASed to avoid case clash on VMS :-(
 void
 FETCH_attrib(sth, keysv)
     SV *	sth
