@@ -1,5 +1,22 @@
-2002-11-27  Jason E. Stewart  <jason@openinformatics.com>
+2002-11-27 10:01  David Wheeler <david@wheeler.net>
 
+	* Makefile.PL: Added Test::More to prerequisites.
+
+2002-11-27 09:58  David Wheeler <david@wheeler.net>
+
+	* t/15funct.t: Removed skip because table_info *is* now supported.
+
+2002-11-27 09:54  David Wheeler <david@wheeler.net>
+
+	* Changes: Updated in preparation for release today. We've made a
+	lot of changes!
+
+2002-11-27 09:53  David Wheeler <david@wheeler.net>
+
+	* MANIFEST: Updated to include ChangeLog and to exclude
+	t/10transition.t.
+
+2002-11-27  Jason E. Stewart  <jason@openinformatics.com>
 	* t/15funct.t (Repository): 
 	uses standard DBI testing env vars, e.g. DBI_DSN, DBI_USER, DBI_PASS
 
@@ -26,4 +43,232 @@
 	* t/01constants.t (Repository): 
 	converted to use Test::More
 	added descriptive names to tests
+
+2002-11-26 19:02  David Wheeler <david@wheeler.net>
+
+	* dbdimp.c: Fixed errors that led to warnings from the compiler.
+
+2002-11-26 18:44  David Wheeler <david@wheeler.net>
+
+	* Pg.pm, dbdimp.c, t/03bind.t, t/11quoting.t: Removed broken
+	support for SQL_BINARY in quote(). Deprecated use of SQL_BINARY in
+	dbd_bind_ph. It now issues a warning when $h->{Warn} is true and
+	SQL_BINARY is used. Added tests for these changes.
+
+2002-11-26 12:57  David Wheeler <david@wheeler.net>
+
+	* MANIFEST: Updated MANIFEST.
+
+2002-11-26 12:47  David Wheeler <david@wheeler.net>
+
+	* Makefile.PL, t/lib/App/Info.pm, t/lib/App/Info/Handler.pm,
+	t/lib/App/Info/RDBMS.pm, t/lib/App/Info/Request.pm,
+	t/lib/App/Info/Util.pm, t/lib/App/Info/Handler/Prompt.pm,
+	t/lib/App/Info/RDBMS/PostgreSQL.pm: Moved App::Info classes from
+	inc to t/lib. This will prevent them from begin indexed by
+	search.cpan.org.
+
+2002-11-26 10:15  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* Pg.pm: cleanup.
+
+2002-11-26 10:15  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* Pg.pm: Oops, stamp 1.20, per David.
+
+2002-11-26 10:14  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* Pg.pm, README: Stamp 2.0.
+
+2002-11-25 22:42  David Wheeler <david@wheeler.net>
+
+	* t/15funct.t: Changed TODO tests to SKIP to support older versions
+	of ExtUtils::MakeMaker.
+
+2002-11-25 21:30  David Wheeler <david@wheeler.net>
+
+	* t/15funct.t: Made some tests TODO, since they test unimplemented
+	features. Eliminated some "Use of uninitialized value in
+	concatenation (.) or string" warnings. Also made the disconnect()
+	test for success instead of failure in the last test.
+
+2002-11-25 21:22  David Wheeler <david@wheeler.net>
+
+	* Pg.pm: Fixed bogus assignment of a list to a scalar.
+
+2002-11-25 21:00  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* t/15funct.t: cleanups.
+
+2002-11-25 18:40  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* Pg.pm, t/15funct.t: More regression cleanups.  Almost done.
+
+2002-11-25 17:11  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* t/: 01setup.t, 04execute.t, 05fetch.t, 08txn.t, 09autocommit.t,
+	10transition.t: Make most regression tests pass.
+
+2002-11-25 16:19  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* README: Update readme.
+
+2002-11-25 15:52  David Wheeler <david@wheeler.net>
+
+	* Pg.pm, Pg.xs, dbdimp.c, t/01constants.t: Added constants for
+	common PostgreSQL data types, plus simple tests to make sure that
+	they work. These are exportable via "use DBD::Pg qw(:pg_types);".
+	Documented deprecatation of the undocumented (and invalid) use of
+	SQL_BINARY in bind_param() and documented the correct approach:
+	"bind_param($num, $val { pg_type => PG_BYTEA });". Removed invalid
+	(and broken) support for SQL_BINARY in quote().
+
+2002-11-25 13:57  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* Makefile.PL: Small cleanup in build system.
+
+2002-11-23 14:24  David Wheeler <david@wheeler.net>
+
+	* Makefile.PL: Added inc/ directory containing necessary parts of
+	App::Info to use it during the build process.
+
+2002-11-22 23:16  tlowery
+
+	* MANIFEST: Added MANIFEST back, prevents bundle for complaining.
+
+2002-11-22 23:14  tlowery
+
+	* Pg.pm: Modified to fix bug with meta data in column_info
+	(required user to use 'table' instead of just table.  Removed
+	restriction on table_info and column_info from presenting system
+	tables.
+
+2002-11-21 20:04  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* t/04execute.t: I'm installing DBD::Pg 1.13 on a new box, and it's
+	not passing 3 tests in 04execute.t, which tests bind behavior. 
+	Tests # 5 & 6 are simply broken tests (expected results are
+	backwards, fixes are in the patch file at the bottom of this
+	email).
+	
+	Pete Leonard
+
+2002-11-21 03:11  Jason E. Stewart  <jason@openinformatics.com>
+
+	* Pg.pm, Pg.xs, dbdimp.c: renamed notifies => pg_notifies to be in
+	line with DBI spec
+
+2002-11-20 18:54  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* eg/notify_test.patch: Add notify test patch.
+
+2002-11-20 18:49  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* Pg.pm, Pg.xs, dbdimp.c, dbdimp.h: Add LISTEN/NOTIFY
+	functionality.
+	
+	Alex Pilosov
+
+2002-11-20 18:36  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* eg/lotest.pl: Attached are large object read and write functions
+	I wrote based on information I gleened from the DBD::Pg install
+	test script.	      They read and write to buffers rather than
+	files because my  information wasn't comming from a file and wasn't
+	going to one.  However if you need the data to go to a file you can
+	either open a file handle yourself in these methods and read into a
+	scalar or write out from one, OR you can scan the test.pl file in
+	the DBD::Pg install to see how to use the proper file based read
+	and write Pg calls.
+	
+	garth@salon.com
+
+2002-11-20 18:32  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* t/04execute.t: This fixes 2 of the problems discussed in bug
+	#384.
+	
+	jason_e_stewart
+
+2002-11-10 10:31  Jason E. Stewart  <jason@openinformatics.com>
+
+	* t/15funct.t: modified to make connection like other tests
+
+2002-11-10 09:49  Jason E. Stewart  <jason@openinformatics.com>
+
+	* dbdimp.c: removed redundant use of strlen() in pg_error()
+
+2002-11-09 19:18  David Wheeler <david@wheeler.net>
+
+	* Makefile.PL: Eliminated conflict introduced by last commit.
+
+2002-11-09 18:32  David Wheeler <david@wheeler.net>
+
+	* Pg.xs: Eliminated single quotes that screwed up Emacs' c-mode.
+
+2002-11-06 10:01  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* Makefile.PL, README: Add mention of POSTGRES_HOME environment
+	variable.
+
+2002-11-06 09:11  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* dbdimp.c: Rudy Lippan  submitted this one. He says, "Another to
+	add to the list -- 's were thowing off placeholders."
+	
+	theory
+
+2002-11-06 09:10  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* Pg.pm: Just some general POD format housekeeping. podchecker now
+	emits no errors.
+	
+	theory
+
+2002-11-06 09:09  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* Pg.pm: This patch is a begining to adding meta data support to
+	DBD::Pg (based on DBI spec). It's all perl based.
+	
+	tlowery
+
+2002-11-06 09:03  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* t/15funct.t: A series of tests that determine if the meta data is
+	working. Normally found in t t/15funct.t
+	
+	tlowery
+
+2002-11-06 08:46  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* MANIFEST: Remove MANIFEST file.
+
+2002-10-15 13:56  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* README, README.win32: Cleanup README.
+
+2002-10-15 13:46  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* Changes, README, README.win32, TODO: Update README/Changelog for
+	new distribution.
+
+2002-10-15 13:20  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* Changes, MANIFEST, Makefile.PL, Pg.h, Pg.pm, Pg.xs, README,
+	README.win32, TODO, dbd-pg.pod, dbdimp.c, dbdimp.h,
+	eg/ApacheDBI.pl, t/01setup.t, t/05fetch.t, t/07reuse.t, t/08txn.t,
+	t/99cleanup.t, t/00basic.t, t/01connect.t, t/02prepare.t,
+	t/03bind.t, t/04execute.t, t/06disconnect.t, t/09autocommit.t,
+	t/10transition.t, t/11quoting.t, t/12placeholders.t, t/13pgtype.t:
+	Initial load of CPAN DBD-pg version 1.13.
+
+2002-10-15 13:20  Bruce Momjian <pgman@candle.pha.pa.us>
+
+	* Changes, MANIFEST, Makefile.PL, Pg.h, Pg.pm, Pg.xs, README,
+	README.win32, TODO, dbd-pg.pod, dbdimp.c, dbdimp.h,
+	eg/ApacheDBI.pl, t/01setup.t, t/05fetch.t, t/07reuse.t, t/08txn.t,
+	t/99cleanup.t, t/00basic.t, t/01connect.t, t/02prepare.t,
+	t/03bind.t, t/04execute.t, t/06disconnect.t, t/09autocommit.t,
+	t/10transition.t, t/11quoting.t, t/12placeholders.t, t/13pgtype.t:
+	Initial revision
 
