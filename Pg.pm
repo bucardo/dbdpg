@@ -3,7 +3,7 @@
 #
 #  Copyright (c) 1997,1998,1999,2000 Edmund Mergl
 #  Copyright (c) 2002 Jeffrey W. Baker
-#  Copyright (c) 2002,2003 PostgreSQL Global Development Group
+#  Copyright (c) 2002-2004 PostgreSQL Global Development Group
 #  Portions Copyright (c) 1994,1995,1996,1997 Tim Bunce
 #
 #  You may distribute under the terms of either the GNU General Public
@@ -434,7 +434,6 @@ $DBD::Pg::VERSION = '1.31';
 	# add code to handle multiple-column keys correctly
 	# return something nicer for pre-7.3?
 	# try to clean up SQL, perl code
-	# create a test script?
 
 	my $dbh = shift;
 	my ($pk_catalog, $pk_schema, $pk_table,
@@ -1172,7 +1171,7 @@ The following connect statement shows all possible parameters:
                       "options=$options;tty=$tty", "$username", "$password");
 
 If a parameter is undefined PostgreSQL first looks for specific environment
-variables and then it uses hard coded defaults:
+variables and then it uses hard-coded defaults:
 
   parameter  environment variable  hard coded default
   --------------------------------------------------
@@ -1291,7 +1290,7 @@ older.
 
   $lobjId = $dbh->func($mode, 'lo_creat');
 
-Creates a new large object and returns the object-id. $mode is a bit-mask
+Creates a new large object and returns the object-id. $mode is a bitmask
 describing different attributes of the new object. Use the following
 constants:
 
@@ -1433,10 +1432,6 @@ Implemented by DBI, not used by the driver.
 
 Implemented by DBI, no driver-specific impact.
 
-=item B<private_*>
-
-Implemented by DBI, no driver-specific impact.
-
 =back
 
 =head1 DBI DATABASE HANDLE OBJECTS
@@ -1527,8 +1522,8 @@ Supported by the driver as proposed by DBI.
 
   $rc = $dbh->ping;
 
-This driver supports the ping-method, which can be used to check the validity
-of a database-handle. The ping method issues an empty query and checks the
+This driver supports the ping method, which can be used to check the validity
+of a database handle. The ping method issues an empty query and checks the
 result status.
 
 =item B<column_info>
@@ -1567,7 +1562,6 @@ percent sign (%) or an underscore (_) are detected in the argument.
 The $type argument accepts a value of wither "TABLE" or "VIEW" 
 (using both is the default action).
 
-
 =item B<foreign_key_info>
 
   $sth = $dbh->foreign_key_info( $pk_catalog, $pk_schema, $pk_table,
@@ -1585,15 +1579,13 @@ Supported by the driver as proposed by DBI. This method returns all tables and
 views which are visible to the current user. If the database is version 7.3 
 or higher, the name of the schema appears before the table or view name.
 
-
-
 =item B<type_info_all>
 
   $type_info_all = $dbh->type_info_all;
 
-Supported by the driver as proposed by DBI. Only for SQL data-types and for
-frequently used data-types information is provided. The mapping between the
-PostgreSQL typename and the SQL92 data-type (if possible) has been done
+Supported by the driver as proposed by DBI. Information is only provided for 
+SQL datatypes and for frequently used datatypes. The mapping between the
+PostgreSQL typename and the SQL92 datatype (if possible) has been done
 according to the following table:
 
   +---------------+------------------------------------+
@@ -1619,7 +1611,7 @@ according to the following table:
   | timestamp     | TIMESTAMP                          |
   +---------------+------------------------------------+
 
-For further details concerning the PostgreSQL specific data-types please read
+For further details concerning the PostgreSQL specific datatypes please read
 the L<pgbuiltin>.
 
 =item B<type_info>
@@ -1805,7 +1797,7 @@ documented, so this method might change.
 This method seems to be heavily influenced by the current implementation of
 blobs in Oracle. Nevertheless we try to be as compatible as possible. Whereas
 Oracle suffers from the limitation that blobs are related to tables and every
-table can have only one blob (data-type LONG), PostgreSQL handles its blobs
+table can have only one blob (datatype LONG), PostgreSQL handles its blobs
 independent of any table by using so called object identifiers. This explains
 why the blob_read method is blessed into the STATEMENT package and not part of
 the DATABASE package. Here the field parameter has been used to handle this
@@ -1929,14 +1921,15 @@ the execute method fetches all data at once into data structures located in
 the frontend application. This has to be considered when selecting large
 amounts of data!
 
-=head2 Data-Type bool
+=head2 Datatype bool
 
 The current implementation of PostgreSQL returns 't' for true and 'f' for
 false. From the Perl point of view a rather unfortunate choice. The DBD::Pg
 module translates the result for the data-type bool in a perl-ish like manner:
 'f' -> '0' and 't' -> '1'. This way the application does not have to check the
 database-specific returned values for the data-type bool, because Perl treats
-'0' as false and '1' as true.
+'0' as false and '1' as true. You may set the pg_bool_tf attribute to change 
+the values back to 't' and 'f' if you wish.
 
 Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
 '1' for true and FALSE, 'f', 'false', 'n', 'no' or '0' for false.
@@ -1991,5 +1984,4 @@ the Perl README file.
 See also B<DBI/ACKNOWLEDGMENTS>.
 
 =cut
-
 
