@@ -2276,15 +2276,19 @@ Supported by this driver as proposed by DBI
 
 =item B<PRECISION>  (array-ref, read-only)
 
-Not supported by this driver.
+Supported by this driver. NUMERIC types will return the precision. 
+Types of CHAR and VARCHAR will return their size (number of characters). 
+Other types will return the number of *bytes*.
 
 =item B<SCALE>  (array-ref, read-only)
 
-Not supported by this driver.
+Supported by this driver as proposed by DBI. The only type 
+that will return a value currently is NUMERIC.
 
 =item B<NULLABLE>  (array-ref, read-only)
 
-Not supported by this driver.
+Supported by this driver as proposed by DBI. This is only available for 
+servers version 7.3 and up. Others will return "2" for all columns.
 
 =item B<CursorName>  (string, read-only)
 

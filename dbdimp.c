@@ -37,6 +37,8 @@ typedef enum
 	PQTRANS_UNKNOWN				/* cannot determine status */
 } PGTransactionStatusType;
 PGresult *PQexecPrepared() { };
+Oid PQftable() { return InvalidOid; };
+int PQftablecol() { return 0; };
 #define PG_DIAG_SQLSTATE 'C'
 #endif
 
@@ -1841,7 +1843,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 {
 	STRLEN kl;
 	char *key = SvPV(keysv,kl);
-	int i, sz;
+	int i, x, y, sz;
 	SV *retsv = Nullsv;
 	char *type_name;
 	sql_type_info_t *type_info;
@@ -1900,7 +1902,19 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		AV *av = newAV();
 		retsv = newRV(sv_2mortal((SV*)av));
 		while(--i >= 0) {
-			sz = PQfsize(imp_sth->result, i);
+			x = PQftype(imp_sth->result, i);
+			switch (x) {
+			case BPCHAROID:
+			case VARCHAROID:
+				sz = PQfmod(imp_sth->result, i);
+				break;
+			case NUMERICOID:
+				sz = (PQfmod(imp_sth->result, i)-4) >> 16;
+				break;
+			default:
+				sz = PQfsize(imp_sth->result, i);
+				break;
+			}
 			av_store(av, i, sz > 0 ? newSViv(sz) : &sv_undef);
 		}
 	}
@@ -1908,15 +1922,49 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		AV *av = newAV();
 		retsv = newRV(sv_2mortal((SV*)av));
 		while(--i >= 0) {
-			av_store(av, i, &sv_undef);
+			x = PQftype(imp_sth->result, i);
+			if (NUMERICOID==x) {
+				x = PQfmod(imp_sth->result, i)-4;
+				av_store(av, i, newSViv(x % (x>>16)));
+			}
+			else {
+				av_store(av, i, &sv_undef);
+			}
 		}
 	}
 	else if (kl==8 && strEQ(key, "NULLABLE")) {
 		AV *av = newAV();
 		retsv = newRV(sv_2mortal((SV*)av));
+		PGresult* result;
+		PGTransactionStatusType status;
+		D_imp_dbh_from_sth;
+		char *statement;
+		int nullable; /* 0 = not nullable, 1 = nullable 2 = unknown */
+
+		New(0, statement, 100, char);
 		while(--i >= 0) {
-			av_store(av, i, newSViv(2));
+			nullable=2;
+			x = PQftable(imp_sth->result, i);
+			y = PQftablecol(imp_sth->result, i);
+			if (InvalidOid != x && y > 0) { /* We know what table and column this came from */
+				sprintf(statement, "SELECT attnotnull FROM pg_catalog.pg_attribute WHERE attrelid=%d AND attnum=%d", x, y);
+				statement[strlen(statement)]='\0';
+				result = PQexec(imp_dbh->conn, statement);
+				status = imp_sth->result ? PQresultStatus(imp_sth->result) : -1;
+				if (PGRES_TUPLES_OK == status && PQntuples(result)) {
+					switch(PQgetvalue(result,0,0)[0]) {
+					case 't':
+						nullable = 0;
+						break;
+					case 'f':
+						nullable = 1;
+					}
+				}
+				PQclear(result);
+			}
+			av_store(av, i, newSViv(nullable));
 		}
+		Safefree(statement);
 	}
 	else if (kl==10 && strEQ(key, "CursorName")) {
 		retsv = &sv_undef;
@@ -1934,13 +1982,10 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 	else if (kl==7 && strEQ(key, "pg_type")) {
 		AV *av = newAV();
 		retsv = newRV(sv_2mortal((SV*)av));
-		
-		while(--i >= 0) {
-			
+		while(--i >= 0) {			
 			type_info = pg_type_data(PQftype(imp_sth->result,i));
 			type_name = (type_info) ? type_info->type_name : "unknown";
-			av_store(av, i, newSVpv(type_name, 0));
-			
+			av_store(av, i, newSVpv(type_name, 0));			
 		}
 	}
 	else if (kl==13 && strEQ(key, "pg_oid_status")) {
