@@ -176,6 +176,14 @@ $DBD::Pg::VERSION = '1.31_3';
 		return $ret;
 	}
 
+	sub pg_type_info {
+		my($dbh,$pg_type) = @_;
+		local $SIG{__WARN__} = sub { } if $dbh->{PrintError};
+		local $dbh->{RaiseError} = 0 if $dbh->{RaiseError};
+		my $ret = DBD::Pg::db::_pg_type_info($pg_type);
+		return $ret;
+	}
+
 	# Column expected in statement handle returned.
 	# table_cat, table_schem, table_name, column_name, data_type, type_name,
 	# column_size, buffer_length, DECIMAL_DIGITS, NUM_PREC_RADIX, NULLABLE,
@@ -219,57 +227,57 @@ $DBD::Pg::VERSION = '1.31_3';
 
 		my $wh = ""; # ();
 		$wh = join( " AND ", '', @wh ) if (@wh);
-		my $showschema = DBD::Pg::_pg_check_version(7.3, $version) ? 
-			"n.nspname" : "NULL::text";
+		# my $showschema = DBD::Pg::_pg_check_version(7.3, $version) ? 
+		# 	"n.nspname" : "NULL::text";
 
-		my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
-			"LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
+		# my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
+		# 	"LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
 
-		my $pg_description_join  =  DBD::Pg::_pg_check_version(7.2, $version) ?
-			"  LEFT JOIN ${CATALOG}pg_description d  ON (a.attnum = d.objsubid)
-			   LEFT JOIN ${CATALOG}pg_class       dc ON (dc.oid = d.objoid ) "
-			:	
-			"   LEFT JOIN ${CATALOG}pg_description d ON (a.oid = d.objoid )";
+		# my $pg_description_join  =  DBD::Pg::_pg_check_version(7.2, $version) ?
+		# 	"  LEFT JOIN ${CATALOG}pg_description d  ON (a.attnum = d.objsubid)
+		# 	   LEFT JOIN ${CATALOG}pg_class       dc ON (dc.oid = d.objoid ) "
+		# 	:	
+		# 	"   LEFT JOIN ${CATALOG}pg_description d ON (a.oid = d.objoid )";
 
 		my $col_info_sql;
 
 		if (DBD::Pg::_pg_check_version( 7.3, $version) < 2) {
 			$col_info_sql = qq!
-				SELECT
-						NULL::text AS "TABLE_CAT"
-					, NULL::text AS "TABLE_SCHEM"
-					, c.relname AS "TABLE_NAME"
-					, a.attname AS "COLUMN_NAME"
-					, t.typname AS "DATA_TYPE"
-					, NULL::text AS "TYPE_NAME"
-					, a.attlen AS "COLUMN_SIZE"
-					, NULL::text AS "BUFFER_LENGTH"
-					, NULL::text AS "DECIMAL_DIGITS"
-					, NULL::text AS "NUM_PREC_RADIX"
-					, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END  AS "NULLABLE"
-					, col_description(a.attrelid, a.attnum) AS "REMARKS"
-					, af.adsrc AS "COLUMN_DEF"
-					, NULL::text AS "SQL_DATA_TYPE"
-					, NULL::text AS "SQL_DATETIME_SUB"
-					, NULL::text AS "CHAR_OCTET_LENGTH"
-					, a.attnum AS "ORDINAL_POSITION"
-					, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END  AS "IS_NULLABLE"
-					, format_type(a.atttypid, a.atttypmod)	as "pg_type"
-					, format_type(a.atttypid, NULL)	as "pg_type_only"
-					, a.atttypmod    AS "pg_atttypmod"
-				FROM
-								pg_type t
-								LEFT JOIN pg_attribute a
-												ON (t.oid = a.atttypid)
-								LEFT JOIN pg_class c
-										ON (a.attrelid = c.oid)
-								LEFT JOIN pg_attrdef af
-												ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
-				WHERE
-										a.attnum >= 0
-								AND c.relkind IN ('r','v')
-								$wh
-				ORDER BY 2, c.relname, a.attnum
+			SELECT
+					NULL::text AS "TABLE_CAT"
+				, NULL::text AS "TABLE_SCHEM"
+				, c.relname AS "TABLE_NAME"
+				, a.attname AS "COLUMN_NAME"
+				, a.atttypid 	AS "DATA_TYPE"
+				, format_type(a.atttypid, NULL)	as "TYPE_NAME"
+				, a.attlen AS "COLUMN_SIZE"
+				, NULL::text AS "BUFFER_LENGTH"
+				, NULL::text AS "DECIMAL_DIGITS"
+				, NULL::text AS "NUM_PREC_RADIX"
+				, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END  AS "NULLABLE"
+				, col_description(a.attrelid, a.attnum) AS "REMARKS"
+				, af.adsrc AS "COLUMN_DEF"
+				, NULL::text AS "SQL_DATA_TYPE"
+				, NULL::text AS "SQL_DATETIME_SUB"
+				, NULL::text AS "CHAR_OCTET_LENGTH"
+				, a.attnum AS "ORDINAL_POSITION"
+				, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END  AS "IS_NULLABLE"
+				, format_type(a.atttypid, a.atttypmod)	as "pg_type"
+				, format_type(a.atttypid, NULL)	as "pg_type_only"
+				, a.atttypmod    AS "pg_atttypmod"
+			FROM
+				pg_type t
+				LEFT JOIN pg_attribute a
+					ON (t.oid = a.atttypid)
+				LEFT JOIN pg_class c
+					ON (a.attrelid = c.oid)
+				LEFT JOIN pg_attrdef af
+					ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
+			WHERE
+									a.attnum >= 0
+							AND c.relkind IN ('r','v')
+							$wh
+			ORDER BY 2, c.relname, a.attnum
 			!;
 		} else {
 			$col_info_sql = qq!
@@ -278,9 +286,8 @@ $DBD::Pg::VERSION = '1.31_3';
 				, n.nspname		AS "TABLE_SCHEM"
 				, c.relname		AS "TABLE_NAME"
 				, a.attname		AS "COLUMN_NAME"
-				, format_type(a.atttypid, NULL)	as "DATA_TYPE"
-				-- , t.typname		AS "DATA_TYPE"
-				, NULL::text	AS "TYPE_NAME"
+				, a.atttypid 	AS "DATA_TYPE"
+				, format_type(a.atttypid, NULL)	as "TYPE_NAME"
 				, a.attlen		AS "COLUMN_SIZE"
 				, NULL::text	AS "BUFFER_LENGTH"
 				, NULL::text	AS "DECIMAL_DIGITS"
@@ -314,51 +321,7 @@ $DBD::Pg::VERSION = '1.31_3';
 			ORDER BY 2, c.relname, a.attnum
 			!;
 
-		# my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
-			# "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
 		}
-# SELECT a.attname, format_type(a.atttypid, a.atttypmod), a.attnotnull, a.atthasdef, a.attnum
-# FROM pg_class c, pg_attribute a
-# WHERE c.relname = 'key_codes'
-#   AND a.attnum > 0 AND a.attrelid = c.oid
-# ORDER BY a.attnum
-
-		# my $col_info_sql = qq!
-		# 	SELECT
-		# 		  NULL::text	AS "TABLE_CAT"
-		# 		, $showschema	AS "TABLE_SCHEM"
-		# 		, c.relname		AS "TABLE_NAME"
-		# 		, a.attname		AS "COLUMN_NAME"
-		# 		, t.typname		AS "DATA_TYPE"
-		# 		, NULL::text	AS "TYPE_NAME"
-		# 		, a.attlen		AS "COLUMN_SIZE"
-		# 		, NULL::text	AS "BUFFER_LENGTH"
-		# 		, NULL::text	AS "DECIMAL_DIGITS"
-		# 		, NULL::text	AS "NUM_PREC_RADIX"
-		# 		, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
-		# 		, ${CATALOG}col_description(a.attrelid, a.attnum)
-		# 		, pg_attrdef.adsrc	AS "COLUMN_DEF"
-		# 		, NULL::text	AS "SQL_DATA_TYPE"
-		# 		, NULL::text	AS "SQL_DATETIME_SUB"
-		# 		, NULL::text	AS "CHAR_OCTET_LENGTH"
-		# 		, a.attnum		AS "ORDINAL_POSITION"
-		# 		, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
-		# 		, a.atttypmod   AS "pg_atttypmod"
-		# 	FROM 
-		# 		  ${CATALOG}pg_type		t
-		# 		, ${CATALOG}pg_class c
-		# 		  $schemajoin
-		# 		, ${CATALOG}pg_attribute	a
-		#     LEFT JOIN ${CATALOG}pg_attrdef ON (a.attnum = pg_attrdef.adnum AND a.attrelid = pg_attrdef.adrelid) 
-		# 	WHERE
-		# 			a.attrelid = c.oid
-		# 		AND a.attnum >= 0
-		# 		AND t.oid = a.atttypid
-		# 		AND c.relkind IN ('r','v')
-		# 		$wh
-		# 	ORDER BY 2, c.relname, a.attnum
-		# !;
-		# 	# $pg_description_join
 
 		my $data = $dbh->selectall_arrayref($col_info_sql) || return undef;
 
@@ -398,16 +361,19 @@ $DBD::Pg::VERSION = '1.31_3';
 		for my $row (@$data) {
 			$row->[$col_map{COLUMN_SIZE}]   = _calc_col_size($row->[$col_map{pg_atttypmod}],$row->[$col_map{COLUMN_SIZE}]);
 
+			# Replace the Pg type with the SQL_ type
+			$row->[$col_map{DATA_TYPE}]     = DBD::Pg::db::pg_type_info($dbh,$col_map{DATA_TYPE});
+
 			pop @$row;
 
 			# Add pg_constraint
 			$constraint_sth->execute("$row->[$col_map{TABLE_NAME}]_$row->[$col_map{COLUMN_NAME}]");
-			$col_map{pg_constraint} = 21;
+			$col_map{pg_constraint} = 20;
 			($row->[$col_map{pg_constraint}]) = $constraint_sth->fetchrow_array; 
 		}
 
 		# get rid of atttypmod that we no longer need
-		# delete $col_map{pg_atttypmod};
+		delete $col_map{pg_atttypmod};
 
 		# Since we've processed the data in Perl, we have to jump through a hoop
 		# To turn it back into a statement handle 
@@ -2200,4 +2166,5 @@ the Perl README file.
 See also B<DBI/ACKNOWLEDGMENTS>.
 
 =cut
+
 

@@ -288,6 +288,25 @@ endcopy(dbh)
     CODE:
         ST(0) = (-1 != pg_db_endcopy(dbh)) ? &sv_yes : &sv_no;
 
+int
+_pg_type_info (type_sv=Nullsv)
+    SV* type_sv
+
+    CODE:
+    	int type_num = VARCHAROID;
+        sql_type_info_t *type_info;
+
+        if(type_sv && SvOK(type_sv)) {
+                if SvMAGICAL(type_sv)
+                        mg_get(type_sv);
+
+                type_info = pg_type_data(SvIV(type_sv));
+                type_num = type_info->type.sql;
+        } 
+	RETVAL = type_num;
+
+# ST(0) = (-1 != type_num) ? &sv_yes : &sv_no; */
+
 
 # -- end of DBD::Pg::db
 
