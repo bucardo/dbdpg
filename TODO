@@ -4,19 +4,19 @@ Known Issues:
 
 TODO: 
 
-- Support for new error messages
-- Use new protocol for COPY
+- Support for new error protocol
+- Support new DBI trace scheme.
+- Finish implementing COPY with new protocol.
+- Support Win32
 - Change quote and dequote functions to take Sv instead of string so that
    things like arrays can be serialized by the quote function.  This will
    take care of broken chopblanks and pg_bool_tf (pass the  quote/dequote 
    options struct to function quote/dequote functions).
 - Export the full list of supported OID types.
-- finish all type mappings  in types.c 
+- finish all type mappings in types.c 
 - Implement a clean UTF-8 support.
 - add array OID types
 - quoting/dequoting of arrays.
 - allow user callbacks to quote user-defined types?
-- move typeinfo into C and pull off of typeinfo struct.
-- write up quote_identifier()
 - rename functions and add defines to avoid problems with static linking of multi DBDs
 
