@@ -18,7 +18,7 @@ ok(defined $dbh,'connect without transaction');
 }
 
 my $sql = <<SQL;
-CREATE TEMPORARY TABLE dbd_pg_test (
+CREATE TABLE dbd_pg_test (
   id int,
   name text,
   val text,
