@@ -1751,8 +1751,8 @@ Also, one additional non-standard field is returned:
 
   $sth = $dbh->table_info;
 
-Supported by the driver as proposed by DBI. This method returns all tables and
-views which are owned by the current user. It does not select any indexes and
+Supported by the driver as proposed by DBI. This method returns all table.
+which are owned by the current user. It does not select any indexes and
 sequences. Also System tables are not selected. As TABLE_QUALIFIER the reltype
 attribute is returned and the REMARKS are undefined.
 
@@ -2030,9 +2030,7 @@ Implemented by DBI, no driver-specific impact.
 
 =item B<TYPE>  (array-ref, read-only)
 
-Supported by the driver as proposed by DBI, with the restriction, that the
-types are PostgreSQL specific data-types which do not correspond to
-international standards.
+Supported by the driver as proposed by DBI
 
 =item B<PRECISION>  (array-ref, read-only)
 
