@@ -9,7 +9,7 @@
 #  License or the Artistic License, as specified in the Perl README file.
 
 
-use 5.006001
+use 5.006001;
 
 $DBD::Pg::VERSION = '1.30_2';
 
