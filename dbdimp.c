@@ -154,8 +154,7 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
     while (*src) {
 			if (*src == '"')
 				inquote = ! inquote;
-			else
-				if (*src == ';' && inquote)
+			else if (*src == ';' && inquote)
 					*dest++ = ' ';
 			else
 				*dest++ = *src;
@@ -166,11 +165,11 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
     if (strlen(uid)) {
         strcat(conn_str, " user=");
         strcat(conn_str, uid);
-    }
-    if (strlen(uid) && strlen(pwd)) {
-        strcat(conn_str, " password=");
-        strcat(conn_str, pwd);
-    }
+				if (strlen(pwd)) {
+					strcat(conn_str, " password=");
+					strcat(conn_str, pwd);
+				}
+		}
 
     if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "pg_db_login: conn_str = >%s<\n", conn_str); }
 
@@ -739,8 +738,8 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
     phs_t *phs;
     sql_type_info_t *sql_type_info;
     int pg_type, bind_type;
-        char *value_string;
-        int value_len;
+		char *value_string;
+		STRLEN value_len;
 
 
     if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_bind_ph\n"); }
