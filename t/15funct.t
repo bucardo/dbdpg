@@ -7,7 +7,7 @@ use Data::Dumper;
 use strict;
 use Test::More;
 if (defined $ENV{DBI_DSN}) {
-  plan tests => 73;
+  plan tests => 69;
 } else {
   plan skip_all => 'cannot test without DB info';
 }
