@@ -1,25 +1,24 @@
-if (!exists($ENV{DBDPG_MAINTAINER})) {
-    print "1..0\n";
-    exit;
-}
-
 use strict;
 use DBI;
+use Test::More;
 
-main();
-
-sub main {
-    my ($n, $dbh);
-    
-    print "1..1\n";
-    
-    $n = 1;
-    
-    $dbh = DBI->connect("dbi:Pg:dbname=$ENV{DBDPG_TEST_DB};host=$ENV{DBDPG_TEST_HOST}", $ENV{DBDPG_TEST_USER}, $ENV{DBDPG_TEST_PASS}, {RaiseError => 1, AutoCommit => 1});
-    $dbh->do(q{DROP TABLE test});
-    $dbh->disconnect();
-        
-    print "ok $n\n"; $n++;
+if (defined $ENV{DBI_DSN}) {
+  plan tests => 3;
+} else {
+  plan skip_all => 'cannot test without DB info';
 }
 
-1;  
+my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+		       {RaiseError => 1, AutoCommit => 0}
+		      );
+ok(defined $dbh,
+   'connect with transaction'
+  );
+
+ok($dbh->do(q{DROP TABLE test}),
+   'drop'
+  );
+
+ok($dbh->disconnect(),
+   'disconnect'
+  );
