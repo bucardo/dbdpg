@@ -73,7 +73,6 @@ PGTransactionStatusType dbd_db_txn_status();
 #include "large_object.c"
 
 /* ================================================================== */
-
 /* Quick result grabber used throughout this file */
 ExecStatusType _result(imp_dbh, com)
 		 imp_dbh_t *imp_dbh;
@@ -104,7 +103,6 @@ ExecStatusType _result(imp_dbh, com)
 
 
 /* ================================================================== */
-
 /* Turn database notices into perl warnings for proper handling. */
 static void pg_warn (arg, message)
 		 void *arg;
@@ -118,7 +116,6 @@ static void pg_warn (arg, message)
 
 
 /* ================================================================== */
-
 /* Database specific error handling. */
 void pg_error (h, error_num, error_msg)
 		 SV *h;
@@ -157,7 +154,6 @@ void pg_error (h, error_num, error_msg)
 
 
 /* ================================================================== */
-
 void dbd_init (dbistate)
 		 dbistate_t *dbistate;
 {
@@ -166,7 +162,6 @@ void dbd_init (dbistate)
 
 
 /* ================================================================== */
-
 int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
@@ -317,7 +312,6 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 
 
 /* ================================================================== */
-
 int dbd_db_ping (dbh)
 		 SV *dbh;
 {
@@ -420,16 +414,16 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	return 1;
 
 } /* end of dbd_db_rollback_commit */
-/* ================================================================== */
 
+/* ================================================================== */
 int dbd_db_commit (dbh, imp_dbh)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
 {
 	return dbd_db_rollback_commit(dbh, imp_dbh, "commit");
 }
-/* ================================================================== */
 
+/* ================================================================== */
 int dbd_db_rollback (dbh, imp_dbh)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
@@ -439,7 +433,6 @@ int dbd_db_rollback (dbh, imp_dbh)
 
 
 /* ================================================================== */
-
 int dbd_db_disconnect (dbh, imp_dbh)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
@@ -473,7 +466,6 @@ int dbd_db_disconnect (dbh, imp_dbh)
 
 
 /* ================================================================== */
-
 void dbd_db_destroy (dbh, imp_dbh)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
@@ -493,7 +485,6 @@ void dbd_db_destroy (dbh, imp_dbh)
 
 
 /* ================================================================== */
-
 int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
@@ -558,7 +549,6 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 
 
 /* ================================================================== */
-
 SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
@@ -631,7 +621,6 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 
 
 /* ================================================================== */
-
 int dbd_discon_all (drh, imp_drh)
 		 SV *drh;
 		 imp_drh_t *imp_drh;
@@ -654,7 +643,6 @@ int dbd_discon_all (drh, imp_drh)
 
 
 /* ================================================================== */
-
 int dbd_db_getfd (dbh, imp_dbh)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
@@ -668,7 +656,6 @@ int dbd_db_getfd (dbh, imp_dbh)
 
 
 /* ================================================================== */
-
 SV * dbd_db_pg_notifies (dbh, imp_dbh)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
@@ -710,7 +697,6 @@ SV * dbd_db_pg_notifies (dbh, imp_dbh)
 
 
 /* ================================================================== */
-
 int dbd_st_prepare (sth, imp_sth, statement, attribs)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
@@ -840,7 +826,6 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 
 
 /* ================================================================== */
-
 void dbd_st_split_statement (sth, imp_sth, statement)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
@@ -1034,6 +1019,7 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 				newph->value = NULL;
 				newph->quoted = NULL;
 				newph->referenced = 0;
+				newph->defaultval = 1;
 				New(0, newph->fooname, newsize+1, char); /* freed in dbd_st_destroy */
 				if (!newph->fooname)
 					croak("No memory");
@@ -1124,6 +1110,7 @@ void dbd_st_split_statement (sth, imp_sth, statement)
 			newph->value = NULL;
 			newph->quoted = NULL;
 			newph->referenced = 0;
+			newph->defaultval = 1;
 			newph->fooname = NULL;
 			/* Let the correct segment point to it */
 			while (!currseg->placeholder)
@@ -1269,7 +1256,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 			params = imp_sth->numphs;
 			paramTypes = calloc(imp_sth->numphs, sizeof(*paramTypes));
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
-				paramTypes[x++] = currph->bind_type->type_id;
+				paramTypes[x++] = currph->defaultval ? 0 : currph->bind_type->type_id;
 			}
 		}
 		result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, paramTypes);
@@ -1294,7 +1281,6 @@ int dbd_st_prepare_statement (sth, imp_sth)
 
 
 /* ================================================================== */
-
 int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, maxlen)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
@@ -1424,12 +1410,14 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 		}
  	}
 	else if (NULL == currph->bind_type) { /* "sticky" data type */
+		/* This is the default type, but we will honor defaultval if we can */
 		currph->bind_type = pg_type_data(VARCHAROID);
 		if (!currph->bind_type)
 			croak("Default type is bad!!!!???");
 	}
 
 	if (pg_type || sql_type) {
+		currph->defaultval = 0;
 		/* Possible re-prepare, depending on whether the type name also changes */
 		if (imp_sth->prepared_by_us && NULL != imp_sth->prepare_name)
 			reprepare=1;
@@ -1685,7 +1673,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			/* Populate paramTypes */
 			paramTypes = calloc(imp_sth->numphs, sizeof(*paramTypes));
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
-				paramTypes[x++] = currph->bind_type->type_id;
+				paramTypes[x++] = currph->defaultval ? 0 : currph->bind_type->type_id;
 			}
 		
 			if (dbis->debug >= 10) {
@@ -1804,7 +1792,6 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 
 /* ================================================================== */
-
 is_high_bit_set(val)
 		 char *val;
 {
@@ -1815,7 +1802,6 @@ is_high_bit_set(val)
 
 
 /* ================================================================== */
-
 AV * dbd_st_fetch (sth, imp_sth)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
@@ -1920,7 +1906,6 @@ AV * dbd_st_fetch (sth, imp_sth)
 
 
 /* ================================================================== */
-
 int dbd_st_rows (sth, imp_sth)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
@@ -1933,7 +1918,6 @@ int dbd_st_rows (sth, imp_sth)
 
 
 /* ================================================================== */
-
 int dbd_st_finish (sth, imp_sth)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
@@ -1955,7 +1939,6 @@ int dbd_st_finish (sth, imp_sth)
 
 
 /* ================================================================== */
-
 int dbd_st_deallocate_statement (sth, imp_sth)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
@@ -2026,7 +2009,6 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 
 
 /* ================================================================== */
-
 void dbd_st_destroy (sth, imp_sth)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
@@ -2084,7 +2066,6 @@ void dbd_st_destroy (sth, imp_sth)
 
 
 /* ================================================================== */
-
 int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
@@ -2120,7 +2101,6 @@ int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 
 
 /* ================================================================== */
-
 SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
@@ -2294,6 +2274,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 } /* end of dbd_st_FETCH_attrib */
 
 
+/* ================================================================== */
 int
 pg_db_putline (dbh, buffer)
 		SV *dbh;
@@ -2321,6 +2302,7 @@ pg_db_putline (dbh, buffer)
 }
 
 
+/* ================================================================== */
 int
 pg_db_getline (dbh, buffer, length)
 		SV *dbh;
@@ -2332,6 +2314,7 @@ pg_db_getline (dbh, buffer, length)
 }
 
 
+/* ================================================================== */
 int
 pg_db_endcopy (dbh)
 		SV *dbh;
@@ -2341,6 +2324,7 @@ pg_db_endcopy (dbh)
 }
 
 
+/* ================================================================== */
 void
 pg_db_pg_server_trace (dbh, fh)
 		SV *dbh;
@@ -2352,6 +2336,7 @@ pg_db_pg_server_trace (dbh, fh)
 }
 
 
+/* ================================================================== */
 void
 pg_db_pg_server_untrace (dbh)
 		 SV *dbh;
@@ -2362,6 +2347,7 @@ pg_db_pg_server_untrace (dbh)
 }
 
 
+/* ================================================================== */
 int
 pg_db_savepoint (dbh, imp_dbh, savepoint)
 		 SV *dbh;
@@ -2384,6 +2370,16 @@ pg_db_savepoint (dbh, imp_dbh, savepoint)
 	if ((NULL == imp_dbh->conn) || (DBDPG_TRUE == DBIc_has(imp_dbh, DBIcf_AutoCommit)))
 		return 0;
 
+	/* Start a new transaction if this is the first command */
+	if (!imp_dbh->done_begin) {
+		status = _result(imp_dbh, "begin");
+		if (PGRES_COMMAND_OK != status) {
+			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
+			return -2;
+		}
+		imp_dbh->done_begin = 1;
+	}
+
 	status = _result(imp_dbh, action);
 
 	if (PGRES_COMMAND_OK != status) {
@@ -2396,6 +2392,7 @@ pg_db_savepoint (dbh, imp_dbh, savepoint)
 }
 
 
+/* ================================================================== */
 int pg_db_rollback_to (dbh, imp_dbh, savepoint)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
@@ -2434,6 +2431,8 @@ int pg_db_rollback_to (dbh, imp_dbh, savepoint)
 	return 1;
 }
 
+
+/* ================================================================== */
 int pg_db_release (dbh, imp_dbh, savepoint)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
