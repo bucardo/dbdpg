@@ -1,3 +1,6 @@
+	- ddbimp.c cleanups: better error messages, ensure commit
+		is only called one after a transaction fails.
+		[Alexey Slynko]
 	- primary_key() returns empty list not undef if no match.
 		[Julian Mehnle]
 	- Added the pg_protocol database handle attribute
