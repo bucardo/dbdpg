@@ -1236,7 +1236,7 @@ dbd_st_execute (sth, imp_sth)   /* <= -2:error, >=0:ok row count, (-1=unknown co
             }
             while (len--) {
                 if (imp_dbh->pg_auto_escape) {
-                    /* if the parameter was bound as SQL_BINARY, escape nonprintables */
+                    /* if the parameter was bound as PG_BYTEA, escape nonprintables */
                     if (phs->ftype == 17 && !isPRINT(*val)) { /* escape null character */
                         dest+=snprintf(dest, strlen(imp_sth->statement) + max_len + (statement - dest), "\\\\%03o", *((unsigned char *)val));
                         val++;

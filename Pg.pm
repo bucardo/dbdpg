@@ -21,6 +21,15 @@ $DBD::Pg::VERSION = '1.13';
     use Exporter ();
     @ISA = qw(DynaLoader Exporter);
 
+    %EXPORT_TAGS = (
+	pg_types => [ qw(
+           PG_BOOL PG_BYTEA PG_CHAR PG_INT8 PG_INT2 PG_INT4 PG_TEXT PG_OID
+           PG_FLOAT4 PG_FLOAT8 PG_ABSTIME PG_RELTIME PG_TINTERVAL PG_BPCHAR
+           PG_VARCHAR PG_DATE PG_TIME PG_DATETIME PG_TIMESPAN PG_TIMESTAMP
+	)]);
+
+    Exporter::export_ok_tags('pg_types');
+
     require_version DBI 1.00;
 
     bootstrap DBD::Pg $VERSION;
@@ -105,17 +114,6 @@ $DBD::Pg::VERSION = '1.13';
 
 {   package DBD::Pg::db; # ====== DATABASE ======
     use strict;
-
-    # Characters that need to be escaped by quote().
-    my %esc = ( "'"  => '\\047', # '\\' . sprintf("%03o", ord("'")), # ISO SQL 2
-                '\\' => '\\134', # '\\' . sprintf("%03o", ord("\\")),
-                "\0" => '\\000'  # '\\' . sprintf("%03o", ord("\0")),
-              );
-
-    # Set up lookup for SQL types we don't want to escape.
-    my @no_escape;
-    grep { $no_escape[$_] = 1 } DBI::SQL_INTEGER, DBI::SQL_SMALLINT, DBI::SQL_DECIMAL,
-      DBI::SQL_FLOAT, DBI::SQL_REAL, DBI::SQL_DOUBLE, DBI::SQL_NUMERIC;
 
     sub prepare {
         my($dbh, $statement, @attribs)= @_;
@@ -748,10 +746,19 @@ $DBD::Pg::VERSION = '1.13';
     }
 
 
+    # Characters that need to be escaped by quote().
+    my %esc = ( "'"  => '\\047', # '\\' . sprintf("%03o", ord("'")), # ISO SQL 2
+                '\\' => '\\134', # '\\' . sprintf("%03o", ord("\\")),
+              );
+
+    # Set up lookup for SQL types we don't want to escape.
+    my @no_escape = map { $_ => 1 }
+      DBI::SQL_INTEGER, DBI::SQL_SMALLINT, DBI::SQL_DECIMAL,
+      DBI::SQL_FLOAT, DBI::SQL_REAL, DBI::SQL_DOUBLE, DBI::SQL_NUMERIC;
+
     sub quote {
         my ($dbh, $str, $data_type) = @_;
         return "NULL" unless defined $str;
-
 	return $str if $data_type && $no_escape[$data_type];
 	$str =~ s/(['\\\0])/$esc{$1}/g;
 	return "'$str'";
@@ -778,6 +785,9 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
   $dbh = DBI->connect("dbi:Pg:dbname=$dbname", "", "");
 
+  # for some advanced uses you may need PostgreSQL type values:
+  use DBD::Oracle qw(:pg_types);
+
   # See the DBI module documentation for full details
 
 =head1 DESCRIPTION
@@ -789,7 +799,7 @@ PostgreSQL databases.
 
 This documentation describes driver specific behavior and restrictions. It is
 not supposed to be used as the only reference for the user. In any case
-consult the DBI documentation first !
+consult the DBI documentation first!
 
 =head1 THE DBI CLASS
 
@@ -936,7 +946,7 @@ Upon failure it returns undef.
 
 Opens an existing large object and returns an object-descriptor for use in
 subsequent lo_* calls. For the mode bits see lo_create. Returns undef upon
-failure. Note, that 0 is a perfectly correct object descriptor !
+failure. Note that 0 is a perfectly correct object descriptor!
 
   $nbytes = $dbh->func($lobj_fd, $buf, $len, 'lo_write');
 
@@ -994,13 +1004,13 @@ table. See test.pl for an example on how to use this function.
 
   $ret = $dbh->func('pg_notifies');
 
-Returns either undef or a reference to two-element array 
-[ $table, $backend_pid ] of asynchronous notifications received.
+Returns either undef or a reference to two-element array [ $table,
+$backend_pid ] of asynchronous notifications received.
 
   $fd = $dbh->func('getfd');
 
-Returns fd of the actual connection to server. Can be used with 
-select() and func('pg_notifies').
+Returns fd of the actual connection to server. Can be used with select() and
+func('pg_notifies').
 
 =back
 
@@ -1042,6 +1052,10 @@ Implemented by DBI, no driver-specific impact.
 Implemented by DBI, no driver-specific impact.
 
 =item B<RaiseError> (boolean, inherited)
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<HandleError> (boolean, inherited)
 
 Implemented by DBI, no driver-specific impact.
 
@@ -1204,9 +1218,15 @@ Implemented by DBI, no driver-specific impact.
 
   $sql = $dbh->quote($value, $data_type);
 
-This module implements it's own quote method. In addition to the DBI method it
-doubles also the backslash, because PostgreSQL treats a backslash as an escape
+This module implements its own quote method. In addition to the DBI method it
+also doubles the backslash, because PostgreSQL treats a backslash as an escape
 character.
+
+B<NOTE:> The undocumented (and invalid) support for the C<SQL_BINARY> data
+type is officially deprecated. Use C<PG_BYTEA> with C<bind_param()> instead:
+
+  $rv = $sth->bind_param($param_num, $bind_value,
+                         { pg_type => DBD::Pg::PG_BYTEA });
 
 =back
 
@@ -1273,6 +1293,12 @@ Constant to be used for the mode in lo_creat and lo_open.
   $rv = $sth->bind_param($param_num, $bind_value, \%attr);
 
 Supported by the driver as proposed by DBI.
+
+B<NOTE:> The undocumented (and invalid) support for the C<SQL_BINARY>
+SQL type is officially deprecated. Use C<PG_BYTEA> instead:
+
+  $rv = $sth->bind_param($param_num, $bind_value,
+                         { pg_type => DBD::Pg::PG_BYTEA });
 
 =item B<bind_param_inout>
 
@@ -1465,7 +1491,7 @@ transaction. A disconnect will issue a 'rollback' statement.
 
 The driver supports all large-objects related functions provided by libpq via
 the func-interface. Please note, that starting with PoostgreSQL-65. any access
-to a large object - even read-only - has to be put into a transaction !
+to a large object - even read-only - has to be put into a transaction!
 
 =head2 Cursors
 

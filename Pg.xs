@@ -24,6 +24,40 @@ DBISTATE_DECLARE;
 
 MODULE = DBD::Pg	PACKAGE = DBD::Pg
 
+I32
+constant(name=Nullch)
+    char *name
+    PROTOTYPE:
+    ALIAS:
+    PG_BOOL      = 16
+    PG_BYTEA     = 17
+    PG_CHAR      = 18
+    PG_INT8      = 20
+    PG_INT2      = 21
+    PG_INT4      = 23
+    PG_TEXT      = 25
+    PG_OID       = 26
+    PG_FLOAT4    = 700
+    PG_FLOAT8    = 701
+    PG_ABSTIME   = 702
+    PG_RELTIME   = 703
+    PG_TINTERVAL = 704
+    PG_BPCHAR    = 1042
+    PG_VARCHAR   = 1043
+    PG_DATE      = 1082
+    PG_TIME      = 1083
+    PG_DATETIME  = 1184
+    PG_TIMESPAN  = 1186
+    PG_TIMESTAMP = 1296
+    CODE:
+    if (!ix) {
+	if (!name) name = GvNAME(CvGV(cv));
+	croak("Unknown DBD::Pg constant '%s'", name);
+    }
+    else RETVAL = ix;
+    OUTPUT:
+    RETVAL
+
 PROTOTYPES: DISABLE
 
 BOOT:
