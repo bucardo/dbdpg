@@ -1309,7 +1309,7 @@ Implemented by DBI, no driver-specific impact.
 
   @data_sources = DBI->data_sources('Pg');
 
-The driver supports this method. Note that the necessary database connection to
+This driver supports this method. Note that the necessary database connection to
 the database template1 will be done on the localhost without any
 user-authentication. Other preferences can only be set with the environment
 variables PGHOST, PGPORT, DBI_USER and DBI_PASS.
@@ -1334,14 +1334,14 @@ See Common Methods.
 
   $rv = $h->err;
 
-Supported by the driver as proposed by DBI. For the connect method it returns
+Supported by this driver as proposed by DBI. For the connect method it returns
 PQstatus. In all other cases it returns PQresultStatus of the current handle.
 
 =item B<errstr>
 
   $str = $h->errstr;
 
-Supported by the driver as proposed by DBI. It returns the PQerrorMessage
+Supported by this driver as proposed by DBI. It returns the PQerrorMessage
 related to the current handle.
 
 =item B<state>
@@ -1485,7 +1485,7 @@ Implemented by DBI, no driver-specific impact.
 
 =item B<Active> (boolean, read-only)
 
-Supported by the driver as proposed by DBI. A database handle is active while
+Supported by this driver as proposed by DBI. A database handle is active while
 it is connected and statement handle is active until it is finished.
 
 =item B<Kids> (integer, read-only)
@@ -1522,16 +1522,16 @@ Implemented by DBI, no driver-specific impact.
 
 =item B<ChopBlanks> (boolean, inherited)
 
-Supported by the driver as proposed by DBI. This method is similar to the
+Supported by this driver as proposed by DBI. This method is similar to the
 SQL-function RTRIM.
 
 =item B<LongReadLen> (integer, inherited)
 
-Implemented by DBI, not used by the driver.
+Implemented by DBI, not used by this driver.
 
 =item B<LongTruncOk> (boolean, inherited)
 
-Implemented by DBI, not used by the driver.
+Implemented by DBI, not used by this driver.
 
 =item B<Taint> (boolean, inherited)
 
@@ -1757,21 +1757,21 @@ notes on perpare, bind_param, and execute for more information.
 
   $rc  = $dbh->commit;
 
-Supported by the driver as proposed by DBI. See also the notes about
+Supported by this driver as proposed by DBI. See also the notes about
 B<Transactions> elsewhere in this document.
 
 =item B<rollback>
 
   $rc  = $dbh->rollback;
 
-Supported by the driver as proposed by DBI. See also the notes about
+Supported by this driver as proposed by DBI. See also the notes about
 B<Transactions> elsewhere in this document.
 
 =item B<disconnect>
 
   $rc  = $dbh->disconnect;
 
-Supported by the driver as proposed by DBI.
+Supported by this driver as proposed by DBI.
 
 =item B<ping>
 
@@ -1785,7 +1785,7 @@ result status.
 
   $sth = $dbh->column_info( $catalog, $schema, $table, $column );
 
-Supported by the driver as proposed by the DBI with the follow exceptions.
+Supported by this driver as proposed by the DBI with the follow exceptions.
 These fields are currently always returned with NULL values:
 
    TABLE_CAT
@@ -1810,7 +1810,7 @@ older.
 
   $sth = $dbh->table_info( $catalog, $schema, $table, $type );
 
-Supported by the driver as proposed by DBI. This method returns all tables 
+Supported by this driver as proposed by DBI. This method returns all tables 
 and views visible to the current user. The $catalog argument is currently 
 unused. The schema and table arguments will do a 'LIKE' search if a 
 percent sign (%) or an underscore (_) are detected in the argument.
@@ -1821,7 +1821,7 @@ The $type argument accepts a value of wither "TABLE" or "VIEW"
 
   $sth = $dbh->primary_key_info( $catalog, $schema, $table, \%attr );
 
-Supported by the driver as proposed by DBI. The $catalog argument is 
+Supported by this driver as proposed by DBI. The $catalog argument is 
 curently unused, and the $schema argument has no effect against 
 servers running version 7.2 or less. There are no search patterns allowed, 
 but leaving the $schema argument blank will cause the first table 
@@ -1847,7 +1847,7 @@ arrayref, which can be useful when multiple columns are involved:
 
 =item B<primary_key>
 
-Supported by the driver as proposed by DBI.
+Supported by this driver as proposed by DBI.
 
 
 =item B<foreign_key_info>
@@ -1855,7 +1855,7 @@ Supported by the driver as proposed by DBI.
   $sth = $dbh->foreign_key_info( $pk_catalog, $pk_schema, $pk_table,
                                  $fk_catalog, $fk_schema, $fk_table );
 
-Supported by the driver as proposed by DBI, using the SQL/CLI variant. 
+Supported by this driver as proposed by DBI, using the SQL/CLI variant. 
 This function returns undef for PostgreSQL servers earlier than version 
 7.3. There are no search patterns allowed, but leaving the $schema argument 
 blank will cause the first table found in the schema search path to be 
@@ -1868,7 +1868,7 @@ an unique index) will return undef for the UK_NAME field.
 
   @names = $dbh->tables( $catalog, $schema, $table, $type, \%attr );
 
-Supported by the driver as proposed by DBI. This method returns all tables 
+Supported by this driver as proposed by DBI. This method returns all tables 
 and/or views which are visible to the current user: see the table_info() 
 for more information about the arguments. If the database is version 7.3 
 or higher, the name of the schema appears before the table or view name. This 
@@ -1881,7 +1881,7 @@ can be turned off by adding in the "pg_noprefix" attribute:
 
   $type_info_all = $dbh->type_info_all;
 
-Supported by the driver as proposed by DBI. Information is only provided for 
+Supported by this driver as proposed by DBI. Information is only provided for 
 SQL datatypes and for frequently used datatypes. The mapping between the
 PostgreSQL typename and the SQL92 datatype (if possible) has been done
 according to the following table:
@@ -1940,7 +1940,7 @@ type is officially deprecated. Use C<PG_BYTEA> with C<bind_param()> instead:
 
 =item B<AutoCommit>  (boolean)
 
-Supported by the driver as proposed by DBI. According to the classification of
+Supported by this driver as proposed by DBI. According to the classification of
 DBI, PostgreSQL is a database, in which a transaction must be explicitly
 started. Without starting a transaction, every change to the database becomes
 immediately permanent. The default of AutoCommit is on, which corresponds to
@@ -1962,7 +1962,7 @@ specs.
 
 =item B<RowCacheSize>  (integer)
 
-Implemented by DBI, not used by the driver.
+Implemented by DBI, not used by this driver.
 
 =item B<pg_auto_escape> (boolean)
 
@@ -2155,19 +2155,19 @@ much more information.
 
   $ary_ref = $sth->fetchrow_arrayref;
 
-Supported by the driver as proposed by DBI.
+Supported by this driver as proposed by DBI.
 
 =item B<fetchrow_array>
 
   @ary = $sth->fetchrow_array;
 
-Supported by the driver as proposed by DBI.
+Supported by this driver as proposed by DBI.
 
 =item B<fetchrow_hashref>
 
   $hash_ref = $sth->fetchrow_hashref;
 
-Supported by the driver as proposed by DBI.
+Supported by this driver as proposed by DBI.
 
 =item B<fetchall_arrayref>
 
@@ -2179,26 +2179,26 @@ Implemented by DBI, no driver-specific impact.
 
   $rc = $sth->finish;
 
-Supported by the driver as proposed by DBI.
+Supported by this driver as proposed by DBI.
 
 =item B<rows>
 
   $rv = $sth->rows;
 
-Supported by the driver as proposed by DBI. In contrast to many other drivers
+Supported by this driver as proposed by DBI. In contrast to many other drivers
 the number of rows is available immediately after executing the statement.
 
 =item B<bind_col>
 
   $rc = $sth->bind_col($column_number, \$var_to_bind, \%attr);
 
-Supported by the driver as proposed by DBI.
+Supported by this driver as proposed by DBI.
 
 =item B<bind_columns>
 
   $rc = $sth->bind_columns(\%attr, @list_of_refs_to_vars_to_bind);
 
-Supported by the driver as proposed by DBI.
+Supported by this driver as proposed by DBI.
 
 =item B<dump_results>
 
@@ -2248,7 +2248,7 @@ Implemented by DBI, no driver-specific impact.
 
 =item B<NAME>  (array-ref, read-only)
 
-Supported by the driver as proposed by DBI.
+Supported by this driver as proposed by DBI.
 
 =item B<NAME_lc>  (array-ref, read-only)
 
@@ -2258,40 +2258,56 @@ Implemented by DBI, no driver-specific impact.
 
 Implemented by DBI, no driver-specific impact.
 
+=item B<NAME_hash>  (hash-ref, read-only)
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<NAME_lc_hash>  (hash-ref, read-only)
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<NAME_uc_hash>  (hash-ref, read-only)
+
+Implemented by DBI, no driver-specific impact.
+
 =item B<TYPE>  (array-ref, read-only)
 
-Supported by the driver as proposed by DBI
+Supported by this driver as proposed by DBI
 
 =item B<PRECISION>  (array-ref, read-only)
 
-Not supported by the driver.
+Not supported by this driver.
 
 =item B<SCALE>  (array-ref, read-only)
 
-Not supported by the driver.
+Not supported by this driver.
 
 =item B<NULLABLE>  (array-ref, read-only)
 
-Not supported by the driver.
+Not supported by this driver.
 
 =item B<CursorName>  (string, read-only)
 
-Not supported by the driver. See the note about B<Cursors> elsewhere in this
+Not supported by this driver. See the note about B<Cursors> elsewhere in this
 document.
+
+=item C<Database>  (dbh, read-only)
+
+Implemented by DBI, no driver-specific impact.
 
 =item C<ParamValues>  (hash ref, read-only)
 
-Supported by the driver as proposed by DBI. If this is called before the execute, 
-then the literal values passed in are shown. If called after the execute, then 
+Supported by this driver as proposed by DBI. If called before execute, the 
+literal values passed in are returned. If called after the execute, then 
 the quoted versions of the values are shown.
 
 =item B<Statement>  (string, read-only)
 
-Supported by the driver as proposed by DBI.
+Supported by this driver as proposed by DBI.
 
 =item B<RowCache>  (integer, read-only)
 
-Not supported by the driver.
+Not supported by this driver.
 
 =item B<pg_size>  (array-ref, read-only)
 
@@ -2329,7 +2345,7 @@ by issuing a "begin" immediately before a statement, and a "commit" afterwards.
 
 =head2 Large Objects
 
-The driver supports all large-objects related functions provided by libpq via
+This driver supports all large-objects related functions provided by libpq via
 the func-interface. Please note, that starting with PostgreSQL 6.5 any access
 to a large object - even read-only - has to be put into a transaction!
 
