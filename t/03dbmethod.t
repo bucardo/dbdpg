@@ -852,7 +852,7 @@ $result = $dbh->func('getfd');
 like( $result, qr/^\d+$/, 'DB handle method "getfd" returns a number');
 
 #
-# Test of the "pg_bool_tf" database handle method
+# Test of the "pg_bool_tf" database handle attribute
 #
 
 $result = $dbh->{pg_bool_tf}=0;
@@ -875,31 +875,31 @@ $result = $sth->fetchall_arrayref()->[0][0];
 is( $result, 'f', qq{DB handle method "pg_bool_tf" returns 'f' for true when on});
 
 
-## Test of all the informational pg_* database handle methods
+## Test of all the informational pg_* database handle attributes
 
 $result = $dbh->{pg_protocol};
-like( $result, qr/^\d+$/, qq{DB handle method "pg_db" returns at least one character});
+like( $result, qr/^\d+$/, qq{DB handle attribute "pg_db" returns at least one character});
 
 $result = $dbh->{pg_db};
-ok( length $result, qq{DB handle method "pg_db" returns at least one character});
+ok( length $result, qq{DB handle attribute "pg_db" returns at least one character});
 
 $result = $dbh->{pg_user};
-ok( defined $result, qq{DB handle method "pg_user" returns a value});
+ok( defined $result, qq{DB handle attribute "pg_user" returns a value});
 
 $result = $dbh->{pg_pass};
-ok( defined $result, qq{DB handle method "pg_pass" returns a value});
+ok( defined $result, qq{DB handle attribute "pg_pass" returns a value});
 
 $result = $dbh->{pg_port};
-like( $result, qr/^\d+$/, qq{DB handle method "pg_port" returns a number});
+like( $result, qr/^\d+$/, qq{DB handle attribute "pg_port" returns a number});
 
 $result = $dbh->{pg_options};
-ok (defined $result, qq{DB handle method "pg_options" returns a value});
+ok (defined $result, qq{DB handle attribute "pg_options" returns a value});
 
 $result = $dbh->{pg_socket};
-like( $result, qr/^\d+$/, qq{DB handle method "pg_socket" returns a value});
+like( $result, qr/^\d+$/, qq{DB handle attribute "pg_socket" returns a value});
 
 $result = $dbh->{pg_pid};
-like( $result, qr/^\d+$/, qq{DB handle method "pg_pid" returns a value});
+like( $result, qr/^\d+$/, qq{DB handle attribute "pg_pid" returns a value});
 
 
 #
