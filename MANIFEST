@@ -13,6 +13,7 @@ quote.c
 quote.h
 README
 README.win32
+win32.mak
 t/00basic.t
 t/01connect.t
 t/01constants.t
