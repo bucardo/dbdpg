@@ -1,4 +1,13 @@
-/* begin large_object.c */
+/*
+
+   $Id$
+
+   Copyright (c) 2003-2004 PostgreSQL Global Development Group
+   
+   You may distribute under the terms of either the GNU General Public
+   License or the Artistic License, as specified in the Perl README file.
+
+*/
 
 int
 pg_db_lo_open (dbh, lobjId, mode)
