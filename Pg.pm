@@ -410,7 +410,7 @@ $DBD::Pg::VERSION = '1.33';
 		my $tablespacejoin = '';
 		if (DBD::Pg::_pg_check_version(7.5, $version)) {
 			$tablespacejoin = 'LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
-			$showtablespace = ', t.spcname, t.spclocation';
+			$showtablespace = ', quote_ident(t.spcname), quote_ident(t.spclocation)';
 		}
 		my $pri_key_sql = qq{
 			SELECT
@@ -830,7 +830,7 @@ $DBD::Pg::VERSION = '1.33';
 			}
 			if (DBD::Pg::_pg_check_version(7.5, $version)) {
 				$tablespacejoin = 'LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
-				$showtablespace = ', t.spcname AS "pg_tablespace_name", t.spclocation AS "pg_tablespace_location"';
+				$showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(t.spclocation) AS "pg_tablespace_location"';
 			}
 
 			## If the schema or table has an underscore or a %, use a LIKE comparison
