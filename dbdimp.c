@@ -42,10 +42,10 @@ typedef enum
 	PQTRANS_INERROR,			/* idle, within failed transaction */
 	PQTRANS_UNKNOWN				/* cannot determine status */
 } PGTransactionStatusType;
-PGresult *PQexecPrepared() { };
-PGresult *PQexecParams() { };
-Oid PQftable() { return InvalidOid; };
-int PQftablecol() { return 0; };
+PGresult *PQexecPrepared() { }
+PGresult *PQexecParams() { }
+Oid PQftable() { return InvalidOid; }
+int PQftablecol() { return 0; }
 int PQputCopyData() { return 0; }
 int PQsetErrorVerbosity() { return 0; }
 #define PG_DIAG_SQLSTATE 'C'
@@ -55,7 +55,7 @@ int PQsetErrorVerbosity() { return 0; }
 #ifdef PG_VERSION8
 #define PG8 1
 #else
-PGresult *PQprepare() { };
+PGresult *PQprepare() { }
 #endif
 
 #ifndef PGErrorVerbosity
@@ -1829,7 +1829,7 @@ AV * dbd_st_fetch (sth, imp_sth)
 
 		sv = AvARRAY(av)[i];
 		if (PQgetisnull(imp_sth->result, imp_sth->cur_tuple, i)) {
-			SvROK(sv) ? sv_unref(sv) : SvOK_off(sv);
+			SvROK(sv) ? (void)sv_unref(sv) : (void)SvOK_off(sv);
 		}
 		else {
 			value = (char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
