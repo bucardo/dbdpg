@@ -1185,12 +1185,6 @@ $DBD::Pg::VERSION = '1.31_6';
 
 }
 
-
-# Ummm, I don't think this extra curly brace should be here,
-# but it quite complaining when I added and things to seem to be working.
-# I'm worried. -mls 07/22/03 
-# }
-
 1;
 
 __END__
