@@ -1757,8 +1757,12 @@ use prepared statements. This is the default when connected to servers
 earlier than version 7.4, which is when prepared statements were introduced.
 Setting C<pg_server_prepare> to "1" means that prepared statements
 should be used whenever possible. This is the default for servers
-version 7.4 or higher. This attribute can also be set at connection
-time like so:
+version 8.0 or higher. Servers that are version 7.4 get a special default 
+value of "2", because server-side statements were only partially supported 
+in that version. In this case, it only uses server-side prepares if all 
+parameters are specifically bound. 
+
+The pg_server_prepare attribute can also be set at connection time like so:
 
   $dbh = DBI->connect($DBNAME, $DBUSER, $DBPASS,
                       { AutoCommit => 0,
@@ -1798,10 +1802,6 @@ situations in which you will be executing similar data many times, the default
 plan will probably work out well. Further discussion on this subject is beyond
 the scope of this documentation: please consult the pgsql-performance mailing
 list, L<http://archives.postgresql.org/pgsql-performance/>
-
-If you are using DBD::Pg with 7.4 libraries, you must set the parameter for
-each placeholder using bind_param() in order to use prepared statements. This
-can be a big hassle: upgrading to 8.0 is highly recommended.
 
 Only certain commands will be sent to a server-side prepare: currently these
 include C<SELECT>, C<INSERT>, C<UPDATE>, and C<DELETE>. DBD::Pg uses a simple
