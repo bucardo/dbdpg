@@ -860,9 +860,10 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
 	
 
 	if (!SvOK(newvalue)) {
-		phs->quoted = strdup("NULL");
+		phs->quoted = safemalloc(sizeof("NULL"));
 		if (NULL == phs->quoted)
 			croak("No memory");
+		strcpy(phs->quoted, "NULL");
 		phs->quoted_len = strlen(phs->quoted);
 	} else {
 		value_string = SvPV(newvalue, value_len);
