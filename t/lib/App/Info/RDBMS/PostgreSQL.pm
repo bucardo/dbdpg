@@ -125,6 +125,9 @@ sub new {
          /usr/sbin
          /bin));
 
+    unshift @paths, "$ENV{POSTGRES_HOME}/bin" if exists $ENV{POSTGRES_HOME};
+    unshift @paths, "$ENV{POSTGRES_LIB}/../bin" if exists $ENV{POSTGRES_LIB};
+
     if (my $cfg = $u->first_cat_exe('pg_config', @paths)) {
         # We found it. Confirm.
         $self->{pg_config} = $self->confirm( key      => 'pg_config',
