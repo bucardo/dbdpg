@@ -1,137 +1,125 @@
-if (!exists($ENV{DBDPG_MAINTAINER})) {
-    print "1..0\n";
-    exit;
-}
-
 use strict;
 use DBI;
+use Test::More;
 
-main();
-
-sub main {
-    my ($n, $dbh, $sth, $quo, $retr);
-    
-    print "1..9\n";
-    
-    $n = 1;
-    
-    $dbh = DBI->connect("dbi:Pg:dbname=$ENV{DBDPG_TEST_DB};host=$ENV{DBDPG_TEST_HOST}", $ENV{DBDPG_TEST_USER}, $ENV{DBDPG_TEST_PASS}, {RaiseError => 1, AutoCommit => 0});    
-    $dbh->do(q{DELETE FROM test});
-    
-    print "ok $n\n"; $n++;
-    
-    $quo = $dbh->quote("\\'?:");
-    $sth = $dbh->prepare(qq{
-        INSERT INTO test (name) VALUES ($quo)
-    });
-    $sth->execute();
-
-    $sth = $dbh->prepare(qq{
-        SELECT name
-          FROM test
-         WHERE name = $quo;
-    });
-    $sth->execute();
-    
-    ($retr) = $sth->fetchrow_array();
-    if (!(defined($retr) && $retr eq "\\'?:")) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    
-    eval {
-        local $dbh->{PrintError} = 0;
-        $sth->execute('foo');
-    };
-    if (!$@) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    
-    $sth = $dbh->prepare(q{
-        SELECT name
-          FROM test
-         WHERE name = ?
-    });    
-    $sth->execute("\\'?:");
-    
-    ($retr) = $sth->fetchrow_array();
-    if (!(defined($retr) && $retr eq "\\'?:")) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    
-    $sth = $dbh->prepare(q{
-        SELECT name
-          FROM test
-         WHERE name = :1
-    });    
-    $sth->execute("\\'?:");
-    
-    ($retr) = $sth->fetchrow_array();
-    if (!(defined($retr) && $retr eq "\\'?:")) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-  
-    $sth = $dbh->prepare(q{
-        SELECT name
-          FROM test
-         WHERE name = '?'
-    });
-    
-    eval {
-        local $dbh->{PrintError} = 0;
-        $sth->execute('foo');
-    };
-    if (!$@) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    
-    $sth = $dbh->prepare(q{
-        SELECT name
-          FROM test
-         WHERE name = ':1'
-    });
-    
-    eval {
-        local $dbh->{PrintError} = 0;
-        $sth->execute('foo');
-    };
-    if (!$@) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    
-    $sth = $dbh->prepare(q{
-        SELECT name
-          FROM test
-         WHERE name = '\\\\'
-           AND name = '?'
-    });
-    
-    eval {
-        local $dbh->{PrintError} = 0;
-        locat $sth->{PrintError} = 0;
-        $sth->execute('foo');
-    };
-    if (!$@) {
-        print "not ";
-    }
-    
-    print "ok $n\n"; $n++;
-    $sth->finish();
-    $dbh->rollback();
-    $dbh->disconnect();
-    
-    print "ok $n\n"; $n++;
+if (defined $ENV{DBI_DSN}) {
+  plan tests => 9;
+} else {
+  plan skip_all => 'cannot test without DB info';
 }
 
-1;
+my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+		       {RaiseError => 1, AutoCommit => 0}
+		      );
+ok(defined $dbh,
+   'connect with transaction'
+  );
+
+my $quo = $dbh->quote("\\'?:");
+my $sth = $dbh->prepare(qq{
+			INSERT INTO test (name) VALUES ($quo)
+		       });
+$sth->execute();
+
+my $sql = <<SQL;
+	SELECT name
+	FROM test
+	WHERE name = $quo;
+SQL
+$sth = $dbh->prepare($sql);
+$sth->execute();
+
+my ($retr) = $sth->fetchrow_array();
+ok((defined($retr) && $retr eq "\\'?:"),
+   'fetch'
+  );
+
+eval {
+  local $dbh->{PrintError} = 0;
+  $sth->execute('foo');
+};
+ok($@,
+   'execute with one bind param where none expected'
+  );
+
+$sql = <<SQL;
+       SELECT name
+       FROM test
+       WHERE name = ?
+SQL
+$sth = $dbh->prepare($sql);
+
+$sth->execute("\\'?:");
+
+($retr) = $sth->fetchrow_array();
+ok((defined($retr) && $retr eq "\\'?:"),
+   'execute with ? placeholder'
+  );
+
+$sql = <<SQL;
+       SELECT name
+       FROM test
+       WHERE name = :1
+SQL
+$sth = $dbh->prepare($sql);
+
+$sth->execute("\\'?:");
+
+($retr) = $sth->fetchrow_array();
+ok((defined($retr) && $retr eq "\\'?:"),
+   'execute with :1 placeholder'
+  );
+
+$sql = <<SQL;
+       SELECT name
+       FROM test
+       WHERE name = '?'
+SQL
+$sth = $dbh->prepare($sql);
+
+eval {
+  local $dbh->{PrintError} = 0;
+  $sth->execute('foo');
+};
+ok($@,
+   'execute with quoted ?'
+  );
+
+$sql = <<SQL;
+       SELECT name
+       FROM test
+       WHERE name = ':1'
+SQL
+$sth = $dbh->prepare($sql);
+
+eval {
+  local $dbh->{PrintError} = 0;
+  $sth->execute('foo');
+};
+ok($@,
+   'execute with quoted :1'
+  );
+
+$sql = <<SQL;
+       SELECT name
+       FROM test
+       WHERE name = '\\\\'
+       AND name = '?'
+SQL
+$sth = $dbh->prepare($sql);
+
+eval {
+  local $dbh->{PrintError} = 0;
+  local $sth->{PrintError} = 0;
+  $sth->execute('foo');
+};
+ok($@,
+   'execute with quoted ?'
+  );
+
+$sth->finish();
+$dbh->rollback();
+
+ok($dbh->disconnect(),
+   'disconnect'
+  );
