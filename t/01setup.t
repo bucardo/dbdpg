@@ -22,6 +22,7 @@ CREATE TABLE dbd_pg_test (
   id int,
   name text,
   val text,
+  fixed character(5),
   score float,
   date timestamp default 'now()',
   testarray text[][]
