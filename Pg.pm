@@ -1,7 +1,7 @@
 
 #  $Id$
 #
-#  Copyright (c) 1997,1998,1999,2000 Edmund Mergl
+#  Copyright (c) 1997-2001 Edmund Mergl
 #  Copyright (c) 2002 Jeffrey W. Baker
 #  Copyright (c) 2002-2004 PostgreSQL Global Development Group
 #  Portions Copyright (c) 1994,1995,1996,1997 Tim Bunce
@@ -39,6 +39,10 @@ $DBD::Pg::VERSION = '1.32';
 	$errstr = "";	# holds error string for DBI::errstr
 	$drh = undef;	# holds driver handle once initialized
 
+	sub CLONE {
+		$drh = undef;
+	}
+
 	sub driver{
 		return $drh if $drh;
 		my($class, $attr) = @_;
@@ -68,10 +72,10 @@ $DBD::Pg::VERSION = '1.32';
 	}
 
 	## Is the second version greater than or equal to the first?
-    # Returns:
-    # 0 if first version is greater
-    # 1 if they are equal
-    # 2 if second version is greater 
+	# Returns:
+	# 0 if first version is greater
+	# 1 if they are equal
+	# 2 if second version is greater 
 	sub _pg_check_version($$) {
 		## Check each section from left to right
 		my @uno = split (/\./ => $_[0]);
@@ -122,13 +126,13 @@ $DBD::Pg::VERSION = '1.32';
 		# create a 'blank' dbh
 
 		my $Name = $dbname;
-    if ($dbname =~ m#dbname\s*=\s*[\"\']([^\"\']+)#) {
-      $Name = "'$1'";
+		if ($dbname =~ m#dbname\s*=\s*[\"\']([^\"\']+)#) {
+			$Name = "'$1'";
 			$dbname =~ s/"/'/g;
 		}			
 		elsif ($dbname =~ m#dbname\s*=\s*([^;]+)#) {
-      $Name = $1;
-    }
+			$Name = $1;
+		}
 
 		$user = "" unless defined($user);
 		$auth = "" unless defined($auth);
@@ -228,7 +232,7 @@ $DBD::Pg::VERSION = '1.32';
 
 		# col_description is not available for Pg < 7.2
 		my $remarks = DBD::Pg::_pg_check_version(7.2, $version) ?
-            "${CATALOG}col_description(a.attrelid, a.attnum)" : "NULL::text";
+			"${CATALOG}col_description(a.attrelid, a.attnum)" : "NULL::text";
 
 		my $col_info_sql = qq!
 			SELECT
@@ -290,9 +294,9 @@ $DBD::Pg::VERSION = '1.32';
 			CHAR_OCTET_LENGTH    15
 			ORDINAL_POSITION     16
 			IS_NULLABLE          17
-			pg_type							 18
-			pg_type_only				 19
-			pg_atttypmod				 20
+			pg_type              18
+			pg_type_only         19
+			pg_atttypmod         20
 			/);
 		
 		my $constraint_query = DBD::Pg::_pg_check_version(7.3, $version)
@@ -326,7 +330,7 @@ $DBD::Pg::VERSION = '1.32';
 		my $sth = _prepare_from_data(
 			'column_info', 
 			$data, 
-				[ sort { $col_map{$a} <=> $col_map{$b}  } keys %col_map]);
+				[ sort { $col_map{$a} <=> $col_map{$b} } keys %col_map]);
 	}
 
 	sub _prepare_from_data {
@@ -497,7 +501,7 @@ $DBD::Pg::VERSION = '1.32';
 
 		## We now need information about each constraint we care about.
 		## Foreign table: only 'f' / Primary table: only 'p' or 'u'
-		my $WHERE = $odbc ? "((contype  = 'p'" : "((contype IN ('p','u')";
+		my $WHERE = $odbc ? "((contype = 'p'" : "((contype IN ('p','u')";
 		if (length $ptable) {
 			$WHERE .= " AND conrelid=$oid{'P'}::oid";
 		}
@@ -811,7 +815,7 @@ $DBD::Pg::VERSION = '1.32';
 		return $sth;
 	}
 
-  sub tables {
+	sub tables {
 			my ($dbh, @args) = @_;
 			my $attr = $args[4];
 			my $sth = $dbh->table_info(@args) or return;
@@ -856,7 +860,7 @@ $DBD::Pg::VERSION = '1.32';
 
 			my @pri_keys = ();
 			@pri_keys = $dbh->primary_key( $CATALOG, undef, $table );
-            $row->{PRIMARY_KEY} = scalar(grep { /^$row->{NAME}$/i } @pri_keys) ? 1 : 0;
+			$row->{PRIMARY_KEY} = scalar(grep { /^$row->{NAME}$/i } @pri_keys) ? 1 : 0;
 		}
 
 		return $attrs;
@@ -1130,7 +1134,7 @@ $DBD::Pg::VERSION = '1.32';
 	} # end of get_info
 } # end of package DBD::Pg::db
 
-{  package DBD::Pg::st; # ====== STATEMENT ======
+{ package DBD::Pg::st; # ====== STATEMENT ======
 
 	# all done in XS
 }
@@ -1544,7 +1548,7 @@ result status.
 
 =item B<column_info>
 
-	$sth = $dbh->column_info( $catalog, $schema, $table, $column );
+  $sth = $dbh->column_info( $catalog, $schema, $table, $column );
 
 Supported by the driver as proposed by the DBI with the follow exceptions.
 These fields are currently always returned with NULL values:
