@@ -61,10 +61,10 @@ $DBD::Pg::VERSION = '1.31';
 	## Used by both the dr and db packages
 	sub _pg_server_version {
 		my $dbh = shift;
-		return $dbh->{private_dbdpg}->{server_version} if defined $dbh->{private_dbdpg}->{server_version};
+		return $dbh->{private_dbdpg}{server_version} if defined $dbh->{private_dbdpg}{server_version};
 		my ($version) = $dbh->selectrow_array("SELECT version();");
-		$dbh->{private_dbdpg}->{server_version} = ($version =~ /^PostgreSQL ([\d\.]+)/) ? $1 : 0;
-		return $dbh->{private_dbdpg}->{server_version};
+		$dbh->{private_dbdpg}{server_version} = ($version =~ /^PostgreSQL ([\d\.]+)/) ? $1 : 0;
+		return $dbh->{private_dbdpg}{server_version};
 	}
 
 	## Is the second version greater than or equal to the first?
@@ -88,10 +88,10 @@ $DBD::Pg::VERSION = '1.31';
 	## Version 7.3 and up uses schemas, so add a "pg_catalog." to system tables
 	sub _pg_use_catalog {
 		my $dbh = shift;
-		return $dbh->{pg_use_catalog} if defined $dbh->{pg_use_catalog};
+		return $dbh->{private_dbdpg}{pg_use_catalog} if defined $dbh->{private_dbdpg}{pg_use_catalog};
 		my $version = DBD::Pg::_pg_server_version($dbh);
-		$dbh->{pg_use_catalog} = DBD::Pg::_pg_check_version(7.3, $version) ? "pg_catalog." : "";
-		return $dbh->{pg_use_catalog};
+		$dbh->{private_dbdpg}{pg_use_catalog} = DBD::Pg::_pg_check_version(7.3, $version) ? "pg_catalog." : "";
+		return $dbh->{private_dbdpg}{pg_use_catalog};
 	}
 
 	1;
@@ -105,15 +105,12 @@ $DBD::Pg::VERSION = '1.31';
 	sub data_sources {
 		my $drh = shift;
 		my $dbh = DBD::Pg::dr::connect($drh, 'dbname=template1') or return undef;
-		$dbh->{AutoCommit} = 1;
+		$dbh->{AutoCommit}=1;
 		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
-		my $sth = $dbh->prepare("SELECT datname FROM ${CATALOG}pg_database ORDER BY datname");
-		$sth->execute or return undef;
-		my (@sources, @datname);
-		while (@datname = $sth->fetchrow_array) {
-			push @sources, "dbi:Pg:dbname=$datname[0]";
-		}
-		$sth->finish;
+		my $SQL = "SELECT ${CATALOG}quote_ident(datname) FROM ${CATALOG}pg_database ORDER BY 1";
+		my $sth = $dbh->prepare($SQL);
+		$sth->execute();
+		my @sources = map { "dbi:Pg:dbname=$_->[0]" } @{$sth->fetchall_arrayref()};
 		$dbh->disconnect;
 		return @sources;
 	}
@@ -125,7 +122,11 @@ $DBD::Pg::VERSION = '1.31';
 		# create a 'blank' dbh
 
 		my $Name = $dbname;
-    if ($dbname =~ m#dbname\s*=\s*\"([^\"]+)\"# or $dbname =~ m#dbname\s*=\s*([^;]+)#) {
+    if ($dbname =~ m#dbname\s*=\s*[\"\']([^\"\']+)#) {
+      $Name = "'$1'";
+			$dbname =~ s/"/'/g;
+		}			
+		elsif ($dbname =~ m#dbname\s*=\s*([^;]+)#) {
       $Name = $1;
     }
 
@@ -1214,7 +1215,7 @@ Implemented by DBI, no driver-specific impact.
 The driver supports this method. Note that the necessary database connection to
 the database template1 will be done on the localhost without any
 user-authentication. Other preferences can only be set with the environment
-variables PGHOST, DBI_USER and DBI_PASS.
+variables PGHOST, PGPORT, DBI_USER and DBI_PASS.
 
 =item B<trace>
 
