@@ -1,4 +1,6 @@
-
+	- Made the data_sources method escape the database names as needed.
+    Added support for databases with spaces in their names.
+    [Greg Sabino Mullane]
 	- Added the "noprefix" attribute to prevent the tables() method 
 		from prepending the schema name. [Greg Sabino Mullane]
 	- Rewrote the testing suite. Many more tests are performed.
