@@ -2,12 +2,19 @@
 #include "types.h"
 #include <assert.h>
 
+/*
+ *	These are not being set automatically so I have set them
+ *	assuming libpq has them.  bjm 2003-04-01
+ */
+#define HAVE_PQescapeString
+#define HAVE_PQescapeBytea
+#define HAVE_PQunescapeBytea
 
 // #include"pg_functions.c"
 
 
 /* This section was stolen from libpq */
-#ifndef PQescapeString
+#ifndef HAVE_PQescapeString
 size_t
 PQescapeString(char *to, const char *from, size_t length)
 {
@@ -60,7 +67,7 @@ PQescapeString(char *to, const char *from, size_t length)
  *		'\\' == ASCII 92 == \\\\
  *		anything >= 0x80 ---> \\ooo (where ooo is an octal expression)
  */
-#ifndef PQescapeBytea
+#ifndef HAVE_PQescapeBytea
 unsigned char *
 PQescapeBytea(unsigned char *bintext, size_t binlen, size_t *bytealen)
 {
@@ -123,7 +130,7 @@ PQescapeBytea(unsigned char *bintext, size_t binlen, size_t *bytealen)
 
 	return result;
 }
-#endif /*PQescapeBytea */
+#endif
 
 /*
  *		PQunescapeBytea - converts the null terminated string representation
@@ -146,7 +153,7 @@ PQescapeBytea(unsigned char *bintext, size_t binlen, size_t *bytealen)
  *		5	\'
  *		6	\\
  */
-#ifndef PQunescapeBytea
+#ifndef HAVE_PQunescapeBytea
 unsigned char *
 PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 {
@@ -229,7 +236,7 @@ PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 	*retbuflen = buflen;
 	return buffer;
 }
-#endif /*PQunescapeBytea */
+#endif
 
 
 
@@ -351,10 +358,10 @@ quote_bytea(string, len, retlen)
 	size_t *retlen;
 {
 	char *result;
-	size_t resultant_len =0;
-	char *intermead = "", *dest;
+	size_t resultant_len = 0;
+	unsigned char *intermead, *dest;
 
-	intermead =  PQescapeBytea(string, len, &resultant_len);
+	intermead = PQescapeBytea(string, len, &resultant_len);
 	Newc(0,result,resultant_len+2,char, char);
 
 
@@ -427,7 +434,6 @@ quote_integer(value, len, retlen)
 
 	return result;
 }
-
 
 
 
