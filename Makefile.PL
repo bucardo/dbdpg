@@ -74,11 +74,7 @@ if ($os eq 'MSWin32') {
 	$dbi_arch_dir = "\$(INSTALLSITEARCH)/auto/DBI";
 }
 else {
-  ## Hide the message as it appears when we call WriteMakefile below
-	{
-		local STDOUT;
-		$dbi_arch_dir = dbd_dbi_arch_dir();
-	}
+  $dbi_arch_dir = dbd_dbi_arch_dir();
 }
 
 
