@@ -3,20 +3,18 @@
 #include "Pg.h"
 #include "types.h"
 
-
-
-
 #define DBDPG_TRUE 1
 #define DBDPG_FALSE 0
 
 /* For quoting/sql type mapping purposes this table only knows about
-   the types that DBD::Pg knew about before.  The other tyeps are just
+   the types that DBD::Pg knew about before.  The other types are just
    here for returning the field type.
 
-TODO:   - expand this for use with type_info() 
-	- map all types to closest sql type.
-	- set up quote functions for remaining types
-	- autogenerate this file.
+TODO: 
+ - expand this for use with type_info() 
+ - map all types to closest sql type.
+ - set up quote functions for remaining types
+ - autogenerate this file.
 */
 
 static sql_type_info_t pg_types[] = {
@@ -156,8 +154,8 @@ pg_type_data(sql_type)
 
 
 
-/*  This table only knows about the types that dbd_pg knew about before
-    TODO: Put the rest of the sql types in here with mapping.
+/* This table only knows about the types that dbd_pg knew about before
+   TODO: Put the rest of the sql types in here with mapping.
 */
 static sql_type_info_t sql_types[] = {
 	{SQL_VARCHAR, "SQL_VARCHAR", DBDPG_TRUE,quote_varchar, dequote_varchar, {VARCHAROID}},
@@ -191,3 +189,5 @@ sql_type_data(sql_type)
 		default:		return NULL;
 	}
 }
+
+/* end of types.c */

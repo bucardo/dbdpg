@@ -15,7 +15,7 @@ prescan_stmt (stmt, stmt_len, place_holder_count)
 	int phc = 0;
 
 	while ((ch = *stmt)) {
-        	if (':' == ch || '?' == ch || '$' == ch)
+		if (':' == ch || '?' == ch || '$' == ch)
 			++phc;
 		++length;
 		++stmt;
@@ -29,7 +29,7 @@ prescan_stmt (stmt, stmt_len, place_holder_count)
 
 /*******************
  * clc_ph_space()
- * givin a place_holder count,  retuns the 
+ * givin a place_holder count, retuns the 
  * string space needed to hold them.
  */
 
@@ -38,7 +38,7 @@ calc_ph_space (place_holder_count)
 	int place_holder_count;
 {
 	int divisor = 10,i;
-	int  digits = 2; /* 2: 1 for " " 1 for "$" eg: ' $1' */
+	int digits = 2; /* 2: 1 for " " 1 for "$" eg: ' $1' */
 	size_t	total_length = 0 ;
 
 	for (i=1; i<=place_holder_count; ++i) {
@@ -49,7 +49,7 @@ calc_ph_space (place_holder_count)
 		}
 		total_length += digits;
 	}
-	return  total_length;
+	return total_length;
 }
 
 
@@ -67,7 +67,7 @@ is_dml (stmt)
 	char token[7];
 
 	/* skip any leading whitespace */
-	while (*stmt && (isSPACE(*stmt) || '\n' == *stmt)  )
+	while (*stmt && (isSPACE(*stmt) || '\n' == *stmt) )
 		++stmt;
 
 	/* must be the first non-whitespace token */
@@ -78,17 +78,19 @@ is_dml (stmt)
 	/* // PerlIO_printf(DBILOGFP, "token: stmt: %s\n", token); */
 	
 	/* XXX: UPDATE & INSERT are broken. The (varchar) hack does not work
-	   as they actually look at the field type. Until I get a fix for this
-	   we don't prepare them
-	  */
-	if (0/*   !strcasecmp(token, "SELECT")
-	    || !strcasecmp(token, "DELETE") */
-	    /*|| !strcasecmp(token, "UPDATE")
-	    || !strcasecmp(token, "INSERT")*/ )
-	{
-		/* //PerlIO_printf(DBILOGFP, "Is DML\n"); */
-		return 1;
-	}
+		 as they actually look at the field type. Until I get a fix for this
+		 we don't prepare them
+	*/
+	if (0
+			/* !strcasecmp(token, "SELECT")
+				 || !strcasecmp(token, "DELETE") */
+			/*|| !strcasecmp(token, "UPDATE")
+				|| !strcasecmp(token, "INSERT")*/
+			)
+		{
+			/* //PerlIO_printf(DBILOGFP, "Is DML\n"); */
+			return 1;
+		}
 	/* // PerlIO_printf(DBILOGFP, "Is not DML\n"); */
 	return 0;
 }
@@ -108,7 +110,7 @@ is_tx_stmt (stmt)
 	char token[10];
 
 	/* skip any leading whitespace */
-	while (*stmt && (isSPACE(*stmt) || '\n' == *stmt)  )
+	while (*stmt && (isSPACE(*stmt) || '\n' == *stmt) )
 		++stmt;
 
 	/* must be the first non-whitespace token */
@@ -118,15 +120,15 @@ is_tx_stmt (stmt)
 	token[9] = '\0';
 	/* // PerlIO_printf(DBILOGFP, "token: stmt: %s\n", token); */
 	
-	if (   !strncasecmp(token, "END",     4)
-  	    || !strncasecmp(token, "BEGIN",   5)
-	    || !strncasecmp(token, "ABORT",   5) 
-	    || !strncasecmp(token, "COMMIT",  6)
-	    || !strncasecmp(token, "ROLLBACK",8) )
-	{
-		/* //PerlIO_printf(DBILOGFP, "Is DML\n"); */
-		return 1;
-	}
+	if (!strncasecmp(token, "END", 4)
+			|| !strncasecmp(token, "BEGIN", 5)
+			|| !strncasecmp(token, "ABORT", 5) 
+			|| !strncasecmp(token, "COMMIT", 6)
+			|| !strncasecmp(token, "ROLLBACK", 8) )
+		{
+			/* //PerlIO_printf(DBILOGFP, "Is DML\n"); */
+			return 1;
+		}
 	/* // PerlIO_printf(DBILOGFP, "Is not DML\n"); */
 	return 0;
 }
@@ -137,7 +139,7 @@ is_tx_stmt (stmt)
 /*******************
  * scan_placeholders()
  * old preparse. this one takes a statement and sets up
- *  the place holder SV*
+ * the place holder SV*
  */
 
 int
@@ -170,12 +172,12 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 		if (in_comment) {
 			/* SQL-style and C++-style */
 			if ((in_comment == '-' || in_comment == '/') && 
-			     '\n' == ch)
+					'\n' == ch)
 			{
 				in_comment = '\0';
 
 			} else if (in_comment == '*' && '*' == ch && 
-			    '/' == *src) /* C style */
+								 '/' == *src) /* C style */
 			{
 				/* *dest++ = ch; */
  				/* avoids asterisk-slash-asterisk issues */
@@ -201,12 +203,12 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 			}
 			*dest++ = ch;
 			continue;
-        	}
+		}
 
 		/* Look for comments: SQL-style or C++-style or C-style */
 		if (('-' == ch && '-' == *src) ||
-		    ('/' == ch && '/' == *src) ||
-		    ('/' == ch && '*' == *src))
+				('/' == ch && '/' == *src) ||
+				('/' == ch && '*' == *src))
 		{
 			in_comment = *src;
 			/* We know *src & the next char are to be copied, so do 
@@ -223,7 +225,7 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 			ch = ' ';
 		}
 		if (isSPACE(ch) && src-2 > statement && 
-		    isSPACE(*(src-2))  ) 
+				isSPACE(*(src-2)) ) 
 		{ 
 			continue;
 		}
@@ -232,7 +234,7 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 		if (':' != ch && '?' != ch && '$' != ch) {
 			if ('\'' == ch || '"' == ch)
 				in_literal = ch;
-			else if ('[' == ch)  /* ignore arrays ex. foo[1:3] */
+			else if ('[' == ch) /* ignore arrays ex. foo[1:3] */
 				in_literal = ']'; 
 				
 			*dest++ = ch;
@@ -255,7 +257,7 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 		dest += namelen;
 
 		ph_name_start = src-1;
-		if ('?' == ch) {		/* X/Open standard	    */
+		if ('?' == ch) {		/* X/Open standard */
 			namelen--; /* Leading " " */
 			ph_name_start = dest-namelen;
 			style = "?";
@@ -276,8 +278,7 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 		}
 
 		if (laststyle && style != laststyle) {
-			croak("Can't mix placeholder styles (%s/%s)",
-			    style,laststyle);
+			croak("Can't mix placeholder styles (%s/%s)",	style,laststyle);
 		}
 		laststyle = style;
 
@@ -286,8 +287,8 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 			imp_sth->all_params_hv = newHV();
 		}
 
-		/* //PerlIO_printf(DBILOGFP, "phs name start:%s len: %i Index:%i\n",  */
-		 /* //   ph_name_start,namelen, place_holder_count); */
+		/* //PerlIO_printf(DBILOGFP, "phs name start:%s len: %i Index:%i\n", */
+		 /* // ph_name_start,namelen, place_holder_count); */
 		
 		hv =hv_fetch(imp_sth->all_params_hv,ph_name_start,namelen,0);
 
@@ -295,10 +296,10 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 			phs_sv = newSV(sizeof(phs_tpl)+namelen+1);
 			Zero(SvPVX(phs_sv), sizeof(phs_tpl)+namelen+1, char);
 			hv_store( imp_sth->all_params_hv,
-			    ph_name_start,namelen,phs_sv,0);
+								ph_name_start,namelen,phs_sv,0);
 
 			 memcpy( ((phs_t*)SvPVX(phs_sv))->name,
-			    ph_name_start,namelen);
+							 ph_name_start,namelen);
 			*(((phs_t*)SvPVX(phs_sv))->name+namelen+1)='\0';
 		} else {
 			phs_sv = *hv;
@@ -312,7 +313,7 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 		DBIc_NUM_PARAMS(imp_sth) = place_holder_count;
 		if (dbis->debug >= 2) {
 			PerlIO_printf(DBILOGFP, 
-			"    dbd_preparse scanned %d"
+			" dbd_preparse scanned %d"
 			" placeholders\n", (int)DBIc_NUM_PARAMS(imp_sth));
 		}
 	}
@@ -340,7 +341,7 @@ build_preamble (statement, type, place_holder_count, prep_stmt_id)
 {
 	int i;
 	char *keyword;
-
+	
 	if (1 == type)
 		keyword = "PREPARE";
 	else if (2 == type)
@@ -348,44 +349,43 @@ build_preamble (statement, type, place_holder_count, prep_stmt_id)
 	else
 		croak("error");
 
-
 	 sprintf(statement, 
-	    "%s \"DBD::ChurlPg::cached_query %i\"", keyword,  prep_stmt_id);
+					 "%s \"DBD::ChurlPg::cached_query %i\"", keyword, prep_stmt_id);
+	 
+	 /* //PerlIO_printf(DBILOGFP, "statement: %s\n", statement); */
 
-		/* //PerlIO_printf(DBILOGFP, "statement: %s\n", statement); */
-
-        if (!place_holder_count) {
-		statement += strlen(statement);
-		if (1 == type) 
-	 		memcpy(statement, " AS ",4);
-		else if (2 == type)
-			*statement = '\0'; /* chop off sql statement */
-		else
-			croak("error");
-		return;
-	}
-
-	strcat(statement, " (");
-	statement += strlen(statement);
-
-	for (i =1; i <= place_holder_count; ++i) {
-		if (type == 1)
-			sprintf(statement, "varchar");
-		if (type == 2)
-			sprintf(statement, "$%i", i);
-
-		if (place_holder_count != i)
-			strcat(statement, ", ");
-
-		statement += strlen(statement);
-	}
-
-	if (1 == type)
-		memcpy(statement, ") AS ", 5); /*finish off */
-	else if (2 == type)
-		memcpy(statement, ")\0 ", 2); /*finish off */
-	else
-		croak("error");
+	 if (!place_holder_count) {
+		 statement += strlen(statement);
+		 if (1 == type) 
+			 memcpy(statement, " AS ",4);
+		 else if (2 == type)
+			 *statement = '\0'; /* chop off sql statement */
+		 else
+			 croak("error");
+		 return;
+	 }
+	 
+	 strcat(statement, " (");
+	 statement += strlen(statement);
+	 
+	 for (i =1; i <= place_holder_count; ++i) {
+		 if (type == 1)
+			 sprintf(statement, "varchar");
+		 if (type == 2)
+			 sprintf(statement, "$%i", i);
+		 
+		 if (place_holder_count != i)
+			 strcat(statement, ", ");
+		 
+		 statement += strlen(statement);
+	 }
+	 
+	 if (1 == type)
+		 memcpy(statement, ") AS ", 5); /*finish off */
+	 else if (2 == type)
+		 memcpy(statement, ")\0 ", 2); /*finish off */
+	 else
+		 croak("error");
 }
 
 
@@ -455,5 +455,4 @@ rewrite_execute_stmt(sth, imp_sth, output)
 	return 0;
 }
 
-
-
+/* end of prescan_stmt.c */

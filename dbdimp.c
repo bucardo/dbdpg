@@ -13,20 +13,12 @@
 */
 
 
-/* 
-   hard-coded OIDs:   (here we need the postgresql types)
-                    pg_sql_type()  1042 (bpchar), 1043 (varchar)
-                    ddb_st_fetch() 1042 (bpchar),   16 (bool)
-                    ddb_preparse() 1043 (varchar)
-                    pgtype_bind_ok()
-*/
-
 #include "Pg.h"
-#include<assert.h>
-#include"types.h"
+#include <assert.h>
+#include "types.h"
 
 /* XXX DBI should provide a better version of this */
-#define IS_DBI_HANDLE(h)  (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV && SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
+#define IS_DBI_HANDLE(h) (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV && SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
 DBISTATE_DECLARE;
 
@@ -36,6 +28,9 @@ void pg_error();
 #include "large_object.c"
 #include "prescan_stmt.c"
 
+
+/* ================================================================== */
+
 void
 dbd_init (dbistate)
 		 dbistate_t *dbistate;
@@ -44,10 +39,12 @@ dbd_init (dbistate)
 }
 
 
+/* ================================================================== */
+
 int
 dbd_discon_all (drh, imp_drh)
 		 SV *drh;
-	imp_drh_t *imp_drh;
+		 imp_drh_t *imp_drh;
 {
 	dTHR;
 	
@@ -65,10 +62,9 @@ dbd_discon_all (drh, imp_drh)
 }
 
 
-
+/* ================================================================== */
 
 /* Turn database notices into perl warnings for proper handling. */
-
 static void
 pg_warn (arg, message)
 		 void *arg;
@@ -80,8 +76,9 @@ pg_warn (arg, message)
 		warn( message );
 }
 
-/* Database specific error handling. */
+/* ================================================================== */
 
+/* Database specific error handling. */
 void
 pg_error (h, error_num, error_msg)
 		 SV *h;
@@ -173,7 +170,7 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	if (dbis->debug >= 2) { PerlIO_printf(DBILOGFP, "pg_db_login: conn_str = >%s<\n", conn_str); }
 	
 	/* make a connection to the database */
-
+	
 	imp_dbh->conn = PQconnectdb(conn_str);
 	safefree(conn_str);
 	
@@ -203,11 +200,11 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 		imp_dbh->version.ver = 0.0;
 	}
 	PQclear(pgres_ret);
-
+	
 #ifdef HAVE_PQprotocol
-  imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
+	imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
 #endif
-
+	
 	/* PerlIO_printf(DBILOGFP, "v.ma: %i, v.mi: %i v.ver: %f\n",
 		 imp_dbh->version.major, imp_dbh->version.minor, imp_dbh->version.ver);
 		 
@@ -228,6 +225,8 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 }
 
 
+/* ================================================================== */
+
 int 
 dbd_db_getfd (dbh, imp_dbh)
 		 SV *dbh;
@@ -241,6 +240,9 @@ dbd_db_getfd (dbh, imp_dbh)
 	return PQsocket(imp_dbh->conn);
 }
 
+
+/* ================================================================== */
+
 SV * 
 dbd_db_pg_notifies (dbh, imp_dbh)
 		 SV *dbh;
@@ -251,7 +253,7 @@ dbd_db_pg_notifies (dbh, imp_dbh)
 	AV* ret;
 	SV* retsv;
 	int status;
-
+	
 	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_db_pg_notifies\n"); }
 	
 	status = PQconsumeInput(imp_dbh->conn);
@@ -275,6 +277,9 @@ dbd_db_pg_notifies (dbh, imp_dbh)
 	
 	return retsv;
 }
+
+
+/* ================================================================== */
 
 int
 dbd_db_ping (dbh)
@@ -303,6 +308,8 @@ dbd_db_ping (dbh)
 }
 
 
+/* ================================================================== */
+
 int
 dbd_db_commit (dbh, imp_dbh)
 		 SV *dbh;
@@ -324,7 +331,7 @@ dbd_db_commit (dbh, imp_dbh)
 			result = PQexec(imp_dbh->conn, "commit");
 			status = result ? PQresultStatus(result) : -1;
 			PQclear(result);
-
+			
 			imp_dbh->done_begin = 0;
 			/* check result */
 			if (status != PGRES_COMMAND_OK) {
@@ -337,6 +344,8 @@ dbd_db_commit (dbh, imp_dbh)
 	return 0;
 }
 
+
+/* ================================================================== */
 
 int
 dbd_db_rollback (dbh, imp_dbh)
@@ -373,6 +382,8 @@ dbd_db_rollback (dbh, imp_dbh)
 	return 0;
 }
 
+
+/* ================================================================== */
 
 int
 dbd_db_disconnect (dbh, imp_dbh)
@@ -418,6 +429,8 @@ dbd_db_disconnect (dbh, imp_dbh)
 }
 
 
+/* ================================================================== */
+
 void
 dbd_db_destroy (dbh, imp_dbh)
 		 SV *dbh;
@@ -433,6 +446,8 @@ dbd_db_destroy (dbh, imp_dbh)
 	DBIc_IMPSET_off(imp_dbh);
 }
 
+
+/* ================================================================== */
 
 int
 dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
@@ -456,7 +471,7 @@ dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 		} else if (oldval == FALSE && newval != FALSE) {
 			if (NULL != imp_dbh->conn) {
 				/* commit any outstanding changes */
-
+				
 				if (imp_dbh->done_begin) {
 					PGresult* result = 0;
 					ExecStatusType status;
@@ -491,6 +506,8 @@ dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 	}
 }
 
+
+/* ================================================================== */
 
 SV *
 dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
@@ -534,7 +551,6 @@ dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 
 /* ================================================================== */
 
-
 int
 dbd_st_prepare (sth, imp_sth, statement, attribs)
 		 SV *sth;
@@ -561,6 +577,8 @@ dbd_st_prepare (sth, imp_sth, statement, attribs)
 	return 1;
 }
 
+
+/* ================================================================== */
 
 int
 dbd_preparse (sth, imp_sth, statement)
@@ -645,6 +663,7 @@ dbd_preparse (sth, imp_sth, statement)
 }
 
 
+/* ================================================================== */
 
 int
 deallocate_statement (sth, imp_sth)
@@ -698,6 +717,7 @@ deallocate_statement (sth, imp_sth)
 }
 
 
+/* ================================================================== */
 
 /* TODO: break this sub up. */
 int
@@ -722,7 +742,7 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
 	int bind_type;
 	char *value_string;
 	STRLEN value_len;
-
+	
 	
 	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_bind_ph\n"); }
 	
@@ -752,7 +772,7 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
 		/* dbi handle allowed for cursor variables */
 		croak("Can't bind a reference (%s)", neatsvpv(newvalue,0));
 	}
-
+	
 	if (SvTYPE(newvalue) == SVt_PVLV && is_inout) {	 /* may allow later */
 		croak("Can't bind ``lvalue'' mode scalar as inout parameter (currently)");
 	}
@@ -771,36 +791,36 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
 	
 	if (attribs)
 		if((svp = hv_fetch((HV*)SvRV(attribs),"pg_type", 7, 0)) != NULL)
-	    		pg_type = SvIV(*svp);
-
+			pg_type = SvIV(*svp);
+	
 	if (sql_type && pg_type)
 		croak ("Cannot specify both sql_type and pg_type");
-
-
+	
+	
 	if (pg_type) {
 		if ((sql_type_info = pg_type_data(pg_type))) {
 			if (!sql_type_info->bind_ok) {
 				croak("Can't bind %s, sql_type %s not supported"
-						"by DBD::Pg",
-						name, sql_type_info->type_name);
+							"by DBD::Pg",
+							name, sql_type_info->type_name);
 			}
 		} else {
 			croak("Cannot bind %s unknown pg_type %i",
-				name, pg_type);
+						name, pg_type);
 		}
 		bind_type = sql_type_info->type_id;
 		
 	} else if (sql_type) {
 		if ((sql_type_info = sql_type_data(sql_type))) {
 			/* always bind as pg_type, because we know we are 
-			   inserting into a pg database... It would make no 
-			   sense to quote something to sql semantics and break
-			   the insert.
+				 inserting into a pg database... It would make no 
+				 sense to quote something to sql semantics and break
+				 the insert.
 		 	*/
 			bind_type = sql_type_info->type.pg;
 		} else {
 			croak("Cannot bind %s unknown sql_type %i",
-				name, sql_type);
+						name, sql_type);
 		}
 		
 	} else {
@@ -810,7 +830,7 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
 		
 		bind_type = sql_type_info->type_id;
 	}
-
+	
 	
 	/* get the place holder */
 	phs_svp = hv_fetch(imp_sth->all_params_hv, name, name_len, 0);
@@ -835,10 +855,10 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
 	/* phs->sv is copy of real variable, upgrade to at least string */
 	(void)SvUPGRADE(newvalue, SVt_PV);
 	
-
+	
 	if (phs->quoted)
 		Safefree(phs->quoted);
-
+	
 	if (!SvOK(newvalue)) {
 		phs->quoted = safemalloc(sizeof("NULL"));
 		if (NULL == phs->quoted)
@@ -856,8 +876,10 @@ dbd_bind_ph (sth, imp_sth, ph_namesv, newvalue, sql_type, attribs, is_inout, max
 }
 
 
+/* ================================================================== */
+
 /*TODO: make smaller */
-dbd_st_execute (sth, imp_sth)  /* <= -2:error, >=0:ok row count, (-1=unknown count) */
+dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown count) */
 		 SV *sth;
 		 imp_sth_t *imp_sth;
 {
@@ -925,7 +947,7 @@ dbd_st_execute (sth, imp_sth)  /* <= -2:error, >=0:ok row count, (-1=unknown cou
 	if (imp_sth->result) {
 		PQclear(imp_sth->result);
 	}
-
+	
 	/* start new transaction if necessary */
 	if (!imp_dbh->done_begin && DBIc_has(imp_dbh, DBIcf_AutoCommit) == FALSE) {
 		PGresult* result = 0;
@@ -939,7 +961,7 @@ dbd_st_execute (sth, imp_sth)  /* <= -2:error, >=0:ok row count, (-1=unknown cou
 		}
 		imp_dbh->done_begin = 1;
 	}
-
+	
 	/* execute statement */
 	imp_sth->result = PQexec(imp_dbh->conn, statement);
 	
@@ -982,7 +1004,7 @@ dbd_st_execute (sth, imp_sth)  /* <= -2:error, >=0:ok row count, (-1=unknown cou
 }
 
 
-/*TODO: pg_bool_tf */
+/* ================================================================== */
 
 AV *
 dbd_st_fetch (sth, imp_sth)
@@ -1037,21 +1059,21 @@ dbd_st_fetch (sth, imp_sth)
 				{
 					*value = (*value == '1') ? 't' : 'f';
 				}
-
+			
 			sv_setpvn(sv, value, value_len);
 			
 			if (type_info && (type_info->type_id == BPCHAROID) && 
-				chopblanks)
-			{
-				p = SvEND(sv);
-				len = SvCUR(sv);
-				while(len && *--p == ' ')
-					--len;
-				if (len != SvCUR(sv)) {
-					SvCUR_set(sv, len);
-					*SvEND(sv) = '\0';
+					chopblanks)
+				{
+					p = SvEND(sv);
+					len = SvCUR(sv);
+					while(len && *--p == ' ')
+						--len;
+					if (len != SvCUR(sv)) {
+						SvCUR_set(sv, len);
+						*SvEND(sv) = '\0';
+					}
 				}
-			}
 			
 #ifdef is_utf8_string
 			/* XXX Under what circumstances is type_info NULL? */
@@ -1076,6 +1098,9 @@ dbd_st_fetch (sth, imp_sth)
 	return av;
 }
 
+
+/* ================================================================== */
+
 is_high_bit_set(val)
 		 char *val;
 {
@@ -1083,6 +1108,9 @@ is_high_bit_set(val)
 		if (*val & 0x80) return 1;
 	return 0;
 }
+
+
+/* ================================================================== */
 
 /* TODO: test for rows and define rows so that this rows() will be used */
 int
@@ -1095,6 +1123,8 @@ dbd_st_rows (sth, imp_sth)
 	return imp_sth->rows;
 }
 
+
+/* ================================================================== */
 
 int
 dbd_st_finish (sth, imp_sth)
@@ -1115,6 +1145,8 @@ dbd_st_finish (sth, imp_sth)
 	return 1;
 }
 
+
+/* ================================================================== */
 
 void
 dbd_st_destroy (sth, imp_sth)
@@ -1160,6 +1192,8 @@ dbd_st_destroy (sth, imp_sth)
 }
 
 
+/* ================================================================== */
+
 int
 dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 		 SV *sth;
@@ -1172,6 +1206,8 @@ dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 	return FALSE;
 }
 
+
+/* ================================================================== */
 
 SV *
 dbd_st_FETCH_attrib (sth, imp_sth, keysv)
@@ -1260,5 +1296,5 @@ dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 	return sv_2mortal(retsv);
 }
 
-
 /* end of dbdimp.c */
+
