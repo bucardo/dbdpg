@@ -710,6 +710,8 @@ $DBD::Pg::VERSION = '1.30';
 			my $showschema = DBD::Pg::_pg_check_version(7.3, $version) ? "n.nspname" : "NULL::text";
 			my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
 				"LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
+			my $has_objsubid = DBD::Pg::_pg_check_version(7.2, $version) ? 
+				"AND d.objsubid = 0" : "";
 			$tbl_sql = qq{
 				SELECT NULL::text   AS "TABLE_CAT"
 					 , $showschema  AS "TABLE_SCHEM"
@@ -722,7 +724,7 @@ $DBD::Pg::VERSION = '1.30';
 				FROM ${CATALOG}pg_class AS c
 					LEFT JOIN 
 					${CATALOG}pg_description AS d 
-						ON (c.relfilenode = d.objoid AND d.objsubid = 0)
+						ON (c.relfilenode = d.objoid $has_objsubid)
 					$schemajoin
 				WHERE 
 					((c.relkind = 'r'
@@ -790,7 +792,7 @@ $DBD::Pg::VERSION = '1.30';
 					FROM ${CATALOG}pg_class AS c
 						LEFT JOIN
 						${CATALOG}pg_description AS d 
-							ON (c.relfilenode = d.objoid AND d.objsubid = 0)
+							ON (c.relfilenode = d.objoid $has_objsubid)
 						$schemajoin
 					WHERE 
 						c.relname !~ '^xin[vx][0-9]+'
@@ -842,13 +844,18 @@ $DBD::Pg::VERSION = '1.30';
 
 	sub table_attributes {
 		my ($dbh, $table) = @_;
+		my $version = DBD::Pg::_pg_server_version($dbh);
 		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
 		my $result = [];
+		my $pg_description_join = DBD::Pg::_pg_check_version(7.2, $version) ?
+			"(a.attnum = d.objsubid) AND (c.oid = d.objoid )" : "(a.oid = d.objoid )";
 		my $attrs = $dbh->selectall_arrayref(
-			"SELECT a.attname, t.typname, a.attlen, a.atttypmod, a.attnotnull, a.atthasdef, a.attnum
-			FROM ${CATALOG}pg_attribute a,
+			"SELECT a.attname, t.typname, a.attlen, a.atttypmod, a.attnotnull, a.atthasdef, a.attnum, d.description
+			FROM
 				${CATALOG}pg_class c,
-				${CATALOG}pg_type t
+				${CATALOG}pg_type t,
+				${CATALOG}pg_attribute a
+				LEFT JOIN ${CATALOG}pg_description d ON ($pg_description_join)
 				WHERE c.relname = ?
 				AND a.attrelid = c.oid
 				AND a.attnum >= 0
@@ -856,7 +863,7 @@ $DBD::Pg::VERSION = '1.30';
 				ORDER BY 1",
 			undef, $table);
 	
-		return $result unless scalar(@$attrs);
+		return $result unless ref $attrs and scalar(@$attrs);
 
 		# Select the array value for tables primary key.
 		my $pk_key_sql = qq{SELECT pg_index.indkey
@@ -892,7 +899,7 @@ $DBD::Pg::VERSION = '1.30';
 		$pri_key = [] unless $pri_key;
 
 		foreach my $attr (reverse @$attrs) {
-			my ($col_name, $col_type, $size, $mod, $notnull, $hasdef, $attnum) = @$attr;
+			my ($col_name, $col_type, $size, $mod, $notnull, $hasdef, $attnum, $remarks) = @$attr;
 			my $col_size = do { 
 			if ($size > 0) {
 				$size;
@@ -937,6 +944,7 @@ $DBD::Pg::VERSION = '1.30';
 			DEFAULT     => $default,
 			CONSTRAINT  => $constraint,
 			PRIMARY_KEY => $is_primary_key,
+			REMARKS     => $remarks,
 			};
 		}
 
@@ -1370,6 +1378,7 @@ This method returns for the given table a reference to an array of hashes:
   DEFAULT     default value
   CONSTRAINT  constraint
   PRIMARY_KEY flag is_primary_key
+  REMARKS     attribute description
 
   $lobjId = $dbh->func($mode, 'lo_creat');
 
