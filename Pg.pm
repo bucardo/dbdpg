@@ -58,7 +58,7 @@ $DBD::Pg::VERSION = '1.30_1';
     }
 
     ## Used by both the dr and db packages
-    sub pg_server_version {
+    sub _pg_server_version {
 		my $dbh = shift;
 		return $dbh->{pg_server_version} if defined $dbh->{pg_server_version};
         my ($version) = $dbh->selectrow_array("SELECT version();");
@@ -67,11 +67,24 @@ $DBD::Pg::VERSION = '1.30_1';
         return $dbh{pg_server_version};
 	}
 
-    sub pg_use_catalog {
+    ## Is the second version greater than or equal to the first?
+    sub _pg_check_version($$) {
+      ## Check each section from left to right
+      my @uno = split (/\./ => $_[0]);
+      my @dos = split (/\./ => $_[1]);
+      for (my $i=0; defined $uno[$i] or defined $dos[$i]; $i++) {
+        $uno[$i] = 0 if ! defined $uno[$i];
+        $dos[$i] = 0 if ! defined $dos[$i];
+        return 2 if $uno[$i] < $dos[$i];
+        return 0 if $uno[$i] > $dos[$i];
+      }
+      return 1; ## versions are equal
+    }
+
+    sub _pg_use_catalog {
       my $dbh = shift;
-      my $version = DBD::Pg::pg_server_version($dbh);
-		$version =~ /^(\d+\.\d+)/;
-      return $1 < 7.3 ? "" : "pg_catalog.";
+      my $version = DBD::Pg::_pg_server_version($dbh);
+      return DBD::Pg::_pg_check_version(7.3, $version) ? "pg_catalog." : "";
     }
 
     1;
@@ -85,7 +98,7 @@ $DBD::Pg::VERSION = '1.30_1';
         my $drh = shift;
         my $dbh = DBD::Pg::dr::connect($drh, 'dbname=template1') or return undef;
         $dbh->{AutoCommit} = 1;
-        my $CATALOG = DBD::Pg::pg_use_catalog($dbh);
+        my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
         my $sth = $dbh->prepare("SELECT datname FROM ${CATALOG}pg_database ORDER BY datname");
         $sth->execute or return undef;
         my (@sources, @datname);
@@ -171,13 +184,16 @@ $DBD::Pg::VERSION = '1.30_1';
 		my ($dbh) = shift;
 		my @attrs = @_;
 		# my ($dbh, $catalog, $schema, $table, $column) = @_;
-		my $CATALOG = DBD::Pg::pg_use_catalog($dbh);
+		my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
+
+		my $version = DBD::Pg::_pg_server_version($dbh);
 
 		my @wh = ();
 		my @flds = qw/catname n.nspname c.relname a.attname/;
 
 		for my $idx (0 .. $#attrs) {
-			next if ($flds[$idx] eq 'catname'); # Skip catalog
+			next if $flds[$idx] eq 'catname'; # Skip catalog
+            next if $flds[$idx] eq 'n.nspname' and ! DBD::Pg::_pg_check_version(7.3, $version);
 			if(defined $attrs[$idx] and length $attrs[$idx]) {
 				# Insure that the value is enclosed in single quotes.
 				$attrs[$idx] =~ s/^'?(\w+)'?$/'$1'/;
@@ -199,9 +215,10 @@ $DBD::Pg::VERSION = '1.30_1';
 
 		my $wh = ""; # ();
 		$wh = join( " AND ", '', @wh ) if (@wh);
-		my $version = DBD::Pg::pg_server_version($dbh);
-		my $showschema = $version < 7.3 ? "NULL::text" : "n.nspname";
-		my $schemajoin = $version < 7.3 ? "" : "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)";
+		my $showschema = DBD::Pg::_pg_check_version(7.3, $version) ? 
+            "n.nspname" : "NULL::text";
+		my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
+            "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
 		my $col_info_sql = qq{
 			SELECT
 				  NULL::text	AS "TABLE_CAT"
@@ -250,21 +267,20 @@ $DBD::Pg::VERSION = '1.30_1';
         my $dbh = shift;
 		my ($catalog, $schema, $table) = @_;
 		my @attrs = @_;
-        my $CATALOG = DBD::Pg::pg_use_catalog($dbh);
+        my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
 
 		# TABLE_CAT:, TABLE_SCHEM:, TABLE_NAME:, COLUMN_NAME:, KEY_SEQ:
 		# , PK_NAME:
 
 		my @wh = (); my @dat = ();  # Used to hold data for the attributes.
 
-		my $version = DBD::Pg::pg_server_version($dbh);
-		$version =~ /^(\d+)\.(\d)/;
+		my $version = DBD::Pg::_pg_server_version($dbh);
 
-		my @flds = qw/catname u.usename bc.relname/;
-		$flds[1] = 'n.nspname' unless ($1.$2 < 73);
+   		my @flds = qw/catname n.nspname bc.relname/;
 
 		for my $idx (0 .. $#attrs) {
-			next if ($flds[$idx] eq 'catname'); # Skip catalog
+			next if $flds[$idx] eq 'catname'; # Skip catalog
+            next if $flds[$idx] eq 'n.nspname' and ! DBD::Pg::_pg_check_version(7.3, $version);
 			if(defined $attrs[$idx] and length $attrs[$idx]) {
 				push( @dat, $attrs[$idx] );
 				push( @wh, qq{$flds[$idx] = ? } );
@@ -275,8 +291,10 @@ $DBD::Pg::VERSION = '1.30_1';
 		$wh = join( " AND ", '', @wh ) if (@wh);
 
 		# Base primary key selection query borrowed from phpPgAdmin.
-		my $showschema = $version < 7.3 ? "NULL::text" : "n.nspname";
-        my $schemajoin = $version < 7.3 ? "" : "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = bc.relnamespace)";
+		my $showschema = DBD::Pg::_pg_check_version(7.3, $version) ? 
+            "n.nspname" : "NULL::text";
+        my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
+            "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = bc.relnamespace)" : "";
 		my $pri_key_sql = qq{
 			SELECT
 				NULL::text		AS "TABLE_CAT"
@@ -347,9 +365,8 @@ $DBD::Pg::VERSION = '1.30_1';
 		$fk_catalog, $fk_schema, $fk_table) = @_;
 
 	# this query doesn't work for Postgres before 7.3
-	my $version = $dbh->pg_server_version;
-	$version =~ /^(\d+)\.(\d)/;
-	return undef if ($1.$2 < 73);
+	my $version = DBD::Pg::_pg_server_version($dbh);
+	return undef unless DBD::Pg::_pg_check_version(7.3, $version);
 
 	# Used to hold data for the attributes.
 	my @dat = ();
@@ -586,8 +603,11 @@ $DBD::Pg::VERSION = '1.30_1';
 
 		my $tbl_sql = ();
 
-        my $version = DBD::Pg::pg_server_version($dbh);
-        my $CATALOG = DBD::Pg::pg_use_catalog($dbh);
+        my $version = DBD::Pg::_pg_server_version($dbh);
+        my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
+        my $schemacase =  DBD::Pg::_pg_check_version(7.3, $version) ? 
+            "CASE WHEN n.nspname ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END" : 
+            "CASE WHEN c.relname ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END";
 
 		if ( # Rules 19a
 			    (defined $catalog and $catalog eq '%')
@@ -608,15 +628,8 @@ $DBD::Pg::VERSION = '1.30_1';
 			and (defined $schema  and $schema  eq '%')
 			and (defined $table   and $table   eq  '')
 			) {
-				$tbl_sql = ($version < 7.3) ? q{
-					SELECT 
-					   NULL::text    AS "TABLE_CAT"
-					 , NULL::text    AS "TABLE_SCHEM"
-					 , NULL::text    AS "TABLE_NAME"
-					 , NULL::text    AS "TABLE_TYPE"
-					 , NULL::text    AS "REMARKS"
-                    } : q{
-					SELECT 
+				$tbl_sql = DBD::Pg::_pg_check_version(7.3, $version) ? 
+                   q{SELECT 
 					   NULL::text    AS "TABLE_CAT"
 					 , n.nspname     AS "TABLE_SCHEM"
 					 , NULL::text    AS "TABLE_NAME"
@@ -624,7 +637,14 @@ $DBD::Pg::VERSION = '1.30_1';
 					 , NULL::text    AS "REMARKS"
 					FROM pg_catalog.pg_namespace n
 					ORDER BY 1
-					};
+					} : 
+					q{SELECT 
+					   NULL::text    AS "TABLE_CAT"
+					 , NULL::text    AS "TABLE_SCHEM"
+					 , NULL::text    AS "TABLE_NAME"
+					 , NULL::text    AS "TABLE_TYPE"
+					 , NULL::text    AS "REMARKS"
+                    };
 		}
 		elsif (# Rules 19c
 			    (defined $catalog and $catalog eq  '')
@@ -685,10 +705,9 @@ $DBD::Pg::VERSION = '1.30_1';
 		}
 		else {
 				# Default SQL
-				my $showschema = $version < 7.3 ? "NULL::text" : "n.nspname";
-                my $schemajoin = $version < 7.3 ? "" : "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)";
-				my $schemacase = $version < 7.3 ? "CASE WHEN c.relname ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END" : 
-					"CASE WHEN n.nspname ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END";
+				my $showschema = DBD::Pg::_pg_check_version(7.3, $version) ?  "n.nspname" : "NULL::text";
+                my $schemajoin = DBD::Pg::_pg_check_version(7.3, $version) ? 
+                    "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
 				$tbl_sql = qq{
 				SELECT NULL::text    AS "TABLE_CAT"
 					 , $showschema   AS "TABLE_SCHEM"
@@ -710,7 +729,6 @@ $DBD::Pg::VERSION = '1.30_1';
 					  (c.relkind     =  'v'
 				  AND c.relhasrules =  TRUE))
 				  AND c.relname     !~ '^xin[vx][0-9]+'
-				  AND c.relowner    =  u.usesysid
 				ORDER BY 1, 2, 3
 				};
 
@@ -720,7 +738,8 @@ $DBD::Pg::VERSION = '1.30_1';
 				my @flds = qw/catname n.nspname c.relname c.relkind/;
 
 				for my $idx (0 .. $#attrs) {
-					next if ($flds[$idx] eq 'catname'); # Skip catalog
+					next if $flds[$idx] eq 'catname'; # Skip catalog
+                    next if $flds[$idx] eq 'n.nspname' and ! DBD::Pg::_pg_check_version(7.3, $version);
 					if(defined $attrs[$idx] and length $attrs[$idx]) {
 						# Change the "name" of the types to the real value.
 						if ($flds[$idx]  =~ m/relkind/) {
@@ -757,8 +776,8 @@ $DBD::Pg::VERSION = '1.30_1';
 						 , $showschema   AS "TABLE_SCHEM"
 						 , c.relname     AS "TABLE_NAME"
 						 , CASE
-							 WHEN c.relkind = 'r' THEN 
-								CASE WHEN n.nspname ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END
+							 WHEN c.relkind = 'r' THEN
+                               $schemacase
 							 WHEN c.relkind = 'v' THEN 'VIEW'
 							 WHEN c.relkind = 'i' THEN 'INDEX'
 							 WHEN c.relkind = 'S' THEN 'SEQUENCE'
@@ -790,27 +809,29 @@ $DBD::Pg::VERSION = '1.30_1';
 
     sub tables {
         my($dbh) = @_;
-        my $version = DBD::Pg::pg_server_version($dbh);
+        my $version = DBD::Pg::_pg_server_version($dbh);
 
-		my $SQL = ($version < 7.3) ? 
-            "SELECT relname  AS \"TABLE_NAME\"
-            FROM   pg_class 
-            WHERE  relkind = 'r'
-            AND    relname !~ '^pg_'
-            AND    relname !~ '^xin[vx][0-9]+'
-            ORDER BY 1" : 
+		my $SQL = DBD::Pg::_pg_check_version(7.3, $version) ? 
             "SELECT n.nspname AS \"SCHEMA_NAME\", c.relname  AS \"TABLE_NAME\"
             FROM   pg_catalog.pg_class c
             LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
             WHERE  c.relkind = 'r'
             AND n.nspname NOT IN ('pg_catalog', 'pg_toast')
             AND pg_catalog.pg_table_is_visible(c.oid)
-            ORDER BY 1,2";
+            ORDER BY 1,2"
+            :
+            "SELECT relname  AS \"TABLE_NAME\"
+            FROM   pg_class 
+            WHERE  relkind = 'r'
+            AND    relname !~ '^pg_'
+            AND    relname !~ '^xin[vx][0-9]+'
+            ORDER BY 1";
         my $sth = $dbh->prepare($SQL) or return undef;
         $sth->execute or return undef;
         my (@tables, @relname);
         while (@relname = $sth->fetchrow_array) {
-            push @tables, $version < 7.3 ? $relname[0] : "$relname[0].$relname[1]";
+            push @tables, DBD::Pg::_pg_check_version(7.3, $version) ? 
+                "$relname[0].$relname[1]" : $relname[0];
         }
         $sth->finish;
 
@@ -820,7 +841,7 @@ $DBD::Pg::VERSION = '1.30_1';
 
     sub table_attributes {
         my ($dbh, $table) = @_;
-        my $CATALOG = DBD::Pg::pg_use_catalog($dbh);
+        my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
         my $result = [];    
         my $attrs  = $dbh->selectall_arrayref(
              "select a.attname, t.typname, a.attlen, a.atttypmod, a.attnotnull, a.atthasdef, a.attnum
@@ -895,11 +916,11 @@ $DBD::Pg::VERSION = '1.30_1';
             # by pg_constraint. To maintain compatibility, check 
             # version number and execute appropriate query.
 	
-            my $version = pg_server_version( $dbh );
+            my $version = DBD::Pg::_pg_server_version($dbh);
             
-            my $con_query = $version < 7.3
-             ? "SELECT rcsrc FROM pg_relcheck WHERE rcname = '${table}_$col_name'"
-             : "SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND conname = '${table}_$col_name'";
+            my $con_query = DBD::Pg::_pg_check_version(7.3, $version)
+             ? "SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND conname = '${table}_$col_name'"
+             : "SELECT rcsrc FROM pg_relcheck WHERE rcname = '${table}_$col_name'";
             my ($constraint) = $dbh->selectrow_array($con_query);
             $constraint = '' unless $constraint;
 
