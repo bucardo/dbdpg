@@ -1,3 +1,8 @@
+	- Add support for SQLSTATE via $dbh->state()
+		[Greg Sabino Mullane]
+	- Major overhaul of prepare/execute to handle new server-side 
+		prepare system. [Greg Sabino Mullane]
+	- Add DBD_TRACE to some tests for better debugging.
 	- Make the tests honor the DBD_SCHEMA variable instead of 
 		assuming that "public" is available.
 		[Rainer Weikusat]
