@@ -1,4 +1,5 @@
 /*
+
    $Id$
 
    Copyright (c) 1997,1998,1999,2000 Edmund Mergl
@@ -130,7 +131,7 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
     char *conn_str;
     char *src;
     char *dest;
-		int inquote;
+		int inquote = 0;
 
     PGresult *pgres_ret;
     char *vstring, *vstart, *vnext; /* Stuff for getting version info */
@@ -154,7 +155,7 @@ dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
     while (*src) {
 			if (*src == '"')
 				inquote = ! inquote;
-			else if (*src == ';' && inquote)
+			else if (*src == ';' && !inquote)
 					*dest++ = ' ';
 			else
 				*dest++ = *src;
@@ -986,78 +987,91 @@ dbd_st_execute (sth, imp_sth)   /* <= -2:error, >=0:ok row count, (-1=unknown co
 
 
 
-/*TODO: pg_bool_tf && chob_blanks
-
-*/
+/*TODO: pg_bool_tf */
 
 AV *
 dbd_st_fetch (sth, imp_sth)
-    SV *sth;
-    imp_sth_t *imp_sth;
+	SV *sth;
+	imp_sth_t *imp_sth;
 {
-    sql_type_info_t *type_info;
-    int num_fields;
-    char *value;
-    int i, pg_type, value_len;
-    AV *av;
-    D_imp_dbh_from_sth;
+	sql_type_info_t *type_info;
+	int num_fields;
+	char *value;
+	char *p;
+	int i, pg_type, value_len, chopblanks, len;
+	AV *av;
+	D_imp_dbh_from_sth;
 
-    if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_fetch\n"); }
+	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_fetch\n"); }
 
-    /* Check that execute() was executed sucessfully */
-    if ( !DBIc_ACTIVE(imp_sth) ) {
-        pg_error(sth, 1, "no statement executing\n");
+	/* Check that execute() was executed sucessfully */
+	if ( !DBIc_ACTIVE(imp_sth) ) {
+		pg_error(sth, 1, "no statement executing\n");
 
-        return Nullav;
-    }
+		return Nullav;
+	}
 
-    if ( imp_sth->cur_tuple == PQntuples(imp_sth->result) ) {
-        imp_sth->cur_tuple = 0;
-        DBIc_ACTIVE_off(imp_sth);
-        return Nullav; /* we reached the last tuple */
-    }
+	if ( imp_sth->cur_tuple == PQntuples(imp_sth->result) ) {
+		imp_sth->cur_tuple = 0;
+		DBIc_ACTIVE_off(imp_sth);
+		return Nullav; /* we reached the last tuple */
+	}
 
-    av = DBIS->get_fbav(imp_sth);
-    num_fields = AvFILL(av)+1;
+	av = DBIS->get_fbav(imp_sth);
+	num_fields = AvFILL(av)+1;
 
-    for(i = 0; i < num_fields; ++i) {
+	chopblanks = DBIc_has(imp_sth, DBIcf_ChopBlanks);
 
-        SV *sv  = AvARRAY(av)[i];
-        if (PQgetisnull(imp_sth->result, imp_sth->cur_tuple, i)) {
-            sv_setsv(sv, &sv_undef);
-        } else {
-            value = (char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
+	for(i = 0; i < num_fields; ++i) {
 
-            pg_type   = PQftype(imp_sth->result, i);
-            type_info = pg_type_data(pg_type);
+			SV *sv = AvARRAY(av)[i];
+			if (PQgetisnull(imp_sth->result, imp_sth->cur_tuple, i)) {
+				sv_setsv(sv, &sv_undef);
+			} else {
+				value = (char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
+				
+				pg_type = PQftype(imp_sth->result, i);
+				type_info = pg_type_data(pg_type);
+				
+				if (type_info)
+					type_info->dequote(value, &value_len); /* dequote in place */
+				else
+					value_len = strlen(value);
+				
+				sv_setpvn(sv, value, value_len);
 
-            if (type_info)
-                type_info->dequote(value, &value_len); /* dequote in place */
-            else
-                value_len = strlen(value);
+				if ((type_info->type_id == BPCHAROID) && chopblanks) {
+					p = SvEND(sv);
+					len = SvCUR(sv);
+					while(len && *--p == ' ')
+						--len;
+					if (len != SvCUR(sv)) {
+						SvCUR_set(sv, len);
+						*SvEND(sv) = '\0';
+					}
+				}
 
-            sv_setpvn(sv, value, value_len);
 #ifdef is_utf8_string
-	    /* XXX Under what circumstances is type_info NULL? */
-	    if (imp_dbh->pg_enable_utf8 && type_info) {
-		SvUTF8_off(sv);
-		switch(type_info->type_id) {
-		    case CHAROID:
-		    case TEXTOID:
-		    case BPCHAROID:
-		    case VARCHAROID:
-			if (is_high_bit_set(value) && is_utf8_string(value, value_len)) {
-			    SvUTF8_on(sv);
-			}
-		}
-	    }
+				/* XXX Under what circumstances is type_info NULL? */
+				if (imp_dbh->pg_enable_utf8 && type_info) {
+					SvUTF8_off(sv);
+					switch(type_info->type_id) {
+					case CHAROID:
+					case TEXTOID:
+					case BPCHAROID:
+					case VARCHAROID:
+						if (is_high_bit_set(value) && is_utf8_string(value, value_len)) {
+							SvUTF8_on(sv);
+						}
+					}
+				}
 #endif
-        }
-    }
+			}
+	}
 
-    imp_sth->cur_tuple += 1;
+	imp_sth->cur_tuple += 1;
 
-    return av;
+	return av;
 }
 
 is_high_bit_set(val)
