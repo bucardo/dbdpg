@@ -45,12 +45,17 @@ Note that the former will redirect you to the nearest CPAN site.
 IF YOU HAVE PROBLEMS OR COMMENTS:
 ---------------------------------
 
-Please send any problems, comments and bug reports to 
+Please send any problems and comments to 
 <dbdpg-general@gborg.postgresql.org>
 
 Please include details about your platform, and your version of 
 perl, PostgreSQL, DBI, and DBD-PG in your bug report.
 
+BUG REPORTS
+-----------
+
+If you feel certain you have found a bug, you can file a bug report here:
+http://rt.cpan.org/NoAuth/Bugs.html?Dist=DBD-Pg
 
 REQUIREMENTS:
 -------------

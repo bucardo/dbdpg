@@ -2611,6 +2611,11 @@ list: L<http://gborg.postgresql.org/mailman/listinfo/dbdpg-general/>.
 This list is available through Gmane (L<http://www.gmane.org/>) as a newsgroup
 with the name: C<gmane.comp.db.postgresql.dbdpg>
 
+B<Bug Reports>
+
+If you feel certain you have found a bug, you can report it here:
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=DBD-Pg>
+
 =head1 COPYRIGHT
 
 The DBD::Pg module is free software. You may distribute under the terms of
