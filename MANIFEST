@@ -36,6 +36,9 @@ t/11quoting.t
 t/12placeholders.t
 t/13pgtype.t
 t/15funct.t
+t/15column_info.t
+t/15table_attrs.t
+t/15table_info.t
 t/16pgbooltf.t
 t/17arrays.t
 t/99_pod.t
