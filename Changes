@@ -1,10 +1,10 @@
 1.41
-  - Set our default type_id to 0, not 1043 (VARCHAR) when possible.
-    Suggested by Abhijit Menon-Sen via David Wheeler. [Greg]
-  - Add $dbh methods savepoint(), rollback_to(), and release()
-    [Stephen Clouse]
+	- Set our default type_id to 0, not 1043 (VARCHAR) when possible.
+		Suggested by Abhijit Menon-Sen via David Wheeler. [Greg]
+	- Add $dbh methods savepoint(), rollback_to(), and release()
+		[Stephen Clouse]
 1.40 Tue Feb 22 06:06:45 UTC 2005
-  - Raise required DBI version to 1.38
+	- Raise required DBI version to 1.38
 	- Execute returns 0 (0E0) not -1 for successful DDL commands.
 		[Robert Treat]
 	- Change all string lengths to use STRLEN
