@@ -1074,6 +1074,152 @@ $DBD::Pg::VERSION = '1.30_1';
 		return "'$str'";
     }
 
+
+    sub get_info {
+
+ my ($dbh,$type) = @_;
+ 
+ return undef unless defined $type and length $type;
+ 
+ my $version = DBD::Pg::_pg_server_version($dbh);
+ 
+ my %type = (
+ 
+ ## Basic information:
+ 
+     6 => ["SQL_DRIVER_NAME",                'DBD/Pg.pm',         ],
+    17 => ["SQL_DBMS_NAME",                  'PostgreSQL'         ],
+    18 => ["SQL_DBMS_VERSION",               'ODBCVERSION'        ],
+    29 => ["SQL_IDENTIFIER_QUOTE_CHAR",      '\"'                 ],
+    41 => ["SQL_CATALOG_NAME_SEPARATOR",     ''                   ],
+    47 => ["SQL_USER_NAME",                  $dbh->{CURRENT_USER} ],
+ 
+ ## Size limits
+ 
+    30 => ["SQL_MAX_COLUMN_NAME_LEN",        'NAMEDATALEN'        ],
+    32 => ["SQL_MAX_SCHEMA_NAME_LEN",        'NAMEDATALEN'        ],
+    34 => ["SQL_MAX_CATALOG_NAME_LEN",       0                    ],
+    35 => ["SQL_MAX_TABLE_NAME_LEN",         'NAMEDATALEN'        ],
+    97 => ["SQL_MAX_COLUMNS_IN_GROUP_BY",    0                    ],
+    98 => ["SQL_MAX_COLUMNS_IN_INDEX",       0                    ],
+    99 => ["SQL_MAX_COLUMNS_IN_ORDER_BY",    0                    ],
+   100 => ["SQL_MAX_COLUMNS_IN_SELECT",      0                    ],
+   101 => ["SQL_MAX_COLUMNS_IN_TABLE",       0                    ],
+   102 => ["SQL_MAX_INDEX_SIZE",             0                    ],
+   104 => ["SQL_MAX_ROW_SIZE",               0                    ],
+   105 => ["SQL_MAX_STATEMENT_LEN",          0                    ],
+   106 => ["SQL_MAX_TABLES_IN_SELECT",       0                    ],
+   107 => ["SQL_MAX_USER_NAME_LEN",          'NAMEDATALEN'        ],
+   108 => ["SQL_MAX_STATEMENT_LEN",          0                    ],
+   109 => ["SQL_MAX_STATEMENT_LEN",          0                    ],
+   105 => ["SQL_MAX_STATEMENT_LEN",          0                    ],
+   105 => ["SQL_MAX_STATEMENT_LEN",          0                    ],
+   112 => ["SQL_MAX_BINARY_LITERAL_LEN",     0                    ],
+ 10005 => ["SQL_MAX_IDENTIFIER_LEN",         'NAMEDATALEN'        ],
+ 
+ ## Catalog support
+ 
+   41  => ["SQL_CATALOG_NAME_SEPARATOR",     ''                   ],
+   42  => ["SQL_CATALOG_TERM",               ''                   ],
+  114  => ["SQL_CATALOG_LOCATION",           0                    ],
+ 10003 => ["SQL_CATALOG_NAME",               'N'                  ],
+ 
+ ## Domain support
+ 
+   117 => ["SQL_ALTER_DOMAIN",               0                    ],
+   130 => ["SQL_CREATE_DOMAIN",              0                    ],
+   139 => ["SQL_DROP_DOMAIN",                0                    ],
+ 
+ ## Schema support (7.3 and up)
+ 
+    39 => ["SQL_SCHEMA_TERM",                'schema'             ],
+    91 => ["SQL_SCHEMA_USAGE",               'SCHEMAUSAGE'        ],
+   131 => ["SQL_CREATE_SCHEMA",              'CREATESCHEMA'       ],
+   140 => ["SQL_DROP_SCHEMA",                'DROPSCHEMA'         ],
+ 
+ ## Various
+ 
+     2 => ["SQL_DATA_SOURCE_NAME",           'SOURCENAME'         ],
+     7 => ["SQL_DRIVER_VER",                 'DBDVERSION'         ],
+    13 => ["SQL_SERVER_NAME",                $dbh->{Name}         ],
+    14 => ["SQL_SEARCH_PATTERN_ESCAPE",      '\\'                 ],
+    22 => ["SQL_CONCAT_NULL_BEHAVIOR",       0                    ], ## SQL_CB_NULL
+    28 => ["SQL_IDENTIFIER_CASE",            4                    ], ## SQL_IC_MIXED 
+    29 => ["SQL_IDENTIFIER_QUOTE_CHAR",      '\"'                 ],
+    40 => ["SQL_PROCEDURE_TERM",             'Function'           ],
+    45 => ["SQL_TABLE_TERM",                 'Table'              ],
+    46 => ["SQL_TXN_CAPABLE",                4                    ], ## SQL_TC_ALL
+    87 => ["SQL_COLUMN_ALIAS",               "Y"                  ],
+    90 => ["SQL_ORDER_BY_COLUMNS_IN_SELECT", 'N'                  ],
+    93 => ["SQL_QUOTED_IDENTIFIER_CASE",     3                    ], ## SQL_IC_SENSITIVE
+   113 => ["SQL_LIKE_ESCAPE_CLAUSE",         'Y'                  ],
+   127 => ["SQL_CREATE_ASSERTION",           0                    ],
+   136 => ["SQL_DROP_ASSERTION",             0                    ],
+ );
+ 
+ ## Put both numbers and names into a hash
+ my %t;
+ for (keys %type) {
+   $t{$_} = $type{$_}->[1];
+   $t{$type{$_}->[0]} = $type{$_}->[1];
+ }
+ 
+ return undef unless exists $t{$type};
+ 
+ my $ans = $t{$type};
+ 
+ if ($ans eq 'NAMEDATALEN') {
+   return DBD::Pg::_pg_check_version(7.3, $version) ? 63 : 31;
+ }
+ elsif ($ans eq 'ODBCVERSION') {
+   return sprintf "%02d.%02d.%1d%1d%1d%1d", split (/\./, "$version.0.0.0.0.0.0");
+ }
+ elsif ($ans eq 'DBDVERSION') {
+   my $simpleversion = $DBD::Pg::VERSION;
+   $simpleversion =~ s/_/./g;
+   return sprintf "%02d.%02d.%1d%1d%1d%1d", split (/\./, "$simpleversion.0.0.0.0.0.0");
+ }
+ elsif ($ans eq 'SOURCENAME') {
+   return "dbi:Pg:dbname=$dbh->{Name}";
+ }
+ elsif ($ans eq 'SCHEMAUSAGE') {
+   return 0 if ! DBD::Pg::_pg_check_version(7.3, $version);
+   my %bitmask = (
+     SQL_SU_DML_STATEMENT        => 1,
+     SQL_SU_PROCEDURE_INVOCATION => 2,
+     SQL_SU_TABLE_DEFINITION     => 4,
+     SQL_SU_INDEX_DEFINITION     => 8,
+     SQL_SU_PRIVILEGE_DEFINITION => 16,
+   );
+   return 31; ## all of the above
+ }
+ elsif ($ans eq 'CREATESCHEMA') {
+   return 0 if ! DBD::Pg::_pg_check_version(7.3, $version);
+   my %bitmask = (
+     SQL_CS_CREATE_SCHEMA         => 1,
+     SQL_CS_AUTHORIZATION         => 2,
+     SQL_CS_DEFAULT_CHARACTER_SET => 4
+   );
+   return $bitmask{SQL_CS_CREATE_SCHEMA} + $bitmask{SQL_CS_AUTHORIZATION};
+ }
+ elsif ($ans eq 'DROPSCHEMA') {
+   return 0 if ! DBD::Pg::_pg_check_version(7.3, $version);
+   my %bitmask = (
+     SQL_DS_DROP_SCHEMA => 1,
+     SQL_DS_RESTRICT    => 2,
+     SQL_DS_CASCADE     => 4
+   );
+   return 7; ## All of the above
+ }
+ 
+ return $ans;
+ 
+ 
+ } # end of get_info
+ 
+ 
+
+
 }    # end of package DBD::Pg::db
 
 {   package DBD::Pg::st; # ====== STATEMENT ======
