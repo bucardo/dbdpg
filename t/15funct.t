@@ -6,7 +6,7 @@ use Data::Dumper;
 use strict;
 use Test::More;
 if (defined $ENV{DBI_DSN}) {
-  plan tests => 59;
+  plan tests => 71;
 } else {
   plan skip_all => 'cannot test without DB info';
 }
@@ -23,19 +23,6 @@ ok(defined $dbh,
 #
 
 my $sth;
-
-# foreach (@{ $DBI::EXPORT_TAGS{sql_types} }) {
-# 	no strict 'refs';
-# 	printf "%s=%d\n", $_, &{"DBI::$_"};
-# }
-
-my $get_info = {
-	  SQL_DBMS_NAME	=> 17
-	, SQL_DBMS_VER	=> 18
-	, SQL_IDENTIFIER_QUOTE_CHAR	=> 29
-	, SQL_CATALOG_NAME_SEPARATOR	=> 41
-	, SQL_CATALOG_LOCATION	=> 114
-};
 
 # Ping
  eval {
@@ -117,47 +104,25 @@ is( $dbh->quote( 1, SQL_INTEGER() ), 1, "quote(1, SQL_INTEGER)" );
 ok ($@, "quote_identifier error expected: $@");
 $sth = undef;
 
-SKIP: {
-    skip("get_info() not yet implemented", 1);
-    #	, SQL_IDENTIFIER_QUOTE_CHAR	=> 29
-    #	, SQL_CATALOG_NAME_SEPARATOR	=> 41
-    my $qt  = $dbh->get_info( $get_info->{SQL_IDENTIFIER_QUOTE_CHAR} );
-    my $sep = $dbh->get_info( $get_info->{SQL_CATALOG_NAME_SEPARATOR} );
-
-    # Uncomment this line and remove the next line when get_info() is implemented.
-#    my $cmp_str = qq{${qt}link${qt}${sep}${qt}schema${qt}${sep}${qt}table${qt}};
-    my $cmp_str = '';
-    is( $dbh->quote_identifier( "link", "schema", "table" )
-	, $cmp_str
-	, q{quote_identifier( "link", "schema", "table" )}
-      );
-}
-
 # Test ping
-
 ok ($dbh->ping, "Ping the current connection ..." );
 
-# Test Get Info.
+# Test various get_info items
+my %get_info = (
+  SQL_DRIVER_NAME            =>  6,
+  SQL_DBMS_NAME              => 17,
+  SQL_DBMS_VERSION           => 18,
+  SQL_IDENTIFIER_QUOTE_CHAR  => 29,
+  SQL_CATALOG_NAME_SEPARATOR => 41,
+  SQL_USER_NAME              => 47,
+);
 
-#	SQL_KEYWORDS
-#	SQL_CATALOG_TERM
-#	SQL_DATA_SOURCE_NAME
-#	SQL_DBMS_NAME
-#	SQL_DBMS_VERSION
-#	SQL_DRIVER_NAME
-#	SQL_DRIVER_VER
-#	SQL_PROCEDURE_TERM
-#	SQL_SCHEMA_TERM
-#	SQL_TABLE_TERM
-#	SQL_USER_NAME
-
-SKIP: {
-    skip("get_info() not yet implemented", 5);
-    foreach my $info (sort keys %$get_info) {
-	my $type =  $dbh->get_info($get_info->{$info});
-	ok( defined $type,  "get_info($info) ($get_info->{$info}) " .
-            ($type || '') );
-    }
+for (keys %get_info) {  
+    my $back = $dbh->get_info($_);
+    ok (defined $back, "get_info($_) tested" );
+    my $forth = $dbh->get_info($get_info{$_});
+    ok (defined $forth, "get_info($_) tested" );
+    ok ($back eq $forth, "get_info($_) is the same as get_info($get_info{$_})");
 }
 
 # Test Table Info
@@ -330,22 +295,23 @@ ok(1
 #   defined $sth
    , "Getting primary keys for tables owned by $ENV{DBI_USER}");
 #DBI::dump_results($sth) if defined $sth;
-
 undef $sth;
 
-SKIP: {
-	# foreign_key_info
-	local ($dbh->{Warn}, $dbh->{PrintError});
-	$dbh->{PrintError} = $dbh->{Warn} = 0;
-	eval {
-	$sth = $dbh->foreign_key_info();
-		die unless $sth;
-	};
-	skip "foreign_key_info not supported by driver", 1 if $@;
-	ok( defined $sth, "Statement handle defined for foreign_key_info()" );
-	DBI::dump_results($sth) if defined $sth;
-	$sth = undef;
+# Test foreign_key_info
+
+local ($dbh->{Warn}, $dbh->{PrintError});
+$dbh->{PrintError} = $dbh->{Warn} = 0;
+my $schemas = DBD::Pg::_pg_use_catalog($dbh);
+eval {
+$sth = $dbh->foreign_key_info(undef,undef,'test');
+};
+if (! $schemas) {
+    ok(! defined $sth, "Statement handle defined for foreign_key_info()" );
 }
+else {
+    ok( defined $sth, "Statement handle defined for foreign_key_info()" );
+}
+$sth = undef;
 
 ok( $dbh->disconnect, "Disconnect from database" );
 
