@@ -204,6 +204,114 @@ use 5.006001;
 		($rows == 0) ? "0E0" : $rows;
 	}
 
+	sub last_insert_id {
+
+		my ($dbh, $catalog, $schema, $table, $col, $attr) = @_;
+
+		## Our ultimate goal is to get a sequence
+		my ($sth, $count, $SQL, $sequence);
+
+		## Cache all of our table lookups? Default is yes
+		my $cache = 1;		
+
+		## Catalog and col are not used
+		$schema = '' if ! defined $schema;
+		$table = '' if ! defined $table;
+		my $cachename = "lii$table$schema";
+
+		if (defined $attr and length $attr) {
+			## If not a hash, assume it is a sequence name
+			if (! ref $attr) {
+				$attr = {sequence => $attr};
+			}
+			elsif (ref $attr ne 'HASH') {
+				die "last_insert_id must be passed a hashref as the final argument\n";
+			}
+			## Named sequence overrides any table or schema settings
+			if (exists $attr->{sequence} and length $attr->{sequence}) {
+				$sequence = $attr->{sequence};
+			}
+			if (exists $attr->{pg_cache}) {
+				$cache = $attr->{pg_cache};
+			}
+		}
+
+		if (! defined $sequence and exists $dbh->{private_dbdpg}{$cachename} and $cache) {
+			$sequence = $dbh->{private_dbdpg}{$cachename};
+		}
+		elsif (! defined $sequence) {
+			## At this point, we must have a valid table name
+			if (! length $table) {
+				die qq{last_insert_id needs at least a sequence or table name\n};
+			}
+			my @args = ($table);
+
+			## Only 7.3 and up can use schemas
+			my $version = DBD::Pg::_pg_server_version($dbh);
+			my $CATALOG = DBD::Pg::_pg_use_catalog($dbh);
+			$schema = '' if $version < 70300;
+			
+			## Make sure the table in question exists and grab its oid
+			my ($schemajoin,$schemawhere) = ('','');
+			if (length $schema) {
+				$schemajoin = "\n JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)";
+				$schemawhere = "\n AND n.nspname = ?";
+				push @args, $schema;
+			}		
+			$SQL = "SELECT c.oid FROM ${CATALOG}pg_class c $schemajoin\n WHERE relname = ?$schemawhere";
+			$sth = $dbh->prepare($SQL);
+			$count = $sth->execute(@args);
+			if (!defined $count or $count eq '0E0') {
+				$sth->finish();
+				my $message = qq{Could not find the table "$table"};
+				length $schema and $message .= qq{ in the schema "$schema"};
+				die "$message\n";
+			}
+			my $oid = $sth->fetchall_arrayref()->[0][0];
+			## This table has a primary key. Is there a sequence associated with it via a unique, indexed column?
+			$SQL = "SELECT a.attname, i.indisprimary, substring(d.adsrc for 128) AS def\n".
+				"FROM ${CATALOG}pg_index i, ${CATALOG}pg_attribute a, ${CATALOG}pg_attrdef d\n ".
+					"WHERE i.indrelid = $oid AND d.adrelid=a.attrelid AND d.adnum=a.attnum\n".
+						"  AND a.attrelid=$oid AND i.indisunique IS TRUE\n".
+							"  AND a.atthasdef IS TRUE AND i.indkey[0]=a.attnum\n".
+								" AND d.adsrc ~ '^nextval'";
+			$sth = $dbh->prepare($SQL);
+			$count = $sth->execute();
+			if (!defined $count or $count eq '0E0') {
+				$sth->finish();
+				die qq{No suitable column found for last_insert_id of table "$table"\n};
+			}
+			my $info = $sth->fetchall_arrayref();
+			
+			## We have at least one with a default value. See if we can determine sequences
+			my @def;
+			for (@$info) {
+				next unless $_->[2] =~ /^nextval\('([^']+)'::/o;
+				push @$_, $1;
+				push @def, $_;
+			}
+			if (!@def) {
+				die qq{No suitable column found for last_insert_id of table "$table"\n};
+			}
+			## Tiebreaker goes to the primary keys
+			if (@def > 1) {
+				my @pri = grep { $_->[1] } @def;
+				if (1 != @pri) {
+					die qq{No suitable column found for last_insert_id of table "$table"\n};
+				}
+				@def = @pri;
+			}
+			$sequence = $def[0]->[3];
+			## Cache this information for subsequent calls
+			$dbh->{private_dbdpg}{$cachename} = $sequence;
+		}
+
+		$sth = $dbh->prepare("SELECT currval(?)");
+		$sth->execute($sequence) or die "$DBI::errstr";
+		return $sth->fetchall_arrayref()->[0][0];
+
+	} ## end of last_insert_id
+
 	sub ping {
 		my($dbh) = @_;
 		local $SIG{__WARN__} = sub { } if $dbh->{PrintError};
@@ -1777,6 +1885,59 @@ should be calling prepare and execute themselves, calls to do will not
 use server-side prepares by default. You can force the use of server-side 
 prepares by adding "pg_server_prepare => 1" to the attribute hashref. See the 
 notes on prepare, bind_param, and execute for more information.
+
+=item B<last_insert_id>
+
+  $rv = $dbh->last_insert_id($catalog, $schema, $table, $field);
+  $rv = $dbh->last_insert_id($catalog, $schema, $table, $field, \%attr);
+
+Attempts to return the id of the last value to be inserted into a table. 
+You can either provide a sequence name (preferred) or provide a table 
+name with optional schema. The "catalog" and "field" are always ignored. 
+The current value of the sequence is returned by a call to the 
+currval() function. This will fail if the sequence has not yet been used. 
+
+If you do not know the name of the sequence, you can provide a table name 
+and DBD::Pg will attempt to return the correct value. To do this, there 
+must be at least one column in the table that is not null, has a unique 
+constraint, and uses a sequence as a default value. If more than one 
+column meets these conditions, the primary key will be used. This involves 
+some looking up of things in the system table, so DBD::Pg will cache the 
+sequence name for susequent calls. If you need to disable this caching 
+for some reason, you can control it via the "pg_cache" argument.
+
+Please keep in mind that this method is far from foolproof, so make your 
+script uses it properly. Specifically, make sure that it is called 
+immediately after the insert, and that the insert does not add a value 
+to the column that is using the sequence as a default value.
+
+Some examples:
+
+  $dbh->do("CREATE SEQUENCE lii_seq START 1");
+  $dbh->do("CREATE TABLE lii (
+    foobar INTEGER NOT NULL UNIQUE DEFAULT nextval('lii_seq'),
+    baz VARCHAR)");
+  $SQL = "INSERT INTO lii(baz) VALUES (?)";
+  $sth = $dbh->prepare($SQL);
+  for (qw(uno dos tres quattro)) {
+    $sth->execute($_);
+    my $newid = $dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'lii_seq'});
+    print "Last insert id was $newid\n";
+  }
+
+If you did not want to worry about the sequence name:
+
+  $dbh->do("CREATE TABLE lii2 (
+    foobar SERIAL UNIQUE,
+    baz VARCHAR)");
+  $SQL = "INSERT INTO lii2(baz) VALUES (?)";
+  $sth = $dbh->prepare($SQL);
+  for (qw(uno dos tres quattro)) {
+    $sth->execute($_);
+    my $newid = $dbh->last_insert_id(undef,undef,"lii2",undef);
+    print "Last insert id was $newid\n";
+  }
+
 
 =item B<commit>
 

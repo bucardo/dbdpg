@@ -18,7 +18,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 149;
+	plan tests => 156;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -51,9 +51,40 @@ $sth->execute(12,'Kiwi');
 # Test of the "last_insert_id" database handle method
 #
 
-TODO: {
-	local $TODO = 'DB handle method "last_insert_id" is not implemented yet';
-}
+$dbh->commit();
+eval {
+	$result = $dbh->last_insert_id(undef,undef,undef,undef);
+};
+ok( $@, 'DB handle method "last_insert_id" given an error when no arguments are given');
+
+eval {
+	$result = $dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistent_sequence_test'});
+};
+ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent sequence');
+$dbh->rollback();
+
+eval {
+	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef);
+};
+ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent table');
+$dbh->rollback();
+
+eval {
+	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef,{sequence=>'dbd_pg_sequence'});
+};
+ok( ! $@, 'DB handle method "last_insert_id" works when given a valid sequence and an invalid table');
+like( $result, qr{^\d+$}, 'DB handle method "last_insert_id" returns a numeric value');
+
+eval {
+	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef);
+};
+ok( ! $@, 'DB handle method "last_insert_id" works when given a valid table');
+
+eval {
+	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef);
+};
+ok( ! $@, 'DB handle method "last_insert_id" works when called twice (cached) given a valid table');
+
 
 #
 # Test of the "selectrow_array" database handle method
