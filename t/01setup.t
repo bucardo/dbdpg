@@ -28,9 +28,12 @@ CREATE TABLE test (
 )
 SQL
 
+## The test table is so important we bail if we cannot create it
+$dbh->{RaiseError}=0;
 ok($dbh->do($sql),
    'create table'
-  );
+  ) or print STDOUT qq{Bail out! Could not create table "test"\n};
+$dbh->{RaiseError}=1;
 
 # First, test that we can trap warnings.
 eval { local $dbh->{PrintError} = 0; $dbh->do( "drop table test2" ) };
