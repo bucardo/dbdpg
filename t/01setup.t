@@ -24,7 +24,7 @@ CREATE TABLE test (
   val text,
   score float,
   date timestamp default 'now()',
-  array text[][]
+  testarray text[][]
 )
 SQL
 

@@ -24,7 +24,7 @@ my $skip_em_all = q{
 my $values = [["a,b", 'c","d', "e'", '\\"'], ['f', 'g', 'h']];
 print Data::Dumper::Dumper($values);
 
-ok($dbh->do(q{INSERT INTO test (id, name, array) VALUES (?, ?, ?)}, {}, 1, 'array1', $values),
+ok($dbh->do(q{INSERT INTO test (id, name, testarray) VALUES (?, ?, ?)}, {}, 1, 'array1', $values),
 	'insert statement with references'
   );
 
@@ -32,8 +32,8 @@ ok($dbh->do(q{INSERT INTO test (id, name, array) VALUES (?, ?, ?)}, {}, 1, 'arra
 print Data::Dumper::Dumper($values);
 
 my $sql = <<SQL;
-   SELECT array[1][1],array[1][2],array[1][3],
-   array[2][1],array[2][2],array[2][3]
+   SELECT testarray[1][1],testarray[1][2],testarray[1][3],
+   testarray[2][1],testarray[2][2],testarray[2][3]
    FROM test
    WHERE id = ?
    AND name = ?
