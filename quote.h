@@ -1,6 +1,5 @@
 #ifndef DBDQUOTEH
 #define DBDQUOTEH
-char * dbd_quote();
 char * null_quote();
 char * quote_varchar();
 char * quote_char();

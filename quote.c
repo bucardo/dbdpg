@@ -292,29 +292,6 @@ PQunescapeBytea(unsigned char *strtext, size_t *retbuflen)
 
 
 char *
-dbd_quote (string, pg_type, length, retlen)
-	char *string;
-	int pg_type;
-	size_t length;
-	size_t *retlen;
-{
-	sql_type_info_t *type_info;
-	char *retval;
-
-	if(pg_type == 17)
-		croak("Use of SQL_BINARY invalid in quote()");
-
-	type_info = pg_type_data(pg_type);
-	if(!type_info)
-		croak("No Type info");
-
-
-	retval = type_info->quote(string, length, retlen);
- 	return retval;
-}
-
-
-char *
 null_quote(string, len, retlen)
 	void *string;
 	size_t len;
@@ -374,35 +351,6 @@ quote_char(string, len, retlen)
 }
 
 
-char *
-quote_sql_binary( string, len, retlen)
-	void *string;
-	size_t	len;
-	size_t	*retlen;
-{
-	char *result;
-	char *dest;
-	int max_len = 0, i;
-
-	/* +4 ==  3 for X'';  1 for \0 */
-	max_len = len*2+4;
-	Newc(0, result, max_len,char,char);
-
-
-	dest = result;
-	memcpy(dest++, "X'",1);
-
-	for (i=0 ; i <= len ; ++i, dest+=2) 
-		sprintf(dest, "%X", *((char*)string++));
-
-	strcat(dest, "\'");
-		
-	*retlen = strlen(result);
-	assert(*retlen+1 <= max_len);
-	return result;
-}
-
-
 
 
 char *
@@ -432,6 +380,43 @@ quote_bytea(string, len, retlen)
 
 	return result;
 }
+
+char *
+quote_sql_binary( string, len, retlen)
+	void *string;
+	size_t	len;
+	size_t	*retlen;
+{
+	char *result;
+	char *dest;
+	int max_len = 0, i;
+
+	/* We are going to retun a quote_bytea() for backwards compat but
+	   we warn first */
+	warn("Use of SQL_BINARY invalid in quote()");
+	return quote_bytea(string, len, retlen);
+
+	/* Ignore the rest of this code until such time that we implement
+	   A SQL_BINARY that quotes in the X'' Format */
+
+	/* +4 ==  3 for X'';  1 for \0 */
+	max_len = len*2+4;
+	Newc(0, result, max_len,char,char);
+
+
+	dest = result;
+	memcpy(dest++, "X'",1);
+
+	for (i=0 ; i <= len ; ++i, dest+=2) 
+		sprintf(dest, "%X", *((char*)string++));
+
+	strcat(dest, "\'");
+		
+	*retlen = strlen(result);
+	assert(*retlen+1 <= max_len);
+	return result;
+}
+
 
 
 char *
@@ -555,6 +540,10 @@ dequote_sql_binary (string, retlen)
 	char *string;
 	int *retlen;
 {
+	/* We are going to retun a dequote_bytea(), JIC */
+	warn("Use of SQL_BINARY invalid in dequote()");
+	return dequote_bytea(string, retlen);
+
 	*retlen = strlen(string);
 }
 

@@ -40,13 +40,15 @@ foreach my $test (keys %tests) {
 
 # Make sure that SQL_BINARY doesn't work.
 
-eval {
+{
+     local $SIG{__WARN__} =
+         sub { ok($_[0] =~ /^Use of SQL_BINARY/,
+               'warning with SQL_BINARY');
+         };
+
   local $dbh->{PrintError} = 0;
   $dbh->quote('foo', DBI::SQL_BINARY);
 };
-ok ($@ && $@ =~ /Use of SQL_BINARY invalid in quote/,
-  'SQL_BINARY'
-);
 
 ok($dbh->disconnect(),
    'disconnect'

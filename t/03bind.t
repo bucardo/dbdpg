@@ -63,7 +63,7 @@ ok($sth->finish(),
 # Make sure that we get warnings when we try to use SQL_BINARY.
 {
   local $SIG{__WARN__} =
-    sub { ok($_[0] =~ /^Use of SQL type SQL_BINARY/,
+    sub { ok($_[0] =~ /^Use of SQL_BINARY/,
 	     'warning with SQL_BINARY'
 	    );
 	};
@@ -78,8 +78,6 @@ SQL
   $sth = $dbh->prepare($sql);
 
   $sth->bind_param(1, 'foo', DBI::SQL_BINARY);
-#rl: TODO: fix this
-ok(1, "FIXME");
 }
 
 $sth->finish();

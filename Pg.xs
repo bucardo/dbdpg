@@ -70,7 +70,6 @@ MODULE=DBD::Pg     PACKAGE = DBD::Pg::db
 
 #TODO: make quote(foo, {type=>SQL_INTEGER}) work  #rl
 #TODO: make quote(foo, {pg_type=>DBD::Pg::PG_INTEGER}) work  #rl
-#TODO: remove dbd_quote() into this function.
 void
 quote(dbh, to_quote_sv, type_sv=Nullsv)
     SV* dbh
@@ -82,7 +81,6 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
         char *to_quote;
         STRLEN len;
         STRLEN retlen=0;
-        int type_num;
         char *quoted;
         sql_type_info_t *type_info;
 
@@ -92,10 +90,15 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
                         mg_get(type_sv);
 
                 type_info = sql_type_data(SvIV(type_sv));
-                type_num = type_info ? type_info->type.pg : VARCHAROID;
+		if (!type_info) {
+			warn("Unknown type %i, "
+			    "defaulting to VARCHAR",SvIV(type_sv));
+
+			type_info = pg_type_data(VARCHAROID);
+		}
         } else {
                 /* default to varchar */
-                type_num = VARCHAROID;
+		 type_info = pg_type_data(VARCHAROID);
         }
 
         if (!SvOK(to_quote_sv))  {
@@ -107,7 +110,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
                         mg_get(to_quote_sv);
 
                 to_quote = SvPV(to_quote_sv, len);
-                quoted = dbd_quote(to_quote, type_num, len, &retlen);
+                quoted = type_info->quote(to_quote, len, &retlen);
                 ST(0) =  sv_2mortal(newSVpv(quoted, retlen));
                 free (quoted);
         }
