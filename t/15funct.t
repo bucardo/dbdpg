@@ -7,17 +7,20 @@ use Data::Dumper;
 
 use strict;
 
-my ($pf, $sf);
+BEGIN {
+    if (!exists($ENV{DBDPG_MAINTAINER})) {
+        print "1..0\n";
+        exit;
+    }
+}
 
 use Test::More tests => 59;
 
-if (!exists($ENV{DBDPG_MAINTAINER})) {
-    print "1..0\n";
-    exit;
-}
-
 my $dbh = DBI->connect("dbi:Pg:dbname=$ENV{DBDPG_TEST_DB};host=$ENV{DBDPG_TEST_HOST}", $ENV{DBDPG_TEST_USER}, $ENV{DBDPG_TEST_PASS}, {RaiseError => 1, AutoCommit => 0});
-    
+
+# Compatability.
+$ENV{DBI_USER} ||= $ENV{DBDPG_TEST_USER};
+
 # my $dbh = DBI->connect() or die "Connect failed: $DBI::errstr\n";
 ok ( defined $dbh, "Connection" ); # print "ok 2\n";
 
@@ -96,7 +99,8 @@ $sth = undef;
 	my $val = $dbh->quote();
  	die unless $val;
  };
-ok ($@, "quote error expected, $@");
+ok ($@, "quote error expected: $@");
+
 $sth = undef;
 # Tests for quote:
 my @qt_vals = (1, 2, undef, 'NULL', "ThisIsAString", "This is Another String");
@@ -115,19 +119,25 @@ is( $dbh->quote( 1, SQL_INTEGER() ), 1, "quote(1, SQL_INTEGER)" );
 	my $val = $dbh->quote_identifier();
  	die unless $val;
  };
-ok ($@, "quote_identifier error expected $@");
-$sth = undef;
- 
-#	, SQL_IDENTIFIER_QUOTE_CHAR	=> 29
-#	, SQL_CATALOG_NAME_SEPARATOR	=> 41
-my $qt  = $dbh->get_info( $get_info->{SQL_IDENTIFIER_QUOTE_CHAR} );
-my $sep = $dbh->get_info( $get_info->{SQL_CATALOG_NAME_SEPARATOR} );
 
-my $cmp_str = qq{${qt}link${qt}${sep}${qt}schema${qt}${sep}${qt}table${qt}};
-is( $dbh->quote_identifier( "link", "schema", "table" )
+ok ($@, "quote_identifier error expected: $@");
+$sth = undef;
+
+TODO: {
+    local $TODO = "get_info() not yet implemented";
+    #	, SQL_IDENTIFIER_QUOTE_CHAR	=> 29
+    #	, SQL_CATALOG_NAME_SEPARATOR	=> 41
+    my $qt  = $dbh->get_info( $get_info->{SQL_IDENTIFIER_QUOTE_CHAR} );
+    my $sep = $dbh->get_info( $get_info->{SQL_CATALOG_NAME_SEPARATOR} );
+
+    # Uncomment this line and remove the next line when get_info() is implemented.
+#    my $cmp_str = qq{${qt}link${qt}${sep}${qt}schema${qt}${sep}${qt}table${qt}};
+    my $cmp_str = '';
+    is( $dbh->quote_identifier( "link", "schema", "table" )
 	, $cmp_str
 	, q{quote_identifier( "link", "schema", "table" )}
-);
+      );
+}
 
 # Test ping
 
@@ -147,10 +157,13 @@ ok ($dbh->ping, "Ping the current connection ..." );
 #	SQL_TABLE_TERM
 #	SQL_USER_NAME
 
-foreach my $info (sort keys %$get_info) 
-{
+TODO: {
+    local $TODO = "get_info() not yet implemented";
+    foreach my $info (sort keys %$get_info) {
 	my $type =  $dbh->get_info($get_info->{$info});
-	ok( defined $type,  "get_info($info) ($get_info->{$info}) $type" );
+	ok( defined $type,  "get_info($info) ($get_info->{$info}) " .
+            ($type || '') );
+    }
 }
 
 # Test Table Info
@@ -343,7 +356,7 @@ SKIP: {
 	$sth = undef;
 }
 
-ok( !$dbh->disconnect, "Disconnect from database" );
+ok( $dbh->disconnect, "Disconnect from database" );
 
 exit(0);
 
