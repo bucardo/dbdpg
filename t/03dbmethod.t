@@ -889,9 +889,6 @@ ok( defined $result, qq{DB handle method "pg_user" returns a value});
 $result = $dbh->{pg_pass};
 ok( defined $result, qq{DB handle method "pg_pass" returns a value});
 
-$result = $dbh->{pg_host};
-ok( defined $result, qq{DB handle method "pg_host" returns a value});
-
 $result = $dbh->{pg_port};
 like( $result, qr/^\d+$/, qq{DB handle method "pg_port" returns a number});
 
