@@ -1395,7 +1395,7 @@ This connects to the database $dbname at localhost without any user
 authentication. This is sufficient for the defaults of PostgreSQL (excluding
 some package-installed versions).
 
-The following connect statement shows all possible parameters:
+The following connect statement shows almost all possible parameters:
 
   $dbh = DBI->connect("dbi:Pg:dbname=$dbname;host=$host;port=$port;" .
                       "options=$options", "$username", "$password",
@@ -1406,15 +1406,17 @@ variables and then it uses hard-coded defaults:
 
   parameter  environment variable  hard coded default
   --------------------------------------------------
-  dbname     PGDATABASE            current userid
   host       PGHOST                local domain socket
+  hostaddr*  PGHOSTADDR            local domain socket
   port       PGPORT                5432
-  options    PGOPTIONS             ""
+  dbname     PGDATABASE            current userid
   username   PGUSER                current userid
   password   PGPASSWORD            ""
+  options    PGOPTIONS             ""
+  service*   PGSERVICE             ""
+  sslmode*   PGSSLMODE             ""
 
-If a host is specified, the postmaster on this host needs to be started with
-the C<-i> option (TCP/IP sockets).
+* Only for servers running version 7.4 or greater
 
 The options parameter specifies runtime options for the Postgres
 backend. Common usage is to increase the number of buffers with the C<-B>
