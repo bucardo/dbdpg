@@ -530,8 +530,9 @@ $DBD::Pg::VERSION = '1.20';
         my $sth = $dbh->prepare("
             select relname  AS \"TABLE_NAME\"
             from   pg_class 
-            where  relkind = 'r' 
-            and    relname !~ '^xin[vx][0-9]+' 
+            where  relkind = 'r'
+            and    relname !~ '^pg_'
+            and    relname !~ '^xin[vx][0-9]+'
             order by 1 
         ") or return undef;
             # and    relname !~ '^pg_' 
@@ -1531,7 +1532,9 @@ L<DBI>
 DBI and DBD-Oracle by Tim Bunce (Tim.Bunce@ig.co.uk)
 
 DBD-Pg by Edmund Mergl (E.Mergl@bawue.de) and Jeffrey W. Baker
-(jwbaker@acm.org)
+(jwbaker@acm.org). By David Wheeler <david@wheeler.net>, Jason
+Stewart <jason@openinformatics.com> and Bruce Momjian
+<pgman@candle.pha.pa.us> after v1.13.
 
 Major parts of this package have been copied from DBI and DBD-Oracle.
 
