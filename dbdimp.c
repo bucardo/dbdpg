@@ -76,7 +76,7 @@ pg_error (h, error_num, error_msg)
     char *err, *src, *dst; 
     int  len  = strlen(error_msg);
 
-    err = (char *)malloc(strlen(error_msg) + 1);
+    err = (char *)malloc(len + 1);
     if (!err) {
       return;
     }
