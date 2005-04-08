@@ -15,7 +15,7 @@ use 5.006001;
 {
 	package DBD::Pg;
 
-	our $VERSION = '1.41';
+	our $VERSION = '1.41_1';
 
 	use DBI ();
 	use DynaLoader ();
@@ -2736,7 +2736,7 @@ $dbh->func($data, 100, 'getline').
 
 This driver supports all largeobject functions provided by libpq via the
 C<func> method. Please note that, starting with PostgreSQL 6.5, any access to
-a large object -- even read-only large objects -- must to be put into a
+a large object -- even read-only large objects -- must be put into a
 transaction!
 
 =head2 Cursors
