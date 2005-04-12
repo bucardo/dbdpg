@@ -60,29 +60,36 @@ $sth->execute(12,'Kiwi');
 # Test of the "last_insert_id" database handle method
 #
 
-$dbh->commit();
-eval {
-	$result = $dbh->last_insert_id(undef,undef,undef,undef);
-};
-ok( $@, 'DB handle method "last_insert_id" given an error when no arguments are given');
+if ($DBI::VERSION <= 1.42) {
+ SKIP: {
+		skip 'DBI must be at least version 1.43 to completely test database handle method "last_insert_id"', 5;
+	}
+}
+else {
+	$dbh->commit();
+	eval {
+		$result = $dbh->last_insert_id(undef,undef,undef,undef);
+	};
+	ok( $@, 'DB handle method "last_insert_id" given an error when no arguments are given');
 
-eval {
-	$result = $dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistentsequence_test'});
-};
-ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent sequence');
-$dbh->rollback();
+	eval {
+		$result = $dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistentsequence_test'});
+	};
+	ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent sequence');
+	$dbh->rollback();
 
-eval {
-	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef);
-};
-ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent table');
-$dbh->rollback();
+	eval {
+		$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef);
+	};
+	ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent table');
+	$dbh->rollback();
 
-eval {
-	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef,{sequence=>'dbd_pg_sequence'});
-};
-ok( ! $@, 'DB handle method "last_insert_id" works when given a valid sequence and an invalid table');
-like( $result, qr{^\d+$}, 'DB handle method "last_insert_id" returns a numeric value');
+	eval {
+		$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef,{sequence=>'dbd_pg_sequence'});
+	};
+	ok( ! $@, 'DB handle method "last_insert_id" works when given a valid sequence and an invalid table');
+	like( $result, qr{^\d+$}, 'DB handle method "last_insert_id" returns a numeric value');
+}
 
 eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef);
