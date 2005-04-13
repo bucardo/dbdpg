@@ -1415,7 +1415,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
  	}
 	else if (NULL == currph->bind_type) { /* "sticky" data type */
 		/* This is the default type, but we will honor defaultval if we can */
-		currph->bind_type = pg_type_data(VARCHAROID);
+				currph->bind_type = pg_type_data(UNKNOWNOID);
 		if (!currph->bind_type)
 			croak("Default type is bad!!!!???");
 	}
