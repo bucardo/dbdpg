@@ -22,6 +22,7 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 1, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for statement handle method testing");
 
+my $pglibversion = $dbh->{pg_lib_version};
 my $got73 = DBD::Pg::_pg_use_catalog($dbh);
 if ($got73) {
 	$dbh->do("SET search_path TO " . $dbh->quote_identifier
@@ -43,24 +44,30 @@ $dbh->{pg_server_prepare} = 0;
 $sth = $dbh->prepare($SQL);
 $sth->execute(1);
 ok( $sth->execute, 'Prepare/execute with pg_server_prepare off at database handle works');
-$dbh->{pg_server_prepare} = 1;
-$sth = $dbh->prepare($SQL);
-$sth->execute(1);
-ok( $sth->execute, 'Prepare/execute with pg_server_prepare on at database handle works');
+## 7.4 does not have a full SSP implementation, so we simply skip these tests.
+if ($pglibversion >= 70400 and $pglibversion < 80000) {
+ SKIP: {
+		skip 'Not testing pg_server_prepare on 7.4-compiled servers', 2;
+	}
+}
+else {
+	$dbh->{pg_server_prepare} = 1;
+	$sth = $dbh->prepare($SQL);
+	$sth->execute(1);
+	ok( $sth->execute, 'Prepare/execute with pg_server_prepare on at database handle works');
+}
 
 # Make sure that undefs are converted to NULL.
 $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, pdate) VALUES (?,?)');
-## Need a bind for 7.4 servers:
-$sth->bind_param(1, 401, SQL_INTEGER);
-$sth->bind_param(2, undef, SQL_TIMESTAMP);
 ok( $sth->execute(401, undef), "Prepare/execute with undef converted to NULL");
-
 $sth = $dbh->prepare($SQL, {pg_server_prepare => 0});
 $sth->execute(1);
 ok( $sth->execute, 'Prepare/execute with pg_server_prepare off at statement handle works');
-$sth = $dbh->prepare($SQL, {pg_server_prepare => 1});
-$sth->execute(1);
-ok( $sth->execute, 'Prepare/execute with pg_server_prepare on at statement handle works');
+if ($pglibversion < 70400 or $pglibversion >= 80000) {
+	$sth = $dbh->prepare($SQL, {pg_server_prepare => 1});
+	$sth->execute(1);
+	ok( $sth->execute, 'Prepare/execute with pg_server_prepare on at statement handle works');
+}
 $dbh->{pg_prepare_now} = 1;
 $sth = $dbh->prepare($SQL);
 $sth->execute(1);
