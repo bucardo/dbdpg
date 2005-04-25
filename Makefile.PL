@@ -5,7 +5,7 @@ use ExtUtils::MakeMaker;
 use Config;
 use strict;
 use 5.006001;
-use DBI 1.35;
+use DBI 1.38;
 use DBI::DBD;
 
 my $lib;
@@ -85,20 +85,23 @@ else {
 
 my $comp_opts = $Config{q{ccflags}} . " -DPGLIBVERSION=$serverversion";
 
-my %opts = (
-    NAME         => 'DBD::Pg',
-    VERSION_FROM => 'Pg.pm',
-    INC          => "-I$POSTGRES_INCLUDE -I$dbi_arch_dir",
-    OBJECT       => "Pg\$(OBJ_EXT) dbdimp\$(OBJ_EXT) quote\$(OBJ_EXT) types\$(OBJ_EXT)",
-    LIBS         => ["-L$POSTGRES_LIB -lpq"],
-    AUTHOR       => 'http://gborg.postgresql.org/project/dbdpg/',
-    ABSTRACT     => 'PostgreSQL database driver for the DBI module',
-    PREREQ_PM    => { 'Test::Simple' => '0.17',  # Need Test::More.
-                      'Test::Harness' => '2.03', # Need TODO tests.
-                    },
-    CCFLAGS      => $comp_opts,
-    PERL_MALLOC_OK => 1,
-    clean        => { FILES => 'trace' },
+my %opts = 
+	(
+	 NAME           => 'DBD::Pg',
+	 VERSION_FROM   => 'Pg.pm',
+	 INC            => "-I$POSTGRES_INCLUDE -I$dbi_arch_dir",
+	 OBJECT         => "Pg\$(OBJ_EXT) dbdimp\$(OBJ_EXT) quote\$(OBJ_EXT) types\$(OBJ_EXT)",
+	 LIBS           => ["-L$POSTGRES_LIB -lpq"],
+	 AUTHOR         => 'http://gborg.postgresql.org/project/dbdpg/',
+	 ABSTRACT       => 'PostgreSQL database driver for the DBI module',
+	 PREREQ_PM      => { 'Test::Simple' => '0.17',  # Need Test::More.
+										 'Test::Harness' => '2.03', # Need TODO tests.
+									 },
+	 CCFLAGS        => $comp_opts,
+	 PERL_MALLOC_OK => 1,
+	 NEEDS_LINKING  => 1,
+	 clean          => { FILES => 'trace' },
+	 depend         => { 'dbdimp.o' => 'large_object.c' },
 );
 
 if ($os eq 'hpux') {
