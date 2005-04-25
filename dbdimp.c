@@ -1544,6 +1544,8 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 				currph->quotedlen = 4;
 			}
 			else {
+				if (currph->quoted)
+					Safefree(currph->quoted);
 				currph->quoted = currph->bind_type->quote(currph->value, currph->valuelen, &currph->quotedlen);
 			}
 		}
