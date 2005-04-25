@@ -64,6 +64,7 @@ $dbh->{Warn}=0;
 ok( $dbh->do($SQL), qq{Created test table "dbd_pg_test"})
 	or print STDOUT "Bail out! Test table could not be created: $DBI::errstr\n";
 
+$dbh->do("COMMENT ON COLUMN dbd_pg_test.id IS 'Bob is your uncle'");
 
 # Double check that the file is there
 $sth->execute();
@@ -72,3 +73,13 @@ is( $count, 1, 'Test table was successfully created')
 	or print STDOUT "Bail out! Test table was not created\n";
 
 ok( $dbh->disconnect(), 'Disconnect from database');
+
+
+
+
+
+
+
+
+
+

@@ -363,7 +363,7 @@ use 5.006001;
 			"JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)" : "";
 
 		# col_description is not available for Pg < 7.2
-		my $remarks = $version < 70200 ? 
+		my $remarks = $version > 70200 ? 
 			"${DBD::Pg::dr::CATALOG}col_description(a.attrelid, a.attnum)" : "NULL::text";
 
 		my $col_info_sql = qq!

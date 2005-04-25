@@ -360,7 +360,7 @@ is( $result->{COLUMN_NAME}, 'id', 'DB handle method "column_info" returns proper
 is( $result->{DATA_TYPE}, 4, 'DB handle method "column_info" returns proper DATA_TYPE');
 is( $result->{COLUMN_SIZE}, 4, 'DB handle method "column_info" returns proper COLUMN_SIZE');
 is( $result->{NULLABLE}, '0', 'DB handle method "column_info" returns proper NULLABLE');
-is( $result->{REMARKS}, undef, 'DB handle method "column_info" returns proper REMARKS');
+is( $result->{REMARKS}, 'Bob is your uncle', 'DB handle method "column_info" returns proper REMARKS');
 is( $result->{COLUMN_DEF}, undef, 'DB handle method "column_info" returns proper COLUMN_DEF');
 is( $result->{ORDINAL_POSITION}, 1, 'DB handle method "column_info" returns proper ORDINAL_POSITION');
 is( $result->{IS_NULLABLE}, 'NO', 'DB handle method "column_info" returns proper IS_NULLABLE');
