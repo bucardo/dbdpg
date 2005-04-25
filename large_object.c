@@ -128,7 +128,8 @@ dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
 		long destoffset;
 {
 		D_imp_dbh_from_sth;
-		int ret, lobj_fd, nbytes, nread;
+		int ret, lobj_fd, nbytes;
+		STRLEN nread;
 		/* PGresult* result;
 		ExecStatusType status; */
 		SV *bufsv;
@@ -196,7 +197,7 @@ dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
 		while ((nbytes = lo_read(imp_dbh->conn, lobj_fd, tmp, BUFSIZ)) > 0) {
 				nread += nbytes;
 				/* break if user wants only a specified chunk */
-				if (len > 0 && nread > len) {
+				if (len > 0 && (int)nread > len) {
 						nread = len;
 						break;
 				}

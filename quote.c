@@ -374,6 +374,7 @@ quote_bool(value, len, retlen)
 	long int int_value;
 	STRLEN	max_len=6;
 	
+	len = 0;
 	if (isDIGIT(*(char*)value)) {
  		/* For now -- will go away when quote* take SVs */
 		int_value = atoi(value);
@@ -404,8 +405,9 @@ quote_integer(value, len, retlen)
 		 STRLEN	*retlen;
 {
 	char *result;
-	STRLEN	max_len=6;
-	
+	STRLEN max_len=6;
+	len = 0;
+
 	New(0, result, max_len, char);
 	
 	if (0 == *((int*)value) )

@@ -13,7 +13,7 @@
 */
 
 
-#include "Pg.h"
+#include "Pg.h" /* has large_object.h */
 #include <math.h>
 
 #define DBDPG_TRUE 1
@@ -85,11 +85,11 @@ ExecStatusType _result(imp_dbh, com)
 		 const char *com;
 {
 	PGresult *result;
-	ExecStatusType status;
+	int status;
 
 	result = PQexec(imp_dbh->conn, com);
 
-	status = result ? PQresultStatus(result) : -1;
+	status = result ? (int)PQresultStatus(result) : -1;
 
 #if PGLIBVERSION >= 70400
 	strncpy(imp_dbh->sqlstate,
@@ -267,11 +267,10 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	imp_dbh->pg_server_version = -1;
 	{
 		PGresult *result;
-		ExecStatusType status;
-		int	cnt, vmaj, vmin, vrev;
+		int	status, cnt, vmaj, vmin, vrev;
 	
 		result = PQexec(imp_dbh->conn, "SELECT version(), 'DBD::Pg'");
-		status = result ? PQresultStatus(result) : -1;
+		status = result ? (int)PQresultStatus(result) : -1;
 	
 		if (PGRES_TUPLES_OK != status || !PQntuples(result)) {
 			if (dbis->debug >= 4)
@@ -322,7 +321,7 @@ int dbd_db_ping (dbh)
 		 SV *dbh;
 {
 	D_imp_dbh(dbh);
-	ExecStatusType status;
+	int status;
 
 	/* Since this is a very explicit call, we do not rely on PQstatus,
 		 which can have stale information */
@@ -367,7 +366,7 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 {
 
 	PGTransactionStatusType tstatus;
-	ExecStatusType status;
+	int status;
 
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "%s\n", action); }
 	
@@ -501,7 +500,12 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 {
 	STRLEN kl;
 	char *key = SvPV(keysv,kl);
-	int oldval, newval = SvTRUE(valuesv);
+	int oldval;
+	int newval = (int) SvTRUE(valuesv);
+	if (SvTRUE(valuesv)) {
+		newval = 1;
+	}
+
 
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_STORE\n"); }
 	
@@ -1161,7 +1165,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	unsigned int x;
 	STRLEN execsize;
 	PGresult *result;
-	ExecStatusType status;
+	int status;
 	seg_t *currseg;
 	bool oldprepare = 1;
 	unsigned int params = 0;
@@ -1200,7 +1204,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 				continue;
 			/* The parameter itself: dollar sign plus digit(s) */
 			for (x=1; x<7; x++) {
-				if (currseg->placeholder < pow(10,x))
+				if (currseg->placeholder < pow((double)10,(double)x))
 					break;
 			}
 			if (x>=7)
@@ -1258,14 +1262,15 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	else {
 		if (imp_sth->numbound) {
 			params = imp_sth->numphs;
-			Newz(0, paramTypes, imp_sth->numphs, Oid);
+			Newz(0, paramTypes, (unsigned)imp_sth->numphs, Oid);
+			//			Newz(0, paramTypes, imp_sth->numphs, Oid);
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 				paramTypes[x++] = currph->defaultval ? 0 : currph->bind_type->type_id;
 			}
 		}
 		result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, paramTypes);
 		Safefree(paramTypes);
-		status = result ? PQresultStatus(result) : -1;
+		status = result ? (int)PQresultStatus(result) : -1;
 		if (dbis->debug >= 6)
 			PerlIO_printf(DBILOGFP, "  dbdpg: Using PQprepare\n");
 	}
@@ -1299,7 +1304,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	char *name = Nullch;
 	STRLEN name_len;
 	ph_t *currph = NULL;
-	unsigned int x, phnum;
+	int x, phnum;
 	SV **svp;
 	bool reprepare = 0;
 	int pg_type = 0;
@@ -1352,7 +1357,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 		if ('$' == *name)
 			*name++;
 		phnum = atoi(name);
-		if (phnum<1 || phnum>imp_sth->numphs)
+		if (phnum < 1 || phnum > imp_sth->numphs)
 			croak("Cannot bind unknown placeholder %d (%s)", phnum, neatsvpv(ph_name,0));
 		for (x=1,currph=imp_sth->ph; NULL != currph; currph = currph->nextph,x++) {
 			if (x==phnum)
@@ -1479,7 +1484,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 	D_imp_dbh_from_sth;
 	ph_t *currph;
-	ExecStatusType status = -1;
+	int status = -1;
 	STRLEN execsize, x;
 	const char **paramValues = NULL;
 	int *paramLengths = NULL, *paramFormats = NULL;
@@ -1557,7 +1562,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	}
 	else { /* We are using a server that can handle PQexecParams/PQexecPrepared */
 		/* Put all values into an array to pass to PQexecPrepared */
-		Newz(0, paramValues, imp_sth->numphs, const char *); /* freed below */
+		Newz(0, paramValues, (unsigned)imp_sth->numphs, const char *); /* freed below */
 		for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 			paramValues[x++] = currph->value;
 		}
@@ -1565,8 +1570,8 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		/* Binary or regular? */
 
 		if (imp_sth->has_binary) {
-			Newz(0, paramLengths, imp_sth->numphs, int); /* freed below */
-			Newz(0, paramFormats, imp_sth->numphs, int); /* freed below */
+			Newz(0, paramLengths, (unsigned)imp_sth->numphs, int); /* freed below */
+			Newz(0, paramFormats, (unsigned)imp_sth->numphs, int); /* freed below */
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
 				if (BYTEAOID==currph->bind_type->type_id) {
 					paramLengths[x] = currph->valuelen;
@@ -1660,7 +1665,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 					continue;
 				/* The parameter itself: dollar sign plus digit(s) */
 				for (x=1; x<7; x++) {
-					if (currseg->placeholder < pow(10,x))
+					if (currseg->placeholder < pow((double)10,(double)x))
 						break;
 				}
 				if (x>=7)
@@ -1681,7 +1686,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			statement[execsize] = '\0';
 			
 			/* Populate paramTypes */
-			Newz(0, paramTypes, imp_sth->numphs, Oid);
+			Newz(0, paramTypes, (unsigned)imp_sth->numphs, Oid);
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 				paramTypes[x++] = currph->defaultval ? 0 : currph->bind_type->type_id;
 			}
@@ -1742,7 +1747,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 	/* Some form of PQexec has been run at this point */
 
-	status = imp_sth->result ? PQresultStatus(imp_sth->result) : -1;
+	status = imp_sth->result ? (int)PQresultStatus(imp_sth->result) : -1;
 
 	/* We don't want the result cleared yet, so we don't use _result */
 
@@ -1851,7 +1856,7 @@ AV * dbd_st_fetch (sth, imp_sth)
 
 	/* Set up the type_info array if we have not seen it yet */
 	if (NULL==imp_sth->type_info) {
-		Newz(0, imp_sth->type_info, num_fields, sql_type_info_t*); /* freed in dbd_st_destroy */
+		Newz(0, imp_sth->type_info, (unsigned)num_fields, sql_type_info_t*); /* freed in dbd_st_destroy */
 		for (i = 0; i < num_fields; ++i) {
 			imp_sth->type_info[i] = pg_type_data(PQftype(imp_sth->result, i));
 		}
@@ -2241,7 +2246,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 				sprintf(statement, "SELECT attnotnull FROM pg_catalog.pg_attribute WHERE attrelid=%d AND attnum=%d", x, y);
 				statement[strlen(statement)]='\0';
 				result = PQexec(imp_dbh->conn, statement);
-				status = imp_sth->result ? PQresultStatus(imp_sth->result) : -1;
+				status = imp_sth->result ? (int)PQresultStatus(imp_sth->result) : -1;
 				if (PGRES_TUPLES_OK == status && PQntuples(result)) {
 					switch(PQgetvalue(result,0,0)[0]) {
 					case 't':
@@ -2357,6 +2362,7 @@ pg_db_getline (dbh, buffer, length)
 		tempbuf = NULL; /* Make compilers happy */
 		return result;
 #else
+		length = 0; /* Make compilers happy */
 		result = PQgetCopyData(imp_dbh->conn, &tempbuf, 0);
 		if (-1 == result) {
 			*buffer = '\0';

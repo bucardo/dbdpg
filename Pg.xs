@@ -217,12 +217,13 @@ lo_read(dbh, fd, buf, len)
         SV * dbh
         int fd
         char * buf
-        int len
+        STRLEN len
     PREINIT:
         SV *bufsv = SvROK(ST(2)) ? SvRV(ST(2)) : ST(2);
         int ret;
     CODE:
         buf = SvGROW(bufsv, len + 1);
+
         ret = pg_db_lo_read(dbh, fd, buf, len);
         if (ret > 0) {
             SvCUR_set(bufsv, ret);
@@ -319,7 +320,7 @@ pg_getline(dbh, buf, len)
         SV *bufsv = SvROK(ST(1)) ? SvRV(ST(1)) : ST(1);
     INPUT:
         SV * dbh
-        int len
+        STRLEN len
         char * buf = SvGROW(bufsv, 3);
     CODE:
 				int ret;
@@ -337,7 +338,7 @@ getline(dbh, buf, len)
         SV *bufsv = SvROK(ST(1)) ? SvRV(ST(1)) : ST(1);
     INPUT:
         SV * dbh
-        int len
+        STRLEN len
         char * buf = SvGROW(bufsv, 3);
     CODE:
 				int ret;
