@@ -217,7 +217,7 @@ lo_read(dbh, fd, buf, len)
         SV * dbh
         int fd
         char * buf
-        STRLEN len
+        unsigned int len
     PREINIT:
         SV *bufsv = SvROK(ST(2)) ? SvRV(ST(2)) : ST(2);
         int ret;
@@ -320,7 +320,7 @@ pg_getline(dbh, buf, len)
         SV *bufsv = SvROK(ST(1)) ? SvRV(ST(1)) : ST(1);
     INPUT:
         SV * dbh
-        STRLEN len
+        unsigned int len
         char * buf = SvGROW(bufsv, 3);
     CODE:
 				int ret;
@@ -338,7 +338,7 @@ getline(dbh, buf, len)
         SV *bufsv = SvROK(ST(1)) ? SvRV(ST(1)) : ST(1);
     INPUT:
         SV * dbh
-        STRLEN len
+        unsigned int len
         char * buf = SvGROW(bufsv, 3);
     CODE:
 				int ret;
