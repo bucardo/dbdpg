@@ -19,3 +19,4 @@ TODO:
 - quoting/dequoting of arrays.
 - allow user callbacks to quote user-defined types?
 - rename functions and add defines to avoid problems with static linking of multi DBDs
+- Move to the Module::Build system
