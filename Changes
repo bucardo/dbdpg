@@ -1,44 +1,53 @@
+('GSM' is Greg Sabino Mullane, greg@turnstep.com)
+
+1.42
+	- Fixed tests to correctly handle older DBI versions reporting 
+		failures on last_insert_id(). [GSM]
+	- Re-enable REMARKS field on column_info [CPAN bug #12399)
+		[thanks to morni@cpan.org] [GSM]
+	- Many minor compiler optimizations and cleanups [GSM]
+	- Fix a memory leak in dbdimp.c (hertzog@debian.org)
+	- Change VARCHAROID to UNKNOWNOID, suggested by users on mailing 
+		list [GSM]
+
 1.41
-	- ('Greg' is Greg Sabino Mullane, greg@turnstep.com)
 	- Make sure tests remove all temporary tables.
-		[Frank Bax]
+		[Frank Bax] [GSM]
 	- Preserve sqlstate if rolling back on deallocate, fix 
 		potential segfault. [Stephen Clouse]
 	- Fix CPAN bug #12004: commit and rollback now return true
-		[Greg] (thanks to ivan-dbdpg@420.am)
+		[GSM] (thanks to ivan-dbdpg@420.am)
 	- Overhaul and update COPY support; use new protocol.
 		New dbh methods: pg_putline, pg_getline, pg_endcopy.
-		[Greg]
+		[GSM]
 	- Rewrote version detection code. Compiled version and target 
 		version are now available via $dbh->{pg_lib_version} and 
-		$dbh->{pg_server_version} [Greg]
+		$dbh->{pg_server_version} [GSM]
 	- Set our default type_id to 0, not 1043 (VARCHAR) when possible.
-		Suggested by Abhijit Menon-Sen via David Wheeler. [Greg]
+		Suggested by Abhijit Menon-Sen via David Wheeler. [GSM]
 	- Add $dbh methods pg_savepoint(), pg_rollback_to(), and pg_release()
-		[Stephen Clouse] [Greg]
+		[Stephen Clouse] [GSM]
+
 1.40 Tue Feb 22 06:06:45 UTC 2005
 	- Raise required DBI version to 1.38
 	- Execute returns 0 (0E0) not -1 for successful DDL commands.
-		[Robert Treat]
-	- Change all string lengths to use STRLEN
-		[rink@stack.nl]
-	- Added $dbh->pg_server_trace($fh) [Greg Sabino Mullane]
-	- Added $dbh->{pg_errorlevel}. [Greg Sabino Mullane]
+		[Robert Treat] [GSM]
+	- Change all string lengths to use STRLEN [rink@stack.nl]
+	- Added $dbh->pg_server_trace($fh) [GSM]
+	- Added $dbh->{pg_errorlevel}. [GSM]
 	- Fix utf8 quote() support [Dominic Mitchell <dom@semantico.com>]
 	- Added explicit support for types SQL_BOOLEAN, DATE, TIME, 
 		TIMESTAMP, and TIMESTAMPTZ. Return correct values for 
-		DATEOID and TIMEOID. [Greg Sabino Mullane]
+		DATEOID and TIMEOID. [GSM]
 	- Added tablespace support for table_info and primary_key_info.
-		[Greg Sabino Mullane]
+		[GSM]
 	- Added new attributes to $dbh: pg_db, pg_user, pg_pass,
-		pg_host, pg_port, pg_options, pg_socket, pg_pid
-		[Greg Sabino Mullane]
+		pg_host, pg_port, pg_options, pg_socket, pg_pid [GSM]
 	- Minor fixes in quote.c, dbdimp.c, and types.h
 		[Christophe Martin: schplurtz at free.fr]
-	- Added support for SQLSTATE via $dbh->state and $sth->state
-		[Greg Sabino Mullane]
+	- Added support for SQLSTATE via $dbh->state and $sth->state [GSM]
 	- Major overhaul of prepare/execute to handle new server-side 
-		prepare system. See Pg.pm for details. [Greg Sabino Mullane]
+		prepare system. See Pg.pm for details. [GSM]
 	- Make the tests honor the DBD_SCHEMA variable instead of 
 		assuming that the "public" schema is available.
 		[Rainer Weikusat]
@@ -48,44 +57,42 @@
 	- primary_key() returns empty list not undef if no match.
 		[Julian Mehnle]
 	- Added the pg_protocol database handle attribute
-		[Greg Sabino Mullane]
+		[GSM]
 	- Changed "noprefix" to pg_noprefix
+
 1.32 Wed Feb 25 18:24:18 UTC 2004
 	- Bugfix for memory allocation problems on win systems
 		[Rafael Kitover <caelum@debian.org>]
 	- Rewrote the foreign_key_info() method to handle 
-		multi-column keys. [Greg Sabino Mullane]
+		multi-column keys. [GSM]
 	- Rewrote the primary_key_info() and primary_key() methods to 
 		cleanly handle multi-column primary keys. Also added a "pg_onerow" 
 		attribute to allow primary_key_info() to return a single 
-		row containing multiple-column information. [Greg Sabino Mullane]
+		row containing multiple-column information. [GSM]
 	- Switched commit behavior from commit->execute->begin 
 		to begin->execute->commit
 		[xelah-junk@xelah.com]
 	- Made the _pg_use_catalog subroutine use {private_dbgpg}.
-		(CPAN bug #4841) [Greg Sabino Mullane]
+		(CPAN bug #4841) [GSM]
 	- Changed strdup to safemalloc/strcpy in dbdimp.c
 		(CPAN bug #4578) [anonymous CPAN user]
 	- Made the data_sources method escape the database names as needed.
-		Added support for databases with spaces in their names.
-		[Greg Sabino Mullane]
+		Added support for databases with spaces in their names. [GSM]
 	- Added the "noprefix" attribute to prevent the tables() method 
-		from prepending the schema name. [Greg Sabino Mullane]
+		from prepending the schema name. [GSM]
 	- Rewrote the testing suite. Many more tests are performed.
-		Servers with a low client_min_messages are handled correctly.
-		[Greg Sabino Mullane]
+		Servers with a low client_min_messages are handled correctly. [GSM]
 	- Fixed bug causing '$\d' to be picked up as a placeholder. 
-		(CPAN bug #4799) [Greg Sabino Mullane]
+		(CPAN bug #4799) [GSM]
 	- pg_notifies now catches and reports when PQconsumeInput fails.
 		(CPAN bug #4027) [nmueller@cs.wisc.edu]
-	- Enabled the "pg_bool_tf" database handle [Greg Sabino Mullane]
+	- Enabled the "pg_bool_tf" database handle [GSM]
 	- Added required fields to the type_info() method:
-		SQL_DATA_TYPE, SQL_DATETIME_SUB, and INTERVAL PRECISION
-		[Greg Sabino Mullane]
+		SQL_DATA_TYPE, SQL_DATETIME_SUB, and INTERVAL PRECISION [GSM]
 	- Fixed bug where the table_attributes() method was incorrectly 
-		removing the NULLABLE column. [Greg Sabino Mullane]
+		removing the NULLABLE column. [GSM]
 	- Fixed bug where case was not being preserved by the 
-		foreign_key_info() method [Greg Sabino Mullane]
+		foreign_key_info() method [GSM]
 	- a fetch on any column that had a type that did not have an entry
 		in the type_info array would segfault DBD::Pg. 
 		(CPAN bugs #4818,4432) [Rudy Lippan]
@@ -97,7 +104,7 @@
 	- Removed extra "return" statement in quote.c to make Solaris happy
 		(CPAN bug #4419) [Rudy Lippan]
 	- Changed get_info(29) to return (") instead of (\")
-		(CPAN bug #4829) [Greg Sabino Mullane]
+		(CPAN bug #4829) [GSM]
 
 1.31 Mon Nov 17 21:21:21 UTC 2003
 	- $dbh->{TYPE} now returns SQL_TYPE_TIMESTAMP instead of 1114 for 
@@ -134,7 +141,7 @@
 	- bind_param() will convert from 1,0 to TRUE/FALSE when pg_type
 		is PGBOOLOID.
 	- Fixed many heap buffer overruns.
-	- Added support for the get_info() method [Greg Sabino Mullane]
+	- Added support for the get_info() method [GSM]
 	- Added tests for POD validation [Mark Stosberg]
 	- Several improvements to column_info, including:
 		- Fixed column_info so NULLABLE field shows correctly. [kevin@sysexperts.com]
@@ -144,7 +151,7 @@
 		- pg_constraint column added to display column constraints
 		- additional documentation and tests added
 	- make test is now more intelligent and will bail out early if
-		db connection fails. [Greg Sabino Mullane]
+		db connection fails. [GSM]
 
 1.22 Wed Mar 26 22:33:44 EST 2003
 	- Win32 compile fix for snprintf [Joe Spears]
@@ -153,9 +160,9 @@
 	- Transform Perl arrays into PostgreSQL arrays [Alexey Slynko]
 	- Fix for foreign_key_info() [Keith Keller]
 	- Fix PG_TEXT parameter binding
-	- Doc cleanups [Greg Sabino Mullane]
-	- Fix warning from func($table, 'table_attributes') [Greg Sabino Mullane]
-	- Added support for schemas [Greg Sabino Mullane]
+	- Doc cleanups [GSM]
+	- Fix warning from func($table, 'table_attributes') [GSM]
+	- Added support for schemas [GSM]
 	- Fix binary to a bytea field conversion [Chris Dunlop <chris@onthe.net.au>]
 
 1.21 Sun Jan 12 21:00:44 EST 2003
