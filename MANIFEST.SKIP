@@ -9,3 +9,12 @@
 ^DBD-Pg
 .cvsignore
 CVS
+Pg.o
+Pg.c
+Pg.bs
+Pg.xsi
+quote.o
+types.o
+dbdimp.o
+pm_to_blib
+\.tmp$
