@@ -86,13 +86,6 @@ else {
 }
 
 my $comp_opts = $Config{q{ccflags}} . " -DPGLIBVERSION=$serverversion";
-## For debugging only
-#$comp_opts .= " -pedantic";
-#$comp_opts .= " -Wall -Wextra -Wfloat-equal -Wtraditional -Wundef -Wdeclaration-after-statement -Wshadow -Wendif-labels -Wundef";
-#$comp_opts .= " -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wwrite-strings -Wconversion -Wsign-compare -Waggregate-return";
-#$comp_opts .= " -Wmissing-prototypes -Wmissing-declarations -Wmissing-noreturn -Wmissing-format-attribute";
-#$comp_opts .= " -Wredundant-decls -Wunreachable-code -Wnested-externs";
-#$comp_opts .= " -Werror";
 
 my %opts = 
 	(
