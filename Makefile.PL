@@ -8,6 +8,8 @@ use 5.006001;
 use DBI 1.38;
 use DBI::DBD;
 
+my $VERSION = "1.41_1";
+
 my $lib;
 BEGIN {
     my %sep = (MacOS   => ':',
@@ -21,7 +23,7 @@ BEGIN {
 }
 
 use lib $lib;
-print "Configuring DBD::Pg\n";
+print "Configuring DBD::Pg $VERSION\n";
 print "Remember to actually read the README file!\n";
 
 my $POSTGRES_INCLUDE;
@@ -84,6 +86,13 @@ else {
 }
 
 my $comp_opts = $Config{q{ccflags}} . " -DPGLIBVERSION=$serverversion";
+## For debugging only
+#$comp_opts .= " -pedantic";
+#$comp_opts .= " -Wall -Wextra -Wfloat-equal -Wtraditional -Wundef -Wdeclaration-after-statement -Wshadow -Wendif-labels -Wundef";
+#$comp_opts .= " -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wwrite-strings -Wconversion -Wsign-compare -Waggregate-return";
+#$comp_opts .= " -Wmissing-prototypes -Wmissing-declarations -Wmissing-noreturn -Wmissing-format-attribute";
+#$comp_opts .= " -Wredundant-decls -Wunreachable-code -Wnested-externs";
+#$comp_opts .= " -Werror";
 
 my %opts = 
 	(
