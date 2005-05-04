@@ -6,7 +6,8 @@
 	- Re-enable REMARKS field on column_info [CPAN bug #12399)
 		[thanks to morni@cpan.org] [GSM]
 	- Many minor compiler optimizations and cleanups [GSM]
-	- Fix a memory leak in dbdimp.c (hertzog@debian.org)
+	- Fix two separate memory leaks in dbdimp.c 
+		(hertzog@debian.org and richardg@eSentire.com)
 	- Change VARCHAROID to UNKNOWNOID, suggested by users on mailing 
 		list [GSM]
 
