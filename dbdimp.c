@@ -1263,7 +1263,6 @@ int dbd_st_prepare_statement (sth, imp_sth)
 		if (imp_sth->numbound) {
 			params = imp_sth->numphs;
 			Newz(0, paramTypes, (unsigned)imp_sth->numphs, Oid);
-			//			Newz(0, paramTypes, imp_sth->numphs, Oid);
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 				paramTypes[x++] = currph->defaultval ? 0 : currph->bind_type->type_id;
 			}
@@ -1639,10 +1638,6 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		imp_sth->result = PQexecPrepared(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs,
 																		 paramValues, paramLengths, paramFormats, 0);
 
-		Safefree(paramValues);
-		Safefree(paramLengths);
-		Safefree(paramFormats);			
-
 	} /* end new-style prepare */
 	else {
 		
@@ -1705,11 +1700,6 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 				PerlIO_printf(DBILOGFP, "  dbdpg: calling PQexecParams for: %s\n", statement);
 			imp_sth->result = PQexecParams(imp_dbh->conn, statement, imp_sth->numphs, paramTypes,
 																		 paramValues, paramLengths, paramFormats, 0);
-			Safefree(paramTypes);
-			Safefree(paramValues);
-			Safefree(paramLengths);
-			Safefree(paramFormats);
-			Safefree(statement);
 		}
 		
 		/* PQexec */
@@ -1739,11 +1729,16 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 				PerlIO_printf(DBILOGFP, "  dbdpg: calling PQexec for: %s\n", statement);
 			
 			imp_sth->result = PQexec(imp_dbh->conn, statement);
-			Safefree(statement);
 
 		} /* end PQexec */
 
 	} /* end non-prepared exec */
+
+	Safefree(statement);
+	Safefree(paramTypes);
+	Safefree(paramValues);
+	Safefree(paramLengths);
+	Safefree(paramFormats);			
 
 	/* Some form of PQexec has been run at this point */
 
