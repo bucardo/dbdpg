@@ -1489,7 +1489,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	int *paramLengths = NULL, *paramFormats = NULL;
 	Oid *paramTypes = NULL;
 	seg_t *currseg;
-	char *statement, *cmdStatus, *cmdTuples;
+	char *statement = NULL, *cmdStatus, *cmdTuples;
 	int num_fields, ret = -2;
 	
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_execute\n"); }
