@@ -501,11 +501,7 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 	STRLEN kl;
 	char *key = SvPV(keysv,kl);
 	int oldval;
-	int newval = (int) SvTRUE(valuesv);
-	if (SvTRUE(valuesv)) {
-		newval = 1;
-	}
-
+	int newval = SvTRUE(valuesv);
 
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_STORE\n"); }
 	
@@ -1853,7 +1849,7 @@ AV * dbd_st_fetch (sth, imp_sth)
 	if (NULL==imp_sth->type_info) {
 		Newz(0, imp_sth->type_info, (unsigned)num_fields, sql_type_info_t*); /* freed in dbd_st_destroy */
 		for (i = 0; i < num_fields; ++i) {
-			imp_sth->type_info[i] = pg_type_data(PQftype(imp_sth->result, i));
+			imp_sth->type_info[i] = pg_type_data((int)PQftype(imp_sth->result, i));
 		}
 	}
 	

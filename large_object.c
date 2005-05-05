@@ -35,7 +35,7 @@ pg_db_lo_read (dbh, fd, buf, len)
 		SV *dbh;
 		int fd;
 		char *buf;
-		int len;
+		unsigned int len;
 {
 		D_imp_dbh(dbh);
 		return lo_read(imp_dbh->conn, fd, buf, len);
@@ -47,7 +47,7 @@ pg_db_lo_write (dbh, fd, buf, len)
 		SV *dbh;
 		int fd;
 		char *buf;
-		int len;
+		unsigned int len;
 {
 		D_imp_dbh(dbh);
 		return lo_write(imp_dbh->conn, fd, buf, len);
@@ -116,7 +116,6 @@ pg_db_lo_export (dbh, lobjId, filename)
 		return lo_export(imp_dbh->conn, lobjId, filename);
 }
 
-
 int
 dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
 		SV *sth;
@@ -175,7 +174,7 @@ dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
 		*/
 
 		/* open large object */
-		lobj_fd = lo_open(imp_dbh->conn, lobjId, INV_READ);
+		lobj_fd = lo_open(imp_dbh->conn, (unsigned)lobjId, INV_READ);
 		if (lobj_fd < 0) {
 				pg_error(sth, -1, PQerrorMessage(imp_dbh->conn));
 				return 0;
