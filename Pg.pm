@@ -23,8 +23,9 @@ use 5.006001;
 	use vars qw(@ISA %EXPORT_TAGS $err $errstr $sqlstate $drh $dbh);
 	@ISA = qw(DynaLoader Exporter);
 
-	%EXPORT_TAGS = (
-		pg_types => [qw(
+	%EXPORT_TAGS = 
+		(
+		 pg_types => [qw(
 			PG_BOOL PG_BYTEA PG_CHAR PG_INT8 PG_INT2 PG_INT4 PG_TEXT PG_OID
 			PG_FLOAT4 PG_FLOAT8 PG_ABSTIME PG_RELTIME PG_TINTERVAL PG_BPCHAR
 			PG_VARCHAR PG_DATE PG_TIME PG_DATETIME PG_TIMESPAN PG_TIMESTAMP
@@ -37,16 +38,17 @@ use 5.006001;
 
 	bootstrap DBD::Pg $VERSION;
 
-	$err = 0;		# holds error code for DBI::err
-	$errstr = "";	# holds error string for DBI::errstr
-	$sqlstate = "";
-	$drh = undef;	# holds driver handle once initialized
+	$err = 0;		    # holds error code for DBI::err
+	$errstr = "";	  # holds error string for DBI::errstr
+	$sqlstate = ""; # holds five character SQLSTATE code
+	$drh = undef;	  # holds driver handle once initialized
 
 	sub CLONE {
 		$drh = undef;
 	}
 
-	sub driver{
+
+	sub driver {
 		return $drh if defined $drh;
 		my($class, $attr) = @_;
 
@@ -77,6 +79,7 @@ use 5.006001;
 
 	}
 
+
  	## Deprecated: use $dbh->{pg_server_version} if possible instead
  	sub _pg_use_catalog {
 		my $dbh = shift;
@@ -89,12 +92,16 @@ use 5.006001;
 }
 
 
-{ package DBD::Pg::dr; # ====== DRIVER ======
+{ 
+
+	package DBD::Pg::dr; # ====== DRIVER ======
 
 	use strict;
 
-	our $CATALOG = 123;
+	our $CATALOG = 123; ## Set later on, this is to catch seriously misplaced code
 
+
+	## Returns an array of formatted database names from the pg_database table
 	sub data_sources {
 		my $drh = shift;
 		my $dbh = DBD::Pg::dr::connect($drh, 'dbname=template1') or return undef;
@@ -109,9 +116,7 @@ use 5.006001;
 
 
 	sub connect {
-		my($drh, $dbname, $user, $auth)= @_;
-
-		# create a 'blank' dbh
+		my($drh, $dbname, $user, $pass)= @_;
 
 		## Allow "db" and "database" as synonyms for "dbname"
 		$dbname =~ s/\b(?:db|database)\s*=/dbname=/;
@@ -125,23 +130,22 @@ use 5.006001;
 			$Name = $1;
 		}
 	
-	
-		$user = "" unless defined($user);
-		$auth = "" unless defined($auth);
+ 		$user = "" unless defined($user);
+		$pass = "" unless defined($pass);
 
 		$user = $ENV{DBI_USER} if $user eq "";
-		$auth = $ENV{DBI_PASS} if $auth eq "";
+		$pass = $ENV{DBI_PASS} if $pass eq "";
 
 		$user = "" unless defined($user);
-		$auth = "" unless defined($auth);
+		$pass = "" unless defined($pass);
 
-		my($dbh) = DBI::_new_dbh($drh, {
+		my ($dbh) = DBI::_new_dbh($drh, {
 			'Name' => $Name,
 			'User' => $user, 'CURRENT_USER' => $user,
 		});
 
 		# Connect to the database..
-		DBD::Pg::db::_login($dbh, $dbname, $user, $auth) or return undef;
+		DBD::Pg::db::_login($dbh, $dbname, $user, $pass) or return undef;
 
 		my $version = $dbh->{pg_server_version};
 		$dbh->{private_dbdpg}{version} = $version;
@@ -155,16 +159,17 @@ use 5.006001;
 }
 
 
-{ package DBD::Pg::db; # ====== DATABASE ======
+{ 
+
+	package DBD::Pg::db; # ====== DATABASE ======
 
 	use strict;
-	use Carp ();
+
 
 	sub prepare {
-		my($dbh, $statement, @attribs)= @_;
+		my($dbh, $statement, @attribs) = @_;
 
-		# create a 'blank' sth
-
+		# Create a 'blank' statement handle:
 		my $sth = DBI::_new_sth($dbh, {
 			'Statement' => $statement,
 		});
@@ -187,6 +192,7 @@ use 5.006001;
 		$sth;
 	}
 
+
 	sub do {
 		my ($dbh, $statement, $attr, @params) = @_;
 
@@ -204,6 +210,7 @@ use 5.006001;
 		my $rows = $sth->rows;
 		($rows == 0) ? "0E0" : $rows;
 	}
+
 
 	sub last_insert_id {
 
@@ -329,7 +336,7 @@ use 5.006001;
 
 	# Column expected in statement handle returned.
 	# table_cat, table_schem, table_name, column_name, data_type, type_name,
-	# column_size, buffer_length, DECIMAL_DIGITS, NUM_PREC_RADIX, NULLABLE,
+ 	# column_size, buffer_length, DECIMAL_DIGITS, NUM_PREC_RADIX, NULLABLE,
 	# REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB, CHAR_OCTET_LENGTH,
 	# ORDINAL_POSITION, IS_NULLABLE
 	# The result set is ordered by TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION.
