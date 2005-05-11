@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.42
+	- Have last_insert_id use set_err, not die.
+		[thanks to Alexandra Walford] [GSM]
 	- Fixed tests to correctly handle older DBI versions reporting 
 		failures on last_insert_id(). [GSM]
 	- Re-enable REMARKS field on column_info [CPAN bug #12399)
