@@ -503,14 +503,13 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 	int oldval;
 	int newval = SvTRUE(valuesv);
 
-	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_STORE\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_STORE (%s) (%d)\n", key, newval); }
 	
 	if (10==kl && strEQ(key, "AutoCommit")) {
 		oldval = DBIc_has(imp_dbh, DBIcf_AutoCommit);
 		if (oldval == newval)
 			return 1;
-		if (oldval) {
-			/* Commit if necessary */
+		if (newval) { /* It was off but is now on, so do a final commit */
 			if (dbd_db_commit(dbh, imp_dbh) && dbis->debug >= 5)
 				PerlIO_printf(DBILOGFP, "dbd_db_STORE: AutoCommit on forced a commit\n");
 		}
