@@ -12,8 +12,9 @@
 
 use 5.006001;
 
-{
-	package DBD::Pg;
+
+
+{ package DBD::Pg;
 
 	our $VERSION = '1.41_1';
 
@@ -92,9 +93,7 @@ use 5.006001;
 }
 
 
-{ 
-
-	package DBD::Pg::dr; # ====== DRIVER ======
+{ package DBD::Pg::dr;
 
 	use strict;
 
@@ -159,9 +158,7 @@ use 5.006001;
 }
 
 
-{ 
-
-	package DBD::Pg::db; # ====== DATABASE ======
+{ package DBD::Pg::db;
 
 	use strict;
 
@@ -233,7 +230,7 @@ use 5.006001;
 				$attr = {sequence => $attr};
 			}
 			elsif (ref $attr ne 'HASH') {
-				die "last_insert_id must be passed a hashref as the final argument\n";
+				return $dbh->set_err(1, "last_insert_id must be passed a hashref as the final argument");
 			}
 			## Named sequence overrides any table or schema settings
 			if (exists $attr->{sequence} and length $attr->{sequence}) {
@@ -250,7 +247,7 @@ use 5.006001;
 		elsif (! defined $sequence) {
 			## At this point, we must have a valid table name
 			if (! length $table) {
-				die qq{last_insert_id needs at least a sequence or table name\n};
+				return $dbh->set_err(1, "last_insert_id needs at least a sequence or table name");
 			}
 			my @args = ($table);
 
@@ -271,7 +268,7 @@ use 5.006001;
 				$sth->finish();
 				my $message = qq{Could not find the table "$table"};
 				length $schema and $message .= qq{ in the schema "$schema"};
-				die "$message\n";
+				return $dbh->set_err(1, $message);
 			}
 			my $oid = $sth->fetchall_arrayref()->[0][0];
 			## This table has a primary key. Is there a sequence associated with it via a unique, indexed column?
@@ -285,7 +282,7 @@ use 5.006001;
 			$count = $sth->execute();
 			if (!defined $count or $count eq '0E0') {
 				$sth->finish();
-				die qq{No suitable column found for last_insert_id of table "$table"\n};
+				$dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"});
 			}
 			my $info = $sth->fetchall_arrayref();
 
@@ -297,13 +294,13 @@ use 5.006001;
 				push @def, $_;
 			}
 			if (!@def) {
-				die qq{No suitable column found for last_insert_id of table "$table"\n};
+				$dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
 			}
 			## Tiebreaker goes to the primary keys
 			if (@def > 1) {
 				my @pri = grep { $_->[1] } @def;
 				if (1 != @pri) {
-					die qq{No suitable column found for last_insert_id of table "$table"\n};
+					$dbh->set_Err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
 				}
 				@def = @pri;
 			}
@@ -1314,14 +1311,12 @@ use 5.006001;
 		 }
 		 return $ans;
 	} # end of get_info
-} # end of package DBD::Pg::db
-
-{ package DBD::Pg::st; # ====== STATEMENT ======
+} 
 
 
-	## The DBI version is broken, so we implement a near-copy here
+{ package DBD::Pg::st;
 
-	sub bind_param_array {
+	sub bind_param_array { ## The DBI version is broken, so we implement a near-copy here
 		my $sth = shift;
 		my ($p_id, $value_array, $attr) = @_;
 
@@ -2800,7 +2795,7 @@ DBD-Pg by Edmund Mergl (E.Mergl@bawue.de) and Jeffrey W. Baker
 Stewart <jason@openinformatics.com> and Bruce Momjian
 <pgman@candle.pha.pa.us> and others after v1.13.
 
-Major parts of this package have been copied from DBI and DBD-Oracle.
+Parts of this package have been copied from DBI and DBD-Oracle.
 
 B<Mailing List>
 
