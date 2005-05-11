@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.42
+	- Fix incorrect behavior when AutoCommit switched on.
+		[thanks to Vivek Khera] [GSM]
 	- Have last_insert_id use set_err, not die.
 		[thanks to Alexandra Walford] [GSM]
 	- Fixed tests to correctly handle older DBI versions reporting 
