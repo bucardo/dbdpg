@@ -85,13 +85,13 @@ ExecStatusType _result(imp_dbh, com)
 		 const char *com;
 {
 	PGresult *result;
-	int status;
+	int status = -1;
 
 	if (dbis->debug >= 1) PerlIO_printf(DBILOGFP, "Running _result with (%s)\n", com);
 
 	result = PQexec(imp_dbh->conn, com);
-
-	status = result ? (int)PQresultStatus(result) : -1;
+	if (result)
+		status = PQresultStatus(result);
 
 #if PGLIBVERSION >= 70400
 	strncpy(imp_dbh->sqlstate,
@@ -294,7 +294,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	if (!imp_dbh->sqlstate)
 		croak("No memory");	
 	imp_dbh->sqlstate[0] = '\0';
-	strcpy(imp_dbh->sqlstate, "S1000");
+	Copy((char)"S1000", imp_dbh->sqlstate, 5, char);
 	imp_dbh->done_begin = 0; /* We are not inside a transaction */
 	imp_dbh->pg_bool_tf = 0;
 	imp_dbh->pg_enable_utf8 = 0;
@@ -566,7 +566,7 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 	SV *retsv = Nullsv;
 	char *host = NULL;
 	
-	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_FETCH\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_FETCH: dbh=%s\n", dbh); }
 	
 	if (10==kl && strEQ(key, "AutoCommit")) {
 		retsv = boolSV(DBIc_has(imp_dbh, DBIcf_AutoCommit));
@@ -634,13 +634,12 @@ int dbd_discon_all (drh, imp_drh)
 {
 	dTHR;
 	
-	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_discon_all\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_discon_all: drh=%s\n", drh); }
 	
 	/* The disconnect_all concept is flawed and needs more work */
 	if (!PL_dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
 		sv_setiv(DBIc_ERR(imp_drh), (IV)1);
-		sv_setpv(DBIc_ERRSTR(imp_drh),
-						 (char*)"disconnect_all not implemented");
+		sv_setpv(DBIc_ERRSTR(imp_drh), "disconnect_all not implemented");
 	}
 	return DBDPG_FALSE;
 
@@ -653,7 +652,7 @@ int dbd_db_getfd (dbh, imp_dbh)
 		 imp_dbh_t *imp_dbh;
 {
 
-	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_getfd\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_getfd: dbh=%s\n", dbh); }
 	
 	return PQsocket(imp_dbh->conn);
 
@@ -797,7 +796,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	statement -= mypos; /* Rewind statement */
 
 	/* Break the statement into segments by placeholder */
-	dbd_st_split_statement(sth, imp_sth, statement);
+	dbd_st_split_statement(imp_sth, statement);
 
 	/*
 		We prepare it right away if:
@@ -831,10 +830,9 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 
 
 /* ================================================================== */
-void dbd_st_split_statement (sth, imp_sth, statement)
-		 SV *sth;
+void dbd_st_split_statement (imp_sth, statement)
 		 imp_sth_t *imp_sth;
-		 const char *statement;
+		 char *statement;
 {
 
 	/* Builds the "segment" and "placeholder" structures for a statement handle */
@@ -1162,7 +1160,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	unsigned int x;
 	STRLEN execsize;
 	PGresult *result;
-	int status;
+	int status = -1;
 	seg_t *currseg;
 	bool oldprepare = 1;
 	unsigned int params = 0;
@@ -1264,9 +1262,10 @@ int dbd_st_prepare_statement (sth, imp_sth)
 				paramTypes[x++] = currph->defaultval ? 0 : currph->bind_type->type_id;
 			}
 		}
-		result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, paramTypes);
+		result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, (int)params, paramTypes);
 		Safefree(paramTypes);
-		status = result ? (int)PQresultStatus(result) : -1;
+		if (result)
+			status = PQresultStatus(result);
 		if (dbis->debug >= 6)
 			PerlIO_printf(DBILOGFP, "  dbdpg: Using PQprepare\n");
 	}
@@ -1305,6 +1304,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	bool reprepare = 0;
 	int pg_type = 0;
 	char *value_string = NULL;
+	maxlen = 0; /* not used */
 
 	if (dbis->debug >= 4) {
 		PerlIO_printf(DBILOGFP, "dbd_bind_ph\n");
@@ -1486,7 +1486,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	int *paramLengths = NULL, *paramFormats = NULL;
 	Oid *paramTypes = NULL;
 	seg_t *currseg;
-	char *statement = NULL, *cmdStatus, *cmdTuples;
+	char *statement = NULL, *cmdStatus = NULL, *cmdTuples = NULL;
 	int num_fields, ret = -2;
 	
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_execute\n"); }
@@ -1541,7 +1541,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 				if (!currph->quoted)
 					croak("No memory");
 				currph->quoted[0] = '\0';
-				strcpy(currph->quoted, "NULL");
+				Copy((char)"NULL", currph->quoted, 4, char);
 				currph->quotedlen = 4;
 			}
 			else {
@@ -1739,7 +1739,10 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 	/* Some form of PQexec has been run at this point */
 
-	status = imp_sth->result ? (int)PQresultStatus(imp_sth->result) : -1;
+	if (imp_sth->result)
+		status = PQresultStatus(imp_sth->result);
+	else
+		status = -1;
 
 	/* We don't want the result cleared yet, so we don't use _result */
 
@@ -1753,9 +1756,11 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	strcpy(imp_dbh->sqlstate, "S1000"); /* DBI standard says this is the default */
 #endif
 
-	cmdStatus = imp_sth->result ? (char *)PQcmdStatus(imp_sth->result) : "";
-	cmdTuples = imp_sth->result ? (char *)PQcmdTuples(imp_sth->result) : "";
-	
+	if (imp_sth->result) {
+		cmdStatus = PQcmdStatus(imp_sth->result);
+		cmdTuples = PQcmdTuples(imp_sth->result);
+	}
+
 	if (dbis->debug >= 5)
 		PerlIO_printf(DBILOGFP, "  dbdpg: received a status of %d\n", status);
 
@@ -1919,7 +1924,7 @@ int dbd_st_rows (sth, imp_sth)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
 {
-	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_rows\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_rows: sth=%s\n", sth); }
 	
 	return imp_sth->rows;
 
@@ -1933,7 +1938,7 @@ int dbd_st_finish (sth, imp_sth)
 {
 	dTHR;
 	
-	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_finish\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_finish: sth=%s\n", sth); }
 	
 	if (DBIc_ACTIVE(imp_sth) && imp_sth->result) {
 		PQclear(imp_sth->result);
@@ -1985,7 +1990,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 				if (dbis->debug >= 4)
 					PerlIO_printf(DBILOGFP, "  dbdpg: Rolling back to savepoint %s\n", SvPV_nolen(sp));
 				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
-				strcpy(tempsqlstate, imp_dbh->sqlstate);
+				Copy(imp_dbh->sqlstate, tempsqlstate, strlen(imp_dbh->sqlstate), char);
 				status = _result(imp_dbh, cmd);
 				Safefree(cmd);
 			}
@@ -2020,7 +2025,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 
 	imp_sth->prepare_name = NULL;
 	if (tempsqlstate[0])
-		strcpy(imp_dbh->sqlstate, tempsqlstate);
+		Copy(tempsqlstate, imp_dbh->sqlstate, strlen(tempsqlstate), char);
 
 	return 0;
 
@@ -2096,7 +2101,7 @@ int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 	STRLEN vl;
 	char *value = SvPV(valuesv,vl);
 
-	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_STORE\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_STORE: sth=%s\n", sth); }
 	
 	if (17==kl && strEQ(key, "pg_server_prepare")) {
 		imp_sth->server_prepare = strEQ(value,"0") ? 0 : 1;
@@ -2127,10 +2132,9 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 	char *key = SvPV(keysv,kl);
 	int i, x, y, sz;
 	SV *retsv = Nullsv;
-	char *type_name;
 	sql_type_info_t *type_info;
 
-	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_FETCH\n"); }
+	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_st_FETCH: sth=%s\n", sth); }
 	
 	/* Some can be done before the execute */
 	if (15==kl && strEQ(key, "pg_prepare_name")) {
@@ -2151,11 +2155,11 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
 			if (NULL == currph->value) {
 				hv_store_ent(pvhv, 3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : 
-										 newSViv(i+1), Nullsv, i);
+										 newSViv(i+1), Nullsv, (unsigned)i);
 			}
 			else {
 				hv_store_ent(pvhv, 3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : 
-										 newSViv(i+1), newSVpv(currph->value,0),i);
+										 newSViv(i+1), newSVpv(currph->value,0),(unsigned)i);
 			}
 		}
 		retsv = newRV_noinc((SV*)pvhv);
@@ -2179,7 +2183,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		AV *av = newAV();
 		retsv = newRV(sv_2mortal((SV*)av));
 		while(--i >= 0) {
-			type_info = pg_type_data(PQftype(imp_sth->result, i));
+			type_info = pg_type_data((int)PQftype(imp_sth->result, i));
 			av_store(av, i, newSViv( type_info ? type_info->type.sql : 0 ) );
 		}
 	}
@@ -2220,7 +2224,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 	else if (8==kl && strEQ(key, "NULLABLE")) {
 		AV *av = newAV();
 		PGresult *result;
-		PGTransactionStatusType status;
+		int status = -1;
 		D_imp_dbh_from_sth;
 		char *statement;
 		int nullable; /* 0 = not nullable, 1 = nullable 2 = unknown */
@@ -2238,7 +2242,8 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 				sprintf(statement, "SELECT attnotnull FROM pg_catalog.pg_attribute WHERE attrelid=%d AND attnum=%d", x, y);
 				statement[strlen(statement)]='\0';
 				result = PQexec(imp_dbh->conn, statement);
-				status = imp_sth->result ? (int)PQresultStatus(imp_sth->result) : -1;
+				if (result)
+					status = PQresultStatus(result);
 				if (PGRES_TUPLES_OK == status && PQntuples(result)) {
 					switch(PQgetvalue(result,0,0)[0]) {
 					case 't':
@@ -2271,13 +2276,12 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		AV *av = newAV();
 		retsv = newRV(sv_2mortal((SV*)av));
 		while(--i >= 0) {			
-			type_info = pg_type_data(PQftype(imp_sth->result,i));
-			type_name = (type_info) ? type_info->type_name : "unknown";
-			av_store(av, i, newSVpv(type_name, 0));			
+			type_info = pg_type_data((int)PQftype(imp_sth->result,i));
+			av_store(av, i, newSVpv(type_info ? type_info->type_name : "unkown", 0));
 		}
 	}
 	else if (13==kl && strEQ(key, "pg_oid_status")) {
-		retsv = newSViv(PQoidValue(imp_sth->result));
+		retsv = newSViv((int)PQoidValue(imp_sth->result));
 	}
 	else if (13==kl && strEQ(key, "pg_cmd_status")) {
 		retsv = newSVpv((char *)PQcmdStatus(imp_sth->result), 0);
@@ -2313,7 +2317,7 @@ pg_db_putline (dbh, buffer)
 		if (dbis->debug >= 4)
 			PerlIO_printf(DBILOGFP, "  dbdpg: PQputCopyData\n");
 
-		result = PQputCopyData(imp_dbh->conn, buffer, strlen(buffer));
+		result = PQputCopyData(imp_dbh->conn, buffer, (int)strlen(buffer));
 		if (-1 == result) {
 			pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
 			return 0;
@@ -2365,7 +2369,7 @@ pg_db_getline (dbh, buffer, length)
 			pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
 		}
 		else {
-			strcpy(buffer, tempbuf);
+			Copy(tempbuf, buffer, strlen(tempbuf), char);
 			PQfreemem(tempbuf);
 		}
 		return 0;
@@ -2595,7 +2599,7 @@ unsigned int pg_db_lo_creat (dbh, mode)
 		status = _result(imp_dbh, "begin");
 		if (PGRES_COMMAND_OK != status) {
 			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
-			return -2;
+			return (unsigned)-2;
 		}
 		imp_dbh->done_begin = 1;
 	}
