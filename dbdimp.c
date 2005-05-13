@@ -87,6 +87,8 @@ ExecStatusType _result(imp_dbh, com)
 	PGresult *result;
 	int status;
 
+	if (dbis->debug >= 1) PerlIO_printf(DBILOGFP, "Running _result with (%s)\n", com);
+
 	result = PQexec(imp_dbh->conn, com);
 
 	status = result ? (int)PQresultStatus(result) : -1;
@@ -400,7 +402,7 @@ int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	}
 #endif
 
-	/* If begin_work has been called, turn AutoCommit back on and BeginWork off */
+	/* If begin_work has been called, turn AutoCommit back on and BegunWork off */
 	if (DBIc_has(imp_dbh, DBIcf_BegunWork)) {
 		DBIc_set(imp_dbh, DBIcf_AutoCommit, 1);
 		DBIc_set(imp_dbh, DBIcf_BegunWork, 0);
@@ -1792,7 +1794,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	/* store the number of affected rows */
 	
 	imp_sth->rows = ret;
-	
+
 	return ret;
 
 } /* end of dbd_st_execute */
