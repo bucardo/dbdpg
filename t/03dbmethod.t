@@ -789,7 +789,7 @@ is_deeply( \%missing, {}, 'DB handle method "table_attributes" returns the expec
 # Test of the "lo_*" database handle methods
 #
 
-$dbh->{AutoCommit}=0;
+$dbh->{AutoCommit}=1; $dbh->{AutoCommit}=0; ## Catch error where not in begin
 my ($R,$W) = ($dbh->{pg_INV_READ}, $dbh->{pg_INV_WRITE});
 my $RW = $R|$W;
 my $object = $dbh->func($R, 'lo_creat');
