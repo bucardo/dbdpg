@@ -95,7 +95,7 @@ struct imp_sth_st {
   char   *statement;       /* the rewritten statement, for passing to PQexecP.. */
 };
 
-/* Other functions we have added to dbdimp.c (large object ones are in large_object.h) */
+/* Other functions we have added to dbdimp.c */
 
 SV * dbd_db_pg_notifies (SV *dbh, imp_dbh_t *imp_dbh);
 int dbd_db_ping ();
@@ -110,5 +110,16 @@ void pg_db_pg_server_trace ();
 void pg_db_pg_server_untrace ();
 void pg_db_server_trace ();
 void pg_db_no_server_trace ();
+
+int pg_db_lo_open ();
+int pg_db_lo_close ();
+int pg_db_lo_read ();
+int pg_db_lo_write ();
+int pg_db_lo_lseek ();
+unsigned int pg_db_lo_creat ();
+int pg_db_lo_tell ();
+int pg_db_lo_unlink ();
+unsigned int pg_db_lo_import ();
+int pg_db_lo_export ();
 
 /* end of dbdimp.h */

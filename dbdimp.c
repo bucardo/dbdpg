@@ -13,7 +13,7 @@
 */
 
 
-#include "Pg.h" /* has large_object.h */
+#include "Pg.h"
 #include <math.h>
 
 #define DBDPG_TRUE 1
@@ -76,7 +76,7 @@ int dbd_st_prepare_statement();
 int dbd_db_transaction_status();
 int dbd_st_deallocate_statement();
 PGTransactionStatusType dbd_db_txn_status();
-#include "large_object.c"
+
 
 /* ================================================================== */
 /* Quick result grabber used throughout this file */
@@ -2579,4 +2579,203 @@ int pg_db_release (dbh, imp_dbh, savepoint)
 	return 1;
 }
 
+
+/* ================================================================== */
+/* Large object functions */
+
+unsigned int pg_db_lo_creat (dbh, mode)
+		SV *dbh;
+		int mode;
+{
+	int status = -1;
+	D_imp_dbh(dbh);
+
+	/* If not autocommit, start a new transaction */
+	if (!imp_dbh->done_begin && DBDPG_FALSE == DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		status = _result(imp_dbh, "begin");
+		if (PGRES_COMMAND_OK != status) {
+			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
+			return -2;
+		}
+		imp_dbh->done_begin = 1;
+	}
+	return lo_creat(imp_dbh->conn, mode);
+}
+
+int pg_db_lo_open (dbh, lobjId, mode)
+		 SV *dbh;
+		 unsigned int lobjId;
+		 int mode;
+{
+	D_imp_dbh(dbh);
+	return lo_open(imp_dbh->conn, lobjId, mode);
+}
+
+int pg_db_lo_close (dbh, fd)
+		 SV *dbh;
+		 int fd;
+{
+	D_imp_dbh(dbh);
+	return lo_close(imp_dbh->conn, fd);
+}
+
+int pg_db_lo_read (dbh, fd, buf, len)
+		 SV *dbh;
+		 int fd;
+		 char *buf;
+		 unsigned int len;
+{
+	D_imp_dbh(dbh);
+	return lo_read(imp_dbh->conn, fd, buf, len);
+}
+
+
+int pg_db_lo_write (dbh, fd, buf, len)
+		 SV *dbh;
+		 int fd;
+		 char *buf;
+		 unsigned int len;
+{
+	D_imp_dbh(dbh);
+	return lo_write(imp_dbh->conn, fd, buf, len);
+}
+
+
+int pg_db_lo_lseek (dbh, fd, offset, whence)
+		 SV *dbh;
+		 int fd;
+		 int offset;
+		 int whence;
+{
+	D_imp_dbh(dbh);
+	return lo_lseek(imp_dbh->conn, fd, offset, whence);
+}
+
+
+int pg_db_lo_tell (dbh, fd)
+		SV *dbh;
+		int fd;
+{
+	D_imp_dbh(dbh);
+	return lo_tell(imp_dbh->conn, fd);
+}
+
+
+int pg_db_lo_unlink (dbh, lobjId)
+		 SV *dbh;
+		 unsigned int lobjId;
+{
+	D_imp_dbh(dbh);
+	return lo_unlink(imp_dbh->conn, lobjId);
+}
+
+
+unsigned int pg_db_lo_import (dbh, filename)
+		 SV *dbh;
+		 char *filename;
+{
+	D_imp_dbh(dbh);
+	return lo_import(imp_dbh->conn, filename);
+}
+
+
+int pg_db_lo_export (dbh, lobjId, filename)
+		 SV *dbh;
+		 unsigned int lobjId;
+		 char *filename;
+{
+	D_imp_dbh(dbh);
+	return lo_export(imp_dbh->conn, lobjId, filename);
+}
+
+int dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
+		 SV *sth;
+		 imp_sth_t *imp_sth;
+		 int lobjId;
+		 long offset;
+		 long len;
+		 SV *destrv;
+		 long destoffset;
+{
+	D_imp_dbh_from_sth;
+	int ret, lobj_fd, nbytes;
+	STRLEN nread;
+	SV *bufsv;
+	char *tmp;
+	
+	if (dbis->debug >= 1) { PerlIO_printf(DBILOGFP, "dbd_st_blob_read\n"); }
+	/* safety checks */
+	if (lobjId <= 0) {
+		pg_error(sth, -1, "dbd_st_blob_read: lobjId <= 0");
+		return 0;
+	}
+	if (offset < 0) {
+		pg_error(sth, -1, "dbd_st_blob_read: offset < 0");
+		return 0;
+	}
+	if (len < 0) {
+		pg_error(sth, -1, "dbd_st_blob_read: len < 0");
+		return 0;
+		}
+	if (! SvROK(destrv)) {
+		pg_error(sth, -1, "dbd_st_blob_read: destrv not a reference");
+		return 0;
+	}
+	if (destoffset < 0) {
+		pg_error(sth, -1, "dbd_st_blob_read: destoffset < 0");
+		return 0;
+	}
+	
+	/* dereference destination and ensure it's writable string */
+	bufsv = SvRV(destrv);
+	if (! destoffset) {
+		sv_setpvn(bufsv, "", 0);
+	}
+	
+	/* open large object */
+	lobj_fd = lo_open(imp_dbh->conn, (unsigned)lobjId, INV_READ);
+	if (lobj_fd < 0) {
+		pg_error(sth, -1, PQerrorMessage(imp_dbh->conn));
+		return 0;
+	}
+	
+	/* seek on large object */
+	if (offset > 0) {
+		ret = lo_lseek(imp_dbh->conn, lobj_fd, offset, SEEK_SET);
+		if (ret < 0) {
+			pg_error(sth, -1, PQerrorMessage(imp_dbh->conn));
+			return 0;
+		}
+	}
+	
+	/* read from large object */
+	nread = 0;
+	SvGROW(bufsv, destoffset + nread + BUFSIZ + 1);
+	tmp = (SvPVX(bufsv)) + destoffset + nread;
+	while ((nbytes = lo_read(imp_dbh->conn, lobj_fd, tmp, BUFSIZ)) > 0) {
+		nread += nbytes;
+		/* break if user wants only a specified chunk */
+		if (len > 0 && (int)nread > len) {
+			nread = len;
+			break;
+		}
+		SvGROW(bufsv, destoffset + nread + BUFSIZ + 1);
+		tmp = (SvPVX(bufsv)) + destoffset + nread;
+	}
+	
+	/* terminate string */
+	SvCUR_set(bufsv, destoffset + nread);
+	*SvEND(bufsv) = '\0';
+	
+	/* close large object */
+	ret = lo_close(imp_dbh->conn, lobj_fd);
+	if (ret < 0) {
+		pg_error(sth, -1, PQerrorMessage(imp_dbh->conn));
+		return 0;
+	}
+	
+	return nread;
+}
+
 /* end of dbdimp.c */
+
