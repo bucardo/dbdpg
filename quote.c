@@ -309,7 +309,7 @@ quote_bytea(string, len, retlen)
 	
  	dest = result;
 	
-	Copy("'", dest++,1,char);
+	Copy('\'', dest++, 1, char);
 	strcpy(dest,intermead);
 	strcat(dest,"\'");
 	
@@ -348,7 +348,7 @@ quote_sql_binary( string, len, retlen)
 	
 	
 	dest = result;
-	Copy("X'",dest++,2,char);
+	Copy((char)"X\'",dest++,2,char);
 	
 	for (i=0 ; i <= len ; ++i, dest+=2) {
 		sprintf(dest, "%X", *(i+(char*)string));

@@ -88,7 +88,6 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
         char *quoted;
         sql_type_info_t *type_info;
 
-
 				SvGETMAGIC(to_quote_sv);
         if(type_sv && SvOK(type_sv)) {
                 if SvMAGICAL(type_sv)
@@ -228,7 +227,7 @@ lo_read(dbh, fd, buf, len)
         if (ret > 0) {
             SvCUR_set(bufsv, ret);
             *SvEND(bufsv) = '\0';
-            sv_setpvn(ST(2), buf, ret);
+            sv_setpvn(ST(2), buf, (unsigned)ret);
             SvSETMAGIC(ST(2));
         }
         ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
@@ -288,7 +287,7 @@ lo_import(dbh, filename)
     char * filename
     CODE:
         unsigned int ret = pg_db_lo_import(dbh, filename);
-        ST(0) = (ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+        ST(0) = (ret) ? sv_2mortal(newSViv((int)ret)) : &sv_undef;
 
 
 void
