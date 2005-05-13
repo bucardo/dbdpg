@@ -1,8 +1,6 @@
 Changes
 dbdimp.c
 dbdimp.h
-large_object.c
-large_object.h
 Makefile.PL
 MANIFEST
 Pg.h
