@@ -103,7 +103,6 @@ my %opts =
 	 PERL_MALLOC_OK => 1,
 	 NEEDS_LINKING  => 1,
 	 clean          => { FILES => 'trace' },
-	 depend         => { 'dbdimp.o' => 'large_object.c' },
 );
 
 if ($os eq 'hpux') {
