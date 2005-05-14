@@ -31,17 +31,18 @@ struct imp_dbh_st {
 	bool    pg_bool_tf;        /* do bools return 't'/'f'? Set by user, default is 0 */
 	bool    pg_enable_utf8;    /* should we attempt to make utf8 strings? Set by user, default is 0 */
 	bool    prepare_now;       /* force immediate prepares, even with placeholders. Set by user, default is 0 */
-	char    pg_errorlevel;     /* PQsetErrorVerbosity. Set by user, defaults to 1 */
-	char    server_prepare;    /* do we want to use PQexecPrepared? 0=no 1=yes 2=smart. Can be changed by user */
-
-	PGconn  *conn;             /* connection structure */
 	bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */
-	AV      *savepoints;       /* list of savepoints */
+
 	int     pg_protocol;       /* value of PQprotocolVersion, usually 0, 2, or 3 */
 	int     pg_server_version; /* Server version e.g. 80100 */
 	int     prepare_number;    /* internal prepared statement name modifier */
-	char    *sqlstate;         /* from the last result */
 	int     copystate;         /* 0=none PGRES_COPY_IN PGRES_COPY_OUT */
+	char    pg_errorlevel;     /* PQsetErrorVerbosity. Set by user, defaults to 1 */
+	char    server_prepare;    /* do we want to use PQexecPrepared? 0=no 1=yes 2=smart. Can be changed by user */
+
+	AV      *savepoints;       /* list of savepoints */
+	PGconn  *conn;             /* connection structure */
+	char    *sqlstate;         /* from the last result */
 };
 
 
@@ -72,27 +73,32 @@ typedef struct ph_st ph_t;
 struct imp_sth_st {
 	dbih_stc_t com;         /* MUST be first element in structure */
 
-	PGresult  *result;      /* result structure from the executed query */
-	int        cur_tuple;   /* current tuple being fetched */
-	int        rows;        /* number of affected rows */
-	sql_type_info_t **type_info; /* type of each column in result */
-
-	char   server_prepare;   /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
-	char   *prepare_name;    /* name of the prepared query; NULL if not prepared */
 	bool   prepare_now;      /* prepare this statement right away, even if it has placeholders */
 	bool   prepared_by_us;   /* false if {prepare_name} set directly */
 	bool   direct;           /* allow bypassing of the statement parsing */
-	char   *firstword;       /* first word of the statement */
 	bool   is_dml;           /* is this SELECT/INSERT/UPDATE/DELETE? */
 	bool   has_binary;       /* does it have one or more binary placeholders? */
+
+	char   server_prepare;   /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
+	char   placeholder_type; /* which style is being used 1=? 2=$1 3=:foo */
+
+	STRLEN totalsize;        /* total string length of the statement (with no placeholders)*/
+
 	int    numsegs;          /* how many segments this statement has */
 	int    numphs;           /* how many placeholders this statement has */
 	int    numbound;         /* how many placeholders were explicitly bound by the client, not us */
-	STRLEN totalsize;        /* total string length of the statement (with no placeholders)*/
-	char   placeholder_type; /* which style is being used 1=? 2=$1 3=:foo */
+	int    cur_tuple;        /* current tuple being fetched */
+	int    rows;             /* number of affected rows */
+
+  char   *statement;       /* the rewritten statement, for passing to PQexecP.. */
+	char   *prepare_name;    /* name of the prepared query; NULL if not prepared */
+	char   *firstword;       /* first word of the statement */
+
+	PGresult  *result;       /* result structure from the executed query */
+	sql_type_info_t **type_info; /* type of each column in result */
+
 	seg_t  *seg;             /* linked list of segments */
 	ph_t   *ph;              /* linked list of placeholders */
-  char   *statement;       /* the rewritten statement, for passing to PQexecP.. */
 };
 
 /* Other functions we have added to dbdimp.c */
