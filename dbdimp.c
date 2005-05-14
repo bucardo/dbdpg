@@ -75,6 +75,8 @@ void dbd_st_split_statement();
 int dbd_st_prepare_statement();
 int dbd_db_transaction_status();
 int dbd_st_deallocate_statement();
+int dbd_db_rollback_commit();
+int is_high_bit_set();
 PGTransactionStatusType dbd_db_txn_status();
 
 
@@ -294,7 +296,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	if (!imp_dbh->sqlstate)
 		croak("No memory");	
 	imp_dbh->sqlstate[0] = '\0';
-	Copy((char)"S1000", imp_dbh->sqlstate, 5, char);
+	strcpy(imp_dbh->sqlstate, "S1000");
 	imp_dbh->done_begin = 0; /* We are not inside a transaction */
 	imp_dbh->pg_bool_tf = 0;
 	imp_dbh->pg_enable_utf8 = 0;
@@ -1541,7 +1543,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 				if (!currph->quoted)
 					croak("No memory");
 				currph->quoted[0] = '\0';
-				Copy((char)"NULL", currph->quoted, 4, char);
+				strcpy(currph->quoted, "NULL");
 				currph->quotedlen = 4;
 			}
 			else {
@@ -1990,7 +1992,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 				if (dbis->debug >= 4)
 					PerlIO_printf(DBILOGFP, "  dbdpg: Rolling back to savepoint %s\n", SvPV_nolen(sp));
 				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
-				Copy(imp_dbh->sqlstate, tempsqlstate, strlen(imp_dbh->sqlstate), char);
+				strcpy(tempsqlstate, imp_dbh->sqlstate);
 				status = _result(imp_dbh, cmd);
 				Safefree(cmd);
 			}
@@ -2025,7 +2027,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 
 	imp_sth->prepare_name = NULL;
 	if (tempsqlstate[0])
-		Copy(tempsqlstate, imp_dbh->sqlstate, strlen(tempsqlstate), char);
+		strcpy(imp_dbh->sqlstate, tempsqlstate);
 
 	return 0;
 
@@ -2369,7 +2371,7 @@ pg_db_getline (dbh, buffer, length)
 			pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
 		}
 		else {
-			Copy(tempbuf, buffer, strlen(tempbuf), char);
+			strcpy(buffer, tempbuf);
 			PQfreemem(tempbuf);
 		}
 		return 0;
