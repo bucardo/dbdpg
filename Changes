@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.42
+	- Make sure lo_creat issues a begin if necessary [GSM]
 	- Fix incorrect behavior when AutoCommit switched on.
 		[thanks to Vivek Khera] [GSM]
 	- Have last_insert_id use set_err, not die.
@@ -76,7 +77,7 @@
 		row containing multiple-column information. [GSM]
 	- Switched commit behavior from commit->execute->begin 
 		to begin->execute->commit
-		[xelah-junk@xelah.com]
+		[xelah-junk@xelah.com] [GSM]
 	- Made the _pg_use_catalog subroutine use {private_dbgpg}.
 		(CPAN bug #4841) [GSM]
 	- Changed strdup to safemalloc/strcpy in dbdimp.c
