@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 24;
+	plan tests => 26;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -156,6 +156,24 @@ SKIP: {
 } ## end SKIP
 
 #
+# Make sure rollback and commit reset our internal copystate tracking
+#
+
+$dbh->do("COPY $table TO STDOUT");
+$dbh->commit();
+eval {
+	$dbh->do("SELECT 'dbdpg_copytest'");
+};
+ok(!$@, 'commit resets COPY state');
+
+$dbh->do("COPY $table TO STDOUT");
+$dbh->rollback();
+eval {
+	$dbh->do("SELECT 'dbdpg_copytest'");
+};
+ok(!$@, 'rollback resets COPY state');
+
+#
 # Keep oldstyle calls around for backwards compatibility
 #
 
@@ -172,4 +190,3 @@ is ($result, 1, "old-style dbh->func(var, length, 'getline') still works");
 $dbh->do("DROP TABLE $table");
 $dbh->commit();
 ok( $dbh->disconnect(), 'Disconnect from database');
-
