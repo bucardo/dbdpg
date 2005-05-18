@@ -1,18 +1,23 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.42
+	- Fix backslash parsing in statements (CPAN bug #12870)
+		[felix.klee@inka.de] [GSM]
+	- Make rollback/commit reset copy state (CPAN bug #12866)
+		[imb@rentrak.com] [GSM]
 	- Make sure lo_creat issues a begin if necessary [GSM]
-	- Fix incorrect behavior when AutoCommit switched on.
+	- Fix incorrect behavior when AutoCommit switched on. (CPAN bug #12748)
 		[thanks to Vivek Khera] [GSM]
-	- Have last_insert_id use set_err, not die.
+	- Have last_insert_id use set_err, not die. (CPAN bug #12503)
 		[thanks to Alexandra Walford] [GSM]
 	- Fixed tests to correctly handle older DBI versions reporting 
-		failures on last_insert_id(). [GSM]
-	- Re-enable REMARKS field on column_info [CPAN bug #12399)
+		failures on last_insert_id() (CPAN bug #12204)
+		[jpo@di.uminho.pt] [GSM]
+	- Re-enable REMARKS field on column_info (CPAN bug #12399)
 		[thanks to morni@cpan.org] [GSM]
 	- Many minor compiler optimizations and cleanups [GSM]
-	- Fix two separate memory leaks in dbdimp.c 
-		(hertzog@debian.org and richardg@eSentire.com)
+	- Fix three separate memory leaks in dbdimp.c 
+		[hertzog@debian.org and richardg@eSentire.com, GSM]
 	- Change VARCHAROID to UNKNOWNOID, suggested by users on mailing 
 		list [GSM]
 
