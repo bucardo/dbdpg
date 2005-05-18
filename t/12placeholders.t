@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 15;
+	plan tests => 16;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -106,6 +106,15 @@ $sth->finish();
 ok( $count >= 1, 'prepare with large number of parameters works');
 
 $sth->finish();
+
+## Test our parsing of backslashes
+$sth = $dbh->prepare("SELECT '\\'?'");
+eval {
+	$sth->execute();
+};
+ok(!$@, 'prepare with backslashes inside quotes works');
+$sth->finish();
+
 $dbh->rollback();
 
 ok( $dbh->disconnect(), 'Disconnect from database');

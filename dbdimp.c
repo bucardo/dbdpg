@@ -903,6 +903,14 @@ void dbd_st_split_statement (imp_sth, statement)
 				if (!(backslashes & 1)) 
 					quote = 0;
 			}
+			else {
+				if ('\\' == ch) {
+					backslashes++;
+				}
+				else {
+					backslashes=0;
+				}
+			}
 			if (*statement)
 				continue;
 		}
