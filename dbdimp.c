@@ -1268,6 +1268,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 		Safefree(paramTypes);
 		if (result)
 			status = PQresultStatus(result);
+		PQclear(result);
 		if (dbis->debug >= 6)
 			PerlIO_printf(DBILOGFP, "  dbdpg: Using PQprepare\n");
 	}
@@ -1702,6 +1703,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 				PerlIO_printf(DBILOGFP, "  dbdpg: calling PQexecParams for: %s\n", statement);
 			imp_sth->result = PQexecParams(imp_dbh->conn, statement, imp_sth->numphs, paramTypes,
 																		 paramValues, paramLengths, paramFormats, 0);
+			Safefree(paramTypes);
 		}
 		
 		/* PQexec */
@@ -1734,13 +1736,13 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 		} /* end PQexec */
 
+		Safefree(statement);
+
 	} /* end non-prepared exec */
 
 	Safefree(paramValues);
 	Safefree(paramLengths);
 	Safefree(paramFormats);			
-	Safefree(statement);
-	Safefree(paramTypes);
 
 	/* Some form of PQexec has been run at this point */
 
