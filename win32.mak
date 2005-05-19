@@ -75,6 +75,11 @@ LINK32_OBJS= \
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
 
+"$(OUTDIR)\pg_config.obj" : .\pg_config.c
+    $(CPP) @<<
+    $(CPP_PROJ) ..\pg_config.c
+<<
+
 "$(OUTDIR)\path.obj" : "$(OUTDIR)" ..\..\port\path.c
     $(CPP) @<<
     $(CPP_PROJ) ..\..\port\path.c
