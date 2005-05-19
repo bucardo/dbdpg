@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.42
+	- Fix minor issues with copying and bytea quoting on older 
+		servers. Fix some other memory leaks. [GSM]
 	- Fix backslash parsing in statements (CPAN bug #12870)
 		[felix.klee@inka.de] [GSM]
 	- Make rollback/commit reset copy state (CPAN bug #12866)
@@ -16,8 +18,8 @@
 	- Re-enable REMARKS field on column_info (CPAN bug #12399)
 		[thanks to morni@cpan.org] [GSM]
 	- Many minor compiler optimizations and cleanups [GSM]
-	- Fix three separate memory leaks in dbdimp.c 
-		[hertzog@debian.org and richardg@eSentire.com, GSM]
+	- Fix two separate memory leaks in dbdimp.c 
+		[hertzog@debian.org and richardg@eSentire.com]
 	- Change VARCHAROID to UNKNOWNOID, suggested by users on mailing 
 		list [GSM]
 
