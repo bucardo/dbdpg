@@ -19,6 +19,7 @@ ok( defined $dbh, "Connect to database for bytea testing");
 
 my ($sth,$count,$result,$expected,@data);
 my $pglibversion = $dbh->{pg_lib_version};
+my $pgversion = $dbh->{pg_server_version};
 my $table = 'dbd_pg_test4';
 
 ## (Re)create a second test table with few columns to test a "bare" COPY
@@ -101,7 +102,7 @@ $dbh->commit();
 #
 
 SKIP: {
-	skip "Cannot test pg_getline with DBD::Pg compiled with pre-7.4 libraries", 12 if $pglibversion < 70400;
+	skip "Cannot test pg_getline with DBD::Pg compiled with pre-7.4 libraries", 10 if $pglibversion < 70400;
 
 	## pg_getline should fail unless we are in a COPY OUT state
 	eval {
@@ -153,6 +154,11 @@ SKIP: {
 	};
 	ok($@, 'pg_endcopy fails when called twice after COPY OUT');
 
+} ## end SKIP
+
+SKIP: {
+	skip "Cannot test commit copy reset with pre-7.4 servers", 2 if $pgversion < 70400;
+
 	#
 	# Make sure rollback and commit reset our internal copystate tracking
 	#
@@ -172,6 +178,7 @@ SKIP: {
 	ok(!$@, 'rollback resets COPY state');
 
 } ## end SKIP
+
 
 #
 # Keep oldstyle calls around for backwards compatibility
