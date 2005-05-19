@@ -309,7 +309,7 @@ quote_bytea(string, len, retlen)
 	
  	dest = result;
 	
-	Copy('\'', dest++, 1, char);
+	Copy("'", dest++, 1, char);
 	strcpy(dest,intermead);
 	strcat(dest,"\'");
 	
