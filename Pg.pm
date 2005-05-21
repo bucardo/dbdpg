@@ -16,7 +16,7 @@ use 5.006001;
 
 { package DBD::Pg;
 
-	our $VERSION = '1.41_2';
+	our $VERSION = '1.42';
 
 	use DBI ();
 	use DynaLoader ();

@@ -6,7 +6,7 @@ DBD::Pg  --  the DBI PostgreSQL interface for Perl
 DESCRIPTION:
 ------------
 
-This is version 1.41_2 of DBD-Pg.  The web site for this interface is at:
+This is version 1.42 of DBD-Pg.  The web site for this interface is at:
 
 	http://gborg.postgresql.org/project/dbdpg/projdisplay.php
 
