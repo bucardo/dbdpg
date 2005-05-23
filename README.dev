@@ -1,4 +1,6 @@
 
+## $Id$
+
 This file is for those interested in developing DBD::Pg. It is hoped that it 
 will be a good introduction as well as a continual reference. Suggestions 
 are always welcome.
@@ -180,7 +182,10 @@ There are many warning options for gcc. Check the man page for a complete list.
 Here are some that should only generate errors that we can fix:
 
 $comp_opts .= " -Wall -Wextra -Wdeclaration-after-statement -Wendif-labels -Wpointer-arith ";
-$comp_opts .= " -Wbad-function-cast -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align ";
+$comp_opts .= " -Wbad-function-cast -Wcast-qual -Wcast-align -Wconversion -Wsign-compare -Waggregate-return";
+$comp_opts .= " -Wmissing-prototypes -Wmissing-declarations -Wmissing-noreturn";
+$comp_opts .= " -Wformat -Wmissing-format-attribute";
+
 
 These are only partially helpful, as they tend to produce warnings for things out of our control, 
 such as warnings from DBI and Perl itself:
