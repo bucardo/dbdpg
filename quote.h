@@ -1,16 +1,17 @@
+
 #ifndef DBDQUOTEH
 #define DBDQUOTEH
-char * null_quote();
-char * quote_varchar();
-char * quote_char();
-char * quote_sql_binary();
-char * quote_bytea();
-char * quote_bool() ;
-char * quote_integer() ;
-void dequote_char();
-void dequote_varchar();
-void dequote_bytea();
-void dequote_sql_binary();
-void dequote_bool();
-void null_dequote();
+char * null_quote(char *string, STRLEN len, STRLEN *retlen);
+char * quote_varchar(char *string, STRLEN len, STRLEN *retlen);
+char * quote_char(char *string, STRLEN len, STRLEN *retlen);
+char * quote_bytea(char *string, STRLEN len, STRLEN *retlen);
+char * quote_sql_binary(char *string, STRLEN len, STRLEN *retlen);
+char * quote_bool(char *string, STRLEN len, STRLEN *retlen);
+char * quote_integer(char *string, STRLEN len, STRLEN *retlen);
+void dequote_char(char *string, STRLEN *retlen);
+void dequote_varchar(char *string, STRLEN *retlen);
+void dequote_bytea(char *string, STRLEN *retlen);
+void dequote_sql_binary(char *string, STRLEN *retlen);
+void dequote_bool(char *string, STRLEN *retlen);
+void null_dequote(char *string, STRLEN *retlen);
 #endif /*DBDQUOTEH*/

@@ -9,8 +9,6 @@
 
 */
 
-#include "quote.h"
-
 #include "Pg.h"
 #include "types.h"
 

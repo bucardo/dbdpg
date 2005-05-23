@@ -24,19 +24,18 @@
 #define PGLIBVERSION 80009
 #endif
 
-/* strcasecmp() does not exist on Windows (!) */
 #ifdef WIN32
-#define strcasecmp(s1,s2) lstrcmpiA((s1), (s2))
+#define snprintf _snprintf
 #endif
 
-/* XXX DBI should provide a better version of this */
-#define IS_DBI_HANDLE(h) (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV && SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
-
-DBISTATE_DECLARE;
+#define sword  signed int
+#define sb2    signed short
+#define ub2    unsigned short
 
 /* Someday, we can abandon pre-7.4 and life will be much easier... */
 #if PGLIBVERSION < 70400
-/* Limited emulation - use with care! And upgrade already... :) */
+#define PG_DIAG_SQLSTATE 'C'
+/* Better we do all this in one place here than put more ifdefs inside dbdimp.c */
 typedef enum
 {
 	PQTRANS_IDLE,				  /* connection idle */
@@ -45,19 +44,51 @@ typedef enum
 	PQTRANS_INERROR,			/* idle, within failed transaction */
 	PQTRANS_UNKNOWN				/* cannot determine status */
 } PGTransactionStatusType;
-PGresult *PQexecPrepared() { croak("Called wrong PQexecPrepared\n"); }
-PGresult *PQexecParams() { croak("Called wrong PQexecParams\n"); }
-Oid PQftable() { return InvalidOid; }
-int PQftablecol() { return 0; }
-int PQsetErrorVerbosity() { return 0; }
-int PQprotocolVersion() { return 0; }
-PGTransactionStatusType PQtransactionStatus() { return PQTRANS_UNKNOWN; }
-#define PG_DIAG_SQLSTATE 'C'
+typedef enum
+{
+	PQERRORS_TERSE,				/* single-line error messages */
+	PQERRORS_DEFAULT,			/* recommended style */
+	PQERRORS_VERBOSE			/* all the facts, ma'am */
+} PGVerbosity;
+/* These are actually used to return default values */
+int PQprotocolVersion(const PGconn *conn);
+int PQprotocolVersion(const PGconn *conn) { return 0; }
+
+Oid PQftable(PGresult *res, int field_num);
+Oid PQftable(PGresult *res, int field_num) { return InvalidOid; }
+
+int PQftablecol(PGresult *res, int field_num);
+int PQftablecol(PGresult *res, int field_num) { return 0; }
+
+int PQsetErrorVerbosity(PGconn *conn, PGVerbosity verbosity);
+int PQsetErrorVerbosity(PGconn *conn, PGVerbosity verbosity) { return 0; }
+
+PGTransactionStatusType PQtransactionStatus(const PGconn *conn);
+PGTransactionStatusType PQtransactionStatus(const PGconn *conn) { return PQTRANS_UNKNOWN; }
+
+/* These should not be called, and will throw errors if they are */
+PGresult *PQexecPrepared(PGconn *a,const char *b,int c,const char *const *d,const int *e,const int *f,int g);
+PGresult *PQexecPrepared(PGconn *a,const char *b,int c,const char *const *d,const int *e,const int *f,int g) {
+	croak ("Called wrong PQexecPrepared\n");
+}
+PGresult *PQexecParams(PGconn *a,const char *b,int c,const Oid *d,const char *const *e,const int *f,const int *g,int h);
+PGresult *PQexecParams(PGconn *a,const char *b,int c,const Oid *d,const char *const *e,const int *f,const int *g,int h) {
+	croak("Called wrong PQexecParams\n");
+}
+
 #endif
 
-/* an important feature was left out of libpq for 7.4, so we need this check */
 #if PGLIBVERSION < 80000
-PGresult *PQprepare() { croak ("Called wrong PQprepare"); }
+
+/* Should not be called, throw errors: */
+PGresult *PQprepare(PGconn *conn, const char *stmtName, const char *query, int nParams, const Oid *paramTypes);
+PGresult *PQprepare(PGconn *conn, const char *stmtName, const char *query, int nParams, const Oid *paramTypes) {
+	croak ("Called wrong PQprepare");
+}
+
+int PQserverVersion(const PGconn *conn);
+int PQserverVersion(const PGconn *conn) { croak ("Called wrong PQserverVersion"); }
+
 #endif
 
 #ifndef PGErrorVerbosity
@@ -69,16 +100,10 @@ typedef enum
 } PGErrorVerbosity;
 #endif
 
-void pg_error();
-ExecStatusType _result();
-void dbd_st_split_statement();
-int dbd_st_prepare_statement();
-int dbd_db_transaction_status();
-int dbd_st_deallocate_statement();
-int dbd_db_rollback_commit();
-int is_high_bit_set();
-PGTransactionStatusType dbd_db_txn_status();
+/* XXX DBI should provide a better version of this */
+#define IS_DBI_HANDLE(h) (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV && SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
+DBISTATE_DECLARE;
 
 /* ================================================================== */
 /* Quick result grabber used throughout this file */
@@ -106,7 +131,6 @@ ExecStatusType _result(imp_dbh, com)
 #endif
 
 	PQclear(result);
-
 	return status;
 
 } /* end of _result */
@@ -262,7 +286,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	PQsetNoticeProcessor(imp_dbh->conn, pg_warn, (void *)SvRV(dbh)); /* XXX this causes a problem with nmake */
 	
 	/* Figure out what protocol this server is using */
-	imp_dbh->pg_protocol = PGLIBVERSION >= 70400 ? PQprotocolVersion(imp_dbh->conn) : 0;
+	imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn); /* Older versions use the one defined above */
 
 	/* Figure out this particular backend's version */
 #if PGLIBVERSION >= 80000
@@ -355,7 +379,7 @@ PGTransactionStatusType dbd_db_txn_status (imp_dbh)
 
 	/* Non - 7.3 *compiled* servers (our PG library) always return unknown */
 
-	return PGLIBVERSION >= 70400 ? PQtransactionStatus(imp_dbh->conn) : PQTRANS_UNKNOWN;
+	return PQtransactionStatus(imp_dbh->conn);
 
 } /* end of dbd_db_txn_status */
 
@@ -538,7 +562,7 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 			newval = SvIV(valuesv);
 			/* Default to "1" if an invalid value is passed in */
 			imp_dbh->pg_errorlevel = 0==newval ? 0 : 2==newval ? 2 : 1;
-			PQsetErrorVerbosity(imp_dbh->conn, imp_dbh->pg_errorlevel);
+			PQsetErrorVerbosity(imp_dbh->conn, imp_dbh->pg_errorlevel); /* pre-7.4 does nothing */
 			if (dbis->debug >= 5)
 				PerlIO_printf(DBILOGFP, "Reset error verbosity to %d\n", imp_dbh->pg_errorlevel);
 		}

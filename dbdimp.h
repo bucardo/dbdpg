@@ -11,14 +11,6 @@
 
 #include "types.h"
 
-#ifdef WIN32
-#define snprintf _snprintf
-#endif
-
-#define sword  signed int
-#define sb2    signed short
-#define ub2    unsigned short
-
 /* Define drh implementor data structure */
 struct imp_drh_st {
 	dbih_drc_t com; /* MUST be first element in structure */
@@ -101,31 +93,39 @@ struct imp_sth_st {
 	ph_t   *ph;              /* linked list of placeholders */
 };
 
+
 /* Other functions we have added to dbdimp.c */
 
+ExecStatusType _result(imp_dbh_t *imp_dbh, const char *com);
+void pg_error(SV *h, int error_num, char *error_msg);
+int dbd_db_ping(SV *dbh);
+PGTransactionStatusType dbd_db_txn_status (imp_dbh_t *imp_dbh);
+int dbd_db_rollback_commit (SV *dbh, imp_dbh_t *imp_dbh, char * action);
+int dbd_db_getfd (SV *dbh, imp_dbh_t *imp_dbh);
 SV * dbd_db_pg_notifies (SV *dbh, imp_dbh_t *imp_dbh);
-int dbd_db_ping ();
-int dbd_db_getfd ();
-int pg_db_putline ();
-int pg_db_getline ();
-int pg_db_endcopy ();
-int pg_db_savepoint ();
-int pg_db_rollback_to ();
-int pg_db_release ();
-void pg_db_pg_server_trace ();
-void pg_db_pg_server_untrace ();
-void pg_db_server_trace ();
-void pg_db_no_server_trace ();
-
-int pg_db_lo_open ();
-int pg_db_lo_close ();
-int pg_db_lo_read ();
-int pg_db_lo_write ();
-int pg_db_lo_lseek ();
-unsigned int pg_db_lo_creat ();
-int pg_db_lo_tell ();
-int pg_db_lo_unlink ();
-unsigned int pg_db_lo_import ();
-int pg_db_lo_export ();
+void dbd_st_split_statement (imp_sth_t *imp_sth, char *statement);
+int dbd_st_prepare_statement (SV *sth, imp_sth_t *imp_sth);
+int is_high_bit_set(char *val);
+int dbd_st_deallocate_statement(SV *sth, imp_sth_t *imp_sth);
+int pg_db_putline (SV *dbh, const char *buffer);
+int pg_db_getline (SV *dbh, char *buffer, int length);
+int pg_db_endcopy (SV * dbh);
+void pg_db_pg_server_trace (SV *dbh, FILE *fh);
+void pg_db_pg_server_untrace (SV *dbh);
+int pg_db_savepoint (SV *dbh, imp_dbh_t *imp_dbh, char * savepoint);
+int pg_db_rollback_to (SV *dbh, imp_dbh_t *imp_dbh, char * savepoint);
+int pg_db_release (SV *dbh, imp_dbh_t *imp_dbh, char * savepoint);
+unsigned int pg_db_lo_creat (SV *dbh, int mode);
+int pg_db_lo_open (SV *dbh, unsigned int lobjId, int mode);
+int pg_db_lo_close (SV *dbh, int fd);
+int pg_db_lo_read (SV *dbh, int fd, char *buf, unsigned int len);
+int pg_db_lo_write (SV *dbh, int fd, char *buf, unsigned int len);
+int pg_db_lo_lseek (SV *dbh, int fd, int offset, int whence);
+int pg_db_lo_tell (SV *dbh, int fd);
+int pg_db_lo_unlink (SV *dbh, unsigned int lobjId);
+unsigned int pg_db_lo_import (SV *dbh, char *filename);
+int pg_db_lo_export (SV *dbh, unsigned int lobjId, char *filename);
 
 /* end of dbdimp.h */
+
+

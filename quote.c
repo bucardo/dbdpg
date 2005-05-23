@@ -11,7 +11,7 @@
 
 #include "Pg.h"
 #include "types.h"
-#include <assert.h>
+
 
 /* This section was stolen from libpq */
 #if PGLIBVERSION < 70200
@@ -160,8 +160,8 @@ PQescapeBytea(const unsigned char *bintext, STRLEN binlen, STRLEN *bytealen)
 #define ISOCTDIGIT(CH) ((CH) >= '0' && (CH) <= '7')
 #define OCTVAL(CH) ((CH) - '0')
 
-unsigned char *
-PQunescapeBytea(const unsigned char *strtext, STRLEN *retbuflen)
+unsigned char * PQunescapeBytea(const unsigned char *strtext, STRLEN *retbuflen);
+unsigned char * PQunescapeBytea(const unsigned char *strtext, STRLEN *retbuflen)
 {
 	STRLEN strtextlen, buflen;
 	unsigned char *buffer;
@@ -230,10 +230,8 @@ PQunescapeBytea(const unsigned char *strtext, STRLEN *retbuflen)
 #endif
 
 
-
-char *
-null_quote(string, len, retlen)
-	void *string;
+char * null_quote(string, len, retlen)
+	char *string;
 	STRLEN len;
 	STRLEN *retlen;
 {
@@ -246,8 +244,7 @@ null_quote(string, len, retlen)
 }
 
 
-char *
-quote_varchar(string, len, retlen)
+char * quote_varchar(string, len, retlen)
 		 char *string;
 		 STRLEN len;
 		 STRLEN *retlen;
@@ -270,7 +267,7 @@ quote_varchar(string, len, retlen)
 
 char *
 quote_char(string, len, retlen)
-		 void *string;
+		 char *string;
 		 STRLEN len;
 		 STRLEN *retlen;
 {
@@ -296,7 +293,7 @@ quote_char(string, len, retlen)
 
 char *
 quote_bytea(string, len, retlen)
-		 void* string;
+		 char* string;
 		 STRLEN len;
 		 STRLEN *retlen;
 {
@@ -326,7 +323,7 @@ quote_bytea(string, len, retlen)
 
 char *
 quote_sql_binary( string, len, retlen)
-		 void *string;
+		 char *string;
 		 STRLEN	len;
 		 STRLEN	*retlen;
 {
@@ -366,7 +363,7 @@ quote_sql_binary( string, len, retlen)
 
 char *
 quote_bool(value, len, retlen) 
-		 void *value;
+		 char *value;
 		 STRLEN	len;
 		 STRLEN	*retlen;
 {
@@ -400,7 +397,7 @@ quote_bool(value, len, retlen)
 
 char *
 quote_integer(value, len, retlen) 
-		 void *value;
+		 char *value;
 		 STRLEN	len;
 		 STRLEN	*retlen;
 {

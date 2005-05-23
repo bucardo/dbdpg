@@ -46,6 +46,8 @@ static int errno;
 
 #include "dbdimp.h"		/* read in our implementation details */
 
+#include "quote.h"		/* read in our implementation details */
+
 #include <dbd_xsh.h>		/* installed by the DBI module	*/
 
 
