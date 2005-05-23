@@ -102,7 +102,7 @@ ExecStatusType _result(imp_dbh, com)
 					5);
 	imp_dbh->sqlstate[5] = '\0';
 #else
-	strcpy(imp_dbh->sqlstate, "S1000"); /* DBI standard says this is the default */
+	strncpy(imp_dbh->sqlstate, "S1000\0", 6); /* DBI standard says this is the default */
 #endif
 
 	PQclear(result);
@@ -296,7 +296,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	if (!imp_dbh->sqlstate)
 		croak("No memory");	
 	imp_dbh->sqlstate[0] = '\0';
-	strcpy(imp_dbh->sqlstate, "S1000");
+	strncpy(imp_dbh->sqlstate, "S1000\0", 6);
 	imp_dbh->done_begin = 0; /* We are not inside a transaction */
 	imp_dbh->pg_bool_tf = 0;
 	imp_dbh->pg_enable_utf8 = 0;
@@ -1556,7 +1556,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 				if (!currph->quoted)
 					croak("No memory");
 				currph->quoted[0] = '\0';
-				strcpy(currph->quoted, "NULL");
+				strncpy(currph->quoted, "NULL\0", 5);
 				currph->quotedlen = 4;
 			}
 			else {
@@ -1772,7 +1772,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 					5);
 	imp_dbh->sqlstate[5] = '\0';
 #else
-	strcpy(imp_dbh->sqlstate, "S1000"); /* DBI standard says this is the default */
+	strncpy(imp_dbh->sqlstate, "S1000\0", 6); /* DBI standard says this is the default */
 #endif
 
 	if (imp_sth->result) {
@@ -2009,7 +2009,8 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 				if (dbis->debug >= 4)
 					PerlIO_printf(DBILOGFP, "  dbdpg: Rolling back to savepoint %s\n", SvPV_nolen(sp));
 				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
-				strcpy(tempsqlstate, imp_dbh->sqlstate);
+				strncpy(tempsqlstate, imp_dbh->sqlstate, strlen(imp_dbh->sqlstate));
+				tempsqlstate[strlen(imp_dbh->sqlstate)] = '\0';
 				status = _result(imp_dbh, cmd);
 				Safefree(cmd);
 			}
@@ -2043,8 +2044,10 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 	}
 
 	imp_sth->prepare_name = NULL;
-	if (tempsqlstate[0])
-		strcpy(imp_dbh->sqlstate, tempsqlstate);
+	if (tempsqlstate[0]) {
+		strncpy(imp_dbh->sqlstate, tempsqlstate, strlen(tempsqlstate));
+		imp_dbh->sqlstate[strlen(tempsqlstate)] = '\0';
+	}
 
 	return 0;
 
@@ -2388,7 +2391,8 @@ pg_db_getline (dbh, buffer, length)
 			pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
 		}
 		else {
-			strcpy(buffer, tempbuf);
+			strncpy(buffer, tempbuf, strlen(tempbuf));
+			buffer[strlen(tempbuf)] = '\0';
 			PQfreemem(tempbuf);
 		}
 		return 0;

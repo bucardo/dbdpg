@@ -310,7 +310,7 @@ quote_bytea(string, len, retlen)
  	dest = result;
 	
 	Copy("'", dest++, 1, char);
-	strcpy(dest,intermead);
+	strncpy(dest,intermead,strlen(intermead));
 	strcat(dest,"\'");
 	
 #if PGLIBVERSION >= 70400
@@ -384,9 +384,9 @@ quote_bool(value, len, retlen)
 	New(0, result, max_len, char);
 	
 	if (0 == int_value)
-		strcpy(result,"FALSE");
+		strncpy(result,"FALSE\0",6);
 	else if (1 == int_value)
-		strcpy(result,"TRUE");
+		strncpy(result,"TRUE\0",5);
 	else
 		croak("Error: Bool must be either 1 or 0");
 	
@@ -411,9 +411,9 @@ quote_integer(value, len, retlen)
 	New(0, result, max_len, char);
 	
 	if (0 == *((int*)value) )
-		strcpy(result,"FALSE");
+		strncpy(result,"FALSE\0",6);
 	if (1 == *((int*)value))
-		strcpy(result,"TRUE");
+		strncpy(result,"TRUE\0",5);
 	
 	*retlen = strlen(result);
 	assert(*retlen+1 <= max_len);
