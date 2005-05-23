@@ -1,5 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+1.43 
+
 1.42 May 21, 2005
 	- Fix minor issues with copying and bytea quoting on older 
 		servers. Fix some other memory leaks. [GSM]
