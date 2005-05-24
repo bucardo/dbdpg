@@ -4,8 +4,8 @@
 char * null_quote(char *string, STRLEN len, STRLEN *retlen);
 char * quote_varchar(char *string, STRLEN len, STRLEN *retlen);
 char * quote_char(char *string, STRLEN len, STRLEN *retlen);
-char * quote_bytea(char *string, STRLEN len, STRLEN *retlen);
-char * quote_sql_binary(char *string, STRLEN len, STRLEN *retlen);
+char * quote_bytea(unsigned char *string, STRLEN len, STRLEN *retlen);
+char * quote_sql_binary(unsigned char *string, STRLEN len, STRLEN *retlen);
 char * quote_bool(char *string, STRLEN len, STRLEN *retlen);
 char * quote_integer(char *string, STRLEN len, STRLEN *retlen);
 void dequote_char(char *string, STRLEN *retlen);

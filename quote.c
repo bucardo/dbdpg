@@ -170,7 +170,7 @@ unsigned char * PQunescapeBytea(const unsigned char *strtext, STRLEN *retbuflen)
 	if (NULL == strtext)
 		return NULL;
 
-	strtextlen = strlen((char *)strtext);
+	strtextlen = strlen(strtext);
 
 	/*
 	 * Length of input is max length of output, but add one to avoid
@@ -293,7 +293,7 @@ quote_char(string, len, retlen)
 
 char *
 quote_bytea(string, len, retlen)
-		 char* string;
+		 unsigned char* string;
 		 STRLEN len;
 		 STRLEN *retlen;
 {
@@ -323,7 +323,7 @@ quote_bytea(string, len, retlen)
 
 char *
 quote_sql_binary( string, len, retlen)
-		 char *string;
+		 unsigned char *string;
 		 STRLEN	len;
 		 STRLEN	*retlen;
 {
