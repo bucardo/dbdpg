@@ -172,33 +172,48 @@ t/lib/App/Info/Util.pm
 Compiling is generally done with gcc. However, we also need to support a wide variety 
 of compilers. Things which may only cause a minor warning when using gcc may stop 
 other compilers cold. One way to catch this early is to add some warning flags to gcc. 
-This can be done by extending the $comp_opts string inside of Makefile.PL. The most 
-useful one is pedantic:
+This can be done by extending the $comp_opts string inside of the Makefile.PL file. 
+There are many warnings that can be enabled (see the man page for gcc for the list). 
+Some of these warnings trigger for things outside of our control, such as the code 
+for DBI or Perl itself. Within each section, the order is the same as found in man gcc.
 
-$comp_opts .= " -pedantic";
-
-There are many warning options for gcc. Check the man page for a complete list.
-
-Here are some that should only generate errors that we can fix:
-
-$comp_opts .= " -Wall -Wextra -Wdeclaration-after-statement -Wendif-labels -Wpointer-arith ";
+## These are warnings that should only generate errors that we can fix:
+$comp_opts .= " -Wchar-subscripts -Wcomment";
+$comp_opts .= " -Wformat=2"; ## does -Wformat,-Wformat-y2k,-Wformat-nonliteral,-Wformat-security
+$comp_opts .= " -Wnonnull";
+$comp_opts .= " -Wuninitialized -Winit-self"; ## latter requires the former
+$comp_opts .= " -Wimplicit"; ## does -Wimplicit-int and -Wimplicit-function-declaration
+$comp_opts .= " -Wmain -Wmissing-braces -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wswitch-enum -Wtrigraphs";
+$comp_opts .= " -Wunused"; ## contains -Wunused- function,label,parameter,variable,value
+$comp_opts .= " -Wunknown-pragmas -Wstrict-aliasing";
+$comp_opts .= " -Wall"; ## all of above, but we enumerate anyway
+$comp_opts .= " -Wextra -Wdeclaration-after-statement -Wendif-labels -Wpointer-arith";
 $comp_opts .= " -Wbad-function-cast -Wcast-qual -Wcast-align -Wconversion -Wsign-compare -Waggregate-return";
-$comp_opts .= " -Wmissing-prototypes -Wmissing-declarations -Wmissing-noreturn";
-$comp_opts .= " -Wformat -Wmissing-format-attribute";
+$comp_opts .= " -Wmissing-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wpacked -Winline -Winvalid-pch";
+$comp_opts .= " -Wdisabled-optimization"; ## Not terribly useful
 
+## These options produce a few hits, but are still pretty useful:
+$comp_opts .= " -Wswitch-default"; ## Complains on any Newz declaration
+$comp_opts .= " -Wfloat-equal"; ## Some perl stuff we cannot catch from Pg.h -> DBIXS.h -> perl.h -> math.h -> bits/mathinline.h
+$comp_opts .= " -Wstrict-prototypes"; ## Still hits a couple places in types.h that need fixing (then move to above)
+$comp_opts .= " -Wmissing-noreturn"; ## Raises a few warnings for <=7.4 libraries, as we croak on purpose for some
+$comp_opts .= " -Wnested-externs"; ## Does not like Perl__notused (from DBIXS;)
 
-These are only partially helpful, as they tend to produce warnings for things out of our control, 
-such as warnings from DBI and Perl itself:
+## These options tend to produce lots of hits outside of our code, but may still be useful:
+$comp_opts .= " -Wsystem-headers"; ## when used with -Wconversion, creates a lot of hits 
+$comp_opts .= " -pedantic"; ## Useful, but very verbose
+$comp_opts .= " -Wundef"; ## Filter: grep warning wfile | grep -v unions | grep -v CORE | grep -v Pg.c | grep -v auto
+$comp_opts .= " -Wshadow"; ## lots of bogus hits - not very useful Filter: grep warning wfile | grep -v "/usr"
+$comp_opts .= " -Wwrite-strings";
+$comp_opts .= " -Wpadded"; ## Use when adding/changing our structs
+$comp_opts .= " -Wredundant-decls";
 
-$comp_opts .= " -Wfloat-equal"; ## Some perl stuff we cannot catch: 2 each in Pg.xs and dbdimp.c
-$comp_opts .= " -Wtraditional"; ## all sorts of junk, 99% of which is unimportant
-$comp_opts .= " -Wundef"; ## lots of warnings from the temporary strings created in Pg.c / Pg.xs
-## Quick filter: grep warning output | grep -v unions | grep -v CORE | grep -v Pg.c | grep -v auto
-$comp_opts .= " -Wshadow"; ## lots of bogus hits - not very useful
-## Filter:: grep warning pop | grep -v "/usr"
-$comp_opts .= " -Wwrite-strings"; ## Good hits, but lots of crud
+## These options are probably not very useful:
+$comp_opts .= " -Wtraditional"; ## Lots and lots of junk
+$comp_opts .= " -Wold-style-definition"; ## We use lots of these
+$comp_opts .= " -Wunreachable-code"; ## Lots due to our mult-version ifdefs
 
-Please feel free to add to and clarify the above list.
+Please feel free to add to and clarify the above lists.
 
 
 =============
