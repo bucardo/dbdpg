@@ -102,7 +102,7 @@ $dbh->commit();
 #
 
 SKIP: {
-	skip "Cannot test pg_getline with DBD::Pg compiled with pre-7.4 libraries", 10 if $pglibversion < 70400;
+	skip "Cannot test pg_getline with DBD::Pg compiled with pre-7.4 libraries", 12 if $pglibversion < 70400;
 
 	## pg_getline should fail unless we are in a COPY OUT state
 	eval {
@@ -154,30 +154,30 @@ SKIP: {
 	};
 	ok($@, 'pg_endcopy fails when called twice after COPY OUT');
 
+ SKIP2: {
+		skip "Cannot test commit copy reset with pre-7.4 servers", 2 if $pgversion < 70400 or $pglibversion < 70400;
+
+		#
+		# Make sure rollback and commit reset our internal copystate tracking
+		#
+
+		$dbh->do("COPY $table TO STDOUT");
+		$dbh->commit();
+		eval {
+			$dbh->do("SELECT 'dbdpg_copytest'");
+		};
+		ok(!$@, 'commit resets COPY state');
+		
+		$dbh->do("COPY $table TO STDOUT");
+		$dbh->rollback();
+		eval {
+			$dbh->do("SELECT 'dbdpg_copytest'");
+		};
+		ok(!$@, 'rollback resets COPY state');
+		
+	} ## end SKIP2
 } ## end SKIP
 
-SKIP: {
-	skip "Cannot test commit copy reset with pre-7.4 servers", 2 if $pgversion < 70400;
-
-	#
-	# Make sure rollback and commit reset our internal copystate tracking
-	#
-
-	$dbh->do("COPY $table TO STDOUT");
-	$dbh->commit();
-	eval {
-		$dbh->do("SELECT 'dbdpg_copytest'");
-	};
-	ok(!$@, 'commit resets COPY state');
-
-	$dbh->do("COPY $table TO STDOUT");
-	$dbh->rollback();
-	eval {
-		$dbh->do("SELECT 'dbdpg_copytest'");
-	};
-	ok(!$@, 'rollback resets COPY state');
-
-} ## end SKIP
 
 
 #
