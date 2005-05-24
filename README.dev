@@ -641,6 +641,14 @@ This is the module that does all the introductory magic:
 
 perldoc ExtUtils::MakeMaker
 
+The all important testing suite:
+
+perldoc Test;
+perldoc Test::Harness;
+perldoc Test::Simple;
+perldoc Test::More;
+perldoc Test::Pod;
+
 This is a guide for DBD authors. It's fairly old and incomplete however, but listed here for 
 completeness:
 
