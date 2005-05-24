@@ -71,7 +71,7 @@ to create the "Makefile"
 
 Makefile - Generated automatically by Makefile.PL
 
-META.yml - For future support of Module::Build.
+META.yml - Generated with "make distdir"
 
 * Distribution files:
 
@@ -454,7 +454,9 @@ cvs log -rRel-1_41: * > all_logs.tmp
 
 Make sure that anything new has been documented properly, usually as pod inside of Pg.pm
 
-* Run "perl Makefile.PL" and commit the new META.yml file that is created, if different.
+* Run "perl Makefile.PL"
+
+* Run "make distdir" and commit the new META.yml file that is created, if different.
 
 * Run "make dist". Double check that the tarball created has the correct version name.
 
