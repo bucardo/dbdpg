@@ -93,13 +93,11 @@ struct imp_sth_st {
 	ph_t   *ph;              /* linked list of placeholders */
 };
 
-
 /* Other functions we have added to dbdimp.c */
 
 ExecStatusType _result(imp_dbh_t *imp_dbh, const char *com);
 void pg_error(SV *h, int error_num, char *error_msg);
 int dbd_db_ping(SV *dbh);
-PGTransactionStatusType dbd_db_txn_status (imp_dbh_t *imp_dbh);
 int dbd_db_rollback_commit (SV *dbh, imp_dbh_t *imp_dbh, char * action);
 int dbd_db_getfd (SV *dbh, imp_dbh_t *imp_dbh);
 SV * dbd_db_pg_notifies (SV *dbh, imp_dbh_t *imp_dbh);

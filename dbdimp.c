@@ -51,28 +51,30 @@ typedef enum
 	PQERRORS_VERBOSE			/* all the facts, ma'am */
 } PGVerbosity;
 /* These are actually used to return default values */
-int PQprotocolVersion(const PGconn *conn);
-int PQprotocolVersion(const PGconn *conn) { return 0; }
+int PQprotocolVersion(const PGconn *a);
+int PQprotocolVersion(const PGconn *a) { return a ? 0 : 0; }
 
-Oid PQftable(PGresult *res, int field_num);
-Oid PQftable(PGresult *res, int field_num) { return InvalidOid; }
+Oid PQftable(PGresult *a, int b);
+Oid PQftable(PGresult *a, int b) { if (a||b) return InvalidOid; return InvalidOid; }
 
-int PQftablecol(PGresult *res, int field_num);
-int PQftablecol(PGresult *res, int field_num) { return 0; }
+int PQftablecol(PGresult *a, int b);
+int PQftablecol(PGresult *a, int b) { return a||b ? 0 : 0; }
 
-int PQsetErrorVerbosity(PGconn *conn, PGVerbosity verbosity);
-int PQsetErrorVerbosity(PGconn *conn, PGVerbosity verbosity) { return 0; }
+int PQsetErrorVerbosity(PGconn *a, PGVerbosity b);
+int PQsetErrorVerbosity(PGconn *a, PGVerbosity b) { return a||b ? 0 : 0; }
 
-PGTransactionStatusType PQtransactionStatus(const PGconn *conn);
-PGTransactionStatusType PQtransactionStatus(const PGconn *conn) { return PQTRANS_UNKNOWN; }
+PGTransactionStatusType PQtransactionStatus(const PGconn *a);
+PGTransactionStatusType PQtransactionStatus(const PGconn *a) { return a ? PQTRANS_UNKNOWN : PQTRANS_UNKNOWN; }
 
 /* These should not be called, and will throw errors if they are */
 PGresult *PQexecPrepared(PGconn *a,const char *b,int c,const char *const *d,const int *e,const int *f,int g);
 PGresult *PQexecPrepared(PGconn *a,const char *b,int c,const char *const *d,const int *e,const int *f,int g) {
+	if (a||b||c||d||e||f||g) g=0;
 	croak ("Called wrong PQexecPrepared\n");
 }
 PGresult *PQexecParams(PGconn *a,const char *b,int c,const Oid *d,const char *const *e,const int *f,const int *g,int h);
 PGresult *PQexecParams(PGconn *a,const char *b,int c,const Oid *d,const char *const *e,const int *f,const int *g,int h) {
+	if (a||b||c||d||e||f||g||h) h=0;
 	croak("Called wrong PQexecParams\n");
 }
 
@@ -81,13 +83,14 @@ PGresult *PQexecParams(PGconn *a,const char *b,int c,const Oid *d,const char *co
 #if PGLIBVERSION < 80000
 
 /* Should not be called, throw errors: */
-PGresult *PQprepare(PGconn *conn, const char *stmtName, const char *query, int nParams, const Oid *paramTypes);
-PGresult *PQprepare(PGconn *conn, const char *stmtName, const char *query, int nParams, const Oid *paramTypes) {
+PGresult *PQprepare(PGconn *a, const char *b, const char *c, int d, const Oid *e);
+PGresult *PQprepare(PGconn *a, const char *b, const char *c, int d, const Oid *e) {
+	if (a||b||c||d||e) d=0;
 	croak ("Called wrong PQprepare");
 }
 
-int PQserverVersion(const PGconn *conn);
-int PQserverVersion(const PGconn *conn) { croak ("Called wrong PQserverVersion"); }
+int PQserverVersion(const PGconn *a);
+int PQserverVersion(const PGconn *a) { if (!a) return 0; croak ("Called wrong PQserverVersion"); }
 
 #endif
 
@@ -102,6 +105,8 @@ typedef enum
 
 /* XXX DBI should provide a better version of this */
 #define IS_DBI_HANDLE(h) (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV && SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
+
+PGTransactionStatusType dbd_db_txn_status (imp_dbh_t *imp_dbh);
 
 DBISTATE_DECLARE;
 
@@ -206,7 +211,8 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	
 	char *conn_str, *dest, inquote = 0;
 	STRLEN connect_string_size;
-	
+	int status;
+
 	if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_db_login\n"); }
 	
 	/* DBD::Pg syntax: 'dbname=dbname;host=host;port=port' */
@@ -276,8 +282,9 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	Safefree(conn_str);
 	
 	/* Check to see that the backend connection was successfully made */
-	if (CONNECTION_OK != PQstatus(imp_dbh->conn)) {
-		pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+	status = PQstatus(imp_dbh->conn);
+	if (CONNECTION_OK != status) {
+		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 		PQfinish(imp_dbh->conn);
 		return 0;
 	}
@@ -298,7 +305,10 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 		int	status, cnt, vmaj, vmin, vrev;
 	
 		result = PQexec(imp_dbh->conn, "SELECT version(), 'DBD::Pg'");
-		status = result ? (int)PQresultStatus(result) : -1;
+		if (result)
+			status = PQresultStatus(result);
+		else
+			status = -1;
 	
 		if (PGRES_TUPLES_OK != status || !PQntuples(result)) {
 			if (dbis->debug >= 4)
@@ -703,7 +713,8 @@ SV * dbd_db_pg_notifies (dbh, imp_dbh)
 	
 	status = PQconsumeInput(imp_dbh->conn);
 	if (0 == status) { 
-		pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+		status = PQstatus(imp_dbh->conn);
+		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 		return 0;
 	}
 	
@@ -2002,7 +2013,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 {
 	char tempsqlstate[6];
 	char *stmt;
-	ExecStatusType status;
+	int status;
 	PGTransactionStatusType tstatus;
 	D_imp_dbh_from_sth;
 	
@@ -2063,7 +2074,7 @@ int dbd_st_deallocate_statement (sth, imp_sth)
 	status = _result(imp_dbh, stmt);
 	Safefree(stmt);
 	if (PGRES_COMMAND_OK != status) {
-		pg_error(sth,status, PQerrorMessage(imp_dbh->conn));
+		pg_error(sth, status, PQerrorMessage(imp_dbh->conn));
 		return 2;
 	}
 
@@ -2365,7 +2376,8 @@ pg_db_putline (dbh, buffer)
 
 		result = PQputCopyData(imp_dbh->conn, buffer, (int)strlen(buffer));
 		if (-1 == result) {
-			pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+			result = PQstatus(imp_dbh->conn);
+			pg_error(dbh, result, PQerrorMessage(imp_dbh->conn));
 			return 0;
 		}
 		else if (1 != result) {
@@ -2412,7 +2424,8 @@ pg_db_getline (dbh, buffer, length)
 			return -1;
 		}
 		else if (result < 1) {
-			pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+			result = PQstatus(imp_dbh->conn);
+			pg_error(dbh, result, PQerrorMessage(imp_dbh->conn));
 		}
 		else {
 			strncpy(buffer, tempbuf, strlen(tempbuf));
@@ -2449,7 +2462,8 @@ pg_db_endcopy (dbh)
 			if (dbis->debug >= 4) { PerlIO_printf(DBILOGFP, "dbd_pg_endcopy: PQputCopyEnd\n"); }
 			res = PQputCopyEnd(imp_dbh->conn, NULL);
 			if (-1 == res) {
-				pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+				res = PQstatus(imp_dbh->conn);
+				pg_error(dbh, res, PQerrorMessage(imp_dbh->conn));
 				return 1;
 			}
 			else if (1 != res)
@@ -2457,7 +2471,8 @@ pg_db_endcopy (dbh)
 			/* Get the final result of the copy */
 			result = PQgetResult(imp_dbh->conn);
 			if (1 != PQresultStatus(result)) {
-				pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+				res = PQstatus(imp_dbh->conn);
+				pg_error(dbh, res, PQerrorMessage(imp_dbh->conn));
 				return 1;
 			}
 			PQclear(result);
@@ -2502,7 +2517,7 @@ pg_db_savepoint (dbh, imp_dbh, savepoint)
 		 imp_dbh_t *imp_dbh;
 		 char * savepoint;
 {
-	ExecStatusType status;
+	int status;
 	char *action;
 
 	New(0, action, strlen(savepoint) + 11, char); /* freed below */
@@ -2550,7 +2565,7 @@ int pg_db_rollback_to (dbh, imp_dbh, savepoint)
 		 imp_dbh_t *imp_dbh;
 		 char * savepoint;
 {
-	ExecStatusType status;
+	int status;
 	I32 i;
 	char *action;
 
@@ -2594,7 +2609,7 @@ int pg_db_release (dbh, imp_dbh, savepoint)
 		 imp_dbh_t *imp_dbh;
 		 char * savepoint;
 {
-	ExecStatusType status;
+	int status;
 	I32 i;
 	char *action;
 

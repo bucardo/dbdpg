@@ -238,7 +238,7 @@ lo_write(dbh, fd, buf, len)
     SV * dbh
     int fd
     char * buf
-    int len
+    unsigned int len
     CODE:
         int ret = pg_db_lo_write(dbh, fd, buf, len);
         ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
@@ -325,7 +325,7 @@ pg_getline(dbh, buf, len)
 				int ret;
 				if (len > 3)
 					buf = SvGROW(bufsv, len);
-        ret = pg_db_getline(dbh, buf, len);
+        ret = pg_db_getline(dbh, buf, (int)len);
     sv_setpv((SV*)ST(1), buf);
     SvSETMAGIC(ST(1));
         ST(0) = (-1 != ret) ? &sv_yes : &sv_no;
@@ -343,7 +343,7 @@ getline(dbh, buf, len)
 				int ret;
 				if (len > 3)
 					buf = SvGROW(bufsv, len);
-        ret = pg_db_getline(dbh, buf, len);
+        ret = pg_db_getline(dbh, buf, (int)len);
     sv_setpv((SV*)ST(1), buf);
     SvSETMAGIC(ST(1));
         ST(0) = (-1 != ret) ? &sv_yes : &sv_no;
