@@ -17,7 +17,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 137;
+	plan tests => 138;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -266,6 +266,10 @@ for (keys %get_info) {
 	ok( defined $forth, qq{DB handle method "get_info" works with a value of "$get_info{$_}"});
 	is( $back, $forth, qq{DB handle method "get_info" returned matching values});
 }
+
+# Make sure odbcversion looks normal
+my $odbcversion = $dbh->get_info(18);
+like( $odbcversion, qr{^([1-9]\d|\d[1-9])\.\d\d\.\d\d00$}, qq{DB handle method "get info" returns a valid looking ODBCVERSION string});
 
 #
 # Test of the "table_info" database handle method

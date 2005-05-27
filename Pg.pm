@@ -1268,9 +1268,8 @@ use 5.006001;
 			return $version >= 70300 ? 63 : 31;
 		}
 		elsif ($ans eq 'ODBCVERSION') {
-			my $version = $dbh->{private_dbdpg}{version};
-			my $dotted = $version =~ /(\d\d?)\.(\d\d)(\d\d)$/ ? "$1.$2.$4" : "0.0.0";
-			return sprintf "%02d.%02d.%1d%1d%1d%1d", split (/\./, "$dotted.0.0.0.0.0.0");
+			return "00.00.0000" unless $version =~ /^(\d\d?)(\d\d)(\d\d)$/o;
+			return sprintf "%02d.%02d.%.2d00", $1,$2,$3;
 		}
 		elsif ($ans eq 'DBDVERSION') {
 			my $simpleversion = $DBD::Pg::VERSION;
