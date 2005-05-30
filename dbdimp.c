@@ -1226,7 +1226,6 @@ int dbd_st_prepare_statement (sth, imp_sth)
 
 	/* Name is simply "dbdpg_#" */
 	sprintf(imp_sth->prepare_name,"dbdpg_%d", imp_dbh->prepare_number);
-	imp_sth->prepare_name[strlen(imp_sth->prepare_name)]='\0';
 
 	if (dbis->debug >= 5)
 		PerlIO_printf(DBILOGFP, "  dbdpg: new statement name \"%s\", oldprepare is %d\n",
