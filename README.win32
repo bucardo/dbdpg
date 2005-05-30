@@ -29,7 +29,7 @@ nmake -f win32.mak
 
 cd bin\pg_config
 nmake -f win32.mak
-copy Release\pg_config.exe ..\..\..\..\dbdpg
+copy Release\pg_config.exe \tmp\DBD-Pg-1.42
 
 4. Install lib and include to some permanent location like this:
 
@@ -40,6 +40,8 @@ cd ..\..\interfaces\libpq\Release
 copy libpq* c:\postgres\lib
 cd ..\..\..
 xcopy /s include c:\postgres\include
+xcopy \tmp\postgresql-8.0.3\src\interfaces\libpq\libpg-fe.h c:\postgres\include
+
 
 5. Make a non-threaded perl, like this:
 
@@ -79,6 +81,7 @@ set POSTGRES_INCLUDE=c:\postgres\include
 
 8. Build DBD::Pg:
 
+cd \tmp\DBD-Pg1.42
 perl Makefile.PL (when asked for pg_config path, say: .\pg_config.exe )
 nmake
 
