@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.43 
+	- Fix incorect sprintf calls (CPAN bug #12204)
+		[Jakub Jelinek]
 	- Fix get_info(18) ("ODBCVERSION") (CPAN bug #12968)
 		[thanks to szinger@lanl.gov] [GSM]
 
