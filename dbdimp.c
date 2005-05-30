@@ -1290,7 +1290,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 	for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 		strcat(statement, currseg->segment);
 		if (currseg->placeholder) {
-			sprintf(statement, "%s$%d", statement, currseg->placeholder);
+			sprintf(strchr(statement, '\0'), "$%d", currseg->placeholder);
 		}
 	}
 
@@ -1725,7 +1725,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 				strcat(statement, currseg->segment);
 				if (currseg->placeholder)
-					sprintf(statement, "%s$%d", statement, currseg->placeholder);
+					sprintf(strchr(statement, '\0'), "$%d", currseg->placeholder);
 			}
 			statement[execsize] = '\0';
 			
