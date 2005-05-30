@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.43 
+	- Enhancements to README.win32 [fenlisesi@gmail.com]
 	- Fix incorect sprintf calls (CPAN bug #12204)
 		[Jakub Jelinek]
 	- Fix get_info(18) ("ODBCVERSION") (CPAN bug #12968)
