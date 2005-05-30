@@ -1316,7 +1316,7 @@ int dbd_st_prepare_statement (sth, imp_sth)
 			status = PQresultStatus(result);
 		PQclear(result);
 		if (dbis->debug >= 6)
-			PerlIO_printf(DBILOGFP, "  dbdpg: Using PQprepare\n");
+			PerlIO_printf(DBILOGFP, "  dbdpg: Using PQprepare: %s\n", statement);
 	}
 	Safefree(statement);
 	if (PGRES_COMMAND_OK != status) {
@@ -1653,7 +1653,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			 )){
 	
 		if (dbis->debug >= 5)
-			PerlIO_printf(DBILOGFP, "  dbdpg: using PQexecPrepare\n");
+			PerlIO_printf(DBILOGFP, "  dbdpg: using PQexecPrepared\n");
 
 		/* Prepare if it has not already been prepared (or it needs repreparing) */
 		if (NULL == imp_sth->prepare_name) {
