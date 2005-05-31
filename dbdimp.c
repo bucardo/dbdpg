@@ -1357,7 +1357,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 
 	if (dbis->debug >= 4) {
 		PerlIO_printf(DBILOGFP, "dbd_bind_ph\n");
-		PerlIO_printf(DBILOGFP, " bind params: ph_name: %s newvalue: %s(%d)\n", 
+		PerlIO_printf(DBILOGFP, " bind params: ph_name: %s newvalue: %s(%lu)\n", 
 									neatsvpv(ph_name,0), neatsvpv(newvalue,0), SvOK(newvalue));
 	}
 
