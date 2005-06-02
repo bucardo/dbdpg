@@ -2102,12 +2102,23 @@ void dbd_st_destroy (sth, imp_sth)
 
 	seg_t *currseg, *nextseg;
 	ph_t *currph, *nextph;
+	D_imp_dbh_from_sth;
 
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbd_st_destroy\n"); }
 
 	if (NULL == imp_sth->seg) /* Already been destroyed! */
 		croak("dbd_st_destroy called twice!");
 
+	/* Deallocate only if we named this statement ourselves and we still have a good connection */
+	/* On rare occasions, dbd_db_destroy is called first and we can no longer rely on imp_dbh */
+	if (imp_sth->prepared_by_us && DBIc_ACTIVE(imp_dbh)) {
+		if (dbd_st_deallocate_statement(sth, imp_sth)!=0) {
+			if (dbis->debug >= 4)
+				(void)PerlIO_printf(DBILOGFP, "  dbdpg: could not deallocate\n");
+		}
+	}	
+
+	Safefree(imp_sth->prepare_name);
 	Safefree(imp_sth->type_info);
 	Safefree(imp_sth->firstword);
 
@@ -2136,15 +2147,6 @@ void dbd_st_destroy (sth, imp_sth)
 		Safefree(currph);
 		currph = nextph;
 	}
-
-	/* Deallocate only if we named this statement ourselves */
-	if (imp_sth->prepared_by_us) {
-		if (dbd_st_deallocate_statement(sth, imp_sth)!=0) {
-			if (dbis->debug >= 4)
-				(void)PerlIO_printf(DBILOGFP, "  dbdpg: could not deallocate\n");
-		}
-	}	
-	Safefree(imp_sth->prepare_name);
 
 	DBIc_IMPSET_off(imp_sth); /* let DBI know we've done it */
 
