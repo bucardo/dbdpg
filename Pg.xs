@@ -133,7 +133,7 @@ void state(dbh)
 	SV *dbh
 	CODE:
 	D_imp_dbh(dbh);
-	ST(0) = newSVpvn(imp_dbh->sqlstate, 5);
+	ST(0) = strEQ(imp_dbh->sqlstate,"00000") ? &sv_no : newSVpv(imp_dbh->sqlstate, 5);
 
 void
 _ping(dbh)
@@ -398,6 +398,6 @@ void state(sth)
  	CODE:
 	D_imp_sth(sth);
 	D_imp_dbh_from_sth;
-	ST(0) = newSVpvn(imp_dbh->sqlstate, 5);
+	ST(0) = strEQ(imp_dbh->sqlstate,"00000") ? &sv_no : newSVpv(imp_dbh->sqlstate, 5);
 
 # end of Pg.xs
