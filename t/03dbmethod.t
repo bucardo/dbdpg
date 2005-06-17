@@ -17,7 +17,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 138;
+	plan tests => 139;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -858,11 +858,19 @@ ok( !$@, 'DB handle method "pg_notifies" does not throw an error');
 $result = $dbh->func('getfd');
 like( $result, qr/^\d+$/, 'DB handle method "getfd" returns a number');
 
-## Test of the "state" database handle method
+#
+# Test of the "state" database handle method
+#
 
 $result = $dbh->state();
-like( $result, qr/^[A-Z0-9]{5}$/, qq{DB handle method returns a five-character code});
+is( $result, "", qq{DB handle method "state" returns an empty string on success});
 
+eval {
+	$dbh->do("SELECT dbdpg_throws_an_error");
+};
+$result = $dbh->state();
+like( $result, qr/^[A-Z0-9]{5}$/, qq{DB handle method "state" returns a five-character code on error});
+$dbh->rollback();
 
 #
 # Test of the "ping" database handle method
