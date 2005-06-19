@@ -2090,6 +2090,7 @@ static int dbd_st_deallocate_statement (sth, imp_sth)
 		return 2;
 	}
 
+	Safefree(imp_sth->prepare_name);
 	imp_sth->prepare_name = NULL;
 	if (tempsqlstate[0]) {
 		strncpy(imp_dbh->sqlstate, tempsqlstate, strlen(tempsqlstate));
