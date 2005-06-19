@@ -300,9 +300,9 @@ security vulnerabilities and common programming mistakes." It can be found at
 
 http://www.splint.org/
 
-It is typically run against a single C file, in our case, the generated Pg.c file. It will not work 
-out of the box, as our dependencies tend to be scattered about. Here is a minimal file that 
-should work:
+It is typically run against a single C file, in our case, dbdimp.c and the generated Pg.c file. 
+It will not work out of the box, as our dependencies tend to be scattered about. Here is a minimal 
+file that should work:
 
 splint \
 +unixlib \
@@ -315,7 +315,8 @@ Pg.c
 You will need to replace the directories above with the correct ones for your local DBI, PG, 
 and Perl directories. Splint can be tempermental, so you may need to add more than that, and 
 tweak a few things. Once you do get it running, it is very thorough and extremely verbose. 
-You can start filtering out items you do not need to check. Here are a few common ones:
+Many of the items will be from DBI, so hunt carefully. You can start filtering out items you 
+do not need to check. Here are a few common ones:
 
 -nullpass \
 -predboolint \
