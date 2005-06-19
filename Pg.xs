@@ -2,7 +2,7 @@
    $Id$
 
    Copyright (c) 2000-2005 PostgreSQL Global Development Group
-   Portions Copyright (c) 1997-20000 Edmund Mergl
+   Portions Copyright (c) 1997-2000 Edmund Mergl
    Portions Copyright (c) 1994-1997 Tim Bunce
 
    You may distribute under the terms of either the GNU General Public
@@ -52,7 +52,7 @@ constant(name=Nullch)
     PG_TIMESPAN  = 1186
     PG_TIMESTAMP = 1296
     CODE:
-    if (!ix) {
+    if (0==ix) {
 			if (!name) {
 				name = GvNAME(CvGV(cv));
 			}
@@ -91,7 +91,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 				SvGETMAGIC(to_quote_sv);
         if(type_sv && SvOK(type_sv)) {
                 if SvMAGICAL(type_sv)
-                        mg_get(type_sv);
+                        (void)mg_get(type_sv);
 
                 type_info = sql_type_data(SvIV(type_sv));
 		if (!type_info) {
@@ -111,7 +111,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
                 RETVAL = newSVpvn(quoted,len);
         } else {
                 if (SvMAGICAL(to_quote_sv))
-                        mg_get(to_quote_sv);
+                        (void)mg_get(to_quote_sv);
 
                 to_quote = SvPV(to_quote_sv, len);
                 quoted = type_info->quote(to_quote, len, &retlen);
@@ -139,7 +139,7 @@ void
 _ping(dbh)
     SV * dbh
     CODE:
-    ST(0) = dbd_db_ping(dbh) ? &sv_yes : &sv_no;
+    ST(0) = (dbd_db_ping(dbh)!=0) ? &sv_yes : &sv_no;
 
 void
 getfd(dbh)
@@ -154,7 +154,7 @@ void
 pg_endcopy(dbh)
     SV * dbh
     CODE:
-		ST(0) = pg_db_endcopy(dbh) ? &sv_no : &sv_yes;
+		ST(0) = (pg_db_endcopy(dbh)!=0) ? &sv_no : &sv_yes;
 
 void
 pg_notifies(dbh)
@@ -171,7 +171,7 @@ pg_savepoint(dbh,name)
     D_imp_dbh(dbh);
     if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
       warn("savepoint ineffective with AutoCommit enabled");
-    ST(0) = pg_db_savepoint(dbh, imp_dbh, name) ? &sv_yes : &sv_no;
+    ST(0) = (pg_db_savepoint(dbh, imp_dbh, name)!=0) ? &sv_yes : &sv_no;
 
 
 void
@@ -182,7 +182,7 @@ pg_rollback_to(dbh,name)
     D_imp_dbh(dbh);
     if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
       warn("rollback_to ineffective with AutoCommit enabled");
-    ST(0) = pg_db_rollback_to(dbh, imp_dbh, name) ? &sv_yes : &sv_no;
+    ST(0) = (pg_db_rollback_to(dbh, imp_dbh, name)!=0) ? &sv_yes : &sv_no;
 
 void
 pg_release(dbh,name)
@@ -192,7 +192,7 @@ pg_release(dbh,name)
     D_imp_dbh(dbh);
     if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
       warn("release ineffective with AutoCommit enabled");
-    ST(0) = pg_db_release(dbh, imp_dbh, name) ? &sv_yes : &sv_no;
+    ST(0) = (pg_db_release(dbh, imp_dbh, name)!=0) ? &sv_yes : &sv_no;
 
 void
 lo_open(dbh, lobjId, mode)
@@ -216,7 +216,7 @@ lo_read(dbh, fd, buf, len)
         SV * dbh
         int fd
         char * buf
-        unsigned int len
+        size_t len
     PREINIT:
         SV *bufsv = SvROK(ST(2)) ? SvRV(ST(2)) : ST(2);
         int ret;
@@ -238,7 +238,7 @@ lo_write(dbh, fd, buf, len)
     SV * dbh
     int fd
     char * buf
-    unsigned int len
+    size_t len
     CODE:
         int ret = pg_db_lo_write(dbh, fd, buf, len);
         ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
@@ -287,7 +287,7 @@ lo_import(dbh, filename)
     char * filename
     CODE:
         unsigned int ret = pg_db_lo_import(dbh, filename);
-        ST(0) = (ret) ? sv_2mortal(newSViv((int)ret)) : &sv_undef;
+        ST(0) = (ret!=0) ? sv_2mortal(newSViv((int)ret)) : &sv_undef;
 
 
 void
@@ -304,14 +304,14 @@ pg_putline(dbh, buf)
     SV * dbh
     char * buf
     CODE:
-      ST(0) = pg_db_putline(dbh, buf) ? &sv_no : &sv_yes;
+      ST(0) = (pg_db_putline(dbh, buf)!=0) ? &sv_no : &sv_yes;
 
 void
 putline(dbh, buf)
     SV * dbh
     char * buf
     CODE:
-      ST(0) = pg_db_putline(dbh, buf) ? &sv_no : &sv_yes;
+      ST(0) = (pg_db_putline(dbh, buf)!=0) ? &sv_no : &sv_yes;
 
 void
 pg_getline(dbh, buf, len)
@@ -378,7 +378,7 @@ _pg_type_info (type_sv=Nullsv)
 
 		if (type_sv && SvOK(type_sv)) {
 			if SvMAGICAL(type_sv)
-				mg_get(type_sv);
+				(void)mg_get(type_sv);
 			type_info = pg_type_data(SvIV(type_sv));
 			type_num = type_info ? type_info->type.sql : SQL_VARCHAR;
 		}

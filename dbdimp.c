@@ -134,16 +134,22 @@ static ExecStatusType _result(imp_dbh, com)
 		status = PQresultStatus(result);
 
 #if PGLIBVERSION >= 70400
-	strncpy(imp_dbh->sqlstate,
-					NULL == PQresultErrorField(result,PG_DIAG_SQLSTATE) ? "00000" : 
-					PQresultErrorField(result,PG_DIAG_SQLSTATE),
-					5);
-	imp_dbh->sqlstate[5] = '\0';
+	if (result) {
+		strncpy(imp_dbh->sqlstate,
+						NULL == PQresultErrorField(result,PG_DIAG_SQLSTATE) ? "00000" : 
+						PQresultErrorField(result,PG_DIAG_SQLSTATE),
+						5);
+		imp_dbh->sqlstate[5] = '\0';
+	}
+	else {
+		strncpy(imp_dbh->sqlstate, "S1000\0", 6); /* DBI standard says this is the default */
+	}
 #else
-	strncpy(imp_dbh->sqlstate, "S1000\0", 6); /* DBI standard says this is the default */
+	strncpy(imp_dbh->sqlstate, "S1000\0", 6);
 #endif
 
-	PQclear(result);
+	if (result)
+		PQclear(result);
 	return status;
 
 } /* end of _result */
@@ -241,7 +247,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	
 	/* Change all semi-colons in dbname to a space, unless quoted */
 	dest = conn_str;
-	while (*dbname) {
+	while (*dbname != '\0') {
 		if (';' == *dbname && !inquote)
 			*dest++ = ' ';
 		else {
@@ -257,9 +263,9 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	if (strlen(uid)>0) {
 		strcat(conn_str, " user='");
 		dest = conn_str;
-		while(*dest)
+		while(*dest != '\0')
 			dest++;
-		while(*uid) {
+		while(*uid != '\0') {
 			if ('\''==*uid || '\\'==*uid)
 				*(dest++)='\\';
 			*(dest++)=*(uid++);
@@ -270,9 +276,9 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	if (strlen(pwd)>0) {
 		strcat(conn_str, " password='");
 		dest = conn_str;
-		while(*dest)
+		while(*dest != '\0')
 			dest++;
-		while(*pwd) {
+		while(*pwd != '\0') {
 			if ('\''==*pwd || '\\'==*pwd)
 				*(dest++)='\\';
 			*(dest++)=*(pwd++);
@@ -286,7 +292,6 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	
 	/* Make a connection to the database */
 
-	// Free with PQfinish?
 	imp_dbh->conn = PQconnectdb(conn_str);
 	Safefree(conn_str);
 	
@@ -319,7 +324,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 		else
 			status = -1;
 	
-		if (PGRES_TUPLES_OK != status || !PQntuples(result)) {
+		if (PGRES_TUPLES_OK != status || (0==PQntuples(result))) {
 			if (dbis->debug >= 4)
 				(void)PerlIO_printf(DBILOGFP, "  Could not get version from the server, status was %d\n", status);
 		}
@@ -504,7 +509,7 @@ int dbd_db_disconnect (dbh, imp_dbh)
 	
 	if (NULL != imp_dbh->conn) {
 		/* Rollback if needed */
-		if (dbd_db_rollback(dbh, imp_dbh) && dbis->debug >= 4)
+		if (0!=dbd_db_rollback(dbh, imp_dbh) && dbis->debug >= 4)
 			(void)PerlIO_printf(DBILOGFP, "dbd_db_disconnect: AutoCommit=off -> rollback\n");
 		
 		PQfinish(imp_dbh->conn);
@@ -558,18 +563,18 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 		if (oldval == newval)
 			return 1;
 		if (newval!=0) { /* It was off but is now on, so do a final commit */
-			if (dbd_db_commit(dbh, imp_dbh) && dbis->debug >= 5)
+			if (0!=dbd_db_commit(dbh, imp_dbh) && dbis->debug >= 5)
 				(void)PerlIO_printf(DBILOGFP, "dbd_db_STORE: AutoCommit on forced a commit\n");
 		}
 		DBIc_set(imp_dbh, DBIcf_AutoCommit, newval);
 		return 1;
 	}
 	else if (10==kl && strEQ(key, "pg_bool_tf")) {
-		imp_dbh->pg_bool_tf = newval ? TRUE : FALSE;
+		imp_dbh->pg_bool_tf = newval!=0 ? TRUE : FALSE;
 	}
 #ifdef is_utf8_string
 	else if (14==kl && strEQ(key, "pg_enable_utf8")) {
-		imp_dbh->pg_enable_utf8 = newval ? TRUE : FALSE;
+		imp_dbh->pg_enable_utf8 = newval!=0 ? TRUE : FALSE;
 	}
 #endif
 	else if (13==kl && strEQ(key, "pg_errorlevel")) {
@@ -803,12 +808,12 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 		mypos++;
 		statement++;
 	}
-	if (!*statement || !isALPHA(*statement)) {
+	if ((*statement=='\0') || !isALPHA(*statement)) {
 		imp_sth->firstword = NULL;
 	}
 	else {
 		wordstart = mypos;
-		while(*statement && isALPHA(*statement)) {
+		while((*statement!='\0') && isALPHA(*statement)) {
 			mypos++;
 			statement++;
 		}
@@ -819,23 +824,23 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 		Copy(statement-newsize,imp_sth->firstword,newsize,char);
 		imp_sth->firstword[newsize] = '\0';
 		/* Try to prevent transaction commands unless "pg_direct" is set */
-		if (!strcasecmp(imp_sth->firstword, "END") ||
-				!strcasecmp(imp_sth->firstword, "BEGIN") ||
-				!strcasecmp(imp_sth->firstword, "ABORT") ||
-				!strcasecmp(imp_sth->firstword, "COMMIT") ||
-				!strcasecmp(imp_sth->firstword, "ROLLBACK") ||
-				!strcasecmp(imp_sth->firstword, "RELEASE") ||
-				!strcasecmp(imp_sth->firstword, "SAVEPOINT")
+		if (0==strcasecmp(imp_sth->firstword, "END") ||
+				0==strcasecmp(imp_sth->firstword, "BEGIN") ||
+				0==strcasecmp(imp_sth->firstword, "ABORT") ||
+				0==strcasecmp(imp_sth->firstword, "COMMIT") ||
+				0==strcasecmp(imp_sth->firstword, "ROLLBACK") ||
+				0==strcasecmp(imp_sth->firstword, "RELEASE") ||
+				0==strcasecmp(imp_sth->firstword, "SAVEPOINT")
 				) {
 			if (!imp_sth->direct)
 				croak ("Please use DBI functions for transaction handling");
 			imp_sth->is_dml = TRUE; /* Close enough for our purposes */
 		}
 		/* Note whether this is preparable DML */
-		if (!strcasecmp(imp_sth->firstword, "SELECT") ||
-				!strcasecmp(imp_sth->firstword, "INSERT") ||
-				!strcasecmp(imp_sth->firstword, "UPDATE") ||
-				!strcasecmp(imp_sth->firstword, "DELETE")
+		if (0==strcasecmp(imp_sth->firstword, "SELECT") ||
+				0==strcasecmp(imp_sth->firstword, "INSERT") ||
+				0==strcasecmp(imp_sth->firstword, "UPDATE") ||
+				0==strcasecmp(imp_sth->firstword, "DELETE")
 				) {
 			imp_sth->is_dml = TRUE;
 		}
@@ -912,13 +917,14 @@ static void dbd_st_split_statement (imp_sth, statement)
 		else {
 			imp_sth->seg->segment = NULL;
 		}
-		while(*statement++) { }
+		while(*statement++ != '\0') { }
 		statement--;
 	}
 
 	sectionstart = 1;
 	mypos = 0;
-	block = quote = backslashes = 0;
+	block = backslashes = 0;
+	quote = 0;
 	while ((ch = *statement++)) {
 
 		mypos++;
@@ -942,7 +948,7 @@ static void dbd_st_split_statement (imp_sth, statement)
 		/* Check for the end of a quote */
 		if (quote!=0) {
 			if (ch == quote) {
-				if (!(backslashes & 1)) 
+				if (0==(backslashes & 1)) 
 					quote = 0;
 			}
 			else {
@@ -959,7 +965,7 @@ static void dbd_st_split_statement (imp_sth, statement)
 
 		/* Check for the start of a quote */
 		if ('\'' == ch || '"' == ch) {
-			if (!(backslashes & 1))
+			if (0==(backslashes & 1))
 				quote = ch;
 			if (*statement)
 				continue;
@@ -1060,13 +1066,13 @@ static void dbd_st_split_statement (imp_sth, statement)
 			newsize = mypos-sectionstop;
 			/* Have we seen this placeholder yet? */
 			for (x=1,thisph=imp_sth->ph; NULL != thisph; thisph=thisph->nextph,x++) {
-				if (!strncmp(thisph->fooname, statement-newsize, newsize)) {
+				if (0==strncmp(thisph->fooname, statement-newsize, newsize)) {
 					newseg->placeholder = x;
 					newseg->ph = thisph;
 					break;
 				}
 			}
-			if (!newseg->placeholder) {
+			if (0==newseg->placeholder) {
 				imp_sth->numphs++;
 				newseg->placeholder = imp_sth->numphs;
 				New(0, newph, 1, ph_t); /* freed in dbd_st_destroy */
@@ -1095,7 +1101,7 @@ static void dbd_st_split_statement (imp_sth, statement)
 		} /* end if placeholder_type */
 		
 		newsize = sectionstop-sectionstart+1;
-		if (! placeholder_type)
+		if (0==placeholder_type)
 			newsize++;
 		if (newsize>0) {
 			New(0, newseg->segment, newsize+1, char); /* freed in dbd_st_destroy */
@@ -1123,7 +1129,7 @@ static void dbd_st_split_statement (imp_sth, statement)
 		imp_sth->numsegs++;
 
 		/* Bail unless it we have a placeholder ready to go */
-		if (!placeholder_type)
+		if (0==placeholder_type)
 			continue;
 
 		imp_sth->placeholder_type = placeholder_type;
@@ -1149,7 +1155,7 @@ static void dbd_st_split_statement (imp_sth, statement)
 					break;
 				}
 			}
-			if (!found)
+			if (0==found)
 				croak("Invalid placeholders: must start at $1 and increment one at a time");
 		}
 		if (dbis->debug >= 5)
@@ -1250,7 +1256,7 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 			execsize += imp_sth->numphs-1; /* for the commas */
 		}
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-			if (!currseg->placeholder)
+			if (0==currseg->placeholder)
 				continue;
 			/* The parameter itself: dollar sign plus digit(s) */
 			for (x=1; x<7; x++) {
@@ -1371,7 +1377,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	if (is_inout!=0)
 		croak("bind_inout not supported by this driver");
 
-	if (!imp_sth->numphs) {
+	if (0==imp_sth->numphs) {
 		croak("Statement has no placeholders to bind");
 	}
 
@@ -1397,12 +1403,12 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 
 	if (3==imp_sth->placeholder_type) {
 		for (x=0,currph=imp_sth->ph; NULL != currph; currph = currph->nextph) {
-			if (!strcmp(currph->fooname, name)) {
+			if (0==strcmp(currph->fooname, name)) {
 				x=1;
 				break;
 			}
 		}
-		if (!x)
+		if (0==x)
 			croak("Cannot bind unknown placeholder '%s'", name);
 	}
 	else { /* We have a number */	
@@ -1712,7 +1718,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 			/* Figure out how big the statement plus placeholders will be */
 			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-				if (!currseg->placeholder)
+				if (0==currseg->placeholder)
 					continue;
 				/* The parameter itself: dollar sign plus digit(s) */
 				for (x=1; x<7; x++) {
@@ -1839,7 +1845,8 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		/* non-select statement */
 		if (dbis->debug >= 5)
 			(void)PerlIO_printf(DBILOGFP, "  dbdpg: status was PGRES_COMMAND_OK\n");
-		if (! strncmp(cmdStatus, "DELETE", 6) || ! strncmp(cmdStatus, "INSERT", 6) || ! strncmp(cmdStatus, "UPDATE", 6)) {
+		if ((0==strncmp(cmdStatus, "DELETE", 6)) || (0==strncmp(cmdStatus, "INSERT", 6)) || 
+				(0==strncmp(cmdStatus, "UPDATE", 6))) {
 			ret = atoi(cmdTuples);
 		} else {
 			/* We assume that no rows are affected for successful commands (e.g. ALTER TABLE) */
@@ -2310,7 +2317,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 				result = PQexec(imp_dbh->conn, statement);
 				if (result)
 					status = PQresultStatus(result);
-				if (PGRES_TUPLES_OK == status && PQntuples(result)) {
+				if (PGRES_TUPLES_OK == status && PQntuples(result)!=0) {
 					switch(PQgetvalue(result,0,0)[0]) {
 					case 't':
 						nullable = 0;
@@ -2804,7 +2811,7 @@ int dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
 	
 	/* dereference destination and ensure it's writable string */
 	bufsv = SvRV(destrv);
-	if (! destoffset) {
+	if (0==destoffset) {
 		sv_setpvn(bufsv, "", 0);
 	}
 	
