@@ -5,7 +5,7 @@ This file is for those interested in developing DBD::Pg. It is hoped that it
 will be a good introduction as well as a continual reference. Suggestions 
 are always welcome.
 
-Note: most of this document assumes you are using a unix-like system.
+Note: most of this document assumes you are using a Unix-like system.
 
 Sections:
 
@@ -36,8 +36,9 @@ There is a sometimes complex interweaving of files needed for each method.
 
 Running "perl Makefile.PL" uses the ExtUtils::MakeMaker module to create a 
 true Makefile. Then the "make" command compiles everything, after creating 
-the Pg.c file from Pg.xs. The files Pg.pm and blib/arch/auto/DBD/Pg/Pg.so 
-form the core of the module once installed.
+the Pg.c file from Pg.xs and DBI's Perl.xsi. The files Pg.pm and 
+blib/arch/auto/DBD/Pg/Pg.so form the core of the module once installed.
+(The above is oversimplified).
 
 
 ===============
@@ -225,7 +226,8 @@ Please use tabs and not spaces everywhere, and keep the indenting to the cperl s
 Use the traditional C mode for *.c files. Pg.xs is a special case: if you know of a good 
 mode for editing this file, please let us know and update this paragraph!
 
-Please follow the other syntax standards in place as much as possible.
+Please follow the other syntax standards in place as much as possible. A few guidelines 
+for xs files can be found in the xs perldocs.
 
 
 ===================
@@ -289,6 +291,54 @@ versions of DBI into different directories, then adjust PERL5LIB with aliases:
 
 alias dbi138='export PERL5LIB=/home/greg/perl/dbi138/lib/perl5/5.8.5/i686-linux-ld'
 alias dbi139='export PERL5LIB=/home/greg/perl/dbi139/lib/perl5/5.8.5/i686-linux-ld'
+
+
+* Using splint
+
+Another great program to use is splint, which is a "tool for statically checking C programs for 
+security vulnerabilities and common programming mistakes." It can be found at
+
+http://www.splint.org/
+
+It is typically run against a single C file, in our case, the generated Pg.c file. It will not work 
+out of the box, as our dependencies tend to be scattered about. Here is a minimal file that 
+should work:
+
+splint \
++unixlib \
++single-include \
+-I/source/bin/DBI-1.48 \
+-I/source/pg801/include \
+-I/usr/lib/perl5/5.8.5/i686-linux-ld/CORE \
+Pg.c
+
+You will need to replace the directories above with the correct ones for your local DBI, PG, 
+and Perl directories. Splint can be tempermental, so you may need to add more than that, and 
+tweak a few things. Once you do get it running, it is very thorough and extremely verbose. 
+You can start filtering out items you do not need to check. Here are a few common ones:
+
+-nullpass \
+-predboolint \
++charint \
++charintliteral \
+-nullderef \
+-branchstate \
+-mustfreeonly \
+-mustfreefresh \
+-boolops \
+-type \
+-observertrans \
+-globstate \
+-nullstate \
+-compdef \
+-onlytrans \
+-realcompare \
+-nullret \
+-bufferoverflowhigh \
+
+Note that most, if not all, of the above, *should* be checked on the first pass, and then 
+gradually added to make the output easier to read.
+
 
 
 ===============
@@ -653,6 +703,8 @@ Besides a good general understanding of Perl, it helps to learn a little bit abo
 perldoc perlapi
 perldoc perlclib
 perldoc perlguts
+perldoc perlxstut
+perldoc perlxs
 
 This is the module that does all the introductory magic:
 
