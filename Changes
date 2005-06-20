@@ -1,11 +1,12 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.43 
+	- Fix statement-name related core dump. [GSM]
 	- Ensure state() returns an empty string, not 00000 on success.
 		(CPAN bug #13237) [michael.bell@web.de of OpenCA] [GSM]
 	- Fix rare core dump when $sth still in scope after disconnect [GSM]
 	- Enhancements to README.win32 [fenlisesi@gmail.com]
-	- Fix incorect sprintf calls (CPAN bug #12204)
+	- Fix incorrect sprintf calls (CPAN bug #12204)
 		[Jakub Jelinek]
 	- Fix get_info(18) ("ODBCVERSION") (CPAN bug #12968)
 		[thanks to szinger@lanl.gov] [GSM]
