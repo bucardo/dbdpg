@@ -71,11 +71,10 @@ struct imp_sth_st {
 	bool   is_dml;           /* is this SELECT/INSERT/UPDATE/DELETE? */
 	bool   has_binary;       /* does it have one or more binary placeholders? */
 
-	char   server_prepare;   /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
-	char   placeholder_type; /* which style is being used 1=? 2=$1 3=:foo */
-
 	STRLEN totalsize;        /* total string length of the statement (with no placeholders)*/
 
+	int    server_prepare;   /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
+	int    placeholder_type; /* which style is being used 1=? 2=$1 3=:foo */
 	int    numsegs;          /* how many segments this statement has */
 	int    numphs;           /* how many placeholders this statement has */
 	int    numbound;         /* how many placeholders were explicitly bound by the client, not us */
