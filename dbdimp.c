@@ -1813,13 +1813,18 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	/* We don't want the result cleared yet, so we don't use _result */
 
 #if PGLIBVERSION >= 70400
-	strncpy(imp_dbh->sqlstate,
-					NULL == PQresultErrorField(imp_sth->result,PG_DIAG_SQLSTATE) ? "00000" : 
-					PQresultErrorField(imp_sth->result,PG_DIAG_SQLSTATE),
-					5);
-	imp_dbh->sqlstate[5] = '\0';
+	if (imp_sth->result) {
+		strncpy(imp_dbh->sqlstate,
+						NULL == PQresultErrorField(imp_sth->result,PG_DIAG_SQLSTATE) ? "00000" : 
+						PQresultErrorField(imp_sth->result,PG_DIAG_SQLSTATE),
+						5);
+		imp_dbh->sqlstate[5] = '\0';
+	}
+	else {
+		strncpy(imp_dbh->sqlstate, "S1000\0", 6); /* DBI standard says this is the default */
+	}
 #else
-	strncpy(imp_dbh->sqlstate, "S1000\0", 6); /* DBI standard says this is the default */
+	strncpy(imp_dbh->sqlstate, "S1000\0", 6);
 #endif
 
 	if (imp_sth->result) {
