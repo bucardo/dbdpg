@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.43 
+	- Added README.dev file. [GSM]
 	- Fix statement-name related core dump. [GSM]
 	- Ensure state() returns an empty string, not 00000 on success.
 		(CPAN bug #13237) [michael.bell@web.de of OpenCA] [GSM]
