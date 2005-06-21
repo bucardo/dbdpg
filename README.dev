@@ -541,9 +541,9 @@ You may also want to remove the directory it creates later. "make realclean"
 * Now that everything works, set a symbolic name for this version. 
 Remember to use underscores (see the ** Version Numbers section)
 
-For example, to tag all of the current file as the fist beta of 1.42, use:
+For example, to tag all of the current file as the first beta of 1.43, use:
 
-cvs rtag Rel-1_41_1 dbdpg
+cvs rtag Rel-1_42_1 dbdpg
 
 * Make checksums
 
