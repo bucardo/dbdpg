@@ -539,7 +539,7 @@ release tarball. Make sure there is nothing important here.
 You may also want to remove the directory it creates later. "make realclean"
 
 * Now that everything works, set a symbolic name for this version. 
-Remember to use underscores (see the ** Version Numbering section)
+Remember to use underscores (see the ** Version Numbers section)
 
 For example, to tag all of the current file as the fist beta of 1.42, use:
 
