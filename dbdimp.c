@@ -134,7 +134,7 @@ static ExecStatusType _result(imp_dbh, com)
 		status = PQresultStatus(result);
 
 #if PGLIBVERSION >= 70400
-	if (result) {
+	if (result && imp_dbh->pg_server_version >= 70400) {
 		strncpy(imp_dbh->sqlstate,
 						NULL == PQresultErrorField(result,PG_DIAG_SQLSTATE) ? "00000" : 
 						PQresultErrorField(result,PG_DIAG_SQLSTATE),
@@ -1813,7 +1813,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	/* We don't want the result cleared yet, so we don't use _result */
 
 #if PGLIBVERSION >= 70400
-	if (imp_sth->result) {
+	if (imp_sth->result && imp_dbh->pg_server_version >= 70400) {
 		strncpy(imp_dbh->sqlstate,
 						NULL == PQresultErrorField(imp_sth->result,PG_DIAG_SQLSTATE) ? "00000" : 
 						PQresultErrorField(imp_sth->result,PG_DIAG_SQLSTATE),

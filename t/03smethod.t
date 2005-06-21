@@ -356,7 +356,12 @@ $sth->finish();
 #
 
 $result = $sth->state();
-is( $result, "", qq{Statement handle method "state" returns an empty string on success});
+if ($pglibversion >= 70400 and $pgversion >= 70400) {
+	is( $result, "", qq{Statement handle method "state" returns an empty string on success});
+}
+else {
+	is( $result, "S1000", qq{Statement handle method "state" returns S1000 (old server)});
+}
 
 eval {
 	$sth = $dbh->prepare("SELECT dbdpg_throws_an_error");

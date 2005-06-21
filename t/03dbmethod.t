@@ -862,8 +862,14 @@ like( $result, qr/^\d+$/, 'DB handle method "getfd" returns a number');
 # Test of the "state" database handle method
 #
 
+my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 $result = $dbh->state();
-is( $result, "", qq{DB handle method "state" returns an empty string on success});
+if ($pglibversion >= 70400 and $pgversion >= 70400) {
+	is( $result, "", qq{DB handle method "state" returns an empty string on success});
+}
+else {
+	is( $result, "S1000", qq{DB handle method "state" returns S1000 on success (old server)});
+}
 
 eval {
 	$dbh->do("SELECT dbdpg_throws_an_error");
