@@ -545,6 +545,14 @@ For example, to tag all of the current file as the first beta of 1.43, use:
 
 cvs rtag Rel-1_42_1 dbdpg
 
+If you ever need to remove a symbolic tag, you can use:
+
+cvs admin -nRel-1_42_1 filename
+
+To add a symbolic tag to a particular version of a file use:
+
+cvs admin -nRel-1_42_1:1.19 filename
+
 * Make checksums
 
 Generate md5 and sha1 checksums of the tarball. Include this in your emails.
