@@ -371,3 +371,4 @@ $result = $sth->state();
 like( $result, qr/^[A-Z0-9]{5}$/, qq{Statement handle method "state" returns a five-character code on error});
 $dbh->rollback();
 
+$dbh->disconnect();
