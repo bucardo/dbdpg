@@ -589,6 +589,24 @@ Short note of changes, link to CPAN directory.
 
 Checksums for the file.
 
+* Post to pgsql-announce if this is a major or important version.
+
+* Post to the "PostgreSQL news"
+
+On the main page, there is a link named "Submit News" which points to:
+
+http://www.postgresql.org/about/submitnews
+
+The content should be roughly the same as the announcement.
+
+* PostgreSQL weekly news summary
+
+The maintainers of the weekly news are usually pretty good about catching the update 
+and adding it in. If not, bug them.
+
+http://www.postgresql.org/community/weeklynews/
+
+
 * If a non-beta, clean out any CPAN bugs
 
 * Update this file based on your experiences!!
