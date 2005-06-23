@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-1.43 
+1.44
+
+1.43 June 23, 2005
 	- Added README.dev file. [GSM]
 	- Fix statement-name related core dump. [GSM]
 	- Ensure state() returns an empty string, not 00000 on success.
