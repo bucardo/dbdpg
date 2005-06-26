@@ -1881,8 +1881,8 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 static int is_high_bit_set(val)
 		 char *val;
 {
-	while (*val++)
-		if (*val & 0x80) return 1;
+	while (*val)
+		if (*val++ & 0x80) return 1;
 	return 0;
 }
 
