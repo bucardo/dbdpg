@@ -27,6 +27,7 @@
 
 #ifdef WIN32
 #define snprintf _snprintf
+#define strcasecmp(s1,s2) lstrcmpiA((s1), (s2))
 #endif
 
 #define sword  signed int
