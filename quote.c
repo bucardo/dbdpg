@@ -307,7 +307,7 @@ quote_bytea(string, len, retlen)
  	dest = result;
 	
 	Copy("'", dest++, 1, char);
-	strncpy(dest,intermead,strlen(intermead));
+	strncpy(dest,intermead,strlen(intermead)+1);
 	strcat(dest,"\'");
 	
 #if PGLIBVERSION >= 70400
