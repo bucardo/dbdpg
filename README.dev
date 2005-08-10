@@ -358,7 +358,7 @@ information and allows to easily stick in a piece of code for testing. It should
 
 BEGIN {
 	my $out = `make 2>&1`;
-	if ($out =~ /^\w+\.[cx]s?:\d+:/ms) {
+	if ($out =~ /^\w+\.[cx]s?:\d+:/ms or $out =~ /^Error/ms) {
 		for (split /\n/ => $out) {
 			print "MAKE ERROR: $_\n" if /^[\w\.]+:/;
 		}
