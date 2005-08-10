@@ -128,7 +128,7 @@ static ExecStatusType _result(imp_dbh, com)
 	PGresult *result;
 	int status = -1;
 
-	if (dbis->debug >= 1) (void)PerlIO_printf(DBILOGFP, "Running _result with (%s)\n", com);
+	if (dbis->debug > 4) (void)PerlIO_printf(DBILOGFP, "Running _result with (%s)\n", com);
 
 	result = PQexec(imp_dbh->conn, com);
 	if (result)
@@ -770,6 +770,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	imp_sth->is_dml = FALSE; /* Not preparable DML until proved otherwise */
 	imp_sth->prepared_by_us = FALSE; /* Set to 1 when actually done preparing */
 	imp_sth->has_binary = FALSE; /* Are any of the params binary? */
+	imp_sth->onetime = FALSE; /* Allow internal shortcut */
 	imp_sth->result	= NULL;
 	imp_sth->cur_tuple = 0;
 	imp_sth->placeholder_type = 0;
@@ -1536,6 +1537,90 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 
 
 /* ================================================================== */
+int pg_quickexec (dbh, sql)
+		 SV *          dbh;
+		 const char *  sql;
+{
+	D_imp_dbh(dbh);
+	PGresult *result;
+	int status = -1;
+	char *cmdStatus = NULL;
+	int rows = 0;
+
+	if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "Running pg_quickexec with (%s)\n", sql);
+
+	if (NULL == imp_dbh->conn)
+		croak("execute on disconnected handle");
+
+	/* Abort if we are in the middle of a copy */
+	if (imp_dbh->copystate!=0)
+		croak("Must call pg_endcopy before issuing more commands");
+
+	/* If not autocommit, start a new transaction */
+	if (!imp_dbh->done_begin && DBDPG_FALSE == DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		status = _result(imp_dbh, "begin");
+		if (PGRES_COMMAND_OK != status) {
+			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
+			return -2;
+		}
+		imp_dbh->done_begin = TRUE;
+	}
+
+	result = PQexec(imp_dbh->conn, sql);
+	if (result)
+		status = PQresultStatus(result);
+
+#if PGLIBVERSION >= 70400
+	if (result && imp_dbh->pg_server_version >= 70400) {
+		strncpy(imp_dbh->sqlstate,
+						NULL == PQresultErrorField(result,PG_DIAG_SQLSTATE) ? "00000" : 
+						PQresultErrorField(result,PG_DIAG_SQLSTATE),
+						5);
+		imp_dbh->sqlstate[5] = '\0';
+	}
+	else {
+		strncpy(imp_dbh->sqlstate, "S1000\0", 6); /* DBI standard says this is the default */
+	}
+#else
+	strncpy(imp_dbh->sqlstate, "S1000\0", 6);
+#endif
+
+	imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
+
+	if (0==result) {
+		return -2;
+	}
+
+	if (PGRES_TUPLES_OK == status) {
+		rows = PQntuples(result);
+	}
+	else if (PGRES_COMMAND_OK == status) {
+		/* non-select statement */
+		cmdStatus = PQcmdStatus(result);
+		if ((0==strncmp(cmdStatus, "DELETE", 6)) || (0==strncmp(cmdStatus, "INSERT", 6)) || 
+				(0==strncmp(cmdStatus, "UPDATE", 6))) {
+			rows = atoi(PQcmdTuples(result));
+		}
+	}
+	else if (PGRES_COPY_OUT == status || PGRES_COPY_IN == status) {
+		/* Copy Out/In data transfer in progress */
+		imp_dbh->copystate = status;
+		rows = -1;
+	}
+	else {
+		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
+		rows = -2;
+	}
+	
+	if (result)
+		PQclear(result);
+
+	return rows;
+
+} /* end of pg_quickexec */
+
+
+/* ================================================================== */
 int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown count) */
 		 SV *sth;
 		 imp_sth_t *imp_sth;
@@ -1549,7 +1634,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	int *paramLengths = NULL, *paramFormats = NULL;
 	Oid *paramTypes = NULL;
 	seg_t *currseg;
-	char *statement = NULL, *cmdStatus = NULL, *cmdTuples = NULL;
+	char *statement = NULL, *cmdStatus = NULL;
 	int num_fields, ret = -2;
 	
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbd_st_execute\n"); }
@@ -1570,7 +1655,6 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			}
 		}
 	}
-
 
 	/* If not autocommit, start a new transaction */
 	if (!imp_dbh->done_begin && DBDPG_FALSE == DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
@@ -1661,7 +1745,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			!imp_sth->direct &&
 			imp_dbh->pg_protocol >= 3 &&
 			0 != imp_sth->server_prepare &&
-			1 <= imp_sth->numphs &&
+			(1 <= imp_sth->numphs && !imp_sth->onetime) &&
 			(1 == imp_sth->server_prepare ||
 			 (imp_sth->numbound == imp_sth->numphs)
 			 )){
@@ -1828,11 +1912,6 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	strncpy(imp_dbh->sqlstate, "S1000\0", 6);
 #endif
 
-	if (imp_sth->result) {
-		cmdStatus = PQcmdStatus(imp_sth->result);
-		cmdTuples = PQcmdTuples(imp_sth->result);
-	}
-
 	if (dbis->debug >= 5)
 		(void)PerlIO_printf(DBILOGFP, "  dbdpg: received a status of %d\n", status);
 
@@ -1849,12 +1928,16 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	}
 	else if (PGRES_COMMAND_OK == status) {
 		/* non-select statement */
+		if (imp_sth->result) {
+			cmdStatus = PQcmdStatus(imp_sth->result);
+		}
 		if (dbis->debug >= 5)
 			(void)PerlIO_printf(DBILOGFP, "  dbdpg: status was PGRES_COMMAND_OK\n");
 		if ((0==strncmp(cmdStatus, "DELETE", 6)) || (0==strncmp(cmdStatus, "INSERT", 6)) || 
 				(0==strncmp(cmdStatus, "UPDATE", 6))) {
-			ret = atoi(cmdTuples);
-		} else {
+			ret = atoi(PQcmdTuples(imp_sth->result));
+		}
+		else {
 			/* We assume that no rows are affected for successful commands (e.g. ALTER TABLE) */
 			return 0;
 		}

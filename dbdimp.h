@@ -67,6 +67,7 @@ struct imp_sth_st {
 
 	bool   prepare_now;      /* prepare this statement right away, even if it has placeholders */
 	bool   prepared_by_us;   /* false if {prepare_name} set directly */
+	bool   onetime;          /* this statement is guaranteed not to be run again - so don't use SSP */
 	bool   direct;           /* allow bypassing of the statement parsing */
 	bool   is_dml;           /* is this SELECT/INSERT/UPDATE/DELETE? */
 	bool   has_binary;       /* does it have one or more binary placeholders? */
@@ -117,7 +118,4 @@ unsigned int pg_db_lo_import (SV *dbh, char *filename);
 int pg_db_lo_export (SV *dbh, unsigned int lobjId, char *filename);
 
 /* end of dbdimp.h */
-
-
-
 

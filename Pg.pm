@@ -189,26 +189,6 @@ use 5.006001;
 		$sth;
 	}
 
-
-	sub do {
-		my ($dbh, $statement, $attr, @params) = @_;
-
-		return undef unless length $statement;
-
-		## Prevent 'do' from using server-side prepares unless specifically requested
-		if (! defined $attr) {
-			$attr = {pg_server_prepare => 0};
-		}
-		elsif (ref $attr and ref $attr eq "HASH" and ! exists $attr->{pg_server_prepare}) {
-			$attr->{pg_server_prepare} = 0;
-		}
-		my $sth = $dbh->prepare($statement, $attr) or return undef;
-		$sth->execute(@params) or return undef;
-		my $rows = $sth->rows;
-		($rows == 0) ? "0E0" : $rows;
-	}
-
-
 	sub last_insert_id {
 
 		my ($dbh, $catalog, $schema, $table, $col, $attr) = @_;
@@ -1908,11 +1888,13 @@ the prepare to happen immediately via the C<pg_prepare_now> attribute.
 
   $rv  = $dbh->do($statement, \%attr, @bind_values);
 
-Prepare and execute a single statement. Because statements with placeholders
-should be calling prepare and execute themselves, calls to C<do()> will not
-use server-side prepares by default. You can force the use of server-side
-prepares by adding C<pg_server_prepare => 1> to the attribute hashref. See the
-notes on C<prepare>, C<bind_param>, and C<execute> for more information.
+Prepare and execute a single statement. Note that an empty statement 
+(string with no length) will not be passed to the server; if you 
+want a simple test, use "SELECT 123" or the ping() function. If 
+neither attr nor bind_values is given, the query will be sent directly 
+to the server without the overhead of creating a statement handle and 
+running prepare and execute.
+
 
 =item B<last_insert_id>
 

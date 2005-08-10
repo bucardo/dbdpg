@@ -135,6 +135,49 @@ void state(dbh)
 	D_imp_dbh(dbh);
 	ST(0) = strEQ(imp_dbh->sqlstate,"00000") ? &sv_no : newSVpv(imp_dbh->sqlstate, 5);
 
+void do(dbh, statement, attr=Nullsv, ...)
+	SV *    dbh
+	char *  statement
+	SV *    attr
+	PROTOTYPE: $$;$@
+	CODE:
+	{
+		D_imp_dbh(dbh);
+		struct imp_sth_ph_st* params = NULL;
+		int numParams = 0;
+		int retval;
+
+		if (strlen(statement)<1) { /* Corner case */
+			XST_mUNDEF(0);
+			return;
+		}
+
+		if (items < 3) { /* No attribs, no arguments */
+			/* Quick run via PQexec */
+			retval = pg_quickexec(dbh, statement);
+		}
+		else { /* The normal, slower way */
+			imp_sth_t *imp_sth;
+			SV * sth = dbixst_bounce_method("prepare", 3);
+			if (!SvROK(sth))
+				XSRETURN_UNDEF;
+			imp_sth = (imp_sth_t*)(DBIh_COM(sth));
+			if (items > 3)
+				if (!dbdxst_bind_params(sth, imp_sth, items-2, ax+2))
+					XSRETURN_UNDEF;
+			imp_sth->server_prepare = 1;
+			imp_sth->onetime = 1; /* Overrides the above at actual PQexec* decision time */
+			retval = dbd_st_execute(sth, imp_sth);
+		}
+
+		if (retval == 0)
+			XST_mPV(0, "0E0");
+		else if (retval < -1)
+			XST_mUNDEF(0);
+		else
+			XST_mIV(0, retval);
+}
+
 void
 _ping(dbh)
     SV * dbh
