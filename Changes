@@ -1,6 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.44
+	- Add pg_ping() method [GSM]
+	- Make sure ping returns true, even if in failed transaction state.
+		[thanks to Bill Moseley] [GSM]
+	- Fix COPY-related core dump [GSM]
 	- Fix strncpy bug in quote.c [Jun Kuriyama]
 	- Fix error in is_high_bit_set(). [Alexey Tourbin]
 
