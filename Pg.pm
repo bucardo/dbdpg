@@ -67,14 +67,15 @@ use 5.006001;
 		});
 
 
-		DBD::Pg::db->install_method("pg_putline");
-		DBD::Pg::db->install_method("pg_getline");
 		DBD::Pg::db->install_method("pg_endcopy");
+		DBD::Pg::db->install_method("pg_getline");
+		DBD::Pg::db->install_method("pg_ping");
+		DBD::Pg::db->install_method("pg_putline");
+		DBD::Pg::db->install_method("pg_release");
+		DBD::Pg::db->install_method("pg_rollback_to");
+		DBD::Pg::db->install_method("pg_savepoint");
 		DBD::Pg::db->install_method("pg_server_trace");
 		DBD::Pg::db->install_method("pg_server_untrace");
-		DBD::Pg::db->install_method("pg_savepoint");
-		DBD::Pg::db->install_method("pg_rollback_to");
-		DBD::Pg::db->install_method("pg_release");
 
 		$drh;
 
@@ -296,11 +297,18 @@ use 5.006001;
 	} ## end of last_insert_id
 
 	sub ping {
-		my($dbh) = @_;
+		my $dbh = shift;
 		local $SIG{__WARN__} = sub { } if $dbh->{PrintError};
 		local $dbh->{RaiseError} = 0 if $dbh->{RaiseError};
 		my $ret = DBD::Pg::db::_ping($dbh);
-		return $ret;
+		return $ret < 1 ? 0 : $ret;
+	}
+
+	sub pg_ping {
+		my $dbh = shift;
+		local $SIG{__WARN__} = sub { } if $dbh->{PrintError};
+		local $dbh->{RaiseError} = 0 if $dbh->{RaiseError};
+		return DBD::Pg::db::_ping($dbh);
 	}
 
 	sub pg_type_info {
@@ -1974,8 +1982,36 @@ Supported by this driver as proposed by DBI.
   $rc = $dbh->ping;
 
 This driver supports the C<ping> method, which can be used to check the validity
-of a database handle. The C<ping> method issues an empty query and checks the
-result status.
+of a database handle. The value returned is either 0, indicating that the 
+connection is no longer valid, or a positive integer, indicating the following:
+
+  Value    Meaning
+  --------------------------------------------------
+    1      Database is idle (not in a transaction)
+    2      Database is active, there is a command in progress (usually seen after a COPY command)
+    3      Database is idle within a transaction
+    4      Database is idle, within a failed transaction
+
+Additional information on why a handle is not valid can be obtained by using the 
+C<pg_ping> method.
+
+=item B<pg_ping>
+
+  $rc = $dbh->pg_ping;
+
+This is a Postgres-specific extension to the C<ping> command. This will check the 
+validity of a database handle in exactly the same way as C<ping>, but instead of 
+returning a 0 for an invalid connection, it will return a negative number. The 
+positive numbers are documented at C<ping>, the negative ones indicate:
+
+  Value    Meaning
+  --------------------------------------------------
+   -1      There is no connection to the database at all (e.g. after C<disconnect>)
+   -2      An unknown transaction status was returned (e.g. after forking)
+   -3      The handle exists, but no data was returned from a test query.
+   -4      An invalid transaction status was returned.
+
+In practice, you should only ever see -1 and -2.
 
 =item B<column_info>
 
@@ -2616,7 +2652,7 @@ Creates a savepoint. This will fail unless you are inside of a transaction. The
 only argument is the name of the savepoint. Note that PostgreSQL does allow 
 multiple savepoints with the same name to exist.
 
-	$dbh->pg_savepoint("mysavepoint");
+  $dbh->pg_savepoint("mysavepoint");
 
 =item B<pg_rollback_to>
 
@@ -2624,7 +2660,7 @@ Rolls the database back to a named savepoint, discarding any work performed afte
 that point. If more than one savepoint with that name exists, rolls back to the 
 most recently created one.
 
-	$dbh->pg_rollback_to("mysavepoint");
+  $dbh->pg_rollback_to("mysavepoint");
 
 =item B<pg_release>
 
