@@ -752,7 +752,7 @@ SV * dbd_db_pg_notifies (dbh, imp_dbh)
 	if (0 == status) { 
 		status = PQstatus(imp_dbh->conn);
 		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
-		return 0;
+		return &sv_undef;
 	}
 	
 	notify = PQnotifies(imp_dbh->conn);
