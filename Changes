@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.44
+	- Fix pg_notifies() bug (CPAN bug #14232) [door@lcpi.ru] 
 	- Add pg_ping() method [GSM]
 	- Make sure ping returns true, even if in failed transaction state.
 		[thanks to Bill Moseley] [GSM]
