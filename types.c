@@ -166,7 +166,7 @@ pg_type_data(sql_type)
    TODO: Put the rest of the sql types in here with mapping.
 */
 static sql_type_info_t sql_types[] = {
-	{SQL_VARCHAR, "SQL_VARCHAR", DBDPG_TRUE, quote_bytea, dequote_varchar, {VARCHAROID}},
+	{SQL_VARCHAR, "SQL_VARCHAR", DBDPG_TRUE, quote_string, dequote_varchar, {VARCHAROID}},
 	{SQL_CHAR, "SQL_CHAR", DBDPG_TRUE, quote_string, dequote_char, {BPCHAROID}},
 	{SQL_NUMERIC, "SQL_NUMERIC", DBDPG_TRUE, null_quote, null_dequote, {FLOAT4OID}},
 	{SQL_DECIMAL, "SQL_DECIMAL", DBDPG_TRUE, null_quote, null_dequote, {FLOAT4OID}},
