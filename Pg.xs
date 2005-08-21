@@ -14,7 +14,6 @@
 #include "Pg.h"
 #include "quote.h"
 #include "types.h"
-#include "pg_typeOID.h"
 
 #ifdef _MSC_VER
 #define strncasecmp(a,b,c) _strnicmp((a),(b),(c))
@@ -82,43 +81,48 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 
 	CODE:
 	{
+		sql_type_info_t *type_info;
 		char *to_quote;
+		char *quoted;
 		STRLEN len;
 		STRLEN retlen=0;
-		char *quoted;
-		sql_type_info_t *type_info;
 			
 		SvGETMAGIC(to_quote_sv);
-		if (type_sv && SvOK(type_sv)) {
-			if SvMAGICAL(type_sv)
-				(void)mg_get(type_sv);
+
+		/* Null is always returned as "NULL", so we can ignore any type given */
+		if (!SvOK(to_quote_sv)) {
+			RETVAL = newSVpvn("NULL", 4);
+		}
+		else {
+
+			/* If no valid type is given, we default to varchar */
+			if (!type_sv || !SvOK(type_sv)) {
+				type_info = pg_type_data(VARCHAROID);
+			}
+			else {
+				if SvMAGICAL(type_sv)
+					(void)mg_get(type_sv);
 				type_info = sql_type_data(SvIV(type_sv));
 				if (!type_info) {
 					warn("Unknown type %" IVdf ", defaulting to VARCHAR",SvIV(type_sv));
 					type_info = pg_type_data(VARCHAROID);
 				}
 			}
-			else {
-				/* default to varchar */
-				type_info = pg_type_data(VARCHAROID);
-			}
-			if (!SvOK(to_quote_sv)) {
-				quoted = "NULL";
-				len = 4;
-				RETVAL = newSVpvn(quoted,len);
-			}
-			else {
-				if (SvMAGICAL(to_quote_sv))
+
+			/* At this point, type_info points to a valid struct, one way or another */
+
+			if (SvMAGICAL(to_quote_sv))
 				(void)mg_get(to_quote_sv);
 				
-				to_quote = SvPV(to_quote_sv, len);
-				quoted = type_info->quote(to_quote, len, &retlen);
-				RETVAL = newSVpvn(quoted, retlen);
-				if (SvUTF8(to_quote_sv))
-				SvUTF8_on( RETVAL );
-				Safefree (quoted);
-			}
+			to_quote = SvPV(to_quote_sv, len);
+			/* Need good debugging here */
+			quoted = type_info->quote(to_quote, len, &retlen);
+			RETVAL = newSVpvn(quoted, retlen);
+			if (SvUTF8(to_quote_sv))
+				SvUTF8_on(RETVAL);
+			Safefree (quoted);
 		}
+	}
 	OUTPUT:
 		RETVAL
 	
