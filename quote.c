@@ -13,130 +13,6 @@
 #include "types.h"
 
 
-/* This section was stolen from libpq */
-#if PGLIBVERSION < 70200
-STRLEN
-PQescapeString(char *to, const char *from, STRLEN length)
-{
-	const char *source = from;
-	char *target = to;
-	unsigned int remaining = length;
-	
-	while (remaining > 0)
-		{
-			switch (*source)
-				{
-				case '\\':
-					*target = '\\';
-					target++;
-					*target = '\\';
-					/* target and remaining are updated below. */
-					break;
-					
-				case '\'':
-					*target = '\'';
-					target++;
-					*target = '\'';
-					/* target and remaining are updated below. */
-					break;
-					
-				case 0:
-					remaining = 0;
-					continue; /* exit the while loop */
-					
-				default:
-					*target = *source;
-					/* target and remaining are updated below. */
-				}
-			source++;
-			target++;
-			remaining--;
-		}
-	
-	/* Write the terminating NUL character. */
-	*target = '\0';
-	
-	return target - to;
-}
-#endif
-
-/*
- *		PQescapeBytea	- converts from binary string to the
- *		minimal encoding necessary to include the string in an SQL
- *		INSERT statement with a bytea type column as the target.
- *
- *		The following transformations are applied
- *		'\0' == ASCII  0 == \\000
- *		'\'' == ASCII 39 == \'
- *		'\\' == ASCII 92 == \\\\
- *		anything >= 0x80 ---> \\ooo (where ooo is an octal expression)
- */
-#if PGLIBVERSION < 70200
-unsigned char *
-PQescapeBytea(const unsigned char *bintext, STRLEN binlen, STRLEN *bytealen)
-{
-	const unsigned char *vp;
-	unsigned char *rp;
-	unsigned char *result;
-	STRLEN		i;
-	STRLEN		len;
-	
-	/*
-	 * empty string has 1 char ('\0')
-	 */
-	len = 1;
-	
-	vp = bintext;
-	for (i = binlen; i > 0; i--, vp++)
-		{
-			if (0 == *vp || *vp >= 0x80)
-				len += 5;			/* '5' is for '\\ooo' */
-			else if ('\'' == *vp)
-				len += 2;
-			else if ('\\' == *vp)
-				len += 4;
-			else
-				len++;
-		}
-	
-	New(0, result, len, unsigned char);
-	if (NULL == rp)
-		return NULL;
-	rp = result;
-	
-	vp = bintext;
-	*bytealen = len;
-	
-	for (i = binlen; i > 0; i--, vp++)
-		{
-			if (0 == *vp || *vp >= 0x80)
-				{
-					(void) sprintf(rp, "\\\\%03o", *vp);
-					rp += 5;
-				}
-			else if ('\'' == *vp)
-				{
-					rp[0] = '\\';
-					rp[1] = '\'';
-					rp += 2;
-				}
-			else if ('\\' == *vp)
-				{
-					rp[0] = '\\';
-					rp[1] = '\\';
-					rp[2] = '\\';
-					rp[3] = '\\';
-					rp += 4;
-				}
-			else
-				*rp++ = *vp;
-		}
-	*rp = '\0';
-	
-	return result;
-}
-#endif
-
 
 #define VAL(CH) ((CH) - '0')
 
@@ -244,81 +120,93 @@ char * null_quote(string, len, retlen)
 }
 
 
-char * quote_varchar(string, len, retlen)
-		 char *string;
+char * quote_string(string, len, retlen)
+		 unsigned char * string;
 		 STRLEN len;
-		 STRLEN *retlen;
+		 STRLEN * retlen;
 {
-	STRLEN	outlen;
-	char *result;
+	char * result;
+	STRLEN oldlen = len;
 
-	New(0, result, len*2+3, char);
-	outlen = PQescapeString(result+1, string, len);
-	
-	/* TODO: remalloc outlen */
-	*result = '\'';
-	outlen++;
-	*(result+outlen)='\'';
-	outlen++;
-	*(result+outlen)='\0';
-	*retlen = outlen;
-	return result;
+	result = string;
+	(*retlen) = 2;
+	while (len > 0 && *string != '\0') {
+			if (*string == '\'' || *string == '\\') {
+				(*retlen)++;
+			}
+			(*retlen)++;
+			*string++;
+			len--;
+	}
+	string = result;
+	New(0, result, (*retlen), char);
+	*result++ = '\'';
+	len = oldlen;
+	while (len > 0 && *string != '\0') {
+			if (*string == '\'' || *string == '\\') {
+					*result++ = *string;
+			}
+			*result++ = *string++;
+			len--;
+	}
+	*result++ = '\'';
+	*result = '\0';
+	return result - (*retlen);
 }
 
-char *
-quote_char(string, len, retlen)
-		 char *string;
+char * quote_bytea(string, len, retlen)
+		 unsigned char * string;
 		 STRLEN len;
-		 STRLEN *retlen;
+		 STRLEN * retlen;
 {
-	STRLEN	outlen;
-	char *result;
-	
-	New(0, result, len*2+3, char);
-	outlen = PQescapeString(result+1, string, len);
-	
-	/* TODO: remalloc outlen */
-	*result = '\'';
-	outlen++;
-	*(result+outlen)='\'';
-	outlen++;
-	*(result+outlen)='\0';
-	*retlen = outlen;
+	char * result;
+	STRLEN oldlen = len;
 
-	return result;
-}
-
-
-
-
-char *
-quote_bytea(string, len, retlen)
-		 unsigned char* string;
-		 STRLEN len;
-		 STRLEN *retlen;
-{
-	char *result, *dest;
-	STRLEN resultant_len = 0;
-	unsigned char *intermead;
-	
-	intermead = PQescapeBytea(string, len, &resultant_len);
-	New(0, result, resultant_len+2, char);
-	
- 	dest = result;
-	
-	Copy("'", dest++, 1, char);
-	strncpy(dest,intermead,strlen(intermead)+1);
-	strcat(dest,"\'");
-	
-#if PGLIBVERSION >= 70400
-	PQfreemem(intermead);
-#else
-	Safefree(intermead);
-#endif
-	*retlen=strlen(result);
-	assert(*retlen+1 <= resultant_len+2);
-	
-	return result;
+	result = string;
+	(*retlen) = 2;
+	while (len > 0) {
+		if (*string == '\'') {
+			(*retlen) += 2;
+		}
+		else if (*string == '\\') {
+			(*retlen) += 4;
+		}
+		else if (*string < 0x20 || *string > 0x7e) {
+			(*retlen) += 5;
+		}
+		else {
+			(*retlen)++;
+		}
+		*string++;
+		len--;
+	}
+	string = result;
+	New(0, result, (*retlen), char);
+	*result++ = '\'';
+	len = oldlen;
+	while (len > 0 && *string != '\0') {
+		if (*string == '\'') {
+			*result++ = *string;
+			*result++ = *string++;
+		}
+		else if (*string == '\\') {
+			*result++ = *string;
+			*result++ = *string++;
+			*result++ = '\\';
+			*result++ = '\\';
+		}
+		else if (*string < 0x20 || *string > 0x7e) {
+			(void) sprintf(result, "\\\\%03o", *string++);
+			result += 5;
+		}
+		else {
+			*result++ = *string++;
+		}
+		len--;
+	}
+	*result++ = '\'';
+	*result = '\0';
+	return result - (*retlen);
 }
 
 char *
@@ -331,7 +219,7 @@ quote_sql_binary( string, len, retlen)
 	char *dest;
 	STRLEN max_len = 0, i;
 	
-	/* We are going to retun a quote_bytea() for backwards compat but
+	/* We are going to return a quote_bytea() for backwards compat but
 		 we warn first */
 	warn("Use of SQL_BINARY invalid in quote()");
 	return quote_bytea(string, len, retlen);
