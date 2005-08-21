@@ -1715,7 +1715,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			 imp_sth->numbound != imp_sth->numphs)) {
 		for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 			if (NULL == currph->value) {
-				Renew(currph->quoted, 5, char); /* freed in dbd_st_execute (and above) */
+				Renew(currph->quoted, 5, char); /* freed in dbd_st_destroy */
 				if (!currph->quoted)
 					croak("No memory");
 				currph->quoted[0] = '\0';
@@ -1725,7 +1725,8 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			else {
 				if (currph->quoted)
 					Safefree(currph->quoted);
-				currph->quoted = currph->bind_type->quote(currph->value, currph->valuelen, &currph->quotedlen);
+				currph->quoted = currph->bind_type->quote
+					(currph->value, currph->valuelen, &currph->quotedlen); /* freed in dbd_st_destroy */
 			}
 		}
 		/* Set the size of each actual in-place placeholder */
