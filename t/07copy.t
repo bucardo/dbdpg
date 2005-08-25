@@ -67,6 +67,7 @@ eval {
 ok($@, 'do() fails while in a COPY IN state');
 
 ## pg_getline is not allowed as we are in a COPY_IN state
+$data[0] = '';
 eval {
 	$dbh->pg_getline($data[0], 100);
 };
@@ -127,6 +128,7 @@ SKIP: {
 	};
 	ok($@, 'pg_putline fails while in a COPY OUT state');
 
+	$data[1]=$data[2]=$data[3]='';
 	$result = $dbh->pg_getline($data[1], 100);
 	is ($result, 1, 'pg_getline returned a 1');
 	$result = $dbh->pg_getline($data[2], 100);
@@ -144,6 +146,7 @@ SKIP: {
 
 	## Make sure we are out of the COPY OUT state and pg_getline no longer works
 	eval {
+		$data[5]='';
 		$dbh->pg_getline($data[5], 100);
 	};
 	ok($@, 'pg_getline fails when issued after pg_endcopy called');
