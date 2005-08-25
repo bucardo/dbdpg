@@ -12,13 +12,10 @@
 
 
 #include "Pg.h"
-#include "quote.h"
-#include "types.h"
 
 #ifdef _MSC_VER
 #define strncasecmp(a,b,c) _strnicmp((a),(b),(c))
 #endif
-
 
 DBISTATE_DECLARE;
 
@@ -86,6 +83,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 		char *quoted;
 		STRLEN len;
 		STRLEN retlen=0;
+		SV **svp;
 			
 		SvGETMAGIC(to_quote_sv);
 
@@ -102,7 +100,20 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 			else {
 				if SvMAGICAL(type_sv)
 					(void)mg_get(type_sv);
-				type_info = sql_type_data(SvIV(type_sv));
+				if (SvNIOK(type_sv)) {
+					type_info = sql_type_data(SvIV(type_sv));
+				}
+				else {
+					if ((svp = hv_fetch((HV*)SvRV(type_sv),"pg_type", 7, 0)) != NULL) {
+						type_info = pg_type_data(SvIV(*svp));
+					}
+					else if ((svp = hv_fetch((HV*)SvRV(type_sv),"type", 4, 0)) != NULL) {
+						type_info = sql_type_data(SvIV(*svp));
+					}
+					else {
+						type_info = NULL;
+					}
+				}
 				if (!type_info) {
 					warn("Unknown type %" IVdf ", defaulting to VARCHAR",SvIV(type_sv));
 					type_info = pg_type_data(VARCHAROID);
