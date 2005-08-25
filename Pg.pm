@@ -2010,7 +2010,6 @@ positive numbers are documented at C<ping>, the negative ones indicate:
    -1      There is no connection to the database at all (e.g. after C<disconnect>)
    -2      An unknown transaction status was returned (e.g. after forking)
    -3      The handle exists, but no data was returned from a test query.
-   -4      An invalid transaction status was returned.
 
 In practice, you should only ever see -1 and -2.
 

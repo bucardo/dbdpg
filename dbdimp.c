@@ -393,10 +393,6 @@ int dbd_db_ping (dbh)
 		return -2;
 	}
 
-	if (tstatus < 0) { /* How bizzare! */
-		return -4;
-	}
-
 	if (tstatus != 0) { /* 2=active, 3=intrans, 4=inerror */
 		return 1+tstatus ;
 	}
