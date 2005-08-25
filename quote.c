@@ -139,7 +139,7 @@ char * quote_string(string, len, retlen)
 			len--;
 	}
 	string = result;
-	New(0, result, (*retlen), char);
+	New(0, result, 1+(*retlen), char);
 	*result++ = '\'';
 	len = oldlen;
 	while (len > 0 && *string != '\0') {
@@ -181,7 +181,7 @@ char * quote_bytea(string, len, retlen)
 		len--;
 	}
 	string = result;
-	New(0, result, (*retlen), char);
+	New(0, result, 1+(*retlen), char);
 	*result++ = '\'';
 	len = oldlen;
 	while (len > 0 && *string != '\0') {
