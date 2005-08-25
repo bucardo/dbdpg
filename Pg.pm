@@ -76,6 +76,7 @@ use 5.006001;
 		DBD::Pg::db->install_method("pg_savepoint");
 		DBD::Pg::db->install_method("pg_server_trace");
 		DBD::Pg::db->install_method("pg_server_untrace");
+		DBD::Pg::db->install_method("pg_type_info");
 
 		$drh;
 
