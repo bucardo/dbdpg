@@ -121,7 +121,7 @@ char * null_quote(string, len, retlen)
 
 
 char * quote_string(string, len, retlen)
-		 unsigned char * string;
+		 char * string;
 		 STRLEN len;
 		 STRLEN * retlen;
 {
@@ -155,7 +155,7 @@ char * quote_string(string, len, retlen)
 }
 
 char * quote_bytea(string, len, retlen)
-		 unsigned char * string;
+		 char * string;
 		 STRLEN len;
 		 STRLEN * retlen;
 {
@@ -209,48 +209,22 @@ char * quote_bytea(string, len, retlen)
 	return result - (*retlen);
 }
 
-char *
-quote_sql_binary( string, len, retlen)
-		 unsigned char *string;
+char * quote_sql_binary( string, len, retlen)
+		 char *string;
 		 STRLEN	len;
 		 STRLEN	*retlen;
 {
-	char *result;
-	char *dest;
-	STRLEN max_len = 0, i;
 	
 	/* We are going to return a quote_bytea() for backwards compat but
 		 we warn first */
 	warn("Use of SQL_BINARY invalid in quote()");
 	return quote_bytea(string, len, retlen);
 	
-	/* Ignore the rest of this code until such time that we implement
-		 A SQL_BINARY that quotes in the X'' Format */
-
-	/* +4 == 3 for X''; 1 for \0 */
-	max_len = len*2+4;
-	New(0, result, max_len, char);
-	
-	
-	dest = result;
-	Copy((char)"X\'",dest++,2,char);
-	
-	for (i=0 ; i <= len ; ++i, dest+=2) {
-		sprintf(dest, "%X", *(i+(char*)string));
-	}
-	
-	strcat(dest, "\'");
-	
-	*retlen = strlen(result);
-	assert(*retlen+1 <= max_len);
-
-	return result;
 }
 
 
 
-char *
-quote_bool(value, len, retlen) 
+char * quote_bool(value, len, retlen) 
 		 char *value;
 		 STRLEN	len;
 		 STRLEN	*retlen;
@@ -283,8 +257,7 @@ quote_bool(value, len, retlen)
 
 
 
-char *
-quote_integer(value, len, retlen) 
+char * quote_integer(value, len, retlen) 
 		 char *value;
 		 STRLEN	len;
 		 STRLEN	*retlen;
@@ -308,8 +281,7 @@ quote_integer(value, len, retlen)
 
 
 
-void
-dequote_char(string, retlen)
+void dequote_char(string, retlen)
 		 char *string;
 		 STRLEN *retlen;
 {
@@ -318,8 +290,7 @@ dequote_char(string, retlen)
 }
 
 
-void
-dequote_varchar (string, retlen)
+void dequote_varchar (string, retlen)
 		 char *string;
 		 STRLEN *retlen;
 {
@@ -328,8 +299,7 @@ dequote_varchar (string, retlen)
 
 
 
-void
-dequote_bytea(string, retlen)
+void dequote_bytea(string, retlen)
 		 char *string;
 		 STRLEN *retlen;
 {
@@ -367,8 +337,7 @@ dequote_bytea(string, retlen)
 	it might be nice to let people go the other way too. Say when talking
 	to something that uses SQL_BINARY
  */
-void
-dequote_sql_binary (string, retlen)
+void dequote_sql_binary (string, retlen)
 		 char *string;
 		 STRLEN *retlen;
 {
@@ -381,8 +350,7 @@ dequote_sql_binary (string, retlen)
 
 
 
-void
-dequote_bool (string, retlen)
+void dequote_bool (string, retlen)
 		 char *string;
 		 STRLEN *retlen;
 {
@@ -397,8 +365,7 @@ dequote_bool (string, retlen)
 
 
 
-void
-null_dequote (string, retlen)
+void null_dequote (string, retlen)
 		 char *string;
 		 STRLEN *retlen;
 {
