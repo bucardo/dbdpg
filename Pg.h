@@ -15,6 +15,9 @@
 static int errno;
 #endif
 
+#define DBDPG_TRUE 1
+#define DBDPG_FALSE 0
+
 #include "libpq-fe.h"
 
 #ifdef NEVER
@@ -44,12 +47,11 @@ static int errno;
 
 #include <DBIXS.h>		/* installed by the DBI module	*/
 
-#include "dbdimp.h"		/* read in our implementation details */
-
-#include "quote.h"		/* read in our implementation details */
-
 #include <dbd_xsh.h>		/* installed by the DBI module	*/
 
+#include "dbdimp.h"
+#include "quote.h"
+#include "types.h"
 
 /* defines for Driver.xst to let it know what functions to include */
 #define dbd_st_rows dbd_st_rows
