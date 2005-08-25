@@ -1,7 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.44
-	- Add support for sepcifying type in $dbh->quote(), 
+	- Add support for specifying type in $dbh->quote(), 
 		such as $dbh->quote($var, {pg_type => DBD::Pg::PG_BYTEA}).
 		Also support type => SQL_xx [GSM]
 	- Fix pg_notifies() bug (CPAN bug #14232) [door@lcpi.ru] 
