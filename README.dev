@@ -190,13 +190,13 @@ $comp_opts .= " -Wextra -Wdeclaration-after-statement -Wendif-labels -Wpointer-a
 $comp_opts .= " -Wbad-function-cast -Wcast-qual -Wcast-align -Wconversion -Wsign-compare -Waggregate-return";
 $comp_opts .= " -Wmissing-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wpacked -Winline -Winvalid-pch";
 $comp_opts .= " -Wdisabled-optimization"; ## Not terribly useful
+$comp_opts .= " -Wnested-externs"; ## Does not like Perl__notused (from DBIXS;)
 
 ## These options produce a few hits, but are still pretty useful:
 $comp_opts .= " -Wswitch-default"; ## Complains on any Newz declaration
 $comp_opts .= " -Wfloat-equal"; ## Some perl stuff we cannot catch from Pg.h -> DBIXS.h -> perl.h -> math.h -> bits/mathinline.h
 $comp_opts .= " -Wstrict-prototypes"; ## Still hits a couple places in types.h that need fixing (then move to above)
 $comp_opts .= " -Wmissing-noreturn"; ## Raises a few warnings for <=7.4 libraries, as we croak on purpose for some
-$comp_opts .= " -Wnested-externs"; ## Does not like Perl__notused (from DBIXS;)
 
 ## These options tend to produce lots of hits outside of our code, but may still be useful:
 $comp_opts .= " -Wsystem-headers"; ## when used with -Wconversion, creates a lot of hits 
