@@ -116,6 +116,7 @@ int pg_db_lo_tell (SV *dbh, int fd);
 int pg_db_lo_unlink (SV *dbh, unsigned int lobjId);
 unsigned int pg_db_lo_import (SV *dbh, char *filename);
 int pg_db_lo_export (SV *dbh, unsigned int lobjId, char *filename);
+int pg_quickexec (SV *dbh, const char *sql);
 
 /* end of dbdimp.h */
 

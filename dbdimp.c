@@ -159,7 +159,7 @@ static ExecStatusType _result(imp_dbh, com)
 /* ================================================================== */
 /* Turn database notices into perl warnings for proper handling. */
 static void pg_warn (arg, message)
-		 void *arg;
+		 void * arg;
 		 const char *message;
 {
 	D_imp_dbh( sv_2mortal(newRV((SV*)arg)) );
@@ -2085,13 +2085,15 @@ AV * dbd_st_fetch (sth, imp_sth)
 			if (imp_dbh->pg_enable_utf8 && type_info) {
 				SvUTF8_off(sv);
 				switch(type_info->type_id) {
-				case CHAROID:
-				case TEXTOID:
-				case BPCHAROID:
-				case VARCHAROID:
-					if (is_high_bit_set(value) && is_utf8_string((unsigned char*)value, value_len)) {
-						SvUTF8_on(sv);
-					}
+					case CHAROID:
+					case TEXTOID:
+					case BPCHAROID:
+					case VARCHAROID:
+						if (is_high_bit_set(value) && is_utf8_string((unsigned char*)value, value_len)) {
+							SvUTF8_on(sv);
+						}
+					default:
+						break;
 				}
 			}
 #endif
@@ -2445,6 +2447,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 						nullable = 0;
 						break;
 					case 'f':
+					default:
 						nullable = 1;
 					}
 				}

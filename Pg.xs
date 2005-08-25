@@ -156,9 +156,6 @@ void do(dbh, statement, attr=Nullsv, ...)
 	PROTOTYPE: $$;$@
 	CODE:
 	{
-		D_imp_dbh(dbh);
-		struct imp_sth_ph_st* params = NULL;
-		int numParams = 0;
 		int retval;
 
 		if (strlen(statement)<1) { /* Corner case */
@@ -284,9 +281,9 @@ lo_read(dbh, fd, buf, len)
 	size_t len
 	PREINIT:
 		SV *bufsv = SvROK(ST(2)) ? SvRV(ST(2)) : ST(2);
-		sv_setpvn(bufsv,"",0); /* Make sure we can grow it safely */
 		int ret;
 	CODE:
+		sv_setpvn(bufsv,"",0); /* Make sure we can grow it safely */
 		buf = SvGROW(bufsv, len + 1);
 		ret = pg_db_lo_read(dbh, fd, buf, len);
 		if (ret > 0) {
@@ -382,14 +379,16 @@ putline(dbh, buf)
 void
 pg_getline(dbh, buf, len)
 	PREINIT:
-		SV * bufsv = SvROK(ST(1)) ? SvRV(ST(1)) : ST(1);
-		sv_setpvn(bufsv,"",0); /* Make sure we can grow it safely */
+		SV *bufsv = SvROK(ST(1)) ? SvRV(ST(1)) : ST(1);
 	INPUT:
 		SV * dbh
 		unsigned int len
-		char * buf = SvGROW(bufsv, 3);
+		char * buf
 	CODE:
 		int ret;
+		bufsv = SvROK(ST(1)) ? SvRV(ST(1)) : ST(1);
+		sv_setpvn(bufsv,"",0); /* Make sure we can grow it safely */
+		buf = SvGROW(bufsv, 3);
 		if (len > 3)
 			buf = SvGROW(bufsv, len);
 		ret = pg_db_getline(dbh, buf, (int)len);
@@ -402,13 +401,14 @@ void
 getline(dbh, buf, len)
 	PREINIT:
 		SV *bufsv = SvROK(ST(1)) ? SvRV(ST(1)) : ST(1);
-		sv_setpvn(bufsv,"",0); /* Make sure we can grow it safely */
 	INPUT:
 		SV * dbh
 		unsigned int len
-		char * buf = SvGROW(bufsv, 3);
+		char * buf
 	CODE:
 		int ret;
+		sv_setpvn(bufsv,"",0); /* Make sure we can grow it safely */
+		buf = SvGROW(bufsv, 3);
 		if (len > 3)
 			buf = SvGROW(bufsv, len);
 		ret = pg_db_getline(dbh, buf, (int)len);
