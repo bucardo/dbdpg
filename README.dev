@@ -112,12 +112,10 @@ of PostgreSQL.
 
 quote.h - Helper file for quote.c
 
-types.c - Lists all known data types for PostgreSQL. Needs updating.
+types.c - Lists all known data types for PostgreSQL.
+Run as a perl script to check for new types.
 
 types.h - Helper file for types.c
-
-pg_typeOID.h - Quick listing of datatypes and their internal numbers. 
-Used by Pg.xs.
 
 * Test files:
 
