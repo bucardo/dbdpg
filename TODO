@@ -1,10 +1,5 @@
-Known Issues: 
-
-- quote("stuff", {typeinfo }) is broken (only when hashref is passed in)
-
 TODO: 
 
-- Implement advanced SQL parsing, based on stuff in PG (see psql)
 - Support for new error protocol
 - Support new DBI trace scheme.
 - Create a .ppm for Windows
@@ -12,11 +7,9 @@ TODO:
    things like arrays can be serialized by the quote function.  This will
    take care of broken chopblanks and pg_bool_tf (pass the  quote/dequote 
    options struct to function quote/dequote functions).
-- Export the full list of supported OID types.
-- finish all type mappings in types.c 
 - Implement a clean UTF-8 support.
-- add array OID types
-- quoting/dequoting of arrays.
-- allow user callbacks to quote user-defined types?
-- rename functions and add defines to avoid problems with static linking of multi DBDs
+- Add array OID types
+- Quoting/dequoting of arrays.
+- Allow user callbacks to quote user-defined types?
+- Rename functions and add defines to avoid problems with static linking of multi DBDs
 - Move to the Module::Build system
