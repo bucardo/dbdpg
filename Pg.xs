@@ -69,8 +69,6 @@ INCLUDE: Pg.xsi
 MODULE=DBD::Pg	PACKAGE = DBD::Pg::db
 
 
-#TODO: make quote(foo, {type=>SQL_INTEGER}) work  #rl
-#TODO: make quote(foo, {pg_type=>DBD::Pg::PG_INTEGER}) work  #rl
 SV*
 quote(dbh, to_quote_sv, type_sv=Nullsv)
 	SV* to_quote_sv
