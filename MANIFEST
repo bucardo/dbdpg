@@ -6,7 +6,6 @@ MANIFEST
 Pg.h
 Pg.pm
 Pg.xs
-pg_typeOID.h
 quote.c
 quote.h
 README
