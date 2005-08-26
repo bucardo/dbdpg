@@ -122,8 +122,13 @@ if ($Config{dlsrc} =~ /dl_none/) {
     $opts{LINKTYPE} = 'static';
 }
 
-sub MY::postamble { return &dbd_postamble; }
-
+sub MY::postamble {
+	my $string = &dbd_postamble;
+	## Evil, evil stuff - but we really want to suppress the "duplicate function" message!
+	$string =~ s/dependancy/dependency/g; ## why not, while we are here
+	$string =~ s#(BASEEXT\)/g)#$1; s/^do\\\(/dontdo\\\(/#;
+	return $string;
+}
 
 WriteMakefile(%opts);
 
