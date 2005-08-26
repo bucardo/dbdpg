@@ -294,6 +294,8 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	
 	/* Make a connection to the database */
 
+	if (imp_dbh->conn)
+		PQfinish(imp_dbh->conn);
 	imp_dbh->conn = PQconnectdb(conn_str);
 	Safefree(conn_str);
 	
@@ -312,11 +314,11 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn); /* Older versions use the one defined above */
 
 	/* Figure out this particular backend's version */
+	imp_dbh->pg_server_version = -1;
 #if PGLIBVERSION >= 80000
 	imp_dbh->pg_server_version = PQserverVersion(imp_dbh->conn);
-#else
-	imp_dbh->pg_server_version = -1;
-	{
+#endif
+	if (imp_dbh->pg_server_version <= 0) {
 		PGresult *result;
 		int	status, cnt, vmaj, vmin, vrev;
 	
@@ -340,11 +342,10 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 			}
 		}
 	}
-#endif
 
 	Renew(imp_dbh->sqlstate, 6, char); /* freed in dbd_db_destroy (and above) */
 	if (!imp_dbh->sqlstate)
-		croak("No memory");	
+		croak("No memory");
 	strncpy(imp_dbh->sqlstate, "S1000\0", 6);
 	imp_dbh->done_begin = FALSE; /* We are not inside a transaction */
 	imp_dbh->pg_bool_tf = FALSE;
@@ -362,7 +363,6 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 
 	DBIc_IMPSET_on(imp_dbh); /* imp_dbh set up now */
 	DBIc_ACTIVE_on(imp_dbh); /* call disconnect before freeing */
-
 	return imp_dbh->pg_server_version;
 
 } /* end of dbd_db_login */
