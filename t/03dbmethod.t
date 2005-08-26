@@ -902,10 +902,13 @@ if ($pglibversion < 70400 or $pgversion < 70300) {
 }
 else {
 	$dbh->do("COPY dbd_pg_test(id,pname) TO STDOUT");
-	$dbh->pg_getline($mtvar,100);
-	ok( 2==$dbh->ping(), 'DB handle method "ping" returns 2 when in COPY IN state');
-	1 while $dbh->pg_getline($mtvar,1000);
-	ok( 2==$dbh->ping(), 'DB handle method "ping" returns 2 immediately after COPY IN state');
+	{
+		local $SIG{__WARN__} = sub {};
+		$dbh->pg_getline($mtvar,100);
+		ok( 2==$dbh->ping(), 'DB handle method "ping" returns 2 when in COPY IN state');
+		1 while $dbh->pg_getline($mtvar,1000);
+		ok( 2==$dbh->ping(), 'DB handle method "ping" returns 2 immediately after COPY IN state');
+	}
 	
 	$dbh->do("SELECT 123");
 	
