@@ -4,13 +4,13 @@
 typedef struct sql_type_info {
 	int	type_id;
 	char	*type_name;
-	bool	bind_ok;
 	char* 	(*quote)();
 	void	(*dequote)();
 	union	{
 			int pg;
 			int sql;
 	} type;
+	bool	bind_ok;
 } sql_type_info_t;
 
 sql_type_info_t* pg_type_data(int);

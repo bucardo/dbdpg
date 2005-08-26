@@ -65,15 +65,6 @@ typedef struct ph_st ph_t;
 struct imp_sth_st {
 	dbih_stc_t com;         /* MUST be first element in structure */
 
-	bool   prepare_now;      /* prepare this statement right away, even if it has placeholders */
-	bool   prepared_by_us;   /* false if {prepare_name} set directly */
-	bool   onetime;          /* this statement is guaranteed not to be run again - so don't use SSP */
-	bool   direct;           /* allow bypassing of the statement parsing */
-	bool   is_dml;           /* is this SELECT/INSERT/UPDATE/DELETE? */
-	bool   has_binary;       /* does it have one or more binary placeholders? */
-
-	STRLEN totalsize;        /* total string length of the statement (with no placeholders)*/
-
 	int    server_prepare;   /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
 	int    placeholder_type; /* which style is being used 1=? 2=$1 3=:foo */
 	int    numsegs;          /* how many segments this statement has */
@@ -81,6 +72,8 @@ struct imp_sth_st {
 	int    numbound;         /* how many placeholders were explicitly bound by the client, not us */
 	int    cur_tuple;        /* current tuple being fetched */
 	int    rows;             /* number of affected rows */
+
+	STRLEN totalsize;        /* total string length of the statement (with no placeholders)*/
 
   char   *statement;       /* the rewritten statement, for passing to PQexecP.. */
 	char   *prepare_name;    /* name of the prepared query; NULL if not prepared */
@@ -91,6 +84,13 @@ struct imp_sth_st {
 
 	seg_t  *seg;             /* linked list of segments */
 	ph_t   *ph;              /* linked list of placeholders */
+
+	bool   prepare_now;      /* prepare this statement right away, even if it has placeholders */
+	bool   prepared_by_us;   /* false if {prepare_name} set directly */
+	bool   onetime;          /* this statement is guaranteed not to be run again - so don't use SSP */
+	bool   direct;           /* allow bypassing of the statement parsing */
+	bool   is_dml;           /* is this SELECT/INSERT/UPDATE/DELETE? */
+	bool   has_binary;       /* does it have one or more binary placeholders? */
 };
 
 /* Other (non-static) functions we have added to dbdimp.c */
