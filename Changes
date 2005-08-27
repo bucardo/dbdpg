@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.44
+	- Double check PQserverVersion return and use alternate 
+		method if it returns 0 (CPAN bug #14302)
 	- Add support for specifying type in $dbh->quote(), 
 		such as $dbh->quote($var, {pg_type => DBD::Pg::PG_BYTEA}).
 		Also support type => SQL_xx [GSM]
