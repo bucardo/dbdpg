@@ -22,19 +22,20 @@ my $sth;
 
 $sth = $dbh->prepare(qq{INSERT INTO dbd_pg_test (id,bytetest) VALUES (?,?)});
 $sth->bind_param(2, undef, { pg_type => DBD::Pg::PG_BYTEA });
-ok($sth->execute(400, "a\0b"), 'bytea insert test with string containing null');
+ok($sth->execute(400, 'aa\\bb\\cc\\\0dd\\'), 'bytea insert test with string containing null and backslashes');
 ok($sth->execute(401, '\''), 'bytea insert test with string containing a single quote');
 ok($sth->execute(402, '\''), 'bytea (second) insert test with string containing a single quote');
 
 $sth = $dbh->prepare(qq{SELECT bytetest FROM dbd_pg_test WHERE id=?});
-$sth->execute(400);
 
+$sth->execute(400);
 my $byte = $sth->fetchall_arrayref()->[0][0];
-ok($byte eq "a\0b", "text from BYTEA column looks corect");
+is($byte, 'aa\bb\cc\\\0dd\\', 'Received correct text from BYTEA column with backslashes');
 
 $sth->execute(402);
 $byte = $sth->fetchall_arrayref()->[0][0];
-is($byte, '\'', 'text from BYTEA column with quote');
+is($byte, '\'', 'Received correct text from BYTEA column with quote');
+
 
 
 $sth->finish();
