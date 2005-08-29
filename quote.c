@@ -90,19 +90,19 @@ char * quote_bytea(string, len, retlen)
 	New(0, result, 1+(*retlen), char);
 	*result++ = '\'';
 	len = oldlen;
-	while (len > 0 && *string != '\0') {
-		if (*string == '\'') {
+	while (len > 0) {
+		if (*string == '\'') { // Single quote becomes double quotes
 			*result++ = *string;
 			*result++ = *string++;
 		}
-		else if (*string == '\\') {
+		else if (*string == '\\') { // Backslash becomes 4 backslashes
 			*result++ = *string;
 			*result++ = *string++;
 			*result++ = '\\';
 			*result++ = '\\';
 		}
 		else if (*string < 0x20 || *string > 0x7e) {
-			(void) sprintf(result, "\\\\%03o", *string++);
+			(void) snprintf(result, 5, "\\\\%03o", *string++);
 			result += 5;
 		}
 		else {
@@ -112,6 +112,7 @@ char * quote_bytea(string, len, retlen)
 	}
 	*result++ = '\'';
 	*result = '\0';
+
 	return result - (*retlen);
 }
 
@@ -196,7 +197,7 @@ void dequote_char(string, retlen)
 }
 
 
-void dequote_varchar (string, retlen)
+void dequote_string (string, retlen)
 		 char *string;
 		 STRLEN *retlen;
 {
@@ -209,31 +210,49 @@ void dequote_bytea(string, retlen)
 		 char *string;
 		 STRLEN *retlen;
 {
-	char *s, *p;
-	int c1,c2,c3;
-	/* Stolen right from dbdquote. This probably should be cleaned up
-		 & made more robust. Maybe later...
-	*/
-	s = string;
-	p = string;
-	while (*s) {
-		if ('\\' == *s) {
-			if ('\\' == *(s+1)) { /* double backslash */
-				*p++ = '\\';
-				s += 2;
-				continue;
-			} else if ( isDIGIT(c1=(*(s+1))) &&
-									isDIGIT(c2=(*(s+2))) &&
-									isDIGIT(c3=(*(s+3))) ) 
-				{
-					*p++ = (c1-'0') * 64 + (c2-'0') * 8 + (c3-'0');
-					s += 4;
-					continue;
-				}
+	char *result;
+
+	(*retlen) = 0;
+
+	if (NULL == string)
+			return;
+
+	New(0, result, strlen(string)+1, char);
+
+	result = string;
+
+	while (*string != '\0') {
+		if ((*retlen)>20) {
+			*string = '\0';
+			continue;
 		}
-		*p++ = *s++;
+		(*retlen)++;
+		if ('\\' == *string) {
+			if ('\\' == *(string+1)) {
+				*result++ = '\\';
+				string +=2;
+			}
+			else if (
+							 (*(string+1) >= '0' && *(string+1) <= '3') &&
+							 (*(string+2) >= '0' && *(string+2) <= '7') &&
+							 (*(string+3) >= '0' && *(string+3) <= '7'))
+				{
+					*result++ = (*(string+1)-'0')*64 + (*(string+2)-'0')*8 + (*(string+3)-'0');
+					string += 4;
+				}
+			else { /* Invalid escape sequence - ignore the backslash */
+				(*retlen)--;
+				*string++;
+			}
+		}
+		else {
+			*result++ = *string++;
+		}
 	}
-	*retlen = (p-string);
+	result = '\0';
+	Renew(result, (*retlen), char);
+	string = result - (*retlen);
+	return;
 }
 
 

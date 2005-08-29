@@ -48,7 +48,7 @@ static sql_type_info_t pg_types[] = {
 	{LANGUAGE_HANDLEROID, "languagehandle", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{LINEOID, "line", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{LSEGOID, "lseg", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{MACADDROID, "MAC address", quote_string, dequote_varchar, {0}, DBDPG_TRUE},
+	{MACADDROID, "MAC address", quote_string, dequote_string, {0}, DBDPG_TRUE},
 	{NAMEOID, "name", null_quote, null_dequote, {SQL_VARCHAR}, DBDPG_TRUE},
 	{NUMERICOID, "numeric", null_quote, null_dequote, {SQL_DECIMAL}, DBDPG_TRUE},
 	{OIDOID, "oid", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
@@ -70,7 +70,7 @@ static sql_type_info_t pg_types[] = {
 	{REGPROCOID, "regproc", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{REGTYPEOID, "regtype", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{RELTIMEOID, "reltime", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{TEXTOID, "text", quote_string, dequote_varchar, {SQL_VARCHAR}, DBDPG_TRUE},
+	{TEXTOID, "text", quote_string, dequote_string, {SQL_VARCHAR}, DBDPG_TRUE},
 	{TIDOID, "tid", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
 	{TIMEOID, "time", null_quote, null_dequote, {SQL_TYPE_TIME}, DBDPG_TRUE},
 	{TIMESTAMPOID, "timestamp", null_quote, null_dequote, {SQL_TYPE_TIMESTAMP}, DBDPG_TRUE},
@@ -78,9 +78,9 @@ static sql_type_info_t pg_types[] = {
 	{TIMETZOID, "timestamptz", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{TINTERVALOID, "tinterval", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{TRIGGEROID, "trigger", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{UNKNOWNOID, "unknown", quote_string, dequote_varchar, {0}, DBDPG_TRUE},
+	{UNKNOWNOID, "unknown", quote_string, dequote_string, {0}, DBDPG_TRUE},
 	{VARBITOID, "vbitstring", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{VARCHAROID, "varchar", quote_string, dequote_varchar, {SQL_VARCHAR}, DBDPG_TRUE},
+	{VARCHAROID, "varchar", quote_string, dequote_string, {SQL_VARCHAR}, DBDPG_TRUE},
 	{VOIDOID, "void", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{XIDOID, "xid", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
 };
@@ -173,7 +173,7 @@ static sql_type_info_t sql_types[] = {
 	{SQL_TYPE_TIME, "SQL_TYPE_TIME", null_quote, null_dequote, {TIMEOID}, DBDPG_TRUE},
 	{SQL_TYPE_TIMESTAMP, "SQL_TYPE_TIMESTAMP", null_quote, null_dequote, {TIMESTAMPOID}, DBDPG_TRUE},
 	{SQL_TYPE_TIMESTAMP_WITH_TIMEZONE, "SQL_TYPE_TIMESTAMP_WITH_TIMEZONE", null_quote, null_dequote, {TIMESTAMPTZOID}, DBDPG_TRUE},
-	{SQL_VARCHAR, "SQL_VARCHAR", quote_string, dequote_varchar, {VARCHAROID}, DBDPG_TRUE},
+	{SQL_VARCHAR, "SQL_VARCHAR", quote_string, dequote_string, {VARCHAROID}, DBDPG_TRUE},
 };
 
 sql_type_info_t* sql_type_data(sql_type)
@@ -353,7 +353,7 @@ for (sort keys %type) {
 	}
 	next unless $type{$_}[4];
 	my $sql = $type{$_}[3];
-	## {SQL_VARCHAR, "SQL_VARCHAR", quote_string, dequote_varchar, {VARCHAROID}, DBDPG_TRUE },
+	## {SQL_VARCHAR, "SQL_VARCHAR", quote_string, dequote_string, {VARCHAROID}, DBDPG_TRUE },
 	printf OUT qq{\t\{$sql, "$sql", $type{$_}[1], $type{$_}[2], \{$_\}, DBDPG_TRUE\},\n};
 	$pos{$sql} = $item++;
 	$maxlen = length $sql if length $sql > $maxlen;
@@ -399,10 +399,10 @@ XIDOID, xid, null_quote, null_dequote, SQL_INTEGER, 0
 
 
 ## Text - single quotes on end, escape backslashes and apostrophes
-VARCHAROID, varchar, quote_string, dequote_varchar, SQL_VARCHAR, 1
+VARCHAROID, varchar, quote_string, dequote_string, SQL_VARCHAR, 1
 BPCHAROID, bpchar, quote_string, dequote_char, SQL_CHAR, 1
 NAMEOID, name, null_quote, null_dequote, SQL_VARCHAR, 0
-TEXTOID, text, quote_string, dequote_varchar, SQL_VARCHAR, 0
+TEXTOID, text, quote_string, dequote_string, SQL_VARCHAR, 0
 
 ## Binary - specialquoting rules
 BYTEAOID, bytea, quote_bytea, dequote_bytea, SQL_BINARY, 1
@@ -438,7 +438,7 @@ INTERVALOID, timespan, null_quote, null_dequote, 0, 0
 LANGUAGE_HANDLEROID, languagehandle, null_quote, null_dequote, 0, 0
 LINEOID, line, null_quote, null_dequote, 0, 0
 LSEGOID, lseg, null_quote, null_dequote, 0, 0
-MACADDROID, MAC address, quote_string,dequote_varchar, 0, 0
+MACADDROID, MAC address, quote_string,dequote_string, 0, 0
 OIDVECTOROID, oid8, null_quote, null_dequote, 0, 0
 OPAQUEOID, opaque, null_quote, null_dequote, 0, 0
 PATHOID, path, null_quote, null_dequote, 0, 0
@@ -460,7 +460,7 @@ RELTIMEOID, reltime, null_quote, null_dequote, 0, 0
 TIMETZOID, timestamptz, null_quote, null_dequote, 0, 0
 TINTERVALOID, tinterval, null_quote, null_dequote, 0, 0
 TRIGGEROID, trigger, null_quote, null_dequote, 0, 0
-UNKNOWNOID, unknown, quote_string, dequote_varchar, 0, 0
+UNKNOWNOID, unknown, quote_string, dequote_string, 0, 0
 VARBITOID, vbitstring, null_quote, null_dequote, 0, 0
 VOIDOID, void, null_quote, null_dequote, 0, 0
 

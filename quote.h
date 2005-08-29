@@ -8,7 +8,7 @@ char * quote_sql_binary(char *string, STRLEN len, STRLEN *retlen);
 char * quote_bool(char *string, STRLEN len, STRLEN *retlen);
 char * quote_integer(char *string, STRLEN len, STRLEN *retlen);
 void dequote_char(char *string, STRLEN *retlen);
-void dequote_varchar(char *string, STRLEN *retlen);
+void dequote_string(char *string, STRLEN *retlen);
 void dequote_bytea(char *string, STRLEN *retlen);
 void dequote_sql_binary(char *string, STRLEN *retlen);
 void dequote_bool(char *string, STRLEN *retlen);
