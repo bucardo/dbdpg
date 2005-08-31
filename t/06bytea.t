@@ -1,6 +1,6 @@
 #!perl -w
 
-# Quick test of some bytea handling
+## Test bytea handling
 
 use Test::More;
 use DBI qw(:sql_types);
@@ -9,7 +9,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}){
-	plan tests => 7;
+	plan tests => 8;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -21,6 +21,7 @@ ok( defined $dbh, "Connect to database for bytea testing");
 my $sth;
 
 $sth = $dbh->prepare(qq{INSERT INTO dbd_pg_test (id,bytetest) VALUES (?,?)});
+
 $sth->bind_param(2, undef, { pg_type => DBD::Pg::PG_BYTEA });
 ok($sth->execute(400, 'aa\\bb\\cc\\\0dd\\'), 'bytea insert test with string containing null and backslashes');
 ok($sth->execute(401, '\''), 'bytea insert test with string containing a single quote');
@@ -36,7 +37,10 @@ $sth->execute(402);
 $byte = $sth->fetchall_arrayref()->[0][0];
 is($byte, '\'', 'Received correct text from BYTEA column with quote');
 
-
+my $string = "abc\123\\def\0ghi";
+my $result = $dbh->quote($string, { pg_type => DBD::Pg::PG_BYTEA });
+my $expected = qq{'abc\123\\\\\\\\def\\\\000ghi'};
+is ($result, $expected, 'quote properly handles bytea strings.');
 
 $sth->finish();
 
