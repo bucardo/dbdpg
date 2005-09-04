@@ -168,6 +168,8 @@ use 5.006001;
 	sub prepare {
 		my($dbh, $statement, @attribs) = @_;
 
+		return undef if ! defined $statement;
+
 		# Create a 'blank' statement handle:
 		my $sth = DBI::_new_sth($dbh, {
 			'Statement' => $statement,
