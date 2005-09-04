@@ -642,6 +642,7 @@ if ($client_level ne "error") {
 	};
 	like($@, qr/^Slonik/, 'Database handle attribute "HandleError" modifies error messages');
 	$dbh->{HandleError}= undef;
+	$dbh->rollback();
 }
 
 
