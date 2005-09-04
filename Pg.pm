@@ -1348,6 +1348,10 @@ __END__
 
 DBD::Pg - PostgreSQL database driver for the DBI module
 
+=head1 VERSION
+
+This documents version 1.43_1 of the DBD::Pg module
+
 =head1 SYNOPSIS
 
   use DBI;

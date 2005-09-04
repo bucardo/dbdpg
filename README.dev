@@ -51,7 +51,9 @@ Here is what each file in the distribution does:
 
 Changes - lists changes made to each version. Please be consistent and use 
 tabs, not spaces, to indent. Try to list who found the bug, and who 
-fixed it (if not the same person). This file contains a version number.
+fixed it (if not the same person). Put the CPAN bug # in parenthesis, 
+and put the person who made the actual changes in brackets. This file 
+contains a version number.
 
 README.dev - you are reading it.
 
@@ -95,8 +97,8 @@ dbdimp.h - Helper file for dbdimp.c.
 
 Pg.pm - The main perl file, which contains all the DBD::Pg packages and code 
 for the methods. Often times code here calls code from Pg.xs and dbdimp.c.
-This file contains a version number. The main documentation for the module 
-lives here, as POD information.
+This file contains a version number in two places (once in the code, once 
+in the POD). The main documentation for the module lives here, as POD information.
 
 Pg.xs - The Perl "glue" file for DBD::Pg. This file basically tells Perl how 
 to handle various methods. It makes many calls to dbdimp.c
@@ -457,7 +459,7 @@ beta version as 1.41_1. A second beta would be 1.41_2, etc.
 Version numbers are currently set in four files:
 
 README
-Pg.pm
+Pg.pm (two places!)
 Changes
 Makefile.PL
 
