@@ -439,7 +439,12 @@ static int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	PGTransactionStatusType tstatus;
 	int status;
 
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "%s\n", action); }
+	if (dbis->debug >= 4) {
+		(void)PerlIO_printf
+			(DBILOGFP, "dbdpg: %s (AutoCommit is %d) (BegunWork is %d)\n", action,
+			 DBIc_is(imp_dbh, DBIcf_AutoCommit) ? 1 : 0,
+			 DBIc_is(imp_dbh, DBIcf_BegunWork) ? 1 : 0);
+	}
 	
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBDPG_TRUE == DBIc_has(imp_dbh, DBIcf_AutoCommit)))
