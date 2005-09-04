@@ -2809,8 +2809,8 @@ DBI and DBD-Oracle by Tim Bunce (Tim.Bunce@ig.co.uk)
 
 DBD-Pg by Edmund Mergl (E.Mergl@bawue.de) and Jeffrey W. Baker
 (jwbaker@acm.org). By David Wheeler <david@justatheory.com>, Jason
-Stewart <jason@openinformatics.com> and Bruce Momjian
-<pgman@candle.pha.pa.us> and others after v1.13.
+Stewart <jason@openinformatics.com>, Bruce Momjian <pgman@candle.pha.pa.us>, 
+Greg Sabino Mullane <greg@turnstep.com>, and others after v1.13.
 
 Parts of this package have been copied from DBI and DBD-Oracle.
 
