@@ -1729,6 +1729,9 @@ is automatically chosen for each query. This will be sufficient for
 most users: keep reading for a more detailed explanation and some
 optional flags.
 
+Statements that do not begin with the word "SELECT", "INSERT", 
+"UPDATE", or "DELETE" will not be prepared.
+
 Deciding whether or not to use prepared statements depends on many
 factors, but you can force them to be used or not used by passing
 the C<pg_server_prepare> attribute to prepare(). A "0" means to never

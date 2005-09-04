@@ -1,6 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.44
+	- Explicitly prevent any parsing of statements for placeholders 
+		unless they begin with "SELECT", "INSERT", "UPDATE", or "DELETE"
+		Suggested by (and fixes) CPAN bug #13608 [GSM]
 	- Rewrite and optimize the do() method. Should be much faster 
 		when called without placeholders. Thanks to Tom Lane 
 		for suggesting this. [GSM]

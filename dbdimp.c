@@ -921,7 +921,12 @@ static void dbd_st_split_statement (imp_sth, statement)
 
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbd_st_split_statement\n"); }
 
-	if (imp_sth->direct) { /* User has specifically asked that we not parse placeholders */
+	/*
+		If this is not DML (e.g. does not start with SELECT, INSERT, UPDATE, or DELETE)
+		or if the "pg_direct" flag is set, we do not split, but put everything verbatim
+		into a single segment
+	*/
+	if (!imp_sth->is_dml || imp_sth->direct) {
 		imp_sth->numsegs = 1;
 		imp_sth->numphs = 0;
 		Renew(imp_sth->seg, 1, seg_t); /* freed in dbd_st_destroy (and above) */
