@@ -162,6 +162,8 @@ use 5.006001;
 
 { package DBD::Pg::db;
 
+	use DBI qw(:sql_types);
+
 	use strict;
 
 
@@ -1062,93 +1064,87 @@ use 5.006001;
 		my ($dbh) = @_;
 
 	my $names = {
-		TYPE_NAME         => 0,
-		DATA_TYPE         => 1,
-		COLUMN_SIZE       => 2,    # was PRECISION originally
-		LITERAL_PREFIX    => 3,
-		LITERAL_SUFFIX    => 4,
-		CREATE_PARAMS     => 5,
-		NULLABLE          => 6,
-		CASE_SENSITIVE    => 7,
-		SEARCHABLE        => 8,
-		UNSIGNED_ATTRIBUTE=> 9,
-		FIXED_PREC_SCALE  => 10,   # was MONEY originally
-		AUTO_UNIQUE_VALUE => 11,   # was AUTO_INCREMENT originally
-		LOCAL_TYPE_NAME   => 12,
-		MINIMUM_SCALE     => 13,
-		MAXIMUM_SCALE     => 14,
-		NUM_PREC_RADIX    => 15,
-    SQL_DATA_TYPE     => 16,
-    SQL_DATETIME_SUB  => 17,
-    INTERVAL_PRECISION=> 18,
+		TYPE_NAME          => 0,
+		DATA_TYPE          => 1,
+		COLUMN_SIZE        => 2,
+		LITERAL_PREFIX     => 3,
+		LITERAL_SUFFIX     => 4,
+		CREATE_PARAMS      => 5,
+		NULLABLE           => 6,
+		CASE_SENSITIVE     => 7,
+		SEARCHABLE         => 8,
+		UNSIGNED_ATTRIBUTE => 9,
+		FIXED_PREC_SCALE   => 10,
+		AUTO_UNIQUE_VALUE  => 11,
+		LOCAL_TYPE_NAME    => 12,
+		MINIMUM_SCALE      => 13,
+		MAXIMUM_SCALE      => 14,
+    SQL_DATA_TYPE      => 15,
+    SQL_DATETIME_SUB   => 16,
+		NUM_PREC_RADIX     => 17,
+    INTERVAL_PRECISION => 18,
 	};
 
+	## This list is derived from dbi_sql.h in DBI, from types.c and types.h, and from the PG docs
+	## http://msdn.microsoft.com/library/default.asp?url=/library/en-us/odbc/htm/odbcsqlgettypeinfo.asp
 
-	#  typname       |typlen|typprtlen|    SQL92
-	#  --------------+------+---------+    -------
-	#  bool          |     1|        1|    BOOLEAN
-	#  text          |    -1|       -1|    like VARCHAR, but automatic storage allocation
-	#  bpchar        |    -1|       -1|    CHARACTER(n)    bp=blank padded
-	#  varchar       |    -1|       -1|    VARCHAR(n)
-	#  int2          |     2|        5|    SMALLINT
-	#  int4          |     4|       10|    INTEGER
-	#  int8          |     8|       20|    /
-	#  money         |     4|       24|    /
-	#  float4        |     4|       12|    FLOAT(p)   for p<7=float4, for p<16=float8
-	#  float8        |     8|       24|    REAL
-	#  abstime       |     4|       20|    /
-	#  reltime       |     4|       20|    /
-	#  tinterval     |    12|       47|    /
-	#  date          |     4|       10|    /
-	#  time          |     8|       16|    /
-	#  datetime      |     8|       47|    /
-	#  timespan      |    12|       47|    INTERVAL
-	#  timestamp     |     4|       19|    TIMESTAMP
-	#  --------------+------+---------+
+	## Ais to make the list more readable:
+	my $GIG = 1073741824;
+	my $PS = 'precision/scale';
+	my $LEN = 'length';
+	my $UN = undef;
+	my $ti = 
+		[
+		$names,  
+	# name     sql_type          size   pfx/sfx crt   n/c/s    +-/P/I   local       min max  sub rdx itvl
 
-		# DBI type definitions / PostgreSQL definitions     # type needs to be DBI-specific (not pg_type)
+['unknown',  SQL_UNKNOWN_TYPE,  0,    $UN,$UN, $UN,  1,0,0, $UN,0,0, 'UNKNOWN',   $UN,$UN, 
+             SQL_UNKNOWN_TYPE,                                                             $UN, $UN, $UN ],
+['bytea',    SQL_VARBINARY,     $GIG, "'","'", $UN,  1,0,3, $UN,0,0, 'BYTEA',     $UN,$UN, 
+             SQL_VARBINARY,                                                                $UN, $UN, $UN ],
+['bpchar',   SQL_CHAR,          $GIG, "'","'", $LEN, 1,1,3, $UN,0,0, 'CHARACTER', $UN,$UN,
+             SQL_CHAR,                                                                     $UN, $UN, $UN ],
+['numeric',  SQL_DECIMAL,       1000, $UN,$UN, $PS,  1,0,2, 0,0,0, '  FLOAT',     0,1000,
+             SQL_DECIMAL,                                                                  $UN, $UN, $UN ],
+['numeric',  SQL_NUMERIC,       1000, $UN,$UN, $PS,  1,0,2, 0,0,0,   'FLOAT',     0,1000,
+             SQL_NUMERIC,                                                                  $UN, $UN, $UN ],
+['int4',     SQL_INTEGER,       10,   $UN,$UN, $UN,  1,0,2, 0,0,0,   'INTEGER',   0,0,
+             SQL_INTEGER,                                                                  $UN, $UN, $UN ],
+['int2',     SQL_SMALLINT,      5,    $UN,$UN, $UN,  1,0,2, 0,0,0,   'SMALLINT',  0,0,
+             SQL_SMALLINT,                                                                 $UN, $UN, $UN ],
+['float4',   SQL_FLOAT,         6,    $UN,$UN, $PS,  1,0,2, 0,0,0,   'FLOAT',     0,6,
+             SQL_FLOAT,                                                                    $UN, $UN, $UN ],
+['float8',   SQL_REAL,          15,   $UN,$UN, $PS,  1,0,2, 0,0,0,   'REAL',      0,15,
+             SQL_REAL,                                                                     $UN, $UN, $UN ],
+['int8',     SQL_DOUBLE,        20,   $UN,$UN, $UN,  1,0,2, 0,0,0,   'LONGINT',   0,0,
+             SQL_DOUBLE,                                                                   $UN, $UN, $UN ],
+['date',     SQL_DATE,          10,   "'","'", $UN,  1,0,2, $UN,0,0, 'DATE',      0,0,
+             SQL_DATE,                                                                     $UN, $UN, $UN ],
+['tinterval',SQL_TIME,          18,   "'","'", $UN,  1,0,2, $UN,0,0, 'TINTERVAL', 0,6,
+             SQL_TIME,                                                                     $UN, $UN, $UN ],
+['timestamp',SQL_TIMESTAMP,     29,   "'","'", $UN,  1,0,2, $UN,0,0, 'TIMESTAMP', 0,6,
+             SQL_TIMESTAMP,                                                                $UN, $UN, $UN ],
+['text',     SQL_VARCHAR,       $GIG, "'","'", $LEN, 1,1,3, $UN,0,0, 'TEXT',      $UN,$UN,
+             SQL_VARCHAR,                                                                  $UN, $UN, $UN ],
+['bool',     SQL_BOOLEAN,       1,    "'","'", $UN,  1,0,2, $UN,0,0, 'BOOLEAN',   $UN,$UN,
+             SQL_BOOLEAN,                                                                  $UN, $UN, $UN ],
+['array',    SQL_ARRAY,         1,    "'","'", $UN,  1,0,2, $UN,0,0, 'ARRAY',     $UN,$UN,
+             SQL_ARRAY,                                                                    $UN, $UN, $UN ],
+['date',     SQL_TYPE_DATE,     10,   "'","'", $UN,  1,0,2, $UN,0,0, 'DATE',      0,0,
+             SQL_TYPE_DATE,                                                                $UN, $UN, $UN ],
+['time',     SQL_TYPE_TIME,     18,   "'","'", $UN,  1,0,2, $UN,0,0, 'TIME',      0,6,
+             SQL_TYPE_TIME,                                                                $UN, $UN, $UN ],
+['timestamp',SQL_TYPE_TIMESTAMP,29,   "'","'", $UN,  1,0,2, $UN,0,0, 'TIMESTAMP', 0,6,
+             SQL_TYPE_TIMESTAMP,                                                           $UN, $UN, $UN ],
+['timetz',   SQL_TYPE_TIME_WITH_TIMEZONE,
+                                29,   "'","'", $UN,  1,0,2, $UN,0,0, 'TIMETZ',    0,6,
+             SQL_TYPE_TIME_WITH_TIMEZONE,                                                  $UN, $UN, $UN ],
+['timestamptz',SQL_TYPE_TIMESTAMP_WITH_TIMEZONE,
+                                29,   "'","'", $UN,  1,0,2, $UN,0,0, 'TIMESTAMPTZ',0,6,
+             SQL_TYPE_TIMESTAMP_WITH_TIMEZONE,                                             $UN, $UN, $UN ],
 		#
-		# SQL_ALL_TYPES  0
-		# SQL_CHAR       1  1042 bpchar
-		# SQL_NUMERIC    2   700 float4
-		# SQL_DECIMAL    3   700 float4
-		# SQL_INTEGER    4    23 int4
-		# SQL_SMALLINT   5    21 int2
-		# SQL_FLOAT      6   700 float4
-		# SQL_REAL       7   701 float8
-		# SQL_DOUBLE     8    20 int8
-		# SQL_DATE       9  1082 date
-		# SQL_TIME      10  1083 time
-		# SQL_TIMESTAMP 11  1296 timestamp
-		# SQL_VARCHAR   12  1043 varchar
-
-	my $ti = [
-		$names,
-		# name          type  prec  prefix suffix  create params null case se unsign mon  incr       local   min    max
-		#
-		[ 'bytea',        -2, 4096,  '\'',  '\'',           undef, 1, '1', 3, undef, '0', '0',     'BYTEA', undef, undef, undef, undef, undef, undef ],
-		[ 'bool',          0,    1,  '\'',  '\'',           undef, 1, '0', 2, undef, '0', '0',   'BOOLEAN', undef, undef, undef, undef, undef, undef ],
-		[ 'int8',          8,   20, undef, undef,           undef, 1, '0', 2,   '0', '0', '0',   'LONGINT', undef, undef, undef, undef, undef, undef ],
-		[ 'int2',          5,    5, undef, undef,           undef, 1, '0', 2,   '0', '0', '0',  'SMALLINT', undef, undef, undef, undef, undef, undef ],
-		[ 'int4',          4,   10, undef, undef,           undef, 1, '0', 2,   '0', '0', '0',   'INTEGER', undef, undef, undef, undef, undef, undef ],
-		[ 'text',         12, 4096,  '\'',  '\'',           undef, 1, '1', 3, undef, '0', '0',      'TEXT', undef, undef, undef, undef, undef, undef ],
-		[ 'float4',        6,   12, undef, undef,     'precision', 1, '0', 2,   '0', '0', '0',     'FLOAT', undef, undef, undef, undef, undef, undef ],
-		[ 'float8',        7,   24, undef, undef,     'precision', 1, '0', 2,   '0', '0', '0',      'REAL', undef, undef, undef, undef, undef, undef ],
-		[ 'abstime',      10,   20,  '\'',  '\'',           undef, 1, '0', 2, undef, '0', '0',   'ABSTIME', undef, undef, undef, undef, undef, undef ],
-		[ 'reltime',      10,   20,  '\'',  '\'',           undef, 1, '0', 2, undef, '0', '0',   'RELTIME', undef, undef, undef, undef, undef, undef ],
-		[ 'tinterval',    11,   47,  '\'',  '\'',           undef, 1, '0', 2, undef, '0', '0', 'TINTERVAL', undef, undef, undef, undef, undef, undef ],
-		[ 'money',         0,   24, undef, undef,           undef, 1, '0', 2, undef, '1', '0',     'MONEY', undef, undef, undef, undef, undef, undef ],
-		[ 'bpchar',        1, 4096,  '\'',  '\'',    'max length', 1, '1', 3, undef, '0', '0', 'CHARACTER', undef, undef, undef, undef, undef, undef ],
-		[ 'bpchar',       12, 4096,  '\'',  '\'',    'max length', 1, '1', 3, undef, '0', '0', 'CHARACTER', undef, undef, undef, undef, undef, undef ],
-		[ 'varchar',      12, 4096,  '\'',  '\'',    'max length', 1, '1', 3, undef, '0', '0',   'VARCHAR', undef, undef, undef, undef, undef, undef ],
-		[ 'date',          9,   10,  '\'',  '\'',           undef, 1, '0', 2, undef, '0', '0',      'DATE', undef, undef, undef, undef, undef, undef ],
-		[ 'time',         10,   16,  '\'',  '\'',           undef, 1, '0', 2, undef, '0', '0',      'TIME', undef, undef, undef, undef, undef, undef ],
-		[ 'datetime',     11,   47,  '\'',  '\'',           undef, 1, '0', 2, undef, '0', '0',  'DATETIME', undef, undef, undef, undef, undef, undef ],
-		[ 'timespan',     11,   47,  '\'',  '\'',           undef, 1, '0', 2, undef, '0', '0',  'INTERVAL', undef, undef, undef, undef, undef, undef ],
-		[ 'timestamp',    10,   19,  '\'',  '\'',           undef, 1, '0', 2, undef, '0', '0', 'TIMESTAMP', undef, undef, undef, undef, undef, undef ]
-		#
-		# intentionally omitted: char, all geometric types, all array types
-		];
+		# intentionally omitted: char, all geometric types, internal types
+	];
 	return $ti;
 	}
 
@@ -1192,9 +1188,9 @@ use 5.006001;
    98  => ["SQL_MAX_COLUMNS_IN_INDEX",       0                    ],
    99  => ["SQL_MAX_COLUMNS_IN_ORDER_BY",    0                    ],
   100  => ["SQL_MAX_COLUMNS_IN_SELECT",      0                    ],
-  101  => ["SQL_MAX_COLUMNS_IN_TABLE",       0                    ],
+  101  => ["SQL_MAX_COLUMNS_IN_TABLE",       1600                 ], ## depends on column types
   102  => ["SQL_MAX_INDEX_SIZE",             0                    ],
-  104  => ["SQL_MAX_ROW_SIZE",               0                    ],
+  104  => ["SQL_MAX_ROW_SIZE",               0                    ], ## actually 1.6 TB, but too big to represent here
   105  => ["SQL_MAX_STATEMENT_LEN",          0                    ],
   106  => ["SQL_MAX_TABLES_IN_SELECT",       0                    ],
   107  => ["SQL_MAX_USER_NAME_LEN",          'NAMEDATALEN'        ],

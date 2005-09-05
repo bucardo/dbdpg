@@ -20,21 +20,21 @@
 static sql_type_info_t pg_types[] = {
 	{ABSTIMEOID, "abstime", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{ACLITEMOID, "aclitem", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{ANYARRAYOID, "anyarray", null_quote, null_dequote, {0}, DBDPG_TRUE},
+	{ANYARRAYOID, "anyarray", null_quote, null_dequote, {SQL_ARRAY}, DBDPG_TRUE},
 	{ANYELEMENTOID, "anyelement", 0, 0, {0}, DBDPG_FALSE},
 	{ANYOID, "any", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{BITOID, "bitstring", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{BOOLOID, "bool", quote_bool, dequote_bool, {SQL_BOOLEAN}, DBDPG_TRUE},
 	{BOXOID, "box", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{BPCHAROID, "bpchar", quote_string, dequote_char, {SQL_CHAR}, DBDPG_TRUE},
-	{BYTEAOID, "bytea", quote_bytea, dequote_bytea, {SQL_BINARY}, DBDPG_TRUE},
+	{BYTEAOID, "bytea", quote_bytea, dequote_bytea, {SQL_VARBINARY}, DBDPG_TRUE},
 	{CASHOID, "money", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{CHAROID, "char", quote_string, dequote_char, {0}, DBDPG_TRUE},
 	{CIDOID, "cid", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
 	{CIDROID, "IP - cidr", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{CIRCLEOID, "circle", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{CSTRINGOID, "cstring", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{DATEOID, "date", null_quote, null_dequote, {SQL_DATE}, DBDPG_TRUE},
+	{DATEOID, "date", null_quote, null_dequote, {SQL_TYPE_DATE}, DBDPG_TRUE},
 	{FLOAT4OID, "float4", quote_string, dequote_char, {SQL_NUMERIC}, DBDPG_TRUE},
 	{FLOAT8OID, "float8", null_quote, null_dequote, {SQL_REAL}, DBDPG_TRUE},
 	{INETOID, "IP address", null_quote, null_dequote, {0}, DBDPG_TRUE},
@@ -44,7 +44,7 @@ static sql_type_info_t pg_types[] = {
 	{INT4OID, "int4", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
 	{INT8OID, "int8", null_quote, null_dequote, {SQL_DOUBLE}, DBDPG_TRUE},
 	{INTERNALOID, "internal", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{INTERVALOID, "timespan", null_quote, null_dequote, {0}, DBDPG_TRUE},
+	{INTERVALOID, "timespan", null_quote, null_dequote, {SQL_INTERVAL}, DBDPG_TRUE},
 	{LANGUAGE_HANDLEROID, "languagehandle", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{LINEOID, "line", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{LSEGOID, "lseg", null_quote, null_dequote, {0}, DBDPG_TRUE},
@@ -71,18 +71,18 @@ static sql_type_info_t pg_types[] = {
 	{REGTYPEOID, "regtype", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{RELTIMEOID, "reltime", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{TEXTOID, "text", quote_string, dequote_string, {SQL_VARCHAR}, DBDPG_TRUE},
-	{TIDOID, "tid", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
+	{TIDOID, "tid", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{TIMEOID, "time", null_quote, null_dequote, {SQL_TYPE_TIME}, DBDPG_TRUE},
 	{TIMESTAMPOID, "timestamp", null_quote, null_dequote, {SQL_TYPE_TIMESTAMP}, DBDPG_TRUE},
 	{TIMESTAMPTZOID, "datetime", null_quote, null_dequote, {SQL_TYPE_TIMESTAMP_WITH_TIMEZONE}, DBDPG_TRUE},
-	{TIMETZOID, "timestamptz", null_quote, null_dequote, {0}, DBDPG_TRUE},
+	{TIMETZOID, "timestamptz", null_quote, null_dequote, {SQL_TYPE_TIME_WITH_TIMEZONE}, DBDPG_TRUE},
 	{TINTERVALOID, "tinterval", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{TRIGGEROID, "trigger", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{UNKNOWNOID, "unknown", quote_string, dequote_string, {0}, DBDPG_TRUE},
+	{UNKNOWNOID, "unknown", quote_string, dequote_string, {SQL_UNKNOWN_TYPE}, DBDPG_TRUE},
 	{VARBITOID, "vbitstring", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{VARCHAROID, "varchar", quote_string, dequote_string, {SQL_VARCHAR}, DBDPG_TRUE},
 	{VOIDOID, "void", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{XIDOID, "xid", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
+	{XIDOID, "xid", null_quote, null_dequote, {0}, DBDPG_TRUE},
 };
 
 sql_type_info_t* pg_type_data(sql_type)
@@ -162,8 +162,8 @@ sql_type_info_t* pg_type_data(sql_type)
 static sql_type_info_t sql_types[] = {
 	{SQL_BOOLEAN, "SQL_BOOLEAN", quote_bool, dequote_bool, {BOOLOID}, DBDPG_TRUE},
 	{SQL_CHAR, "SQL_CHAR", quote_string, dequote_char, {BPCHAROID}, DBDPG_TRUE},
-	{SQL_BINARY, "SQL_BINARY", quote_bytea, dequote_bytea, {BYTEAOID}, DBDPG_TRUE},
-	{SQL_DATE, "SQL_DATE", null_quote, null_dequote, {DATEOID}, DBDPG_TRUE},
+	{SQL_VARBINARY, "SQL_VARBINARY", quote_bytea, dequote_bytea, {BYTEAOID}, DBDPG_TRUE},
+	{SQL_TYPE_DATE, "SQL_TYPE_DATE", null_quote, null_dequote, {DATEOID}, DBDPG_TRUE},
 	{SQL_NUMERIC, "SQL_NUMERIC", quote_string, dequote_char, {FLOAT4OID}, DBDPG_TRUE},
 	{SQL_REAL, "SQL_REAL", null_quote, null_dequote, {FLOAT8OID}, DBDPG_TRUE},
 	{SQL_SMALLINT, "SQL_SMALLINT", null_quote, null_dequote, {INT2OID}, DBDPG_TRUE},
@@ -181,8 +181,8 @@ sql_type_info_t* sql_type_data(sql_type)
 {	switch(sql_type) {
 		case SQL_BOOLEAN:                      return &sql_types[0];
 		case SQL_CHAR:                         return &sql_types[1];
-		case SQL_BINARY:                       return &sql_types[2];
-		case SQL_DATE:                         return &sql_types[3];
+		case SQL_VARBINARY:                    return &sql_types[2];
+		case SQL_TYPE_DATE:                    return &sql_types[3];
 		case SQL_NUMERIC:                      return &sql_types[4];
 		case SQL_REAL:                         return &sql_types[5];
 		case SQL_SMALLINT:                     return &sql_types[6];
@@ -394,8 +394,6 @@ FLOAT8OID, float8, null_quote,null_dequote, SQL_REAL, 1
 NUMERICOID, numeric, null_quote, null_dequote, SQL_DECIMAL, 1
 CIDOID, cid, null_quote, null_dequote, SQL_INTEGER, 0
 OIDOID, oid, null_quote, null_dequote, SQL_INTEGER, 0
-TIDOID, tid, null_quote, null_dequote, SQL_INTEGER, 0
-XIDOID, xid, null_quote, null_dequote, SQL_INTEGER, 0
 
 
 ## Text - single quotes on end, escape backslashes and apostrophes
@@ -405,24 +403,25 @@ NAMEOID, name, null_quote, null_dequote, SQL_VARCHAR, 0
 TEXTOID, text, quote_string, dequote_string, SQL_VARCHAR, 0
 
 ## Binary - specialquoting rules
-BYTEAOID, bytea, quote_bytea, dequote_bytea, SQL_BINARY, 1
+BYTEAOID, bytea, quote_bytea, dequote_bytea, SQL_VARBINARY, 1
 CHAROID, char, quote_string, dequote_char, 0, 0
 
 ## Boolean
 BOOLOID, bool, quote_bool, dequote_bool, SQL_BOOLEAN, 1
 
 ## Time and date
-DATEOID, date, null_quote, null_dequote, SQL_DATE, 1
+DATEOID, date, null_quote, null_dequote, SQL_TYPE_DATE, 1
 TIMEOID, time, null_quote, null_dequote, SQL_TYPE_TIME, 1
 TIMESTAMPOID, timestamp, null_quote, null_dequote, SQL_TYPE_TIMESTAMP, 1
 TIMESTAMPTZOID, datetime, null_quote, null_dequote, SQL_TYPE_TIMESTAMP_WITH_TIMEZONE, 1
+TIMETZOID, timestamptz, null_quote, null_dequote, SQL_TYPE_TIME_WITH_TIMEZONE, 0
 
 
 ## Others
 ANYELEMENTOID, anyelement, 0, 0, 0, 0
 ABSTIMEOID, abstime, null_quote, null_dequote, 0, 0
 ACLITEMOID, aclitem, null_quote, null_dequote, 0, 0
-ANYARRAYOID, anyarray, null_quote, null_dequote, 0, 0
+ANYARRAYOID, anyarray, null_quote, null_dequote, SQL_ARRAY, 0
 ANYOID, any, null_quote, null_dequote, 0, 0
 BITOID, bitstring, null_quote, null_dequote, 0, 0
 BOXOID, box, null_quote, null_dequote, 0, 0
@@ -434,7 +433,7 @@ INETOID, IP address, null_quote, null_dequote, 0, 0
 INT2VECTOROID, int28, null_quote, null_dequote, 0, 0
 INT4ARRAYOID, int4array, 0, 0, 0, 0
 INTERNALOID, internal, null_quote, null_dequote, 0, 0
-INTERVALOID, timespan, null_quote, null_dequote, 0, 0
+INTERVALOID, timespan, null_quote, null_dequote, SQL_INTERVAL, 0
 LANGUAGE_HANDLEROID, languagehandle, null_quote, null_dequote, 0, 0
 LINEOID, line, null_quote, null_dequote, 0, 0
 LSEGOID, lseg, null_quote, null_dequote, 0, 0
@@ -457,12 +456,13 @@ REGPROCEDUREOID, regprocedureoid, null_quote, null_dequote, 0, 0
 REGPROCOID, regproc, null_quote, null_dequote, 0, 0
 REGTYPEOID, regtype, null_quote, null_dequote, 0, 0
 RELTIMEOID, reltime, null_quote, null_dequote, 0, 0
-TIMETZOID, timestamptz, null_quote, null_dequote, 0, 0
+TIDOID, tid, null_quote, null_dequote, 0, 0
 TINTERVALOID, tinterval, null_quote, null_dequote, 0, 0
 TRIGGEROID, trigger, null_quote, null_dequote, 0, 0
-UNKNOWNOID, unknown, quote_string, dequote_string, 0, 0
+UNKNOWNOID, unknown, quote_string, dequote_string, SQL_UNKNOWN_TYPE, 0
 VARBITOID, vbitstring, null_quote, null_dequote, 0, 0
 VOIDOID, void, null_quote, null_dequote, 0, 0
+XIDOID, xid, null_quote, null_dequote, 0, 0
 
 
 __END__
