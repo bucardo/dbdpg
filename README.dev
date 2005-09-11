@@ -507,7 +507,7 @@ other sections referenced herein (indicated with **)
 
 * Make sure everything is up to date in cvs
 
-* Update the versions (see ** Version Numbers) in README, Pg.pm, Makefile.PL, and Changes
+* Update the versions (see ** Version Numbers) in README, Pg.pm (2 places!), Makefile.PL, and Changes
 
 * Update the Changes file
 
