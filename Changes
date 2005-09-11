@@ -7,6 +7,8 @@
 	- Explicitly prevent any parsing of statements for placeholders 
 		unless they begin with "SELECT", "INSERT", "UPDATE", or "DELETE"
 		Suggested by (and fixes) CPAN bug #13608 [GSM]
+	- Rewrite some of the quoting functions, reduce dependence 
+		on libpq versions. [GSM]
 	- Rewrite and optimize the do() method. Should be much faster 
 		when called without placeholders. Thanks to Tom Lane 
 		for suggesting this. [GSM]
