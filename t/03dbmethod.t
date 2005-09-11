@@ -17,7 +17,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 154;
+	plan tests => 158;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -251,6 +251,7 @@ eval {
 ok ($@, 'DB handle method "get_info" with no arguments gives an error');
 
 my %get_info = (
+  SQL_MAX_DRIVER_CONNECTIONS =>  0,
   SQL_DRIVER_NAME            =>  6,
   SQL_DBMS_NAME              => 17,
   SQL_DBMS_VERSION           => 18,
@@ -269,7 +270,11 @@ for (keys %get_info) {
 
 # Make sure odbcversion looks normal
 my $odbcversion = $dbh->get_info(18);
-like( $odbcversion, qr{^([1-9]\d|\d[1-9])\.\d\d\.\d\d00$}, qq{DB handle method "get info" returns a valid looking ODBCVERSION string});
+like( $odbcversion, qr{^([1-9]\d|\d[1-9])\.\d\d\.\d\d00$}, qq{DB handle method "get_info" returns a valid looking ODBCVERSION string});
+
+# Testing max connections is good as this info is dynamic
+my $maxcon = $dbh->get_info(0);
+like( $maxcon, qr{^\d+$}, qq{DB handle method "get_info" returns a number for SQL_MAX_DRIVER_CONNECTIONS});
 
 #
 # Test of the "table_info" database handle method
