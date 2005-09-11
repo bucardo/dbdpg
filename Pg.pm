@@ -2419,6 +2419,11 @@ string.
 PostgreSQL specific attribute. Returns the port of the connection to
 the server.
 
+=item B<pg_default_port> (integer, read-only)
+
+PostgreSQL specific attribute. Returns the default port used if none is 
+specifically givem.
+
 =item B<pg_options> (string, read-only)
 
 PostgreSQL specific attribute. Returns the command-line options passed

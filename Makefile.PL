@@ -1,4 +1,3 @@
-
 # $Id$
 
 use ExtUtils::MakeMaker;
@@ -35,8 +34,9 @@ require App::Info::RDBMS::PostgreSQL;
 require App::Info::Handler::Prompt;
 my $p = App::Info::Handler::Prompt->new;
 my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $p);
-my ($major_ver, $minor_ver, $patch) = map {$pg->$_} qw/major_version minor_version patch_version/;
+my ($major_ver, $minor_ver, $patch, $conf) = map {$pg->$_} qw/major_version minor_version patch_version configure/;
 my $serverversion = sprintf("%d%.02d%.02d", $major_ver, $minor_ver, $patch);
+my $defaultport = $conf =~ /with-pgport=(\d+)/ ? $1 : 5432;
 
 if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
     $POSTGRES_INCLUDE = $pg->inc_dir;
@@ -51,7 +51,7 @@ if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
 
 my $os = $^O;
 print "OS: $os\n";
-print "PostgreSQL version: $serverversion\n";
+print "PostgreSQL version: $serverversion (default port: $defaultport)\n";
 
 if ($os =~ /Win32/) {
 	for ($POSTGRES_INCLUDE, $POSTGRES_LIB) {
@@ -85,7 +85,7 @@ else {
   }
 }
 
-my $comp_opts = $Config{q{ccflags}} . " -DPGLIBVERSION=$serverversion";
+my $comp_opts = $Config{q{ccflags}} . " -DPGLIBVERSION=$serverversion -DPGDEFPORT=$defaultport";
 
 my %opts = 
 	(

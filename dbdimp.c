@@ -691,8 +691,6 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 	} else if (17==kl && strEQ(key, "pg_server_version")) {
 		retsv = newSViv((IV)imp_dbh->pg_server_version);
 	}
-	/* All the following are called too infrequently to bother caching */
-
 	else if (5==kl && strEQ(key, "pg_db")) {
 		retsv = newSVpv(PQdb(imp_dbh->conn),0);
 	} else if (7==kl && strEQ(key, "pg_user")) {
@@ -706,6 +704,8 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 		retsv = newSVpv(host,0);
 	} else if (7==kl && strEQ(key, "pg_port")) {
 		retsv = newSVpv(PQport(imp_dbh->conn),0);
+	} else if (15==kl && strEQ(key, "pg_default_port")) {
+		retsv = newSViv((IV) PGDEFPORT );
 	} else if (10==kl && strEQ(key, "pg_options")) {
 		retsv = newSVpv(PQoptions(imp_dbh->conn),0);
 	} else if (9==kl && strEQ(key, "pg_socket")) {

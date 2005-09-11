@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.44
+	- Added $dbh->{pg_default_port} method [GSM]
 	- Overhaul get_info data, add many more values [GSM]
 	- Overhaul type_info data (fixes CPAN bug #13806) [GSM]
 	- Explicitly prevent any parsing of statements for placeholders 

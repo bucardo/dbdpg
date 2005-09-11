@@ -16,7 +16,7 @@ if (defined $ENV{DBI_DSN}) {
 }
 
 ## Define this here in case we get to the END block before a connection is made.
-my ($pgversion,$pglibversion,$pgvstring) = ('?','?','?');
+my ($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
 
 # Trapping a connection error can be tricky, but we only have to do it 
 # this thoroughly one time. We are trapping two classes of errors:
@@ -42,6 +42,7 @@ pass('Established a connection to the database');
 
 $pgversion = $dbh->{pg_server_version};
 $pglibversion = $dbh->{pg_lib_version};
+$pgdefport = $dbh->{pg_default_port};
 $pgvstring = $dbh->selectall_arrayref("SELECT VERSION();")->[0][0];
 
 ok( $dbh->disconnect(), 'Disconnect from the database');
@@ -77,6 +78,7 @@ END {
 		"PostgreSQL (compiled) $pglibversion\n".
 		"PostgreSQL (target)   $pgversion\n".
 		"PostgreSQL (reported) $pgvstring\n".
+		"Default port          $pgdefport\n".
 		"DBI                   $DBI::VERSION\n".
 		"DBI_DSN               $ENV{DBI_DSN}$schema\n";
 }

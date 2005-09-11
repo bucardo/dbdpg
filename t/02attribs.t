@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 121;
+	plan tests => 122;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -53,6 +53,7 @@ d pg_db
 d pg_user
 d pg_pass
 d pg_port
+d pg_default_port
 d pg_options
 d pg_socket
 d pg_pid
@@ -291,6 +292,9 @@ ok( defined $result, qq{DB handle attribute "pg_pass" returns a value});
 
 $result = $dbh->{pg_port};
 like( $result, qr/^\d+$/, qq{DB handle attribute "pg_port" returns a number});
+
+$result = $dbh->{pg_default_port};
+like( $result, qr/^\d+$/, qq{DB handle attribute "pg_default_port" returns a number});
 
 $result = $dbh->{pg_options};
 ok (defined $result, qq{DB handle attribute "pg_options" returns a value});
