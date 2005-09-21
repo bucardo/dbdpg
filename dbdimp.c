@@ -190,7 +190,7 @@ static void pg_error (h, error_num, error_msg)
 	imp_dbh_t	*imp_dbh = (imp_dbh_t *)(DBIc_TYPE(imp_xxh) == DBIt_ST ? DBIc_PARENT_COM(imp_xxh) : imp_xxh);
 	
 	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_error (%s) numvber=%d\n",
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_error (%s) number=%d\n",
 												error_msg, error_num);
 
 	New(0, err, len+1, char); /* freed below */
