@@ -14,7 +14,8 @@ use 5.006001;
 
 
 
-{ package DBD::Pg;
+{
+	package DBD::Pg;
 
 	our $VERSION = '1.43_1';
 	
@@ -95,7 +96,8 @@ use 5.006001;
 }
 
 
-{ package DBD::Pg::dr;
+{
+	package DBD::Pg::dr;
 
 	use strict;
 
@@ -160,7 +162,8 @@ use 5.006001;
 }
 
 
-{ package DBD::Pg::db;
+{
+	package DBD::Pg::db;
 
 	use DBI qw(:sql_types);
 
@@ -1392,7 +1395,8 @@ use 5.006001;
 } 
 
 
-{ package DBD::Pg::st;
+{
+	package DBD::Pg::st;
 
 	sub bind_param_array { ## The DBI version is broken, so we implement a near-copy here
 		my $sth = shift;
@@ -1822,7 +1826,7 @@ most users: keep reading for a more detailed explanation and some
 optional flags.
 
 Statements that do not begin with the word "SELECT", "INSERT", 
-"UPDATE", or "DELETE" will not be prepared.
+"UPDATE", or "DELETE" will not be sent to be server-side prepared.
 
 Deciding whether or not to use prepared statements depends on many
 factors, but you can force them to be used or not used by passing
@@ -2313,6 +2317,11 @@ in the future, so it is highly recommended that you explicitly set it when
 calling C<connect()>. For details see the notes about B<Transactions>
 elsewhere in this document.
 
+=item B<pg_bool_tf> (boolean)
+
+PostgreSQL specific attribute. If true, boolean values will be returned
+as the characters 't' and 'f' instead of '1' and '0'.
+
 =item B<Driver>  (handle)
 
 Implemented by DBI, no driver-specific impact.
@@ -2356,11 +2365,6 @@ Constant to be used for the mode in C<lo_creat> and C<lo_open>.
 =item B<pg_INV_WRITE> (integer, read-only)
 
 Constant to be used for the mode in C<lo_creat> and C<lo_open>.
-
-=item B<pg_bool_tf> (boolean)
-
-PostgreSQL specific attribute. If true, boolean values will be returned
-as the characters 't' and 'f' instead of '1' and '0'.
 
 =item B<pg_errorlevel> (integer)
 
