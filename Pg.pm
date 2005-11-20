@@ -1922,7 +1922,7 @@ statement, as it will not be executed. However, it should have the same
 number of placeholders as your prepared statement. Example:
 
   $dbh->do("PREPARE mystat AS SELECT COUNT(*) FROM pg_class WHERE reltuples < ?");
-  $sth = $dbh->prepare("ABC ?");
+  $sth = $dbh->prepare("SELECT ?");
   $sth->bind_param(1, 1, SQL_INTEGER);
   $sth->{pg_prepare_name} = "mystat";
   $sth->execute(123);
