@@ -1571,6 +1571,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 		currph->value[currph->valuelen] = '\0';
 	}
 	else {
+		Safefree(currph->value);
 		currph->value = NULL;
 		currph->valuelen = 0;
 	}
