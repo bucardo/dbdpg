@@ -2774,6 +2774,8 @@ Releases (or removes) a named savepoint. If more than one savepoint with that na
 exists, it will only destroy the most recently created one. Note that all savepoints 
 created after the one being released are also destroyed.
 
+  $dbh->pg_release("mysavepoint");
+
 =back
 
 =head2 COPY support
