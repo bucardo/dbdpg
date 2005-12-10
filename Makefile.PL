@@ -66,8 +66,7 @@ if ($serverversion < 70200) {
 	print "It is highly recommended that you upgrade PostgreSQL to a newer version.\n";
 	print "****************\n\n";
 }
-
-if ($serverversion < 70400) {
+elsif ($serverversion < 70400) {
 	print "\n****************\n";
 	print "WARNING! Support for servers older than version 7.4 will soon end.\n";
 	print "It is highly recommended that you upgrade PostgreSQL to a newer version.\n";
@@ -86,6 +85,24 @@ else {
 }
 
 my $comp_opts = $Config{q{ccflags}} . " -DPGLIBVERSION=$serverversion -DPGDEFPORT=$defaultport";
+
+if ($ENV{DBDPG_GCCDEBUG}) {
+	warn "Enabling many compiler options\n";
+	$comp_opts .= " -Wchar-subscripts -Wcomment";
+	$comp_opts .= " -Wformat=2"; ## does -Wformat,-Wformat-y2k,-Wformat-nonliteral,-Wformat-security
+	$comp_opts .= " -Wnonnull";
+	$comp_opts .= " -Wuninitialized -Winit-self"; ## latter requires the former
+	$comp_opts .= " -Wimplicit"; ## does -Wimplicit-int and -Wimplicit-function-declaration
+	$comp_opts .= " -Wmain -Wmissing-braces -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wswitch-enum -Wtrigraphs";
+	$comp_opts .= " -Wunused"; ## contains -Wunused- function,label,parameter,variable,value
+	$comp_opts .= " -Wunknown-pragmas -Wstrict-aliasing";
+	$comp_opts .= " -Wall"; ## all of above, but we enumerate anyway
+	$comp_opts .= " -Wextra -Wdeclaration-after-statement -Wendif-labels -Wpointer-arith";
+	$comp_opts .= " -Wbad-function-cast -Wcast-qual -Wcast-align -Wconversion -Wsign-compare -Waggregate-return";
+	$comp_opts .= " -Wmissing-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wpacked -Winline -Winvalid-pch";
+	$comp_opts .= " -Wdisabled-optimization"; ## Not terribly useful
+	$comp_opts .= " -Wnested-externs"; ## Does not like Perl__notused (from DBIXS;)
+}
 
 my %opts = 
 	(
