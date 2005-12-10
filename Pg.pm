@@ -2755,7 +2755,7 @@ control savepoints:
 =item B<pg_savepoint>
 
 Creates a savepoint. This will fail unless you are inside of a transaction. The 
-only argument is the name of the savepoint. Note that PostgreSQL does allow 
+only argument is the name of the savepoint. Note that PostgreSQL DOES allow 
 multiple savepoints with the same name to exist.
 
   $dbh->pg_savepoint("mysavepoint");
