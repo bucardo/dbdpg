@@ -1,5 +1,8 @@
 TODO: 
 
+- Add array OID types
+- Quoting/dequoting of arrays.
+- Suport for bind_param_inout
 - Support for new error protocol
 - Support new DBI trace scheme.
 - Create a .ppm for Windows
@@ -8,8 +11,7 @@ TODO:
    take care of broken chopblanks and pg_bool_tf (pass the  quote/dequote 
    options struct to function quote/dequote functions).
 - Implement a clean UTF-8 support.
-- Add array OID types
-- Quoting/dequoting of arrays.
 - Allow user callbacks to quote user-defined types?
 - Rename functions and add defines to avoid problems with static linking of multi DBDs
 - Move to the Module::Build system
+- Support asynchronous queries
