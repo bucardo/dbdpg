@@ -474,7 +474,7 @@ see the ** Making a New Release section.
 If you are adding a new file to the distribution (and this should be a rare event), 
 please check that you have done the following items:
 
-* Created a standard header for the file, with a $Id$ line
+* Created a standard header for the file, with a (dollar sign)Id(dollar sign)
 
 * Added it to cvs via 'cvs add filename' and 'cvs commit filename'
 
