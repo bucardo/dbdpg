@@ -581,6 +581,7 @@ void dbd_db_destroy (dbh, imp_dbh)
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_destroy\n"); }
 
 	av_undef(imp_dbh->savepoints);
+	sv_free((SV*)imp_dbh->savepoints);
 	Safefree(imp_dbh->sqlstate);
 
 	if (DBIc_ACTIVE(imp_dbh)!=0)
