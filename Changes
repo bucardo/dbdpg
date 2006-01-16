@@ -1,12 +1,15 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.44
+	- Fix memory leak in dbdimp.c (k@sawada.cc) [Kenchi Sawada]
+	- Fix memory leak in dbdimp.c (dmitri@karasik.eu.org)
+		(fixes CPAN bug #16054)
+	- Move package declaration lines to fix RPM parser problems.
+		(fixes CPAN bug #14509) [GSM]
+	- Add support for dollar quoting. (fixes CPAN bug #13608) [GSM]
 	- Added $dbh->{pg_default_port} method [GSM]
 	- Overhaul get_info data, add many more values [GSM]
 	- Overhaul type_info data (fixes CPAN bug #13806) [GSM]
-	- Explicitly prevent any parsing of statements for placeholders 
-		unless they begin with "SELECT", "INSERT", "UPDATE", or "DELETE"
-		Suggested by (and fixes) CPAN bug #13608 [GSM]
 	- Rewrite some of the quoting functions, reduce dependence 
 		on libpq versions. [GSM]
 	- Rewrite and optimize the do() method. Should be much faster 
