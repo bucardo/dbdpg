@@ -111,7 +111,7 @@ typedef enum
 static ExecStatusType _result(imp_dbh_t *imp_dbh, const char *com);
 static void pg_error(SV *h, int error_num, char *error_msg);
 static int dbd_db_rollback_commit (SV *dbh, imp_dbh_t *imp_dbh, char * action);
-static void dbd_st_split_statement (imp_sth_t *imp_sth, char *statement);
+static void dbd_st_split_statement (imp_sth_t *imp_sth, int version, char *statement);
 static int dbd_st_prepare_statement (SV *sth, imp_sth_t *imp_sth);
 static int is_high_bit_set(char *val);
 static int dbd_st_deallocate_statement(SV *sth, imp_sth_t *imp_sth);
@@ -256,8 +256,6 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	}
 
 	New(0, conn_str, connect_string_size+1, char); /* freed below */
-	if (!conn_str)
-		croak("No memory");
 	
 	/* Change all semi-colons in dbname to a space, unless quoted */
 	dest = conn_str;
@@ -356,8 +354,6 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	}
 
 	Renew(imp_dbh->sqlstate, 6, char); /* freed in dbd_db_destroy (and above) */
-	if (!imp_dbh->sqlstate)
-		croak("No memory");
 	strncpy(imp_dbh->sqlstate, "S1000\0", 6);
 	imp_dbh->done_begin = FALSE; /* We are not inside a transaction */
 	imp_dbh->pg_bool_tf = FALSE;
@@ -581,7 +577,7 @@ void dbd_db_destroy (dbh, imp_dbh)
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_destroy\n"); }
 
 	av_undef(imp_dbh->savepoints);
-	sv_free((SV*)imp_dbh->savepoints);
+  sv_free((SV *)imp_dbh->savepoints);
 	Safefree(imp_dbh->sqlstate);
 
 	if (DBIc_ACTIVE(imp_dbh)!=0)
@@ -665,7 +661,7 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 	SV *retsv = Nullsv;
 	char *host = NULL;
 	
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_FETCH (%s)\n", key); }
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_FETCH (%s) dbh=%d\n", key, dbh); }
 	
 	if (10==kl && strEQ(key, "AutoCommit")) {
 		retsv = boolSV(DBIc_has(imp_dbh, DBIcf_AutoCommit));
@@ -732,7 +728,7 @@ int dbd_discon_all (drh, imp_drh)
 		 imp_drh_t *imp_drh;
 {
 	
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_discon_all\n"); }
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_discon_all drh=%d\n", drh); }
 	
 	/* The disconnect_all concept is flawed and needs more work */
 	if (!PL_dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
@@ -750,7 +746,7 @@ int dbd_db_getfd (dbh, imp_dbh)
 		 imp_dbh_t *imp_dbh;
 {
 
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_getfd\n"); }
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_getfd dbh=%d\n", dbh); }
 	
 	return PQsocket(imp_dbh->conn);
 
@@ -811,7 +807,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	STRLEN mypos=0, wordstart, newsize; /* Used to find and set firstword */
 	SV **svp; /* To help parse the arguments */
 
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_prepare (%)\n", statement); }
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_prepare (%s)\n", statement); }
 
 	/* Set default values for this statement handle */
 	imp_sth->is_dml = FALSE; /* Not preparable DML until proved otherwise */
@@ -868,8 +864,6 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 		}
 		newsize = mypos-wordstart;
 		New(0, imp_sth->firstword, newsize+1, char); /* freed in dbd_st_destroy */
-		if (!imp_sth->firstword)
-			croak ("No memory");
 		Copy(statement-newsize,imp_sth->firstword,newsize,char);
 		imp_sth->firstword[newsize] = '\0';
 		/* Try to prevent transaction commands unless "pg_direct" is set */
@@ -897,7 +891,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	statement -= mypos; /* Rewind statement */
 
 	/* Break the statement into segments by placeholder */
-	dbd_st_split_statement(imp_sth, statement);
+	dbd_st_split_statement(imp_sth, imp_dbh->pg_server_version, statement);
 
 	/*
 		We prepare it right away if:
@@ -938,133 +932,279 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 
 
 /* ================================================================== */
-static void dbd_st_split_statement (imp_sth, statement)
+static void dbd_st_split_statement (imp_sth, version, statement)
 		 imp_sth_t *imp_sth;
+		 int version;
 		 char *statement;
 {
 
 	/* Builds the "segment" and "placeholder" structures for a statement handle */
 
-	STRLEN mypos, sectionstart, sectionstop, newsize;
-	int backslashes, topdollar, x;
-	char ch, block, quote, placeholder_type, found;
-	seg_t *newseg, *currseg = NULL;
-	ph_t *newph, *thisph, *currph = NULL;
+	STRLEN currpos; /* Where we currently are in the statement string */
 
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_split_statement\n"); }
+	STRLEN sectionstart, sectionstop; /* Borders of current section */
+
+	STRLEN sectionsize; /* Size of an allocated segment */
+
+	STRLEN backslashes; /* Counts backslashes, only used in quote section */
+
+	STRLEN dollarsize; /* Size of dollarstring */
+
+	int topdollar; /* Used to enforce sequential $1 arguments */
+
+ 	char ch; /* The current character being checked */
+
+	char quote; /* Current quote or comment character: used only in those two blocks */
+
+	char placeholder_type; /* Which type we are in: one of 0,1,2,3 (none,?,$,:) */
+
+	bool found; /* Simple boolean */
+
+	bool inside_dollar; /* Inside a dollar quoted value */
+
+	char * dollarstring = NULL; /* Dynamic string between $$ in dollar quoting */
+
+	STRLEN xlen; /* Because "x" is too hard to search for */
+
+	int xint;
+
+	seg_t *newseg, *currseg = NULL; /* Segment structures to help build linked lists */
+
+	ph_t *newph, *thisph, *currph = NULL; /* Placeholder structures to help build ll */
+
+	if (dbis->debug >= 4) {
+		if (dbis->debug >= 10) {
+			(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_split_statement (%s)\n", statement);
+		}
+		else {
+			(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_split_statement\n");
+		}
+	}
 
 	/*
-		If this is not DML (e.g. does not start with SELECT, INSERT, UPDATE, or DELETE)
-		or if the "pg_direct" flag is set, we do not split, but put everything verbatim
-		into a single segment
+		If the pg_direct flag is set (or the string has no length), we do not split at all,
+		but simply put everything verbatim into a single segment and return.
 	*/
-	if (!imp_sth->is_dml || imp_sth->direct) {
+	if (imp_sth->direct || '\0' == *statement) {
+		if (dbis->debug >= 4) {
+			(void)PerlIO_printf(DBILOGFP, "dbdpg: not splitting due to %s\n",
+													imp_sth->direct ? "pg_direct" : "empty string");
+		}
 		imp_sth->numsegs = 1;
 		imp_sth->numphs = 0;
-		Renew(imp_sth->seg, 1, seg_t); /* freed in dbd_st_destroy (and above) */
-		if (!imp_sth->seg)
-			croak ("No memory");
+		Renew(imp_sth->seg, 1, seg_t); /* freed in dbd_st_destroy */
 		imp_sth->seg->nextseg = NULL;
 		imp_sth->seg->placeholder = 0;
 		imp_sth->seg->ph = NULL;
-		imp_sth->totalsize = newsize = strlen(statement);
-		if (newsize>0) {
-			New(0, imp_sth->seg->segment, newsize+1, char); /* freed in dbd_st_destroy */
-			if (!imp_sth->seg->segment)
-				croak("No memory");
-			Copy(statement, imp_sth->seg->segment, newsize, char);
-			imp_sth->seg->segment[newsize] = '\0';
+		imp_sth->totalsize = strlen(statement);
+		if (imp_sth->totalsize > 0) {
+			New(0, imp_sth->seg->segment, imp_sth->totalsize+1, char); /* freed in dbd_st_destroy */
+			Copy(statement, imp_sth->seg->segment, imp_sth->totalsize+1, char);
 		}
 		else {
 			imp_sth->seg->segment = NULL;
 		}
-		while(*statement++ != '\0') { }
-		statement--;
+		if (dbis->debug >= 10) {
+			(void)PerlIO_printf(DBILOGFP, "dbdpg: direct split = (%s) length=(%d)\n",
+													imp_sth->seg->segment, imp_sth->totalsize);
+		}
+		return;
 	}
 
-	sectionstart = 1;
-	mypos = 0;
-	block = backslashes = 0;
-	quote = 0;
-	while ((ch = *statement++)) {
+	/* Start everyone at the start of the string */
+	currpos = sectionstart = 0;
 
-		mypos++;
+	ch = 1;
 
-		/* Check for the end of a block */
-		if (block!=0) {
-			if (
-					/* dashdash and slashslash only terminate at newline */
-					(('-' == block || '/' == block) && '\n' == ch) ||
-					/* slashstar ends with a matching starslash */
-					('*' == block && '*' == ch && '/' == *statement) ||
-					/* end of array */
-					(']' == ch)
-					) {
-				block = 0;
-			}
-			if (*statement)
-				continue;
+	while (1) {
+
+		/* Are we done processing this string? */
+		if (ch < 1) {
+			break;
 		}
 
-		/* Check for the end of a quote */
-		if (quote!=0) {
-			if (ch == quote) {
-				if (0==(backslashes & 1)) 
-					quote = 0;
-			}
-			else {
-				if ('\\' == ch) {
-					backslashes++;
-				}
-				else {
-					backslashes=0;
-				}
-			}
-			if (*statement)
-				continue;
+		/* Put the current letter into ch, and advance statement to the next character */
+		ch = *statement++;
+
+		/* Remember: currpos matches *statement, not ch */
+		currpos++;
+
+		/* Quick short-circuit for uninteresting characters */
+		if (
+				(ch < 34 && ch != 0) || (ch > 63 && ch != 91) ||
+				 (ch!=34 && ch!=39 &&    /* simple quoting */
+					ch!=45 && ch!=47 &&    /* comment */
+					ch!=36 &&              /* dollar quoting or placeholder */
+					ch!=58 && ch!=63 &&    /* placeholder */
+					ch!=91 &&              /* array slice */
+					ch!=0                  /* end of the string (create segment) */
+					)
+				) {
+			continue;
 		}
 
-		/* Check for the start of a quote */
+		/* 1: A traditionally quoted section */
 		if ('\'' == ch || '"' == ch) {
-			if (0==(backslashes & 1))
-				quote = ch;
-			if (*statement)
+			quote = ch;
+			backslashes = 0;
+			/* Go until ending quote character (unescaped) or end of string */
+			while (quote && ++currpos && (ch = *statement++)) {
+				/* 1.1 : single quotes have no meaning in double-quoted sections and vice-versa */
+				/* 1.2 : backslashed quotes do not end the section */
+				if (ch == quote && (0==(backslashes&1))) {
+					quote = 0;
+				}
+				else if ('\\' == ch) 
+					backslashes++;
+				else
+					backslashes = 0;
+			}
+			/* 1.3 Quote ended normally, not the end of the string */
+			if (ch != 0)
 				continue;
-		}
+			/* 1.4 String ended, but the quote did not */
+			if (0 != quote) {
+				/* Let the backend handle this */
+			}
 
-		/* If a backslash, just count them to handle escaped quotes */
-		if ('\\' == ch) {
-			backslashes++;
-			if (*statement)
-				continue;
-		}
-		else {
-			backslashes=0;
-		}
+			/* 1.5: End quote was the last character in the string */
+		} /* end quote section */
 
-		/* Check for the start of a 2 character block (e.g. comments) */
+		/* 2: A comment block: */
 		if (('-' == ch && '-' == *statement) ||
 				('/' == ch && '/' == *statement) ||
-				('/' == ch && '*' == *statement)) {
-			block = *statement;
-			if (*statement)
-				continue;
-		}
+				('/' == ch && '*' == *statement)
+				) {
+			quote = *statement;
+			/* Go until end of comment (may be newline) or end of the string */
+			while (quote && ++currpos && (ch = *statement++)) {
+				/* 2.1: dashdash and slashslash only terminate at newline */
+				if (('-' == quote || '/' == quote) && '\n' == ch) {
+					quote=0;
+				}
+				/* 2.2: slashstar ends with a matching starslash */
+				else if ('*' == quote && '*' == ch && '/' == *statement) {
+					/* Slurp up the slash */
+					ch = *statement++;
+					currpos++;
+					quote=0;
+				}
+			}
 
-		/* Check for the start of an array */
-		if ('[' == ch) {
-			block = ']'; 
-			if (*statement)
+			/* 2.3 Comment ended normally, not the end of the string */
+			if (ch != 0)
 				continue;
-		}
 
-		/* All we care about at this point is placeholder characters and end of string */
-		if ('?' != ch && '$' != ch && ':' != ch && *statement)
+			/* 2.4 String ended, but the comment did not - do nothing special */
+			/* 2.5: End quote was the last character in the string */
+		} /* end comment section */
+
+		/* 3: advanced dollar quoting - only if the backend is version 8 or higher */
+		if (version >= 80000 && '$' == ch && (*statement == '$' || *statement >= 'A')) {
+			/* Unlike PG, we allow a little more latitude in legal characters - anything >= 65 can be used */
+			sectionsize = 0; /* How far from the first dollar sign are we? */
+		  found = 0; /* Have we found the end of the dollarquote? */
+
+			/* Scan forward until we hit the matching dollarsign */
+			while ((ch = *statement++)) {
+
+				sectionsize++;
+				/* If we hit an invalid character, bail out */
+				if (ch <= 32 || (ch >= '0' && ch <= '9')) {
+					break;
+				}
+				if ('$' == ch) {
+					found = 1;
+					break;
+				}
+			} /* end first scan */
+
+			/* Not found? Move to the next letter after the dollarsign and move on */
+			if (0==found) {
+				statement -= sectionsize;
+				if (!ch) {
+					ch = 1; /* So the top loop still works */
+					statement--;
+				}
+				continue;
+			}
+
+			/* We only need to create a dollarstring if something was between the two dollar signs */
+			if (sectionsize >= 1) {
+				New(0, dollarstring, sectionsize, char); /* note: a true array, not a null-terminated string */
+				strncpy(dollarstring, statement-sectionsize, sectionsize);
+			}
+
+			/* Move on and see if the quote is ever closed */
+
+			inside_dollar=0; /* Are we evaluating the dollar sign for the end? */
+			dollarsize = sectionsize;
+			xlen=0; /* The current character we are tracing */
+			found=0;
+			while ((ch = *statement++)) {
+				sectionsize++;
+				if (inside_dollar) {
+					/* Special case of $$ */
+					if (dollarsize < 1) {
+						found = 1;
+						break;
+					}
+					if (ch == dollarstring[xlen++]) {
+						/* Got a total match? */
+						if (xlen >= dollarsize) {
+							found = 1;
+							statement++;
+							sectionsize--;
+							break;
+						}
+					}
+					else { /* False dollar string: reset */
+						inside_dollar=0;
+						xlen=0;
+						/* Fall through in case this is a dollar sign */
+					}
+				}
+				if ('$' == ch) {
+					inside_dollar=1;
+				}
+			}
+
+			/* Once here, we are either rewinding, or are done parsing the string */
+
+			/* If end of string, rewind one character */
+			if (0==ch) {
+				sectionsize--;
+			}
+
+			Safefree(dollarstring);
+
+			/* Advance our cursor to the current position */
+			currpos += sectionsize+1;
+
+			statement--; /* Rewind statement by one */
+
+			/* If not found, might be end of string, so set ch */
+			if (0==found) {
+				ch = 1;
+			}
+
+			/* Regardless if found or not, we send it back */
 			continue;
 
+		} /* end dollar quoting */
+		
+		/* All we care about at this point is placeholder characters and end of string */
+		if ('?' != ch && '$' != ch && ':' != ch && 0!=ch) {
+			continue;
+		}
+
+		/* We might slurp in a placeholder, so mark the character before the current one */
+		/* In other words, inside of "ABC?", set sectionstop to point to "C" */
+		sectionstop=currpos-1;
+
+		/* Figure out if we have a placeholder */
 		placeholder_type = 0;
-		sectionstop=mypos-1;
-	
+
 		/* Normal question mark style */
 		if ('?' == ch) {
 			placeholder_type = 1;
@@ -1075,24 +1215,24 @@ static void dbd_st_split_statement (imp_sth, statement)
 				croak("Invalid placeholder value");
 			while(isDIGIT(*statement)) {
 				++statement;
-				++mypos;
+				++currpos;
 			}
 			placeholder_type = 2;
 		}
-		/* Colon style */
+		/* Colon style, but skip two colons in a row (e.g. myval::float) */
 		else if (':' == ch) {
-			/* Skip multiple colons (casting, e.g. "myval::float") */
 			if (':' == *statement) {
+				/* Might as well skip _all_ consecutive colons */
 				while(':' == *statement) {
 					++statement;
-					++mypos;
+					++currpos;
 				}
 				continue;
 			}
 			if (isALNUM(*statement)) {
 				while(isALNUM(*statement)) {
 					++statement;
-					++mypos;
+					++currpos;
 				}
 				placeholder_type = 3;
 			}
@@ -1106,13 +1246,12 @@ static void dbd_st_split_statement (imp_sth, statement)
 							1==placeholder_type ? "?" : 2==placeholder_type ? "$1" : ":foo");
 		}
 		
-		if (0==placeholder_type && *statement)
+		/* Move on to the next letter unless we found a placeholder, or we are at the end of the string */
+		if (0==placeholder_type && ch)
 			continue;
 
 		/* If we got here, we have a segment that needs to be saved */
 		New(0, newseg, 1, seg_t); /* freed in dbd_st_destroy */
-		if (!newseg)
-			croak ("No memory");
 		newseg->nextseg = NULL;
 		newseg->placeholder = 0;
 		newseg->ph = NULL;
@@ -1121,14 +1260,14 @@ static void dbd_st_split_statement (imp_sth, statement)
 			newseg->placeholder = ++imp_sth->numphs;
 		}
 		else if (2==placeholder_type) {
-			newseg->placeholder = atoi(statement-(mypos-sectionstop-1));
+			newseg->placeholder = atoi(statement-(currpos-sectionstop-2));
 		}
 		else if (3==placeholder_type) {
-			newsize = mypos-sectionstop;
+			sectionsize = currpos-sectionstop;
 			/* Have we seen this placeholder yet? */
-			for (x=1,thisph=imp_sth->ph; NULL != thisph; thisph=thisph->nextph,x++) {
-				if (0==strncmp(thisph->fooname, statement-newsize, newsize)) {
-					newseg->placeholder = x;
+			for (xlen=1,thisph=imp_sth->ph; NULL != thisph; thisph=thisph->nextph,xlen++) {
+				if (0==strncmp(thisph->fooname, statement-sectionsize, sectionsize)) {
+					newseg->placeholder = xlen;
 					newseg->ph = thisph;
 					break;
 				}
@@ -1138,19 +1277,15 @@ static void dbd_st_split_statement (imp_sth, statement)
 				newseg->placeholder = imp_sth->numphs;
 				New(0, newph, 1, ph_t); /* freed in dbd_st_destroy */
 				newseg->ph = newph;
-				if (!newph)
-					croak("No memory");
 				newph->nextph = NULL;
 				newph->bind_type = NULL;
 				newph->value = NULL;
 				newph->quoted = NULL;
 				newph->referenced = FALSE;
 				newph->defaultval = TRUE;
-				New(0, newph->fooname, newsize+1, char); /* freed in dbd_st_destroy */
-				if (!newph->fooname)
-					croak("No memory");
-				Copy(statement-newsize, newph->fooname, newsize, char);
-				newph->fooname[newsize] = '\0';
+				New(0, newph->fooname, sectionsize+1, char); /* freed in dbd_st_destroy */
+				Copy(statement-sectionsize, newph->fooname, sectionsize, char);
+				newph->fooname[sectionsize] = '\0';
 				if (NULL==currph) {
 					imp_sth->ph = newph;
 				}
@@ -1160,17 +1295,13 @@ static void dbd_st_split_statement (imp_sth, statement)
 				currph = newph;
 			}
 		} /* end if placeholder_type */
-		
-		newsize = sectionstop-sectionstart+1;
-		if (0==placeholder_type)
-			newsize++;
-		if (newsize>0) {
-			New(0, newseg->segment, newsize+1, char); /* freed in dbd_st_destroy */
-			if (!newseg->segment)
-				croak("No memory");
-			Copy(statement-(mypos-sectionstart+1), newseg->segment, newsize, char);
-			newseg->segment[newsize] = '\0';
-			imp_sth->totalsize += newsize;
+
+		sectionsize = sectionstop-sectionstart; /* 4-0 for "ABCD" */
+		if (sectionsize>0) {
+			New(0, newseg->segment, sectionsize+1, char); /* freed in dbd_st_destroy */
+			Copy(statement-(currpos-sectionstart), newseg->segment, sectionsize, char);
+			newseg->segment[sectionsize] = '\0';
+			imp_sth->totalsize += sectionsize;
 		}
 		else {
 			newseg->segment = NULL;
@@ -1186,16 +1317,16 @@ static void dbd_st_split_statement (imp_sth, statement)
 			currseg->nextseg = newseg;
 		}
 		currseg = newseg;
-		sectionstart = mypos+1;
+		sectionstart = currpos;
 		imp_sth->numsegs++;
-
-		/* Bail unless it we have a placeholder ready to go */
-		if (0==placeholder_type)
-			continue;
 
 		imp_sth->placeholder_type = placeholder_type;
 
-	} /* end statement parsing */
+		/* If this segment also, ended the string, set ch so we bail out early */
+		if ('\0' == *statement)
+			break;
+
+	} /* end large while(1) loop: statement parsing */
 
 	/* For dollar sign placeholders, ensure that the rules are followed */
 	if (2==imp_sth->placeholder_type) {
@@ -1209,15 +1340,16 @@ static void dbd_st_split_statement (imp_sth, statement)
 				topdollar = currseg->placeholder;
 		}
 
-		for (x=1; x<=topdollar; x++) {
+		/* Make sure every placeholder from 1 to topdollar is used at least once */
+		for (xint=1; xint <= topdollar; xint++) {
 			for (found=0, currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-				if (currseg->placeholder==x) {
+				if (currseg->placeholder==xint) {
 					found=1;
 					break;
 				}
 			}
 			if (0==found)
-				croak("Invalid placeholders: must start at $1 and increment one at a time");
+				croak("Invalid placeholders: must start at $1 and increment one at a time (expected: $%d)\n", xint);
 		}
 		if (dbis->debug >= 5)
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: Set number of placeholders to %d\n", topdollar);
@@ -1227,10 +1359,8 @@ static void dbd_st_split_statement (imp_sth, statement)
 	/* Create sequential placeholders */
 	if (3 != imp_sth->placeholder_type) {
 		currseg = imp_sth->seg;
-		for (x=1; x <= imp_sth->numphs; x++) {
+		for (xint=1; xint <= imp_sth->numphs; xint++) {
 			New(0, newph, 1, ph_t); /* freed in dbd_st_destroy */
-			if (!newph)
-				croak("No memory");
 			newph->nextph = NULL;
 			newph->bind_type = NULL;
 			newph->value = NULL;
@@ -1262,8 +1392,8 @@ static void dbd_st_split_statement (imp_sth, statement)
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: PH: (%d) ID: (%d) SEG: (%s)\n", currseg->placeholder, NULL==currseg->ph ? 0 : currseg->ph, currseg->segment);
 		}
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: Placeholder number, fooname, id:\n");
-		for (x=1,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-			(void)PerlIO_printf(DBILOGFP, "dbdpg: #%d FOONAME: (%s) ID: (%d)\n", x, currph->fooname, currph);
+		for (xlen=1,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,xlen++) {
+			(void)PerlIO_printf(DBILOGFP, "dbdpg: #%d FOONAME: (%s) ID: (%d)\n", xlen, currph->fooname, currph);
 		}
 	}
 
@@ -1299,8 +1429,6 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 #endif
 
 	Renew(imp_sth->prepare_name, 25, char); /* freed in dbd_st_destroy (and above) */
-	if (!imp_sth->prepare_name)
-		croak("No memory");
 
 	/* Name is simply "dbdpg_#" */
 	sprintf(imp_sth->prepare_name,"dbdpg_%d", imp_dbh->prepare_number);
@@ -1342,8 +1470,6 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 	}
 
 	New(0, statement, execsize+1, char); /* freed below */
-	if (!statement)
-		croak("No memory");
 
 	if (oldprepare) {
 		sprintf(statement, "PREPARE %s", imp_sth->prepare_name);
@@ -1750,8 +1876,6 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 			if (NULL == currph->value) {
 				Renew(currph->quoted, 5, char); /* freed in dbd_st_destroy */
-				if (!currph->quoted)
-					croak("No memory");
 				currph->quoted[0] = '\0';
 				strncpy(currph->quoted, "NULL\0", 5);
 				currph->quotedlen = 4;
@@ -1885,8 +2009,6 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 			/* Create the statement */
 			New(0, statement, execsize+1, char); /* freed below */
-			if (!statement)
-				croak("No memory");
 			statement[0] = '\0';
 			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 				strcat(statement, currseg->segment);
@@ -1931,8 +2053,6 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 					execsize += currseg->ph->quotedlen;
 			}
 			New(0, statement, execsize+1, char); /* freed below */
-			if (!statement)
-				croak("No memory");
 			statement[0] = '\0';
 			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 				strcat(statement, currseg->segment);
@@ -2156,7 +2276,7 @@ int dbd_st_rows (sth, imp_sth)
 		 SV *sth;
 		 imp_sth_t *imp_sth;
 {
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_rows\n"); }
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_rows sth=%d\n", sth); }
 	
 	return imp_sth->rows;
 
@@ -2169,7 +2289,7 @@ int dbd_st_finish (sth, imp_sth)
 		 imp_sth_t *imp_sth;
 {
 	
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_finish\n"); }
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_finish sth=%d\n", sth); }
 	
 	if (DBIc_ACTIVE(imp_sth) && imp_sth->result) {
 		PQclear(imp_sth->result);
@@ -2221,8 +2341,7 @@ static int dbd_st_deallocate_statement (sth, imp_sth)
 				if (dbis->debug >= 4)
 					(void)PerlIO_printf(DBILOGFP, "dbdpg: Rolling back to savepoint %s\n", SvPV_nolen(sp));
 				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
-				strncpy(tempsqlstate, imp_dbh->sqlstate, strlen(imp_dbh->sqlstate));
-				tempsqlstate[strlen(imp_dbh->sqlstate)] = '\0';
+				strncpy(tempsqlstate, imp_dbh->sqlstate, strlen(imp_dbh->sqlstate)+1);
 				status = _result(imp_dbh, cmd);
 				Safefree(cmd);
 			}
@@ -2240,8 +2359,6 @@ static int dbd_st_deallocate_statement (sth, imp_sth)
 	}
 
 	New(0, stmt, strlen("DEALLOCATE ") + strlen(imp_sth->prepare_name) + 1, char); /* freed below */
-	if (!stmt)
-		croak("No memory");
 
 	sprintf(stmt, "DEALLOCATE %s", imp_sth->prepare_name);
 
@@ -2258,8 +2375,7 @@ static int dbd_st_deallocate_statement (sth, imp_sth)
 	Safefree(imp_sth->prepare_name);
 	imp_sth->prepare_name = NULL;
 	if (tempsqlstate[0]) {
-		strncpy(imp_dbh->sqlstate, tempsqlstate, strlen(tempsqlstate));
-		imp_dbh->sqlstate[strlen(tempsqlstate)] = '\0';
+		strncpy(imp_dbh->sqlstate, tempsqlstate, strlen(tempsqlstate)+1);
 	}
 
 	return 0;
@@ -2338,7 +2454,7 @@ int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 	STRLEN vl;
 	char *value = SvPV(valuesv,vl);
 
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_STORE (%s) (%s)\n", key, value); }
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_STORE (%s) (%s) sth=%d\n", key, value, sth); }
 	
 	if (17==kl && strEQ(key, "pg_server_prepare")) {
 		imp_sth->server_prepare = strEQ(value,"0") ? FALSE : TRUE;
@@ -2349,8 +2465,6 @@ int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 	else if (15==kl && strEQ(key, "pg_prepare_name")) {
 		Safefree(imp_sth->prepare_name);
 		New(0, imp_sth->prepare_name, vl+1, char); /* freed in dbd_st_destroy (and above) */
-		if (!imp_sth->prepare_name)
-			croak("No memory");
 		Copy(value, imp_sth->prepare_name, vl, char);
 		imp_sth->prepare_name[vl] = '\0';
 	}
@@ -2371,7 +2485,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 	SV *retsv = Nullsv;
 	sql_type_info_t *type_info;
 
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_FETCH (%s)\n", key); }
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_FETCH (%s) sth=%d\n", key, sth); }
 	
 	/* Some can be done before the execute */
 	if (15==kl && strEQ(key, "pg_prepare_name")) {
@@ -2402,6 +2516,15 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 			}
 		}
 		retsv = newRV_noinc((SV*)pvhv);
+		return retsv;
+	}
+	else if (11==kl && strEQ(key, "pg_segments")) {
+		AV *arr = newAV();
+		seg_t *currseg;
+		for (i=0,currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg,i++) {
+			av_push(arr, newSVpv(currseg->segment ? currseg->segment : "NULL",0));
+		}
+		retsv = newRV_noinc((SV*)arr);
 		return retsv;
 	}
 
@@ -2472,8 +2595,6 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		retsv = newRV(sv_2mortal((SV*)av));
 
 		New(0, statement, 100, char); /* freed below */
-		if (!statement)
-			croak("No memory");
 		statement[0] = '\0';
 		while(--i >= 0) {
 			nullable=2;
@@ -2623,7 +2744,7 @@ pg_db_getline (dbh, buffer, length)
 			pg_error(dbh, result, PQerrorMessage(imp_dbh->conn));
 		}
 		else {
-			strncpy(buffer, tempbuf, strlen(tempbuf));
+			strncpy(buffer, tempbuf, strlen(tempbuf)+1);
 			buffer[strlen(tempbuf)] = '\0';
 			PQfreemem(tempbuf);
 		}
@@ -2727,8 +2848,6 @@ pg_db_savepoint (dbh, imp_dbh, savepoint)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_savepoint (%s)\n", savepoint);
 
 	New(0, action, strlen(savepoint) + 11, char); /* freed below */
-	if (!action)
-		croak("No memory");
 
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
@@ -2776,8 +2895,6 @@ int pg_db_rollback_to (dbh, imp_dbh, savepoint)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_rollback_to (%s)\n", savepoint);
 
 	New(0, action, strlen(savepoint) + 13, char);
-	if (!action)
-		croak("No memory!");
 
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
@@ -2820,8 +2937,6 @@ int pg_db_release (dbh, imp_dbh, savepoint)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_release (%s)\n", savepoint);
 
 	New(0, action, strlen(savepoint) + 9, char);
-	if (!action)
-		croak("No memory!");
 
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
