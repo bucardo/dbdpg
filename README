@@ -245,6 +245,15 @@ You may need to add "-lssl" and "-lcrypto" to your LIB variable
 before compiling.
 (thanks to <rob at cabrion dot com>)
 
+If having problems compiling, try running:
+
+env -i command
+
+This trick stops 'command' from inheriting environment variables from 
+the shell process, which more often than not fixes up such weird build 
+errors without having to do anything else in particular.
+(thanks to David Landgren <david at landgren dot net>)
+
 
 * SCO issues:
 
