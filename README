@@ -1,4 +1,15 @@
 
+===================================================
+WARNING!!
+
+THIS IS A TEST VERSION (1.43_2) AND SHOULD BE USED 
+FOR TESTING PURPOSED ONLY. PLEASE USE A STABLE 
+VERSION (no underscore) BY VISITING:
+
+http://search.cpan.org/~dbdpg/
+===================================================
+
+
 DBD::Pg  --  the DBI PostgreSQL interface for Perl
 
 # $Id$
@@ -6,7 +17,7 @@ DBD::Pg  --  the DBI PostgreSQL interface for Perl
 DESCRIPTION:
 ------------
 
-This is version 1.43_1 of DBD-Pg.  The web site for this interface is at:
+This is version 1.43_2 of DBD-Pg.  The web site for this interface is at:
 
 	http://gborg.postgresql.org/project/dbdpg/projdisplay.php
 
@@ -34,12 +45,9 @@ License or the Artistic License, as specified in the Perl README file.
 HOW TO GET THE LATEST VERSION:
 ------------------------------
 
-Use the following URLs to look for new versions of this module: 
+Use the following URL to look for new versions of this module: 
 
-	http://www.perl.com/CPAN/modules/by-module/DBD/
-	http://gborg.postgresql.org/project/dbdpg/projdisplay.php
-
-Note that the former will redirect you to the nearest CPAN site.
+http://search.cpan.org/~dbdpg/
 
 
 IF YOU HAVE PROBLEMS OR COMMENTS:
@@ -54,8 +62,12 @@ perl, PostgreSQL, DBI, and DBD-PG in your bug report.
 BUG REPORTS
 -----------
 
-If you feel certain you have found a bug, you can file a bug report here:
-http://rt.cpan.org/NoAuth/Bugs.html?Dist=DBD-Pg
+If you feel certain you have found a bug, you can file a bug report 
+by visiting:
+http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
+and selecting the "Report a new bug" link. Please check that the bug 
+has not already been reported first.
+
 
 REQUIREMENTS:
 -------------
