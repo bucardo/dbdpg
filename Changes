@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.44
+	- Make quote work properly for time/date types.
+		(CPAN bug #15082) [GSM]
 	- Ensure all lo_ functions begin a transaction as needed 
 		if they are the first action in a script.
 		(CPAN bug # 13810) [GSM]
