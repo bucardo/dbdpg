@@ -3,16 +3,16 @@
 1.44
 	- Ensure all lo_ functions begin a transaction as needed 
 		if they are the first action in a script.
-		(fixes CPAN bug # 13810) [GSM]
+		(CPAN bug # 13810) [GSM]
 	- Fix memory leak in dbdimp.c (k@sawada.cc) [Kenchi Sawada]
 	- Fix memory leak in dbdimp.c (dmitri@karasik.eu.org)
-		(fixes CPAN bug #16054)
+		(CPAN bug #16054)
 	- Move package declaration lines to fix RPM parser problems.
-		(fixes CPAN bug #14509) [GSM]
-	- Add support for dollar quoting. (fixes CPAN bug #13608) [GSM]
+		(CPAN bug #14509) [GSM]
+	- Add support for dollar quoting. (CPAN bug #13608) [GSM]
 	- Added $dbh->{pg_default_port} method [GSM]
 	- Overhaul get_info data, add many more values [GSM]
-	- Overhaul type_info data (fixes CPAN bug #13806) [GSM]
+	- Overhaul type_info data (CPAN bug #13806) [GSM]
 	- Rewrite some of the quoting functions, reduce dependence 
 		on libpq versions. [GSM]
 	- Rewrite and optimize the do() method. Should be much faster 
@@ -22,13 +22,13 @@
 		method if it returns 0 (CPAN bug #14302)
 	- Add support for specifying type in $dbh->quote(), 
 		such as $dbh->quote($var, {pg_type => DBD::Pg::PG_BYTEA}).
-		Also support type => SQL_xx [GSM] (fixes CPAN bug #13942)
+		Also support type => SQL_xx [GSM] (CPAN bug #13942)
 	- Fix pg_notifies() bug (CPAN bug #14232) [door@lcpi.ru] 
 	- Add pg_ping() method [GSM]
 	- Make sure ping returns true, even if in failed transaction state.
 		[thanks to Bill Moseley] [GSM]
 	- Fix COPY-related core dump [GSM]
-	- Fix strncpy bug in quote.c [Jun Kuriyama]
+	- Fix strncpy bug in quote.c [Jun Kuriyama] (CPAN bug #14897)
 	- Fix error in is_high_bit_set(). [Alexey Tourbin] (CPAN bug #13406)
 
 1.43 June 23, 2005
