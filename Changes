@@ -1,6 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.44
+	- Ensure all lo_ functions begin a transaction as needed 
+		if they are the first action in a script.
+		(fixes CPAN bug # 13810) [GSM]
 	- Fix memory leak in dbdimp.c (k@sawada.cc) [Kenchi Sawada]
 	- Fix memory leak in dbdimp.c (dmitri@karasik.eu.org)
 		(fixes CPAN bug #16054)
