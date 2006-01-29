@@ -8,8 +8,9 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 122;
-} else {
+	plan tests => 123;
+}
+else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
 
@@ -780,9 +781,6 @@ ok( $dbh->disconnect(), 'Disconnect from database');
 $attrib = $dbh->{Active};
 is( $attrib, '', 'Database handle attribute "Active" is false after disconnect');
 
-my $answer = 42;
-$SQL = "SELECT $answer";
-
 if ($^O =~ /MSWin/) {
  SKIP: {
 		skip 'Cannot test database handle "InactiveDestroy" on a non-forking system', 4;
@@ -798,22 +796,30 @@ else {
 	else {
 
 		# Test of forking. Hang on to your hats
+
+		my $answer = 42;
+		$SQL = "SELECT $answer FROM dbd_pg_test WHERE id > ? LIMIT 1";
+
 		for my $destroy (0,1) {
 
 			$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 													{RaiseError => 0, PrintError => 0, AutoCommit => 1});
 
-			$dbh->{InactiveDestroy} = $destroy;
+			$sth = $dbh->prepare($SQL);
+			$sth->execute(1);
+			$sth->finish();
 
 			# Desired flow: parent test, child test, child kill, parent test
 
 			if (fork) {
-				my $val = $dbh->selectall_arrayref($SQL)->[0][0];
+				$sth->execute(1);
+				my $val = $sth->fetchall_arrayref()->[0][0];
 				is( $val, $answer, qq{Parent in fork test is working properly ("InactiveDestroy" = $destroy)});
 				# Let the child exit
 				select(undef,undef,undef,0.3);
 			}
 			else { # Child
+				$dbh->{InactiveDestroy} = $destroy;
 				select(undef,undef,undef,0.1); # Age before beauty
 				exit; ## Calls disconnect via DESTROY unless InactiveDestroy set
 			}
@@ -821,6 +827,10 @@ else {
 			if ($destroy) {
 				# The database handle should still be active
 				ok ( $dbh->ping(), qq{Ping works after the child has exited ("InactiveDestroy" = $destroy)});
+				## The statement handle should still be usable
+				$sth->execute(1);
+				my $val = $sth->fetchall_arrayref()->[0][0];
+				is ($val, $answer, qq{Statement handle works after forking});
 			}
 			else {
 				# The database handle should be dead
