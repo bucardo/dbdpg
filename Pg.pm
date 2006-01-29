@@ -1816,6 +1816,10 @@ Implemented by DBI, no driver-specific impact.
 
   $sth = $dbh->prepare($statement, \%attr);
 
+WARNING: DBD::Pg now uses true prepared statements by sending them 
+to the backend to be prepared by the PostgreSQL server. Statements 
+that were legal before may no longer work. See below for details.
+
 Prepares a statement for later execution. PostgreSQL supports prepared
 statements, which enables DBD::Pg to only send the query once, and
 simply send the arguments for every subsequent call to execute().
