@@ -7,7 +7,7 @@ use 5.006001;
 use DBI 1.38;
 use DBI::DBD;
 
-my $VERSION = "1.43_1";
+my $VERSION = "1.43_2";
 
 my $lib;
 BEGIN {
@@ -22,6 +22,10 @@ BEGIN {
 }
 
 use lib $lib;
+if ($VERSION =~ /_/) {
+	print "WARNING! This is a test version ($VERSION) and should not be used in production!\n";
+}
+
 print "Configuring DBD::Pg $VERSION\n";
 print "Remember to actually read the README file!\n";
 
