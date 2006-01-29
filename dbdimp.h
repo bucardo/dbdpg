@@ -106,6 +106,7 @@ void pg_db_pg_server_untrace (SV *dbh);
 int pg_db_savepoint (SV *dbh, imp_dbh_t *imp_dbh, char * savepoint);
 int pg_db_rollback_to (SV *dbh, imp_dbh_t *imp_dbh, char * savepoint);
 int pg_db_release (SV *dbh, imp_dbh_t *imp_dbh, char * savepoint);
+int pg_db_start_txn (SV *dbh, imp_dbh_t *imp_dbh);
 unsigned int pg_db_lo_creat (SV *dbh, int mode);
 int pg_db_lo_open (SV *dbh, unsigned int lobjId, int mode);
 int pg_db_lo_close (SV *dbh, int fd);

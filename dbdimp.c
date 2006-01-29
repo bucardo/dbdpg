@@ -2963,28 +2963,41 @@ int pg_db_release (dbh, imp_dbh, savepoint)
 	return 1;
 }
 
-
-/* ================================================================== */
-/* Large object functions */
-
-unsigned int pg_db_lo_creat (dbh, mode)
-		SV *dbh;
-		int mode;
+/* Used to ensure we are in a txn, e.g. the lo_ functions below */
+int pg_db_start_txn (dbh, imp_dbh)
+		 SV *dbh;
+		 imp_dbh_t *imp_dbh;
 {
 	int status = -1;
-	D_imp_dbh(dbh);
-
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_creat (%d)\n", mode); }
-
 	/* If not autocommit, start a new transaction */
 	if (!imp_dbh->done_begin && DBDPG_FALSE == DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
 		status = _result(imp_dbh, "begin");
 		if (PGRES_COMMAND_OK != status) {
 			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
-			return (unsigned)-2;
+			return 0;
 		}
 		imp_dbh->done_begin = TRUE;
 	}
+	return 1;
+}
+
+
+/* ================================================================== */
+/* Large object functions */
+
+
+unsigned int pg_db_lo_creat (dbh, mode)
+		SV *dbh;
+		int mode;
+{
+	D_imp_dbh(dbh);
+
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_creat (%d)\n", mode); }
+
+	if (!pg_db_start_txn(dbh,imp_dbh)) {
+		return (unsigned)-1;
+	}
+
 	return lo_creat(imp_dbh->conn, mode);
 }
 
@@ -2995,6 +3008,9 @@ int pg_db_lo_open (dbh, lobjId, mode)
 {
 	D_imp_dbh(dbh);
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_open (%d) (%d)\n", lobjId, mode); }
+	if (!pg_db_start_txn(dbh,imp_dbh)) {
+		return (unsigned)-1;
+	}
 	return lo_open(imp_dbh->conn, lobjId, mode);
 }
 
@@ -3018,7 +3034,6 @@ int pg_db_lo_read (dbh, fd, buf, len)
 	return lo_read(imp_dbh->conn, fd, buf, len);
 }
 
-
 int pg_db_lo_write (dbh, fd, buf, len)
 		 SV *dbh;
 		 int fd;
@@ -3029,7 +3044,6 @@ int pg_db_lo_write (dbh, fd, buf, len)
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_write (%d) (%d)\n", fd, len); }
 	return lo_write(imp_dbh->conn, fd, buf, len);
 }
-
 
 int pg_db_lo_lseek (dbh, fd, offset, whence)
 		 SV *dbh;
@@ -3042,7 +3056,6 @@ int pg_db_lo_lseek (dbh, fd, offset, whence)
 	return lo_lseek(imp_dbh->conn, fd, offset, whence);
 }
 
-
 int pg_db_lo_tell (dbh, fd)
 		SV *dbh;
 		int fd;
@@ -3052,16 +3065,17 @@ int pg_db_lo_tell (dbh, fd)
 	return lo_tell(imp_dbh->conn, fd);
 }
 
-
 int pg_db_lo_unlink (dbh, lobjId)
 		 SV *dbh;
 		 unsigned int lobjId;
 {
 	D_imp_dbh(dbh);
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_unlink (%d)\n", lobjId); }
+	if (!pg_db_start_txn(dbh,imp_dbh)) {
+		return (unsigned)-1;
+	}
 	return lo_unlink(imp_dbh->conn, lobjId);
 }
-
 
 unsigned int pg_db_lo_import (dbh, filename)
 		 SV *dbh;
@@ -3069,9 +3083,11 @@ unsigned int pg_db_lo_import (dbh, filename)
 {
 	D_imp_dbh(dbh);
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_import (%s)\n", filename); }
+	if (!pg_db_start_txn(dbh,imp_dbh)) {
+		return (unsigned)-1;
+	}
 	return lo_import(imp_dbh->conn, filename);
 }
-
 
 int pg_db_lo_export (dbh, lobjId, filename)
 		 SV *dbh;
@@ -3079,7 +3095,10 @@ int pg_db_lo_export (dbh, lobjId, filename)
 		 char *filename;
 {
 	D_imp_dbh(dbh);
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_export (%d) (%s)\n", lobjId, filename); }
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_export id:(%d) file:(%s)\n", lobjId, filename); }
+	if (!pg_db_start_txn(dbh,imp_dbh)) {
+		return (unsigned)-1;
+	}
 	return lo_export(imp_dbh->conn, lobjId, filename);
 }
 
