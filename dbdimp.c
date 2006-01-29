@@ -2398,6 +2398,15 @@ void dbd_st_destroy (sth, imp_sth)
 	if (NULL == imp_sth->seg) /* Already been destroyed! */
 		croak("dbd_st_destroy called twice!");
 
+	/* If the InactiveDestroy flag has been set, we go no further */
+	if (DBIc_IADESTROY(imp_dbh)) {
+		if (dbis->debug >= 4) {
+			(void)PerlIO_printf(DBILOGFP, "dbdpg: skipping sth destroy due to InactiveDestroy\n");
+		}
+		DBIc_IMPSET_off(imp_sth); /* let DBI know we've done it */
+		return;
+	}
+
 	/* Deallocate only if we named this statement ourselves and we still have a good connection */
 	/* On rare occasions, dbd_db_destroy is called first and we can no longer rely on imp_dbh */
 	if (imp_sth->prepared_by_us && DBIc_ACTIVE(imp_dbh)) {
@@ -2405,7 +2414,7 @@ void dbd_st_destroy (sth, imp_sth)
 			if (dbis->debug >= 4)
 				(void)PerlIO_printf(DBILOGFP, "dbdpg: Could not deallocate\n");
 		}
-	}	
+	}
 
 	Safefree(imp_sth->prepare_name);
 	Safefree(imp_sth->type_info);
