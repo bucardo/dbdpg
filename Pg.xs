@@ -349,8 +349,7 @@ lo_import(dbh, filename)
 	char * filename
 	CODE:
 		unsigned int ret = pg_db_lo_import(dbh, filename);
-		ST(0) = (ret!=0) ? sv_2mortal(newSViv((int)ret)) : &sv_undef;
-
+		ST(0) = (-1 != ret) ? sv_2mortal(newSViv((int)ret)) : &sv_undef;
 
 void
 lo_export(dbh, lobjId, filename)
