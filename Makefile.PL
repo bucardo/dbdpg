@@ -57,6 +57,13 @@ my $os = $^O;
 print "OS: $os\n";
 print "PostgreSQL version: $serverversion (default port: $defaultport)\n";
 
+if ($serverversion < 1) {
+	die "Could not determine the PostgreSQL library version.\n".
+		"Please ensure that a valid path is given to the 'pg_config' command,\n".
+			"either manually or by setting the environment variables\n".
+				"POSTGRES_DATA, PSOTGRES_INCLUDE, and POSTGRES_LIB\n";
+}
+
 if ($os =~ /Win32/) {
 	for ($POSTGRES_INCLUDE, $POSTGRES_LIB) {
 		$_ = qq{"$_"} if index($_,'"');
@@ -68,6 +75,7 @@ if ($serverversion < 70200) {
 	print "\n****************\n";
 	print "WARNING! DBD::Pg no longer supports versions less than 7.2.\n";
 	print "It is highly recommended that you upgrade PostgreSQL to a newer version.\n";
+	print "If you continue, DBD::Pg may not work.\n";
 	print "****************\n\n";
 }
 elsif ($serverversion < 70400) {
