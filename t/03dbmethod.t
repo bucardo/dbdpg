@@ -17,7 +17,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 158;
+	plan tests => 159;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -750,6 +750,12 @@ for (keys %quotetests) {
 	$result = $dbh->quote($_);
 	is( $result, $quotetests{$_}, qq{DB handle method "quote" works with a value of "$_"});
 }
+
+## Test timestamp - should quote as a string
+my $tstype = 93;
+my $testtime = "2006-01-28 11:12:13";
+is( $dbh->quote( $testtime, $tstype ), qq{'$testtime'}, qq{DB handle method "quote" work on timestamp});
+
 my $foo;
 {
 	no warnings; ## Perl does not like undef args
