@@ -15,8 +15,8 @@
 static int errno;
 #endif
 
-#define DBDPG_TRUE 1
-#define DBDPG_FALSE 0
+#define DBDPG_TRUE (bool)1
+#define DBDPG_FALSE (bool)0
 
 #include "libpq-fe.h"
 
