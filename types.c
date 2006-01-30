@@ -287,9 +287,9 @@ print OUT
 ## Map all types into a sql_type_info structure
 
 #Each must have a "name" e.g. declared as column type name
-#whether we quote it or not (DNDPG_TRUE)
+#whether we quote it or not (DBDPG_TRUE)
 #the quoting function to use
-#the dequoting functio to use (used?)
+#the dequoting function to use
 #the closest SQL_ match
 #whether this is the "master" for sql matches
 
