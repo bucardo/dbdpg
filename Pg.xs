@@ -79,7 +79,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 		sql_type_info_t *type_info;
 		char *to_quote;
 		char *quoted;
-		STRLEN len;
+		STRLEN len=0;
 		STRLEN retlen=0;
 		SV **svp;
 			
@@ -348,7 +348,7 @@ lo_import(dbh, filename)
 	SV * dbh
 	char * filename
 	CODE:
-		unsigned int ret = pg_db_lo_import(dbh, filename);
+		int ret = pg_db_lo_import(dbh, filename);
 		ST(0) = (-1 != ret) ? sv_2mortal(newSViv((int)ret)) : &sv_undef;
 
 void
