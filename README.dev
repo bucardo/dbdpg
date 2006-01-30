@@ -176,7 +176,10 @@ other compilers cold. One way to catch this early is to add some warning flags t
 This can be done by extending the $comp_opts string inside of the Makefile.PL file. 
 There are many warnings that can be enabled (see the man page for gcc for the list). 
 Some of these warnings trigger for things outside of our control, such as the code 
-for DBI or Perl itself. Within each section, the order is the same as found in man gcc.
+for DBI or Perl itself. You can define the environment variable DBDPG_GCCDEBUG to turn 
+many of these options on automatically.
+
+Within each section, the order is the same as found in man gcc.
 
 ## These are warnings that should only generate errors that we can fix:
 $comp_opts .= " -Wchar-subscripts -Wcomment";
@@ -212,7 +215,7 @@ $comp_opts .= " -Wredundant-decls";
 ## These options are probably not very useful:
 $comp_opts .= " -Wtraditional"; ## Lots and lots of junk
 $comp_opts .= " -Wold-style-definition"; ## We use lots of these
-$comp_opts .= " -Wunreachable-code"; ## Lots due to our mult-version ifdefs
+$comp_opts .= " -Wunreachable-code"; ## Lots due to our multi-version ifdefs
 
 Please feel free to add to and clarify the above lists.
 
@@ -289,8 +292,8 @@ In addition to different versions of Postgres, it's a good idea to test a few ve
 DBI: this has caught problems in the past. You'll basically need to install the different 
 versions of DBI into different directories, then adjust PERL5LIB with aliases:
 
-alias dbi138='export PERL5LIB=/home/greg/perl/dbi138/lib/perl5/5.8.5/i686-linux-ld'
-alias dbi139='export PERL5LIB=/home/greg/perl/dbi139/lib/perl5/5.8.5/i686-linux-ld'
+alias dbi138='export PERL5LIB=/home/greg/perl/dbi138/lib/perl5/site_perl/5.8.7/i686-linux'
+alias dbi139='export PERL5LIB=/home/greg/perl/dbi139/lib/perl5/site_perl/5.8.7/i686-linux'
 
 
 * Using splint
@@ -307,16 +310,20 @@ file that should work:
 splint \
 +unixlib \
 +single-include \
+-I$DBIDIR \
+-I$POSTGRES_INCLUDE \
+-I$PERLDIR \
 -I/source/bin/DBI-1.48 \
 -I/source/pg801/include \
 -I/usr/lib/perl5/5.8.5/i686-linux-ld/CORE \
 Pg.c
 
-You will need to replace the directories above with the correct ones for your local DBI, PG, 
-and Perl directories. Splint can be tempermental, so you may need to add more than that, and 
-tweak a few things. Once you do get it running, it is very thorough and extremely verbose. 
-Many of the items will be from DBI, so hunt carefully. You can start filtering out items you 
-do not need to check. Here are a few common ones:
+You will need to define the environment variables and put the correct path to the DBI, 
+Postgres, and Perl directories (the Perl one should end in "CORE"). Splint can be 
+tempermental, so you may need to add more than that, and tweak a few things. It may 
+take a few runs to get it to go without errors. Once you do get it running, it is very 
+thorough and extremely verbose. Many of the items will be from DBI, so hunt carefully. 
+You can start filtering out items you do not need to check. Here are a few common ones:
 
 -nullpass \
 -predboolint \
@@ -354,7 +361,7 @@ It is helpful to have a standard file (e.g. ping.test.tmp) which contains some c
 information and allows to easily stick in a piece of code for testing. It should run 
 "make" to make sure everything is up to date. Here's the top of one such file:
 
-#!perl
+#!perl -w
 
 BEGIN {
 	my $out = `make 2>&1`;
@@ -396,6 +403,8 @@ tutorial. If "core" is the name of the core file, just use "gdb perl core", then
 causing the problem.
 
 * For really low-level debugging, you can use pg_server_trace() function.
+
+* The perl debugger can also be helpful (perl -d ping.test.tmp).
 
 * Don't forget about the PostgreSQL server logs either, when investigating matters.
 
@@ -509,12 +518,26 @@ other sections referenced herein (indicated with **)
 
 * Update the versions (see ** Version Numbers) in README, Pg.pm (2 places!), Makefile.PL, and Changes
 
+* If a beta version, please put a large warning at the top of the README file. Here is a sample:
+
+===================================================
+WARNING!!
+
+THIS IS A TEST VERSION (1.43_2) AND SHOULD BE USED 
+FOR TESTING PURPOSED ONLY. PLEASE USE A STABLE 
+VERSION (no underscore) BY VISITING:
+
+http://search.cpan.org/~dbdpg/
+===================================================
+
+* If not a beta version, remove the warning from the README.
+
 * Update the Changes file
 
 The best way to do this (other than doing it as you go along) is to check the cvs logs. 
-For example, to grab all changes made since revision 1.41 and save it to a file:
+For example, to grab all changes made since revision 1.43 and save it to a file:
 
-cvs log -rRel-1_41: * > all_logs.tmp
+cvs log -rRel-1_43: * > all_logs.tmp
 
 * Update the documentation
 
@@ -532,7 +555,7 @@ that should be part of the distribution, add them to the MANIFEST file, commit y
 and then re-run. Note that files ending in ".tmp" are currently skipped, so this is a good 
 extension for any miscellaneous files you have that use often (e.g. libpq-fe.h.tmp)
 
-* Run "make skipcheck". This will show you a list of files that will not be packed into the '
+* Run "make skipcheck". This will show you a list of files that will not be packed into the 
 release tarball. Make sure there is nothing important here.
 
 * Run "make disttest". This unpacks the tarball, then runs "make" and "make test" on it.
@@ -614,8 +637,8 @@ and adding it in. If not, bug them.
 
 http://www.postgresql.org/community/weeklynews/
 
-
-* If a non-beta, clean out any CPAN bugs
+* If a non-beta, clean out any CPAN bugs, including going back and marking resolved 
+bugs with this new version, once it appears in the choices.
 
 * Update this file based on your experiences!!
 
