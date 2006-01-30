@@ -17,9 +17,6 @@
 #include <math.h>
 
 
-#define DBDPG_TRUE 1
-#define DBDPG_FALSE 0
-
 /* Force preprocessors to use this variable. Default to something valid yet noticeable */
 #ifndef PGLIBVERSION
 #define PGLIBVERSION 80009
@@ -116,6 +113,7 @@ static int dbd_st_prepare_statement (SV *sth, imp_sth_t *imp_sth);
 static int is_high_bit_set(char *val);
 static int dbd_st_deallocate_statement(SV *sth, imp_sth_t *imp_sth);
 static PGTransactionStatusType dbd_db_txn_status (imp_dbh_t *imp_dbh);
+static int pg_db_start_txn (SV *dbh, imp_dbh_t *imp_dbh);
 
 DBISTATE_DECLARE;
 
@@ -237,7 +235,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 {
 	
 	char *conn_str, *dest;
-	bool inquote = FALSE;
+	bool inquote = DBDPG_FALSE;
 	STRLEN connect_string_size;
 	int status;
 
@@ -330,14 +328,14 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 #endif
 	if (imp_dbh->pg_server_version <= 0) {
 		PGresult *result;
-		int	status, cnt, vmaj, vmin, vrev;
+		int	cnt, vmaj, vmin, vrev;
 	
 		result = PQexec(imp_dbh->conn, "SELECT version(), 'DBD::Pg'");
 		if (result)
 			status = PQresultStatus(result);
 		else
 			status = -1;
-	
+
 		if (PGRES_TUPLES_OK != status || (0==PQntuples(result))) {
 			if (dbis->debug >= 4)
 				(void)PerlIO_printf(DBILOGFP, "dbdpg: Could not get version from the server, status was %d\n", status);
@@ -355,12 +353,16 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 
 	Renew(imp_dbh->sqlstate, 6, char); /* freed in dbd_db_destroy (and above) */
 	strncpy(imp_dbh->sqlstate, "S1000\0", 6);
-	imp_dbh->done_begin = FALSE; /* We are not inside a transaction */
-	imp_dbh->pg_bool_tf = FALSE;
+	imp_dbh->done_begin = DBDPG_FALSE; /* We are not inside a transaction */
+	imp_dbh->pg_bool_tf = DBDPG_FALSE;
 	imp_dbh->pg_enable_utf8 = 0;
 	imp_dbh->prepare_number = 1;
-	imp_dbh->prepare_now = FALSE;
+	imp_dbh->prepare_now = DBDPG_FALSE;
 	imp_dbh->pg_errorlevel = 1; /* Matches PG default */
+	if (imp_dbh->savepoints) {
+		av_undef(imp_dbh->savepoints);
+		sv_free((SV *)imp_dbh->savepoints);
+	}
 	imp_dbh->savepoints = newAV();
 	imp_dbh->copystate = 0;
 
@@ -476,7 +478,7 @@ static int dbd_db_rollback_commit (dbh, imp_dbh, action)
 		if (imp_dbh->done_begin) {
 			/* We think we ARE in a transaction but we really are not */
 			if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: Warning: invalid done_begin turned off\n"); }
-			imp_dbh->done_begin = FALSE;
+			imp_dbh->done_begin = DBDPG_FALSE;
 		}
 	}
 	else if (PQTRANS_ACTIVE == tstatus) { /* Still active - probably in a COPY */
@@ -486,7 +488,7 @@ static int dbd_db_rollback_commit (dbh, imp_dbh, action)
 		if (!imp_dbh->done_begin) {
 			/* We think we are NOT in a transaction but we really are */
 			if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: Warning: invalid done_begin turned on\n"); }
-			imp_dbh->done_begin = TRUE;
+			imp_dbh->done_begin = DBDPG_TRUE;
 		}
 	}
 	else { /* Something is wrong: transaction status unknown */
@@ -510,8 +512,8 @@ static int dbd_db_rollback_commit (dbh, imp_dbh, action)
 		return 0;
 	}
 
-	av_clear(imp_dbh->savepoints);
-	imp_dbh->done_begin = FALSE;
+	av_undef(imp_dbh->savepoints);
+	imp_dbh->done_begin = DBDPG_FALSE;
 
 	/* If we just did a rollback or a commit, we can no longer be in a PGRES_COPY state */
 	imp_dbh->copystate=0;
@@ -614,11 +616,11 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 		return 1;
 	}
 	else if (10==kl && strEQ(key, "pg_bool_tf")) {
-		imp_dbh->pg_bool_tf = newval!=0 ? TRUE : FALSE;
+		imp_dbh->pg_bool_tf = newval!=0 ? DBDPG_TRUE : DBDPG_FALSE;
 	}
 #ifdef is_utf8_string
 	else if (14==kl && strEQ(key, "pg_enable_utf8")) {
-		imp_dbh->pg_enable_utf8 = newval!=0 ? TRUE : FALSE;
+		imp_dbh->pg_enable_utf8 = newval!=0 ? DBDPG_TRUE : DBDPG_FALSE;
 	}
 #endif
 	else if (13==kl && strEQ(key, "pg_errorlevel")) {
@@ -642,7 +644,7 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 	}
 	else if (14==kl && strEQ(key, "pg_prepare_now")) {
 		if (imp_dbh->pg_protocol >= 3) {
-			imp_dbh->prepare_now = newval ? TRUE : FALSE;
+			imp_dbh->prepare_now = newval ? DBDPG_TRUE : DBDPG_FALSE;
 		}
 	}
 	return 0;
@@ -810,17 +812,17 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_prepare (%s)\n", statement); }
 
 	/* Set default values for this statement handle */
-	imp_sth->is_dml = FALSE; /* Not preparable DML until proved otherwise */
-	imp_sth->prepared_by_us = FALSE; /* Set to 1 when actually done preparing */
-	imp_sth->has_binary = FALSE; /* Are any of the params binary? */
-	imp_sth->onetime = FALSE; /* Allow internal shortcut */
+	imp_sth->is_dml = DBDPG_FALSE; /* Not preparable DML until proved otherwise */
+	imp_sth->prepared_by_us = DBDPG_FALSE; /* Set to 1 when actually done preparing */
+	imp_sth->has_binary = DBDPG_FALSE; /* Are any of the params binary? */
+	imp_sth->onetime = DBDPG_FALSE; /* Allow internal shortcut */
 	imp_sth->result	= NULL;
 	imp_sth->cur_tuple = 0;
 	imp_sth->placeholder_type = 0;
 	imp_sth->rows = -1;
 	imp_sth->totalsize = 0;
 	imp_sth->numsegs = imp_sth->numphs = imp_sth->numbound = 0;
-	imp_sth->direct = FALSE;
+	imp_sth->direct = DBDPG_FALSE;
 	imp_sth->prepare_name = NULL;
 	imp_sth->seg = NULL;
 	imp_sth->ph = NULL;
@@ -840,10 +842,10 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 			}
 		}
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_direct", 9, 0)) != NULL)
-			imp_sth->direct = 0==SvIV(*svp) ? FALSE : TRUE;
-		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_prepare_now", 14, 0)) != NULL) {
+			imp_sth->direct = 0==SvIV(*svp) ? DBDPG_FALSE : DBDPG_TRUE;
+		else if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_prepare_now", 14, 0)) != NULL) {
 			if (imp_dbh->pg_protocol >= 3) {
-				imp_sth->prepare_now = 0==SvIV(*svp) ? FALSE : TRUE;
+				imp_sth->prepare_now = 0==SvIV(*svp) ? DBDPG_FALSE : DBDPG_TRUE;
 			}
 		}
 	}
@@ -877,7 +879,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 				) {
 			if (!imp_sth->direct)
 				croak ("Please use DBI functions for transaction handling");
-			imp_sth->is_dml = TRUE; /* Close enough for our purposes */
+			imp_sth->is_dml = DBDPG_TRUE; /* Close enough for our purposes */
 		}
 		/* Note whether this is preparable DML */
 		if (0==strcasecmp(imp_sth->firstword, "SELECT") ||
@@ -885,7 +887,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 				0==strcasecmp(imp_sth->firstword, "UPDATE") ||
 				0==strcasecmp(imp_sth->firstword, "DELETE")
 				) {
-			imp_sth->is_dml = TRUE;
+			imp_sth->is_dml = DBDPG_TRUE;
 		}
 	}
 	statement -= mypos; /* Rewind statement */
@@ -952,11 +954,11 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 
 	int topdollar; /* Used to enforce sequential $1 arguments */
 
+	int placeholder_type; /* Which type we are in: one of 0,1,2,3 (none,?,$,:) */
+
  	char ch; /* The current character being checked */
 
 	char quote; /* Current quote or comment character: used only in those two blocks */
-
-	char placeholder_type; /* Which type we are in: one of 0,1,2,3 (none,?,$,:) */
 
 	bool found; /* Simple boolean */
 
@@ -1114,13 +1116,13 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 					break;
 				}
 				if ('$' == ch) {
-					found = 1;
+					found = DBDPG_TRUE;
 					break;
 				}
 			} /* end first scan */
 
 			/* Not found? Move to the next letter after the dollarsign and move on */
-			if (0==found) {
+			if (!found) {
 				statement -= sectionsize;
 				if (!ch) {
 					ch = 1; /* So the top loop still works */
@@ -1146,13 +1148,13 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 				if (inside_dollar) {
 					/* Special case of $$ */
 					if (dollarsize < 1) {
-						found = 1;
+						found = DBDPG_TRUE;
 						break;
 					}
 					if (ch == dollarstring[xlen++]) {
 						/* Got a total match? */
 						if (xlen >= dollarsize) {
-							found = 1;
+							found = DBDPG_TRUE;
 							statement++;
 							sectionsize--;
 							break;
@@ -1165,7 +1167,7 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 					}
 				}
 				if ('$' == ch) {
-					inside_dollar=1;
+					inside_dollar = DBDPG_TRUE;
 				}
 			}
 
@@ -1176,7 +1178,8 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 				sectionsize--;
 			}
 
-			Safefree(dollarstring);
+			if (dollarstring)
+				Safefree(dollarstring);
 
 			/* Advance our cursor to the current position */
 			currpos += sectionsize+1;
@@ -1184,7 +1187,7 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 			statement--; /* Rewind statement by one */
 
 			/* If not found, might be end of string, so set ch */
-			if (0==found) {
+			if (!found) {
 				ch = 1;
 			}
 
@@ -1265,9 +1268,9 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 		else if (3==placeholder_type) {
 			sectionsize = currpos-sectionstop;
 			/* Have we seen this placeholder yet? */
-			for (xlen=1,thisph=imp_sth->ph; NULL != thisph; thisph=thisph->nextph,xlen++) {
+			for (xint=1,thisph=imp_sth->ph; NULL != thisph; thisph=thisph->nextph,xint++) {
 				if (0==strncmp(thisph->fooname, statement-sectionsize, sectionsize)) {
-					newseg->placeholder = xlen;
+					newseg->placeholder = xint;
 					newseg->ph = thisph;
 					break;
 				}
@@ -1281,8 +1284,8 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 				newph->bind_type = NULL;
 				newph->value = NULL;
 				newph->quoted = NULL;
-				newph->referenced = FALSE;
-				newph->defaultval = TRUE;
+				newph->referenced = DBDPG_FALSE;
+				newph->defaultval = DBDPG_TRUE;
 				New(0, newph->fooname, sectionsize+1, char); /* freed in dbd_st_destroy */
 				Copy(statement-sectionsize, newph->fooname, sectionsize, char);
 				newph->fooname[sectionsize] = '\0';
@@ -1344,11 +1347,11 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 		for (xint=1; xint <= topdollar; xint++) {
 			for (found=0, currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 				if (currseg->placeholder==xint) {
-					found=1;
+					found = DBDPG_TRUE;
 					break;
 				}
 			}
-			if (0==found)
+			if (!found)
 				croak("Invalid placeholders: must start at $1 and increment one at a time (expected: $%d)\n", xint);
 		}
 		if (dbis->debug >= 5)
@@ -1365,13 +1368,15 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 			newph->bind_type = NULL;
 			newph->value = NULL;
 			newph->quoted = NULL;
-			newph->referenced = FALSE;
-			newph->defaultval = TRUE;
+			newph->referenced = DBDPG_FALSE;
+			newph->defaultval = DBDPG_TRUE;
 			newph->fooname = NULL;
 			/* Let the correct segment point to it */
 			while (!currseg->placeholder)
 				currseg = currseg->nextseg;
-			currseg->ph = newph;
+			if (!currseg)
+				croak("Invalid segment");
+ 			currseg->ph = newph;
 			currseg = currseg->nextseg;
 			if (NULL==currph) {
 				imp_sth->ph = newph;
@@ -1416,7 +1421,7 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 	PGresult *result;
 	int status = -1;
 	seg_t *currseg;
-	bool oldprepare = TRUE;
+	bool oldprepare = DBDPG_TRUE;
 	int params = 0;
 	Oid *paramTypes = NULL;
 	ph_t *currph;
@@ -1425,7 +1430,7 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_prepare_statement\n");
 
 #if PGLIBVERSION >= 80000
-	oldprepare = FALSE;
+	oldprepare = DBDPG_FALSE;
 #endif
 
 	Renew(imp_sth->prepare_name, 25, char); /* freed in dbd_st_destroy (and above) */
@@ -1464,7 +1469,7 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 				/* The parameter type, only once per number please */
 				if (!currseg->ph->referenced)
 					execsize += strlen(currseg->ph->bind_type->type_name);
-				currseg->ph->referenced = TRUE;
+				currseg->ph->referenced = DBDPG_TRUE;
 			}
 		}
 	}
@@ -1481,7 +1486,7 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 						strcat(statement, ",");
 					strcat(statement, currseg->ph->bind_type->type_name);
 					x=1;
-					currseg->ph->referenced = FALSE;
+					currseg->ph->referenced = DBDPG_FALSE;
 				}
 			}
 			strcat(statement, ")");
@@ -1512,7 +1517,7 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 			params = imp_sth->numphs;
 			Newz(0, paramTypes, (unsigned)imp_sth->numphs, Oid);
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
-				paramTypes[x++] = currph->defaultval ? 0 : currph->bind_type->type_id;
+				paramTypes[x++] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
 			}
 		}
 		result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, paramTypes);
@@ -1529,7 +1534,7 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 		return -2;
 	}
 
-	imp_sth->prepared_by_us = TRUE; /* Done here so deallocate is not called spuriously */
+	imp_sth->prepared_by_us = DBDPG_TRUE; /* Done here so deallocate is not called spuriously */
 	imp_dbh->prepare_number++; /* We do this at the end so we don't increment if we fail above */
 
 	return 0;
@@ -1555,7 +1560,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	ph_t *currph = NULL;
 	int x, phnum;
 	SV **svp;
-	bool reprepare = FALSE;
+	bool reprepare = DBDPG_FALSE;
 	int pg_type = 0;
 	char *value_string = NULL;
 	maxlen = 0; /* not used */
@@ -1674,13 +1679,13 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	}
 
 	if (pg_type || sql_type) {
-		currph->defaultval = FALSE;
+		currph->defaultval = DBDPG_FALSE;
 		/* Possible re-prepare, depending on whether the type name also changes */
 		if (imp_sth->prepared_by_us && NULL != imp_sth->prepare_name)
-			reprepare = TRUE;
+			reprepare = DBDPG_TRUE;
 		/* Mark this statement as having binary if the type is bytea */
 		if (BYTEAOID==currph->bind_type->type_id)
-			imp_sth->has_binary = TRUE;
+			imp_sth->has_binary = DBDPG_TRUE;
 	}
 
 	/* convert to a string ASAP */
@@ -1753,7 +1758,7 @@ int pg_quickexec (dbh, sql)
 			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 			return -2;
 		}
-		imp_dbh->done_begin = TRUE;
+		imp_dbh->done_begin = DBDPG_TRUE;
 	}
 
 	result = PQexec(imp_dbh->conn, sql);
@@ -1854,7 +1859,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			pg_error(sth, status, PQerrorMessage(imp_dbh->conn));
 			return -2;
 		}
-		imp_dbh->done_begin = TRUE;
+		imp_dbh->done_begin = DBDPG_TRUE;
 	}
 
 	/* clear old result (if any) */
@@ -2020,7 +2025,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			/* Populate paramTypes */
 			Newz(0, paramTypes, (unsigned)imp_sth->numphs, Oid);
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
-				paramTypes[x++] = currph->defaultval ? 0 : currph->bind_type->type_id;
+				paramTypes[x++] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
 			}
 		
 			if (dbis->debug >= 10) {
@@ -2256,6 +2261,7 @@ AV * dbd_st_fetch (sth, imp_sth)
 						if (is_high_bit_set(value) && is_utf8_string((unsigned char*)value, value_len)) {
 							SvUTF8_on(sv);
 						}
+						break;
 					default:
 						break;
 				}
@@ -2347,7 +2353,7 @@ static int dbd_st_deallocate_statement (sth, imp_sth)
 			}
 			else {
 				status = _result(imp_dbh, "ROLLBACK");
-				imp_dbh->done_begin = FALSE;
+				imp_dbh->done_begin = DBDPG_FALSE;
 			}
 		}
 		if (PGRES_COMMAND_OK != status) {
@@ -2466,10 +2472,10 @@ int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_STORE (%s) (%s) sth=%d\n", key, value, sth); }
 	
 	if (17==kl && strEQ(key, "pg_server_prepare")) {
-		imp_sth->server_prepare = strEQ(value,"0") ? FALSE : TRUE;
+		imp_sth->server_prepare = strEQ(value,"0") ? DBDPG_FALSE : DBDPG_TRUE;
 	}
 	else if (14==kl && strEQ(key, "pg_prepare_now")) {
-		imp_sth->prepare_now = strEQ(value,"0") ? FALSE : TRUE;
+		imp_sth->prepare_now = strEQ(value,"0") ? DBDPG_FALSE : DBDPG_TRUE;
 	}
 	else if (15==kl && strEQ(key, "pg_prepare_name")) {
 		Safefree(imp_sth->prepare_name);
@@ -2874,7 +2880,7 @@ pg_db_savepoint (dbh, imp_dbh, savepoint)
 			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 			return -2;
 		}
-		imp_dbh->done_begin = TRUE;
+		imp_dbh->done_begin = DBDPG_TRUE;
 	}
 
 	status = _result(imp_dbh, action);
@@ -2973,7 +2979,7 @@ int pg_db_release (dbh, imp_dbh, savepoint)
 }
 
 /* Used to ensure we are in a txn, e.g. the lo_ functions below */
-int pg_db_start_txn (dbh, imp_dbh)
+static int pg_db_start_txn (dbh, imp_dbh)
 		 SV *dbh;
 		 imp_dbh_t *imp_dbh;
 {
@@ -2985,7 +2991,7 @@ int pg_db_start_txn (dbh, imp_dbh)
 			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 			return 0;
 		}
-		imp_dbh->done_begin = TRUE;
+		imp_dbh->done_begin = DBDPG_TRUE;
 	}
 	return 1;
 }
@@ -3124,7 +3130,7 @@ int dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
 {
 	D_imp_dbh_from_sth;
 	int ret, lobj_fd, nbytes;
-	int nread;
+	STRLEN nread;
 	SV *bufsv;
 	char *tmp;
 	
@@ -3181,8 +3187,8 @@ int dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
 	while ((nbytes = lo_read(imp_dbh->conn, lobj_fd, tmp, BUFSIZ)) > 0) {
 		nread += nbytes;
 		/* break if user wants only a specified chunk */
-		if (len > 0 && (int)nread > len) {
-			nread = len;
+		if (len > 0 && nread > (STRLEN)len) {
+			nread = (STRLEN)len;
 			break;
 		}
 		SvGROW(bufsv, (STRLEN)(destoffset + nread + BUFSIZ + 1));
@@ -3190,7 +3196,7 @@ int dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
 	}
 	
 	/* terminate string */
-	SvCUR_set(bufsv, destoffset + nread);
+	SvCUR_set(bufsv, (STRLEN)(destoffset + nread));
 	*SvEND(bufsv) = '\0';
 	
 	/* close large object */
@@ -3200,7 +3206,7 @@ int dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
 		return 0;
 	}
 	
-	return nread;
+	return (int)nread;
 }
 
 /* end of dbdimp.c */
