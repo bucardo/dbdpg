@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.44
+	- Return the proper SQLSTATE codes on connection failures.
+		(CPAN bug #17115) [GSM]
 	- Fix parser to handle leading parens. (CPAN bug #15481) [GSM]
 	- Make statement handles destruction abort early if 
 		InactiveDestroy is set (CPAN bug #14978) [GSM]
