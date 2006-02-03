@@ -1562,8 +1562,13 @@ related to the current handle.
   $str = $h->state;
 
 Supported by this driver. Returns a five-character "SQLSTATE" code.
-PostgreSQL servers version less than 7.4 will always return a generic
-"S1000" code. Success is indicated by a "00000" code.
+Success is indicated by a "00000" code, which gets mapped to an 
+empty string by DBI. A code of S8006 indicates a connection failure, 
+usually because the connection to the PostgreSQL server has been lost.
+Note that this can be called as both $sth->state and $dbh->state.
+
+PostgreSQL servers version less than 7.4 will return a small subset 
+of the available codes, and should not be relied upon.
 
 The list of codes used by PostgreSQL can be found at:
 L<http://www.postgresql.org/docs/current/static/errcodes-appendix.html>
