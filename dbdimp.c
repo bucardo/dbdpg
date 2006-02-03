@@ -853,6 +853,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	imp_sth->is_dml = DBDPG_FALSE; /* Not preparable DML until proved otherwise */
 	imp_sth->prepared_by_us = DBDPG_FALSE; /* Set to 1 when actually done preparing */
 	imp_sth->has_binary = DBDPG_FALSE; /* Are any of the params binary? */
+	imp_sth->has_default = DBDPG_FALSE; /* Are any of the params DEFAULT? */
 	imp_sth->onetime = DBDPG_FALSE; /* Allow internal shortcut */
 	imp_sth->result	= NULL;
 	imp_sth->cur_tuple = 0;
@@ -1324,6 +1325,7 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 				newph->quoted = NULL;
 				newph->referenced = DBDPG_FALSE;
 				newph->defaultval = DBDPG_TRUE;
+				newph->isdefault = DBDPG_FALSE;
 				New(0, newph->fooname, sectionsize+1, char); /* freed in dbd_st_destroy */
 				Copy(statement-sectionsize, newph->fooname, sectionsize, char);
 				newph->fooname[sectionsize] = '\0';
@@ -1408,6 +1410,7 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 			newph->quoted = NULL;
 			newph->referenced = DBDPG_FALSE;
 			newph->defaultval = DBDPG_TRUE;
+			newph->isdefault = DBDPG_FALSE;
 			newph->fooname = NULL;
 			/* Let the correct segment point to it */
 			while (!currseg->placeholder)
@@ -1661,10 +1664,21 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	if (SvTYPE(newvalue) > SVt_PVLV) { /* hook for later array logic	*/
 		croak("Cannot bind a non-scalar value (%s)", neatsvpv(newvalue,0));
 	}
+	/* dbi handle allowed for cursor variables */
 	if ((SvROK(newvalue) &&!IS_DBI_HANDLE(newvalue) &&!SvAMAGIC(newvalue))) {
-		/* dbi handle allowed for cursor variables */
-		croak("Cannot bind a reference (%s) (%s) (%d) type=%d %d %d %d", neatsvpv(newvalue,0), SvAMAGIC(newvalue),
-					SvTYPE(SvRV(newvalue)) == SVt_PVAV ? 1 : 0, SvTYPE(newvalue), SVt_PVAV, SVt_PV, 0);
+		if (strnEQ("DBD::Pg::DefaultValue", neatsvpv(newvalue,0), 16)
+				|| strnEQ("DBI::DefaultValue", neatsvpv(newvalue,0), 17)) {
+			/* This is a special type */
+			Safefree(currph->value);
+			currph->value = NULL;
+			currph->valuelen = 0;
+			currph->isdefault = DBDPG_TRUE;
+			imp_sth->has_default = DBDPG_TRUE;
+		}
+		else {
+			croak("Cannot bind a reference (%s) (%s) (%d) type=%d %d %d %d", neatsvpv(newvalue,0), SvAMAGIC(newvalue),
+						SvTYPE(SvRV(newvalue)) == SVt_PVAV ? 1 : 0, SvTYPE(newvalue), SVt_PVAV, SVt_PV, 0);
+		}
 	}
 	if (dbis->debug >= 5) {
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: Bind (%s) <== (%s) (type=%ld)", name, neatsvpv(newvalue,0), (long)sql_type);
@@ -1725,6 +1739,9 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 		if (BYTEAOID==currph->bind_type->type_id)
 			imp_sth->has_binary = DBDPG_TRUE;
 	}
+
+	if (currph->isdefault)
+		return 1;
 
 	/* convert to a string ASAP */
 	if (!SvPOK(newvalue) && SvOK(newvalue)) {
@@ -1905,12 +1922,17 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 	/* If using plain old PQexec, we need to quote each value ourselves */
 	if (imp_dbh->pg_protocol < 3 || 
+			DBDPG_TRUE == imp_sth->has_default ||
 			(1 != imp_sth->server_prepare && 
 			 imp_sth->numbound != imp_sth->numphs)) {
 		for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
-			if (NULL == currph->value) {
+			if (DBDPG_TRUE == currph->isdefault) {
+				Renew(currph->quoted, 8, char); /* freed in dbd_st_destroy */
+				strncpy(currph->quoted, "DEFAULT\0", 8);
+				currph->quotedlen = 7;
+			}
+			else if (NULL == currph->value) {
 				Renew(currph->quoted, 5, char); /* freed in dbd_st_destroy */
-				currph->quoted[0] = '\0';
 				strncpy(currph->quoted, "NULL\0", 5);
 				currph->quotedlen = 4;
 			}
@@ -1958,9 +1980,10 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		3. We can handle server-side prepares
 		4. The attribute "pg_server_prepare" is not 0
 		5. There is one or more placeholders
-		6a. The attribute "pg_server_prepare" is 1
+		6. There are no DEFAULT values
+		7a. The attribute "pg_server_prepare" is 1
 		OR
-		6b. All placeholders are bound (and "pg_server_prepare" is 2)
+		7b. All placeholders are bound (and "pg_server_prepare" is 2)
 	*/
 	if (dbis->debug >= 6) {
 		(void)PerlIO_printf
@@ -1971,6 +1994,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			!imp_sth->direct &&
 			imp_dbh->pg_protocol >= 3 &&
 			0 != imp_sth->server_prepare &&
+			DBDPG_TRUE == imp_sth->has_default &&
 			(1 <= imp_sth->numphs && !imp_sth->onetime) &&
 			(1 == imp_sth->server_prepare ||
 			 (imp_sth->numbound == imp_sth->numphs)

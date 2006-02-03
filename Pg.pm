@@ -13,7 +13,6 @@
 use 5.006001;
 
 
-
 {
 	package DBD::Pg;
 
@@ -22,7 +21,7 @@ use 5.006001;
 	use DBI ();
 	use DynaLoader ();
 	use Exporter ();
-	use vars qw(@ISA %EXPORT_TAGS $err $errstr $sqlstate $drh $dbh);
+	use vars qw(@ISA %EXPORT_TAGS $err $errstr $sqlstate $drh $dbh $DBDPG_DEFAULT);
 	@ISA = qw(DynaLoader Exporter);
 
 	%EXPORT_TAGS = 
@@ -34,7 +33,13 @@ use 5.006001;
 		)]
 	);
 
+	{
+		package DBD::Pg::DefaultValue;
+		sub new { my $self = {}; return bless $self, shift; }
+	}
+	$DBDPG_DEFAULT = DBD::Pg::DefaultValue->new();
 	Exporter::export_ok_tags('pg_types');
+	@EXPORT = qw($DBDPG_DEFAULT);
 
 	require_version DBI 1.38;
 
@@ -2553,6 +2558,12 @@ the C<execute> method can also be used for C<SELECT ... INTO table> statements.
 The "prepare/bind/execute" process has changed significantly for PostgreSQL
 servers 7.4 and later: please see the C<prepare()> and C<bind_param()> entries for
 much more information.
+
+Setting one of the bind_values to "undef" is the equivalent of setting the value 
+to NULL in the database. Setting the bind_value to $DBDPG_DEFAULT is equivalent 
+to sending the literal string 'DEFAULT' to the backend. Note that using this 
+option will force server-side prepares off until such time as PostgreSQL 
+supports using DEFAULT in prepared statements.
 
 =item B<fetchrow_arrayref>
 

@@ -1,14 +1,16 @@
 #!perl -w
 
 # Various stuff that does not go elsewhere
+# Uses ids of 600-650
 
 use Test::More;
 use DBI;
+use DBD::Pg;
 use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 2;
+	plan tests => 3;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -36,5 +38,15 @@ else {
 	pass("The data_sources() method returned undef");
 }
 
-$dbh->disconnect();
+#
+# Test the use of $DBDPG_DEFAULT
+#
 
+my $sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id, pname) VALUES (?,?)});
+eval {
+$sth->execute(600,$DBDPG_DEFAULT);
+};
+$sth->execute(602,123);
+ok (!$@, qq{Using \$DBDPG_DEFAULT ($DBDPG_DEFAULT) works});
+
+$dbh->disconnect();
