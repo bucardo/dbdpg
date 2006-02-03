@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 123;
+	plan tests => 125;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -827,6 +827,8 @@ else {
 			if ($destroy) {
 				# The database handle should still be active
 				ok ( $dbh->ping(), qq{Ping works after the child has exited ("InactiveDestroy" = $destroy)});
+				my $state = $dbh->state();
+				is( $state, '', qq{Successful ping returns a SQLSTATE code of 00000 (empty string)});
 				## The statement handle should still be usable
 				$sth->execute(1);
 				my $val = $sth->fetchall_arrayref()->[0][0];
@@ -835,6 +837,8 @@ else {
 			else {
 				# The database handle should be dead
 				ok ( !$dbh->ping(), qq{Ping fails after the child has exited ("InactiveDestroy" = $destroy)});
+				my $state = $dbh->state();
+				is( $state, 'S8006', qq{Failed ping returns a SQLSTATE code of S8006});
 				if ($pglibversion < 70400) {
 				SKIP: {
 						skip "Can't determine advanced ping with old 7.2 server libraries", 1;

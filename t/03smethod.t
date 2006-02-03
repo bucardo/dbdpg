@@ -13,7 +13,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 52;
+	plan tests => 54;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -356,12 +356,7 @@ $sth->finish();
 #
 
 $result = $sth->state();
-if ($pglibversion >= 70400 and $pgversion >= 70400) {
-	is( $result, "", qq{Statement handle method "state" returns an empty string on success});
-}
-else {
-	is( $result, "S1000", qq{Statement handle method "state" returns S1000 (old server)});
-}
+is( $result, "", qq{Statement handle method "state" returns an empty string on success});
 
 eval {
 	$sth = $dbh->prepare("SELECT dbdpg_throws_an_error");
@@ -369,6 +364,14 @@ eval {
 };
 $result = $sth->state();
 like( $result, qr/^[A-Z0-9]{5}$/, qq{Statement handle method "state" returns a five-character code on error});
+my $result2 = $dbh->state();
+is ($result, $result2, qq{Statement and database handle method "state" return same code});
+if ($pglibversion >= 70400 and $pgversion >= 70400) {
+	is ($result, "42703", qq{Statement handle method "state" returns expected code});
+}
+else {
+	is ($result, "S8006", qq{Statement handle method "state" returns expected code (old servers)});
+}
 $dbh->rollback();
 
 $dbh->disconnect();
