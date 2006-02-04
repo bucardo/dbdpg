@@ -2384,8 +2384,8 @@ Constant to be used for the mode in C<lo_creat> and C<lo_open>.
 
 PostgreSQL specific attribute, only works for servers version 7.4 and above.
 Sets the amount of information returned by the server's error messages.
-Valid entries are 1,2, and 3. Any other number will be forced to the default
-value of 2.
+Valid entries are 0, 1, and 2. Any other number will be forced to the default
+value of 1.
 
 A value of 0 ("TERSE") will show severity, primary text, and position only
 and will usually fit on a single line. A value of 1 ("DEFAULT") will also
