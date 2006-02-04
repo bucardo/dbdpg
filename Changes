@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.44
+	- Fix error in documentation for pg_errorlevel. 
+		(CPAN bug #17434)
 	- Add experimental support for using DEFAULT values inside 
 		of execute with $DBDPG_DEFAULT. [GSM]
 	- Return the proper SQLSTATE codes on connection failures.
