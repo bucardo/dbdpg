@@ -17,8 +17,9 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 159;
-} else {
+	plan tests => 160;
+}
+else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
 
@@ -95,6 +96,11 @@ eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef);
 };
 ok( ! $@, 'DB handle method "last_insert_id" works when given a valid table');
+
+eval {
+	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef,'');
+};
+ok( ! $@, 'DB handle method "last_insert_id" works when given an empty attrib');
 
 eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef);

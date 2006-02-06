@@ -13,8 +13,9 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 54;
-} else {
+	plan tests => 55;
+}
+else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
 
@@ -56,6 +57,13 @@ else {
 	$sth->execute(1);
 	ok( $sth->execute, 'Prepare/execute with pg_server_prepare on at database handle works');
 }
+
+## We must send a hashref as the final arg
+eval {
+	$sth = $dbh->prepare('SELECT 123', ['I am not a hashref!']);
+};
+like ($@, qr{not a hash}, qq{Prepare failes when sent a non-hashref});
+
 
 # Make sure that undefs are converted to NULL.
 $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, pdate) VALUES (?,?)');
