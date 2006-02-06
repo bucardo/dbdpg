@@ -4,8 +4,10 @@ use Test::More;
 use strict;
 
 # Check our Pod
-# The test was provided by Andy Lester, who stole it from Brian D. Foy
+# The top test was provided by Andy Lester, who stole it from Brian D. Foy
 # Thanks to both !
+
+plan tests => 4;
 
 my $PODVERSION = '0.95';
 eval {
@@ -13,7 +15,7 @@ eval {
 	Test::Pod->import;
 };
 if ($@ or $Test::Pod::VERSION < $PODVERSION) {
-	plan skip_all => "Test::Pod $PODVERSION required for testing POD";
+	pass("Skipping Test::Pod testing") for (1..3);
 }
 else {
 	# We defer loading these until we know Test::Pod is ready
@@ -27,8 +29,27 @@ else {
 			# The 'defined' test is just to avoid compiler warnings
 			push @files, $File::Find::name if /\.p(l|m|od)$/o and defined $File::Find::name;
 	}, $blib);
-	plan tests => scalar @files;
 	foreach my $file (@files) {
 		pod_file_ok($file);
 	}
+}
+
+## We won't require everyone to have this, so silently move on if not found
+my $PODCOVERVERSION = '1.04';
+eval {
+	require Test::Pod::Coverage;
+	Test::Pod::Coverage->import;
+};
+if ($@ or $Test::Pod::Coverage::VERSION < $PODCOVERVERSION) {
+	pass ("DBD::Pg pod coverage skipped");
+}
+else {
+	my $trusted_names  = 
+		[
+		 qr{^PG_[A-Z]+\d?$},
+		 qr{^CLONE$},
+		 qr{^driver$},
+		 qr{^constant$},
+		];
+	pod_coverage_ok("DBD::Pg", {trustme => $trusted_names}, "DBD::Pg pod coverage okay");
 }
