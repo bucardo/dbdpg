@@ -348,6 +348,21 @@ Note that most, if not all, of the above, *should* be checked on the first pass,
 gradually added to make the output easier to read.
 
 
+* Using Devel::Cover
+
+Another handy tool is the module Devel::Cover. While not totally useful as it only tests 
+direct perl modules, it is good at giving Pg.pm the once-over. To use, install it, then run:
+
+cover -delete
+HARNESS_PERL_SWITCHES=-Mdevel::Cover make test
+
+The tests will take much longer than usual. When done, run a simple
+
+cover
+
+then check out the coverage.html file inside the cover_db directory.
+
+
 
 ===============
 == Debugging ==
