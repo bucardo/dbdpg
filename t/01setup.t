@@ -10,7 +10,8 @@ $|=1;
 
 if (defined $ENV{DBI_DSN}) {
 	plan tests => 4;
-} else {
+}
+else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file.';
 }
 

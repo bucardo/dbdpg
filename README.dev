@@ -609,6 +609,8 @@ cvs admin -NRel-1_42_1: filename
 
 Generate md5 and sha1 checksums of the tarball. Include this in your emails.
 
+* Update the SIGNATURE file with Module::Signature
+
 * Test it out
 
 Download the tarball to a completely different system, unpack and test it.
