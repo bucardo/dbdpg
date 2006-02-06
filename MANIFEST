@@ -4,6 +4,7 @@ dbdimp.c
 dbdimp.h
 Makefile.PL
 MANIFEST
+MANIFEST.SKIP
 Pg.h
 Pg.pm
 Pg.xs
