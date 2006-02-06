@@ -7,7 +7,7 @@ use strict;
 # The top test was provided by Andy Lester, who stole it from Brian D. Foy
 # Thanks to both !
 
-plan tests => 4;
+plan tests => 3;
 
 my $PODVERSION = '0.95';
 eval {
@@ -15,7 +15,7 @@ eval {
 	Test::Pod->import;
 };
 if ($@ or $Test::Pod::VERSION < $PODVERSION) {
-	pass("Skipping Test::Pod testing") for (1..3);
+	pass("Skipping Test::Pod testing") for (1..2);
 }
 else {
 	# We defer loading these until we know Test::Pod is ready
