@@ -50,17 +50,17 @@ Here is what each file in the distribution does:
 * Text files:
 
 Changes - lists changes made to each version. Please be consistent and use 
-tabs, not spaces, to indent. Try to list who found the bug, and who 
-fixed it (if not the same person). Put the CPAN bug # in parenthesis, 
-and put the person who made the actual changes in brackets. This file 
-contains a version number.
+  tabs, not spaces, to indent. Try to list who found the bug, and who 
+  fixed it (if not the same person). Put the CPAN bug # in parenthesis, 
+  and put the person who made the actual changes in brackets. This file 
+  contains a version number.
 
 README.dev - you are reading it.
 
 README - the main file that explains the module, where to get it, and guides 
-people in installing it. A large portion of it is simply a list of common 
-gotchas and guides for various platforms. This is one of four files that lists 
-the version number.
+  people in installing it. A large portion of it is simply a list of common 
+  gotchas and guides for various platforms. This is one of four files that lists 
+  the version number.
 
 README.win32 - the directions on how to install DBD::Pg on a Win32 box.
 
@@ -70,7 +70,7 @@ TODO - Rough list of upcoming tasks.
 * Build files:
 
 Makefile.PL - The main file that starts everything off. Used by ExtUtils::MakeMaker 
-to create the "Makefile"
+  to create the "Makefile"
 
 Makefile - Generated automatically by Makefile.PL
 
@@ -79,10 +79,10 @@ META.yml - Generated with "make distdir"
 * Distribution files:
 
 MANIFEST - lists which files should be included in the release tarball. 
-Used by the "make dist*" set of commands.
+  Used by the "make dist*" set of commands.
 
 MANIFEST.SKIP - files that are known to be safe to exclude from the release 
-tarball. Used by the "make distcheck" command
+  tarball. Used by the "make distcheck" command
 
 win32.mak - a helper file for the win32 build.
 
@@ -90,32 +90,32 @@ win32.mak - a helper file for the win32 build.
 * Program files:
 
 dbdimp.c - The main C file, which does most of the heavy lifting for the DBD::Pg 
-module (the rest is done by Pg.pm). Almost all of the complexity and power of 
-the module is here.
+  module (the rest is done by Pg.pm). Almost all of the complexity and power of 
+  the module is here.
 
 dbdimp.h - Helper file for dbdimp.c.
 
 Pg.pm - The main perl file, which contains all the DBD::Pg packages and code 
-for the methods. Often times code here calls code from Pg.xs and dbdimp.c.
-This file contains a version number in two places (once in the code, once 
-in the POD). The main documentation for the module lives here, as POD information.
+  for the methods. Often times code here calls code from Pg.xs and dbdimp.c.
+  This file contains a version number in two places (once in the code, once 
+  in the POD). The main documentation for the module lives here, as POD information.
 
 Pg.xs - The Perl "glue" file for DBD::Pg. This file basically tells Perl how 
-to handle various methods. It makes many calls to dbdimp.c
+  to handle various methods. It makes many calls to dbdimp.c
 
 Pg.c - Not part of the distribution, but created from Pg.xs as part of the 
-build process. Never edit this directly.
+  build process. Never edit this directly.
 
 Pg.h - Helper file for Pg.xs (or Pg.c)
 
 quote.c - Various methods to help quote and dequote variables. Much of this is 
-now done on the backend, but it is still needed to support older versions 
-of PostgreSQL.
+  now done on the backend, but it is still needed to support older versions 
+  of PostgreSQL.
 
 quote.h - Helper file for quote.c
 
 types.c - Lists all known data types for PostgreSQL.
-Run as a perl script to check for new types.
+  Run as a perl script to check for new types.
 
 types.h - Helper file for types.c
 
@@ -147,7 +147,9 @@ t/12placeholders.t - Tests placeholders.
 
 t/20savepoints.t - Test savepoints. Requires a server version 8.0 or up.
 
-t/99_pod.t - Verifies the POD of Pg.pm. Requires Test::POD version 0.95
+t/99_pod.t - Verifies the POD of Pg.pm. Requires Test::POD version 0.95, and 
+  Test::Pod::Coverage 1.04. Neither are mandatory for normal testing, but 
+  developers are highly encouraged to install them.
 
 t/99cleanup.t - Removes anything we have created for the tests (e.g. tables)
 
@@ -557,6 +559,10 @@ cvs log -rRel-1_43: * > all_logs.tmp
 * Update the documentation
 
 Make sure that anything new has been documented properly, usually as pod inside of Pg.pm
+A good way to do this is to use the tests in 99_pod.t - they will run automatically as 
+part of the test suite if the right modules are installed. You can do this to test:
+
+prove -v t/99_pod.t
 
 * Run "perl Makefile.PL"
 
@@ -791,6 +797,13 @@ perldoc Test::Harness;
 perldoc Test::Simple;
 perldoc Test::More;
 perldoc Test::Pod;
+perldoc Test::Pod::Coverage;
+
+
+Othjer important modules:
+
+perldoc Devel::Cover;
+perldoc Module::Signature;
 
 
 This is a guide for DBD authors. It's fairly old and incomplete however, but listed here for 
