@@ -187,8 +187,8 @@ is( $attrib, 'Pg', '$dbh->{Driver}{Name} returns correct value of "Pg"');
 # Test of the database handle attribute "Name"
 #
 
-if ($ENV{DBI_DSN} !~ /dbname\s*=\s*\"([^"]+)/o and 
-		$ENV{DBI_DSN} !~ /dbname\s*=\s*([^;]+)/o) {
+if ($ENV{DBI_DSN} !~ /(?:dbname|database|db)\s*=\s*\"([^"]+)/o and 
+		$ENV{DBI_DSN} !~ /(?:dbname|database|db)\s*=\s*([^;]+)/o) {
  SKIP: {
 		skip 'Cannot test DB handle attribute "Name": DBI_DSN has no dbname', 1;
 	}
