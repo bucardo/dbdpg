@@ -502,7 +502,7 @@ static int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	}
 	
 	/* no action if AutoCommit = on or the connection is invalid */
-	if ((NULL == imp_dbh->conn) || (DBDPG_TRUE == DBIc_has(imp_dbh, DBIcf_AutoCommit)))
+	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit)))
 		return 0;
 
 	/* We only perform these actions if we need to. For newer servers, we 
@@ -1807,7 +1807,7 @@ int pg_quickexec (dbh, sql)
 		croak("Must call pg_endcopy before issuing more commands");
 
 	/* If not autocommit, start a new transaction */
-	if (!imp_dbh->done_begin && DBDPG_FALSE == DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+	if (!imp_dbh->done_begin && !DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
 		status = _result(imp_dbh, "begin");
 		if (PGRES_COMMAND_OK != status) {
 			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
@@ -1899,7 +1899,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	}
 
 	/* If not autocommit, start a new transaction */
-	if (!imp_dbh->done_begin && DBDPG_FALSE == DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+	if (!imp_dbh->done_begin && !DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
 		status = _result(imp_dbh, "begin");
 		if (PGRES_COMMAND_OK != status) {
 			pg_error(sth, status, PQerrorMessage(imp_dbh->conn));
@@ -1921,12 +1921,12 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	execsize = imp_sth->totalsize; /* Total of all segments */
 
 	/* If using plain old PQexec, we need to quote each value ourselves */
-	if (imp_dbh->pg_protocol < 3 || 
-			DBDPG_TRUE == imp_sth->has_default ||
+	if (imp_dbh->pg_protocol < 3 ||
+			imp_sth->has_default ||
 			(1 != imp_sth->server_prepare && 
 			 imp_sth->numbound != imp_sth->numphs)) {
 		for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
-			if (DBDPG_TRUE == currph->isdefault) {
+			if (currph->isdefault) {
 				Renew(currph->quoted, 8, char); /* freed in dbd_st_destroy */
 				strncpy(currph->quoted, "DEFAULT\0", 8);
 				currph->quotedlen = 7;
@@ -1987,14 +1987,14 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	*/
 	if (dbis->debug >= 6) {
 		(void)PerlIO_printf
-			(DBILOGFP, "dbdpg: PQexec* decision: dml=%d direct=%d protocol=%d server_prepare=%d numbound=%d numphs=%d\n",
-			 imp_sth->is_dml, imp_sth->direct, imp_dbh->pg_protocol, imp_sth->server_prepare, imp_sth->numbound, imp_sth->numphs);
+			(DBILOGFP, "dbdpg: PQexec* decision: dml=%d direct=%d protocol=%d server_prepare=%d numbound=%d numphs=%d default=%d\n",
+			 imp_sth->is_dml, imp_sth->direct, imp_dbh->pg_protocol, imp_sth->server_prepare, imp_sth->numbound, imp_sth->numphs, imp_sth->has_default);
 	}
 	if (imp_sth->is_dml && 
 			!imp_sth->direct &&
 			imp_dbh->pg_protocol >= 3 &&
 			0 != imp_sth->server_prepare &&
-			DBDPG_TRUE == imp_sth->has_default &&
+			!imp_sth->has_default &&
 			(1 <= imp_sth->numphs && !imp_sth->onetime) &&
 			(1 == imp_sth->server_prepare ||
 			 (imp_sth->numbound == imp_sth->numphs)
@@ -2045,6 +2045,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 		if (imp_dbh->pg_protocol >= 3 &&
 				imp_sth->numphs &&
+				!imp_sth->has_default &&
 				(1 == imp_sth->server_prepare || 
 				 imp_sth->numbound == imp_sth->numphs)) {
 
@@ -2898,7 +2899,7 @@ pg_db_savepoint (dbh, imp_dbh, savepoint)
 	sprintf(action, "savepoint %s", savepoint);
 
 	/* no action if AutoCommit = on or the connection is invalid */
-	if ((NULL == imp_dbh->conn) || (DBDPG_TRUE == DBIc_has(imp_dbh, DBIcf_AutoCommit)))
+	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit)))
 		return 0;
 
 	/* Start a new transaction if this is the first command */
@@ -2945,7 +2946,7 @@ int pg_db_rollback_to (dbh, imp_dbh, savepoint)
 	sprintf(action,"rollback to %s",savepoint);
 
 	/* no action if AutoCommit = on or the connection is invalid */
-	if ((NULL == imp_dbh->conn) || (DBDPG_TRUE == DBIc_has(imp_dbh, DBIcf_AutoCommit)))
+	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit)))
 		return 0;
 
 	status = _result(imp_dbh, action);
@@ -2987,7 +2988,7 @@ int pg_db_release (dbh, imp_dbh, savepoint)
 	sprintf(action,"release %s",savepoint);
 
 	/* no action if AutoCommit = on or the connection is invalid */
-	if ((NULL == imp_dbh->conn) || (DBDPG_TRUE == DBIc_has(imp_dbh, DBIcf_AutoCommit)))
+	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit)))
 		return 0;
 
 	status = _result(imp_dbh, action);
@@ -3013,7 +3014,7 @@ static int pg_db_start_txn (dbh, imp_dbh)
 {
 	int status = -1;
 	/* If not autocommit, start a new transaction */
-	if (!imp_dbh->done_begin && DBDPG_FALSE == DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+	if (!imp_dbh->done_begin && !DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
 		status = _result(imp_dbh, "begin");
 		if (PGRES_COMMAND_OK != status) {
 			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
