@@ -1,5 +1,6 @@
 TODO: 
 
+- Start testing with a thread-enabled Perl.
 - Add array OID types
 - Quoting/dequoting of arrays.
 - Suport for bind_param_inout
