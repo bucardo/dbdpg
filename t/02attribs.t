@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 125;
+	plan tests => 130;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -44,6 +44,7 @@ d Driver
 d Name
 d RowCacheSize
 d Username
+d PrintWarn
 d pg_INV_READ
 d pg_INV_WRITE
 d pg_protocol
@@ -221,6 +222,39 @@ else {
 	$attrib = $dbh->{Username};
 	is( $attrib, $ENV{DBI_USER}, 'DB handle attribute "Username" returns the same value as DBI_USER');
 }
+
+#
+# Test of the "PrintWarn" database handle attribute
+#
+
+my $value = $dbh->{PrintWarn};
+is ($value, 1, qq{DB handle attribute "PrintWarn" defaults to on});
+
+{
+
+local $SIG{__WARN__} = sub { $warning = shift; };
+
+$warning = q{};
+eval {
+	$dbh->do("CREATE TEMP TABLE dbd_pg_test_temp(id INT PRIMARY KEY)");
+};
+ok (!$@, qq{DB handle attribute "PrintWarn" works when on});
+like($warning, qr{dbd_pg_test_temp}, qq{DB handle attribute "PrintWarn" shows warnings when on});
+
+$dbh->rollback();
+$dbh->{PrintWarn}=0;
+$warning = q{};
+eval {
+	$dbh->do("CREATE TEMP TABLE dbd_pg_test_temp(id INT PRIMARY KEY)");
+};
+ok (!$@, qq{DB handle attribute "PrintWarn" works when on});
+is($warning, q{}, qq{DB handle attribute "PrintWarn" shows warnings when on});
+
+$dbh->{PrintWarn}=1;
+$dbh->rollback();
+
+}
+
 
 #
 # Test of the database handle attributes "pg_INV_WRITE" and "pg_INV_READ"

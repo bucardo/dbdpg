@@ -208,7 +208,7 @@ static void pg_warn (arg, message)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_warn (%s) DBIc_WARN=%d\n",
 												message, DBIc_WARN(imp_dbh) ? 1 : 0);
 
-	if (DBIc_WARN(imp_dbh)!=0)
+	if (DBIc_WARN(imp_dbh) && DBIc_is(imp_dbh, DBIcf_PrintWarn))
 		warn(message);
 }
 
