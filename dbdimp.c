@@ -551,7 +551,6 @@ static int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	}
 
 	av_undef(imp_dbh->savepoints);
-	sv_free((SV *)imp_dbh->savepoints);
 	imp_dbh->done_begin = DBDPG_FALSE;
 
 	/* If we just did a rollback or a commit, we can no longer be in a PGRES_COPY state */
