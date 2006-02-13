@@ -551,6 +551,7 @@ static int dbd_db_rollback_commit (dbh, imp_dbh, action)
 	}
 
 	av_undef(imp_dbh->savepoints);
+	sv_free((SV *)imp_dbh->savepoints);
 	imp_dbh->done_begin = DBDPG_FALSE;
 
 	/* If we just did a rollback or a commit, we can no longer be in a PGRES_COPY state */
@@ -904,7 +905,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 			statement++;
 		}
 		newsize = mypos-wordstart;
-		New(0, imp_sth->firstword, newsize+1, char); /* freed in dbd_st_destroy */
+		New(0, imp_sth->firstword, newsize+1, char); /* freed in dbd_st_destroy, and above */
 		Copy(statement-newsize,imp_sth->firstword,newsize,char);
 		imp_sth->firstword[newsize] = '\0';
 		/* Try to prevent transaction commands unless "pg_direct" is set */
@@ -1033,7 +1034,7 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 		}
 		imp_sth->numsegs = 1;
 		imp_sth->numphs = 0;
-		Renew(imp_sth->seg, 1, seg_t); /* freed in dbd_st_destroy */
+		New(0, imp_sth->seg, 1, seg_t); /* freed in dbd_st_destroy */
 		imp_sth->seg->nextseg = NULL;
 		imp_sth->seg->placeholder = 0;
 		imp_sth->seg->ph = NULL;
@@ -1769,6 +1770,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 		/* Deallocate sets the prepare_name to NULL */
 		if (dbd_st_deallocate_statement(sth, imp_sth)!=0) {
 			/* Deallocation failed. Let's mark it and move on */
+			Safefree(imp_sth->prepare_name);
 			imp_sth->prepare_name = NULL;
 			if (dbis->debug >= 4)
 				(void)PerlIO_printf(DBILOGFP, "dbdpg: Failed to deallocate!\n");
@@ -1909,7 +1911,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	}
 
 	/* clear old result (if any) */
-	if (imp_sth->result)
+	if (imp_sth->result != NULL)
 		PQclear(imp_sth->result);
 
 	/*
@@ -2238,7 +2240,7 @@ AV * dbd_st_fetch (sth, imp_sth)
 	chopblanks = DBIc_has(imp_sth, DBIcf_ChopBlanks);
 
 	/* Set up the type_info array if we have not seen it yet */
-	if (NULL==imp_sth->type_info) {
+	if (NULL == imp_sth->type_info) {
 		Newz(0, imp_sth->type_info, (unsigned)num_fields, sql_type_info_t*); /* freed in dbd_st_destroy */
 		for (i = 0; i < num_fields; ++i) {
 			imp_sth->type_info[i] = pg_type_data((int)PQftype(imp_sth->result, i));
@@ -2330,7 +2332,7 @@ int dbd_st_finish (sth, imp_sth)
 	
 	if (DBIc_ACTIVE(imp_sth) && imp_sth->result) {
 		PQclear(imp_sth->result);
-		imp_sth->result = 0;
+		imp_sth->result = NULL;
 		imp_sth->rows = 0;
 	}
 	
@@ -2471,6 +2473,7 @@ void dbd_st_destroy (sth, imp_sth)
 		Safefree(currseg);
 		currseg = nextseg;
 	}
+	imp_sth->seg = NULL;
 
 	/* Free all the placeholders */
 	currph = imp_sth->ph;
@@ -2478,10 +2481,12 @@ void dbd_st_destroy (sth, imp_sth)
 		Safefree(currph->fooname);
 		Safefree(currph->value);
 		Safefree(currph->quoted);
+ 		currph->bind_type = NULL;
 		nextph = currph->nextph;
 		Safefree(currph);
 		currph = nextph;
 	}
+	imp_sth->ph = NULL;
 
 	DBIc_IMPSET_off(imp_sth); /* let DBI know we've done it */
 
