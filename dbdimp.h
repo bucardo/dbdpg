@@ -76,7 +76,6 @@ struct imp_sth_st {
 
 	STRLEN totalsize;        /* total string length of the statement (with no placeholders)*/
 
-  char   *statement;       /* the rewritten statement, for passing to PQexecP.. */
 	char   *prepare_name;    /* name of the prepared query; NULL if not prepared */
 	char   *firstword;       /* first word of the statement */
 
