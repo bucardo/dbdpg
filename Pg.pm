@@ -16,7 +16,7 @@ use 5.006001;
 {
 	package DBD::Pg;
 
-	our $VERSION = '1.43_2';
+	our $VERSION = '1.44';
 	
 	use DBI ();
 	use DynaLoader ();
@@ -174,7 +174,7 @@ use 5.006001;
 
 	use strict;
 
-	
+
 	sub prepare {
 		my($dbh, $statement, @attribs) = @_;
 
@@ -1447,7 +1447,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 1.43_2 of the DBD::Pg module
+This documents version 1.44 of the DBD::Pg module
 
 =head1 SYNOPSIS
 
