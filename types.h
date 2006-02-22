@@ -66,6 +66,7 @@ sql_type_info_t* sql_type_data(int);
 #define               REGOPEROID  2203
 #define          REGPROCEDUREOID  2202
 #define               REGPROCOID  24
+#define          REGTYPEARRAYOID  2211
 #define               REGTYPEOID  2206
 #define               RELTIMEOID  703
 #define                  TEXTOID  25

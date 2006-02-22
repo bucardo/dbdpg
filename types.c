@@ -44,7 +44,7 @@ static sql_type_info_t pg_types[] = {
 	{INT4OID, "int4", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
 	{INT8OID, "int8", null_quote, null_dequote, {SQL_DOUBLE}, DBDPG_TRUE},
 	{INTERNALOID, "internal", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{INTERVALOID, "timespan", quote_string, dequote_string, {SQL_INTERVAL}, DBDPG_TRUE},
+	{INTERVALOID, "timespan", null_quote, null_dequote, {SQL_INTERVAL}, DBDPG_TRUE},
 	{LANGUAGE_HANDLEROID, "languagehandle", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{LINEOID, "line", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{LSEGOID, "lseg", null_quote, null_dequote, {0}, DBDPG_TRUE},
@@ -68,15 +68,16 @@ static sql_type_info_t pg_types[] = {
 	{REGOPEROID, "registeredoperator", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{REGPROCEDUREOID, "regprocedureoid", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{REGPROCOID, "regproc", null_quote, null_dequote, {0}, DBDPG_TRUE},
+	{REGTYPEARRAYOID, "regtypearray", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{REGTYPEOID, "regtype", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{RELTIMEOID, "reltime", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{TEXTOID, "text", quote_string, dequote_string, {SQL_VARCHAR}, DBDPG_TRUE},
 	{TIDOID, "tid", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{TIMEOID, "time", null_quote, null_dequote, {SQL_TYPE_TIME}, DBDPG_TRUE},
-	{TIMESTAMPOID, "timestamp", quote_string, dequote_string, {SQL_TYPE_TIMESTAMP}, DBDPG_TRUE},
-	{TIMESTAMPTZOID, "datetime", quote_string, dequote_string, {SQL_TYPE_TIMESTAMP_WITH_TIMEZONE}, DBDPG_TRUE},
-	{TIMETZOID, "timestamptz", quote_string, dequote_string, {SQL_TYPE_TIME_WITH_TIMEZONE}, DBDPG_TRUE},
-	{TINTERVALOID, "tinterval", quote_string, dequote_string, {0}, DBDPG_TRUE},
+	{TIMESTAMPOID, "timestamp", null_quote, null_dequote, {SQL_TYPE_TIMESTAMP}, DBDPG_TRUE},
+	{TIMESTAMPTZOID, "datetime", null_quote, null_dequote, {SQL_TYPE_TIMESTAMP_WITH_TIMEZONE}, DBDPG_TRUE},
+	{TIMETZOID, "timestamptz", null_quote, null_dequote, {SQL_TYPE_TIME_WITH_TIMEZONE}, DBDPG_TRUE},
+	{TINTERVALOID, "tinterval", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{TRIGGEROID, "trigger", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{UNKNOWNOID, "unknown", quote_string, dequote_string, {SQL_UNKNOWN_TYPE}, DBDPG_TRUE},
 	{VARBITOID, "vbitstring", null_quote, null_dequote, {0}, DBDPG_TRUE},
@@ -140,21 +141,22 @@ sql_type_info_t* pg_type_data(sql_type)
 		case REGOPEROID:               return &pg_types[47];
 		case REGPROCEDUREOID:          return &pg_types[48];
 		case REGPROCOID:               return &pg_types[49];
-		case REGTYPEOID:               return &pg_types[50];
-		case RELTIMEOID:               return &pg_types[51];
-		case TEXTOID:                  return &pg_types[52];
-		case TIDOID:                   return &pg_types[53];
-		case TIMEOID:                  return &pg_types[54];
-		case TIMESTAMPOID:             return &pg_types[55];
-		case TIMESTAMPTZOID:           return &pg_types[56];
-		case TIMETZOID:                return &pg_types[57];
-		case TINTERVALOID:             return &pg_types[58];
-		case TRIGGEROID:               return &pg_types[59];
-		case UNKNOWNOID:               return &pg_types[60];
-		case VARBITOID:                return &pg_types[61];
-		case VARCHAROID:               return &pg_types[62];
-		case VOIDOID:                  return &pg_types[63];
-		case XIDOID:                   return &pg_types[64];
+		case REGTYPEARRAYOID:          return &pg_types[50];
+		case REGTYPEOID:               return &pg_types[51];
+		case RELTIMEOID:               return &pg_types[52];
+		case TEXTOID:                  return &pg_types[53];
+		case TIDOID:                   return &pg_types[54];
+		case TIMEOID:                  return &pg_types[55];
+		case TIMESTAMPOID:             return &pg_types[56];
+		case TIMESTAMPTZOID:           return &pg_types[57];
+		case TIMETZOID:                return &pg_types[58];
+		case TINTERVALOID:             return &pg_types[59];
+		case TRIGGEROID:               return &pg_types[60];
+		case UNKNOWNOID:               return &pg_types[61];
+		case VARBITOID:                return &pg_types[62];
+		case VARCHAROID:               return &pg_types[63];
+		case VOIDOID:                  return &pg_types[64];
+		case XIDOID:                   return &pg_types[65];
 		default:return NULL;
 	}
 }
@@ -171,8 +173,8 @@ static sql_type_info_t sql_types[] = {
 	{SQL_DOUBLE, "SQL_DOUBLE", null_quote, null_dequote, {INT8OID}, DBDPG_TRUE},
 	{SQL_DECIMAL, "SQL_DECIMAL", null_quote, null_dequote, {NUMERICOID}, DBDPG_TRUE},
 	{SQL_TYPE_TIME, "SQL_TYPE_TIME", null_quote, null_dequote, {TIMEOID}, DBDPG_TRUE},
-	{SQL_TYPE_TIMESTAMP, "SQL_TYPE_TIMESTAMP", quote_string, dequote_string, {TIMESTAMPOID}, DBDPG_TRUE},
-	{SQL_TYPE_TIMESTAMP_WITH_TIMEZONE, "SQL_TYPE_TIMESTAMP_WITH_TIMEZONE", quote_string, dequote_string, {TIMESTAMPTZOID}, DBDPG_TRUE},
+	{SQL_TYPE_TIMESTAMP, "SQL_TYPE_TIMESTAMP", null_quote, null_dequote, {TIMESTAMPOID}, DBDPG_TRUE},
+	{SQL_TYPE_TIMESTAMP_WITH_TIMEZONE, "SQL_TYPE_TIMESTAMP_WITH_TIMEZONE", null_quote, null_dequote, {TIMESTAMPTZOID}, DBDPG_TRUE},
 	{SQL_VARCHAR, "SQL_VARCHAR", quote_string, dequote_string, {VARCHAROID}, DBDPG_TRUE},
 };
 
@@ -269,7 +271,7 @@ print OUT
 
    $Id$
 
-   Copyright (c) 2003-2005 PostgreSQL Global Development Group
+   Copyright (c) 2003-2006 PostgreSQL Global Development Group
    
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.
@@ -402,7 +404,7 @@ BPCHAROID, bpchar, quote_string, dequote_char, SQL_CHAR, 1
 NAMEOID, name, null_quote, null_dequote, SQL_VARCHAR, 0
 TEXTOID, text, quote_string, dequote_string, SQL_VARCHAR, 0
 
-## Binary - specialquoting rules
+## Binary - special quoting rules
 BYTEAOID, bytea, quote_bytea, dequote_bytea, SQL_VARBINARY, 1
 CHAROID, char, quote_string, dequote_char, 0, 0
 
@@ -455,6 +457,7 @@ REGOPEROID, registeredoperator, null_quote, null_dequote, 0, 0
 REGPROCEDUREOID, regprocedureoid, null_quote, null_dequote, 0, 0
 REGPROCOID, regproc, null_quote, null_dequote, 0, 0
 REGTYPEOID, regtype, null_quote, null_dequote, 0, 0
+REGTYPEARRAYOID, regtypearray, null_quote, null_dequote, 0, 0
 RELTIMEOID, reltime, null_quote, null_dequote, 0, 0
 TIDOID, tid, null_quote, null_dequote, 0, 0
 TINTERVALOID, tinterval, null_quote, null_dequote, 0, 0
