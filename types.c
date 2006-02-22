@@ -44,7 +44,7 @@ static sql_type_info_t pg_types[] = {
 	{INT4OID, "int4", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
 	{INT8OID, "int8", null_quote, null_dequote, {SQL_DOUBLE}, DBDPG_TRUE},
 	{INTERNALOID, "internal", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{INTERVALOID, "timespan", null_quote, null_dequote, {SQL_INTERVAL}, DBDPG_TRUE},
+	{INTERVALOID, "timespan", quote_string, dequote_string, {SQL_INTERVAL}, DBDPG_TRUE},
 	{LANGUAGE_HANDLEROID, "languagehandle", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{LINEOID, "line", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{LSEGOID, "lseg", null_quote, null_dequote, {0}, DBDPG_TRUE},
@@ -74,8 +74,8 @@ static sql_type_info_t pg_types[] = {
 	{TEXTOID, "text", quote_string, dequote_string, {SQL_VARCHAR}, DBDPG_TRUE},
 	{TIDOID, "tid", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{TIMEOID, "time", null_quote, null_dequote, {SQL_TYPE_TIME}, DBDPG_TRUE},
-	{TIMESTAMPOID, "timestamp", null_quote, null_dequote, {SQL_TYPE_TIMESTAMP}, DBDPG_TRUE},
-	{TIMESTAMPTZOID, "datetime", null_quote, null_dequote, {SQL_TYPE_TIMESTAMP_WITH_TIMEZONE}, DBDPG_TRUE},
+	{TIMESTAMPOID, "timestamp", quote_string, dequote_string, {SQL_TYPE_TIMESTAMP}, DBDPG_TRUE},
+	{TIMESTAMPTZOID, "datetime", quote_string, dequote_string, {SQL_TYPE_TIMESTAMP_WITH_TIMEZONE}, DBDPG_TRUE},
 	{TIMETZOID, "timestamptz", null_quote, null_dequote, {SQL_TYPE_TIME_WITH_TIMEZONE}, DBDPG_TRUE},
 	{TINTERVALOID, "tinterval", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{TRIGGEROID, "trigger", null_quote, null_dequote, {0}, DBDPG_TRUE},
@@ -173,8 +173,8 @@ static sql_type_info_t sql_types[] = {
 	{SQL_DOUBLE, "SQL_DOUBLE", null_quote, null_dequote, {INT8OID}, DBDPG_TRUE},
 	{SQL_DECIMAL, "SQL_DECIMAL", null_quote, null_dequote, {NUMERICOID}, DBDPG_TRUE},
 	{SQL_TYPE_TIME, "SQL_TYPE_TIME", null_quote, null_dequote, {TIMEOID}, DBDPG_TRUE},
-	{SQL_TYPE_TIMESTAMP, "SQL_TYPE_TIMESTAMP", null_quote, null_dequote, {TIMESTAMPOID}, DBDPG_TRUE},
-	{SQL_TYPE_TIMESTAMP_WITH_TIMEZONE, "SQL_TYPE_TIMESTAMP_WITH_TIMEZONE", null_quote, null_dequote, {TIMESTAMPTZOID}, DBDPG_TRUE},
+	{SQL_TYPE_TIMESTAMP, "SQL_TYPE_TIMESTAMP", quote_string, dequote_string, {TIMESTAMPOID}, DBDPG_TRUE},
+	{SQL_TYPE_TIMESTAMP_WITH_TIMEZONE, "SQL_TYPE_TIMESTAMP_WITH_TIMEZONE", quote_string, dequote_string, {TIMESTAMPTZOID}, DBDPG_TRUE},
 	{SQL_VARCHAR, "SQL_VARCHAR", quote_string, dequote_string, {VARCHAROID}, DBDPG_TRUE},
 };
 
@@ -414,8 +414,8 @@ BOOLOID, bool, quote_bool, dequote_bool, SQL_BOOLEAN, 1
 ## Time and date
 DATEOID, date, null_quote, null_dequote, SQL_TYPE_DATE, 1
 TIMEOID, time, null_quote, null_dequote, SQL_TYPE_TIME, 1
-TIMESTAMPOID, timestamp, null_quote, null_dequote, SQL_TYPE_TIMESTAMP, 1
-TIMESTAMPTZOID, datetime, null_quote, null_dequote, SQL_TYPE_TIMESTAMP_WITH_TIMEZONE, 1
+TIMESTAMPOID, timestamp, quote_string, dequote_string, SQL_TYPE_TIMESTAMP, 1
+TIMESTAMPTZOID, datetime, quote_string, dequote_string, SQL_TYPE_TIMESTAMP_WITH_TIMEZONE, 1
 TIMETZOID, timestamptz, null_quote, null_dequote, SQL_TYPE_TIME_WITH_TIMEZONE, 0
 
 
@@ -435,7 +435,7 @@ INETOID, IP address, null_quote, null_dequote, 0, 0
 INT2VECTOROID, int28, null_quote, null_dequote, 0, 0
 INT4ARRAYOID, int4array, 0, 0, 0, 0
 INTERNALOID, internal, null_quote, null_dequote, 0, 0
-INTERVALOID, timespan, null_quote, null_dequote, SQL_INTERVAL, 0
+INTERVALOID, timespan, quote_string, dequote_string, SQL_INTERVAL, 0
 LANGUAGE_HANDLEROID, languagehandle, null_quote, null_dequote, 0, 0
 LINEOID, line, null_quote, null_dequote, 0, 0
 LSEGOID, lseg, null_quote, null_dequote, 0, 0
