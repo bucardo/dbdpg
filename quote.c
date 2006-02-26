@@ -222,10 +222,6 @@ void dequote_bytea(string, retlen)
 	result = string;
 
 	while (*string != '\0') {
-		if ((*retlen)>20) {
-			*string = '\0';
-			continue;
-		}
 		(*retlen)++;
 		if ('\\' == *string) {
 			if ('\\' == *(string+1)) {
