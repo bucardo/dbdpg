@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-1.45
+1.45 February 27, 2006
 	- Fix bug preventing bytea values over 20 characters from showing.
 		Spotted by Igor Shevchenko. [GSM]
 
