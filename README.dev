@@ -660,6 +660,8 @@ and adding it in. If not, bug them.
 
 http://www.postgresql.org/community/weeklynews/
 
+* Tell Greg to post on PlanetPostgresql.
+
 * If a non-beta, clean out any CPAN bugs, including going back and marking resolved 
 bugs with this new version, once it appears in the choices.
 
