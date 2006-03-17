@@ -1,7 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.46
-	- Fix problem with dollar-sign placeholders.
+	- Fix problem with dollar-sign placeholders. (husseinp@gmail.com)
 		(CPAN bug 18209) [GSM]
 
 1.45 February 27, 2006
