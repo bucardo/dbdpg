@@ -45,8 +45,13 @@ IF YOU HAVE PROBLEMS OR COMMENTS:
 Please send any problems and comments to 
 <dbdpg-general@gborg.postgresql.org>
 
-Please include details about your platform, and your version of 
-perl, PostgreSQL, DBI, and DBD-PG in your bug report.
+Please include what OS you are using, and the version of Perl, 
+DBI, and DBD::Pg you are using. Also tell which version of 
+PostgreSQL DBD::Pg was compiled against, and which version you 
+are connecting to. The easiest way to gather all of this 
+information is to run "make test", which outputs it all early in 
+the tests.
+
 
 BUG REPORTS
 -----------
@@ -63,7 +68,7 @@ REQUIREMENTS:
 
 	build, test, and install Perl 5         (at least 5.6.1)
 	build, test, and install the DBI module (at least 1.38)
-	build, test, and install PostgreSQL     (at least 7.2)
+	build, test, and install PostgreSQL     (at least 7.3)
 	build, test, and install Test::Simple   (at least 0.30)
 
 You must also have the pg_config executable installed (to check, type 
@@ -135,6 +140,32 @@ set DBD_TRACE unless requested, and send only the relevant sections.
 
 TROUBLESHOOTING:
 ----------------
+
+* Placeholder issues
+
+If you find that some of your queries containing placeholders are no 
+longer working, this may because DBD::Pg now uses the native PostgreSQL 
+placeholders on the server itself whenever possible. Previously, DBD::Pg 
+did a simple emulation of placeholders, so the rules were not as strict.
+You should either rewrite your queries to make them legal SQL syntax for 
+PostgreSQL, or turn off server-side prepares.
+
+To change your queries, make sure that the type of each placholder can 
+be determined by the PostgreSQL parser. So instead of:
+
+  SELECT ?
+
+use something like:
+
+  SELECT ?::int
+
+To turn off server-side prepares completely (with a loss of some performance 
+and features), do this at the top of your scripts:
+
+$dbh->{pg_server_prepare} = 0;
+
+This can also be set for individual queries at the statment handle level: see 
+the documentation for more details.
 
 * PostgreSQL library issues:
 
