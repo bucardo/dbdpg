@@ -1302,7 +1302,7 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 			newseg->placeholder = ++imp_sth->numphs;
 		}
 		else if (2==placeholder_type) {
-			newseg->placeholder = atoi(statement-(currpos-sectionstop-2));
+			newseg->placeholder = atoi(statement-(currpos-sectionstop-1));
 		}
 		else if (3==placeholder_type) {
 			sectionsize = currpos-sectionstop;
@@ -1363,7 +1363,8 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 		sectionstart = currpos;
 		imp_sth->numsegs++;
 
-		imp_sth->placeholder_type = placeholder_type;
+		if (placeholder_type > 0)
+			imp_sth->placeholder_type = placeholder_type;
 
 		/* If this segment also, ended the string, set ch so we bail out early */
 		if ('\0' == *statement)
