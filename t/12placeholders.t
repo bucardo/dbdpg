@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 16;
+	plan tests => 17;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -69,6 +69,13 @@ $sth->execute();
 
 ($retr) = $sth->fetchrow_array();
 ok( (defined($retr) && $retr eq "\\'?:"), 'execute with :1 placeholder');
+
+$sql = q{SELECT pname FROM dbd_pg_test WHERE pname = $1 AND pname <> 'foo'};
+$sth = $dbh->prepare($sql);
+$sth->execute("\\'?:");
+
+($retr) = $sth->fetchrow_array();
+ok( (defined($retr) && $retr eq "\\'?:"), 'execute with $1 placeholder');
 
 $sql = "SELECT pname FROM dbd_pg_test WHERE pname = '?'";
 
