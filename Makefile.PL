@@ -7,7 +7,7 @@ use 5.006001;
 use DBI 1.38;
 use DBI::DBD;
 
-my $VERSION = "1.45";
+my $VERSION = "1.46";
 
 my $lib;
 BEGIN {
