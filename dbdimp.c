@@ -651,7 +651,6 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 				(void)PerlIO_printf(DBILOGFP, "dbdpg: Setting AutoCommit on forced a commit\n");
 		}
 		DBIc_set(imp_dbh, DBIcf_AutoCommit, newval);
-		return 1;
 	}
 	else if (10==kl && strEQ(key, "pg_bool_tf")) {
 		imp_dbh->pg_bool_tf = newval!=0 ? DBDPG_TRUE : DBDPG_FALSE;
@@ -685,7 +684,10 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 			imp_dbh->prepare_now = newval ? DBDPG_TRUE : DBDPG_FALSE;
 		}
 	}
-	return 0;
+	else {
+		return 0;
+	}
+	return 1;
 
 } /* end of dbd_db_STORE_attrib */
 
@@ -1383,7 +1385,6 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 			if (currseg->placeholder > topdollar)
 				topdollar = currseg->placeholder;
 		}
-
 		/* Make sure every placeholder from 1 to topdollar is used at least once */
 		for (xint=1; xint <= topdollar; xint++) {
 			for (found=0, currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
@@ -1402,7 +1403,6 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 
 	/* Create sequential placeholders */
 	if (3 != imp_sth->placeholder_type) {
-		currseg = imp_sth->seg;
 		for (xint=1; xint <= imp_sth->numphs; xint++) {
 			New(0, newph, 1, ph_t); /* freed in dbd_st_destroy */
 			newph->nextph = NULL;
@@ -1413,13 +1413,12 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 			newph->defaultval = DBDPG_TRUE;
 			newph->isdefault = DBDPG_FALSE;
 			newph->fooname = NULL;
-			/* Let the correct segment point to it */
-			while (!currseg->placeholder)
-				currseg = currseg->nextseg;
-			if (!currseg)
-				croak("Invalid segment");
- 			currseg->ph = newph;
-			currseg = currseg->nextseg;
+			/* Let the correct segment(s) point to it */
+			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
+				if (currseg->placeholder==xint) {
+					currseg->ph = newph;
+				}
+			}
 			if (NULL==currph) {
 				imp_sth->ph = newph;
 			}
@@ -1987,7 +1986,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		OR
 		7b. All placeholders are bound (and "pg_server_prepare" is 2)
 	*/
-	if (dbis->debug >= 6) {
+	if (dbis->debug >= 7) {
 		(void)PerlIO_printf
 			(DBILOGFP, "dbdpg: PQexec* decision: dml=%d direct=%d protocol=%d server_prepare=%d numbound=%d numphs=%d default=%d\n",
 			 imp_sth->is_dml, imp_sth->direct, imp_dbh->pg_protocol, imp_sth->server_prepare, imp_sth->numbound, imp_sth->numphs, imp_sth->has_default);
@@ -2519,7 +2518,10 @@ int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 		Copy(value, imp_sth->prepare_name, vl, char);
 		imp_sth->prepare_name[vl] = '\0';
 	}
-	return 0;
+	else {
+		return 0;
+	}
+	return 1;
 
 } /* end of sbs_st_STORE_attrib */
 
