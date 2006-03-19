@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 17;
+	plan tests => 18;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -21,6 +21,14 @@ if (DBD::Pg::_pg_use_catalog($dbh)) {
 	$dbh->do("SET search_path TO " . $dbh->quote_identifier
 					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
 }
+
+my $SQL = "UPDATE dbd_pg_test SET testarray2 = '{99}'";
+my $count = $dbh->do($SQL);
+$SQL = "SELECT testarray2 FROM dbd_pg_test";
+my $sth = $dbh->prepare($SQL);
+my $count2 = $sth->execute();
+my $info = $sth->fetchall_arrayref();
+ok ($count==$count2, "Select from an array works");
 
 SKIP: {
     # XXX Until all the array stuff is working, skip all tests.
