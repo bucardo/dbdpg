@@ -40,7 +40,7 @@ static sql_type_info_t pg_types[] = {
 	{INETOID, "IP address", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{INT2OID, "int2", null_quote, null_dequote, {SQL_SMALLINT}, DBDPG_TRUE},
 	{INT2VECTOROID, "int28", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{INT4ARRAYOID, "int4array", 0, 0, {0}, DBDPG_FALSE},
+	{INT4ARRAYOID, "int4array", quote_string, dequote_string, {0}, DBDPG_FALSE},
 	{INT4OID, "int4", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
 	{INT8OID, "int8", null_quote, null_dequote, {SQL_DOUBLE}, DBDPG_TRUE},
 	{INTERNALOID, "internal", null_quote, null_dequote, {0}, DBDPG_TRUE},
@@ -433,7 +433,7 @@ CIRCLEOID, circle, null_quote, null_dequote, 0, 0
 CSTRINGOID, cstring, null_quote, null_dequote, 0, 0
 INETOID, IP address, null_quote, null_dequote, 0, 0
 INT2VECTOROID, int28, null_quote, null_dequote, 0, 0
-INT4ARRAYOID, int4array, 0, 0, 0, 0
+INT4ARRAYOID, int4array, quote_string, dequote_string, 0, 0
 INTERNALOID, internal, null_quote, null_dequote, 0, 0
 INTERVALOID, timespan, quote_string, dequote_string, SQL_INTERVAL, 0
 LANGUAGE_HANDLEROID, languagehandle, null_quote, null_dequote, 0, 0
