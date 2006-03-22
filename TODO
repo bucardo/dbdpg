@@ -16,3 +16,4 @@ TODO:
 - Rename functions and add defines to avoid problems with static linking of multi DBDs
 - Move to the Module::Build system
 - Support asynchronous queries
+- Add pgpass and company to the docs
