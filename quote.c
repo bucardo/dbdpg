@@ -61,7 +61,7 @@ char * quote_string(string, len, retlen)
 }
 
 char * quote_bytea(string, len, retlen)
-		 char * string;
+		 unsigned char * string;
 		 STRLEN len;
 		 STRLEN * retlen;
 {
