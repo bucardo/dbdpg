@@ -1544,11 +1544,23 @@ The format of the pg_service.conf file is simply a bracketed service
 name, followed by one parameter per line in the format name=value.
 For example:
 
-[zephyr]
-dbname=winds
-user=wisp
-password=W$2Hc00YSgP
-port=6543
+  [zephyr]
+  dbname=winds
+  user=wisp
+  password=W$2Hc00YSgP
+  port=6543
+
+There are four valid arguments to the "sslmode" parameter, which controls 
+whether to use SSL to connect to the database:
+
+=over 4
+
+=item disable - SSL connections are never used
+=item allow - try non-SSL, then SSL
+=item prefer - try SSL, then non-SSL
+=item require - connect only with SSL
+
+=back
 
 =item B<available_drivers>
 
