@@ -1504,10 +1504,10 @@ variables and then it uses hard-coded defaults:
   port       PGPORT                5432
   dbname**   PGDATABASE            current userid
   username   PGUSER                current userid
-  password   PGPASSWORD            ""
-  options    PGOPTIONS             ""
-  service*   PGSERVICE             ""
-  sslmode*   PGSSLMODE             ""
+  password   PGPASSWORD            (none)
+  options    PGOPTIONS             (none)
+  service*   PGSERVICE             (none)
+  sslmode*   PGSSLMODE             (none)
 
 * Only for servers running version 7.4 or greater
 
@@ -1526,6 +1526,30 @@ for these two parameters DBI distinguishes between empty and undefined. If
 these parameters are undefined DBI substitutes the values of the environment
 variables C<DBI_USER> and C<DBI_PASS> if present.
 
+You can also conenct by using a service connection file, which is named 
+"pg_service.conf." The location of this file can be controlled by 
+setting the C<PGSYSCONFDIR> environment variable. To use one of the named 
+services within the file, set the name by using either the "service" parameter 
+or the environment variable C<PGSERVICE>. Note that when connecting this way, 
+only the minimum parameters should be used. For example, to connect to a 
+service named "zephyr", you could use:
+
+  $dbh = DBI->connect("dbi:Pg:service=zephyr", "", "");
+
+You could also set $ENV{PGSERVICE} to "zephyr" and connect like this:
+
+  $dbh = DBI->connect("dbi:Pg:", "", "");
+
+The format of the pg_service.conf file is simply a bracketed service 
+name, followed by one parameter per line in the format name=value.
+For example:
+
+[zephyr]
+dbname=winds
+user=wisp
+password=W$2Hc00YSgP
+port=6543
+
 =item B<available_drivers>
 
   @driver_names = DBI->available_drivers;
@@ -1539,7 +1563,7 @@ Implemented by DBI, no driver-specific impact.
 This driver supports this method. Note that the necessary database connection
 to the database "template1" will be made on the localhost without any user
 authentication. Other preferences can only be set with the environment
-variables C<PGHOST>, C<PGPORT>, C<DBI_USER>, and C<DBI_PASS>.
+variables C<PGHOST>, C<PGPORT>, C<DBI_USER>, C<DBI_PASS>, and C<PGSERVICE>.
 
 =back
 
