@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 use Config;
 use strict;
 use 5.006001;
-use DBI 1.38;
+use DBI 1.41;
 use DBI::DBD;
 
 my $VERSION = "1.48";
