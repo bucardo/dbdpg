@@ -1681,7 +1681,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 		}
 	}
 	if (dbis->debug >= 5) {
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: Bind (%s) <== (%s) (type=%ld)", name, neatsvpv(newvalue,0), (long)sql_type);
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: Bind (%s) <== (%s) (type=%ld)\n", name, neatsvpv(newvalue,0), (long)sql_type);
 		if (attribs) {
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: Bind attribs (%s)", neatsvpv(attribs,0));
 		}
