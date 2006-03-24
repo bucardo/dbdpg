@@ -1,8 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.48
-		- Add documentation about connection service files
-			(pg_service.conf). [David Fetter]
+	- Fix bytea encoding problem (CPAN bug #18264) [GSM]
+	- Add documentation about connection service files
+		(pg_service.conf). [David Fetter]
 
 1.47 March 20, 2006
 	- Fix problem with selecting arrays. (CPAN bugs #18128 and 
