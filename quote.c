@@ -60,12 +60,12 @@ char * quote_string(string, len, retlen)
 	return result - (*retlen);
 }
 
-char * quote_bytea(string, len, retlen)
+unsigned char * quote_bytea(string, len, retlen)
 		 unsigned char * string;
 		 STRLEN len;
 		 STRLEN * retlen;
 {
-	char * result;
+	unsigned char * result;
 	STRLEN oldlen = len;
 
 	result = string;
@@ -87,7 +87,7 @@ char * quote_bytea(string, len, retlen)
 		len--;
 	}
 	string = result;
-	New(0, result, 1+(*retlen), char);
+	New(0, result, 1+(*retlen), unsigned char);
 	*result++ = '\'';
 	len = oldlen;
 	while (len > 0) {
@@ -116,8 +116,8 @@ char * quote_bytea(string, len, retlen)
 	return result - (*retlen);
 }
 
-char * quote_sql_binary( string, len, retlen)
-		 char *string;
+unsigned char * quote_sql_binary(string, len, retlen)
+		 unsigned char *string;
 		 STRLEN	len;
 		 STRLEN	*retlen;
 {
@@ -207,17 +207,17 @@ void dequote_string (string, retlen)
 
 
 void dequote_bytea(string, retlen)
-		 char *string;
+		 unsigned char *string;
 		 STRLEN *retlen;
 {
-	char *result;
+	unsigned char *result;
 
 	(*retlen) = 0;
 
 	if (NULL == string)
 			return;
 
-	New(0, result, strlen(string)+1, char);
+	New(0, result, strlen(string)+1, unsigned char);
 
 	result = string;
 
@@ -246,7 +246,7 @@ void dequote_bytea(string, retlen)
 		}
 	}
 	result = '\0';
-	Renew(result, (*retlen), char);
+	Renew(result, (*retlen), unsigned char);
 	string = result - (*retlen);
 	return;
 }
@@ -259,7 +259,7 @@ void dequote_bytea(string, retlen)
 	to something that uses SQL_BINARY
  */
 void dequote_sql_binary (string, retlen)
-		 char *string;
+		 unsigned char *string;
 		 STRLEN *retlen;
 {
 	/* We are going to retun a dequote_bytea(), JIC */
