@@ -102,7 +102,7 @@ unsigned char * quote_bytea(string, len, retlen)
 			*result++ = '\\';
 		}
 		else if (*string < 0x20 || *string > 0x7e) {
-			(void) snprintf(result, 6, "\\\\%03o", *string++);
+			(void) snprintf((char *)result, 6, "\\\\%03o", *string++);
 			result += 5;
 		}
 		else {
@@ -217,7 +217,7 @@ void dequote_bytea(string, retlen)
 	if (NULL == string)
 			return;
 
-	New(0, result, strlen(string)+1, unsigned char);
+	New(0, result, strlen((char *)string)+1, unsigned char);
 
 	result = string;
 
