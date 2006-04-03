@@ -45,10 +45,10 @@ use 5.006001;
 
 	bootstrap DBD::Pg $VERSION;
 
-	$err = 0;		    # holds error code for DBI::err
-	$errstr = "";	  # holds error string for DBI::errstr
+	$err = 0;       # holds error code for DBI::err
+	$errstr = "";   # holds error string for DBI::errstr
 	$sqlstate = ""; # holds five character SQLSTATE code
-	$drh = undef;	  # holds driver handle once initialized
+	$drh = undef;   # holds driver handle once initialized
 
 	sub CLONE {
 		$drh = undef;
@@ -69,7 +69,7 @@ use 5.006001;
 			'Err' => \$DBD::Pg::err,
 			'Errstr' => \$DBD::Pg::errstr,
 			'State' => \$DBD::Pg::sqlstate,
-			'Attribution' => 'PostgreSQL DBD by Edmund Mergl',
+			'Attribution' => "DBD::Pg $VERSION by Greg Sabino Mullane and others",
 		});
 
 
@@ -2151,10 +2151,11 @@ C<pg_ping> method.
 
   $rc = $dbh->pg_ping;
 
-This is a Postgres-specific extension to the C<ping> command. This will check the 
+This is a DBD::Pg-specific extension to the C<ping> command. This will check the 
 validity of a database handle in exactly the same way as C<ping>, but instead of 
-returning a 0 for an invalid connection, it will return a negative number. The 
-positive numbers are documented at C<ping>, the negative ones indicate:
+returning a 0 for an invalid connection, it will return a negative number. So in 
+addition to returning the positive numbers documented for C<ping>, it may also 
+return the following:
 
   Value    Meaning
   --------------------------------------------------
