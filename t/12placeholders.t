@@ -22,6 +22,11 @@ if (DBD::Pg::_pg_use_catalog($dbh)) {
 					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
 }
 
+my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
+if ($pgversion >= 80100) {
+  $dbh->do("SET escape_string_warning = false");
+}
+
 # Make sure that quoting works properly.
 my $quo = $dbh->quote("\\'?:");
 is( $quo, "'\\\\''?:'", "Properly quoted");
