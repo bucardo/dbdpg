@@ -60,7 +60,7 @@ char * quote_string(string, len, retlen)
 	return result - (*retlen);
 }
 
-unsigned char * quote_bytea(string, len, retlen)
+char * quote_bytea(string, len, retlen)
 		 unsigned char * string;
 		 STRLEN len;
 		 STRLEN * retlen;
@@ -113,10 +113,10 @@ unsigned char * quote_bytea(string, len, retlen)
 	*result++ = '\'';
 	*result = '\0';
 
-	return result - (*retlen);
+	return (char *)result - (*retlen);
 }
 
-unsigned char * quote_sql_binary(string, len, retlen)
+char * quote_sql_binary(string, len, retlen)
 		 unsigned char *string;
 		 STRLEN	len;
 		 STRLEN	*retlen;
