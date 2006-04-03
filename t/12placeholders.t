@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 17;
+	plan tests => 20;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -119,8 +119,25 @@ $sth = $dbh->prepare("SELECT '\\'?'");
 eval {
 	$sth->execute();
 };
-ok(!$@, 'prepare with backslashes inside quotes works');
+ok( !$@, 'prepare with backslashes inside quotes works');
 $sth->finish();
+
+## Test do() with placeholders, both DML and non-DML
+eval {
+  $dbh->do(q{SET search_path TO ?}, undef, 'public');
+};
+ok( !$@, 'do() called with non-DML placeholder works');
+eval {
+  $dbh->do(q{SELECT ?::text}, undef, 'public');
+};
+ok( !$@, 'do() called with non-DML placeholder works');
+
+## Test a non-DML placeholder
+eval {
+  $sth = $dbh->prepare(qq{SET search_path TO ?});
+  $sth->execute('public');
+};
+ok( !$@, 'prepare/execute iwth non-DML placeholder works');
 
 $dbh->rollback();
 
