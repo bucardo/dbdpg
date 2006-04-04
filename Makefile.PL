@@ -131,7 +131,7 @@ my %opts =
 	 CCFLAGS        => $comp_opts,
 	 PERL_MALLOC_OK => 1,
 	 NEEDS_LINKING  => 1,
-	 clean          => { FILES => 'trace' },
+	 clean          => { FILES => 'trace Pg.xsi' },
 );
 
 if ($os eq 'hpux') {
