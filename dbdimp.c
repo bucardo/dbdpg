@@ -343,6 +343,8 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	if (imp_dbh->conn)
 		PQfinish(imp_dbh->conn);
 	imp_dbh->conn = PQconnectdb(conn_str);
+	if (dbis->debug >= 5)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: successful connection\n");
 	Safefree(conn_str);
 	
 	Renew(imp_dbh->sqlstate, 6, char); /* freed in dbd_db_destroy (and above) */
