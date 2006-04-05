@@ -24,8 +24,6 @@ else {
 	plan tests => 1;
 }
 
-pass('Skip it XXX');
-exit;
 my $ret = Module::Signature::verify();
 SKIP: {
 	skip "Module::Signature cannot verify", 1 
