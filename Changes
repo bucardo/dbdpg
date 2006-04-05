@@ -1,10 +1,11 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.48 April 5, 2006
+	- Bump minimum DBI version to 1.45 (CPAN bug #18260) (plus problems 
+		in versions 1.42 and 1.44 [GSM]
 	- Fix typo in Pg.pm code (CPAN bug #18537) [marc@sssonline.com]
 	- Ensure begin_work is properly set before err. (CPAN bug #18387) [GSM]
 	- Force PQexecParams to only run with DML. (CPAN bug #18258) [GSM]
-	- Bump minimum DBI version to 1.41 (CPAN bug #18260) [GSM]
 	- Fix bytea encoding problem (CPAN bug #18264) [GSM]
 	- Add documentation about connection service files (pg_service.conf). 
 		[David Fetter]
