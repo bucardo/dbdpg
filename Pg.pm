@@ -294,7 +294,7 @@ use 5.006001;
 			if (@def > 1) {
 				my @pri = grep { $_->[1] } @def;
 				if (1 != @pri) {
-					$dbh->set_Err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
+					$dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
 				}
 				@def = @pri;
 			}
