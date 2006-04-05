@@ -31,11 +31,6 @@ static int errno;
 #define INV_WRITE 0x00020000
 #endif
 
-/* For versions of DBI older than 1.41 */
-#ifndef DBIcf_Executed
-#define DBIcf_Executed 0x080000
-#endif
-
 #ifdef BUFSIZ
 #undef BUFSIZ
 #endif
