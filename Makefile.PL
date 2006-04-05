@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 use Config;
 use strict;
 use 5.006001;
-use DBI 1.41;
+use DBI 1.45;
 use DBI::DBD;
 
 my $VERSION = "1.48";
@@ -125,9 +125,11 @@ my %opts =
 	 LIBS           => ["-L$POSTGRES_LIB -lpq"],
 	 AUTHOR         => 'http://gborg.postgresql.org/project/dbdpg/',
 	 ABSTRACT       => 'PostgreSQL database driver for the DBI module',
-	 PREREQ_PM      => { 'Test::Simple' => '0.17',  # Need Test::More.
-											 'Test::Harness' => '2.03', # Need TODO tests.
-									 },
+	 PREREQ_PM      => {
+						'DBI' => 1.45,
+						'Test::Simple' => '0.30',
+						'Test::Harness' => '2.03',
+					   },
 	 CCFLAGS        => $comp_opts,
 	 PERL_MALLOC_OK => 1,
 	 NEEDS_LINKING  => 1,

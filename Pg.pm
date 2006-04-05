@@ -41,7 +41,7 @@ use 5.006001;
 	Exporter::export_ok_tags('pg_types');
 	@EXPORT = qw($DBDPG_DEFAULT);
 
-	require_version DBI 1.38;
+	require_version DBI 1.45;
 
 	bootstrap DBD::Pg $VERSION;
 
