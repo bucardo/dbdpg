@@ -17,7 +17,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 160;
+	plan tests => 163;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -245,6 +245,16 @@ ok( !$@, 'DB handle method "begin_work" gives no warning when AutoCommit is off'
 ok( !$dbh->{AutoCommit}, 'DB handle method "begin_work" sets AutoCommit to off');
 $dbh->commit();
 ok( $dbh->{AutoCommit}, 'DB handle method "commit" after "begin_work" sets AutoCommit to on');
+
+$dbh->{AutoCommit}=1;
+eval {
+	$dbh->begin_work();
+};
+ok( !$@, 'DB handle method "begin_work" gives no warning when AutoCommit is off');
+ok( !$dbh->{AutoCommit}, 'DB handle method "begin_work" sets AutoCommit to off');
+$dbh->rollback();
+ok( $dbh->{AutoCommit}, 'DB handle method "rollback" after "begin_work" sets AutoCommit to on');
+
 $dbh->{AutoCommit}=0;
 
 #
