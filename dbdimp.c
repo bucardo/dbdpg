@@ -547,13 +547,15 @@ static int dbd_db_rollback_commit (dbh, imp_dbh, action)
 
 	status = _result(imp_dbh, action);
 		
+	/* Set this early, for scripts that continue despite the error below */
+	imp_dbh->done_begin = DBDPG_FALSE;
+
 	if (PGRES_COMMAND_OK != status) {
 		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 		return 0;
 	}
 
 	av_undef(imp_dbh->savepoints);
-	imp_dbh->done_begin = DBDPG_FALSE;
 
 	/* If we just did a rollback or a commit, we can no longer be in a PGRES_COPY state */
 	imp_dbh->copystate=0;
