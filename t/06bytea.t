@@ -18,6 +18,11 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 1, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for bytea testing");
 
+my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
+if ($pgversion >= 80100) {
+  $dbh->do("SET escape_string_warning = false");
+}
+
 my $sth;
 
 $sth = $dbh->prepare(qq{INSERT INTO dbd_pg_test (id,bytetest) VALUES (?,?)});
