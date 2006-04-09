@@ -37,28 +37,113 @@ char * quote_string(string, len, retlen)
 	result = string;
 	(*retlen) = 2;
 	while (len > 0 && *string != '\0') {
-			if (*string == '\'' || *string == '\\') {
-				(*retlen)++;
-			}
+		if (*string == '\'' || *string == '\\') {
 			(*retlen)++;
-			*string++;
-			len--;
+		}
+		(*retlen)++;
+		*string++;
+		len--;
 	}
 	string = result;
 	New(0, result, 1+(*retlen), char);
 	*result++ = '\'';
 	len = oldlen;
 	while (len > 0 && *string != '\0') {
-			if (*string == '\'' || *string == '\\') {
-					*result++ = *string;
-			}
-			*result++ = *string++;
-			len--;
+		if (*string == '\'' || *string == '\\') {
+				*result++ = *string;
+		}
+		*result++ = *string++;
+		len--;
 	}
 	*result++ = '\'';
 	*result = '\0';
 	return result - (*retlen);
 }
+
+
+char * quote_geom(string, len, retlen)
+	char * string;
+	STRLEN len;
+	STRLEN * retlen;
+{
+	char * result;
+
+	result = string;
+	(*retlen) = 2;
+	while (*string != '\0') {
+		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
+			&& *string != ',' && (*string < '0' || *string > '9'))
+			croak("Invalid input for geometric type");
+		(*retlen)++;
+		*string++;
+	}
+	string = result;
+	New(0, result, 1+(*retlen), char);
+	*result++ = '\'';
+	while (*string != '\0') {
+		*result++ = *string++;
+	}
+	*result++ = '\'';
+	*result = '\0';
+	return result - (*retlen);
+}
+
+char * quote_path(string, len, retlen)
+	char * string;
+	STRLEN len;
+	STRLEN * retlen;
+{
+	char * result;
+
+	result = string;
+	(*retlen) = 2;
+	while (*string != '\0') {
+		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
+			&& *string != ',' && *string != '[' && *string != ']'
+			&& (*string < '0' || *string > '9'))
+				croak("Invalid input for geometric path type");
+		(*retlen)++;
+		*string++;
+	}
+	string = result;
+	New(0, result, 1+(*retlen), char);
+	*result++ = '\'';
+	while (*string != '\0') {
+		*result++ = *string++;
+	}
+	*result++ = '\'';
+	*result = '\0';
+	return result - (*retlen);
+}
+
+char * quote_circle(string, len, retlen)
+	char * string;
+	STRLEN len;
+	STRLEN * retlen;
+{
+	char * result;
+
+	result = string;
+	(*retlen) = 2;
+	while (*string != '\0') {
+		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
+			&& *string != ',' && *string != '<' && *string != '>'
+			&& (*string < '0' || *string > '9'))
+				croak("Invalid input for geometric circle type");
+		(*retlen)++;
+		*string++;
+	}
+	string = result;
+	New(0, result, 1+(*retlen), char);
+	*result++ = '\'';
+	while (*string != '\0') {
+		*result++ = *string++;
+	}
+	*result++ = '\'';
+	*result = '\0';
+	return result - (*retlen);
+}
+
 
 char * quote_bytea(string, len, retlen)
 		 unsigned char * string;
