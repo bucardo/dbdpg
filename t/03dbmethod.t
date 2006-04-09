@@ -13,11 +13,12 @@
 
 use Test::More;
 use DBI qw(:sql_types);
+use DBD::Pg qw(:pg_types);
 use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 163;
+	plan tests => 186;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -778,6 +779,66 @@ my $foo;
 	is( $dbh->quote($foo), q{NULL}, 'DB handle method "quote" works with an undefined value');
 }
 is( $dbh->quote(1, 4), 1, 'DB handle method "quote" works with a supplied data type argument');
+
+#
+# Test various quote types
+#
+
+
+## Points
+eval { $result = $dbh->quote(q{123,456}, { pg_type => PG_POINT }); };
+ok( !$@, 'DB handle method "quote" works with type PG_POINT');
+is( $result, q{'123,456'}, 'DB handle method "quote" returns correct value for type PG_POINT');
+eval { $result = $dbh->quote(q{[123,456]}, { pg_type => PG_POINT }); };
+like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_POINT string');
+eval { $result = $dbh->quote(q{A123,456}, { pg_type => PG_POINT }); };
+like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_POINT string');
+
+## Lines and line segments
+eval { $result = $dbh->quote(q{123,456}, { pg_type => PG_LINE }); };
+ok( !$@, 'DB handle method "quote" works with valid PG_LINE string');
+eval { $result = $dbh->quote(q{[123,456]}, { pg_type => PG_LINE }); };
+like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_LINE string');
+eval { $result = $dbh->quote(q{<123,456}, { pg_type => PG_LINE }); };
+like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_LINE string');
+eval { $result = $dbh->quote(q{[123,456]}, { pg_type => PG_LSEG }); };
+like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_LSEG string');
+eval { $result = $dbh->quote(q{[123,456}, { pg_type => PG_LSEG }); };
+like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_LSEG string');
+
+## Boxes
+eval { $result = $dbh->quote(q{1,2,3,4}, { pg_type => PG_BOX }); };
+ok( !$@, 'DB handle method "quote" works with valid PG_BOX string');
+eval { $result = $dbh->quote(q{[1,2,3,4]}, { pg_type => PG_BOX }); };
+like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_BOX string');
+eval { $result = $dbh->quote(q{1,2,3,4,cheese}, { pg_type => PG_BOX }); };
+like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_BOX string');
+
+## Paths - can have optional square brackets
+eval { $result = $dbh->quote(q{[(1,2),(3,4)]}, { pg_type => PG_PATH }); };
+ok( !$@, 'DB handle method "quote" works with valid PG_PATH string');
+is( $result, q{'[(1,2),(3,4)]'}, 'DB handle method "quote" returns correct value for type PG_PATH');
+eval { $result = $dbh->quote(q{<(1,2),(3,4)>}, { pg_type => PG_PATH }); };
+like( $@, qr{Invalid input for geometric path type}, 'DB handle method "quote" fails with invalid PG_PATH string');
+eval { $result = $dbh->quote(q{<1,2,3,4>}, { pg_type => PG_PATH }); };
+like( $@, qr{Invalid input for geometric path type}, 'DB handle method "quote" fails with invalid PG_PATH string');
+
+## Polygons
+eval { $result = $dbh->quote(q{1,2,3,4}, { pg_type => PG_POLYGON }); };
+ok( !$@, 'DB handle method "quote" works with valid PG_POLYGON string');
+eval { $result = $dbh->quote(q{[1,2,3,4]}, { pg_type => PG_POLYGON }); };
+like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_POLYGON string');
+eval { $result = $dbh->quote(q{1,2,3,4,cheese}, { pg_type => PG_POLYGON }); };
+like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_POLYGON string');
+
+## Circles - can have optional angle brackets
+eval { $result = $dbh->quote(q{<(1,2,3)>}, { pg_type => PG_CIRCLE }); };
+ok( !$@, 'DB handle method "quote" works with valid PG_CIRCLE string');
+is( $result, q{'<(1,2,3)>'}, 'DB handle method "quote" returns correct value for type PG_CIRCLE');
+eval { $result = $dbh->quote(q{[(1,2,3)]}, { pg_type => PG_CIRCLE }); };
+like( $@, qr{Invalid input for geometric circle type}, 'DB handle method "quote" fails with invalid PG_CIRCLE string');
+eval { $result = $dbh->quote(q{1,2,3,4,H}, { pg_type => PG_CIRCLE }); };
+like( $@, qr{Invalid input for geometric circle type}, 'DB handle method "quote" fails with invalid PG_CIRCLE string');
 
 
 #
