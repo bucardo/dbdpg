@@ -567,6 +567,7 @@ prove -v t/99_pod.t
 * Run "perl Makefile.PL"
 
 * Run "make distdir" and commit the new META.yml file that is created, if different.
+(Or just edit it by hand yourself)
 
 * Run "make dist". Double check that the tarball created has the correct version name.
 
