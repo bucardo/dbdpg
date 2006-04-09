@@ -25,14 +25,14 @@ static sql_type_info_t pg_types[] = {
 	{ANYOID, "any", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{BITOID, "bitstring", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{BOOLOID, "bool", quote_bool, dequote_bool, {SQL_BOOLEAN}, DBDPG_TRUE},
-	{BOXOID, "box", null_quote, null_dequote, {0}, DBDPG_TRUE},
+	{BOXOID, "box", quote_geom, dequote_string, {0}, DBDPG_TRUE},
 	{BPCHAROID, "bpchar", quote_string, dequote_char, {SQL_CHAR}, DBDPG_TRUE},
 	{BYTEAOID, "bytea", quote_bytea, dequote_bytea, {SQL_VARBINARY}, DBDPG_TRUE},
 	{CASHOID, "money", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{CHAROID, "char", quote_string, dequote_char, {0}, DBDPG_TRUE},
 	{CIDOID, "cid", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
 	{CIDROID, "IP - cidr", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{CIRCLEOID, "circle", null_quote, null_dequote, {0}, DBDPG_TRUE},
+	{CIRCLEOID, "circle", quote_circle, dequote_string, {0}, DBDPG_TRUE},
 	{CSTRINGOID, "cstring", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{DATEOID, "date", null_quote, null_dequote, {SQL_TYPE_DATE}, DBDPG_TRUE},
 	{FLOAT4OID, "float4", quote_string, dequote_char, {SQL_NUMERIC}, DBDPG_TRUE},
@@ -40,27 +40,27 @@ static sql_type_info_t pg_types[] = {
 	{INETOID, "IP address", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{INT2OID, "int2", null_quote, null_dequote, {SQL_SMALLINT}, DBDPG_TRUE},
 	{INT2VECTOROID, "int28", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{INT4ARRAYOID, "int4array", quote_string, dequote_string, {0}, DBDPG_FALSE},
+	{INT4ARRAYOID, "int4array", quote_string, dequote_string, {0}, DBDPG_TRUE},
 	{INT4OID, "int4", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
 	{INT8OID, "int8", null_quote, null_dequote, {SQL_DOUBLE}, DBDPG_TRUE},
 	{INTERNALOID, "internal", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{INTERVALOID, "timespan", quote_string, dequote_string, {SQL_INTERVAL}, DBDPG_TRUE},
 	{LANGUAGE_HANDLEROID, "languagehandle", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{LINEOID, "line", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{LSEGOID, "lseg", null_quote, null_dequote, {0}, DBDPG_TRUE},
+	{LINEOID, "line", quote_geom, dequote_string, {0}, DBDPG_TRUE},
+	{LSEGOID, "lseg", quote_geom, dequote_string, {0}, DBDPG_TRUE},
 	{MACADDROID, "MAC address", quote_string, dequote_string, {0}, DBDPG_TRUE},
 	{NAMEOID, "name", null_quote, null_dequote, {SQL_VARCHAR}, DBDPG_TRUE},
 	{NUMERICOID, "numeric", null_quote, null_dequote, {SQL_DECIMAL}, DBDPG_TRUE},
 	{OIDOID, "oid", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
 	{OIDVECTOROID, "oid8", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{OPAQUEOID, "opaque", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{PATHOID, "path", null_quote, null_dequote, {0}, DBDPG_TRUE},
+	{PATHOID, "path", quote_path, dequote_string, {0}, DBDPG_TRUE},
 	{PG_ATTRIBUTE_RELTYPE_OID, "pg_attribute_reltype", 0, 0, {0}, DBDPG_FALSE},
 	{PG_CLASS_RELTYPE_OID, "pg_class_reltype", 0, 0, {0}, DBDPG_FALSE},
 	{PG_PROC_RELTYPE_OID, "pg_proc_reltype", 0, 0, {0}, DBDPG_FALSE},
 	{PG_TYPE_RELTYPE_OID, "pg_type_reltype", 0, 0, {0}, DBDPG_FALSE},
-	{POINTOID, "point", null_quote, null_dequote, {0}, DBDPG_TRUE},
-	{POLYGONOID, "polygon", null_quote, null_dequote, {0}, DBDPG_TRUE},
+	{POINTOID, "point", quote_geom, dequote_string, {0}, DBDPG_TRUE},
+	{POLYGONOID, "polygon", quote_geom, dequote_string, {0}, DBDPG_TRUE},
 	{RECORDOID, "record", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{REFCURSOROID, "refcursor", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{REGCLASSOID, "regclass", null_quote, null_dequote, {0}, DBDPG_TRUE},
@@ -72,7 +72,7 @@ static sql_type_info_t pg_types[] = {
 	{REGTYPEOID, "regtype", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{RELTIMEOID, "reltime", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{TEXTOID, "text", quote_string, dequote_string, {SQL_VARCHAR}, DBDPG_TRUE},
-	{TIDOID, "tid", null_quote, null_dequote, {0}, DBDPG_TRUE},
+	{TIDOID, "tid", quote_geom, dequote_string, {0}, DBDPG_TRUE},
 	{TIMEOID, "time", null_quote, null_dequote, {SQL_TYPE_TIME}, DBDPG_TRUE},
 	{TIMESTAMPOID, "timestamp", quote_string, dequote_string, {SQL_TYPE_TIMESTAMP}, DBDPG_TRUE},
 	{TIMESTAMPTZOID, "datetime", quote_string, dequote_string, {SQL_TYPE_TIMESTAMP_WITH_TIMEZONE}, DBDPG_TRUE},
@@ -397,12 +397,23 @@ NUMERICOID, numeric, null_quote, null_dequote, SQL_DECIMAL, 1
 CIDOID, cid, null_quote, null_dequote, SQL_INTEGER, 0
 OIDOID, oid, null_quote, null_dequote, SQL_INTEGER, 0
 
-
 ## Text - single quotes on end, escape backslashes and apostrophes
 VARCHAROID, varchar, quote_string, dequote_string, SQL_VARCHAR, 1
 BPCHAROID, bpchar, quote_string, dequote_char, SQL_CHAR, 1
 NAMEOID, name, null_quote, null_dequote, SQL_VARCHAR, 0
 TEXTOID, text, quote_string, dequote_string, SQL_VARCHAR, 0
+
+## Geometric types
+POINTOID, point, quote_geom, dequote_string, 0, 0
+LINEOID, line, quote_geom, dequote_string, 0, 0
+LSEGOID, lseg, quote_geom, dequote_string, 0, 0
+BOXOID, box, quote_geom, dequote_string, 0, 0
+PATHOID, path, quote_path, dequote_string, 0, 0
+POLYGONOID, polygon, quote_geom, dequote_string, 0, 0
+CIRCLEOID, circle, quote_circle, dequote_string, 0, 0
+
+## Similar enough to geometric types that we use the same quoting rules
+TIDOID, tid, quote_geom, dequote_string, 0, 0
 
 ## Binary - special quoting rules
 BYTEAOID, bytea, quote_bytea, dequote_bytea, SQL_VARBINARY, 1
@@ -426,10 +437,8 @@ ACLITEMOID, aclitem, null_quote, null_dequote, 0, 0
 ANYARRAYOID, anyarray, null_quote, null_dequote, SQL_ARRAY, 0
 ANYOID, any, null_quote, null_dequote, 0, 0
 BITOID, bitstring, null_quote, null_dequote, 0, 0
-BOXOID, box, null_quote, null_dequote, 0, 0
 CASHOID, money, null_quote, null_dequote, 0, 0
 CIDROID, IP - cidr, null_quote, null_dequote, 0, 0
-CIRCLEOID, circle, null_quote, null_dequote, 0, 0
 CSTRINGOID, cstring, null_quote, null_dequote, 0, 0
 INETOID, IP address, null_quote, null_dequote, 0, 0
 INT2VECTOROID, int28, null_quote, null_dequote, 0, 0
@@ -437,18 +446,13 @@ INT4ARRAYOID, int4array, quote_string, dequote_string, 0, 0
 INTERNALOID, internal, null_quote, null_dequote, 0, 0
 INTERVALOID, timespan, quote_string, dequote_string, SQL_INTERVAL, 0
 LANGUAGE_HANDLEROID, languagehandle, null_quote, null_dequote, 0, 0
-LINEOID, line, null_quote, null_dequote, 0, 0
-LSEGOID, lseg, null_quote, null_dequote, 0, 0
 MACADDROID, MAC address, quote_string,dequote_string, 0, 0
 OIDVECTOROID, oid8, null_quote, null_dequote, 0, 0
 OPAQUEOID, opaque, null_quote, null_dequote, 0, 0
-PATHOID, path, null_quote, null_dequote, 0, 0
 PG_ATTRIBUTE_RELTYPE_OID, pg_attribute_reltype, 0, 0, 0, 0
 PG_CLASS_RELTYPE_OID, pg_class_reltype, 0, 0, 0, 0
 PG_PROC_RELTYPE_OID, pg_proc_reltype, 0, 0, 0, 0
 PG_TYPE_RELTYPE_OID, pg_type_reltype, 0, 0, 0, 0
-POINTOID, point, null_quote, null_dequote, 0, 0
-POLYGONOID, polygon, null_quote, null_dequote, 0, 0
 RECORDOID, record, null_quote, null_dequote, 0, 0
 REFCURSOROID, refcursor, null_quote, null_dequote, 0, 0
 REGCLASSOID, regclass, null_quote, null_dequote, 0, 0
@@ -459,7 +463,6 @@ REGPROCOID, regproc, null_quote, null_dequote, 0, 0
 REGTYPEOID, regtype, null_quote, null_dequote, 0, 0
 REGTYPEARRAYOID, regtypearray, null_quote, null_dequote, 0, 0
 RELTIMEOID, reltime, null_quote, null_dequote, 0, 0
-TIDOID, tid, null_quote, null_dequote, 0, 0
 TINTERVALOID, tinterval, null_quote, null_dequote, 0, 0
 TRIGGEROID, trigger, null_quote, null_dequote, 0, 0
 UNKNOWNOID, unknown, quote_string, dequote_string, SQL_UNKNOWN_TYPE, 0

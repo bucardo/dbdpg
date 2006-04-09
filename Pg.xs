@@ -29,24 +29,38 @@ constant(name=Nullch)
 	ALIAS:
 	PG_BOOL      = 16
 	PG_BYTEA     = 17
-	PG_CHAR      = 18
-	PG_INT8      = 20
+
 	PG_INT2      = 21
 	PG_INT4      = 23
-	PG_TEXT      = 25
-	PG_OID       = 26
+	PG_INT8      = 20
 	PG_FLOAT4    = 700
 	PG_FLOAT8    = 701
+
+	PG_BPCHAR    = 1042
+	PG_CHAR      = 18
+	PG_VARCHAR   = 1043
+	PG_TEXT      = 25
+
 	PG_ABSTIME   = 702
 	PG_RELTIME   = 703
 	PG_TINTERVAL = 704
-	PG_BPCHAR    = 1042
-	PG_VARCHAR   = 1043
 	PG_DATE      = 1082
 	PG_TIME      = 1083
 	PG_DATETIME  = 1184
 	PG_TIMESPAN  = 1186
 	PG_TIMESTAMP = 1296
+
+	PG_POINT     = 600
+	PG_LINE      = 628
+	PG_LSEG      = 601
+	PG_BOX       = 603
+	PG_PATH      = 602
+	PG_POLYGON   = 604
+	PG_CIRCLE    = 718
+
+	PG_OID       = 26
+	PG_TID       = 27
+
 	CODE:
 		if (0==ix) {
 			if (!name) {
