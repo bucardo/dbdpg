@@ -176,11 +176,11 @@ char * quote_bytea(string, len, retlen)
 	*result++ = '\'';
 	len = oldlen;
 	while (len > 0) {
-		if (*string == '\'') { // Single quote becomes double quotes
+		if (*string == '\'') { /* Single quote becomes double quotes */
 			*result++ = *string;
 			*result++ = *string++;
 		}
-		else if (*string == '\\') { // Backslash becomes 4 backslashes
+		else if (*string == '\\') { /* Backslash becomes 4 backslashes */
 			*result++ = *string;
 			*result++ = *string++;
 			*result++ = '\\';
