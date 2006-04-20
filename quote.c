@@ -68,6 +68,7 @@ char * quote_geom(string, len, retlen)
 {
 	char * result;
 
+	len = 0; /* stops compiler warnings. Remove entirely someday */
 	result = string;
 	(*retlen) = 2;
 	while (*string != '\0') {
@@ -95,6 +96,7 @@ char * quote_path(string, len, retlen)
 {
 	char * result;
 
+	len = 0; /* stops compiler warnings. Remove entirely someday */
 	result = string;
 	(*retlen) = 2;
 	while (*string != '\0') {
@@ -123,6 +125,7 @@ char * quote_circle(string, len, retlen)
 {
 	char * result;
 
+	len = 0; /* stops compiler warnings. Remove entirely someday */
 	result = string;
 	(*retlen) = 2;
 	while (*string != '\0') {
