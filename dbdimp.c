@@ -2728,7 +2728,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		}
 	}
 	else if (13==kl && strEQ(key, "pg_oid_status")) {
-		retsv = newSViv((int)PQoidValue(imp_sth->result));
+	  retsv = newSVuv((unsigned int)PQoidValue(imp_sth->result));
 	}
 	else if (13==kl && strEQ(key, "pg_cmd_status")) {
 		retsv = newSVpv((char *)PQcmdStatus(imp_sth->result), 0);
