@@ -270,13 +270,22 @@ pg_release(dbh,name)
 
 
 void
+lo_creat(dbh, mode)
+	SV * dbh
+	int mode
+	CODE:
+		unsigned int ret = pg_db_lo_creat(dbh, mode);
+		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &sv_undef;
+
+
+void
 lo_open(dbh, lobjId, mode)
 	SV * dbh
 	unsigned int lobjId
 	int mode
 	CODE:
 		int ret = pg_db_lo_open(dbh, lobjId, mode);
-	ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
 
 
 void
@@ -284,7 +293,7 @@ lo_close(dbh, fd)
 	SV * dbh
 	int fd
 	CODE:
-		ST(0) = (-1 != pg_db_lo_close(dbh, fd)) ? &sv_yes : &sv_no;
+		ST(0) = (pg_db_lo_close(dbh, fd) >= 0) ? &sv_yes : &sv_no;
 
 
 void
@@ -306,7 +315,7 @@ lo_read(dbh, fd, buf, len)
 			sv_setpvn(ST(2), buf, (unsigned)ret);
 			SvSETMAGIC(ST(2));
 		}
-		ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
 
 
 void
@@ -317,7 +326,7 @@ lo_write(dbh, fd, buf, len)
 	size_t len
 	CODE:
 		int ret = pg_db_lo_write(dbh, fd, buf, len);
-		ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
 
 
 void
@@ -328,16 +337,7 @@ lo_lseek(dbh, fd, offset, whence)
 	int whence
 	CODE:
 		int ret = pg_db_lo_lseek(dbh, fd, offset, whence);
-		ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
-
-
-void
-lo_creat(dbh, mode)
-	SV * dbh
-	int mode
-	CODE:
-		int ret = pg_db_lo_creat(dbh, mode);
-		ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
 
 
 void
@@ -346,7 +346,7 @@ lo_tell(dbh, fd)
 	int fd
 	CODE:
 		int ret = pg_db_lo_tell(dbh, fd);
-		ST(0) = (-1 != ret) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
 
 
 void
@@ -354,7 +354,7 @@ lo_unlink(dbh, lobjId)
 	SV * dbh
 	unsigned int lobjId
 	CODE:
-		ST(0) = (-1 != pg_db_lo_unlink(dbh, lobjId)) ? &sv_yes : &sv_no;
+		ST(0) = (pg_db_lo_unlink(dbh, lobjId) >= 1) ? &sv_yes : &sv_no;
 
 
 void
@@ -362,8 +362,9 @@ lo_import(dbh, filename)
 	SV * dbh
 	char * filename
 	CODE:
-		int ret = pg_db_lo_import(dbh, filename);
-		ST(0) = (-1 != ret) ? sv_2mortal(newSViv((int)ret)) : &sv_undef;
+		unsigned int ret = pg_db_lo_import(dbh, filename);
+		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &sv_undef;
+
 
 void
 lo_export(dbh, lobjId, filename)
@@ -371,7 +372,7 @@ lo_export(dbh, lobjId, filename)
 	unsigned int lobjId
 	char * filename
 	CODE:
-		ST(0) = (-1 != pg_db_lo_export(dbh, lobjId, filename)) ? &sv_yes : &sv_no;
+		ST(0) = (pg_db_lo_export(dbh, lobjId, filename) >= 1) ? &sv_yes : &sv_no;
 
 
 void
@@ -388,6 +389,7 @@ putline(dbh, buf)
 	char * buf
 	CODE:
 		ST(0) = (pg_db_putline(dbh, buf)!=0) ? &sv_no : &sv_yes;
+
 
 void
 pg_getline(dbh, buf, len)

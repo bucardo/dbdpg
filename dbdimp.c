@@ -3077,10 +3077,10 @@ unsigned int pg_db_lo_creat (dbh, mode)
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_creat (%d)\n", mode); }
 
 	if (!pg_db_start_txn(dbh,imp_dbh)) {
-		return (unsigned)-1;
+	  return 0; /* No other option, because lo_creat returns an Oid */
 	}
 
-	return lo_creat(imp_dbh->conn, mode);
+	return lo_creat(imp_dbh->conn, mode); /* 0 on error */
 }
 
 int pg_db_lo_open (dbh, lobjId, mode)
@@ -3091,9 +3091,9 @@ int pg_db_lo_open (dbh, lobjId, mode)
 	D_imp_dbh(dbh);
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_open (%d) (%d)\n", lobjId, mode); }
 	if (!pg_db_start_txn(dbh,imp_dbh)) {
-		return (unsigned)-1;
+		return -2;
 	}
-	return lo_open(imp_dbh->conn, lobjId, mode);
+	return lo_open(imp_dbh->conn, lobjId, mode); /* -1 on error */
 }
 
 int pg_db_lo_close (dbh, fd)
@@ -3102,7 +3102,7 @@ int pg_db_lo_close (dbh, fd)
 {
 	D_imp_dbh(dbh);
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_close (%d)\n", fd); }
-	return lo_close(imp_dbh->conn, fd);
+	return lo_close(imp_dbh->conn, fd); /* <0 on error, 0 if ok */
 }
 
 int pg_db_lo_read (dbh, fd, buf, len)
@@ -3113,7 +3113,7 @@ int pg_db_lo_read (dbh, fd, buf, len)
 {
 	D_imp_dbh(dbh);
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_read (%d) (%d)\n", fd, len); }
-	return lo_read(imp_dbh->conn, fd, buf, len);
+	return lo_read(imp_dbh->conn, fd, buf, len); /* bytes read, <0 on error */
 }
 
 int pg_db_lo_write (dbh, fd, buf, len)
@@ -3124,7 +3124,7 @@ int pg_db_lo_write (dbh, fd, buf, len)
 {
 	D_imp_dbh(dbh);
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_write (%d) (%d)\n", fd, len); }
-	return lo_write(imp_dbh->conn, fd, buf, len);
+	return lo_write(imp_dbh->conn, fd, buf, len); /* bytes written, <0 on error */
 }
 
 int pg_db_lo_lseek (dbh, fd, offset, whence)
@@ -3135,7 +3135,7 @@ int pg_db_lo_lseek (dbh, fd, offset, whence)
 {
 	D_imp_dbh(dbh);
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_lseek (%d) (%d) (%d)\n", fd, offset, whence); }
-	return lo_lseek(imp_dbh->conn, fd, offset, whence);
+	return lo_lseek(imp_dbh->conn, fd, offset, whence); /* new position, -1 on error */
 }
 
 int pg_db_lo_tell (dbh, fd)
@@ -3144,7 +3144,7 @@ int pg_db_lo_tell (dbh, fd)
 {
 	D_imp_dbh(dbh);
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_tell (%d)\n", fd); }
-	return lo_tell(imp_dbh->conn, fd);
+	return lo_tell(imp_dbh->conn, fd); /* current position, <0 on error */
 }
 
 int pg_db_lo_unlink (dbh, lobjId)
@@ -3154,9 +3154,9 @@ int pg_db_lo_unlink (dbh, lobjId)
 	D_imp_dbh(dbh);
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_unlink (%d)\n", lobjId); }
 	if (!pg_db_start_txn(dbh,imp_dbh)) {
-		return (unsigned)-1;
+		return -2;
 	}
-	return lo_unlink(imp_dbh->conn, lobjId);
+	return lo_unlink(imp_dbh->conn, lobjId); /* 1 on success, -1 on failure */
 }
 
 unsigned int pg_db_lo_import (dbh, filename)
@@ -3166,9 +3166,9 @@ unsigned int pg_db_lo_import (dbh, filename)
 	D_imp_dbh(dbh);
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_import (%s)\n", filename); }
 	if (!pg_db_start_txn(dbh,imp_dbh)) {
-		return (unsigned)-1;
+		return 0; /* No other option, because lo_import returns an Oid */
 	}
-	return lo_import(imp_dbh->conn, filename);
+	return lo_import(imp_dbh->conn, filename); /* 0 on error */
 }
 
 int pg_db_lo_export (dbh, lobjId, filename)
@@ -3179,9 +3179,9 @@ int pg_db_lo_export (dbh, lobjId, filename)
 	D_imp_dbh(dbh);
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_lo_export id:(%d) file:(%s)\n", lobjId, filename); }
 	if (!pg_db_start_txn(dbh,imp_dbh)) {
-		return (unsigned)-1;
+		return -2;
 	}
-	return lo_export(imp_dbh->conn, lobjId, filename);
+	return lo_export(imp_dbh->conn, lobjId, filename); /* 1 on success, -1 on failure */
 }
 
 
