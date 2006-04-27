@@ -1,10 +1,13 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.49
+	- Make workaround for PQresultErrorField not returning proper 
+		result when an error is set and we are connecting via TCP/IP.
+		This allows correct $dbh->state() values., [GSM]
 	- Fix incorrect quoting preventing compiling (CPAN bug #18640)
 	- Add support for quoting and binding of geometric types: POINT, 
 		LINE, LSEG, BOX, PATH, POLYGON, and CIRCLE. Also added the 
-        TID type. [GSM]
+		TID type. [GSM]
 
 1.48 April 5, 2006
 	- Bump minimum DBI version to 1.45 (CPAN bug #18260) (plus problems 
