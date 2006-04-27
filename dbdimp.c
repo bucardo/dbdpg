@@ -159,15 +159,19 @@ static ExecStatusType _sqlstate(imp_dbh, result)
 	if (dbis->debug >= 6) (void)PerlIO_printf(DBILOGFP, "dbdpg: Status is (%d)\n", status);
 
 #if PGLIBVERSION >= 70400
-	if (result && imp_dbh->pg_server_version >= 70400) {
-		strncpy(imp_dbh->sqlstate,
-						NULL == PQresultErrorField(result,PG_DIAG_SQLSTATE) ? "00000" : 
-						PQresultErrorField(result,PG_DIAG_SQLSTATE),
-						5);
+	/*
+	  Because PQresultErrorField may not work completely when an error occurs, and 
+	  we are connecting over TCP/IP, only set it here if non-null, and fall through 
+	  to a better default value below.
+    */
+	if (result && imp_dbh->pg_server_version >= 70400
+	  && NULL != PQresultErrorField(result,PG_DIAG_SQLSTATE)) {
+		strncpy(imp_dbh->sqlstate, PQresultErrorField(result,PG_DIAG_SQLSTATE), 5);
 		imp_dbh->sqlstate[5] = '\0';
 		stateset = DBDPG_TRUE;
 	}
 #endif
+
 	if (!stateset) {
 		/* Do our best to map the status result to a sqlstate code */
 		switch (status) {
