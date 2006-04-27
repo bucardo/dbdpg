@@ -860,6 +860,7 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	imp_sth->prepared_by_us = DBDPG_FALSE; /* Set to 1 when actually done preparing */
 	imp_sth->has_binary = DBDPG_FALSE; /* Are any of the params binary? */
 	imp_sth->has_default = DBDPG_FALSE; /* Are any of the params DEFAULT? */
+	imp_sth->has_current = DBDPG_FALSE; /* Are any of the params DEFAULT? */
 	imp_sth->onetime = DBDPG_FALSE; /* Allow internal shortcut */
 	imp_sth->result	= NULL;
 	imp_sth->cur_tuple = 0;
@@ -1332,6 +1333,7 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 				newph->referenced = DBDPG_FALSE;
 				newph->defaultval = DBDPG_TRUE;
 				newph->isdefault = DBDPG_FALSE;
+				newph->iscurrent = DBDPG_FALSE;
 				New(0, newph->fooname, sectionsize+1, char); /* freed in dbd_st_destroy */
 				Copy(statement-sectionsize, newph->fooname, sectionsize, char);
 				newph->fooname[sectionsize] = '\0';
@@ -1416,6 +1418,7 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 			newph->referenced = DBDPG_FALSE;
 			newph->defaultval = DBDPG_TRUE;
 			newph->isdefault = DBDPG_FALSE;
+			newph->iscurrent = DBDPG_FALSE;
 			newph->fooname = NULL;
 			/* Let the correct segment(s) point to it */
 			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
@@ -1670,7 +1673,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 	}
 	/* dbi handle allowed for cursor variables */
 	if ((SvROK(newvalue) &&!IS_DBI_HANDLE(newvalue) &&!SvAMAGIC(newvalue))) {
-		if (strnEQ("DBD::Pg::DefaultValue", neatsvpv(newvalue,0), 16)
+		if (strnEQ("DBD::Pg::DefaultValue", neatsvpv(newvalue,0), 21)
 				|| strnEQ("DBI::DefaultValue", neatsvpv(newvalue,0), 17)) {
 			/* This is a special type */
 			Safefree(currph->value);
@@ -1678,6 +1681,14 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 			currph->valuelen = 0;
 			currph->isdefault = DBDPG_TRUE;
 			imp_sth->has_default = DBDPG_TRUE;
+		}
+		else if (strnEQ("DBD::Pg::Current", neatsvpv(newvalue,0), 16)) {
+			/* This is a special type */
+			Safefree(currph->value);
+			currph->value = NULL;
+			currph->valuelen = 0;
+			currph->iscurrent = DBDPG_TRUE;
+			imp_sth->has_current = DBDPG_TRUE;
 		}
 		else {
 			croak("Cannot bind a reference (%s) (%s) (%d) type=%d %d %d %d", neatsvpv(newvalue,0), SvAMAGIC(newvalue),
@@ -1744,7 +1755,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 			imp_sth->has_binary = DBDPG_TRUE;
 	}
 
-	if (currph->isdefault)
+	if (currph->isdefault || currph->iscurrent)
 		return 1;
 
 	/* convert to a string ASAP */
@@ -1929,6 +1940,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 	if (!imp_sth->is_dml
 		|| imp_dbh->pg_protocol < 3
 		|| imp_sth->has_default
+		|| imp_sth->has_current
 		|| (1 != imp_sth->server_prepare
 			&& imp_sth->numbound != imp_sth->numphs)
 		) {
@@ -1937,6 +1949,11 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 				Renew(currph->quoted, 8, char); /* freed in dbd_st_destroy */
 				strncpy(currph->quoted, "DEFAULT\0", 8);
 				currph->quotedlen = 7;
+			}
+			else if (currph->iscurrent) {
+				Renew(currph->quoted, 8, char); /* freed in dbd_st_destroy */
+				strncpy(currph->quoted, "CURRENT_TIMESTAMP\0", 18);
+				currph->quotedlen = 17;
 			}
 			else if (NULL == currph->value) {
 				Renew(currph->quoted, 5, char); /* freed in dbd_st_destroy */
@@ -2002,6 +2019,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 		&& imp_dbh->pg_protocol >= 3
 		&& 0 != imp_sth->server_prepare
 		&& !imp_sth->has_default
+		&& !imp_sth->has_current
 		&& (1 <= imp_sth->numphs && !imp_sth->onetime)
 		&& (1 == imp_sth->server_prepare
 			|| (imp_sth->numbound == imp_sth->numphs))
@@ -2054,6 +2072,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			&& imp_dbh->pg_protocol >= 3
 			&& imp_sth->numphs
 			&& !imp_sth->has_default
+			&& !imp_sth->has_current
 			&& (1 == imp_sth->server_prepare || imp_sth->numbound == imp_sth->numphs)
 			) {
 		  
