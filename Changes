@@ -1,6 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.49
+	- Thanks to Backcountry.com for sponsoring work on this release. [GSM]
+	- Strip the final newline from error messages, so that die can add 
+		in the line number. (CPAN bug #18900) [GSM]
 	- Make workaround for PQresultErrorField not returning proper 
 		result when an error is set and we are connecting via TCP/IP.
 		This allows correct $dbh->state() values., [GSM]
