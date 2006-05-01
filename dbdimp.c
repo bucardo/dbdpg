@@ -225,27 +225,19 @@ static void pg_error (h, error_num, error_msg)
 		 char *error_msg;
 {
 	D_imp_xxh(h);
-	char *err, *src, *dst; 
-	STRLEN len = strlen(error_msg);
+	char *err;
 	imp_dbh_t	*imp_dbh = (imp_dbh_t *)(DBIc_TYPE(imp_xxh) == DBIt_ST ? DBIc_PARENT_COM(imp_xxh) : imp_xxh);
 	
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_error (%s) number=%d\n",
 												error_msg, error_num);
 
-	New(0, err, len+1, char); /* freed below */
-	if (!err)
-		return;
-	
-	src = error_msg;
-	dst = err;
-	
-	/* copy error message without trailing newlines */
-	while (*src != '\0') {
-		*dst++ = *src++;
-	}
-	*dst = '\0';
-	
+	New(0, err, strlen(error_msg)+1, char); /* freed below */
+	strcpy(err, error_msg);
+	/* Strip final newline so line number appears for warn/die */
+	if (err[strlen(err)] == 10)
+	  err[strlen(err)] = '\0';
+
 	sv_setiv(DBIc_ERR(imp_xxh), (IV)error_num);		 /* set err early */
 	sv_setpv(DBIc_ERRSTR(imp_xxh), (char*)err);
 	sv_setpvn(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate, 5);
