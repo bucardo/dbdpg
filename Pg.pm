@@ -1939,6 +1939,9 @@ increases. This number is tracked at the database handle level, so multiple
 statement handles will not collide. If you use your own prepare statements, do
 not name them "dbdpg_"!
 
+You cannot send more than one command at a time in the same prepare command, 
+by separating them with semi-colons, when using server-side prepares.
+
 The actual C<PREPARE> is not performed until the first execute is called, due
 to the fact that information on the data types (provided by C<bind_param>) may
 be given after the prepare but before the execute.
@@ -2405,7 +2408,7 @@ string constant.
 
 PostgreSQL specific attribute. If true, then the C<utf8> flag will be turned
 for returned character data (if the data is valid UTF-8). For details about
-the C<utf8> flag, see L<Encode|Encode>. This attribute only relevant under
+the C<utf8> flag, see L<Encode|Encode>. This attribute is only relevant under
 perl 5.8 and later.
 
 B<NB>: This attribute is experimental and may be subject to change.
