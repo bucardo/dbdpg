@@ -2127,6 +2127,11 @@ B<Transactions> elsewhere in this document.
 Supported by this driver as proposed by DBI. See also the notes about
 B<Transactions> elsewhere in this document.
 
+=item B<begin_work>
+
+Supported by this driver as proposed by DBI. Note that this will not 
+issue a "begin" until immediately before the next given command.
+
 =item B<disconnect>
 
   $rc  = $dbh->disconnect;
