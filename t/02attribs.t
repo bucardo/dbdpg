@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 130;
+	plan tests => 132;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -70,6 +70,7 @@ s TYPE, PRECISION, SCALE, NULLABLE
 s CursorName
 s Database
 s ParamValues
+s ParamTypes
 s RowsInCache
 
 a Warn (inheritance test also)
@@ -462,13 +463,36 @@ is( $attrib, $dbh, 'Statement handle attribute "Database" matches the database h
 # Test of the statement handle attribute "ParamValues"
 #
 
-$sth = $dbh->prepare("SELECT id FROM dbd_pg_test WHERE id=?");
-$sth->bind_param(1, 1);
+$sth = $dbh->prepare("SELECT id FROM dbd_pg_test WHERE id=? AND val=? AND pname=?");
+$sth->bind_param(1, 99);
+$sth->bind_param(3, 'Sparky');
 $attrib = $sth->{ParamValues};
-is_deeply( $attrib, {1 => "1"}, qq{Statement handle attribute "ParamValues" works before execute});
+$expected = {1 => "99", 2 => undef, 3 => "Sparky"};
+is_deeply( $attrib, $expected, qq{Statement handle attribute "ParamValues" works before execute});
 $sth->execute();
 $attrib = $sth->{ParamValues};
-is_deeply( $attrib, {1 => "1"}, qq{Statement handle attribute "ParamValues" works after execute});
+is_deeply( $attrib, $expected, qq{Statement handle attribute "ParamValues" works after execute});
+
+#
+# Test of the statement handle attribute "ParamTypes"
+#
+
+if ($DBI::VERSION < 1.49) {
+ SKIP: {
+		skip 'DBI must be at least version 1.49 to test the DB handle attribute "ParamTypes"', 2;
+	}
+}
+else {
+	$sth = $dbh->prepare("SELECT id FROM dbd_pg_test WHERE id=? AND val=? AND lii=?");
+	$sth->bind_param(1, 1, SQL_INTEGER);
+	$sth->bind_param(2, 'TMW', SQL_VARCHAR);
+	$attrib = $sth->{ParamTypes};
+	$expected = {1 => "int4", 2 => "varchar", 3 => undef};
+	is_deeply( $attrib, $expected, qq{Statement handle attribute "ParamTypes" works before execute});
+	$sth->execute('TT');
+	$attrib = $sth->{ParamTypes};
+	is_deeply( $attrib, $expected, qq{Statement handle attribute "ParamTypes" works after execute});
+}
 
 #
 # Test of the statement handle attribute "RowsInCache"
