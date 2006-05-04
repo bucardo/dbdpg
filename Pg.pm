@@ -1,4 +1,4 @@
-# -*-cperl-*-
+<# -*-cperl-*-
 #  $Id$
 #
 #  Copyright (c) 2002-2006 PostgreSQL Global Development Group
@@ -2025,13 +2025,13 @@ The following two examples will be prepared right away:
 
   $sth->prepare("SELECT 123"); ## no placeholders
 
-  $sth->prepare("SELECT 123, ?", {pg_prepare_now = 1});
+  $sth->prepare("SELECT 123, ?", {pg_prepare_now => 1});
 
 The following two examples will NOT be prepared right away:
 
   $sth->prepare("SELECT 123, ?"); ## has a placeholder
 
-  $sth->prepare("SELECT 123", {pg_prepare_now = 0});
+  $sth->prepare("SELECT 123", {pg_prepare_now => 0});
 
 There are times when you may want to prepare a statement yourself. To do this,
 simply send the C<PREPARE> statement directly to the server (e.g. with
