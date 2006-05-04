@@ -75,13 +75,3 @@ is( $count, 1, 'Test table was successfully created')
 	or print STDOUT "Bail out! Test table was not created\n";
 
 ok( $dbh->disconnect(), 'Disconnect from database');
-
-
-
-
-
-
-
-
-
-
