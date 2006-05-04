@@ -113,6 +113,7 @@ use 5.006001;
 	## Returns an array of formatted database names from the pg_database table
 	sub data_sources {
 		my $drh = shift;
+		## Connect to "postgres" when the minimum version we support is 8.0
 		my $dbh = DBD::Pg::dr::connect($drh, 'dbname=template1') or return undef;
 		$dbh->{AutoCommit}=1;
 		my $SQL = "SELECT ${CATALOG}quote_ident(datname) FROM ${CATALOG}pg_database ORDER BY 1";
@@ -1485,9 +1486,8 @@ syntax:
 
   $dbh = DBI->connect("dbi:Pg:dbname=$dbname", "", "");
 
-This connects to the database $dbname at localhost without any user
-authentication. This is sufficient for the defaults of PostgreSQL (excluding
-some package-installed versions).
+This connects to the database $dbname on the default port (usually 5432) without 
+any user authentication.
 
 The following connect statement shows almost all possible parameters:
 
@@ -1495,8 +1495,8 @@ The following connect statement shows almost all possible parameters:
                       "options=$options", "$username", "$password",
                       {AutoCommit => 0});
 
-If a parameter is undefined PostgreSQL first looks for specific environment
-variables and then it uses hard-coded defaults:
+If a parameter is not given, the PostgreSQL server will first look for 
+specific environment variables, and then use hard-coded defaults:
 
   parameter  environment variable  hard coded default
   --------------------------------------------------
@@ -1563,6 +1563,18 @@ whether to use SSL to connect to the database:
 
 =back
 
+=item B<connect_cached>
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<installed_drivers>
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<installed_versions>
+
+Implemented by DBI, no driver-specific impact.
+
 =item B<available_drivers>
 
   @driver_names = DBI->available_drivers;
@@ -1607,7 +1619,8 @@ Supported by this driver. Returns a five-character "SQLSTATE" code.
 Success is indicated by a "00000" code, which gets mapped to an 
 empty string by DBI. A code of S8006 indicates a connection failure, 
 usually because the connection to the PostgreSQL server has been lost.
-Note that this can be called as both $sth->state and $dbh->state.
+
+Note that state can be called as either $sth->state or $dbh->state.
 
 PostgreSQL servers version less than 7.4 will return a small subset 
 of the available codes, and should not be relied upon.
@@ -1617,6 +1630,7 @@ L<http://www.postgresql.org/docs/current/static/errcodes-appendix.html>
 
 =item B<trace>
 
+  $h->trace($trace_level);
   $h->trace($trace_level, $trace_filename);
 
 Implemented by DBI, no driver-specific impact.
@@ -1624,6 +1638,7 @@ Implemented by DBI, no driver-specific impact.
 =item B<trace_msg>
 
   $h->trace_msg($message_text);
+  $h->trace_msg($message_text, $min_level);
 
 Implemented by DBI, no driver-specific impact.
 
@@ -1766,6 +1781,10 @@ Implemented by DBI, no driver-specific impact.
 Supported by this driver as proposed by DBI. A database handle is active while
 it is connected and statement handle is active until it is finished.
 
+=item B<Executed> (boolean, read-only)
+
+Implemented by DBI, no driver-specific impact. Requires DBI 1.41 or greater.
+
 =item B<Kids> (integer, read-only)
 
 Implemented by DBI, no driver-specific impact.
@@ -1778,11 +1797,25 @@ Implemented by DBI, no driver-specific impact.
 
 Implemented by DBI, no driver-specific impact.
 
+=item B<Type> (scalar)
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<ChildHandles> (array ref)
+
+Implemented by DBI, no driver-specific impact.
+
 =item B<CompatMode> (boolean, inherited)
 
 Not used by this driver.
 
 =item B<InactiveDestroy> (boolean)
+
+Implemented by DBI, no driver-specific impact. If set to true, then 
+the disconnect() method will not be automatically called when the 
+database handle goes out of scope (e.g. when exiting after a fork).
+
+=item B<PrintWarn> (boolean, inherited)
 
 Implemented by DBI, no driver-specific impact.
 
@@ -1798,6 +1831,26 @@ Implemented by DBI, no driver-specific impact.
 
 Implemented by DBI, no driver-specific impact.
 
+=item B<HandleSetErr> (code ref, inherited)
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<ErrCount> (unsigned integer)
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<ShowErrorStatement> (boolean, inherited)
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<TraceLevel> (integer, inherited)
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<FetchHashKeyName> (string, inherited)
+
+Implemented by DBI, no driver-specific impact.
+
 =item B<ChopBlanks> (boolean, inherited)
 
 Supported by this driver as proposed by DBI. This method is similar to the
@@ -1805,13 +1858,25 @@ SQL function C<RTRIM>.
 
 =item B<LongReadLen> (integer, inherited)
 
-Implemented by DBI, not used by this driver.
+Not used by this driver.
 
 =item B<LongTruncOk> (boolean, inherited)
 
-Implemented by DBI, not used by this driver.
+Not used by this driver.
 
 =item B<Taint> (boolean, inherited)
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<TaintIn> (boolean, inherited)
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<TaintOut> (boolean, inherited)
+
+Implemented by DBI, no driver-specific impact.
+
+=item B<Profile> (inherited)
 
 Implemented by DBI, no driver-specific impact.
 
@@ -2174,6 +2239,33 @@ return the following:
 
 In practice, you should only ever see -1 and -2.
 
+=item B<get_info>
+
+  $value = $dbh->get_info($info_type);
+
+Supports a very large set (> 250) of the information types, including the minimum 
+recommended by DBI.
+
+=item B<table_info>
+
+  $sth = $dbh->table_info( $catalog, $schema, $table, $type );
+
+Supported by this driver as proposed by DBI. This method returns all tables
+and views visible to the current user. The $catalog argument is currently
+unused. The schema and table arguments will do a C<LIKE> search if a percent
+sign (C<%>) or an underscore (C<_>) is detected in the argument. The $type
+argument accepts a value of either "TABLE" or "VIEW" (using both is the
+default action).
+
+The TABLE_CAT field will always return NULL (C<undef>). The TABLE_SCHEM field
+returns NULL (C<undef>) if the server is older than version 7.4.
+
+If your database supports tablespaces (version 8.0 or greater), two additional
+columns are returned, "pg_tablespace_name" and "pg_tablespace_location",
+that contain the name and location of the tablespace associated with
+this table. Tables that have not been assigned to a particular tablespace
+will return NULL (C<undef>) for both of these columns.
+
 =item B<column_info>
 
   $sth = $dbh->column_info( $catalog, $schema, $table, $column );
@@ -2197,26 +2289,6 @@ Also, two additional non-standard fields are returned:
 The REMARKS field will be returned as NULL (C<undef> for PostgreSQL versions
 older than 7.2. The TABLE_SCHEM field will be returned as NULL (C<undef>) for
 versions older than 7.4.
-
-=item B<table_info>
-
-  $sth = $dbh->table_info( $catalog, $schema, $table, $type );
-
-Supported by this driver as proposed by DBI. This method returns all tables
-and views visible to the current user. The $catalog argument is currently
-unused. The schema and table arguments will do a C<LIKE> search if a percent
-sign (C<%>) or an underscore (C<_>) is detected in the argument. The $type
-argument accepts a value of either "TABLE" or "VIEW" (using both is the
-default action).
-
-The TABLE_CAT field will always return NULL (C<undef>). The TABLE_SCHEM field
-returns NULL (C<undef>) if the server is older than version 7.4.
-
-If your database supports tablespaces (version 8.0 or greater), two additional
-columns are returned, "pg_tablespace_name" and "pg_tablespace_location",
-that contain the name and location of the tablespace associated with
-this table. Tables that have not been assigned to a particular tablespace
-will return NULL (C<undef>) for both of these columns.
 
 =item B<primary_key_info>
 
@@ -2335,6 +2407,9 @@ type is officially deprecated. Use C<PG_BYTEA> with C<bind_param()> instead:
   $rv = $sth->bind_param($param_num, $bind_value,
                          { pg_type => DBD::Pg::PG_BYTEA });
 
+=item B<quote_identifier>
+
+Implemented by DBI, no driver-specific impact.
 
 =item B<pg_server_trace>
 
@@ -2396,6 +2471,10 @@ this method is read-only.
 =item B<RowCacheSize>  (integer)
 
 Implemented by DBI, not used by this driver.
+
+=item B<Username>  (string, read-only)
+
+Supported by this driver as proposed by DBI.
 
 =item B<pg_auto_escape> (boolean)
 
@@ -2593,6 +2672,10 @@ Examples:
 
 Currently not supported by this driver.
 
+=item B<bind_param_array>
+
+Supported by this driver as proposed by DBI.
+
 =item B<execute>
 
   $rv = $sth->execute(@bind_values);
@@ -2610,6 +2693,14 @@ to NULL in the database. Setting the bind_value to $DBDPG_DEFAULT is equivalent
 to sending the literal string 'DEFAULT' to the backend. Note that using this 
 option will force server-side prepares off until such time as PostgreSQL 
 supports using DEFAULT in prepared statements.
+
+=item B<execute_array>
+
+Supported by this driver as proposed by DBI.
+
+=item B<execute_for_fetch>
+
+Supported by this driver as proposed by DBI.
 
 =item B<fetchrow_arrayref>
 
@@ -2765,6 +2856,12 @@ Implemented by DBI, no driver-specific impact.
 Supported by this driver as proposed by DBI. If called before C<execute>, the
 literal values passed in are returned. If called after C<execute>, then
 the quoted versions of the values are shown.
+
+=item C<ParamTypes>  (hash ref, read-only)
+
+Returns a hash of all current placeholders. The keys are the names of the placeholders, 
+and the values are the types that have been bound to each one. Placeholders that 
+have not yet been bound will return undef as the value.
 
 =item B<Statement>  (string, read-only)
 
