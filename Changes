@@ -2,6 +2,8 @@
 
 1.49
 	- Thanks to Backcountry.com for sponsoring work on this release. [GSM]
+	- Add the statement handle attribute ParamTypes, and fix an error 
+		in ParamValues. ParamTypes requires DBI 1.49 or better. [GSM]
 	- Strip the final newline from error messages, so that die can add 
 		in the line number. (CPAN bug #18900) [GSM]
 	- Make workaround for PQresultErrorField not returning proper 
