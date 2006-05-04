@@ -2581,14 +2581,34 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		ph_t *currph;
 		for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
 			if (NULL == currph->value) {
-				(void)hv_store_ent
-					(pvhv, 3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : 
-					 newSViv(i+1), Nullsv, (unsigned)i);
+				(void)hv_store_ent 
+				  (pvhv,
+				   (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1)),
+				   newSV(0), 0);
 			}
 			else {
 				(void)hv_store_ent
-					(pvhv, 3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : 
-					 newSViv(i+1), newSVpv(currph->value,0),(unsigned)i);
+					(pvhv,
+					 (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1)),
+					 newSVpv(currph->value,0),0);
+			}
+		}
+		retsv = newRV_noinc((SV*)pvhv);
+		return retsv;
+	}
+	else if (10==kl && strEQ(key, "ParamTypes")) {
+		HV *pvhv = newHV();
+		ph_t *currph;
+		for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
+			if (NULL == currph->bind_type) {
+				(void)hv_store_ent
+					(pvhv, (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1)),
+					 newSV(0), 0);
+			}
+			else {
+				(void)hv_store_ent
+					(pvhv, (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1)),
+					 newSVpv(currph->bind_type->type_name,0),0);
 			}
 		}
 		retsv = newRV_noinc((SV*)pvhv);
