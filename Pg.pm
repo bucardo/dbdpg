@@ -1,4 +1,4 @@
-<# -*-cperl-*-
+# -*-cperl-*-
 #  $Id$
 #
 #  Copyright (c) 2002-2006 PostgreSQL Global Development Group
