@@ -534,6 +534,8 @@ other sections referenced herein (indicated with **)
 * Update the versions (see ** Version Numbers) in README, Pg.pm (2 places!), Makefile.PL, 
   META.yml, and Changes.
 
+* Put the final release date into the Changes file.
+
 * If a beta version, please put a large warning at the top of the README file. Here is a sample:
 
 ===================================================
