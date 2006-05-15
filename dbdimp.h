@@ -27,6 +27,7 @@ struct imp_dbh_st {
 
 	int     pg_protocol;       /* value of PQprotocolVersion, usually 0, 2, or 3 */
 	int     pg_server_version; /* Server version e.g. 80100 */
+	int     pid_number;        /* prefixed before prepare_number */
 	int     prepare_number;    /* internal prepared statement name modifier */
 	int     copystate;         /* 0=none PGRES_COPY_IN PGRES_COPY_OUT */
 	int     pg_errorlevel;     /* PQsetErrorVerbosity. Set by user, defaults to 1 */

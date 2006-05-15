@@ -392,6 +392,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	imp_dbh->done_begin = DBDPG_FALSE; /* We are not inside a transaction */
 	imp_dbh->pg_bool_tf = DBDPG_FALSE;
 	imp_dbh->pg_enable_utf8 = 0;
+	imp_dbh->pid_number = getpid();
 	imp_dbh->prepare_number = 1;
 	imp_dbh->prepare_now = DBDPG_FALSE;
 	imp_dbh->pg_errorlevel = 1; /* Matches PG default */
@@ -709,6 +710,8 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 		retsv = boolSV(DBIc_has(imp_dbh, DBIcf_AutoCommit));
 	} else if (10==kl && strEQ(key, "pg_bool_tf")) {
 		retsv = newSViv((IV)imp_dbh->pg_bool_tf);
+	} else if (10==kl && strEQ(key, "pid_number")) {
+		retsv = newSViv((IV)imp_dbh->pid_number);
 	} else if (13==kl && strEQ(key, "pg_errorlevel")) {
 		retsv = newSViv((IV)imp_dbh->pg_errorlevel);
 #ifdef is_utf8_string
@@ -1479,8 +1482,8 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 
 	Renew(imp_sth->prepare_name, 25, char); /* freed in dbd_st_destroy (and above) */
 
-	/* Name is simply "dbdpg_#" */
-	sprintf(imp_sth->prepare_name,"dbdpg_%d", imp_dbh->prepare_number);
+	/* Name is simply "dbdpg_PID_#" */
+	sprintf(imp_sth->prepare_name,"dbdpg_%d_%d", imp_dbh->pid_number, imp_dbh->prepare_number);
 
 	if (dbis->debug >= 5)
 		(void)PerlIO_printf
