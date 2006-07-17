@@ -1557,8 +1557,11 @@ whether to use SSL to connect to the database:
 =over 4
 
 =item disable - SSL connections are never used
+
 =item allow - try non-SSL, then SSL
+
 =item prefer - try SSL, then non-SSL
+
 =item require - connect only with SSL
 
 =back
