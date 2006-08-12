@@ -31,6 +31,7 @@ use 5.006001;
 			PG_FLOAT4 PG_FLOAT8 PG_ABSTIME PG_RELTIME PG_TINTERVAL PG_BPCHAR
 			PG_VARCHAR PG_DATE PG_TIME PG_DATETIME PG_TIMESPAN PG_TIMESTAMP
 			PG_POINT PG_LINE PG_LSEG PG_BOX PG_PATH PG_POLYGON PG_CIRCLE
+			PG_INT4ARRAY
 		)]
 	);
 
@@ -1527,7 +1528,7 @@ for these two parameters DBI distinguishes between empty and undefined. If
 these parameters are undefined DBI substitutes the values of the environment
 variables C<DBI_USER> and C<DBI_PASS> if present.
 
-You can also conenct by using a service connection file, which is named 
+You can also connect by using a service connection file, which is named 
 "pg_service.conf." The location of this file can be controlled by 
 setting the C<PGSYSCONFDIR> environment variable. To use one of the named 
 services within the file, set the name by using either the "service" parameter 
