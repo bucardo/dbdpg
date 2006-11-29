@@ -7,6 +7,9 @@ are always welcome.
 
 Note: most of this document assumes you are using a Unix-like system.
 
+Warning: this document still references cvs, but DBD::Pg is now using 
+subversion. Documentation updates will be coming soon.
+
 Sections:
 
 * Overview
