@@ -8,7 +8,7 @@ DESCRIPTION:
 
 This is version 1.50 of DBD-Pg.  The web site for this interface is at:
 
-	http://gborg.postgresql.org/project/dbdpg/projdisplay.php
+	http://search.cpan.org/~dbdpg/
 
 For further information about DBI look at:
 
@@ -43,7 +43,7 @@ IF YOU HAVE PROBLEMS OR COMMENTS:
 ---------------------------------
 
 Please send any problems and comments to 
-<dbdpg-general@gborg.postgresql.org>
+<dbd-pg@perl.org>
 
 Please include what OS you are using, and the version of Perl, 
 DBI, and DBD::Pg you are using. Also tell which version of 
