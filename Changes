@@ -2,7 +2,7 @@
 
 1.50
 	- Switch from cvs to subversion. Switch from gborg to perl.org.
-	- Fix pg_description join in table_info(). [max@endpoint.com]
+	- Fix pg_description join in table_info(). [Max Cohan max@endpoint.com]
 	- Fix memory leak in pg_notifies. [Stephen Marshall smarshall@wsi.com]
 		(CPAN bug #21380)
 
