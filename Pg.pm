@@ -937,6 +937,7 @@ use 5.006001;
 			my $showschema = "NULL::text";
 			my $schemajoin = '';
 			my $has_objsubid = '';
+			my $objid_join = '';
 			my $tablespacejoin = '';
 			my $showtablespace = '';
 			my @search;
@@ -944,10 +945,12 @@ use 5.006001;
 				$showschema = "quote_ident(n.nspname)";
 				$schemajoin = "LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)";
 				$has_objsubid = "AND d.objsubid = 0";
+				$objid_join = "c.relfilenode = d.objoid";
 			}
 			if ($version >= 70500) {
 				$tablespacejoin = 'LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
 				$showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(t.spclocation) AS "pg_tablespace_location"';
+				$objid_join = "c.oid = d.objoid AND c.tableoid = d.classoid";
 			}
 
 			## If the schema or table has an underscore or a %, use a LIKE comparison
@@ -984,7 +987,7 @@ use 5.006001;
 					 , d.description AS "REMARKS" $showtablespace
 				FROM ${DBD::Pg::dr::CATALOG}pg_class AS c
 					LEFT JOIN ${DBD::Pg::dr::CATALOG}pg_description AS d
-						ON (c.relfilenode = d.objoid $has_objsubid)
+						ON ($objid_join $has_objsubid)
 					$schemajoin $tablespacejoin
 				WHERE $whereclause
 				ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
