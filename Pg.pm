@@ -496,6 +496,151 @@ use 5.006001;
 		return $sth;
 	}
 
+	sub statistics_info {
+		my $dbh = shift;
+		my ($catalog, $schema, $table, $unique_only, $quick, $attr) = @_;
+
+		## Catalog is ignored, but table is mandatory
+		return undef unless defined $table and length $table;
+
+		my $version = $dbh->{private_dbdpg}{version};
+
+		# These defaults are for schema-less pre-7.3 versions...
+		my $schema_out = 'NULL::text AS nspname';
+		my $schema_from = '';
+		my $schema_where = '';
+		my @exe_args = ($table);
+
+		my $gotschema = $version >= 70300 ? 1 : 0;
+		my $input_schema = (defined $schema and length $schema) ? 1 : 0;
+
+		if($gotschema) {
+			$schema_out = 'n.nspname';
+			$schema_from = ", ${DBD::Pg::dr::CATALOG}pg_namespace n";
+			if($input_schema) {
+				$schema_where = 'AND n.nspname = ? AND n.oid = d.relnamespace';
+				push(@exe_args, $schema);
+			}
+			else {
+				$schema_where = 'AND n.oid = d.relnamespace';
+			}
+		}
+
+		my $table_stats_sql = qq{
+			SELECT d.relpages, d.reltuples, $schema_out
+			FROM   pg_class d $schema_from
+			WHERE  d.relname = ? $schema_where
+		};
+
+		my $colnames_sql = qq{
+			SELECT
+				a.attnum, a.attname
+			FROM
+				${DBD::Pg::dr::CATALOG}pg_attribute a, ${DBD::Pg::dr::CATALOG}pg_class d
+				$schema_from
+			WHERE
+				a.attrelid = d.oid AND d.relname = ? $schema_where
+		};
+
+		my $stats_sql = qq{
+			SELECT
+				c.relname, i.indkey, i.indisunique, i.indisclustered, a.amname,
+				$schema_out, c.relpages, c.reltuples, i.indexprs,
+				pg_get_expr(i.indpred,i.indrelid) as predicate
+			FROM
+				${DBD::Pg::dr::CATALOG}pg_index i, ${DBD::Pg::dr::CATALOG}pg_class c,
+				${DBD::Pg::dr::CATALOG}pg_class d, ${DBD::Pg::dr::CATALOG}pg_am a
+				$schema_from
+			WHERE
+				d.relname = ? $schema_where AND d.oid = i.indrelid
+				AND i.indexrelid = c.oid AND c.relam = a.oid
+			ORDER BY
+				i.indisunique desc, a.amname, c.relname
+		};
+
+		my @output_rows;
+
+		# Table-level stats
+		if(!$unique_only) {
+			my $table_stats_sth = $dbh->prepare($table_stats_sql);
+			$table_stats_sth->execute(@exe_args) or return undef;
+			my $tst = $table_stats_sth->fetchrow_hashref or return undef;
+			push(@output_rows, [
+				undef,            # TABLE_CAT
+				$tst->{nspname},  # TABLE_SCHEM
+				$table,           # TABLE_NAME
+				undef,            # NON_UNIQUE
+				undef,            # INDEX_QUALIFIER
+				undef,            # INDEX_NAME
+				'table',          # TYPE
+				undef,            # ORDINAL_POSITION
+				undef,            # COLUMN_NAME
+				undef,            # ASC_OR_DESC
+				$tst->{reltuples},# CARDINALITY
+				$tst->{relpages}, # PAGES
+				undef,            # FILTER_CONDITION
+			]);
+		}
+
+		# Fetch the column names for later use
+		my $colnames_sth = $dbh->prepare($colnames_sql);
+		$colnames_sth->execute(@exe_args) or return undef;
+		my $colnames = $colnames_sth->fetchall_hashref('attnum');
+
+		# Fetch the index definitions
+		my $sth = $dbh->prepare($stats_sql);
+		$sth->execute(@exe_args) or return undef;
+
+		STAT_ROW:
+		while(my $row = $sth->fetchrow_hashref) {
+			next if $row->{indexprs}; # We can't return these accurately via this interface ...
+			next if $unique_only && !$row->{indisunique};
+
+			my $indtype = $row->{indisclustered}
+				? 'clustered'
+				: ( $row->{amname} eq 'btree' )
+					? 'btree'
+					: ($row->{amname} eq 'hash' )
+						? 'hashed' : 'other';
+
+			my $nonunique = $row->{indisunique} ? 0 : 1;
+
+			my @index_row = (
+				undef,             # TABLE_CAT
+				$row->{nspname},   # TABLE_SCHEM
+				$table,            # TABLE_NAME
+				$nonunique,        # NON_UNIQUE
+				undef,             # INDEX_QUALIFIER
+				$row->{relname},   # INDEX_NAME
+				$indtype,          # TYPE
+				undef,             # ORDINAL_POSITION
+				undef,             # COLUMN_NAME
+				'A',               # ASC_OR_DESC
+				$row->{reltuples}, # CARDINALITY
+				$row->{relpages},  # PAGES
+				$row->{predicate}, # FILTER_CONDITION
+			);
+
+			my $col_nums = $row->{indkey};
+			$col_nums =~ s/^\s+//;
+			my @col_nums = split(/\s+/, $col_nums);
+
+			my $ord_pos = 1;
+			foreach my $col_num (@col_nums) {
+				my @copy = @index_row;
+				$copy[7] = $ord_pos++; # ORDINAL_POSITION
+				$copy[8] = $colnames->{$col_num}->{attname}; # COLUMN_NAME
+				push(@output_rows, \@copy);
+			}
+		}
+
+		my @output_colnames = qw/ TABLE_CAT TABLE_SCHEM TABLE_NAME NON_UNIQUE INDEX_QUALIFIER
+					INDEX_NAME TYPE ORDINAL_POSITION COLUMN_NAME ASC_OR_DESC
+					CARDINALITY PAGES FILTER_CONDITION /;
+
+		return _prepare_from_data('statistics_info', \@output_rows, \@output_colnames);
+	}
+
 	sub primary_key_info {
 
 		my $dbh = shift;

@@ -18,7 +18,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 186;
+	plan tests => 196;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -428,6 +428,131 @@ is_deeply( \@result, $expected, 'DB handle method "primary_key" works');
 @result = $dbh->primary_key('', '', 'dbd_pg_test_do_not_create_this_table');
 $expected = [];
 is_deeply( \@result, $expected, 'DB handle method "primary_key" returns empty list for invalid table');
+
+#
+# Test of the "statistics_info" database handle method
+#
+
+$sth = $dbh->statistics_info(undef,undef,undef,undef,undef);
+is ($sth, undef, 'DB handle method "statistics_info" returns undef: no table');
+
+# Drop any tables that may exist
+my $fktables = join "," => map { "'dbd_pg_test$_'" } (1..3);
+$SQL = "SELECT relname FROM pg_catalog.pg_class WHERE relkind='r' AND relname IN ($fktables)";
+{
+	local $SIG{__WARN__} = sub {};
+	for (@{$dbh->selectall_arrayref($SQL)}) {
+		$dbh->do("DROP TABLE $_->[0] CASCADE");
+	}
+}
+
+## Invalid table
+$sth = $dbh->statistics_info(undef,undef,'dbd_pg_test9',undef,undef);
+is ($sth, undef, 'DB handle method "statistics_info" returns undef: bad table');
+
+## Create some tables with various indexes
+{
+	local $SIG{__WARN__} = sub {};
+	$dbh->do("CREATE TABLE dbd_pg_test1 (a INT, b INT NOT NULL, c INT NOT NULL, ".
+		"CONSTRAINT dbd_pg_test1_pk PRIMARY KEY (a))");
+	$dbh->do("ALTER TABLE dbd_pg_test1 ADD CONSTRAINT dbd_pg_test1_uc1 UNIQUE (b)");
+	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test1_index_c ON dbd_pg_test1(c)");
+	$dbh->do("CREATE TABLE dbd_pg_test2 (a INT, b INT, c INT, PRIMARY KEY(a,b), UNIQUE(b,c))");
+	$dbh->do("CREATE INDEX dbd_pg_test2_skipme ON dbd_pg_test2(c,(a+b))");
+	$dbh->do("CREATE TABLE dbd_pg_test3 (a INT, b INT, c INT, PRIMARY KEY(a)) WITH OIDS");
+	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_index_b ON dbd_pg_test3(b)");
+	$dbh->do("CREATE INDEX dbd_pg_test3_index_c ON dbd_pg_test3 USING hash(c)");
+	$dbh->do("CREATE INDEX dbd_pg_test3_oid ON dbd_pg_test3(oid)");
+	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_pred ON dbd_pg_test3(c) WHERE c > 0 AND c < 45");
+	$dbh->commit();
+}
+
+my $correct_stats = {
+one => [
+	[ undef, 'public', 'dbd_pg_test1', undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef ],
+	[ undef, 'public', 'dbd_pg_test1', '0', undef, 'dbd_pg_test1_index_c', 'btree',  1, 'c', 'A', '0', '1', undef ],
+	[ undef, 'public', 'dbd_pg_test1', '0', undef, 'dbd_pg_test1_pk',      'btree',  1, 'a', 'A', '0', '1', undef ],
+	[ undef, 'public', 'dbd_pg_test1', '0', undef, 'dbd_pg_test1_uc1',     'btree',  1, 'b', 'A', '0', '1', undef ],
+],
+two => [
+	[ undef, 'public', 'dbd_pg_test2', undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef ],
+	[ undef, 'public', 'dbd_pg_test2', '0', undef, 'dbd_pg_test2_b_key',   'btree',  1, 'b', 'A', '0', '1', undef ],
+	[ undef, 'public', 'dbd_pg_test2', '0', undef, 'dbd_pg_test2_b_key',   'btree',  2, 'c', 'A', '0', '1', undef ],
+	[ undef, 'public', 'dbd_pg_test2', '0', undef, 'dbd_pg_test2_pkey',    'btree',  1, 'a', 'A', '0', '1', undef ],
+	[ undef, 'public', 'dbd_pg_test2', '0', undef, 'dbd_pg_test2_pkey',    'btree',  2, 'b', 'A', '0', '1', undef ],
+],
+three => [
+	[ undef, 'public', 'dbd_pg_test3', undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef ],
+	[ undef, 'public', 'dbd_pg_test3', '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef ],
+	[ undef, 'public', 'dbd_pg_test3', '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef ],
+	[ undef, 'public', 'dbd_pg_test3', '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))' ],
+	[ undef, 'public', 'dbd_pg_test3', '1', undef, 'dbd_pg_test3_oid',     'btree',  1, 'oid', 'A', '0', '1', undef ],
+	[ undef, 'public', 'dbd_pg_test3', '1', undef, 'dbd_pg_test3_index_c', 'hashed', 1, 'c', 'A', '0', '0', undef ],
+],
+three_uo => [
+	[ undef, 'public', 'dbd_pg_test3', '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef ],
+	[ undef, 'public', 'dbd_pg_test3', '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef ],
+	[ undef, 'public', 'dbd_pg_test3', '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))' ],
+],
+};
+
+if(!$got73) { # wipe out the schema names in the expected results above
+	foreach my $subset (values %$correct_stats) {
+		foreach (@$subset) {
+			$_->[1] = undef;
+		}
+	}
+}
+
+SKIP: {
+	skip qq{Cannot test statistics_info with schema arg on pre-7.3 servers.}, 3
+		if ! $got73;
+
+        my $stats;
+
+	$sth = $dbh->statistics_info(undef,'public','dbd_pg_test1',undef,undef);
+        $stats = $sth->fetchall_arrayref;
+	is_deeply($stats, $correct_stats->{one}, 'Correct stats output for public.dbd_pg_test1');
+
+	$sth = $dbh->statistics_info(undef,'public','dbd_pg_test2',undef,undef);
+        $stats = $sth->fetchall_arrayref;
+	is_deeply($stats, $correct_stats->{two}, 'Correct stats output for public.dbd_pg_test2');
+
+	$sth = $dbh->statistics_info(undef,'public','dbd_pg_test3',undef,undef);
+        $stats = $sth->fetchall_arrayref;
+	is_deeply($stats, $correct_stats->{three}, 'Correct stats output for public.dbd_pg_test3');
+
+	$sth = $dbh->statistics_info(undef,'public','dbd_pg_test3',1,undef);
+        $stats = $sth->fetchall_arrayref;
+	is_deeply($stats, $correct_stats->{three_uo}, 'Correct stats output for public.dbd_pg_test3 (unique only)');
+}
+
+{
+        my $stats;
+
+	$sth = $dbh->statistics_info(undef,undef,'dbd_pg_test1',undef,undef);
+        $stats = $sth->fetchall_arrayref;
+	is_deeply($stats, $correct_stats->{one}, 'Correct stats output for dbd_pg_test1');
+
+	$sth = $dbh->statistics_info(undef,undef,'dbd_pg_test2',undef,undef);
+        $stats = $sth->fetchall_arrayref;
+	is_deeply($stats, $correct_stats->{two}, 'Correct stats output for dbd_pg_test2');
+
+	$sth = $dbh->statistics_info(undef,undef,'dbd_pg_test3',undef,undef);
+        $stats = $sth->fetchall_arrayref;
+	is_deeply($stats, $correct_stats->{three}, 'Correct stats output for dbd_pg_test3');
+
+	$sth = $dbh->statistics_info(undef,undef,'dbd_pg_test3',1,undef);
+        $stats = $sth->fetchall_arrayref;
+	is_deeply($stats, $correct_stats->{three_uo}, 'Correct stats output for dbd_pg_test3 (unique only)');
+}
+
+# Clean everything up
+{
+	$dbh->do("DROP TABLE dbd_pg_test3");
+	$dbh->do("DROP TABLE dbd_pg_test2");
+	$dbh->do("DROP TABLE dbd_pg_test1");
+}
 
 #
 # Test of the "foreign_key_info" database handle method
