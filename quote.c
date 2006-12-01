@@ -305,8 +305,6 @@ void dequote_bytea(string, retlen)
 	if (NULL == string)
 			return;
 
-	New(0, result, strlen((char *)string)+1, unsigned char);
-
 	result = string;
 
 	while (*string != '\0') {
@@ -334,7 +332,6 @@ void dequote_bytea(string, retlen)
 		}
 	}
 	result = '\0';
-	Renew(result, (*retlen), unsigned char);
 	string = result - (*retlen);
 	return;
 }
