@@ -835,7 +835,7 @@ SV * dbd_db_pg_notifies (dbh, imp_dbh)
 
 	retsv = newRV(sv_2mortal((SV*)ret));
 	
-	return retsv;
+	return sv_2mortal(retsv);
 
 } /* end of dbd_db_pg_notifies */
 
