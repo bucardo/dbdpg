@@ -127,7 +127,7 @@ my %opts =
 	 ABSTRACT       => 'PostgreSQL database driver for the DBI module',
 	 PREREQ_PM      => {
 						'DBI' => 1.45,
-						'Test::Simple' => '0.30',
+						'Test::Simple' => '0.60_01',
 						'Test::Harness' => '2.03',
 					   },
 	 CCFLAGS        => $comp_opts,
