@@ -505,7 +505,7 @@ if(!$got73) { # wipe out the schema names in the expected results above
 }
 
 SKIP: {
-	skip qq{Cannot test statistics_info with schema arg on pre-7.3 servers.}, 3
+	skip qq{Cannot test statistics_info with schema arg on pre-7.3 servers.}, 4
 		if ! $got73;
 
         my $stats;
