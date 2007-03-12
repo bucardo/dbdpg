@@ -2547,7 +2547,7 @@ Implemented by DBI, no driver-specific impact.
 
 =item B<quote>
 
-  $sql = $dbh->quote($value, $data_type);
+  $rv = $dbh->quote($value, $data_type);
 
 This module implements its own C<quote> method. In addition to the DBI method it
 also doubles the backslash, because PostgreSQL treats a backslash as an escape
