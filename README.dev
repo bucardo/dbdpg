@@ -290,7 +290,7 @@ This allows for quick testing of each combination:
 
 etc...
 
-It's also a good idea to test the current cvs version of pg in your tests: this can detect 
+It's also a good idea to test the current cvs version of Postgres in your tests: this can detect 
 changes nice and early.
 
 In addition to different versions of Postgres, it's a good idea to test a few versions of 
@@ -503,11 +503,11 @@ please check that you have done the following items:
 
 * Created a standard header for the file, with a (dollar sign)Id(dollar sign)
 
-* Added it to cvs via 'cvs add filename' and 'cvs commit filename'
+* Added it to subversion via 'svn add filename' and 'svn commit filename'
 
 * Added it to the MANIFEST file
 
-* Added to Makefile.PL if needed, to make sure all build dependencies are met
+* Added it to Makefile.PL if needed, to make sure all build dependencies are met
 
 * Updated/created necessary tests for it
 
@@ -532,7 +532,7 @@ other sections referenced herein (indicated with **)
 
 * Test on variety of versions (see ** Heavy Testing)
 
-* Make sure everything is up to date in cvs
+* Make sure everything is up to date in subversion
 
 * Update the versions (see ** Version Numbers) in README, Pg.pm (2 places!), Makefile.PL, 
   META.yml, and Changes.
@@ -691,10 +691,10 @@ not persistent across tests, they mess up the schema testing, and they
 are compatible with the foreign key testing. But do try and use them 
 whenever possible.
 
-* "turnstep" in the cvs logs is Greg Sabino Mullane, greg@turnstep.com.
+* "turnstep" in the cvs/svn logs is Greg Sabino Mullane, greg@turnstep.com.
 
 * Use a "tmp" extension for files you keep around in the dbdpg directory, but 
-don't want to show up when you do a "cvs up". They are also ignored by make dist.
+don't want to show up when you do a "svn up". They are also ignored by make dist.
 
 * Commit each file individually, unless the log message is *really* identical 
 across all committed files (which is rare). Always give a good description 
