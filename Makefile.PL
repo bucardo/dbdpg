@@ -7,7 +7,7 @@ use 5.006001;
 use DBI 1.45;
 use DBI::DBD;
 
-my $VERSION = "1.49";
+my $VERSION = "1.50";
 
 my $lib;
 BEGIN {
@@ -56,6 +56,8 @@ if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
 my $os = $^O;
 print "OS: $os\n";
 print "PostgreSQL version: $serverversion (default port: $defaultport)\n";
+print "POSTGRES_INCLUDE: $ENV{POSTGRES_INCLUDE}\n";
+print "POSTGRES_LIB: $ENV{POSTGRES_LIB}\n";
 
 if ($serverversion < 1) {
 	die "Could not determine the PostgreSQL library version.\n".
