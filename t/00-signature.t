@@ -6,7 +6,10 @@ use Test::More;
 use strict;
 $|=1;
 
-if (!eval { require Module::Signature; 1 }) {
+if ($ENV{DBDPG_SKIP_SIGNATURE_TEST}) {
+	plan skip_all => 'Skipping signature test';
+}
+elsif (!eval { require Module::Signature; 1 }) {
 	plan skip_all => 
 		"Please install Module::Signature so that you can verify ".
 			"the integrity of this and other distributions.";
