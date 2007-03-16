@@ -259,7 +259,7 @@ use 5.006001;
 				push @args, $schema;
 			}
 			$SQL = "SELECT c.oid FROM ${DBD::Pg::dr::CATALOG}pg_class c $schemajoin\n WHERE relname = ?$schemawhere";
-			$sth = $dbh->prepare($SQL);
+			$sth = $dbh->prepare_cached($SQL);
 			$count = $sth->execute(@args);
 			if (!defined $count or $count eq '0E0') {
 				$sth->finish();
@@ -306,7 +306,7 @@ use 5.006001;
 			$dbh->{private_dbdpg}{$cachename} = $sequence;
 		}
 
-		$sth = $dbh->prepare("SELECT currval(?)");
+		$sth = $dbh->prepare_cached("SELECT currval(?)");
 		$sth->execute($sequence);
 		return $sth->fetchall_arrayref()->[0][0];
 
