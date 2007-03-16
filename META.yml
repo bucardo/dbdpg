@@ -21,15 +21,15 @@ build_requires:
 
 provides:
   DBD::Pg:
-    file:            Pg.pm
-    version:         1.50
+    file            : Pg.pm
+    version         : 1.50
 
 resources:
-  homepage:          http://search.cpan.org/dist/DBD-Pg/
-  license:           http://dev.perl.org/licenses/
-  bugtracker:        http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
-  MailingList:       http://www.nntp.perl.org/group/perl.dbd.pg/
+  homepage          : http://search.cpan.org/dist/DBD-Pg/
+  license           : http://dev.perl.org/licenses/
+  bugtracker        : http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
+  MailingList       : http://www.nntp.perl.org/group/perl.dbd.pg/
 meta-spec:
-  version:           1.3
-  url:               http://module-build.sourceforge.net/META-spec-v1.3.html
-generated_by:        emacs
+  version           : 1.3
+  url               : http://module-build.sourceforge.net/META-spec-v1.3.html
+generated_by        : emacs
