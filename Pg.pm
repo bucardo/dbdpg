@@ -1,7 +1,7 @@
 # -*-cperl-*-
 #  $Id$
 #
-#  Copyright (c) 2002-2006 PostgreSQL Global Development Group
+#  Copyright (c) 2002-2007 PostgreSQL Global Development Group
 #  Portions Copyright (c) 2002 Jeffrey W. Baker
 #  Portions Copyright (c) 1997-2001 Edmund Mergl
 #  Portions Copyright (c) 1994-1997 Tim Bunce
@@ -17,7 +17,7 @@ use 5.006001;
 	package DBD::Pg;
 
 	our $VERSION = '1.50';
-	
+
 	use DBI ();
 	use DynaLoader ();
 	use Exporter ();
@@ -131,7 +131,7 @@ use 5.006001;
 
 		## Allow "db" and "database" as synonyms for "dbname"
 		$dbname =~ s/\b(?:db|database)\s*=/dbname=/;
-	
+
 		my $Name = $dbname;
 		if ($dbname =~ m#dbname\s*=\s*[\"\']([^\"\']+)#) {
 			$Name = "'$1'";
@@ -140,7 +140,7 @@ use 5.006001;
 		elsif ($dbname =~ m#dbname\s*=\s*([^;]+)#) {
 			$Name = $1;
 		}
-	
+
  		$user = "" unless defined($user);
 		$pass = "" unless defined($pass);
 
@@ -271,10 +271,10 @@ use 5.006001;
 			## This table has a primary key. Is there a sequence associated with it via a unique, indexed column?
 			$SQL = "SELECT a.attname, i.indisprimary, substring(d.adsrc for 128) AS def\n".
 				"FROM ${DBD::Pg::dr::CATALOG}pg_index i, ${DBD::Pg::dr::CATALOG}pg_attribute a, ${DBD::Pg::dr::CATALOG}pg_attrdef d\n ".
-					"WHERE i.indrelid = $oid AND d.adrelid=a.attrelid AND d.adnum=a.attnum\n".
-						"  AND a.attrelid=$oid AND i.indisunique IS TRUE\n".
-							"  AND a.atthasdef IS TRUE AND i.indkey[0]=a.attnum\n".
-								" AND d.adsrc ~ '^nextval'";
+				"WHERE i.indrelid = $oid AND d.adrelid=a.attrelid AND d.adnum=a.attnum\n".
+				"  AND a.attrelid=$oid AND i.indisunique IS TRUE\n".
+				"  AND a.atthasdef IS TRUE AND i.indkey[0]=a.attnum\n".
+				" AND d.adsrc ~ '^nextval'";
 			$sth = $dbh->prepare($SQL);
 			$count = $sth->execute();
 			if (!defined $count or $count eq '0E0') {
@@ -514,7 +514,7 @@ use 5.006001;
 		my $gotschema = $version >= 70300 ? 1 : 0;
 		my $input_schema = (defined $schema and length $schema) ? 1 : 0;
 
-		if($gotschema) {
+		if ($gotschema) {
 			$schema_out = 'n.nspname';
 			$schema_from = ", ${DBD::Pg::dr::CATALOG}pg_namespace n";
 			if($input_schema) {
@@ -528,7 +528,7 @@ use 5.006001;
 
 		my $table_stats_sql = qq{
 			SELECT d.relpages, d.reltuples, $schema_out
-			FROM   pg_class d $schema_from
+			FROM   ${DBD::Pg::dr::CATALOG}pg_class d $schema_from
 			WHERE  d.relname = ? $schema_where
 		};
 
@@ -561,7 +561,7 @@ use 5.006001;
 		my @output_rows;
 
 		# Table-level stats
-		if(!$unique_only) {
+		if (!$unique_only) {
 			my $table_stats_sth = $dbh->prepare($table_stats_sql);
 			$table_stats_sth->execute(@exe_args) or return undef;
 			my $tst = $table_stats_sth->fetchrow_hashref or return undef;
@@ -592,9 +592,9 @@ use 5.006001;
 		$sth->execute(@exe_args) or return undef;
 
 		STAT_ROW:
-		while(my $row = $sth->fetchrow_hashref) {
+		while (my $row = $sth->fetchrow_hashref) {
 			next if $row->{indexprs}; # We can't return these accurately via this interface ...
-			next if $unique_only && !$row->{indisunique};
+			next if $unique_only and !$row->{indisunique};
 
 			my $indtype = $row->{indisclustered}
 				? 'clustered'
@@ -626,7 +626,7 @@ use 5.006001;
 			my @col_nums = split(/\s+/, $col_nums);
 
 			my $ord_pos = 1;
-			foreach my $col_num (@col_nums) {
+			for my $col_num (@col_nums) {
 				my @copy = @index_row;
 				$copy[7] = $ord_pos++; # ORDINAL_POSITION
 				$copy[8] = $colnames->{$col_num}->{attname}; # COLUMN_NAME
