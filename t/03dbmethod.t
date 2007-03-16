@@ -18,7 +18,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 196;
+	plan tests => 198;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -105,6 +105,20 @@ eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef);
 };
 ok( ! $@, 'DB handle method "last_insert_id" works when called twice (cached) given a valid table');
+
+$dbh->do("CREATE SCHEMA dbd_pg_testli");
+$dbh->{Warn}=0;
+$dbh->do("CREATE TABLE dbd_pg_testli.litest(a serial primary key)");
+$dbh->{Warn}=1;
+$dbh->do("INSERT INTO dbd_pg_testli.litest DEFAULT VALUES");
+eval {
+	$result = $dbh->last_insert_id(undef,'dbd_pg_testli','litest',undef);
+};
+is ($@, q{}, 'DB handle method "last_insert_id" works when called with a schema not in the search path');
+is ($result, 1, qq{Got 1});
+
+$dbh->do("DROP TABLE dbd_pg_testli.litest CASCADE");
+$dbh->do("DROP SCHEMA dbd_pg_testli CASCADE");
 
 #
 # Test of the "selectrow_array" database handle method
@@ -1156,11 +1170,11 @@ else {
 	ok( 2==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 2 when in COPY IN state');
 	1 while $dbh->pg_getline($mtvar,1000);
 	ok( 2==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 2 immediately after COPY IN state');
-	
+
 	$dbh->do("SELECT 123");
-	
+
 	ok( 3==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 3 for a good connection inside a transaction');
-	
+
 	eval {
 		$dbh->do("DBD::Pg creating an invalid command for testing");
 	};
