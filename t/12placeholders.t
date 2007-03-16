@@ -8,7 +8,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 20;
+	plan tests => 27;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -142,7 +142,57 @@ eval {
   $sth = $dbh->prepare(qq{SET search_path TO ?});
   $sth->execute('public');
 };
-ok( !$@, 'prepare/execute iwth non-DML placeholder works');
+ok( !$@, 'prepare/execute with non-DML placeholder works');
+
+
+## Make sure we can allow geometric and other placeholders
+eval {
+	$sth = $dbh->prepare(qq{SELECT ?- lseg '(1,0),(1,1)'});
+	$sth->execute();
+};
+like ($@, qr{unbound placeholder}, qq{prepare/execute does not allows geometric operators});
+
+$dbh->{pg_placeholder_dollaronly} = 1;
+eval {
+	$sth = $dbh->prepare(qq{SELECT ?- lseg '(1,0),(1,1)'});
+	$sth->execute();
+	$sth->finish();
+};
+is ($@, q{}, qq{prepare/execute allows geometric operator ?- when dollaronly set});
+
+eval {
+	$sth = $dbh->prepare(qq{SELECT lseg'(1,0),(1,1)' ?# lseg '(2,3),(4,5)'});
+	$sth->execute();
+	$sth->finish();
+};
+is ($@, q{}, qq{prepare/execute allows geometric operator ?# when dollaronly set});
+
+is ($dbh->{pg_placeholder_dollaronly}, 1, qq{Value of plcaeholder_dollaronly can be retrieved});
+
+$dbh->{pg_placeholder_dollaronly} = 0;
+eval {
+	$sth = $dbh->prepare(q{SELECT uno ?: dos ? tres :foo bar $1});
+	$sth->execute();
+	$sth->finish();
+};
+like ($@, qr{mix placeholder}, qq{prepare/execute does not allow use of raw ? and :foo forms});
+
+$dbh->{pg_placeholder_dollaronly} = 1;
+eval {
+	$sth = $dbh->prepare(q{SELECT uno ?: dos ? tres :foo bar $1}, {pg_placeholder_dollaronly => 1});
+	$sth->{pg_placeholder_dollaronly} = 1;
+	$sth->execute();
+	$sth->finish();
+};
+like ($@, qr{unbound placeholder}, qq{prepare/execute allows use of raw ? and :foo forms when dollaronly set});
+
+$dbh->{pg_placeholder_dollaronly} = 0;
+eval {
+	$sth = $dbh->prepare(q{SELECT uno ?: dos ? tres :foo bar $1}, {pg_placeholder_dollaronly => 1});
+	$sth->execute();
+	$sth->finish();
+};
+like ($@, qr{unbound placeholder}, qq{pg_placeholder_dollaronly can be called as part of prepare()});
 
 $dbh->rollback();
 

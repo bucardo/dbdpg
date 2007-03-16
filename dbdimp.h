@@ -1,7 +1,7 @@
 /*
 	$Id$
 	
-	Copyright (c) 2000-2006 PostgreSQL Global Development Group
+	Copyright (c) 2000-2007 PostgreSQL Global Development Group
 	Portions Copyright (c) 1997-2000 Edmund Mergl
 	Portions Copyright (c) 1994-1997 Tim Bunce
 	
@@ -24,6 +24,7 @@ struct imp_dbh_st {
 	bool    pg_enable_utf8;    /* should we attempt to make utf8 strings? Set by user, default is 0 */
 	bool    prepare_now;       /* force immediate prepares, even with placeholders. Set by user, default is 0 */
 	bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */
+	bool    dollaronly;        /* Only consider $1, $2 ... as valid placeholders */
 
 	int     pg_protocol;       /* value of PQprotocolVersion, usually 0, 2, or 3 */
 	int     pg_server_version; /* Server version e.g. 80100 */
@@ -95,6 +96,7 @@ struct imp_sth_st {
 	bool   has_binary;       /* does it have one or more binary placeholders? */
 	bool   has_default;      /* does it have one or more 'DEFAULT' values? */
 	bool   has_current;      /* does it have one or more 'DEFAULT' values? */
+	bool   dollaronly;          /* Only use $1 as placeholders, allow all else */
 };
 
 /* Other (non-static) functions we have added to dbdimp.c */

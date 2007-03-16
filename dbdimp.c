@@ -395,6 +395,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	imp_dbh->pid_number = getpid();
 	imp_dbh->prepare_number = 1;
 	imp_dbh->prepare_now = DBDPG_FALSE;
+	imp_dbh->dollaronly = DBDPG_FALSE;
 	imp_dbh->pg_errorlevel = 1; /* Matches PG default */
 	if (imp_dbh->savepoints) {
 		av_undef(imp_dbh->savepoints);
@@ -685,6 +686,9 @@ int dbd_db_STORE_attrib (dbh, imp_dbh, keysv, valuesv)
 			imp_dbh->prepare_now = newval ? DBDPG_TRUE : DBDPG_FALSE;
 		}
 	}
+	else if (25==kl && strEQ(key, "pg_placeholder_dollaronly")) {
+	  imp_dbh->dollaronly = newval ? DBDPG_TRUE : DBDPG_FALSE;
+	}
 	else {
 		return 0;
 	}
@@ -728,6 +732,8 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 		retsv = newSViv((IV)imp_dbh->server_prepare);
 	} else if (14==kl && strEQ(key, "pg_prepare_now")) {
 		retsv = newSViv((IV)imp_dbh->prepare_now);
+	} else if (25==kl && strEQ(key, "pg_placeholder_dollaronly")) {
+		retsv = newSViv((IV)imp_dbh->dollaronly);
 	} else if (14==kl && strEQ(key, "pg_lib_version")) {
 		retsv = newSViv((IV) PGLIBVERSION );
 	} else if (17==kl && strEQ(key, "pg_server_version")) {
@@ -872,10 +878,12 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	imp_sth->seg = NULL;
 	imp_sth->ph = NULL;
 	imp_sth->type_info = NULL;
+	imp_sth->dollaronly = DBDPG_FALSE;
 
 	/* We inherit our prepare preferences from the database handle */
 	imp_sth->server_prepare = imp_dbh->server_prepare;
 	imp_sth->prepare_now = imp_dbh->prepare_now;
+	imp_sth->dollaronly = imp_dbh->dollaronly;
 
 	/* Parse and set any attributes passed in */
 	if (attribs) {
@@ -892,6 +900,9 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 			if (imp_dbh->pg_protocol >= 3) {
 				imp_sth->prepare_now = 0==SvIV(*svp) ? DBDPG_FALSE : DBDPG_TRUE;
 			}
+		}
+		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_placeholder_dollaronly", 25, 0)) != NULL) {
+			imp_sth->dollaronly = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
 		}
 	}
 
@@ -1253,12 +1264,8 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 		/* Figure out if we have a placeholder */
 		placeholder_type = 0;
 
-		/* Normal question mark style */
-		if ('?' == ch) {
-			placeholder_type = 1;
-		}
 		/* Dollar sign placeholder style */
-		else if ('$' == ch && isDIGIT(*statement)) {
+		if ('$' == ch && isDIGIT(*statement)) {
 			if ('0' == *statement)
 				croak("Invalid placeholder value");
 			while(isDIGIT(*statement)) {
@@ -1267,22 +1274,28 @@ static void dbd_st_split_statement (imp_sth, version, statement)
 			}
 			placeholder_type = 2;
 		}
-		/* Colon style, but skip two colons in a row (e.g. myval::float) */
-		else if (':' == ch) {
-			if (':' == *statement) {
-				/* Might as well skip _all_ consecutive colons */
-				while(':' == *statement) {
-					++statement;
-					++currpos;
-				}
-				continue;
+		else if (! imp_sth->dollaronly) {
+			/* Question mark style */
+			if ('?' == ch) {
+				placeholder_type = 1;
 			}
-			if (isALNUM(*statement)) {
-				while(isALNUM(*statement)) {
-					++statement;
-					++currpos;
+			/* Colon style, but skip two colons in a row (e.g. myval::float) */
+			else if (':' == ch) {
+				if (':' == *statement) {
+					/* Might as well skip _all_ consecutive colons */
+					while(':' == *statement) {
+						++statement;
+						++currpos;
+					}
+					continue;
 				}
-				placeholder_type = 3;
+				if (isALNUM(*statement)) {
+					while(isALNUM(*statement)) {
+						++statement;
+						++currpos;
+					}
+					placeholder_type = 3;
+				}
 			}
 		}
 
@@ -2537,6 +2550,9 @@ int dbd_st_STORE_attrib (sth, imp_sth, keysv, valuesv)
 	}
 	else if (14==kl && strEQ(key, "pg_prepare_now")) {
 		imp_sth->prepare_now = strEQ(value,"0") ? DBDPG_FALSE : DBDPG_TRUE;
+	}
+	else if (25==kl && strEQ(key, "pg_placeholder_dollaronly")) {
+		imp_sth->dollaronly = SvTRUE(valuesv) ? DBDPG_TRUE : DBDPG_FALSE;
 	}
 	else if (15==kl && strEQ(key, "pg_prepare_name")) {
 		Safefree(imp_sth->prepare_name);

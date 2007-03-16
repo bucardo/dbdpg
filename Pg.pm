@@ -2259,6 +2259,22 @@ syntax is supported by DBD::Pg, its use is highly discouraged.
 The different types of placeholders cannot be mixed within a statement, but you may
 use different ones for each statement handle you have. Again, this is not encouraged.
 
+
+If your queries use operators that contain question marks (some of the native 
+Postgres geometric operators for example) you can tell DBD::Pg to ignore any 
+non-dollar sign placeholders by setting the "pg_placeholder_dollaronly" 
+attribute at either the database handle or the statement handle level. Examples:
+
+  $dbh->{pg_placeholder_dollaronly} = 1;
+  $sth = $dbh->prepare(q{SELECT * FROM mytable WHERE lseg1 ?# lseg2 AND name = $1});
+  $sth->execute('segname');
+
+Alternatively, you can set it at prepare time:
+
+  $sth = $dbh->prepare(q{SELECT * FROM mytable WHERE lseg1 ?-| lseg2 AND name = $1},
+    {pg_placeholder_dollaronly = 1});
+  $sth->execute('segname');
+
 =item B<prepare_cached>
 
   $sth = $dbh->prepare_cached($statement, \%attr);
