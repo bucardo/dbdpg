@@ -2,7 +2,7 @@
 
    $Id$
 
-   Copyright (c) 2003-2006 PostgreSQL Global Development Group
+   Copyright (c) 2003-2007 PostgreSQL Global Development Group
    
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.
