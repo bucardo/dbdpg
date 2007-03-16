@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.50
+	- Use prepare_cached in last_insert_id function. (CPAN bug #24313)
 	- Switch from cvs to subversion. Switch from gborg to perl.org.
 	- Fix pg_description join in table_info(). [Max Cohan max@endpoint.com]
 	- Fix memory leak in bytea quoting. (CPAN bug #21392). Fix memory leak 
