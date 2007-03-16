@@ -268,11 +268,13 @@ use 5.006001;
 				return $dbh->set_err(1, $message);
 			}
 			my $oid = $sth->fetchall_arrayref()->[0][0];
+			$oid =~ /(\d+)/ or die qq{OID was not numeric?!?\n};
+			$oid = $1;
 			## This table has a primary key. Is there a sequence associated with it via a unique, indexed column?
 			$SQL = "SELECT a.attname, i.indisprimary, substring(d.adsrc for 128) AS def\n".
 				"FROM ${DBD::Pg::dr::CATALOG}pg_index i, ${DBD::Pg::dr::CATALOG}pg_attribute a, ${DBD::Pg::dr::CATALOG}pg_attrdef d\n ".
 				"WHERE i.indrelid = $oid AND d.adrelid=a.attrelid AND d.adnum=a.attnum\n".
-				"  AND a.attrelid=$oid AND i.indisunique IS TRUE\n".
+				"  AND a.attrelid = $oid AND i.indisunique IS TRUE\n".
 				"  AND a.atthasdef IS TRUE AND i.indkey[0]=a.attnum\n".
 				" AND d.adsrc ~ '^nextval'";
 			$sth = $dbh->prepare($SQL);
