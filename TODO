@@ -1,5 +1,6 @@
 TODO: 
 
+- Better documentation for listen/notify.
 - Start testing with a thread-enabled Perl.
 - Add array OID types
 - Quoting/dequoting of arrays.
