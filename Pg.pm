@@ -1197,7 +1197,7 @@ use 5.006001;
 		return $attrs;
 
 	}
-	
+
 	sub _calc_col_size {
 		my $mod = shift;
 		my $size = shift;
@@ -1322,7 +1322,7 @@ use 5.006001;
 		DBI::SQL_FLOAT, DBI::SQL_REAL, DBI::SQL_DOUBLE, DBI::SQL_NUMERIC;
 
 	sub get_info {
-		
+
 		my ($dbh,$type) = @_;
 
 		return undef unless defined $type and length $type;
@@ -1435,7 +1435,7 @@ use 5.006001;
       29  => ["SQL_IDENTIFIER_QUOTE_CHAR",          '"'                       ],
      148  => ["SQL_INDEX_KEYWORDS",                 0                         ],
      172  => ["SQL_INSERT_STATEMENT",               7                         ],
-      73  => ["SQL_INTEGERITY",                     "Y"                       ], ## e.g. ON DELETE CASCADE? 
+      73  => ["SQL_INTEGERITY",                     "Y"                       ], ## e.g. ON DELETE CASCADE?
       89  => ["SQL_KEYWORDS",                       'KEYWORDS'                ],
      113  => ["SQL_LIKE_ESCAPE_CLAUSE",             "Y"                       ],
       75  => ["SQL_NON_NULLABLE_COLUMNS",           1                         ],
@@ -1510,9 +1510,8 @@ use 5.006001;
      125  => ["SQL_CONVERT_WLONGVARCHAR",           0                          ],
      126  => ["SQL_CONVERT_WVARCHAR",               0                          ],
 
-							 ); ## end of %type
+		); ## end of %type
 
- 
 		## Put both numbers and names into a hash
 		my %t;
 		for (keys %type) {
@@ -1525,7 +1524,7 @@ use 5.006001;
 		my $ans = $t{$type};
 
 		if ($ans eq 'NAMEDATALEN') {
-			return $version >= 70300 ? 63 : 31; ## Could technically be more
+			return $dbh->selectall_arrayref("show max_identifier_length")->[0][0];
 		}
 		elsif ($ans eq 'ODBCVERSION') {
 			return "00.00.0000" unless $version =~ /^(\d\d?)(\d\d)(\d\d)$/o;
