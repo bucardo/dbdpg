@@ -1909,7 +1909,27 @@ otherwise.
   $ret = $dbh->func('pg_notifies');
 
 Returns either C<undef> or a reference to two-element array [ $table,
-$backend_pid ] of asynchronous notifications received.
+$backend_pid ] of asynchronous notifications received. Note that this does
+not check if the connection to the database is still valid - for that, 
+use the c<ping> method. Also note that you may need to commit if not in 
+autocommit mode - new notices will not be picked up while in the middle of 
+a transation. An example:
+
+  $dbh->do("LISTEN abc");
+  $dbh->do("LISTEN def");
+
+  ## Hang around until we get the message we want
+  LISTENLOOP: {
+    while (my $notify = $dbh->func('pg_notifies')) {
+      my ($name, $pid) = @$notify;
+      print qq{I received notice "$name" from PID $pid\n};
+      ## Do something based on the notice received
+    }
+    $dbh->ping() or die qq{Ping failed!};
+    $dbh->commit();
+    sleep(5);
+    redo;
+  }
 
 =item getfd
 
