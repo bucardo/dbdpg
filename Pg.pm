@@ -127,7 +127,7 @@ use 5.006001;
 
 
 	sub connect {
-		my($drh, $dbname, $user, $pass)= @_;
+		my ($drh, $dbname, $user, $pass)= @_;
 
 		## Allow "db" and "database" as synonyms for "dbname"
 		$dbname =~ s/\b(?:db|database)\s*=/dbname=/;
@@ -151,7 +151,7 @@ use 5.006001;
 		$pass = "" unless defined($pass);
 
 		my ($dbh) = DBI::_new_dbh($drh, {
-			'Name' => $Name,
+			'Name' => $dbname,
 			'User' => $user, 'CURRENT_USER' => $user,
 		});
 
@@ -1337,7 +1337,7 @@ use 5.006001;
    10021 => ["SQL_ASYNC_MODE",                      0                         ],
      120 => ["SQL_BATCH_ROW_COUNT",                 2                         ],
      121 => ["SQL_BATCH_SUPPORT",                   3                         ], ## ??
-       2 => ["SQL_DATA_SOURCE_NAME",                'dbi:Pg:db='.$dbh->{Name} ], ## TODO: support port and other args
+       2 => ["SQL_DATA_SOURCE_NAME",                "dbi:Pg:$dbh->{Name}"     ],
        3 => ["SQL_DRIVER_HDBC",                     0                         ], ## ??
      135 => ["SQL_DRIVER_HDESC",                    0                         ],
        4 => ["SQL_DRIVER_HENV",                     0                         ],
@@ -1363,14 +1363,14 @@ use 5.006001;
      154 => ["SQL_PARAM_ARRAY_SELECTS",             3                         ],
       11 => ["SQL_ROW_UPDATES",                     'N'                       ],
       14 => ["SQL_SEARCH_PATTERN_ESCAPE",           '\\'                      ],
-      13 => ["SQL_SERVER_NAME",                     $dbh->{Name}              ],
+      13 => ["SQL_SERVER_NAME",                     'CURRENTDB'               ],
      166 => ["SQL_STANDARD_CLI_CONFORMANCE",        2                         ], ## ??
      167 => ["SQL_STATIC_CURSOR_ATTRIBUTES1",       519                       ], ## ??
      168 => ["SQL_STATIC_CURSOR_ATTRIBUTES2",       5209                      ], ## ??
 
 ## DBMS Information
 
-      16 => ["SQL_DATABASE_NAME",                   $dbh->{Name}              ],
+      16 => ["SQL_DATABASE_NAME",                   'CURRENTDB'               ],
       17 => ["SQL_DBMS_NAME",                       'PostgreSQL'              ],
       18 => ["SQL_DBMS_VERSION",                    'ODBCVERSION'             ],
 
@@ -1546,10 +1546,13 @@ use 5.006001;
 			## Basically, we want ones that are 'reserved' for PostgreSQL but not 'reserved' in SQL:2003
 			return join "," => (qw(ANALYSE ANALYZE ASC DEFERRABLE DESC DO ILIKE INITIALLY ISNULL LIMIT NOTNULL OFF OFFSET PLACING VERBOSE));
 		 }
+		 elsif ($ans eq 'CURRENTDB') {
+			 return $dbh->selectall_arrayref("select pg_catalog.current_database()")->[0][0];
+		 }
 
 		 return $ans;
 	} # end of get_info
-} 
+}
 
 
 {
