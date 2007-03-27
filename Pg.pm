@@ -1544,7 +1544,7 @@ use 5.006001;
 		 elsif ($ans eq 'KEYWORDS') {
 			## http://www.postgresql.org/docs/current/static/sql-keywords-appendix.html
 			## Basically, we want ones that are 'reserved' for PostgreSQL but not 'reserved' in SQL:2003
-			return join "," => (qw(ANALYSE ANALYZE ASC DEFERRABLE DESC DO ILIKE INITIALLY ISNULL LIMIT NOTNULL OFF OFFSET PLACING VERBOSE));
+			return join "," => (qw(ANALYSE ANALYZE ASC DEFERRABLE DESC DO FREEZE ILIKE INITIALLY ISNULL LIMIT NOTNULL OFF OFFSET PLACING RETURNING VERBOSE));
 		 }
 		 elsif ($ans eq 'CURRENTDB') {
 			 return $dbh->selectall_arrayref("select pg_catalog.current_database()")->[0][0];
