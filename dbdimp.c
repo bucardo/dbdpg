@@ -1744,7 +1744,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 			 the insert.
 		*/
 		if (!(currph->bind_type = sql_type_data((int)sql_type))) {
-			croak("Cannot bind %s unknown sql_type %" IVdf, name, sql_type);
+			croak("Cannot bind param %s: unknown sql_type %d", name, sql_type);
 		}
 		if (!(currph->bind_type = pg_type_data(currph->bind_type->type.pg))) {
 			croak("Cannot find a pg_type for %" IVdf, sql_type);
