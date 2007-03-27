@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.50
+	- Add SQL_INTERVAL and others to types.c [GSM]
     - Change $dbh->{Name} to return the entire DSN string, minus the 
       'dbi:Pg:' part. Thanks to Mark Stosberg for the idea. [GSM]
 	- Add $dbh->{pg_placeholder_dollaronly} to allow '?' and other symbols 
