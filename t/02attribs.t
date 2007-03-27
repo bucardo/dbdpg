@@ -190,13 +190,12 @@ is( $attrib, 'Pg', '$dbh->{Driver}{Name} returns correct value of "Pg"');
 # Test of the database handle attribute "Name"
 #
 
-if ($ENV{DBI_DSN} !~ /(?:dbname|database|db)\s*=\s*\"([^"]+)/o and 
-		$ENV{DBI_DSN} !~ /(?:dbname|database|db)\s*=\s*([^;]+)/o) {
- SKIP: {
-		skip 'Cannot test DB handle attribute "Name": DBI_DSN has no dbname', 1;
-	}
-}
-else {
+SKIP: {
+	skip qq{Cannot test DB handle attribute "Name": no DBI_DSN is set}, 1
+		if ! exists $ENV{DBI_DSN};
+	skip qq{Cannot test DB handle attribute "Name": invalid DBI_DSN}, 1
+		if $ENV{DBI_DSN} !~ /^dbi:Pg:(.+)$/io;
+
 	$attrib = $dbh->{Name};
 	is( $attrib, $1, 'DB handle attribute "Name" returns same value as DBI_DSN');
 }
@@ -215,12 +214,10 @@ ok( !defined $attrib, 'Setting DB handle attribute "RowCacheSize" has no effect'
 # Test of the database handle attribute "Username"
 #
 
-if ($DBI::VERSION < 1.36) {
- SKIP: {
-		skip 'DBI must be at least version 1.36 to test the DB handle attribute "Username"', 1;
-	}
-}
-else {
+SKIP: {
+	skip 'DBI must be at least version 1.36 to test the DB handle attribute "Username"', 1
+		if $DBI::VERSION < 1.36;
+
 	$attrib = $dbh->{Username};
 	is( $attrib, $ENV{DBI_USER}, 'DB handle attribute "Username" returns the same value as DBI_USER');
 }
@@ -278,12 +275,10 @@ like( $dbh->{pg_protocol}, qr/^\d+$/, 'Database handle attribute "pg_protocol" r
 
 cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" returns the default (1)');
 
-if ($pgversion < 70400) {
- SKIP: {
-		skip 'Cannot test DB handle attribute "pg_errorlevel" on pre-7.4 servers', 1;
-	}
-}
-else {
+SKIP: {
+	skip 'Cannot test DB handle attribute "pg_errorlevel" on pre-7.4 servers', 1
+		if $pgversion < 70400;
+
 	$dbh->{pg_errorlevel} = 3;
 	cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" defaults to 1 if invalid');
 }
@@ -478,12 +473,10 @@ is_deeply( $attrib, $expected, qq{Statement handle attribute "ParamValues" works
 # Test of the statement handle attribute "ParamTypes"
 #
 
-if ($DBI::VERSION < 1.49) {
- SKIP: {
-		skip 'DBI must be at least version 1.49 to test the DB handle attribute "ParamTypes"', 2;
-	}
-}
-else {
+SKIP: {
+	skip 'DBI must be at least version 1.49 to test the DB handle attribute "ParamTypes"', 2
+		if $DBI::VERSION < 1.49;
+
 	$sth = $dbh->prepare("SELECT id FROM dbd_pg_test WHERE id=? AND val=? AND lii=?");
 	$sth->bind_param(1, 1, SQL_INTEGER);
 	$sth->bind_param(2, 'TMW', SQL_VARCHAR);
@@ -840,19 +833,15 @@ ok( $dbh->disconnect(), 'Disconnect from database');
 $attrib = $dbh->{Active};
 is( $attrib, '', 'Database handle attribute "Active" is false after disconnect');
 
-if ($^O =~ /MSWin/) {
- SKIP: {
-		skip 'Cannot test database handle "InactiveDestroy" on a non-forking system', 4;
-	}
-}
-else {
+SKIP: {
+	skip 'Cannot test database handle "InactiveDestroy" on a non-forking system', 4
+		if $^O =~ /MSWin/;
+
 	require Test::Simple;
-	if ($Test::Simple::VERSION < 0.47) {
+
 	SKIP: {
-			skip 'Test::Simple version 0.47 or better required for testing of attribute "InactiveDestroy"', 4;
-		}
-	}
-	else {
+		skip 'Test::Simple version 0.47 or better required for testing of attribute "InactiveDestroy"', 4
+			if $Test::Simple::VERSION < 0.47;
 
 		# Test of forking. Hang on to your hats
 
@@ -898,12 +887,10 @@ else {
 				ok ( !$dbh->ping(), qq{Ping fails after the child has exited ("InactiveDestroy" = $destroy)});
 				my $state = $dbh->state();
 				is( $state, 'S8006', qq{Failed ping returns a SQLSTATE code of S8006});
-				if ($pglibversion < 70400) {
 				SKIP: {
-						skip "Can't determine advanced ping with old 7.2 server libraries", 1;
-					}
-				}
-				else {
+					skip "Can't determine advanced ping with old 7.2 server libraries", 1
+						if $pglibversion < 70400;
+
 					ok ( -2==$dbh->pg_ping(), qq{pg_ping gives an error code of -2 after the child has exited ("InactiveDestroy" = $destroy)});
 				}
 			}
