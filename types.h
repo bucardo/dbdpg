@@ -33,6 +33,7 @@ sql_type_info_t* sql_type_data(int);
 #define                CIRCLEOID  718
 #define               CSTRINGOID  2275
 #define                  DATEOID  1082
+#define           FLOAT4ARRAYOID  1021
 #define                FLOAT4OID  700
 #define                FLOAT8OID  701
 #define                  INETOID  869
@@ -82,5 +83,6 @@ sql_type_info_t* sql_type_data(int);
 #define               VARCHAROID  1043
 #define                  VOIDOID  2278
 #define                   XIDOID  28
+#define                   XMLOID  142
 
 #endif
