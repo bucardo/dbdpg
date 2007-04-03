@@ -74,7 +74,7 @@ REQUIREMENTS:
 You must also have the pg_config executable installed (to check, type 
 "which pg_config" on unix-like systems). If pg_config is not available, 
 then you need to install the development package for PostgreSQL. For example 
-on Debian: apt-get install postgresql-dev; on RedHat: yum postgresql-devel. 
+on Debian: apt-get install postgresql-dev; on RedHat: yum install postgresql-devel. 
 This development package is needed even if you already have PostgreSQL up 
 and running since DBD::Pg uses it for its installation.
 
