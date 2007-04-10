@@ -1,5 +1,6 @@
 TODO: 
 
+- Use WITH HOLD for cursor work
 - Start testing with a thread-enabled Perl.
 - Add array OID types
 - Quoting/dequoting of arrays.
