@@ -714,7 +714,7 @@ SV * dbd_db_FETCH_attrib (dbh, imp_dbh, keysv)
 		retsv = boolSV(DBIc_has(imp_dbh, DBIcf_AutoCommit));
 	} else if (10==kl && strEQ(key, "pg_bool_tf")) {
 		retsv = newSViv((IV)imp_dbh->pg_bool_tf);
-	} else if (10==kl && strEQ(key, "pid_number")) {
+	} else if (10==kl && strEQ(key, "pg_pid_number")) {
 		retsv = newSViv((IV)imp_dbh->pid_number);
 	} else if (13==kl && strEQ(key, "pg_errorlevel")) {
 		retsv = newSViv((IV)imp_dbh->pg_errorlevel);
