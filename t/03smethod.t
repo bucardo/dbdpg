@@ -13,7 +13,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 55;
+	plan tests => 57;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -380,6 +380,28 @@ if ($pglibversion >= 70400 and $pgversion >= 70400) {
 else {
 	is ($result, "S8006", qq{Statement handle method "state" returns expected code (old servers)});
 }
+
+#
+# Test of the statement handle method "private_attribute_info"
+#
+
+SKIP: {
+	if ($DBI::VERSION < 1.54) {
+		skip "DBI must be at least version 1.54 to test private_attribute_info", 2;
+	}
+
+	$sth = $dbh->prepare("SELECT 123");
+	my $private = $sth->private_attribute_info();
+	my ($valid,$invalid) = (0,0);
+	for my $name (keys %$private) {
+		$name =~ /^pg_\w+/ ? $valid++ : $invalid++;
+	}
+	ok($valid >= 1, qq{Statement handle method "private_attribute_info" returns at least one record});
+	is($invalid, 0, qq{Statement handle method "private_attribute_info" returns only internal names});
+	$sth->finish();
+}
+
+
 $dbh->rollback();
 
 $dbh->disconnect();

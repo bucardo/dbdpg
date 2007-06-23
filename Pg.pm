@@ -167,6 +167,12 @@ use 5.006001;
 		$dbh;
 	}
 
+	sub private_attribute_info {
+		return {
+		};
+	}
+
+
 }
 
 
@@ -176,7 +182,6 @@ use 5.006001;
 	use DBI qw(:sql_types);
 
 	use strict;
-
 
 	sub prepare {
 		my($dbh, $statement, @attribs) = @_;
@@ -1552,6 +1557,17 @@ use 5.006001;
 
 		 return $ans;
 	} # end of get_info
+
+	sub private_attribute_info {
+		return {
+				pg_bool_tf                => undef,
+				pg_enable_utf8            => undef,
+				pg_errorlevel             => undef,
+				pg_prepare_now            => undef,
+				pg_placeholder_dollaronly => undef,
+				pg_server_prepare         => undef,
+		};
+	}
 }
 
 
@@ -1587,8 +1603,33 @@ use 5.006001;
 		$$hash_of_arrays{$p_id} = $value_array;
 		return $sth->bind_param($p_id, '', $attr) if $attr; ## This is the big change so -w does not complain
 		1;
-	}
+	} ## end bind_param_array
 
+	sub private_attribute_info {
+		return {
+				pg_bool_tf                => undef,
+				pg_db                     => undef,
+				pg_default_port           => undef,
+				pg_enable_utf8            => undef,
+				pg_errorlevel             => undef,
+				pg_host                   => undef,
+				pg_INV_READ               => undef,
+				pg_INV_WRITE              => undef,
+				pg_lib_version            => undef,
+				pg_options                => undef,
+				pg_pass                   => undef,
+				pg_pid                    => undef,
+				pg_pid_number             => undef,
+				pg_placeholder_dollaronly => undef,
+				pg_port                   => undef,
+				pg_prepare_now            => undef,
+				pg_protocol               => undef,
+				pg_server_prepare         => undef,
+				pg_server_version         => undef,
+				pg_socket                 => undef,
+				pg_user                   => undef,
+		};
+    }
 
 } ## end st section
 
@@ -1941,6 +1982,14 @@ Returns fd of the actual connection to server. Can be used with select() and
 func('pg_notifies'). Deprecated in favor of C<< $dbh->{pg_socket} >>.
 
 =back
+
+=item private_attribute_info
+
+  $hashref = $dbh->private_attribute_info();
+  $hashref = $sth->private_attribute_info();
+
+Supported by this driver as proposed by DBI.
+
 
 =back
 

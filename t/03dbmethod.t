@@ -18,7 +18,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 198;
+	plan tests => 200;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -898,11 +898,11 @@ is_deeply( \%missing, {}, 'DB handle method "type_info" returns fields required 
 #
 
 my %quotetests = (
-									q{0} => q{'0'},
-									q{Ain't misbehaving } => q{'Ain''t misbehaving '},
-									NULL => q{'NULL'},
-									"" => q{''},
-								 );
+	q{0} => q{'0'},
+	q{Ain't misbehaving } => q{'Ain''t misbehaving '},
+	NULL => q{'NULL'},
+	"" => q{''},
+);
 
 for (keys %quotetests) {
 	$result = $dbh->quote($_);
@@ -1101,6 +1101,25 @@ eval {
 $result = $dbh->state();
 like( $result, qr/^[A-Z0-9]{5}$/, qq{DB handle method "state" returns a five-character code on error});
 $dbh->rollback();
+
+#
+# Test of the "private_attribute_info" database handle method
+#
+
+SKIP: {
+	if ($DBI::VERSION < 1.54) {
+		skip "DBI must be at least version 1.54 to test private_attribute_info", 2;
+	}
+
+	my $private = $dbh->private_attribute_info();
+	my ($valid,$invalid) = (0,0);
+	for my $name (keys %$private) {
+		$name =~ /^pg_\w+/ ? $valid++ : $invalid++;
+	}
+	ok($valid >= 1, qq{DB handle method "private_attribute_info" returns at least one record});
+	is($invalid, 0, qq{DB handle method "private_attribute_info" returns only internal names});
+
+}
 
 #
 # Test of the "ping" database handle method

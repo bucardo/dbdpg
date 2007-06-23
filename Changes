@@ -1,12 +1,13 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.50
+	- Add private_attribute_info() method. [GSM]
 	- Add SQL_INTERVAL and others to types.c [GSM]
-    - Change $dbh->{Name} to return the entire DSN string, minus the 
-      'dbi:Pg:' part. Thanks to Mark Stosberg for the idea. [GSM]
+	- Change $dbh->{Name} to return the entire DSN string, minus the 
+		'dbi:Pg:' part. Thanks to Mark Stosberg for the idea. [GSM]
 	- Add $dbh->{pg_placeholder_dollaronly} to allow '?' and other symbols 
-	  to be used in prepared statements without getting interpreted as 
-	  placeholders, i.e. the geometric operator '?#' (CPAN bug #24124) [GSM]
+		to be used in prepared statements without getting interpreted as 
+		placeholders, i.e. the geometric operator '?#' (CPAN bug #24124) [GSM]
 	- Use prepare_cached in last_insert_id function. (CPAN bug #24313)
 	- Switch from cvs to subversion. Switch from gborg to perl.org.
 	- Fix pg_description join in table_info(). [Max Cohan max@endpoint.com]
