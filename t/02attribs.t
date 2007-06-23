@@ -385,7 +385,7 @@ ok( ! $dbh->{Warn}, 'Turn off the "Warn" attribute in the database handle');
 # TYPE, PRECISION, SCALE, NULLABLE
 #
 
-$sth = $dbh->prepare('SELECT 123 AS "Sheep", id::float FROM dbd_pg_test WHERE id=?');
+$sth = $dbh->prepare('SELECT 123 AS "Sheep", CAST(id AS float) FROM dbd_pg_test WHERE id=?');
 $sth->execute(12);
 $attrib = $sth->{'NUM_OF_FIELDS'};
 is( $attrib, '2', 'Statement handle attribute "NUM_OF_FIELDS" works correctly for SELECT');
@@ -411,7 +411,7 @@ $colnames = {SHEEP => 0, ID => 1};
 is_deeply( $attrib, $colnames, 'Statement handle attribute "NAME_uc_hash" works correctly');
 
 $attrib = $sth->{TYPE};
-$colnames = [4, 7];
+$colnames = [4, 6];
 is_deeply( $attrib, $colnames, 'Statement handle attribute "TYPE" works correctly');
 
 $attrib = $sth->{PRECISION};
