@@ -878,9 +878,8 @@ int dbd_st_prepare (sth, imp_sth, statement, attribs)
 	imp_sth->seg = NULL;
 	imp_sth->ph = NULL;
 	imp_sth->type_info = NULL;
-	imp_sth->dollaronly = DBDPG_FALSE;
 
-	/* We inherit our prepare preferences from the database handle */
+	/* We inherit some preferences from the database handle */
 	imp_sth->server_prepare = imp_dbh->server_prepare;
 	imp_sth->prepare_now = imp_dbh->prepare_now;
 	imp_sth->dollaronly = imp_dbh->dollaronly;
