@@ -20,6 +20,8 @@ sql_type_info_t* sql_type_data(int);
 #define               ACLITEMOID  1033
 #define              ANYARRAYOID  2277
 #define            ANYELEMENTOID  2283
+#define               ANYENUMOID  3500
+#define           ANYNONARRAYOID  2776
 #define                   ANYOID  2276
 #define                   BITOID  1560
 #define                  BOOLOID  16
@@ -31,6 +33,7 @@ sql_type_info_t* sql_type_data(int);
 #define                   CIDOID  29
 #define                  CIDROID  650
 #define                CIRCLEOID  718
+#define          CSTRINGARRAYOID  1263
 #define               CSTRINGOID  2275
 #define                  DATEOID  1082
 #define           FLOAT4ARRAYOID  1021

@@ -22,6 +22,8 @@ static sql_type_info_t pg_types[] = {
 	{ACLITEMOID, "aclitem", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{ANYARRAYOID, "anyarray", null_quote, null_dequote, {SQL_ARRAY}, DBDPG_TRUE},
 	{ANYELEMENTOID, "anyelement", 0, 0, {0}, DBDPG_FALSE},
+	{ANYENUMOID, "anyenum", 0, 0, {0}, DBDPG_FALSE},
+	{ANYNONARRAYOID, "anynonarray", 0, 0, {0}, DBDPG_FALSE},
 	{ANYOID, "any", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{BITOID, "bitstring", null_quote, null_dequote, {SQL_BIT}, DBDPG_TRUE},
 	{BOOLOID, "bool", quote_bool, dequote_bool, {SQL_BOOLEAN}, DBDPG_TRUE},
@@ -33,6 +35,7 @@ static sql_type_info_t pg_types[] = {
 	{CIDOID, "cid", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
 	{CIDROID, "IP - cidr", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{CIRCLEOID, "circle", quote_circle, dequote_string, {0}, DBDPG_TRUE},
+	{CSTRINGARRAYOID, "cstringarray", 0, 0, {0}, DBDPG_FALSE},
 	{CSTRINGOID, "cstring", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{DATEOID, "date", null_quote, null_dequote, {SQL_TYPE_DATE}, DBDPG_TRUE},
 	{FLOAT4ARRAYOID, "float4array", 0, 0, {0}, DBDPG_FALSE},
@@ -97,70 +100,73 @@ sql_type_info_t* pg_type_data(sql_type)
 		case ACLITEMOID:               return &pg_types[1];
 		case ANYARRAYOID:              return &pg_types[2];
 		case ANYELEMENTOID:            return &pg_types[3];
-		case ANYOID:                   return &pg_types[4];
-		case BITOID:                   return &pg_types[5];
-		case BOOLOID:                  return &pg_types[6];
-		case BOXOID:                   return &pg_types[7];
-		case BPCHAROID:                return &pg_types[8];
-		case BYTEAOID:                 return &pg_types[9];
-		case CASHOID:                  return &pg_types[10];
-		case CHAROID:                  return &pg_types[11];
-		case CIDOID:                   return &pg_types[12];
-		case CIDROID:                  return &pg_types[13];
-		case CIRCLEOID:                return &pg_types[14];
-		case CSTRINGOID:               return &pg_types[15];
-		case DATEOID:                  return &pg_types[16];
-		case FLOAT4ARRAYOID:           return &pg_types[17];
-		case FLOAT4OID:                return &pg_types[18];
-		case FLOAT8OID:                return &pg_types[19];
-		case INETOID:                  return &pg_types[20];
-		case INT2OID:                  return &pg_types[21];
-		case INT2VECTOROID:            return &pg_types[22];
-		case INT4ARRAYOID:             return &pg_types[23];
-		case INT4OID:                  return &pg_types[24];
-		case INT8OID:                  return &pg_types[25];
-		case INTERNALOID:              return &pg_types[26];
-		case INTERVALOID:              return &pg_types[27];
-		case LANGUAGE_HANDLEROID:      return &pg_types[28];
-		case LINEOID:                  return &pg_types[29];
-		case LSEGOID:                  return &pg_types[30];
-		case MACADDROID:               return &pg_types[31];
-		case NAMEOID:                  return &pg_types[32];
-		case NUMERICOID:               return &pg_types[33];
-		case OIDOID:                   return &pg_types[34];
-		case OIDVECTOROID:             return &pg_types[35];
-		case OPAQUEOID:                return &pg_types[36];
-		case PATHOID:                  return &pg_types[37];
-		case PG_ATTRIBUTE_RELTYPE_OID: return &pg_types[38];
-		case PG_CLASS_RELTYPE_OID:     return &pg_types[39];
-		case PG_PROC_RELTYPE_OID:      return &pg_types[40];
-		case PG_TYPE_RELTYPE_OID:      return &pg_types[41];
-		case POINTOID:                 return &pg_types[42];
-		case POLYGONOID:               return &pg_types[43];
-		case RECORDOID:                return &pg_types[44];
-		case REFCURSOROID:             return &pg_types[45];
-		case REGCLASSOID:              return &pg_types[46];
-		case REGOPERATOROID:           return &pg_types[47];
-		case REGOPEROID:               return &pg_types[48];
-		case REGPROCEDUREOID:          return &pg_types[49];
-		case REGPROCOID:               return &pg_types[50];
-		case REGTYPEARRAYOID:          return &pg_types[51];
-		case REGTYPEOID:               return &pg_types[52];
-		case RELTIMEOID:               return &pg_types[53];
-		case TEXTOID:                  return &pg_types[54];
-		case TIDOID:                   return &pg_types[55];
-		case TIMEOID:                  return &pg_types[56];
-		case TIMESTAMPOID:             return &pg_types[57];
-		case TIMESTAMPTZOID:           return &pg_types[58];
-		case TIMETZOID:                return &pg_types[59];
-		case TINTERVALOID:             return &pg_types[60];
-		case TRIGGEROID:               return &pg_types[61];
-		case UNKNOWNOID:               return &pg_types[62];
-		case VARBITOID:                return &pg_types[63];
-		case VARCHAROID:               return &pg_types[64];
-		case VOIDOID:                  return &pg_types[65];
-		case XIDOID:                   return &pg_types[66];
-		case XMLOID:                   return &pg_types[67];
+		case ANYENUMOID:               return &pg_types[4];
+		case ANYNONARRAYOID:           return &pg_types[5];
+		case ANYOID:                   return &pg_types[6];
+		case BITOID:                   return &pg_types[7];
+		case BOOLOID:                  return &pg_types[8];
+		case BOXOID:                   return &pg_types[9];
+		case BPCHAROID:                return &pg_types[10];
+		case BYTEAOID:                 return &pg_types[11];
+		case CASHOID:                  return &pg_types[12];
+		case CHAROID:                  return &pg_types[13];
+		case CIDOID:                   return &pg_types[14];
+		case CIDROID:                  return &pg_types[15];
+		case CIRCLEOID:                return &pg_types[16];
+		case CSTRINGARRAYOID:          return &pg_types[17];
+		case CSTRINGOID:               return &pg_types[18];
+		case DATEOID:                  return &pg_types[19];
+		case FLOAT4ARRAYOID:           return &pg_types[20];
+		case FLOAT4OID:                return &pg_types[21];
+		case FLOAT8OID:                return &pg_types[22];
+		case INETOID:                  return &pg_types[23];
+		case INT2OID:                  return &pg_types[24];
+		case INT2VECTOROID:            return &pg_types[25];
+		case INT4ARRAYOID:             return &pg_types[26];
+		case INT4OID:                  return &pg_types[27];
+		case INT8OID:                  return &pg_types[28];
+		case INTERNALOID:              return &pg_types[29];
+		case INTERVALOID:              return &pg_types[30];
+		case LANGUAGE_HANDLEROID:      return &pg_types[31];
+		case LINEOID:                  return &pg_types[32];
+		case LSEGOID:                  return &pg_types[33];
+		case MACADDROID:               return &pg_types[34];
+		case NAMEOID:                  return &pg_types[35];
+		case NUMERICOID:               return &pg_types[36];
+		case OIDOID:                   return &pg_types[37];
+		case OIDVECTOROID:             return &pg_types[38];
+		case OPAQUEOID:                return &pg_types[39];
+		case PATHOID:                  return &pg_types[40];
+		case PG_ATTRIBUTE_RELTYPE_OID: return &pg_types[41];
+		case PG_CLASS_RELTYPE_OID:     return &pg_types[42];
+		case PG_PROC_RELTYPE_OID:      return &pg_types[43];
+		case PG_TYPE_RELTYPE_OID:      return &pg_types[44];
+		case POINTOID:                 return &pg_types[45];
+		case POLYGONOID:               return &pg_types[46];
+		case RECORDOID:                return &pg_types[47];
+		case REFCURSOROID:             return &pg_types[48];
+		case REGCLASSOID:              return &pg_types[49];
+		case REGOPERATOROID:           return &pg_types[50];
+		case REGOPEROID:               return &pg_types[51];
+		case REGPROCEDUREOID:          return &pg_types[52];
+		case REGPROCOID:               return &pg_types[53];
+		case REGTYPEARRAYOID:          return &pg_types[54];
+		case REGTYPEOID:               return &pg_types[55];
+		case RELTIMEOID:               return &pg_types[56];
+		case TEXTOID:                  return &pg_types[57];
+		case TIDOID:                   return &pg_types[58];
+		case TIMEOID:                  return &pg_types[59];
+		case TIMESTAMPOID:             return &pg_types[60];
+		case TIMESTAMPTZOID:           return &pg_types[61];
+		case TIMETZOID:                return &pg_types[62];
+		case TINTERVALOID:             return &pg_types[63];
+		case TRIGGEROID:               return &pg_types[64];
+		case UNKNOWNOID:               return &pg_types[65];
+		case VARBITOID:                return &pg_types[66];
+		case VARCHAROID:               return &pg_types[67];
+		case VOIDOID:                  return &pg_types[68];
+		case XIDOID:                   return &pg_types[69];
+		case XMLOID:                   return &pg_types[70];
 		default:return NULL;
 	}
 }
@@ -439,15 +445,18 @@ TIMETZOID, timestamptz, null_quote, null_dequote, SQL_TYPE_TIME_WITH_TIMEZONE, 0
 
 
 ## Others
-ANYELEMENTOID, anyelement, 0, 0, 0, 0
 ABSTIMEOID, abstime, null_quote, null_dequote, 0, 0
 ACLITEMOID, aclitem, null_quote, null_dequote, 0, 0
 ANYARRAYOID, anyarray, null_quote, null_dequote, SQL_ARRAY, 0
+ANYELEMENTOID, anyelement, 0, 0, 0, 0
+ANYENUMOID, anyenum, 0, 0, 0, 0
+ANYNONARRAYOID, anynonarray, 0, 0, 0, 0
 ANYOID, any, null_quote, null_dequote, 0, 0
 BITOID, bitstring, null_quote, null_dequote, SQL_BIT, 1
 CASHOID, money, null_quote, null_dequote, 0, 0
 CIDROID, IP - cidr, null_quote, null_dequote, 0, 0
 CSTRINGOID, cstring, null_quote, null_dequote, 0, 0
+CSTRINGARRAYOID, cstringarray, 0, 0, 0, 0
 FLOAT4ARRAYOID, float4array, 0, 0, 0, 0
 INETOID, IP address, null_quote, null_dequote, 0, 0
 INT2VECTOROID, int28, null_quote, null_dequote, 0, 0
