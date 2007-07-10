@@ -3328,11 +3328,8 @@ Parts of this package have been copied from DBI and DBD-Oracle.
 
 B<Mailing List>
 
-The current maintainers may be reached through the 'dbdpg-general' mailing
-list: L<http://gborg.postgresql.org/mailman/listinfo/dbdpg-general/>.
-
-This list is available through Gmane (L<http://www.gmane.org/>) as a newsgroup
-with the name: C<gmane.comp.db.postgresql.dbdpg>
+The current maintainers may be reached through the 'dbd-pg' mailing list:
+<dbd-pg@perl.org>
 
 B<Bug Reports>
 
