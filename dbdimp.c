@@ -16,7 +16,6 @@
 #include "Pg.h"
 #include <math.h>
 
-
 /* Force preprocessors to use this variable. Default to something valid yet noticeable */
 #ifndef PGLIBVERSION
 #define PGLIBVERSION 80009
@@ -102,8 +101,9 @@ typedef enum
 } PGErrorVerbosity;
 #endif
 
-/* XXX DBI should provide a better version of this */
-#define IS_DBI_HANDLE(h) (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV && SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
+#define IS_DBI_HANDLE(h) \
+  (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV && \
+  SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
 static ExecStatusType _result(imp_dbh_t *imp_dbh, const char *sql);
 static ExecStatusType _sqlstate(imp_dbh_t *imp_dbh, PGresult *result);
@@ -252,44 +252,37 @@ static void pg_error (h, error_num, error_msg)
 
 
 /* ================================================================== */
-void dbd_init (dbistate)
-		 dbistate_t *dbistate;
+void dbd_init (dbistate_t *dbistate)
 {
 	DBIS = dbistate;
 }
 
 
 /* ================================================================== */
-int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
-		 SV *dbh;
-		 imp_dbh_t *imp_dbh;
-		 char *dbname;
-		 char *uid;
-		 char *pwd;
+int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char * pwd)
 {
-	
-	char *conn_str, *dest;
-	bool inquote = DBDPG_FALSE;
-	STRLEN connect_string_size;
-	int status;
 
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_login\n"); }
-	
-	/* DBD::Pg syntax: 'dbname=dbname;host=host;port=port' */
+	char *         conn_str;
+	char *         dest;
+	bool           inquote = DBDPG_FALSE;
+	STRLEN         connect_string_size;
+	ExecStatusType status;
+
+	if (dbis->debug >= 4)
+	(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_login\n");
+  
+	/* DBD::Pg syntax: 'dbname=dbname;host=host;port=port', 'User', 'Pass' */
 	/* libpq syntax: 'dbname=dbname host=host port=port user=uid password=pwd' */
 
 	/* Figure out how large our connection string is going to be */
 	connect_string_size = strlen(dbname);
-	if (strlen(uid)>0) {
-		connect_string_size += strlen(" user=''") + 2*strlen(uid);
-	}
-	if (strlen(pwd)>0) {
-		connect_string_size += strlen(" password=''") + 2*strlen(pwd);
-	}
+	if (strlen(uid))
+		connect_string_size += strlen("user='' ") + 2*strlen(uid);
+	if (strlen(pwd))
+		connect_string_size += strlen("password='' ") + 2*strlen(pwd);
+	Newx(conn_str, connect_string_size+1, char); /* freed below */
 
-	New(0, conn_str, connect_string_size+1, char); /* freed below */
-	
-	/* Change all semi-colons in dbname to a space, unless quoted */
+	/* Change all semi-colons in dbname to a space, unless single-quoted */
 	dest = conn_str;
 	while (*dbname != '\0') {
 		if (';' == *dbname && !inquote)
@@ -304,7 +297,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	*dest = '\0';
 
 	/* Add in the user and/or password if they exist, escaping single quotes and backslashes */
-	if (strlen(uid)>0) {
+	if (strlen(uid)) {
 		strcat(conn_str, " user='");
 		dest = conn_str;
 		while(*dest != '\0')
@@ -317,7 +310,7 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 		*dest = '\0';
 		strcat(conn_str, "'");
 	}
-	if (strlen(pwd)>0) {
+	if (strlen(pwd)) {
 		strcat(conn_str, " password='");
 		dest = conn_str;
 		while(*dest != '\0')
@@ -331,35 +324,43 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 		strcat(conn_str, "'");
 	}
 
-	if (dbis->debug >= 5)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: login connection string: (%s)\n", conn_str);
-	
-	/* Make a connection to the database */
-
+	/* Close any old connection and free memory, just in case */
 	if (imp_dbh->conn)
 		PQfinish(imp_dbh->conn);
+	
+	/* Remove any stored savepoint information */
+	if (imp_dbh->savepoints) {
+		av_undef(imp_dbh->savepoints);
+		sv_free((SV *)imp_dbh->savepoints);
+	}
+	imp_dbh->savepoints = newAV();
+
+	/* Attempt the connection to the database */
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: login connection string: (%s)\n", conn_str);
 	imp_dbh->conn = PQconnectdb(conn_str);
-	if (dbis->debug >= 5)
+	if (dbis->debug >= 6)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: successful connection\n");
 	Safefree(conn_str);
 	
-	Renew(imp_dbh->sqlstate, 6, char); /* freed in dbd_db_destroy (and above) */
-	strncpy(imp_dbh->sqlstate, "25P01\0", 6); /* Internal use (No active SQL transaction) */
+	/* Set the initial sqlstate */
+	Renew(imp_dbh->sqlstate, 6, char); /* freed in dbd_db_destroy */
+	strncpy(imp_dbh->sqlstate, "25P01", 6); /* "NO ACTIVE SQL TRANSACTION" */
 
 	/* Check to see that the backend connection was successfully made */
 	status = PQstatus(imp_dbh->conn);
 	if (CONNECTION_OK != status) {
 		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
-		strncpy(imp_dbh->sqlstate, "S0001\0", 6);
+		strncpy(imp_dbh->sqlstate, "08006", 6); /* "CONNECTION FAILURE" */
 		PQfinish(imp_dbh->conn);
 		return 0;
 	}
 	
-	/* Enable warnings to go through perl */
-	(void)PQsetNoticeProcessor(imp_dbh->conn, pg_warn, (void *)SvRV(dbh)); /* XXX this causes a problem with nmake */
+	/* Call the pg_warn function anytime this connection raises a notice */
+	(void)PQsetNoticeProcessor(imp_dbh->conn, pg_warn, (void *)SvRV(dbh));
 	
-	/* Figure out what protocol this server is using */
-	imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn); /* Older versions use the one defined above */
+	/* Figure out what protocol this server is using (most likely 3) */
+	imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
 
 	/* Figure out this particular backend's version */
 	imp_dbh->pg_server_version = -1;
@@ -372,49 +373,49 @@ int dbd_db_login (dbh, imp_dbh, dbname, uid, pwd)
 	
 		result = PQexec(imp_dbh->conn, "SELECT version(), 'DBD::Pg'");
 		status = _sqlstate(imp_dbh, result);
-
+	
 		if (!result || PGRES_TUPLES_OK != status || (0==PQntuples(result))) {
-			if (dbis->debug >= 4)
+			if (dbis->debug >= 1)
 				(void)PerlIO_printf(DBILOGFP, "dbdpg: Could not get version from the server, status was %d\n", status);
 		}
 		else {
 			cnt = sscanf(PQgetvalue(result,0,0), "PostgreSQL %d.%d.%d", &vmaj, &vmin, &vrev);
 			if (cnt >= 2) {
-				if (cnt == 2)
+				if (cnt == 2) /* Account for devel version e.g. 8.3beta1 */
 					vrev = 0;
 				imp_dbh->pg_server_version = (100 * vmaj + vmin) * 100 + vrev;
 			}
+			else if (dbis->debug >= 1)
+				(void)PerlIO_printf(DBILOGFP, "dbdpg: Unable to parse version from \"%s\"\n", PQgetvalue(result,0,0));
 		}
 		if (result)
 			PQclear(result);
 	}
 
-	imp_dbh->done_begin = DBDPG_FALSE; /* We are not inside a transaction */
-	imp_dbh->pg_bool_tf = DBDPG_FALSE;
-	imp_dbh->pg_enable_utf8 = 0;
-	imp_dbh->pid_number = getpid();
+	imp_dbh->pg_bool_tf     = DBDPG_FALSE;
+	imp_dbh->pg_enable_utf8 = DBDPG_FALSE;
+	imp_dbh->prepare_now    = DBDPG_FALSE;
+	imp_dbh->done_begin     = DBDPG_FALSE;
+	imp_dbh->dollaronly     = DBDPG_FALSE;
+	imp_dbh->pid_number     = getpid();
 	imp_dbh->prepare_number = 1;
-	imp_dbh->prepare_now = DBDPG_FALSE;
-	imp_dbh->dollaronly = DBDPG_FALSE;
-	imp_dbh->pg_errorlevel = 1; /* Matches PG default */
-	if (imp_dbh->savepoints) {
-		av_undef(imp_dbh->savepoints);
-		sv_free((SV *)imp_dbh->savepoints);
-	}
-	imp_dbh->savepoints = newAV();
-	imp_dbh->copystate = 0;
-
+	imp_dbh->copystate      = 0;
+	imp_dbh->pg_errorlevel  = 1; /* Default */
+	imp_dbh->async_status   = 0;
+	imp_dbh->async_sth      = NULL;
+  
 	/* If the server can handle it, we default to "smart", otherwise "off" */
 	imp_dbh->server_prepare = imp_dbh->pg_protocol >= 3 ? 
-	/* If using 3.0 protocol but not yet version 8, switch to "smart" */
+		/* If using 3.0 protocol but not yet version 8, switch to "smart" */
 		PGLIBVERSION >= 80000 ? 1 : 2 : 0;
-
-	DBIc_IMPSET_on(imp_dbh); /* imp_dbh set up now */
-	DBIc_ACTIVE_on(imp_dbh); /* call disconnect before freeing */
-	return imp_dbh->pg_server_version;
+  
+	/* Tell DBI that imp_dbh is all ready to go */
+	DBIc_IMPSET_on(imp_dbh);
+	DBIc_ACTIVE_on(imp_dbh);
+  
+	return 1;
 
 } /* end of dbd_db_login */
-
 
 
 /* ================================================================== */
@@ -619,7 +620,7 @@ void dbd_db_destroy (dbh, imp_dbh)
 	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_destroy\n"); }
 
 	av_undef(imp_dbh->savepoints);
-  sv_free((SV *)imp_dbh->savepoints);
+	sv_free((SV *)imp_dbh->savepoints);
 	Safefree(imp_dbh->sqlstate);
 
 	if (DBIc_ACTIVE(imp_dbh)!=0)
@@ -2754,7 +2755,7 @@ SV * dbd_st_FETCH_attrib (sth, imp_sth, keysv)
 		retsv = newRV(sv_2mortal((SV*)av));
 		while(--i >= 0) {			
 			type_info = pg_type_data((int)PQftype(imp_sth->result,i));
-			(void)av_store(av, i, newSVpv(type_info ? type_info->type_name : "unkown", 0));
+			(void)av_store(av, i, newSVpv(type_info ? type_info->type_name : "unknown", 0));
 		}
 	}
 	else if (13==kl && strEQ(key, "pg_oid_status")) {
@@ -3305,6 +3306,27 @@ int dbd_st_blob_read (sth, imp_sth, lobjId, offset, len, destrv, destoffset)
 	
 	return (int)nread;
 }
+
+/*
+Some information to keep you sane:
+typedef enum
+{
+	PGRES_EMPTY_QUERY = 0,		// empty query string was executed 
+1	PGRES_COMMAND_OK,			// a query command that doesn't return
+								   anything was executed properly by the
+								   backend 
+2	PGRES_TUPLES_OK,			// a query command that returns tuples was
+								   executed properly by the backend, PGresult
+								   contains the result tuples 
+3	PGRES_COPY_OUT,				// Copy Out data transfer in progress 
+4	PGRES_COPY_IN,				// Copy In data transfer in progress 
+5	PGRES_BAD_RESPONSE,			// an unexpected response was recv'd from the
+								   backend 
+6	PGRES_NONFATAL_ERROR,		// notice or warning message 
+7	PGRES_FATAL_ERROR			// query failed 
+} ExecStatusType;
+
+*/
 
 /* end of dbdimp.c */
 
