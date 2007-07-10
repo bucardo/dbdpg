@@ -35,19 +35,19 @@
 #define PG_DIAG_SQLSTATE 'C'
 /* Better we do all this in one place here than put more ifdefs inside dbdimp.c */
 typedef enum
-{
-	PQTRANS_IDLE,        /* connection idle */
-	PQTRANS_ACTIVE,      /* command in progress */
-	PQTRANS_INTRANS,     /* idle, within transaction block */
-	PQTRANS_INERROR,     /* idle, within failed transaction */
-	PQTRANS_UNKNOWN      /* cannot determine status */
-} PGTransactionStatusType;
+	{
+		PQTRANS_IDLE,        /* connection idle */
+		PQTRANS_ACTIVE,      /* command in progress */
+		PQTRANS_INTRANS,     /* idle, within transaction block */
+		PQTRANS_INERROR,     /* idle, within failed transaction */
+		PQTRANS_UNKNOWN      /* cannot determine status */
+	} PGTransactionStatusType;
 typedef enum
-{
-	PQERRORS_TERSE,      /* single-line error messages */
-	PQERRORS_DEFAULT,    /* recommended style */
-	PQERRORS_VERBOSE     /* all the facts, ma'am */
-} PGVerbosity;
+	{
+		PQERRORS_TERSE,      /* single-line error messages */
+		PQERRORS_DEFAULT,    /* recommended style */
+		PQERRORS_VERBOSE     /* all the facts, ma'am */
+	} PGVerbosity;
 /* These are actually used to return default values */
 int PQprotocolVersion(const PGconn *a);
 int PQprotocolVersion(const PGconn *a) { return a ? 0 : 0; }
@@ -94,20 +94,21 @@ int PQserverVersion(const PGconn *a) { if (!a) return 0; croak ("Called wrong PQ
 
 #ifndef PGErrorVerbosity
 typedef enum
-{
-	PGERROR_TERSE,				/* single-line error messages */
-	PGERROR_DEFAULT,			/* recommended style */
-	PGERROR_VERBOSE				/* all the facts, ma'am */
-} PGErrorVerbosity;
+	{
+		PGERROR_TERSE,				/* single-line error messages */
+		PGERROR_DEFAULT,			/* recommended style */
+		PGERROR_VERBOSE				/* all the facts, ma'am */
+	} PGErrorVerbosity;
 #endif
 
-#define IS_DBI_HANDLE(h) \
-  (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV && \
-  SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
+#define IS_DBI_HANDLE(h)										\
+	(SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV &&					\
+	 SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
+static void pg_error(SV *h, ExecStatusType error_num, char *error_msg);
+static void pg_warn (void * arg, const char * message);
 static ExecStatusType _result(imp_dbh_t *imp_dbh, const char *sql);
 static ExecStatusType _sqlstate(imp_dbh_t *imp_dbh, PGresult *result);
-static void pg_error(SV *h, ExecStatusType error_num, char *error_msg);
 static int dbd_db_rollback_commit (SV *dbh, imp_dbh_t *imp_dbh, char * action);
 static void dbd_st_split_statement (imp_sth_t *imp_sth, int version, char *statement);
 static int dbd_st_prepare_statement (SV *sth, imp_sth_t *imp_sth);
@@ -117,139 +118,6 @@ static PGTransactionStatusType dbd_db_txn_status (imp_dbh_t *imp_dbh);
 static int pg_db_start_txn (SV *dbh, imp_dbh_t *imp_dbh);
 
 DBISTATE_DECLARE;
-
-/* ================================================================== */
-/* Quick command executor used throughout this file */
-static ExecStatusType _result(imp_dbh, sql)
-		 imp_dbh_t *imp_dbh;
-		 const char *sql;
-{
-	PGresult *result;
-	ExecStatusType status;
-
-	if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: _result (%s)\n", sql);
-
-	result = PQexec(imp_dbh->conn, sql);
-
-	status = _sqlstate(imp_dbh, result);
-
-	if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: Set status to (%d)\n", status);
-
-	PQclear(result);
-
-	return status;
-
-} /* end of _result */
-
-
-/* ================================================================== */
-/* Set the SQLSTATE based on a result, returns the status */
-static ExecStatusType _sqlstate(imp_dbh, result)
-		 imp_dbh_t *imp_dbh;
-		 PGresult *result;
-{
-	ExecStatusType status = PGRES_FATAL_ERROR; /* until proven otherwise */
-	bool stateset = DBDPG_FALSE;
-
-	if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: _sqlstate\n");
-
-	if (result)
-		status = PQresultStatus(result);
-
-	if (dbis->debug >= 6) (void)PerlIO_printf(DBILOGFP, "dbdpg: Status is (%d)\n", status);
-
-#if PGLIBVERSION >= 70400
-	/*
-	  Because PQresultErrorField may not work completely when an error occurs, and 
-	  we are connecting over TCP/IP, only set it here if non-null, and fall through 
-	  to a better default value below.
-    */
-	if (result && imp_dbh->pg_server_version >= 70400
-	  && NULL != PQresultErrorField(result,PG_DIAG_SQLSTATE)) {
-		strncpy(imp_dbh->sqlstate, PQresultErrorField(result,PG_DIAG_SQLSTATE), 5);
-		imp_dbh->sqlstate[5] = '\0';
-		stateset = DBDPG_TRUE;
-	}
-#endif
-
-	if (!stateset) {
-		/* Do our best to map the status result to a sqlstate code */
-		switch (status) {
-		case PGRES_EMPTY_QUERY:
-		case PGRES_COMMAND_OK:
-		case PGRES_TUPLES_OK:
-		case PGRES_COPY_OUT:
-		case PGRES_COPY_IN:
-			strncpy(imp_dbh->sqlstate, "00000\0", 6); /* Successful completion */
-			break;
-		case PGRES_BAD_RESPONSE:
-		case PGRES_NONFATAL_ERROR:
-			strncpy(imp_dbh->sqlstate, "01000\0", 6); /* Warning */
-			break;
-		case PGRES_FATAL_ERROR:
-		default:
-			strncpy(imp_dbh->sqlstate, "S8006\0", 6); /* Connection failure */
-			break;
-		}
-	}
-
-	if (dbis->debug >= 6) (void)PerlIO_printf(DBILOGFP, "dbdpg: Set sqlstate to (%s)\n", imp_dbh->sqlstate);
-
-	return status;
-
-} /* end of _sqlstate */
-
-
-/* ================================================================== */
-/* Turn database notices into perl warnings for proper handling. */
-static void pg_warn (arg, message)
-		 void * arg;
-		 const char *message;
-{
-	D_imp_dbh( sv_2mortal(newRV((SV*)arg)) );
-	
-	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_warn (%s) DBIc_WARN=%d\n",
-												message, DBIc_WARN(imp_dbh) ? 1 : 0);
-
-	if (DBIc_WARN(imp_dbh) && DBIc_is(imp_dbh, DBIcf_PrintWarn))
-		warn(message);
-}
-
-
-/* ================================================================== */
-/* Database specific error handling. */
-static void pg_error (h, error_num, error_msg)
-		 SV *h;
-		 ExecStatusType error_num;
-		 char *error_msg;
-{
-	D_imp_xxh(h);
-	char *err;
-	imp_dbh_t	*imp_dbh = (imp_dbh_t *)(DBIc_TYPE(imp_xxh) == DBIt_ST ? DBIc_PARENT_COM(imp_xxh) : imp_xxh);
-	
-	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_error (%s) number=%d\n",
-												error_msg, error_num);
-
-	New(0, err, strlen(error_msg)+1, char); /* freed below */
-	strcpy(err, error_msg);
-	/* Strip final newline so line number appears for warn/die */
-	if (err[strlen(err)] == 10)
-	  err[strlen(err)] = '\0';
-
-	sv_setiv(DBIc_ERR(imp_xxh), (IV)error_num);		 /* set err early */
-	sv_setpv(DBIc_ERRSTR(imp_xxh), (char*)err);
-	sv_setpvn(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate, 5);
-	if (dbis->debug >= 3) {
-		(void)PerlIO_printf
-			(DBILOGFP, "dbdpg: %s error %d recorded: %s\n",
-			 err, error_num, SvPV_nolen(DBIc_ERRSTR(imp_xxh)));
-	}
-	Safefree(err);
-
-} /* end of pg_error */
-
 
 /* ================================================================== */
 void dbd_init (dbistate_t *dbistate)
@@ -269,7 +137,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	ExecStatusType status;
 
 	if (dbis->debug >= 4)
-	(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_login\n");
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_login\n");
   
 	/* DBD::Pg syntax: 'dbname=dbname;host=host;port=port', 'User', 'Pass' */
 	/* libpq syntax: 'dbname=dbname host=host port=port user=uid password=pwd' */
@@ -401,8 +269,6 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	imp_dbh->prepare_number = 1;
 	imp_dbh->copystate      = 0;
 	imp_dbh->pg_errorlevel  = 1; /* Default */
-	imp_dbh->async_status   = 0;
-	imp_dbh->async_sth      = NULL;
   
 	/* If the server can handle it, we default to "smart", otherwise "off" */
 	imp_dbh->server_prepare = imp_dbh->pg_protocol >= 3 ? 
@@ -416,6 +282,134 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	return 1;
 
 } /* end of dbd_db_login */
+
+
+/* ================================================================== */
+/* Database specific error handling. */
+static void pg_error (SV * h, ExecStatusType error_num, char * error_msg)
+{
+	D_imp_xxh(h);
+	char *      err;
+	imp_dbh_t * imp_dbh = (imp_dbh_t *)(DBIc_TYPE(imp_xxh) == DBIt_ST ? DBIc_PARENT_COM(imp_xxh) : imp_xxh);
+	
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_error (%s) number=%d\n",
+							error_msg, error_num);
+
+	New(0, err, strlen(error_msg)+1, char); /* freed below */
+	strcpy(err, error_msg);
+	/* Strip final newline so line number appears for warn/die */
+	if (err[strlen(err)] == 10)
+		err[strlen(err)] = '\0';
+
+	sv_setiv(DBIc_ERR(imp_xxh), (IV)error_num);		 /* set err early */
+	sv_setpv(DBIc_ERRSTR(imp_xxh), (char*)err);
+	sv_setpvn(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate, 5);
+	if (dbis->debug >= 3) {
+		(void)PerlIO_printf
+			(DBILOGFP, "dbdpg: %s error %d recorded: %s\n",
+			 err, error_num, SvPV_nolen(DBIc_ERRSTR(imp_xxh)));
+	}
+	Safefree(err);
+
+} /* end of pg_error */
+
+
+/* ================================================================== */
+/* Turn database notices into perl warnings for proper handling. */
+static void pg_warn (void * arg, const char * message)
+{
+	D_imp_dbh( sv_2mortal(newRV((SV*)arg)) );
+	
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_warn (%s) DBIc_WARN=%d\n",
+							message, DBIc_WARN(imp_dbh) ? 1 : 0);
+
+	if (DBIc_WARN(imp_dbh) && DBIc_is(imp_dbh, DBIcf_PrintWarn))
+		warn(message);
+}
+
+
+/* ================================================================== */
+/* Quick command executor used throughout this file */
+static ExecStatusType _result(imp_dbh, sql)
+	 imp_dbh_t *imp_dbh;
+	 const char *sql;
+{
+	PGresult *result;
+	ExecStatusType status;
+
+	if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: _result (%s)\n", sql);
+
+	result = PQexec(imp_dbh->conn, sql);
+
+	status = _sqlstate(imp_dbh, result);
+
+	if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: Set status to (%d)\n", status);
+
+	PQclear(result);
+
+	return status;
+
+} /* end of _result */
+
+
+/* ================================================================== */
+/* Set the SQLSTATE based on a result, returns the status */
+static ExecStatusType _sqlstate(imp_dbh, result)
+	 imp_dbh_t *imp_dbh;
+	 PGresult *result;
+{
+	ExecStatusType status = PGRES_FATAL_ERROR; /* until proven otherwise */
+	bool stateset = DBDPG_FALSE;
+
+	if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: _sqlstate\n");
+
+	if (result)
+		status = PQresultStatus(result);
+
+	if (dbis->debug >= 6) (void)PerlIO_printf(DBILOGFP, "dbdpg: Status is (%d)\n", status);
+
+#if PGLIBVERSION >= 70400
+	/*
+	  Because PQresultErrorField may not work completely when an error occurs, and 
+	  we are connecting over TCP/IP, only set it here if non-null, and fall through 
+	  to a better default value below.
+    */
+	if (result && imp_dbh->pg_server_version >= 70400
+		&& NULL != PQresultErrorField(result,PG_DIAG_SQLSTATE)) {
+		strncpy(imp_dbh->sqlstate, PQresultErrorField(result,PG_DIAG_SQLSTATE), 5);
+		imp_dbh->sqlstate[5] = '\0';
+		stateset = DBDPG_TRUE;
+	}
+#endif
+
+	if (!stateset) {
+		/* Do our best to map the status result to a sqlstate code */
+		switch (status) {
+		case PGRES_EMPTY_QUERY:
+		case PGRES_COMMAND_OK:
+		case PGRES_TUPLES_OK:
+		case PGRES_COPY_OUT:
+		case PGRES_COPY_IN:
+			strncpy(imp_dbh->sqlstate, "00000\0", 6); /* Successful completion */
+			break;
+		case PGRES_BAD_RESPONSE:
+		case PGRES_NONFATAL_ERROR:
+			strncpy(imp_dbh->sqlstate, "01000\0", 6); /* Warning */
+			break;
+		case PGRES_FATAL_ERROR:
+		default:
+			strncpy(imp_dbh->sqlstate, "S8006\0", 6); /* Connection failure */
+			break;
+		}
+	}
+
+	if (dbis->debug >= 6) (void)PerlIO_printf(DBILOGFP, "dbdpg: Set sqlstate to (%s)\n", imp_dbh->sqlstate);
+
+	return status;
+
+} /* end of _sqlstate */
 
 
 /* ================================================================== */
