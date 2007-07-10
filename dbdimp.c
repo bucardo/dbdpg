@@ -296,13 +296,14 @@ static void pg_error (SV * h, ExecStatusType error_num, char * error_msg)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_error (%s) number=%d\n",
 							error_msg, error_num);
 
-	New(0, err, strlen(error_msg)+1, char); /* freed below */
+	Newx(err, strlen(error_msg)+1, char); /* freed below */
 	strcpy(err, error_msg);
+
 	/* Strip final newline so line number appears for warn/die */
 	if (err[strlen(err)] == 10)
 		err[strlen(err)] = '\0';
 
-	sv_setiv(DBIc_ERR(imp_xxh), (IV)error_num);		 /* set err early */
+	sv_setiv(DBIc_ERR(imp_xxh), (IV)error_num); /* set err early */
 	sv_setpv(DBIc_ERRSTR(imp_xxh), (char*)err);
 	sv_setpvn(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate, 5);
 	if (dbis->debug >= 3) {
@@ -327,25 +328,26 @@ static void pg_warn (void * arg, const char * message)
 
 	if (DBIc_WARN(imp_dbh) && DBIc_is(imp_dbh, DBIcf_PrintWarn))
 		warn(message);
-}
+
+} /* end of pg_warn */
 
 
 /* ================================================================== */
 /* Quick command executor used throughout this file */
-static ExecStatusType _result(imp_dbh, sql)
-	 imp_dbh_t *imp_dbh;
-	 const char *sql;
+static ExecStatusType _result(imp_dbh_t * imp_dbh, const char * sql)
 {
-	PGresult *result;
+	PGresult *     result;
 	ExecStatusType status;
 
-	if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: _result (%s)\n", sql);
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: _result (%s)\n", sql);
 
 	result = PQexec(imp_dbh->conn, sql);
 
 	status = _sqlstate(imp_dbh, result);
 
-	if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: Set status to (%d)\n", status);
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: Set status to (%d)\n", status);
 
 	PQclear(result);
 
@@ -356,9 +358,7 @@ static ExecStatusType _result(imp_dbh, sql)
 
 /* ================================================================== */
 /* Set the SQLSTATE based on a result, returns the status */
-static ExecStatusType _sqlstate(imp_dbh, result)
-	 imp_dbh_t *imp_dbh;
-	 PGresult *result;
+static ExecStatusType _sqlstate(imp_dbh_t * imp_dbh, PGresult * result)
 {
 	ExecStatusType status = PGRES_FATAL_ERROR; /* until proven otherwise */
 	bool stateset = DBDPG_FALSE;
