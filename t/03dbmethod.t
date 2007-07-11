@@ -61,35 +61,29 @@ $sth->execute(12,'Kiwi');
 # Test of the "last_insert_id" database handle method
 #
 
+$dbh->commit();
+eval {
+	$result = $dbh->last_insert_id(undef,undef,undef,undef);
+};
+ok( $@, 'DB handle method "last_insert_id" given an error when no arguments are given');
 
-SKIP: {
-  $DBI::VERSION >= 1.43
-	or skip 'DBI must be at least version 1.43 to completely test database handle method "last_insert_id"', 5;
+eval {
+	$result = $dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistentsequence_test'});
+};
+ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent sequence');
+$dbh->rollback();
 
-	$dbh->commit();
-	eval {
-		$result = $dbh->last_insert_id(undef,undef,undef,undef);
-	};
-	ok( $@, 'DB handle method "last_insert_id" given an error when no arguments are given');
+eval {
+	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef);
+};
+ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent table');
+$dbh->rollback();
 
-	eval {
-		$result = $dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistentsequence_test'});
-	};
-	ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent sequence');
-	$dbh->rollback();
-
-	eval {
-		$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef);
-	};
-	ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent table');
-	$dbh->rollback();
-
-	eval {
-		$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef,{sequence=>'dbd_pg_sequence'});
-	};
-	ok( ! $@, 'DB handle method "last_insert_id" works when given a valid sequence and an invalid table');
-	like( $result, qr{^\d+$}, 'DB handle method "last_insert_id" returns a numeric value');
-}
+eval {
+	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef,{sequence=>'dbd_pg_sequence'});
+};
+ok( ! $@, 'DB handle method "last_insert_id" works when given a valid sequence and an invalid table');
+like( $result, qr{^\d+$}, 'DB handle method "last_insert_id" returns a numeric value');
 
 eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef);
@@ -200,14 +194,9 @@ $result = $dbh->selectcol_arrayref($SQL, {Columns=>[2,1]});
 $expected = ['Roseapple',10,'Pineapple',11,'Kiwi',12];
 is_deeply($result, $expected, 'DB handle method "selectcol_arrayref" works with the Columns attribute');
 
-SKIP: {
-	$DBI::VERSION >= 1.36
-		or skip 'DBI must be at least version 1.36 to test "selectcol_arrayref" with "MaxRows"', 1;
-
-	$result = $dbh->selectcol_arrayref($SQL, {Columns=>[2], MaxRows => 1});
-	$expected = ['Roseapple'];
-	is_deeply($result, $expected, 'DB handle method "selectcol_arrayref" works with the MaxRows attribute');
-}
+$result = $dbh->selectcol_arrayref($SQL, {Columns=>[2], MaxRows => 1});
+$expected = ['Roseapple'];
+is_deeply($result, $expected, 'DB handle method "selectcol_arrayref" works with the MaxRows attribute');
 
 #
 # Test of the "commit" and "rollback" database handle methods
@@ -1129,7 +1118,7 @@ ok( 1==$dbh->ping(), 'DB handle method "ping" returns 1 on an idle connection');
 
 $dbh->do("SELECT 123");
 
-$result = $pglibversion < 70400 ? 1 : 3;
+$result = 3;
 ok( $result==$dbh->ping(), 'DB handle method "ping" returns 3 for a good connection inside a transaction');
 
 $dbh->commit();
@@ -1138,69 +1127,61 @@ ok( 1==$dbh->ping(), 'DB handle method "ping" returns 1 on an idle connection');
 
 my $mtvar; ## This is an implicit test of getline: please leave this var undefined
 
-if ($pglibversion < 70400 or $pgversion < 70300) {
- SKIP: {
-		skip "Can't run advanced ping tests with older versions of Postgres", 14;
-	}
+$dbh->do("COPY dbd_pg_test(id,pname) TO STDOUT");
+{
+	local $SIG{__WARN__} = sub {};
+	$dbh->pg_getline($mtvar,100);
+	ok( 2==$dbh->ping(), 'DB handle method "ping" returns 2 when in COPY IN state');
+	1 while $dbh->pg_getline($mtvar,1000);
+	ok( 2==$dbh->ping(), 'DB handle method "ping" returns 2 immediately after COPY IN state');
 }
-else {
-	$dbh->do("COPY dbd_pg_test(id,pname) TO STDOUT");
-	{
-		local $SIG{__WARN__} = sub {};
-		$dbh->pg_getline($mtvar,100);
-		ok( 2==$dbh->ping(), 'DB handle method "ping" returns 2 when in COPY IN state');
-		1 while $dbh->pg_getline($mtvar,1000);
-		ok( 2==$dbh->ping(), 'DB handle method "ping" returns 2 immediately after COPY IN state');
-	}
 	
-	$dbh->do("SELECT 123");
+$dbh->do("SELECT 123");
 	
-	ok( 3==$dbh->ping(), 'DB handle method "ping" returns 3 for a good connection inside a transaction');
+ok( 3==$dbh->ping(), 'DB handle method "ping" returns 3 for a good connection inside a transaction');
 	
-	eval {
-		$dbh->do("DBD::Pg creating an invalid command for testing");
-		};
-	ok( 4==$dbh->ping(), 'DB handle method "ping" returns a 4 when inside a failed transaction');
+eval {
+	$dbh->do("DBD::Pg creating an invalid command for testing");
+};
+ok( 4==$dbh->ping(), 'DB handle method "ping" returns a 4 when inside a failed transaction');
 
-	$dbh->disconnect();
-	ok( 0==$dbh->ping(), 'DB handle method "ping" fails (returns 0) on a disconnected handle');
+$dbh->disconnect();
+ok( 0==$dbh->ping(), 'DB handle method "ping" fails (returns 0) on a disconnected handle');
 
-	$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											{RaiseError => 1, PrintError => 0, AutoCommit => 0});
 
-	ok( defined $dbh, "Reconnect to the database after disconnect");
+ok( defined $dbh, "Reconnect to the database after disconnect");
 
-	#
-	# Test of the "pg_ping" database handle method
-	#
+#
+# Test of the "pg_ping" database handle method
+#
 
-	ok( 1==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 1 on an idle connection');
+ok( 1==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 1 on an idle connection');
 
-	$dbh->do("SELECT 123");
+$dbh->do("SELECT 123");
 
-	ok( 3==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 3 for a good connection inside a transaction');
+ok( 3==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 3 for a good connection inside a transaction');
 
-	$dbh->commit();
+$dbh->commit();
 
-	ok( 1==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 1 on an idle connection');
+ok( 1==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 1 on an idle connection');
 
-	$dbh->do("COPY dbd_pg_test(id,pname) TO STDOUT");
-	$dbh->pg_getline($mtvar,100);
-	ok( 2==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 2 when in COPY IN state');
-	1 while $dbh->pg_getline($mtvar,1000);
-	ok( 2==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 2 immediately after COPY IN state');
+$dbh->do("COPY dbd_pg_test(id,pname) TO STDOUT");
+$dbh->pg_getline($mtvar,100);
+ok( 2==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 2 when in COPY IN state');
+1 while $dbh->pg_getline($mtvar,1000);
+ok( 2==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 2 immediately after COPY IN state');
 
-	$dbh->do("SELECT 123");
+$dbh->do("SELECT 123");
 
-	ok( 3==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 3 for a good connection inside a transaction');
+ok( 3==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 3 for a good connection inside a transaction');
 
-	eval {
-		$dbh->do("DBD::Pg creating an invalid command for testing");
-	};
-	ok( 4==$dbh->pg_ping(), 'DB handle method "pg_ping" returns a 4 when inside a failed transaction');
+eval {
+	$dbh->do("DBD::Pg creating an invalid command for testing");
+};
+ok( 4==$dbh->pg_ping(), 'DB handle method "pg_ping" returns a 4 when inside a failed transaction');
 
-	$dbh->disconnect();
-	ok( -1==$dbh->pg_ping(), 'DB handle method "pg_ping" fails (returns 0) on a disconnected handle');
-
-}
+$dbh->disconnect();
+ok( -1==$dbh->pg_ping(), 'DB handle method "pg_ping" fails (returns 0) on a disconnected handle');
 

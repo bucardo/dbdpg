@@ -2,7 +2,7 @@
 
   $Id$
 
-  Copyright (c) 2002-2007 Greg Sabino Mullane and others, see Changes file
+  Copyright (c) 2002-2007 Greg Sabino Mullane and others: see the Changes file
   Portions Copyright (c) 2002 Jeffrey W. Baker
   Portions Copyright (c) 1997-2000 Edmund Mergl
   Portions Copyright (c) 1994-1997 Tim Bunce
@@ -29,54 +29,6 @@
 #define sword signed int
 #define sb2 signed short
 #define ub2 unsigned short
-
-/* Someday, we can abandon pre-7.4 and life will be much easier... */
-#if PGLIBVERSION < 70400
-#define PG_DIAG_SQLSTATE 'C'
-/* Better we do all this in one place here than put more ifdefs inside dbdimp.c */
-typedef enum
-	{
-		PQTRANS_IDLE,        /* connection idle */
-		PQTRANS_ACTIVE,      /* command in progress */
-		PQTRANS_INTRANS,     /* idle, within transaction block */
-		PQTRANS_INERROR,     /* idle, within failed transaction */
-		PQTRANS_UNKNOWN      /* cannot determine status */
-	} PGTransactionStatusType;
-typedef enum
-	{
-		PQERRORS_TERSE,      /* single-line error messages */
-		PQERRORS_DEFAULT,    /* recommended style */
-		PQERRORS_VERBOSE     /* all the facts, ma'am */
-	} PGVerbosity;
-/* These are actually used to return default values */
-int PQprotocolVersion(const PGconn *a);
-int PQprotocolVersion(const PGconn *a) { return a ? 0 : 0; }
-
-Oid PQftable(PGresult *a, int b);
-Oid PQftable(PGresult *a, int b) { if (a||b) return InvalidOid; return InvalidOid; }
-
-int PQftablecol(PGresult *a, int b);
-int PQftablecol(PGresult *a, int b) { return a||b ? 0 : 0; }
-
-int PQsetErrorVerbosity(PGconn *a, PGVerbosity b);
-int PQsetErrorVerbosity(PGconn *a, PGVerbosity b) { return a||b ? 0 : 0; }
-
-PGTransactionStatusType PQtransactionStatus(const PGconn *a);
-PGTransactionStatusType PQtransactionStatus(const PGconn *a) { return a ? PQTRANS_UNKNOWN : PQTRANS_UNKNOWN; }
-
-/* These should not be called, and will throw errors if they are */
-PGresult *PQexecPrepared(PGconn *a,const char *b,int c,const char *const *d,const int *e,const int *f,int g);
-PGresult *PQexecPrepared(PGconn *a,const char *b,int c,const char *const *d,const int *e,const int *f,int g) {
-	if (a||b||c||d||e||f||g) g=0;
-	croak ("Called wrong PQexecPrepared\n");
-}
-PGresult *PQexecParams(PGconn *a,const char *b,int c,const Oid *d,const char *const *e,const int *f,const int *g,int h);
-PGresult *PQexecParams(PGconn *a,const char *b,int c,const Oid *d,const char *const *e,const int *f,const int *g,int h) {
-	if (a||b||c||d||e||f||g||h) h=0;
-	croak("Called wrong PQexecParams\n");
-}
-
-#endif
 
 #if PGLIBVERSION < 80000
 
@@ -373,19 +325,17 @@ static ExecStatusType _sqlstate(imp_dbh_t * imp_dbh, PGresult * result)
 	if (dbis->debug >= 6)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: _sqlstate status is %d\n", status);
 
-#if PGLIBVERSION >= 70400
 	/*
 	  Because PQresultErrorField may not work completely when an error occurs, and 
 	  we are connecting over TCP/IP, only set it here if non-null, and fall through 
 	  to a better default value below.
     */
-	if (result && imp_dbh->pg_server_version >= 70400
+	if (result
 		&& NULL != PQresultErrorField(result,PG_DIAG_SQLSTATE)) {
 		strncpy(imp_dbh->sqlstate, PQresultErrorField(result,PG_DIAG_SQLSTATE), 5);
 		imp_dbh->sqlstate[5] = '\0';
 		stateset = DBDPG_TRUE;
 	}
-#endif
 
 	if (!stateset) {
 		/* Do our best to map the status result to a sqlstate code */
@@ -429,11 +379,7 @@ int dbd_db_ping (SV * dbh)
 	if (NULL == imp_dbh->conn)
 		return -1;
 
-#if PGLIBVERSION < 70400
-	tstatus = 0;
-#else
 	tstatus = dbd_db_txn_status(imp_dbh);
-#endif
 
 	if (dbis->debug >= 6)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_ping txn_status is %d\n", tstatus);
@@ -461,17 +407,9 @@ static PGTransactionStatusType dbd_db_txn_status (imp_dbh_t * imp_dbh)
 {
 
 	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_txn_status%s\n",
-							PGLIBVERSION < 70400 ? " (ALWAYS 4)" : "");
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_txn_status\n");
 
-	/* Pre 7.3 *compiled* servers (our PG library) always return unknown */
-
-	/* Since 7.3 has a possible autocommit issue, we simply have it return unknown as well */
-#if PGLIBVERSION < 70400
-	return 4;
-#else
 	return PQtransactionStatus(imp_dbh->conn);
-#endif
 
 } /* end of dbd_db_txn_status */
 
@@ -497,9 +435,6 @@ static int dbd_db_rollback_commit (SV * dbh, imp_dbh_t * imp_dbh, char * action)
 	/* We only perform these actions if we need to. For newer servers, we 
 	   ask it for the status directly and double-check things */
 
-#if PGLIBVERSION < 70400
-	tstatus = 0;
-#else
 	tstatus = dbd_db_txn_status(imp_dbh);
 	if (PQTRANS_IDLE == tstatus) { /* Not in a transaction */
 		if (imp_dbh->done_begin) {
@@ -525,7 +460,6 @@ static int dbd_db_rollback_commit (SV * dbh, imp_dbh_t * imp_dbh, char * action)
 		if (dbis->debug >= 1)
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: Warning: cannot determine transaction status\n");
 	}
-#endif
 
 	/* If begin_work has been called, turn AutoCommit back on and BegunWork off */
 	if (DBIc_has(imp_dbh, DBIcf_BegunWork)!=0) {
@@ -1199,11 +1133,7 @@ SV * dbd_db_pg_notifies (SV * dbh, imp_dbh_t * imp_dbh)
 	av_push(ret, newSVpv(notify->relname,0) );
 	av_push(ret, newSViv(notify->be_pid) );
 	
-#if PGLIBVERSION >= 70400
  	PQfreemem(notify);
-#else
-	Safefree(notify);
-#endif
 
 	retsv = newRV(sv_2mortal((SV*)ret));
 
@@ -2890,12 +2820,6 @@ pg_db_putline (SV * dbh, const char * buffer)
 	if (PGRES_COPY_IN != imp_dbh->copystate)
 		croak("pg_putline can only be called directly after issuing a COPY IN command\n");
 
-#if PGLIBVERSION < 70400
-	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: Running PQputline\n");
-	copystatus = 0; /* Make compilers happy */
-	return PQputline(imp_dbh->conn, buffer);
-#else
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: Running PQputCopyData\n");
 
@@ -2908,7 +2832,6 @@ pg_db_putline (SV * dbh, const char * buffer)
 		croak("PQputCopyData gave a value of %d\n", copystatus);
 	}
 	return 0;
-#endif
 }
 
 
@@ -2929,17 +2852,6 @@ pg_db_getline (SV * dbh, char * buffer, int length)
 	if (PGRES_COPY_OUT != imp_dbh->copystate)
 		croak("pg_getline can only be called directly after issuing a COPY OUT command\n");
 
-#if PGLIBVERSION < 70400
-	if (dbis->debug >= 5)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: Running PQgetline (%d)\n", length);
-	copystatus = PQgetline(imp_dbh->conn, buffer, length);
-	if (copystatus < 0 || (*buffer == '\\' && *(buffer+1) == '.')) {
-		imp_dbh->copystate=0;
-		PQendcopy(imp_dbh->conn);
-		return -1;
-	}
-	return copystatus;
-#else
 	length = 0; /* Make compilers happy */
 	if (dbis->debug >= 5)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: Running PQgetCopyData\n");
@@ -2960,7 +2872,6 @@ pg_db_getline (SV * dbh, char * buffer, int length)
 		PQfreemem(tempbuf);
 	}
 	return 0;
-#endif
 
 }
 
@@ -2979,15 +2890,6 @@ int pg_db_endcopy (SV * dbh)
 	if (0==imp_dbh->copystate)
 		croak("pg_endcopy cannot be called until a COPY is issued");
 
-#if PGLIBVERSION < 70400
-	if (PGRES_COPY_IN == imp_dbh->copystate) {
-		if (dbis->debug >= 5)
-			(void)PerlIO_printf(DBILOGFP, "dbdpg: Running PQputline with (\\\\.\\n)\n");
-		PQputline(imp_dbh->conn, "\\.\n");
-	}
-	result = 0; /* Make compiler happy */
-	copystatus = PQendcopy(imp_dbh->conn);
-#else
 	if (PGRES_COPY_IN == imp_dbh->copystate) {
 		if (dbis->debug >= 5)
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: Running PQputCopyEnd\n");
@@ -3011,7 +2913,7 @@ int pg_db_endcopy (SV * dbh)
 	else {
 		copystatus = PQendcopy(imp_dbh->conn);
 	}
-#endif
+
 	imp_dbh->copystate = 0;
 	return copystatus;
 }

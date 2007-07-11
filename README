@@ -22,7 +22,7 @@ For information about PostgreSQL, visit:
 COPYRIGHT:
 ----------
 
-	Copyright (c) 2002-2007 PostgreSQL Global Development Group
+	Copyright (c) 2002-2007 Greg Sabino Mullane and others: see the Changes file
 	Portions Copyright (c) 2002 Jeffrey W. Baker
 	Portions Copyright (c) 1997-2001 Edmund Mergl
 	Portions Copyright (c) 1994-1997 Tim Bunce
@@ -68,7 +68,7 @@ REQUIREMENTS:
 
 	build, test, and install Perl 5         (at least 5.6.1)
 	build, test, and install the DBI module (at least 1.45)
-	build, test, and install PostgreSQL     (at least 7.3)
+	build, test, and install PostgreSQL     (at least 7.4)
 	build, test, and install Test::Simple   (at least 0.47)
 
 You must also have the pg_config executable installed (to check, type 
@@ -124,9 +124,9 @@ or a space inside of it:
 
 	DBI_DSN='dbi:Pg:dbname="<data;base>"'
 
-The tests assume that a schema named "public" is available for 
-7.3 and greater servers. To override this, set the environment 
-variable DBD_SCHEMA to a valid schema before testing.
+The tests assume that a schema named "public" is available. To override 
+this, set the environment variable DBD_SCHEMA to a valid schema 
+before testing.
 
 You can increase the verbosity of the tests by setting the 
 environment variable TEST_VERBOSE. You can also enable tracing 

@@ -18,15 +18,8 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											 {RaiseError => 0, PrintError => 0, AutoCommit => 0});
 ok( defined $dbh, "Connect to database for handle attributes testing");
 
-my $version = $dbh->{pg_server_version};
-my $pglibversion = $dbh->{pg_lib_version};
-my $got73 = $version >= 70300 ? 1 : 0;
-if ($got73) {
-	$dbh->do("SET search_path TO " . $dbh->quote_identifier
-					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
-}
-
-my $pgversion = $dbh->{pg_server_version};
+$dbh->do("SET search_path TO " . $dbh->quote_identifier
+		 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
 
 my $attributes_tested = q{
 
@@ -151,10 +144,8 @@ ok( $dbh->commit(), "Commit after deleting all rows from dbd_pg_test");
 
 my $dbh2 = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 												{RaiseError => 0, PrintError => 0, AutoCommit => 1});
-if ($got73) {
-	$dbh2->do("SET search_path TO " . $dbh2->quote_identifier
-					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
-}
+$dbh2->do("SET search_path TO " . $dbh2->quote_identifier
+		 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
 
 ok( defined $dbh2, "Connect to database with second database handle, AutoCommit on");
 
@@ -214,13 +205,8 @@ ok( !defined $attrib, 'Setting DB handle attribute "RowCacheSize" has no effect'
 # Test of the database handle attribute "Username"
 #
 
-SKIP: {
-	skip 'DBI must be at least version 1.36 to test the DB handle attribute "Username"', 1
-		if $DBI::VERSION < 1.36;
-
-	$attrib = $dbh->{Username};
-	is( $attrib, $ENV{DBI_USER}, 'DB handle attribute "Username" returns the same value as DBI_USER');
-}
+$attrib = $dbh->{Username};
+is( $attrib, $ENV{DBI_USER}, 'DB handle attribute "Username" returns the same value as DBI_USER');
 
 #
 # Test of the "PrintWarn" database handle attribute
@@ -275,13 +261,8 @@ like( $dbh->{pg_protocol}, qr/^\d+$/, 'Database handle attribute "pg_protocol" r
 
 cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" returns the default (1)');
 
-SKIP: {
-	skip 'Cannot test DB handle attribute "pg_errorlevel" on pre-7.4 servers', 1
-		if $pgversion < 70400;
-
-	$dbh->{pg_errorlevel} = 3;
-	cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" defaults to 1 if invalid');
-}
+$dbh->{pg_errorlevel} = 3;
+cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" defaults to 1 if invalid');
 
 #
 # Test of the database handle attribute "pg_bool_tf"
@@ -431,7 +412,7 @@ $sth->finish();
 $sth = $dbh->prepare("DELETE FROM dbd_pg_test WHERE id=0");
 $sth->execute();
 $attrib = $sth->{'NUM_OF_FIELDS'};
-my $expected = $DBI::VERSION >=1.42 ? undef : 0;
+my $expected = undef;
 is( $attrib, $expected, 'Statement handle attribute "NUM_OF_FIELDS" works correctly for DELETE');
 $attrib = $sth->{'NUM_OF_PARAMS'};
 is( $attrib, '0', 'Statement handle attribute "NUM_OF_PARAMS" works correctly with no placeholder');
@@ -514,8 +495,6 @@ is_deeply( $result, $expected, 'Statement handle attribute "pg_size" works');
 $sth->execute();
 $result = $sth->{pg_type};
 $expected = [qw(int4 varchar text float8 bpchar timestamp bool)];
-# Hack for old servers
-$expected->[5] = 'datetime' unless $got73;
 is_deeply( $result, $expected, 'Statement handle attribute "pg_type" works');
 $sth->finish();
 
@@ -618,11 +597,9 @@ is( $attrib, '', 'Database handle attribute "PrintError" is set properly');
 # Make sure that warnings are sent back to the client
 # We assume that older servers are okay
 my $client_level = '';
-if ($pgversion >= 70300) {
-	$sth = $dbh->prepare("SHOW client_min_messages");
-	$sth->execute();
-	$client_level = $sth->fetchall_arrayref()->[0][0];
-}
+$sth = $dbh->prepare("SHOW client_min_messages");
+$sth->execute();
+$client_level = $sth->fetchall_arrayref()->[0][0];
 
 if ($client_level eq "error") {
  SKIP: {
@@ -887,12 +864,7 @@ SKIP: {
 				ok ( !$dbh->ping(), qq{Ping fails after the child has exited ("InactiveDestroy" = $destroy)});
 				my $state = $dbh->state();
 				is( $state, '22000', qq{Failed ping returns a SQLSTATE code of 22000});
-				SKIP: {
-					skip "Can't determine advanced ping with old 7.2 server libraries", 1
-						if $pglibversion < 70400;
-
-					ok ( -2==$dbh->pg_ping(), qq{pg_ping gives an error code of -2 after the child has exited ("InactiveDestroy" = $destroy)});
-				}
+				ok ( -2==$dbh->pg_ping(), qq{pg_ping gives an error code of -2 after the child has exited ("InactiveDestroy" = $destroy)});
 			}
 		}
 	}

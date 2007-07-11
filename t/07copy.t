@@ -18,8 +18,6 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 ok( defined $dbh, "Connect to database for bytea testing");
 
 my ($sth,$count,$result,$expected,@data);
-my $pglibversion = $dbh->{pg_lib_version};
-my $pgversion = $dbh->{pg_server_version};
 my $table = 'dbd_pg_test4';
 
 ## (Re)create a second test table with few columns to test a "bare" COPY
@@ -102,89 +100,80 @@ $dbh->commit();
 # Test of the pg_getline method
 #
 
-SKIP: {
-	skip "Cannot test pg_getline with DBD::Pg compiled with pre-7.4 libraries", 12 if $pglibversion < 70400;
+## pg_getline should fail unless we are in a COPY OUT state
+eval {
+	$dbh->pg_getline($data[0], 100);
+};
+ok($@, 'pg_getline fails when issued without a preceding COPY command');
 
-	## pg_getline should fail unless we are in a COPY OUT state
-	eval {
-		$dbh->pg_getline($data[0], 100);
-	};
-	ok($@, 'pg_getline fails when issued without a preceding COPY command');
+$dbh->do("COPY $table TO STDOUT");
+my ($buffer,$badret,$badval) = ('',0,0);
+$result = $dbh->pg_getline($data[0], 100);
+is ($result, 1, 'pg_getline returned a 1');
 
-	$dbh->do("COPY $table TO STDOUT");
-	my ($buffer,$badret,$badval) = ('',0,0);
-	$result = $dbh->pg_getline($data[0], 100);
-	is ($result, 1, 'pg_getline returned a 1');
-
-	## Commands are not allowed while in a COPY OUT state
-	eval {
-		$dbh->do("SELECT 'dbdpg_copytest'");
-	};
-	ok($@, 'do() fails while in a COPY OUT state');
-
-	## pg_putline is not allowed as we are in a COPY OUT state
-	eval {
-		$dbh->pg_putline("99\tBogusberry");
-	};
-	ok($@, 'pg_putline fails while in a COPY OUT state');
-
-	$data[1]=$data[2]=$data[3]='';
-	$result = $dbh->pg_getline($data[1], 100);
-	is ($result, 1, 'pg_getline returned a 1');
-	$result = $dbh->pg_getline($data[2], 100);
-	is ($result, 1, 'pg_getline returned a 1');
-
-	$result = $dbh->pg_getline($data[3], 100);
-	is ($result, '', 'pg_getline returns empty on final call');
-
-	$result = \@data;
-	$expected = ["12\tMulberry\n","13\tStrawberry\n","14\tBlueberry\n",""];
-	is_deeply( $result, $expected, 'getline returned all rows successfuly');
-
-	## Make sure we can issue normal commands again
+## Commands are not allowed while in a COPY OUT state
+eval {
 	$dbh->do("SELECT 'dbdpg_copytest'");
+};
+ok($@, 'do() fails while in a COPY OUT state');
 
-	## Make sure we are out of the COPY OUT state and pg_getline no longer works
-	eval {
-		$data[5]='';
-		$dbh->pg_getline($data[5], 100);
-	};
-	ok($@, 'pg_getline fails when issued after pg_endcopy called');
+## pg_putline is not allowed as we are in a COPY OUT state
+eval {
+	$dbh->pg_putline("99\tBogusberry");
+};
+ok($@, 'pg_putline fails while in a COPY OUT state');
 
-	## pg_endcopy should fail because we are no longer in a COPY state
-	eval {
-		$dbh->pg_endcopy;
-	};
-	ok($@, 'pg_endcopy fails when called twice after COPY OUT');
+$data[1]=$data[2]=$data[3]='';
+$result = $dbh->pg_getline($data[1], 100);
+is ($result, 1, 'pg_getline returned a 1');
+$result = $dbh->pg_getline($data[2], 100);
+is ($result, 1, 'pg_getline returned a 1');
 
- SKIP2: {
-		skip "Cannot test commit copy reset with pre-7.4 servers", 2 if $pgversion < 70400 or $pglibversion < 70400;
+$result = $dbh->pg_getline($data[3], 100);
+is ($result, '', 'pg_getline returns empty on final call');
 
-		#
-		# Make sure rollback and commit reset our internal copystate tracking
-		#
+$result = \@data;
+$expected = ["12\tMulberry\n","13\tStrawberry\n","14\tBlueberry\n",""];
+is_deeply( $result, $expected, 'getline returned all rows successfuly');
 
-		$dbh->do("COPY $table TO STDOUT");
-		$dbh->commit();
-		eval {
-			$dbh->do("SELECT 'dbdpg_copytest'");
-		};
-		ok(!$@, 'commit resets COPY state');
-		
-		$dbh->do("COPY $table TO STDOUT");
-		$dbh->rollback();
-		eval {
-			$dbh->do("SELECT 'dbdpg_copytest'");
-		};
-		ok(!$@, 'rollback resets COPY state');
-		
-	} ## end SKIP2
-} ## end SKIP
+## Make sure we can issue normal commands again
+$dbh->do("SELECT 'dbdpg_copytest'");
 
+## Make sure we are out of the COPY OUT state and pg_getline no longer works
+eval {
+	$data[5]='';
+	$dbh->pg_getline($data[5], 100);
+};
+ok($@, 'pg_getline fails when issued after pg_endcopy called');
+
+## pg_endcopy should fail because we are no longer in a COPY state
+eval {
+	$dbh->pg_endcopy;
+};
+ok($@, 'pg_endcopy fails when called twice after COPY OUT');
 
 
 #
-# Keep oldstyle calls around for backwards compatibility
+# Make sure rollback and commit reset our internal copystate tracking
+#
+
+$dbh->do("COPY $table TO STDOUT");
+$dbh->commit();
+eval {
+	$dbh->do("SELECT 'dbdpg_copytest'");
+};
+ok(!$@, 'commit resets COPY state');
+		
+$dbh->do("COPY $table TO STDOUT");
+$dbh->rollback();
+eval {
+	$dbh->do("SELECT 'dbdpg_copytest'");
+};
+ok(!$@, 'rollback resets COPY state');
+		
+
+#
+# Keep old-style calls around for backwards compatibility
 #
 
 $dbh->do("COPY $table FROM STDIN");

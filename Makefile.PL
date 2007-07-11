@@ -73,19 +73,14 @@ if ($os =~ /Win32/) {
 }
 
 ## Warn about older versions
-if ($serverversion < 70200) {
+if ($serverversion < 70400) {
 	print "\n****************\n";
-	print "WARNING! DBD::Pg no longer supports versions less than 7.2.\n";
-	print "It is highly recommended that you upgrade PostgreSQL to a newer version.\n";
-	print "If you continue, DBD::Pg may not work.\n";
+	print "WARNING! DBD::Pg no longer supports versions less than 7.4.\n";
+	print "You must upgrade PostgreSQL to a newer version.\n";
 	print "****************\n\n";
+	exit 1;
 }
-elsif ($serverversion < 70400) {
-	print "\n****************\n";
-	print "WARNING! Support for servers older than version 7.4 will soon end.\n";
-	print "It is highly recommended that you upgrade PostgreSQL to a newer version.\n";
-	print "****************\n\n";
-}
+
 
 my $dbi_arch_dir;
 if ($os eq 'MSWin32') {

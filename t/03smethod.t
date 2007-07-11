@@ -24,11 +24,8 @@ my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 ok( defined $dbh, "Connect to database for statement handle method testing");
 
 my $pglibversion = $dbh->{pg_lib_version};
-my $got73 = DBD::Pg::_pg_use_catalog($dbh);
-if ($got73) {
-	$dbh->do("SET search_path TO " . $dbh->quote_identifier
-					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
-}
+$dbh->do("SET search_path TO " . $dbh->quote_identifier
+		 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
 
 $dbh->do("DELETE FROM dbd_pg_test");
 my ($SQL, $sth, $sth2, $result, @result, $expected, $warning, $rows);
@@ -46,7 +43,7 @@ $sth = $dbh->prepare($SQL);
 $sth->execute(1);
 ok( $sth->execute, 'Prepare/execute with pg_server_prepare off at database handle works');
 ## 7.4 does not have a full SSP implementation, so we simply skip these tests.
-if ($pglibversion >= 70400 and $pglibversion < 80000) {
+if ($pglibversion < 80000) {
  SKIP: {
 		skip 'Not testing pg_server_prepare on 7.4-compiled servers', 2;
 	}
@@ -71,7 +68,7 @@ ok( $sth->execute(401, undef), "Prepare/execute with undef converted to NULL");
 $sth = $dbh->prepare($SQL, {pg_server_prepare => 0});
 $sth->execute(1);
 ok( $sth->execute, 'Prepare/execute with pg_server_prepare off at statement handle works');
-if ($pglibversion < 70400 or $pglibversion >= 80000) {
+if ($pglibversion >= 80000) {
 	$sth = $dbh->prepare($SQL, {pg_server_prepare => 1});
 	$sth->execute(1);
 	ok( $sth->execute, 'Prepare/execute with pg_server_prepare on at statement handle works');
@@ -93,18 +90,13 @@ ok( $sth->execute, 'Prepare/execute with pg_prepare_now on at statement handle w
 
 # Test using our own prepared statements
 my $pgversion = $dbh->{pg_server_version};
-if ($pgversion >= 70400) {
-	my $myname = "dbdpg_test_1";
-	$dbh->do("PREPARE $myname(int) AS SELECT COUNT(*) FROM pg_class WHERE reltuples > \$1", {pg_direct=> 1});
-  $sth = $dbh->prepare("SELECT ?");
-  $sth->bind_param(1, 1, SQL_INTEGER);
-  $sth->{pg_prepare_name} = $myname;
-	ok($sth->execute(1), 'Prepare/execute works with pg_prepare_name');
-	$dbh->do("DEALLOCATE $myname");
-}
-else {
-	pass("Skipping prepare statement tests for old servers");
-}
+my $myname = "dbdpg_test_1";
+$dbh->do("PREPARE $myname(int) AS SELECT COUNT(*) FROM pg_class WHERE reltuples > \$1", {pg_direct=> 1});
+$sth = $dbh->prepare("SELECT ?");
+$sth->bind_param(1, 1, SQL_INTEGER);
+$sth->{pg_prepare_name} = $myname;
+ok($sth->execute(1), 'Prepare/execute works with pg_prepare_name');
+$dbh->do("DEALLOCATE $myname");
 
 
 #
@@ -119,11 +111,9 @@ ok( $sth->bind_param(1, 'foo'), 'Statement handle method "bind_param" works when
 # Check if the server is sending us warning messages
 # We assume that older servers are okay
 my $client_level = '';
-if ($got73) {
-	$sth2 = $dbh->prepare("SHOW client_min_messages");
-	$sth2->execute();
-	$client_level = $sth2->fetchall_arrayref()->[0][0];
-}
+$sth2 = $dbh->prepare("SHOW client_min_messages");
+$sth2->execute();
+$client_level = $sth2->fetchall_arrayref()->[0][0];
 
 #
 # Test of the "bind_param_array" statement handle method
@@ -194,26 +184,17 @@ is( $rows, 4, 'Statement method handle "execute_array" returns correct number of
 # Test of the "execute_for_fetch" statement handle method
 #
 
-if ($DBI::VERSION < 1.38) {
- SKIP: {
-		skip 'DBI must be at least version 1.38 to test statement handle method "execute_for_fetch"', 2;
-	}
-}
-else {
-	$sth = $dbh->prepare("SELECT id+200, val FROM dbd_pg_test");
-	my $goodrows = $sth->execute();
-	my $sth2 = $dbh->prepare("INSERT INTO dbd_pg_test (id, val) VALUES (?,?)");
-	$sth2->bind_param(1,'',SQL_INTEGER);
-	my $fetch_tuple_sub = sub { $sth->fetchrow_arrayref() };
-	undef @tuple_status;
-	$rows = $sth2->execute_for_fetch($fetch_tuple_sub, \@tuple_status);
+$sth = $dbh->prepare("SELECT id+200, val FROM dbd_pg_test");
+my $goodrows = $sth->execute();
+$sth2 = $dbh->prepare("INSERT INTO dbd_pg_test (id, val) VALUES (?,?)");
+$sth2->bind_param(1,'',SQL_INTEGER);
+my $fetch_tuple_sub = sub { $sth->fetchrow_arrayref() };
+undef @tuple_status;
+$rows = $sth2->execute_for_fetch($fetch_tuple_sub, \@tuple_status);
 
-	is_deeply( \@tuple_status, [map{1}(1..$goodrows)], 'Statement handle method "execute_for_fetch" works');
+is_deeply( \@tuple_status, [map{1}(1..$goodrows)], 'Statement handle method "execute_for_fetch" works');
 
-
-
-	is( $rows, $goodrows, 'Statement handle method "execute_for_fetch" returns correct number of rows');
-}
+is( $rows, $goodrows, 'Statement handle method "execute_for_fetch" returns correct number of rows');
 
 #
 # Test of the "fetchrow_arrayref" statement handle method
@@ -374,12 +355,7 @@ $result = $sth->state();
 like( $result, qr/^[A-Z0-9]{5}$/, qq{Statement handle method "state" returns a five-character code on error});
 my $result2 = $dbh->state();
 is ($result, $result2, qq{Statement and database handle method "state" return same code});
-if ($pglibversion >= 70400 and $pgversion >= 70400) {
-	is ($result, "42703", qq{Statement handle method "state" returns expected code});
-}
-else {
-	is ($result, "S8006", qq{Statement handle method "state" returns expected code (old servers)});
-}
+is ($result, "42703", qq{Statement handle method "state" returns expected code});
 
 #
 # Test of the statement handle method "private_attribute_info"
