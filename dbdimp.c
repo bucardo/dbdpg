@@ -1388,12 +1388,10 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 	ph_t *newph, *thisph, *currph = NULL; /* Placeholder structures to help build ll */
 
 	if (dbis->debug >= 4) {
-		if (dbis->debug >= 10) {
+		if (dbis->debug >= 10)
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_split_statement (%s)\n", statement);
-		}
-		else {
+		else
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_split_statement\n");
-		}
 	}
 
 	/*
@@ -1405,15 +1403,17 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: not splitting due to %s\n",
 								imp_sth->direct ? "pg_direct" : "empty string");
 		}
-		imp_sth->numsegs = 1;
-		imp_sth->numphs = 0;
-		New(0, imp_sth->seg, 1, seg_t); /* freed in dbd_st_destroy */
-		imp_sth->seg->nextseg = NULL;
-		imp_sth->seg->placeholder = 0;
-		imp_sth->seg->ph = NULL;
+		imp_sth->numsegs   = 1;
+		imp_sth->numphs    = 0;
 		imp_sth->totalsize = strlen(statement);
+
+		Newx(imp_sth->seg, 1, seg_t); /* freed in dbd_st_destroy */
+		imp_sth->seg->placeholder = 0;
+		imp_sth->seg->nextseg     = NULL;
+		imp_sth->seg->ph          = NULL;
+
 		if (imp_sth->totalsize > 0) {
-			New(0, imp_sth->seg->segment, imp_sth->totalsize+1, char); /* freed in dbd_st_destroy */
+			Newx(imp_sth->seg->segment, imp_sth->totalsize+1, char); /* freed in dbd_st_destroy */
 			Copy(statement, imp_sth->seg->segment, imp_sth->totalsize+1, char);
 		}
 		else {
@@ -1546,7 +1546,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 
 			/* We only need to create a dollarstring if something was between the two dollar signs */
 			if (sectionsize >= 1) {
-				New(0, dollarstring, sectionsize, char); /* note: a true array, not a null-terminated string */
+				Newx(dollarstring, sectionsize, char); /* note: a true array, not a null-terminated string */
 				strncpy(dollarstring, statement-sectionsize, sectionsize);
 			}
 
@@ -1669,7 +1669,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 			continue;
 
 		/* If we got here, we have a segment that needs to be saved */
-		New(0, newseg, 1, seg_t); /* freed in dbd_st_destroy */
+		Newx(newseg, 1, seg_t); /* freed in dbd_st_destroy */
 		newseg->nextseg = NULL;
 		newseg->placeholder = 0;
 		newseg->ph = NULL;
@@ -1693,17 +1693,17 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 			if (0==newseg->placeholder) {
 				imp_sth->numphs++;
 				newseg->placeholder = imp_sth->numphs;
-				New(0, newph, 1, ph_t); /* freed in dbd_st_destroy */
-				newseg->ph = newph;
-				newph->nextph = NULL;
-				newph->bind_type = NULL;
-				newph->value = NULL;
-				newph->quoted = NULL;
+				Newx(newph, 1, ph_t); /* freed in dbd_st_destroy */
+				newseg->ph        = newph;
+				newph->nextph     = NULL;
+				newph->bind_type  = NULL;
+				newph->value      = NULL;
+				newph->quoted     = NULL;
 				newph->referenced = DBDPG_FALSE;
 				newph->defaultval = DBDPG_TRUE;
-				newph->isdefault = DBDPG_FALSE;
-				newph->iscurrent = DBDPG_FALSE;
-				New(0, newph->fooname, sectionsize+1, char); /* freed in dbd_st_destroy */
+				newph->isdefault  = DBDPG_FALSE;
+				newph->iscurrent  = DBDPG_FALSE;
+				Newx(newph->fooname, sectionsize+1, char); /* freed in dbd_st_destroy */
 				Copy(statement-sectionsize, newph->fooname, sectionsize, char);
 				newph->fooname[sectionsize] = '\0';
 				if (NULL==currph) {
@@ -1718,7 +1718,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 
 		sectionsize = sectionstop-sectionstart; /* 4-0 for "ABCD" */
 		if (sectionsize>0) {
-			New(0, newseg->segment, sectionsize+1, char); /* freed in dbd_st_destroy */
+			Newx(newseg->segment, sectionsize+1, char); /* freed in dbd_st_destroy */
 			Copy(statement-(currpos-sectionstart), newseg->segment, sectionsize, char);
 			newseg->segment[sectionsize] = '\0';
 			imp_sth->totalsize += sectionsize;
@@ -1779,16 +1779,16 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 	/* Create sequential placeholders */
 	if (3 != imp_sth->placeholder_type) {
 		for (xint=1; xint <= imp_sth->numphs; xint++) {
-			New(0, newph, 1, ph_t); /* freed in dbd_st_destroy */
-			newph->nextph = NULL;
-			newph->bind_type = NULL;
-			newph->value = NULL;
-			newph->quoted = NULL;
+			Newx(newph, 1, ph_t); /* freed in dbd_st_destroy */
+			newph->nextph     = NULL;
+			newph->bind_type  = NULL;
+			newph->value      = NULL;
+			newph->quoted     = NULL;
+			newph->fooname    = NULL;
 			newph->referenced = DBDPG_FALSE;
 			newph->defaultval = DBDPG_TRUE;
-			newph->isdefault = DBDPG_FALSE;
-			newph->iscurrent = DBDPG_FALSE;
-			newph->fooname = NULL;
+			newph->isdefault  = DBDPG_FALSE;
+			newph->iscurrent  = DBDPG_FALSE;
 			/* Let the correct segment(s) point to it */
 			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 				if (currseg->placeholder==xint) {
@@ -1821,27 +1821,27 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 
 	DBIc_NUM_PARAMS(imp_sth) = imp_sth->numphs;
 
+	return;
+
 } /* end dbd_st_split_statement */
 
 
 
 /* ================================================================== */
-static int dbd_st_prepare_statement (sth, imp_sth)
-	 SV *sth;
-	 imp_sth_t *imp_sth;
+static int dbd_st_prepare_statement (SV * sth, imp_sth_t * imp_sth)
 {
 
 	D_imp_dbh_from_sth;
-	char *statement;
+	char *       statement;
 	unsigned int x;
-	STRLEN execsize;
-	PGresult *result;
-	int status = -1;
-	seg_t *currseg;
-	bool oldprepare = DBDPG_TRUE;
-	int params = 0;
-	Oid *paramTypes = NULL;
-	ph_t *currph;
+	STRLEN       execsize;
+	PGresult *   result;
+	int          status = -1;
+	seg_t *      currseg;
+	bool         oldprepare = DBDPG_TRUE;
+	int          params = 0;
+	Oid *        paramTypes = NULL;
+	ph_t *       currph;
 
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_prepare_statement\n");
@@ -1850,7 +1850,7 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 	oldprepare = DBDPG_FALSE;
 #endif
 
-	Renew(imp_sth->prepare_name, 25, char); /* freed in dbd_st_destroy (and above) */
+	Renew(imp_sth->prepare_name, 25, char); /* freed in dbd_st_destroy */
 
 	/* Name is simply "dbdpg_PID_#" */
 	sprintf(imp_sth->prepare_name,"dbdpg_%d_%d", imp_dbh->pid_number, imp_dbh->prepare_number);
@@ -1891,7 +1891,7 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 		}
 	}
 
-	New(0, statement, execsize+1, char); /* freed below */
+	Newx(statement, execsize+1, char); /* freed below */
 
 	if (oldprepare) {
 		sprintf(statement, "PREPARE %s", imp_sth->prepare_name);
@@ -1961,38 +1961,29 @@ static int dbd_st_prepare_statement (sth, imp_sth)
 
 
 /* ================================================================== */
-int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, maxlen)
-	 SV *sth;
-	 imp_sth_t *imp_sth;
-	 SV *ph_name;
-	 SV *newvalue;
-	 IV sql_type;
-	 SV *attribs;
-	 int is_inout;
-	 IV maxlen;
+int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV sql_type, SV * attribs, int is_inout, IV maxlen)
 {
 
-	char *name = Nullch;
+	char * name = Nullch;
 	STRLEN name_len;
-	ph_t *currph = NULL;
-	int x, phnum;
-	SV **svp;
-	bool reprepare = DBDPG_FALSE;
-	int pg_type = 0;
-	char *value_string = NULL;
-	maxlen = 0; /* not used */
+	ph_t * currph = NULL;
+	int    x, phnum;
+	SV **  svp;
+	bool   reprepare = DBDPG_FALSE;
+	int    pg_type = 0;
+	char * value_string = NULL;
 
-	if (dbis->debug >= 4) {
+   	maxlen = 0; /* not used, this makes the compiler happy */
+
+	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_bind_ph ph_name: (%s) newvalue: %s(%lu)\n",
 							neatsvpv(ph_name,0), neatsvpv(newvalue,0), SvOK(newvalue));
-	}
 
 	if (is_inout!=0)
 		croak("bind_inout not supported by this driver");
 
-	if (0==imp_sth->numphs) {
+	if (0==imp_sth->numphs)
 		croak("Statement has no placeholders to bind");
-	}
 
 	/* Check the placeholder name and transform to a standard form */
 	if (SvGMAGICAL(ph_name)) {
@@ -2137,7 +2128,7 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 
 	if (SvOK(newvalue)) {
 		value_string = SvPV(newvalue, currph->valuelen);
-		Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy (and above) */
+		Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
 		Copy(value_string, currph->value, currph->valuelen, char);
 		currph->value[currph->valuelen] = '\0';
 	}
@@ -2172,17 +2163,16 @@ int dbd_bind_ph (sth, imp_sth, ph_name, newvalue, sql_type, attribs, is_inout, m
 
 
 /* ================================================================== */
-int pg_quickexec (dbh, sql)
-	 SV *          dbh;
-	 const char *  sql;
+int pg_quickexec (SV * dbh, const char * sql)
 {
 	D_imp_dbh(dbh);
-	PGresult *result;
+	PGresult *     result;
 	ExecStatusType status = PGRES_FATAL_ERROR; /* Assume the worst */
-	char *cmdStatus = NULL;
-	int rows = 0;
+	char *         cmdStatus = NULL;
+	int            rows = 0;
 
-	if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_quickexec (%s)\n", sql);
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_quickexec (%s)\n", sql);
 
 	if (NULL == imp_dbh->conn)
 		croak("execute on disconnected handle");
@@ -2248,23 +2238,25 @@ int pg_quickexec (dbh, sql)
 
 
 /* ================================================================== */
-int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown count) */
-	 SV *sth;
-	 imp_sth_t *imp_sth;
+/* Return value <= -2:error, >=0:ok row count, (-1=unknown count) */
+int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 {
-
 	D_imp_dbh_from_sth;
-	ph_t *currph;
-	int status = -1;
-	STRLEN execsize, x;
-	const char **paramValues = NULL;
-	int *paramLengths = NULL, *paramFormats = NULL;
-	Oid *paramTypes = NULL;
-	seg_t *currseg;
-	char *statement = NULL, *cmdStatus = NULL;
-	int num_fields, ret = -2;
+	ph_t *        currph;
+	int           status = -1;
+	STRLEN        execsize, x;
+	const char ** paramValues = NULL;
+	int *         paramLengths = NULL;
+	int *         paramFormats = NULL;
+	Oid *         paramTypes = NULL;
+	seg_t *       currseg;
+	char *        statement = NULL;
+	char *        cmdStatus = NULL;
+	int           num_fields;
+	int           ret = -2;
 	
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_execute\n"); }
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_execute\n");
 	
 	if (NULL == imp_dbh->conn)
 		croak("execute on disconnected handle");
@@ -2463,7 +2455,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 			}
 
 			/* Create the statement */
-			New(0, statement, execsize+1, char); /* freed below */
+			Newx(statement, execsize+1, char); /* freed below */
 			statement[0] = '\0';
 			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 				strcat(statement, currseg->segment);
@@ -2508,7 +2500,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 					execsize += currseg->ph->quotedlen;
 			}
 
-			New(0, statement, execsize+1, char); /* freed below */
+			Newx(statement, execsize+1, char); /* freed below */
 			statement[0] = '\0';
 			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 				strcat(statement, currseg->segment);
@@ -2589,8 +2581,7 @@ int dbd_st_execute (sth, imp_sth) /* <= -2:error, >=0:ok row count, (-1=unknown 
 
 
 /* ================================================================== */
-static int is_high_bit_set(val)
-	 char *val;
+static int is_high_bit_set(cahr * val)
 {
 	while (*val)
 		if (*val++ & 0x80) return 1;
@@ -2599,21 +2590,21 @@ static int is_high_bit_set(val)
 
 
 /* ================================================================== */
-AV * dbd_st_fetch (sth, imp_sth)
-SV *sth;
-imp_sth_t *imp_sth;
+AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 {
-	sql_type_info_t *type_info;
-	int num_fields;
-	char *value;
-	char *p;
-	int i, chopblanks;
-	STRLEN value_len = 0;
-	STRLEN len;
-	AV *av;
 	D_imp_dbh_from_sth;
+	sql_type_info_t * type_info;
+	int               num_fields;
+	char *            value;
+	char *            p;
+	int               i;
+	int               chopblanks;
+	STRLEN            value_len = 0;
+	STRLEN            len;
+	AV *              av;
 	
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_fetch\n"); }
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_fetch\n");
 
 	/* Check that execute() was executed successfully */
 	if ( !DBIc_ACTIVE(imp_sth) ) {
@@ -2771,7 +2762,7 @@ static int dbd_st_deallocate_statement (sth, imp_sth)
 				SV		*sp = Nullsv;
 				char	*cmd;
 				sp = *av_fetch(imp_dbh->savepoints, alen, 0);
-				New(0, cmd, SvLEN(sp) + 13, char); /* Freed below */
+				Newx(cmd, SvLEN(sp) + 13, char); /* Freed below */
 				if (dbis->debug >= 4)
 					(void)PerlIO_printf(DBILOGFP, "dbdpg: Rolling back to savepoint %s\n", SvPV_nolen(sp));
 				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
@@ -2792,7 +2783,7 @@ static int dbd_st_deallocate_statement (sth, imp_sth)
 		}
 	}
 
-	New(0, stmt, strlen("DEALLOCATE ") + strlen(imp_sth->prepare_name) + 1, char); /* freed below */
+	Newx(stmt, strlen("DEALLOCATE ") + strlen(imp_sth->prepare_name) + 1, char); /* freed below */
 
 	sprintf(stmt, "DEALLOCATE %s", imp_sth->prepare_name);
 
@@ -3077,7 +3068,7 @@ pg_db_savepoint (dbh, imp_dbh, savepoint)
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_savepoint (%s)\n", savepoint);
 
-	New(0, action, strlen(savepoint) + 11, char); /* freed below */
+	Newx(action, strlen(savepoint) + 11, char); /* freed below */
 
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
@@ -3124,7 +3115,7 @@ int pg_db_rollback_to (dbh, imp_dbh, savepoint)
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_rollback_to (%s)\n", savepoint);
 
-	New(0, action, strlen(savepoint) + 13, char);
+	Newx(action, strlen(savepoint) + 13, char);
 
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
@@ -3166,7 +3157,7 @@ int pg_db_release (dbh, imp_dbh, savepoint)
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_release (%s)\n", savepoint);
 
-	New(0, action, strlen(savepoint) + 9, char);
+	Newx(action, strlen(savepoint) + 9, char);
 
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
