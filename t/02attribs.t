@@ -886,7 +886,7 @@ SKIP: {
 				# The database handle should be dead
 				ok ( !$dbh->ping(), qq{Ping fails after the child has exited ("InactiveDestroy" = $destroy)});
 				my $state = $dbh->state();
-				is( $state, 'S8006', qq{Failed ping returns a SQLSTATE code of S8006});
+				is( $state, '22000', qq{Failed ping returns a SQLSTATE code of 22000});
 				SKIP: {
 					skip "Can't determine advanced ping with old 7.2 server libraries", 1
 						if $pglibversion < 70400;
