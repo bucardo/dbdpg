@@ -17,6 +17,9 @@ static int errno;
 
 #define DBDPG_TRUE (bool)1
 #define DBDPG_FALSE (bool)0
+#define DBDPG_ASYNC 1
+#define DBDPG_OLDQUERY_CANCEL 2
+#define DBDPG_OLDQUERY_WAIT 4
 
 #include "libpq-fe.h"
 

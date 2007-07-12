@@ -33,7 +33,9 @@ struct imp_dbh_st {
 	int     copystate;         /* 0=none PGRES_COPY_IN PGRES_COPY_OUT */
 	int     pg_errorlevel;     /* PQsetErrorVerbosity. Set by user, defaults to 1 */
 	int     server_prepare;    /* do we want to use PQexecPrepared? 0=no 1=yes 2=smart. Can be changed by user */
+	int     async_status;      /* 0=no async 1=async started -1=async has been cancelled */
 
+    imp_sth_t *async_sth;      /* current async statement handle */
 	AV      *savepoints;       /* list of savepoints */
 	PGconn  *conn;             /* connection structure */
 	char    *sqlstate;         /* from the last result */
@@ -76,6 +78,8 @@ struct imp_sth_st {
 	int    numbound;         /* how many placeholders were explicitly bound by the client, not us */
 	int    cur_tuple;        /* current tuple being fetched */
 	int    rows;             /* number of affected rows */
+	int    async_flag;       /* async? 0=no 1=async 2=cancel 4=wait */
+	int    async_status;     /* 0=no async 1=async started -1=async has been cancelled */
 
 	STRLEN totalsize;        /* total string length of the statement (with no placeholders)*/
 
@@ -122,7 +126,11 @@ int pg_db_lo_tell (SV *dbh, int fd);
 int pg_db_lo_unlink (SV *dbh, unsigned int lobjId);
 unsigned int pg_db_lo_import (SV *dbh, char *filename);
 int pg_db_lo_export (SV *dbh, unsigned int lobjId, char *filename);
-int pg_quickexec (SV *dbh, const char *sql);
+int pg_quickexec (SV *dbh, const char *sql, int asyncflag);
+int dbdpg_ready (SV *dbh, imp_dbh_t *imp_dbh);
+int dbdpg_result (SV *dbh, imp_dbh_t *imp_dbh);
+int dbdpg_cancel (SV *h, imp_dbh_t *imp_dbh);
+int dbdpg_cancel_sth (SV *sth, imp_sth_t *imp_sth);
 
 /* end of dbdimp.h */
 

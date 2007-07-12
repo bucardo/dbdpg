@@ -68,6 +68,7 @@ static int is_high_bit_set(char *val);
 static int dbd_st_deallocate_statement(SV *sth, imp_sth_t *imp_sth);
 static PGTransactionStatusType dbd_db_txn_status (imp_dbh_t *imp_dbh);
 static int pg_db_start_txn (SV *dbh, imp_dbh_t *imp_dbh);
+static int handle_old_async(SV * handle, imp_dbh_t * imp_dbh, int asyncflag);
 
 DBISTATE_DECLARE;
 
@@ -221,6 +222,8 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	imp_dbh->prepare_number = 1;
 	imp_dbh->copystate      = 0;
 	imp_dbh->pg_errorlevel  = 1; /* Default */
+	imp_dbh->async_status   = 0;
+	imp_dbh->async_sth      = NULL;
 
 	/* If the server can handle it, we default to "smart", otherwise "off" */
 	imp_dbh->server_prepare = imp_dbh->pg_protocol >= 3 ? 
@@ -330,8 +333,7 @@ static ExecStatusType _sqlstate(imp_dbh_t * imp_dbh, PGresult * result)
 	  we are connecting over TCP/IP, only set it here if non-null, and fall through 
 	  to a better default value below.
     */
-	if (result
-		&& NULL != PQresultErrorField(result,PG_DIAG_SQLSTATE)) {
+	if (result && NULL != PQresultErrorField(result,PG_DIAG_SQLSTATE)) {
 		strncpy(imp_dbh->sqlstate, PQresultErrorField(result,PG_DIAG_SQLSTATE), 5);
 		imp_dbh->sqlstate[5] = '\0';
 		stateset = DBDPG_TRUE;
@@ -534,10 +536,17 @@ int dbd_db_disconnect (SV * dbh, imp_dbh_t * imp_dbh)
 /* ================================================================== */
 void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
 {
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_destroy\n"); }
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_destroy\n");
 
 	if (DBIc_ACTIVE(imp_dbh))
 		(void)dbd_db_disconnect(dbh, imp_dbh);
+
+	if (imp_dbh->async_sth) { /* Just in case */
+		if (imp_dbh->async_sth->result)
+			PQclear(imp_dbh->async_sth->result);
+		imp_dbh->async_sth = NULL;
+	}
 
 	av_undef(imp_dbh->savepoints);
 	sv_free((SV *)imp_dbh->savepoints);
@@ -635,10 +644,12 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 #endif
 		break;
 
-	case 15: /* pg_default_port */
+	case 15: /* pg_default_port pg_async_status */
 
 		if (strEQ("pg_default_port", key))
 			retsv = newSViv((IV) PGDEFPORT );
+		else if (strEQ("pg_async_status", key))
+			retsv = newSViv((IV)imp_dbh->async_status);
 		break;
 
 	case 17: /* pg_server_prepare  pg_server_version */
@@ -925,9 +936,11 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 		}
 		break;
 
-	case 8: /* NULLABLE */
+	case 8: /* pg_async  NULLABLE */
 
-		if (strEQ("NULLABLE", key)) {
+		if (strEQ("pg_async", key))
+			retsv = newSViv((IV)imp_sth->async_flag);
+		else if (strEQ("NULLABLE", key)) {
 			AV *av = newAV();
 			PGresult *result;
 			int status = -1;
@@ -1038,6 +1051,13 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 	
 	switch (kl) {
 
+	case 8: /* pg_async */
+
+		if (strEQ("pg_async", key)) {
+			imp_sth->async_flag = SvIV(valuesv);
+			return 1;
+		}
+
 	case 14: /* pg_prepare_now */
 
 		if (strEQ("pg_prepare_now", key)) {
@@ -1094,7 +1114,7 @@ int dbd_discon_all (SV * drh, imp_drh_t * imp_drh)
 } /* end of dbd_discon_all */
 
 
-// XXX IS this really needed die to $dbh->{pg_socket}?
+/* Deprecated in favor of $dbh->{pg_socket} */
 /* ================================================================== */
 int dbd_db_getfd (SV * dbh, imp_dbh_t * imp_dbh)
 {
@@ -1160,6 +1180,8 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 	imp_sth->cur_tuple        = 0;
 	imp_sth->rows             = -1; /* per DBI spec */
 	imp_sth->totalsize        = 0;
+	imp_sth->async_flag       = 0;
+	imp_sth->async_status     = 0;
 	imp_sth->prepare_name     = NULL;
 	imp_sth->firstword        = NULL;
 	imp_sth->result	          = NULL;
@@ -1198,6 +1220,9 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 		}
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_placeholder_dollaronly", 25, 0)) != NULL) {
 			imp_sth->dollaronly = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
+		}
+		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_async", 8, 0)) != NULL) {
+		  imp_sth->async_flag = SvIV(*svp);
 		}
 	}
 
@@ -1869,9 +1894,10 @@ static int dbd_st_prepare_statement (SV * sth, imp_sth_t * imp_sth)
 		}
 		result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, paramTypes);
 		Safefree(paramTypes);
-		if (result)
+		if (result) {
 			status = PQresultStatus(result);
-		PQclear(result);
+			PQclear(result);
+		}
 		if (dbis->debug >= 6)
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: Using PQprepare: %s\n", statement);
 	}
@@ -2093,7 +2119,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 
 
 /* ================================================================== */
-int pg_quickexec (SV * dbh, const char * sql)
+int pg_quickexec (SV * dbh, const char * sql, int asyncflag)
 {
 	D_imp_dbh(dbh);
 	PGresult *     result;
@@ -2102,7 +2128,8 @@ int pg_quickexec (SV * dbh, const char * sql)
 	int            rows = 0;
 
 	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_quickexec (%s)\n", sql);
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbdpg_quickexec query=(%s) async=(%d) async_status=(%d)\n",
+							sql, asyncflag, imp_dbh->async_status);
 
 	if (NULL == imp_dbh->conn)
 		croak("execute on disconnected handle");
@@ -2110,6 +2137,14 @@ int pg_quickexec (SV * dbh, const char * sql)
 	/* Abort if we are in the middle of a copy */
 	if (imp_dbh->copystate!=0)
 		croak("Must call pg_endcopy before issuing more commands");
+
+	/* If we are still waiting on an async, handle it */
+	if (imp_dbh->async_status) {
+	  if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: handling old async\n");
+	  rows = handle_old_async(dbh, imp_dbh, asyncflag);
+	  if (rows)
+		return rows;
+	}
 
 	/* If not autocommit, start a new transaction */
 	if (!imp_dbh->done_begin && !DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
@@ -2119,6 +2154,20 @@ int pg_quickexec (SV * dbh, const char * sql)
 			return -2;
 		}
 		imp_dbh->done_begin = DBDPG_TRUE;
+	}
+
+	/* Asynchronous commands get kicked off and return undef */
+	if (asyncflag & DBDPG_ASYNC) {
+	  if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: Going asychronous with do()\n");
+	  if (! PQsendQuery(imp_dbh->conn, sql)) {
+		if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: PQsendQuery failed\n");
+		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
+		return -2;
+	  }
+	  imp_dbh->async_status = 1;
+	  imp_dbh->async_sth = NULL; // Needed?
+	  if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: PQsendQuery worked\n");
+	  return 0;
 	}
 
 	result = PQexec(imp_dbh->conn, sql);
@@ -2205,6 +2254,17 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		}
 	}
 
+	/* Check for old async transactions */
+	if (imp_dbh->async_status) {
+	  if (dbis->debug >= 7) {
+		(void)PerlIO_printf
+		  (DBILOGFP, "dbdpg: Attempting to handle existing async transaction\n");
+	  }	  
+	  ret = handle_old_async(sth, imp_dbh, imp_sth->async_flag);
+	  if (ret)
+		return ret;
+	}
+
 	/* If not autocommit, start a new transaction */
 	if (!imp_dbh->done_begin && !DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
 		status = _result(imp_dbh, "begin");
@@ -2216,8 +2276,10 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	}
 
 	/* clear old result (if any) */
-	if (imp_sth->result != NULL)
+	if (imp_sth->result) {
 		PQclear(imp_sth->result);
+		imp_sth->result = NULL;
+	}
 
 	/*
 	  Now, we need to build the statement to send to the backend
@@ -2348,7 +2410,11 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		
 		if (dbis->debug >= 5)
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: Running PQexecPrepared with (%s)\n", imp_sth->prepare_name);
-		imp_sth->result = PQexecPrepared
+		if (imp_sth->async_flag & DBDPG_ASYNC)
+		  ret = PQsendQueryPrepared
+			(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs, paramValues, paramLengths, paramFormats, 0);
+		else
+		  imp_sth->result = PQexecPrepared
 			(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs, paramValues, paramLengths, paramFormats, 0);
 
 	} /* end new-style prepare */
@@ -2412,7 +2478,11 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
 			if (dbis->debug >= 5)
 				(void)PerlIO_printf(DBILOGFP, "dbdpg: Running PQexecParams with (%s)\n", statement);
-			imp_sth->result = PQexecParams
+			if (imp_sth->async_flag & DBDPG_ASYNC)
+			  ret = PQsendQueryParams
+				(imp_dbh->conn, statement, imp_sth->numphs, paramTypes, paramValues, paramLengths, paramFormats, 0);
+			else
+			  imp_sth->result = PQexecParams
 				(imp_dbh->conn, statement, imp_sth->numphs, paramTypes, paramValues, paramLengths, paramFormats, 0);
 			Safefree(paramTypes);
 		}
@@ -2440,9 +2510,13 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			statement[execsize] = '\0';
 
 			if (dbis->debug >= 5)
-				(void)PerlIO_printf(DBILOGFP, "dbdpg: Running PQexec with (%s)\n", statement);
+				(void)PerlIO_printf(DBILOGFP, "dbdpg: Running %s with (%s)\n", 
+									imp_sth->async_flag & 1 ? "PQsendQuery" : "PQexec", statement);
 			
-			imp_sth->result = PQexec(imp_dbh->conn, statement);
+			if (imp_sth->async_flag & DBDPG_ASYNC)
+			  ret = PQsendQuery(imp_dbh->conn, statement);
+			else
+			  imp_sth->result = PQexec(imp_dbh->conn, statement);
 
 		} /* end PQexec */
 
@@ -2450,13 +2524,24 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
 	} /* end non-prepared exec */
 
-	/* Some form of PQexec has been run at this point */
-
-	status = _sqlstate(imp_dbh, imp_sth->result);
+	/* Some form of PQexec/PQsendQuery has been run at this point */
 
 	Safefree(paramValues);
 	Safefree(paramLengths);
 	Safefree(paramFormats);			
+
+	/* If running asynchronously, we don't stick around for the result */
+	if (imp_sth->async_flag & DBDPG_ASYNC) {
+		if (dbis->debug >= 2)
+		  (void)PerlIO_printf
+			(DBILOGFP, "dbdpg: Early return for async query");
+		imp_dbh->async_status = 1;
+		imp_sth->async_status = 1;
+		imp_dbh->async_sth = imp_sth;
+		return 0;
+	}
+
+	status = _sqlstate(imp_dbh, imp_sth->result);
 
 	imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
 	if (PGRES_TUPLES_OK == status) {
@@ -2641,8 +2726,11 @@ int dbd_st_rows (SV * sth, imp_sth_t * imp_sth)
 int dbd_st_finish (SV * sth, imp_sth_t * imp_sth)
 {
 	
+	D_imp_dbh_from_sth;
+
 	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_finish sth=%d\n", sth);
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbdpg_finish sth=%d async=%d\n",
+							sth, imp_dbh->async_status);
 	
 	if (DBIc_ACTIVE(imp_sth) && imp_sth->result) {
 		PQclear(imp_sth->result);
@@ -2650,6 +2738,16 @@ int dbd_st_finish (SV * sth, imp_sth_t * imp_sth)
 		imp_sth->rows = 0;
 	}
 	
+	/* Are we in the middle of an async for this statement handle? */
+	if (imp_dbh->async_status) {
+	  if (imp_sth->async_status) {
+		handle_old_async(sth, imp_dbh, DBDPG_OLDQUERY_WAIT);
+	  }
+	}
+
+	imp_sth->async_status = 0;
+	imp_dbh->async_sth = NULL;
+
 	DBIc_ACTIVE_off(imp_sth);
 	return 1;
 
@@ -2759,6 +2857,10 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 		return;
 	}
 
+	if (imp_dbh->async_status) {
+	  handle_old_async(sth, imp_dbh, DBDPG_OLDQUERY_WAIT);
+	}
+
 	/* Deallocate only if we named this statement ourselves and we still have a good connection */
 	/* On rare occasions, dbd_db_destroy is called first and we can no longer rely on imp_dbh */
 	if (imp_sth->prepared_by_us && DBIc_ACTIVE(imp_dbh)) {
@@ -2772,7 +2874,7 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 	Safefree(imp_sth->type_info);
 	Safefree(imp_sth->firstword);
 
-	if (NULL != imp_sth->result) {
+	if (imp_sth->result) {
 		PQclear(imp_sth->result);
 		imp_sth->result = NULL;
 	}
@@ -2800,6 +2902,9 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 		currph = nextph;
 	}
 	imp_sth->ph = NULL;
+
+	if (imp_dbh->async_sth)
+		imp_dbh->async_sth = NULL;
 
 	DBIc_IMPSET_off(imp_sth); /* let DBI know we've done it */
 
@@ -3295,6 +3400,295 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
 	return (int)nread;
 
 } /* end of dbd_st_blob_read */
+
+
+
+/* ================================================================== */
+/* Return the result of an asynchronous query, waiting if needed */
+int dbdpg_result (h, imp_dbh)
+		 SV *h;
+		 imp_dbh_t *imp_dbh;
+{
+
+	PGresult *result;
+	ExecStatusType status = PGRES_FATAL_ERROR;
+	int rows;
+	char *cmdStatus = NULL;
+
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbdpg_result\n"); }
+
+	if (1 != imp_dbh->async_status) {
+		pg_error(h, PGRES_FATAL_ERROR, "No asynchronous query is running\n");
+		return -2;
+	}	
+
+	imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
+
+	while ((result = PQgetResult(imp_dbh->conn)) != NULL) {
+	  /* TODO: Better multiple result-set handling */
+	  status = _sqlstate(imp_dbh, result);
+	  switch (status) {
+	  case PGRES_TUPLES_OK:
+		rows = PQntuples(result);
+
+		if (imp_dbh->async_sth) {
+		  imp_dbh->async_sth->cur_tuple = 0;
+		  DBIc_NUM_FIELDS(imp_dbh->async_sth) = PQnfields(result);
+		  DBIc_ACTIVE_on(imp_dbh->async_sth);
+		}
+
+		break;
+	  case PGRES_COMMAND_OK:
+		/* non-select statement */
+		cmdStatus = PQcmdStatus(result);
+		if ((0==strncmp(cmdStatus, "DELETE", 6)) || (0==strncmp(cmdStatus, "INSERT", 6)) || 
+			(0==strncmp(cmdStatus, "UPDATE", 6))) {
+		  rows = atoi(PQcmdTuples(result));
+		}
+		break;
+	  case PGRES_COPY_OUT:
+	  case PGRES_COPY_IN:
+		/* Copy Out/In data transfer in progress */
+		imp_dbh->copystate = status;
+		rows = -1;
+		break;
+	  case PGRES_EMPTY_QUERY:
+	  case PGRES_BAD_RESPONSE:
+	  case PGRES_NONFATAL_ERROR:
+		rows = -2;
+		pg_error(h, status, PQerrorMessage(imp_dbh->conn));
+		break;
+	  case PGRES_FATAL_ERROR:
+	  default:
+		rows = -2;
+		pg_error(h, status, PQerrorMessage(imp_dbh->conn));
+		break;
+	  }
+
+	  if (imp_dbh->async_sth) {
+		if (imp_dbh->async_sth->result) /* For potential multi-result sets */
+		  PQclear(imp_dbh->async_sth->result);
+		imp_dbh->async_sth->result = result;
+	  }
+	  else {
+		  PQclear(result);
+	  }
+	}
+
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbdpg_result returning %d\n", rows); }
+	if (imp_dbh->async_sth) {
+	  imp_dbh->async_sth->rows = rows;
+	  imp_dbh->async_sth->async_status = 0;
+	}
+	imp_dbh->async_status = 0;
+	return rows;
+
+} /* end of dbdpg_result */
+
+
+/* 
+==================================================================
+Indicates if an asynchronous query has finished yet
+Accepts either a database or a statement handle
+Returns:
+  -1 if no query is running (and raises an exception)
+  +1 if the query is finished
+   0 if the query is still running
+  -2 for other errors
+==================================================================
+*/
+
+int dbdpg_ready (h, imp_dbh)
+		 SV *h;
+		 imp_dbh_t *imp_dbh;
+{
+
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_st_ready\n"); }
+
+	if (0 == imp_dbh->async_status) {
+		pg_error(h, PGRES_FATAL_ERROR, "No asynchronous query is running\n");
+		return -1;
+	}	
+
+	if (!PQconsumeInput(imp_dbh->conn)) {
+	  pg_error(h, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+	  return -2;
+	}
+
+	return ! PQisBusy(imp_dbh->conn);
+
+} /* end of dbdpg_ready */
+
+
+/*
+Attempt to cancel a running asynchronous query
+Returns true if the cancel succeeded, and false if it did not
+If it did successfully cancel the query, it will also do a rollback.
+Note that queries which have finished do not cause a rollback.
+In this case, pg_cancel will return false.
+NOTE: We only return true if we cancelled and rolled back!
+*/
+
+int dbdpg_cancel(h, imp_dbh)
+	 SV *h;
+	 imp_dbh_t *imp_dbh;
+{
+
+	PGcancel *cancel;
+	char errbuf[256];
+	PGresult *result;
+	ExecStatusType status;
+
+	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: dbdpg_cancel, async=%d\n", imp_dbh->async_status); }
+
+	if (0 == imp_dbh->async_status) {
+	  pg_error(h, PGRES_FATAL_ERROR, "No asynchronous query is running");
+	  return DBDPG_FALSE;
+	}
+
+	if (-1 == imp_dbh->async_status) {
+	  pg_error(h, PGRES_FATAL_ERROR, "Asychronous query has already been cancelled");
+	  return DBDPG_FALSE;
+	}
+
+	/* Get the cancel structure */
+	cancel = PQgetCancel(imp_dbh->conn);
+
+	/* This almost always works. If not, free our structure and complain looudly */
+	if (! PQcancel(cancel,errbuf,sizeof(errbuf))) {
+	  PQfreeCancel(cancel);
+	  if (dbis->debug >= 1) { (void)PerlIO_printf(DBILOGFP, "dbdpg: PQcancel failed: %s\n", errbuf); }
+	  pg_error(h, PGRES_FATAL_ERROR, "PQcancel failed");
+	  return DBDPG_FALSE;
+	}
+	PQfreeCancel(cancel);
+
+	/* Whatever else happens, we should no longer be inside of an async query */
+	imp_dbh->async_status = -1;
+	if (imp_dbh->async_sth)
+	  imp_dbh->async_sth->async_status = -1;
+
+	/* Read in the result - assume only one */
+	result = PQgetResult(imp_dbh->conn);
+	if (!result) {
+	  pg_error(h, PGRES_FATAL_ERROR, "Failed to get a result after PQcancel");
+	  return DBDPG_FALSE;
+	}
+
+	status = _sqlstate(imp_dbh, result);
+
+	/* If we actually cancelled a running query, perform a rollback */
+	if (0 == strncmp(imp_dbh->sqlstate, "57014", 5)) {
+	  if (dbis->debug >= 0) { (void)PerlIO_printf(DBILOGFP, "dbdpg: Rolling back after cancelled query\n"); }
+	  dbd_db_rollback(h, imp_dbh);
+	  //	  PQexec(imp_dbh->conn, "ROLLBACK");
+	  return DBDPG_TRUE;
+	}
+
+	/* If we got any other error, make sure we report it */
+	if (0 != strncmp(imp_dbh->sqlstate, "00000", 5)) {
+	  if (dbis->debug >= 0) { (void)PerlIO_printf(DBILOGFP, "dbdpg: Query was not cancelled: was already finished\n"); }
+	  pg_error(h, status, PQerrorMessage(imp_dbh->conn));
+	}
+	
+	return DBDPG_FALSE;
+
+} /* end of dbdpg_cancel */
+
+
+int dbdpg_cancel_sth(sth, imp_sth)
+	 SV *sth;
+	 imp_sth_t *imp_sth;
+{
+
+    D_imp_dbh_from_sth;
+	bool cancel_result;
+
+	cancel_result = dbdpg_cancel(sth, imp_dbh);
+
+	dbd_st_finish(sth, imp_sth);
+
+	return cancel_result;
+
+} /* end of dbdpg_cancel */
+
+
+/*
+Finish up an existing async query, either by cancelling it,
+or by waiting for a result.
+
+ */
+static int handle_old_async(SV * handle, imp_dbh_t * imp_dbh, int asyncflag)
+{
+
+  PGresult *result;
+  ExecStatusType status;
+
+  if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: handle_old_sync flag=%d\n", asyncflag); }
+
+  if (asyncflag & DBDPG_OLDQUERY_CANCEL) {
+	/* Cancel the outstanding query */
+	if (dbis->debug >= 1) { (void)PerlIO_printf(DBILOGFP, "dbdpg: Cancelling old async command\n"); }
+	if (PQisBusy(imp_dbh->conn)) {
+	  PGcancel *cancel;
+	  char errbuf[256];
+	  int cresult;
+	  if (dbis->debug >= 1) { (void)PerlIO_printf(DBILOGFP, "dbdpg: Attempting to cancel query\n"); }
+	  cancel = PQgetCancel(imp_dbh->conn);
+	  cresult = PQcancel(cancel,errbuf,255);
+	  if (! cresult) {
+		if (dbis->debug >= 1) { (void)PerlIO_printf(DBILOGFP, "dbdpg: PQcancel failed: %s\n", errbuf); }
+		pg_error(handle, PGRES_FATAL_ERROR, "Could not cancel previous command");
+		return -2;
+	  }
+	  PQfreeCancel(cancel);
+	  /* Suck up the cancellation notice */
+	  while ((result = PQgetResult(imp_dbh->conn)) != NULL) {
+	  }
+	  /* We need to rollback! - reprepare!? */
+	  PQexec(imp_dbh->conn, "rollback");
+	  imp_dbh->done_begin = DBDPG_FALSE;
+	}
+  }
+  else if (asyncflag & DBDPG_OLDQUERY_WAIT || imp_dbh->async_status == -1) {
+	/* Finish up the outstanding query and throw out the result, unless an error */
+	if (dbis->debug >= 1) { (void)PerlIO_printf(DBILOGFP, "dbdpg: Waiting for old async command to finish\n"); }
+	while ((result = PQgetResult(imp_dbh->conn)) != NULL) {
+	  status = _sqlstate(imp_dbh, result);
+	  PQclear(result);
+	  if (status == PGRES_COPY_IN) { /* In theory, this should be caught by copystate, but we'll be careful */
+		if (-1 == PQputCopyEnd(imp_dbh->conn, NULL)) {
+		  pg_error(handle, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+		  return -2;
+		}
+	  }
+	  else if (status == PGRES_COPY_OUT) { /* Won't be as nice with this one */
+		pg_error(handle, PGRES_FATAL_ERROR, "Must finish copying first");
+		return -2;
+	  }
+	  else if (status != PGRES_EMPTY_QUERY
+			   && status != PGRES_COMMAND_OK
+			   && status != PGRES_TUPLES_OK) {
+		pg_error(handle, status, PQerrorMessage(imp_dbh->conn));
+		return -2;
+	  }
+	}
+  }
+  else {
+	pg_error(handle, PGRES_FATAL_ERROR, "Cannot execute until previous async query has finished");
+	return -2;
+  }
+
+  /* If we made it this far, safe to assume there is no running query */
+  imp_dbh->async_status = 0;
+  if (imp_dbh->async_sth)
+  	imp_dbh->async_sth->async_status = 0;
+
+  return 0;
+
+} /* end of handle_old_async */
+
+
 
 /*
 Some information to keep you sane:

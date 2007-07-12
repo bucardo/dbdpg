@@ -61,6 +61,10 @@ constant(name=Nullch)
 	PG_OID       = 26
 	PG_TID       = 27
 
+	DBDPG_ASYNC           = DBDPG_ASYNC
+	DBDPG_OLDQUERY_CANCEL = DBDPG_OLDQUERY_CANCEL
+	DBDPG_OLDQUERY_WAIT   = DBDPG_OLDQUERY_WAIT
+
 	CODE:
 		if (0==ix) {
 			if (!name) {
@@ -171,27 +175,34 @@ void do(dbh, statement, attr=Nullsv, ...)
 	CODE:
 	{
 		int retval;
+		int asyncflag = 0;
+		SV **svp;
 
 		if (strlen(statement)<1) { /* Corner case */
 			XST_mUNDEF(0);
 			return;
 		}
 
-		if (items < 3) { /* No attribs, no arguments */
-			/* Quick run via PQexec */
-			retval = pg_quickexec(dbh, statement);
+		if (attr && SvROK(attr) && SvTYPE(SvRV(attr)) == SVt_PVHV) {
+			if ((svp = hv_fetch((HV*)SvRV(attr),"pg_async", 8, 0)) != NULL) {
+			   asyncflag = SvIV(*svp);
+			}
 		}
-		else { /* The normal, slower way */
+		if (items < 4) { /* No bind arguments */
+			/* Quick run via PQexec */
+			retval = pg_quickexec(dbh, statement, asyncflag);
+		}
+		else { /* We've got bind arguments, so we do the whole prepare/execute route */
 			imp_sth_t *imp_sth;
 			SV * sth = dbixst_bounce_method("prepare", 3);
 			if (!SvROK(sth))
 				XSRETURN_UNDEF;
 			imp_sth = (imp_sth_t*)(DBIh_COM(sth));
-			if (items > 3)
-				if (!dbdxst_bind_params(sth, imp_sth, items-2, ax+2))
-					XSRETURN_UNDEF;
+			if (!dbdxst_bind_params(sth, imp_sth, items-2, ax+2))
+				XSRETURN_UNDEF;
 			imp_sth->server_prepare = 1;
 			imp_sth->onetime = 1; /* Overrides the above at actual PQexec* decision time */
+			imp_sth->async_flag = asyncflag;
 			retval = dbd_st_execute(sth, imp_sth);
 		}
 
@@ -467,6 +478,34 @@ _pg_type_info (type_sv=Nullsv)
 		ST(0) = sv_2mortal( newSViv( type_num ) );
 	}
 
+void
+pg_result(dbh)
+	SV * dbh
+	CODE:
+		int ret;
+		D_imp_dbh(dbh);
+		ret = dbdpg_result(dbh, imp_dbh);
+		if (ret == 0)
+			XST_mPV(0, "0E0");
+		else if (ret < -1)
+			XST_mUNDEF(0);
+		else
+			XST_mIV(0, ret);
+
+void
+pg_ready(dbh)
+	SV *dbh
+	CODE:
+		D_imp_dbh(dbh);
+		ST(0) = sv_2mortal(newSViv(dbdpg_ready(dbh, imp_dbh)));
+
+void
+pg_cancel(dbh)
+	SV *dbh
+	CODE:
+	D_imp_dbh(dbh);
+	ST(0) = dbdpg_cancel(dbh, imp_dbh) ? &sv_yes : &sv_no;
+
 # -- end of DBD::Pg::db
 
 
@@ -481,5 +520,36 @@ SV *sth;
 		D_imp_sth(sth);
 		D_imp_dbh_from_sth;
 		ST(0) = strEQ(imp_dbh->sqlstate,"00000") ? &sv_no : newSVpv(imp_dbh->sqlstate, 5);
+
+void
+pg_ready(sth)
+	SV *sth
+	CODE:
+		D_imp_sth(sth);
+		D_imp_dbh_from_sth;
+		ST(0) = sv_2mortal(newSViv(dbdpg_ready(sth, imp_dbh)));
+
+void
+pg_cancel(sth)
+	SV *sth
+	CODE:
+	D_imp_sth(sth);
+	ST(0) = dbdpg_cancel_sth(sth, imp_sth) ? &sv_yes : &sv_no;
+
+void
+pg_result(sth)
+	SV * sth
+	CODE:
+		int ret;
+		D_imp_sth(sth);
+		D_imp_dbh_from_sth;
+		ret = dbdpg_result(sth, imp_dbh);
+		if (ret == 0)
+			XST_mPV(0, "0E0");
+		else if (ret < -1)
+			XST_mUNDEF(0);
+		else
+			XST_mIV(0, ret);
+
 
 # end of Pg.xs

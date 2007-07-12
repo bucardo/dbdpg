@@ -26,6 +26,7 @@ use 5.006001;
 
 	%EXPORT_TAGS = 
 		(
+		 async => [qw(DBDPG_ASYNC DBDPG_OLDQUERY_CANCEL DBDPG_OLDQUERY_WAIT)],
 		 pg_types => [qw(
 			PG_BOOL PG_BYTEA PG_CHAR PG_INT8 PG_INT2 PG_INT4 PG_TEXT PG_OID PG_TID
 			PG_FLOAT4 PG_FLOAT8 PG_ABSTIME PG_RELTIME PG_TINTERVAL PG_BPCHAR
@@ -40,8 +41,8 @@ use 5.006001;
 		sub new { my $self = {}; return bless $self, shift; }
 	}
 	$DBDPG_DEFAULT = DBD::Pg::DefaultValue->new();
-	Exporter::export_ok_tags('pg_types');
-	@EXPORT = qw($DBDPG_DEFAULT);
+	Exporter::export_ok_tags('pg_types', 'async');
+	@EXPORT = qw($DBDPG_DEFAULT DBDPG_ASYNC DBDPG_OLDQUERY_CANCEL DBDPG_OLDQUERY_WAIT);
 
 	require_version DBI 1.45;
 
@@ -78,16 +79,23 @@ use 5.006001;
 		});
 
 
+		DBD::Pg::db->install_method("pg_cancel");
 		DBD::Pg::db->install_method("pg_endcopy");
 		DBD::Pg::db->install_method("pg_getline");
 		DBD::Pg::db->install_method("pg_ping");
 		DBD::Pg::db->install_method("pg_putline");
+		DBD::Pg::db->install_method("pg_ready");
 		DBD::Pg::db->install_method("pg_release");
+		DBD::Pg::db->install_method("pg_result");
 		DBD::Pg::db->install_method("pg_rollback_to");
 		DBD::Pg::db->install_method("pg_savepoint");
 		DBD::Pg::db->install_method("pg_server_trace");
 		DBD::Pg::db->install_method("pg_server_untrace");
 		DBD::Pg::db->install_method("pg_type_info");
+
+		DBD::Pg::st->install_method("pg_cancel");
+		DBD::Pg::st->install_method("pg_result");
+		DBD::Pg::st->install_method("pg_ready");
 
 		$drh;
 
@@ -3084,6 +3092,643 @@ created after the one being released are also destroyed.
   $dbh->pg_release("mysavepoint");
 
 =back
+
+=head2 Asynchronous Queries
+
+It is possible to send a query to the backend and have your script do other work while the query is 
+running on the backend. Both queries sent by the do() method, and by the execute() method can be 
+sent asynchronously. The basic usage is as follows:
+
+  use DBD::Pg ':async';
+
+  print "Async do() example:\n";
+  $dbh->do("SELECT long_running_query()", {pg_async => DBDPG_ASYNC});
+  do_something_else();
+  {
+    if ($dbh->pg_ready()) {
+      $res = $pg_result();
+      print "Result of do(): $res\n";
+    }
+    print "Query is still running...\n";
+    if (cancel_request_received) {
+      $dbh->pg_cancel();
+    }
+    sleep 1;
+    redo;
+  }
+
+  print "Async prepare/execute example:\n";
+  $sth = $dbh->prepare("SELECT long_running_query(1)", {pg_async => ASYNC});
+  $sth->execute();
+
+  ## Changed our mind, cancel and run again:
+  $sth = $dbh->prepare("SELECT 678", {pg_async => DBDPG_ASYNC + DBDPG_OLDQUERY_CANCEL});
+  $sth->execute();
+
+  do_something_else();
+
+  if (!$sth->pg_ready) {
+    do_another_thing();
+  }
+
+  ## We wait until it is done, and get the result:
+  $res = $dbh->pg_result();
+
+=head3 Asynchronous Constants
+
+There are currently three asynchronous constants exported by DBD::Pg. You can import all of them by putting 
+either of these at the top of your script:
+
+  use DBD::Pg;
+
+  use DBD::Pg ':async';
+
+You may also use the numbers instead of the constants, but using the constants is recommended as it 
+makes your script more readable.
+
+=over 4
+
+=item DBDPG_ASYNC
+
+This is a constant for the number 1. It is passed to either the do() or the prepare() method as a value 
+to the pg_async key and indicates that the query should be sent asynchronously.
+
+=item DBDPG_OLDQUERY_CANCEL
+
+This is a constant for the number 2. When passed to either the do() or the prepare method(), it causes any 
+currently running asynchronous query to be cancelled and rolled back. It has no effect if no asynchronous 
+query is currently running.
+
+=item DBDPG_OLDQUERY_WAIT
+
+This is a constant for the number 4. When passed to either the do() or the prepare method(), it waits for any 
+currently running asynchronous query to complete. It has no effect if no asynchronous query is currently running.
+
+=back
+
+=head3 Asynchronous Methods
+
+=over 4
+
+=item pg_cancel
+
+This database-level method attempts to cancel any currently running asynchronous query. It returns true if 
+the cancel suceeded, and false otherwise. Note that a query that has finished before this method is executed 
+will also return false. B<Warning>: a successful cancellation will leave the database in an unusable state, 
+so DBD::Pg will automatically clear out the error message and issue a ROLLBACK.
+
+  $result = $dbh->pg_cancel();
+
+=item pg_ready
+
+This method can be called as a database handle method or (for convenience) as a statement handle method. Both simply 
+see if a previously issued asycnhronous query has completed yet. It returns true if the statement has finished, in which 
+case you should then call the pg_result() method. Calls to <pg_ready() should only be used when you have other 
+things to do while the query is running. If you simply want to wait until the query is done, do not call pg_ready()
+over and over, but simply call the pg_result() method.
+
+  my $time = 0;
+  while (!$dbh->pg_ready) {
+    print "Query is still running. Seconds: $time\n";
+    $time++;
+    sleep 1;
+  }
+  $result = $dbh->pg_result;
+
+=item pg_result
+
+This database handle method returns the results of a previously issued asynchronous query. If the query is still 
+running, this method will wait until it has finished. The result returned is the number of rows: the same thing 
+that would have been returned by the asynchronous do() or execute() if it had been without an 
+asychronous flag.
+
+  $result = $dbh->pg_result;
+
+=back
+
+=head2 Savepoints
+
+PostgreSQL version 8.0 introduced the concept of savepoints, which allows 
+transactions to be rolled back to a certain point without affecting the 
+rest of the transaction. DBD::Pg encourages using the following methods to 
+control savepoints:
+
+=over 4
+
+=item B<pg_savepoint>
+
+Creates a savepoint. This will fail unless you are inside of a transaction. The 
+only argument is the name of the savepoint. Note that PostgreSQL DOES allow 
+multiple savepoints with the same name to exist.
+
+  $dbh->pg_savepoint("mysavepoint");
+
+=item B<pg_rollback_to>
+
+Rolls the database back to a named savepoint, discarding any work performed after 
+that point. If more than one savepoint with that name exists, rolls back to the 
+most recently created one.
+
+  $dbh->pg_rollback_to("mysavepoint");
+
+=item B<pg_release>
+
+Releases (or removes) a named savepoint. If more than one savepoint with that name 
+exists, it will only destroy the most recently created one. Note that all savepoints 
+created after the one being released are also destroyed.
+
+  $dbh->pg_release("mysavepoint");
+
+=back
+
+=head2 Asynchronous Queries
+
+It is possible to send a query to the backend and have your script do other work while the query is 
+running on the backend. Both queries sent by the do() method, and by the execute() method can be 
+sent asynchronously. The basic usage is as follows:
+
+  use DBD::Pg ':async';
+
+  print "Async do() example:\n";
+  $dbh->do("SELECT long_running_query()", {pg_async => DBDPG_ASYNC});
+  do_something_else();
+  {
+    if ($dbh->pg_ready()) {
+      $res = $pg_result();
+      print "Result of do(): $res\n";
+    }
+    print "Query is still running...\n";
+    if (cancel_request_received) {
+      $dbh->pg_cancel();
+    }
+    sleep 1;
+    redo;
+  }
+
+  print "Async prepare/execute example:\n";
+  $sth = $dbh->prepare("SELECT long_running_query(1)", {pg_async => ASYNC});
+  $sth->execute();
+
+  ## Changed our mind, cancel and run again:
+  $sth = $dbh->prepare("SELECT 678", {pg_async => DBDPG_ASYNC + DBDPG_OLDQUERY_CANCEL});
+  $sth->execute();
+
+  do_something_else();
+
+  if (!$sth->pg_ready) {
+    do_another_thing();
+  }
+
+  ## We wait until it is done, and get the result:
+  $res = $dbh->pg_result();
+
+=head3 Asynchronous Constants
+
+There are currently three asynchronous constants exported by DBD::Pg. You can import all of them by putting 
+either of these at the top of your script:
+
+  use DBD::Pg;
+
+  use DBD::Pg ':async';
+
+You may also use the numbers instead of the constants, but using the constants is recommended as it 
+makes your script more readable.
+
+=over 4
+
+=item DBDPG_ASYNC
+
+This is a constant for the number 1. It is passed to either the do() or the prepare() method as a value 
+to the pg_async key and indicates that the query should be sent asynchronously.
+
+=item DBDPG_OLDQUERY_CANCEL
+
+This is a constant for the number 2. When passed to either the do() or the prepare method(), it causes any 
+currently running asynchronous query to be cancelled and rolled back. It has no effect if no asynchronous 
+query is currently running.
+
+=item DBDPG_OLDQUERY_WAIT
+
+This is a constant for the number 4. When passed to either the do() or the prepare method(), it waits for any 
+currently running asynchronous query to complete. It has no effect if no asynchronous query is currently running.
+
+=back
+
+=head3 Asynchronous Methods
+
+=over 4
+
+=item pg_cancel
+
+This database-level method attempts to cancel any currently running asynchronous query. It returns true if 
+the cancel suceeded, and false otherwise. Note that a query that has finished before this method is executed 
+will also return false. B<Warning>: a successful cancellation will leave the database in an unusable state, 
+so DBD::Pg will automatically clear out the error message and issue a ROLLBACK.
+
+  $result = $dbh->pg_cancel();
+
+=item pg_ready
+
+This method can be called as a database handle method or (for convenience) as a statement handle method. Both simply 
+see if a previously issued asycnhronous query has completed yet. It returns true if the statement has finished, in which 
+case you should then call the pg_result() method. Calls to <pg_ready() should only be used when you have other 
+things to do while the query is running. If you simply want to wait until the query is done, do not call pg_ready()
+over and over, but simply call the pg_result() method.
+
+  my $time = 0;
+  while (!$dbh->pg_ready) {
+    print "Query is still running. Seconds: $time\n";
+    $time++;
+    sleep 1;
+  }
+  $result = $dbh->pg_result;
+
+=item pg_result
+
+This database handle method returns the results of a previously issued asynchronous query. If the query is still 
+running, this method will wait until it has finished. The result returned is the number of rows: the same thing 
+that would have been returned by the asynchronous do() or execute() if it had been without an 
+asychronous flag.
+
+  $result = $dbh->pg_result;
+
+=back
+
+=head2 Savepoints
+
+PostgreSQL version 8.0 introduced the concept of savepoints, which allows 
+transactions to be rolled back to a certain point without affecting the 
+rest of the transaction. DBD::Pg encourages using the following methods to 
+control savepoints:
+
+=over 4
+
+=item B<pg_savepoint>
+
+Creates a savepoint. This will fail unless you are inside of a transaction. The 
+only argument is the name of the savepoint. Note that PostgreSQL DOES allow 
+multiple savepoints with the same name to exist.
+
+  $dbh->pg_savepoint("mysavepoint");
+
+=item B<pg_rollback_to>
+
+Rolls the database back to a named savepoint, discarding any work performed after 
+that point. If more than one savepoint with that name exists, rolls back to the 
+most recently created one.
+
+  $dbh->pg_rollback_to("mysavepoint");
+
+=item B<pg_release>
+
+Releases (or removes) a named savepoint. If more than one savepoint with that name 
+exists, it will only destroy the most recently created one. Note that all savepoints 
+created after the one being released are also destroyed.
+
+  $dbh->pg_release("mysavepoint");
+
+=back
+
+=head2 Asynchronous Queries
+
+It is possible to send a query to the backend and have your script do other work while the query is 
+running on the backend. Both queries sent by the do() method, and by the execute() method can be 
+sent asynchronously. The basic usage is as follows:
+
+  use DBD::Pg ':async';
+
+  print "Async do() example:\n";
+  $dbh->do("SELECT long_running_query()", {pg_async => DBDPG_ASYNC});
+  do_something_else();
+  {
+    if ($dbh->pg_ready()) {
+      $res = $pg_result();
+      print "Result of do(): $res\n";
+    }
+    print "Query is still running...\n";
+    if (cancel_request_received) {
+      $dbh->pg_cancel();
+    }
+    sleep 1;
+    redo;
+  }
+
+  print "Async prepare/execute example:\n";
+  $sth = $dbh->prepare("SELECT long_running_query(1)", {pg_async => ASYNC});
+  $sth->execute();
+
+  ## Changed our mind, cancel and run again:
+  $sth = $dbh->prepare("SELECT 678", {pg_async => DBDPG_ASYNC + DBDPG_OLDQUERY_CANCEL});
+  $sth->execute();
+
+  do_something_else();
+
+  if (!$sth->pg_ready) {
+    do_another_thing();
+  }
+
+  ## We wait until it is done, and get the result:
+  $res = $dbh->pg_result();
+
+=head3 Asynchronous Constants
+
+There are currently three asynchronous constants exported by DBD::Pg. You can import all of them by putting 
+either of these at the top of your script:
+
+  use DBD::Pg;
+
+  use DBD::Pg ':async';
+
+You may also use the numbers instead of the constants, but using the constants is recommended as it 
+makes your script more readable.
+
+=over 4
+
+=item DBDPG_ASYNC
+
+This is a constant for the number 1. It is passed to either the do() or the prepare() method as a value 
+to the pg_async key and indicates that the query should be sent asynchronously.
+
+=item DBDPG_OLDQUERY_CANCEL
+
+This is a constant for the number 2. When passed to either the do() or the prepare method(), it causes any 
+currently running asynchronous query to be cancelled and rolled back. It has no effect if no asynchronous 
+query is currently running.
+
+=item DBDPG_OLDQUERY_WAIT
+
+This is a constant for the number 4. When passed to either the do() or the prepare method(), it waits for any 
+currently running asynchronous query to complete. It has no effect if no asynchronous query is currently running.
+
+=back
+
+=head3 Asynchronous Methods
+
+=over 4
+
+=item pg_cancel
+
+This database-level method attempts to cancel any currently running asynchronous query. It returns true if 
+the cancel suceeded, and false otherwise. Note that a query that has finished before this method is executed 
+will also return false. B<Warning>: a successful cancellation will leave the database in an unusable state, 
+so DBD::Pg will automatically clear out the error message and issue a ROLLBACK.
+
+  $result = $dbh->pg_cancel();
+
+=item pg_ready
+
+This method can be called as a database handle method or (for convenience) as a statement handle method. Both simply 
+see if a previously issued asycnhronous query has completed yet. It returns true if the statement has finished, in which 
+case you should then call the pg_result() method. Calls to <pg_ready() should only be used when you have other 
+things to do while the query is running. If you simply want to wait until the query is done, do not call pg_ready()
+over and over, but simply call the pg_result() method.
+
+  my $time = 0;
+  while (!$dbh->pg_ready) {
+    print "Query is still running. Seconds: $time\n";
+    $time++;
+    sleep 1;
+  }
+  $result = $dbh->pg_result;
+
+=item pg_result
+
+This database handle method returns the results of a previously issued asynchronous query. If the query is still 
+running, this method will wait until it has finished. The result returned is the number of rows: the same thing 
+that would have been returned by the asynchronous do() or execute() if it had been without an 
+asychronous flag.
+
+  $result = $dbh->pg_result;
+
+=back
+
+=head2 Savepoints
+
+PostgreSQL version 8.0 introduced the concept of savepoints, which allows 
+transactions to be rolled back to a certain point without affecting the 
+rest of the transaction. DBD::Pg encourages using the following methods to 
+control savepoints:
+
+=over 4
+
+=item B<pg_savepoint>
+
+Creates a savepoint. This will fail unless you are inside of a transaction. The 
+only argument is the name of the savepoint. Note that PostgreSQL DOES allow 
+multiple savepoints with the same name to exist.
+
+  $dbh->pg_savepoint("mysavepoint");
+
+=item B<pg_rollback_to>
+
+Rolls the database back to a named savepoint, discarding any work performed after 
+that point. If more than one savepoint with that name exists, rolls back to the 
+most recently created one.
+
+  $dbh->pg_rollback_to("mysavepoint");
+
+=item B<pg_release>
+
+Releases (or removes) a named savepoint. If more than one savepoint with that name 
+exists, it will only destroy the most recently created one. Note that all savepoints 
+created after the one being released are also destroyed.
+
+  $dbh->pg_release("mysavepoint");
+
+=back
+
+=head2 Asynchronous Queries
+
+It is possible to send a query to the backend and have your script do other work while the query is 
+running on the backend. Both queries sent by the do() method, and by the execute() method can be 
+sent asynchronously. The basic usage is as follows:
+
+  use DBD::Pg ':async';
+
+  print "Async do() example:\n";
+  $dbh->do("SELECT long_running_query()", {pg_async => DBDPG_ASYNC});
+  do_something_else();
+  {
+    if ($dbh->pg_ready()) {
+      $res = $pg_result();
+      print "Result of do(): $res\n";
+    }
+    print "Query is still running...\n";
+    if (cancel_request_received) {
+      $dbh->pg_cancel();
+    }
+    sleep 1;
+    redo;
+  }
+
+  print "Async prepare/execute example:\n";
+  $sth = $dbh->prepare("SELECT long_running_query(1)", {pg_async => ASYNC});
+  $sth->execute();
+
+  ## Changed our mind, cancel and run again:
+  $sth = $dbh->prepare("SELECT 678", {pg_async => DBDPG_ASYNC + DBDPG_OLDQUERY_CANCEL});
+  $sth->execute();
+
+  do_something_else();
+
+  if (!$sth->pg_ready) {
+    do_another_thing();
+  }
+
+  ## We wait until it is done, and get the result:
+  $res = $dbh->pg_result();
+
+=head3 Asynchronous Constants
+
+There are currently three asynchronous constants exported by DBD::Pg. You can import all of them by putting 
+either of these at the top of your script:
+
+  use DBD::Pg;
+
+  use DBD::Pg ':async';
+
+You may also use the numbers instead of the constants, but using the constants is recommended as it 
+makes your script more readable.
+
+=over 4
+
+=item DBDPG_ASYNC
+
+This is a constant for the number 1. It is passed to either the do() or the prepare() method as a value 
+to the pg_async key and indicates that the query should be sent asynchronously.
+
+=item DBDPG_OLDQUERY_CANCEL
+
+This is a constant for the number 2. When passed to either the do() or the prepare method(), it causes any 
+currently running asynchronous query to be cancelled and rolled back. It has no effect if no asynchronous 
+query is currently running.
+
+=item DBDPG_OLDQUERY_WAIT
+
+This is a constant for the number 4. When passed to either the do() or the prepare method(), it waits for any 
+currently running asynchronous query to complete. It has no effect if there is no asynchronous query currently running.
+
+=back
+
+=head3 Asynchronous Methods
+
+=over 4
+
+=item pg_cancel
+
+This database-level method attempts to cancel any currently running asynchronous query. It returns true if 
+the cancel suceeded, and false otherwise. Note that a query that has finished before this method is executed 
+will also return false. B<WARNING>: a successful cancellation will leave the database in an unusable state, 
+so DBD::Pg will automatically clear out the error message and issue a ROLLBACK.
+
+  $result = $dbh->pg_cancel();
+
+=item pg_ready
+
+This method can be called as a database handle method or (for convenience) as a statement handle method. Both simply 
+see if a previously issued asycnhronous query has completed yet. It returns true if the statement has finished, in which 
+case you should then call the pg_result() method. Calls to pg_ready() should only be used when you have other 
+things to do while the query is running. If you simply want to wait until the query is done, do not call pg_ready()
+over and over, but simply call the pg_result() method.
+
+  my $time = 0;
+  while (!$dbh->pg_ready) {
+    print "Query is still running. Seconds: $time\n";
+    $time++;
+    sleep 1;
+  }
+  $result = $dbh->pg_result;
+
+=item pg_result
+
+This database handle method returns the results of a previously issued asynchronous query. If the query is still 
+running, this method will wait until it has finished. The result returned is the number of rows: the same thing 
+that would have been returned by the asynchronous do() or execute() if it had been called without an asychronous flag.
+
+  $result = $dbh->pg_result;
+
+=back
+
+=head3 Asynchronous Examples
+
+Here are some working examples of asynchronous queries. Note that we'll use the pg_sleep function to emulate a 
+long-running query.
+
+  use strict;
+  use warnings;
+  use Time::HiRes 'sleep';
+  use DBD::Pg ':async';
+
+  my $dbh = DBI->connect('dbi:Pg:dbname=postgres', 'postgres', '', {AutoCommit=>0,RaiseError=>1});
+
+  ## Kick off a long running query on the first database:
+  my $sth = $dbh->prepare("SELECT pg_sleep(?)", {pg_async => DBDPG_ASYNC});
+  $sth->execute(5);
+
+  ## While that is running, do some other things
+  print "Your query is processing. Thanks for waiting\n";
+  check_on_the_kids(); ## Expensive sub, takes at least three seconds.
+
+  while (!$dbh->pg_ready) {
+    check_on_the_kids();
+    ## If the above function returns quickly for some reason, we add a small sleep
+    sleep 0.1;
+  }
+
+  print "The query has finished. Gathering results\n";
+  my $result = $sth->pg_result;
+  print "Result: $result\n";
+  my $info = $sth->fetchall_arrayref();
+
+Without asynchronous queries, the above script would take about 8 seconds to run: five seconds waiting 
+for the execute to finish, then three for the check_on_the_kids() function to return. With asynchronous 
+queries, the script takes about 6 seconds to run, and gets in two iterations of check_on_the_kids in 
+the process.
+
+Here's an example showing the ability to cancel a long-running query. Imagine two slave databases in 
+different geographic locations over a slow network. You need information as quickly as possible, so 
+you query both at once. When you get an answer, you tell the other one to stop working on your query, 
+as you don't need it anymore.
+
+  use strict;
+  use warnings;
+  use Time::HiRes 'sleep';
+  use DBD::Pg ':async';
+
+  my $dbhslave1 = DBI->connect('dbi:Pg:dbname=postgres;host=slave1', 'postgres', '', {AutoCommit=>0,RaiseError=>1});
+  my $dbhslave2 = DBI->connect('dbi:Pg:dbname=postgres;host=slave2', 'postgres', '', {AutoCommit=>0,RaiseError=>1});
+
+  $SQL = "SELECT count(*) FROM largetable WHERE flavor='blueberry'";
+
+  my $sth1 = $dbhslave1->prepare($SQL, {pg_async => DBDPG_ASYNC});
+  my $sth2 = $dbhslave2->prepare($SQL, {pg_async => DBDPG_ASYNC});
+
+  $sth1->execute();
+  $sth2->execute();
+
+  my $winner;
+  while (!defined $winner) {
+    if ($sth1->pg_ready) {
+      $winner = 1;
+    }
+    elsif ($sth2->pg_ready) {
+      $winner = 2;
+    }
+    Time::HiRes::sleep 0.05;
+  }
+
+  my $count;
+  if ($winner == 1) {
+    $sth2->pg_cancel();
+    $sth1->pg_result();
+    $count = $sth1->fetchall_arrayref()->[0][0];
+  }
+  else {
+    $sth1->pg_cancel();
+    $sth2->pg_result();
+    $count = $sth2->fetchall_arrayref()->[0][0];
+  }
+
 
 =head2 COPY support
 
