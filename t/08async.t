@@ -66,7 +66,7 @@ like($@, qr{No asynchronous query is running}, $t);
 
 $t=q{Method do() works as expected with an asychronous flag };
 eval {
-	$res = $dbh->do("SELECT 123", {pg_async => DBDPG_ASYNC});
+	$res = $dbh->do("SELECT 123", {pg_async => PG_ASYNC});
 };
 is($@, q{}, $t);
 is($res, '0E0', $t);
@@ -104,7 +104,7 @@ eval {
 };
 like($@, qr{No async}, $t);
 
-$res = $dbh->do("SELECT 123", {pg_async => DBDPG_ASYNC});
+$res = $dbh->do("SELECT 123", {pg_async => PG_ASYNC});
 $t=q{Method pg_ready() works after a non-async query};
 ## Sleep a sub-second to make sure the server has caught up
 sleep 0.2;
@@ -136,7 +136,7 @@ eval {
 };
 is($@, q{}, $t);
 
-$dbh->do("SELECT 'async2'", {pg_async => DBDPG_ASYNC});
+$dbh->do("SELECT 'async2'", {pg_async => PG_ASYNC});
 
 $t=q{Method do() fails when async query has not been cleared};
 eval {
@@ -185,7 +185,7 @@ SKIP: {
 	}
 
 	my $time = time();
-	$res = $dbh->do("SELECT pg_sleep(2)", {pg_async => DBDPG_ASYNC});
+	$res = $dbh->do("SELECT pg_sleep(2)", {pg_async => PG_ASYNC});
 	$time = time()-$time;
 	$t = qq{Database method do() returns right away when in async mode};
 	cmp_ok($time, '<=', 1, $t);
@@ -202,7 +202,7 @@ SKIP: {
 
 	$t=q{Method do() will not work if async query not yet cleared};
 	eval {
-		$dbh->do("SELECT pg_sleep(2)", {pg_async => DBDPG_ASYNC});
+		$dbh->do("SELECT pg_sleep(2)", {pg_async => PG_ASYNC});
 	};
 	like($@, qr{previous async}, $t);
 
@@ -222,7 +222,7 @@ SKIP: {
 
 	$t=q{Database method do() cancels the previous async when requested};
 	eval {
-		$res = $dbh->do("SELECT pg_sleep(2)", {pg_async => DBDPG_ASYNC + DBDPG_OLDQUERY_CANCEL});
+		$res = $dbh->do("SELECT pg_sleep(2)", {pg_async => PG_ASYNC + PG_OLDQUERY_CANCEL});
 	};
 	is($@, q{}, $t);
 
@@ -236,22 +236,22 @@ SKIP: {
 	$sth = $dbh->prepare("SELECT 567");
 
 	$t = q{Running execute after async do() gives an error};
-	$dbh->do("SELECT pg_sleep(2)", {pg_async => DBDPG_ASYNC});
+	$dbh->do("SELECT pg_sleep(2)", {pg_async => PG_ASYNC});
 	eval {
 		$res = $sth->execute();
 	};
 	like($@, qr{previous async}, $t);
 
 	$t = q{Running execute after async do() works when told to cancel};
-	$sth = $dbh->prepare("SELECT 678", {pg_async => DBDPG_OLDQUERY_CANCEL});
+	$sth = $dbh->prepare("SELECT 678", {pg_async => PG_OLDQUERY_CANCEL});
 	eval {
 		$sth->execute();
 	};
 	is($@, q{}, $t);
 
 	$t = q{Running execute after async do() works when told to wait};
-	$dbh->do("SELECT pg_sleep(2)", {pg_async => DBDPG_ASYNC});
-	$sth = $dbh->prepare("SELECT 678", {pg_async => DBDPG_OLDQUERY_WAIT});
+	$dbh->do("SELECT pg_sleep(2)", {pg_async => PG_ASYNC});
+	$sth = $dbh->prepare("SELECT 678", {pg_async => PG_OLDQUERY_WAIT});
 	eval {
 		$sth->execute();
 	};
@@ -262,8 +262,8 @@ SKIP: {
 }; ## end of pg_sleep skip
 
 
-$t=q{Method execute() works when prepare has DBDPG_ASYNC flag};
-$sth = $dbh->prepare("SELECT 123", {pg_async => DBDPG_ASYNC});
+$t=q{Method execute() works when prepare has PG_ASYNC flag};
+$sth = $dbh->prepare("SELECT 123", {pg_async => PG_ASYNC});
 eval {
 	$sth->execute();
 };
@@ -308,7 +308,7 @@ $dbh->pg_cancel;
 $t=q{Directly after pg_cancel(), pg_async_status is -1};
 is($dbh->{pg_async_status}, -1, $t);
 
-$t=q{Method execute() works when prepare has DBDPG_ASYNC flag};
+$t=q{Method execute() works when prepare has PG_ASYNC flag};
 $sth->execute();
 
 $t=q{After async execute, pg_async_status is 1};
@@ -339,12 +339,12 @@ $dbh->do("CREATE TABLE dbdpg_async_test(id INT, t TEXT)");
 $dbh->commit();
 $sth->execute();
 
-$t=q{Method prepare() works when passed in DBDPG_OLDQUERY_CANCEL};
+$t=q{Method prepare() works when passed in PG_OLDQUERY_CANCEL};
 
 my $sth2;
 my $SQL = "INSERT INTO dbdpg_async_test(id) SELECT 123 UNION SELECT 456";
 eval {
-	$sth2 = $dbh->prepare($SQL, {pg_async => DBDPG_ASYNC + DBDPG_OLDQUERY_CANCEL});
+	$sth2 = $dbh->prepare($SQL, {pg_async => PG_ASYNC + PG_OLDQUERY_CANCEL});
 };
 is($@, q{}, $t);
 

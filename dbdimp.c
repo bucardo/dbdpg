@@ -2157,7 +2157,7 @@ int pg_quickexec (SV * dbh, const char * sql, int asyncflag)
 	}
 
 	/* Asynchronous commands get kicked off and return undef */
-	if (asyncflag & DBDPG_ASYNC) {
+	if (asyncflag & PG_ASYNC) {
 	  if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: Going asychronous with do()\n");
 	  if (! PQsendQuery(imp_dbh->conn, sql)) {
 		if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: PQsendQuery failed\n");
@@ -2410,7 +2410,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		
 		if (dbis->debug >= 5)
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: Running PQexecPrepared with (%s)\n", imp_sth->prepare_name);
-		if (imp_sth->async_flag & DBDPG_ASYNC)
+		if (imp_sth->async_flag & PG_ASYNC)
 		  ret = PQsendQueryPrepared
 			(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs, paramValues, paramLengths, paramFormats, 0);
 		else
@@ -2478,7 +2478,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
 			if (dbis->debug >= 5)
 				(void)PerlIO_printf(DBILOGFP, "dbdpg: Running PQexecParams with (%s)\n", statement);
-			if (imp_sth->async_flag & DBDPG_ASYNC)
+			if (imp_sth->async_flag & PG_ASYNC)
 			  ret = PQsendQueryParams
 				(imp_dbh->conn, statement, imp_sth->numphs, paramTypes, paramValues, paramLengths, paramFormats, 0);
 			else
@@ -2513,7 +2513,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				(void)PerlIO_printf(DBILOGFP, "dbdpg: Running %s with (%s)\n", 
 									imp_sth->async_flag & 1 ? "PQsendQuery" : "PQexec", statement);
 			
-			if (imp_sth->async_flag & DBDPG_ASYNC)
+			if (imp_sth->async_flag & PG_ASYNC)
 			  ret = PQsendQuery(imp_dbh->conn, statement);
 			else
 			  imp_sth->result = PQexec(imp_dbh->conn, statement);
@@ -2531,7 +2531,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	Safefree(paramFormats);			
 
 	/* If running asynchronously, we don't stick around for the result */
-	if (imp_sth->async_flag & DBDPG_ASYNC) {
+	if (imp_sth->async_flag & PG_ASYNC) {
 		if (dbis->debug >= 2)
 		  (void)PerlIO_printf
 			(DBILOGFP, "dbdpg: Early return for async query");
@@ -2741,7 +2741,7 @@ int dbd_st_finish (SV * sth, imp_sth_t * imp_sth)
 	/* Are we in the middle of an async for this statement handle? */
 	if (imp_dbh->async_status) {
 	  if (imp_sth->async_status) {
-		handle_old_async(sth, imp_dbh, DBDPG_OLDQUERY_WAIT);
+		handle_old_async(sth, imp_dbh, PG_OLDQUERY_WAIT);
 	  }
 	}
 
@@ -2858,7 +2858,7 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 	}
 
 	if (imp_dbh->async_status) {
-	  handle_old_async(sth, imp_dbh, DBDPG_OLDQUERY_WAIT);
+	  handle_old_async(sth, imp_dbh, PG_OLDQUERY_WAIT);
 	}
 
 	/* Deallocate only if we named this statement ourselves and we still have a good connection */
@@ -3626,7 +3626,7 @@ static int handle_old_async(SV * handle, imp_dbh_t * imp_dbh, int asyncflag)
 
   if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: handle_old_sync flag=%d\n", asyncflag); }
 
-  if (asyncflag & DBDPG_OLDQUERY_CANCEL) {
+  if (asyncflag & PG_OLDQUERY_CANCEL) {
 	/* Cancel the outstanding query */
 	if (dbis->debug >= 1) { (void)PerlIO_printf(DBILOGFP, "dbdpg: Cancelling old async command\n"); }
 	if (PQisBusy(imp_dbh->conn)) {
@@ -3650,7 +3650,7 @@ static int handle_old_async(SV * handle, imp_dbh_t * imp_dbh, int asyncflag)
 	  imp_dbh->done_begin = DBDPG_FALSE;
 	}
   }
-  else if (asyncflag & DBDPG_OLDQUERY_WAIT || imp_dbh->async_status == -1) {
+  else if (asyncflag & PG_OLDQUERY_WAIT || imp_dbh->async_status == -1) {
 	/* Finish up the outstanding query and throw out the result, unless an error */
 	if (dbis->debug >= 1) { (void)PerlIO_printf(DBILOGFP, "dbdpg: Waiting for old async command to finish\n"); }
 	while ((result = PQgetResult(imp_dbh->conn)) != NULL) {

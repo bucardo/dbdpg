@@ -1,7 +1,7 @@
 use strict;
-use Test::More tests => 28;
+use Test::More tests => 31;
 
-use DBD::Pg qw(:pg_types);
+use DBD::Pg qw(:pg_types :async);
 
 ## Should match the list in Pg.xs
 
@@ -38,4 +38,8 @@ ok(PG_CIRCLE    == 718,  'PG_CIRCLE returns a correct value');
 
 ok(PG_OID       == 26,   'PG_OID returns a correct value');
 ok(PG_TID       == 27,   'PG_TID returns a correct value');
+
+is(PG_ASYNC,           1, 'PG_ASYNC returns a correct value');
+is(PG_OLDQUERY_CANCEL, 2, 'PG_OLDQUERY_CANCEL returns a correct value');
+is(PG_OLDQUERY_WAIT,   4, 'PG_OLDQUERY_WAIT returns a correct value');
 

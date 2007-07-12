@@ -26,7 +26,7 @@ use 5.006001;
 
 	%EXPORT_TAGS = 
 		(
-		 async => [qw(DBDPG_ASYNC DBDPG_OLDQUERY_CANCEL DBDPG_OLDQUERY_WAIT)],
+		 async => [qw(PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT)],
 		 pg_types => [qw(
 			PG_BOOL PG_BYTEA PG_CHAR PG_INT8 PG_INT2 PG_INT4 PG_TEXT PG_OID PG_TID
 			PG_FLOAT4 PG_FLOAT8 PG_ABSTIME PG_RELTIME PG_TINTERVAL PG_BPCHAR
@@ -42,7 +42,7 @@ use 5.006001;
 	}
 	$DBDPG_DEFAULT = DBD::Pg::DefaultValue->new();
 	Exporter::export_ok_tags('pg_types', 'async');
-	@EXPORT = qw($DBDPG_DEFAULT DBDPG_ASYNC DBDPG_OLDQUERY_CANCEL DBDPG_OLDQUERY_WAIT);
+	@EXPORT = qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT);
 
 	require_version DBI 1.45;
 
@@ -3102,7 +3102,7 @@ sent asynchronously. The basic usage is as follows:
   use DBD::Pg ':async';
 
   print "Async do() example:\n";
-  $dbh->do("SELECT long_running_query()", {pg_async => DBDPG_ASYNC});
+  $dbh->do("SELECT long_running_query()", {pg_async => PG_ASYNC});
   do_something_else();
   {
     if ($dbh->pg_ready()) {
@@ -3118,11 +3118,11 @@ sent asynchronously. The basic usage is as follows:
   }
 
   print "Async prepare/execute example:\n";
-  $sth = $dbh->prepare("SELECT long_running_query(1)", {pg_async => ASYNC});
+  $sth = $dbh->prepare("SELECT long_running_query(1)", {pg_async => PG_ASYNC});
   $sth->execute();
 
   ## Changed our mind, cancel and run again:
-  $sth = $dbh->prepare("SELECT 678", {pg_async => DBDPG_ASYNC + DBDPG_OLDQUERY_CANCEL});
+  $sth = $dbh->prepare("SELECT 678", {pg_async => PG_ASYNC + PG_OLDQUERY_CANCEL});
   $sth->execute();
 
   do_something_else();
@@ -3148,18 +3148,18 @@ makes your script more readable.
 
 =over 4
 
-=item DBDPG_ASYNC
+=item PG_ASYNC
 
 This is a constant for the number 1. It is passed to either the do() or the prepare() method as a value 
 to the pg_async key and indicates that the query should be sent asynchronously.
 
-=item DBDPG_OLDQUERY_CANCEL
+=item PG_OLDQUERY_CANCEL
 
 This is a constant for the number 2. When passed to either the do() or the prepare method(), it causes any 
 currently running asynchronous query to be cancelled and rolled back. It has no effect if no asynchronous 
 query is currently running.
 
-=item DBDPG_OLDQUERY_WAIT
+=item PG_OLDQUERY_WAIT
 
 This is a constant for the number 4. When passed to either the do() or the prepare method(), it waits for any 
 currently running asynchronous query to complete. It has no effect if there is no asynchronous query currently running.
@@ -3218,7 +3218,7 @@ long-running query.
   my $dbh = DBI->connect('dbi:Pg:dbname=postgres', 'postgres', '', {AutoCommit=>0,RaiseError=>1});
 
   ## Kick off a long running query on the first database:
-  my $sth = $dbh->prepare("SELECT pg_sleep(?)", {pg_async => DBDPG_ASYNC});
+  my $sth = $dbh->prepare("SELECT pg_sleep(?)", {pg_async => PG_ASYNC});
   $sth->execute(5);
 
   ## While that is running, do some other things
@@ -3256,8 +3256,8 @@ as you don't need it anymore.
 
   $SQL = "SELECT count(*) FROM largetable WHERE flavor='blueberry'";
 
-  my $sth1 = $dbhslave1->prepare($SQL, {pg_async => DBDPG_ASYNC});
-  my $sth2 = $dbhslave2->prepare($SQL, {pg_async => DBDPG_ASYNC});
+  my $sth1 = $dbhslave1->prepare($SQL, {pg_async => PG_ASYNC});
+  my $sth2 = $dbhslave2->prepare($SQL, {pg_async => PG_ASYNC});
 
   $sth1->execute();
   $sth2->execute();
