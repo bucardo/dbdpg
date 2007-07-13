@@ -1973,7 +1973,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 	}
 	else { /* We have a number */	
 		if ('$' == *name)
-			*name++;
+			name++;
 		phnum = atoi(name);
 		if (phnum < 1 || phnum > imp_sth->numphs)
 			croak("Cannot bind unknown placeholder %d (%s)", phnum, neatsvpv(ph_name,0));
