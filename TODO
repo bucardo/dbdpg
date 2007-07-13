@@ -16,4 +16,3 @@ TODO:
 - Allow user callbacks to quote user-defined types?
 - Rename functions and add defines to avoid problems with static linking of multi DBDs
 - Move to the Module::Build system
-- Support asynchronous queries
