@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.50
+	- Complain loudly and fail to proceed if Makefile.PL finds no -lpq [GSM]
 	- Fix META.yml file. (CPAN bug #25759) [GSM]
 	- Force column names to respect utf8-ness. Per report from Ch Lamprect. [GSM]
 	- Add support for asynchronous queries. [GSM]

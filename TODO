@@ -1,7 +1,6 @@
 TODO: 
 
 - Play nicely with standard_confirming_strings (CPAN bug #27538)
-- Catch no -lpq when compiling early and complain loudly.
 - Use WITH HOLD for cursor work
 - Start testing with a thread-enabled Perl.
 - Add array OID types
