@@ -1026,14 +1026,9 @@ use 5.006001;
 		}
 		else {
 			# Default SQL
-			my $has_objsubid = '';
-			my $objid_join = '';
 			my $showtablespace = '';
 			my @search;
-			$has_objsubid = "AND d.objsubid = 0";
-			$objid_join = "c.relfilenode = d.objoid";
 			$showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(t.spclocation) AS "pg_tablespace_location"';
-			$objid_join = "c.oid = d.objoid AND c.tableoid = d.classoid";
 
 			## If the schema or table has an underscore or a %, use a LIKE comparison
 			if (defined $schema and length $schema) {
@@ -1068,7 +1063,7 @@ use 5.006001;
 					 , d.description AS "REMARKS" $showtablespace
 				FROM pg_catalog.pg_class AS c
 					LEFT JOIN pg_catalog.pg_description AS d
-						ON ($objid_join $has_objsubid)
+						ON (c.oid = d.objoid AND c.tableoid = d.classoid AND d.objsubid = 0)
 					LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
 					LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)
 				WHERE $whereclause
