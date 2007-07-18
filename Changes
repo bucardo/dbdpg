@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 1.50
+	- Fix META.yml file. (CPAN bug #25759) [GSM]
 	- Force column names to respect utf8-ness. Per report from Ch Lamprect. [GSM]
 	- Add support for asynchronous queries. [GSM]
 	- Make minimum supported server 7.4. [GSM]
