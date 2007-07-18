@@ -1,5 +1,6 @@
 TODO: 
 
+- Catch no -lpq when compiling early and complain loudly.
 - Use WITH HOLD for cursor work
 - Start testing with a thread-enabled Perl.
 - Add array OID types
