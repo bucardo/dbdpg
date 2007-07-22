@@ -468,6 +468,11 @@ Abbreviations are encouraged, but be consistent throughout the file.
 tag with an appropriate message if a test does not work on a particular version of 
 something (see 20savepoints.t for an example).
 
+* When developing a new test, or just sorting out an issue with an existing one, 
+set the environment variable DBDPG_QUICKTEST to true, and the testing will bail 
+out at the start of 00basic.t. This allows you to run tests starting with 000 without 
+going through all the tests.
+
 
 =====================
 == Version Numbers ==
@@ -555,7 +560,7 @@ http://search.cpan.org/~dbdpg/
 
 * Update the Changes file
 
-The best way to do this (other than doing it as you go along) is to check the cvs logs. 
+The best way to do this (other than doing it as you go along) is to check the subversion logs. 
 For example, to grab all changes made since revision 1.43 and save it to a file:
 
 cvs log -rRel-1_43: * > all_logs.tmp

@@ -7,7 +7,7 @@ use Test::More tests => 3;
 use strict;
 
 ## For quick testing, put new tests as 000xxx.t and set this:
-if (exists $ENV{DBDPG_QUICKTEST}) {
+if (exists $ENV{DBDPG_QUICKTEST} and $ENV{DBDPG_QUICKTEST}) {
 	BAIL_OUT "Stopping due to DBDPG_QUICKTEST being set";
 }
 
