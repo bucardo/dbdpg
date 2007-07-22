@@ -218,6 +218,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
  	imp_dbh->prepare_now    = DBDPG_FALSE;
 	imp_dbh->done_begin     = DBDPG_FALSE;
 	imp_dbh->dollaronly     = DBDPG_FALSE;
+	imp_dbh->expand_array   = DBDPG_TRUE;
 	imp_dbh->pid_number     = getpid();
 	imp_dbh->prepare_number = 1;
 	imp_dbh->copystate      = 0;
@@ -644,12 +645,14 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 #endif
 		break;
 
-	case 15: /* pg_default_port pg_async_status */
+	case 15: /* pg_default_port pg_async_status pg_expand_array */
 
 		if (strEQ("pg_default_port", key))
 			retsv = newSViv((IV) PGDEFPORT );
 		else if (strEQ("pg_async_status", key))
 			retsv = newSViv((IV)imp_dbh->async_status);
+		else if (strEQ("pg_expand_array", key))
+			retsv = newSViv((IV)imp_dbh->expand_array);
 		break;
 
 	case 17: /* pg_server_prepare  pg_server_version */
@@ -737,6 +740,13 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			return 1;
 		}
 #endif
+
+	case 15: /* pg_expand_array */
+
+		if (strEQ("pg_expand_array", key)) {
+			imp_dbh->expand_array = newval ? DBDPG_TRUE : DBDPG_FALSE;
+			return 1;
+		}
 
 	case 17: /* pg_server_prepare */
 
@@ -1929,6 +1939,7 @@ static int dbd_st_prepare_statement (SV * sth, imp_sth_t * imp_sth)
 int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV sql_type, SV * attribs, int is_inout, IV maxlen)
 {
 
+	D_imp_dbh_from_sth;
 	char * name = Nullch;
 	STRLEN name_len;
 	ph_t * currph = NULL;
@@ -1937,6 +1948,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 	bool   reprepare = DBDPG_FALSE;
 	int    pg_type = 0;
 	char * value_string = NULL;
+	bool   is_array = DBDPG_FALSE;
 
    	maxlen = 0; /* not used, this makes the compiler happy */
 
@@ -2015,9 +2027,17 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 			currph->iscurrent = DBDPG_TRUE;
 			imp_sth->has_current = DBDPG_TRUE;
 		}
+		else if (SvTYPE(SvRV(newvalue)) == SVt_PVAV) {
+			SV * quotedval;
+			quotedval = pg_stringify_array(newvalue,",",imp_dbh->pg_server_version);
+			currph->valuelen = sv_len(quotedval);
+			Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
+			currph->value = SvPVutf8_nolen(quotedval);
+			currph->bind_type = pg_type_data(CSTRINGARRAYOID);
+			is_array = DBDPG_TRUE;
+		}
 		else {
-			croak("Cannot bind a reference (%s) (%s) (%d) type=%d %d %d %d", neatsvpv(newvalue,0), SvAMAGIC(newvalue),
-				  SvTYPE(SvRV(newvalue)) == SVt_PVAV ? 1 : 0, SvTYPE(newvalue), SVt_PVAV, SVt_PV, 0);
+			croak("Cannot bind a reference\n");
 		}
 	}
 	if (dbis->debug >= 5) {
@@ -2026,7 +2046,16 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: Bind attribs (%s)", neatsvpv(attribs,0));
 		}
 	}
-	
+
+	/* We ignore attribs for these special cases */
+	if (currph->isdefault || currph->iscurrent || is_array) {
+		if (NULL == currph->bind_type) {
+			imp_sth->numbound++;
+			currph->bind_type = pg_type_data(UNKNOWNOID);
+		}
+		return 1;
+	}
+
 	/* Check for a pg_type argument (sql_type already handled) */
 	if (attribs) {
 		if((svp = hv_fetch((HV*)SvRV(attribs),"pg_type", 7, 0)) != NULL)
@@ -2080,9 +2109,6 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 			imp_sth->has_binary = DBDPG_TRUE;
 	}
 
-	if (currph->isdefault || currph->iscurrent)
-		return 1;
-
 	/* convert to a string ASAP */
 	if (!SvPOK(newvalue) && SvOK(newvalue)) {
 		(void)sv_2pv(newvalue, &na);
@@ -2125,6 +2151,134 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 	return 1;
 
 } /* end of dbd_bind_ph */
+
+/* ================================================================== */
+SV * pg_stringify_array(SV *input, const char * array_delim, int server_version) {
+
+	AV * toparr;
+	AV * currarr;
+	AV * lastarr;
+	int done;
+	int array_depth = 0;
+	int array_items;
+	int inner_arrays = 0;
+	int xy, yz;
+	SV * svitem;
+	char * string;
+	STRLEN svlen;
+	SV * value;
+
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_stringify_array\n");
+
+	toparr = (AV *) SvRV(input);
+	value = newSVpv("{", 1);
+
+	/* Empty arrays are easy */
+	if (av_len(toparr) < 0) {
+		av_clear(toparr);
+		sv_catpv(value, "}");
+		return value;
+	}
+
+	done = 0;
+	currarr = lastarr = toparr;
+	while (!done) {
+		/* Grab the first item of the current array */
+		svitem = *av_fetch(currarr, 0, 0);
+
+		/* If a ref, die if not an array, else keep descending */
+		if (SvROK(svitem)) {
+			if (SvTYPE(SvRV(svitem)) != SVt_PVAV)
+				croak("Arrays must contain only scalars and other arrays");
+			array_depth++;
+
+			/* Squirrel away this level before we leave it */
+			lastarr = currarr;
+
+			/* Set the current array to this item */
+			currarr = (AV *)SvRV(svitem);
+
+			/* If this is an empty array, stop here */
+			if (av_len(currarr) < 0)
+				done = 1;
+		}
+		else
+			done = 1;
+	}
+
+	inner_arrays = array_depth ? 1+av_len(lastarr) : 0;
+
+	/* How many items are in each inner array? */
+	array_items = array_depth ? (1+av_len((AV*)SvRV(*av_fetch(lastarr,0,0)))) : 1+av_len(lastarr);
+
+	for (xy=1; xy < array_depth; xy++) {
+		sv_catpv(value, "{");
+	}
+
+	for (xy=0; xy < inner_arrays || !array_depth; xy++) {
+		if (array_depth) {
+			svitem = *av_fetch(lastarr, xy, 0);
+			if (!SvROK(svitem))
+				croak ("Not a valid array!");
+			currarr = (AV*)SvRV(svitem);
+			if (SvTYPE(currarr) != SVt_PVAV)
+				croak("Arrays must contain only scalars and other arrays!");
+			if (1+av_len(currarr) != array_items)
+				croak("Invalid array - all arrays must be of equal size");
+			sv_catpv(value, "{");
+		}
+		for (yz=0; yz < array_items; yz++) {
+			svitem = *av_fetch(currarr, yz, 0);
+
+			if (SvROK(svitem))
+				croak("Arrays must contain only scalars and other arrays");
+
+			if (!SvOK(svitem)) { /* Insert NULL if we can */
+				/* Only version 8.2 and up can handle NULLs in arrays */
+				if (server_version < 80200)
+					croak("Cannot use NULLs in arrays until version 8.2");
+				sv_catpv(value, "NULL"); /* Beware of array_nulls config param! */
+			}
+			else {
+				sv_catpv(value, "\"");
+				string = SvPV(svitem, svlen);
+				while (svlen--) {
+					sv_catpvf(value, "%s%c", /* upgrades to utf8 for us */
+							  '\"'==*string ? "\\" : 
+							  '\\'==*string ? "\\\\" :
+							  "", *string);
+					string++;
+				}
+				sv_catpv(value, "\"");
+			}
+
+			if (yz < array_items-1)
+				sv_catpv(value, array_delim);
+		}
+
+		if (!array_items) {
+			sv_catpv(value, "\"\"");
+		}
+
+		sv_catpv(value, "}");
+		if (xy < inner_arrays-1)
+			sv_catpv(value, array_delim);
+		if (!array_depth)
+			break;
+	}
+
+	for (xy=0; xy<array_depth; xy++) {
+		sv_catpv(value, "}");
+	}
+
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_stringify_array returns %s\n", neatsvpv(value,0));
+
+	return value;
+
+} /* end of pg_stringify_array */
+
 
 
 /* ================================================================== */

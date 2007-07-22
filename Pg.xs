@@ -61,6 +61,8 @@ constant(name=Nullch)
 	PG_OID       = 26
 	PG_TID       = 27
 
+	PG_INT4ARRAY = 1007
+
 	PG_ASYNC           = PG_ASYNC
 	PG_OLDQUERY_CANCEL = PG_OLDQUERY_CANCEL
 	PG_OLDQUERY_WAIT   = PG_OLDQUERY_WAIT
@@ -89,23 +91,30 @@ MODULE=DBD::Pg	PACKAGE = DBD::Pg::db
 
 SV*
 quote(dbh, to_quote_sv, type_sv=Nullsv)
+    SV* dbh
 	SV* to_quote_sv
 	SV* type_sv
 
 	CODE:
 	{
+		D_imp_dbh(dbh);
 		sql_type_info_t *type_info;
 		char *to_quote;
 		char *quoted;
 		STRLEN len=0;
 		STRLEN retlen=0;
 		SV **svp;
-			
+
 		SvGETMAGIC(to_quote_sv);
 
 		/* Null is always returned as "NULL", so we can ignore any type given */
 		if (!SvOK(to_quote_sv)) {
 			RETVAL = newSVpvn("NULL", 4);
+		}
+		else if (SvROK(to_quote_sv)) {
+			if (SvTYPE(SvRV(to_quote_sv)) != SVt_PVAV)
+				croak("Cannot quote a reference");
+			RETVAL = pg_stringify_array(to_quote_sv, ",", imp_dbh->pg_server_version);
 		}
 		else {
 

@@ -111,9 +111,6 @@ use 5.006001;
 
 	use strict;
 
-	our $CATALOG = 123; ## Set later on, this is to catch seriously misplaced code
-
-
 	## Returns an array of formatted database names from the pg_database table
 	sub data_sources {
 		my $drh = shift;
@@ -2549,7 +2546,8 @@ Implemented by DBI, no driver-specific impact.
 
 This module implements its own C<quote> method. In addition to the DBI method it
 also doubles the backslash, because PostgreSQL treats a backslash as an escape
-character.
+character. You may also quote arrayrefs and received a string suitable for 
+passing into Postgres array columns.
 
 B<NOTE:> The undocumented (and invalid) support for the C<SQL_BINARY> data
 type is officially deprecated. Use C<PG_BYTEA> with C<bind_param()> instead:
@@ -2841,6 +2839,9 @@ to NULL in the database. Setting the bind_value to $DBDPG_DEFAULT is equivalent
 to sending the literal string 'DEFAULT' to the backend. Note that using this 
 option will force server-side prepares off until such time as PostgreSQL 
 supports using DEFAULT in prepared statements.
+
+DBD::Pg also supports passing in arrays to execute: simply pass in an arrayref, 
+and DBD::Pg will flatten it into a string suitable for input on the backend.
 
 =item B<execute_array>
 
@@ -3279,6 +3280,20 @@ as you don't need it anymore.
     $sth2->pg_result();
     $count = $sth2->fetchall_arrayref()->[0][0];
   }
+
+=head2 Array support
+
+DBD::Pg allows arrays (as arrayrefs) to be passed in to both 
+the quote() and the execute() functions. In both cases, the array is 
+flattened into a string representing a Postgres array.
+
+When fetching rows from a table that contains a column with an 
+array type, the result will be passed back to your script as an arrayref.
+
+To turn off the automatic parsing of returned arrays into arrayrefs, 
+you can set the variable "pg_expand_array", which is true by default.
+
+  $dbh->{pg_expand_array} = 0;
 
 
 =head2 COPY support

@@ -35,7 +35,7 @@ static sql_type_info_t pg_types[] = {
 	{CIDOID, "cid", null_quote, null_dequote, {SQL_INTEGER}, DBDPG_TRUE},
 	{CIDROID, "IP - cidr", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{CIRCLEOID, "circle", quote_circle, dequote_string, {0}, DBDPG_TRUE},
-	{CSTRINGARRAYOID, "cstringarray", 0, 0, {0}, DBDPG_FALSE},
+	{CSTRINGARRAYOID, "cstringarray", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{CSTRINGOID, "cstring", null_quote, null_dequote, {0}, DBDPG_TRUE},
 	{DATEOID, "date", null_quote, null_dequote, {SQL_TYPE_DATE}, DBDPG_TRUE},
 	{FLOAT4ARRAYOID, "float4array", 0, 0, {0}, DBDPG_FALSE},
@@ -172,6 +172,7 @@ sql_type_info_t* pg_type_data(sql_type)
 }
 
 static sql_type_info_t sql_types[] = {
+	{SQL_ARRAY, "SQL_ARRAY", null_quote, null_dequote, {ANYARRAYOID}, DBDPG_TRUE},
 	{SQL_BIT, "SQL_BIT", null_quote, null_dequote, {BITOID}, DBDPG_TRUE},
 	{SQL_BOOLEAN, "SQL_BOOLEAN", quote_bool, dequote_bool, {BOOLOID}, DBDPG_TRUE},
 	{SQL_CHAR, "SQL_CHAR", quote_string, dequote_char, {BPCHAROID}, DBDPG_TRUE},
@@ -187,6 +188,7 @@ static sql_type_info_t sql_types[] = {
 	{SQL_BIGINT, "SQL_BIGINT", null_quote, null_dequote, {INT8OID}, DBDPG_TRUE},
 	{SQL_INTERVAL, "SQL_INTERVAL", quote_string, dequote_string, {INTERVALOID}, DBDPG_TRUE},
 	{SQL_DECIMAL, "SQL_DECIMAL", null_quote, null_dequote, {NUMERICOID}, DBDPG_TRUE},
+	{SQL_LONGVARCHAR, "SQL_LONGVARCHAR", quote_string, dequote_string, {TEXTOID}, DBDPG_TRUE},
 	{SQL_TYPE_TIME, "SQL_TYPE_TIME", null_quote, null_dequote, {TIMEOID}, DBDPG_TRUE},
 	{SQL_TIMESTAMP, "SQL_TIMESTAMP", quote_string, dequote_string, {TIMESTAMPOID}, DBDPG_TRUE},
 	{SQL_TYPE_TIMESTAMP, "SQL_TYPE_TIMESTAMP", quote_string, dequote_string, {TIMESTAMPOID}, DBDPG_TRUE},
@@ -198,27 +200,29 @@ static sql_type_info_t sql_types[] = {
 sql_type_info_t* sql_type_data(sql_type)
 	int sql_type;
 {	switch(sql_type) {
-		case SQL_BIT:                          return &sql_types[0];
-		case SQL_BOOLEAN:                      return &sql_types[1];
-		case SQL_CHAR:                         return &sql_types[2];
-		case SQL_VARBINARY:                    return &sql_types[3];
-		case SQL_TYPE_DATE:                    return &sql_types[4];
-		case SQL_REAL:                         return &sql_types[5];
-		case SQL_NUMERIC:                      return &sql_types[6];
-		case SQL_FLOAT:                        return &sql_types[7];
-		case SQL_DOUBLE:                       return &sql_types[8];
-		case SQL_SMALLINT:                     return &sql_types[9];
-		case SQL_TINYINT:                      return &sql_types[10];
-		case SQL_INTEGER:                      return &sql_types[11];
-		case SQL_BIGINT:                       return &sql_types[12];
-		case SQL_INTERVAL:                     return &sql_types[13];
-		case SQL_DECIMAL:                      return &sql_types[14];
-		case SQL_TYPE_TIME:                    return &sql_types[15];
-		case SQL_TIMESTAMP:                    return &sql_types[16];
-		case SQL_TYPE_TIMESTAMP:               return &sql_types[17];
-		case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE: return &sql_types[18];
-		case SQL_UNKNOWN_TYPE:                 return &sql_types[19];
-		case SQL_VARCHAR:                      return &sql_types[20];
+		case SQL_ARRAY:                        return &sql_types[0];
+		case SQL_BIT:                          return &sql_types[1];
+		case SQL_BOOLEAN:                      return &sql_types[2];
+		case SQL_CHAR:                         return &sql_types[3];
+		case SQL_VARBINARY:                    return &sql_types[4];
+		case SQL_TYPE_DATE:                    return &sql_types[5];
+		case SQL_REAL:                         return &sql_types[6];
+		case SQL_NUMERIC:                      return &sql_types[7];
+		case SQL_FLOAT:                        return &sql_types[8];
+		case SQL_DOUBLE:                       return &sql_types[9];
+		case SQL_SMALLINT:                     return &sql_types[10];
+		case SQL_TINYINT:                      return &sql_types[11];
+		case SQL_INTEGER:                      return &sql_types[12];
+		case SQL_BIGINT:                       return &sql_types[13];
+		case SQL_INTERVAL:                     return &sql_types[14];
+		case SQL_DECIMAL:                      return &sql_types[15];
+		case SQL_LONGVARCHAR:                  return &sql_types[16];
+		case SQL_TYPE_TIME:                    return &sql_types[17];
+		case SQL_TIMESTAMP:                    return &sql_types[18];
+		case SQL_TYPE_TIMESTAMP:               return &sql_types[19];
+		case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE: return &sql_types[20];
+		case SQL_UNKNOWN_TYPE:                 return &sql_types[21];
+		case SQL_VARCHAR:                      return &sql_types[22];
 		default: return NULL;
 	}
 }
@@ -415,7 +419,7 @@ OIDOID, oid, null_quote, null_dequote, SQL_INTEGER, 0
 VARCHAROID, varchar, quote_string, dequote_string, SQL_VARCHAR, 1
 BPCHAROID, bpchar, quote_string, dequote_char, SQL_CHAR, 1
 NAMEOID, name, null_quote, null_dequote, SQL_VARCHAR, 0
-TEXTOID, text, quote_string, dequote_string, SQL_LONGVARCHAR, 0
+TEXTOID, text, quote_string, dequote_string, SQL_LONGVARCHAR, 1
 
 ## Geometric types
 POINTOID, point, quote_geom, dequote_string, 0, 0
@@ -447,7 +451,7 @@ TIMETZOID, timestamptz, null_quote, null_dequote, SQL_TYPE_TIME_WITH_TIMEZONE, 0
 ## Others
 ABSTIMEOID, abstime, null_quote, null_dequote, 0, 0
 ACLITEMOID, aclitem, null_quote, null_dequote, 0, 0
-ANYARRAYOID, anyarray, null_quote, null_dequote, SQL_ARRAY, 0
+ANYARRAYOID, anyarray, null_quote, null_dequote, SQL_ARRAY, 1
 ANYELEMENTOID, anyelement, 0, 0, 0, 0
 ANYENUMOID, anyenum, 0, 0, 0, 0
 ANYNONARRAYOID, anynonarray, 0, 0, 0, 0
@@ -456,7 +460,7 @@ BITOID, bitstring, null_quote, null_dequote, SQL_BIT, 1
 CASHOID, money, null_quote, null_dequote, 0, 0
 CIDROID, IP - cidr, null_quote, null_dequote, 0, 0
 CSTRINGOID, cstring, null_quote, null_dequote, 0, 0
-CSTRINGARRAYOID, cstringarray, 0, 0, 0, 0
+CSTRINGARRAYOID, cstringarray, null_quote, null_dequote, 0, 0
 FLOAT4ARRAYOID, float4array, 0, 0, 0, 0
 INETOID, IP address, null_quote, null_dequote, 0, 0
 INT2VECTOROID, int28, null_quote, null_dequote, 0, 0

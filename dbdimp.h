@@ -25,6 +25,7 @@ struct imp_dbh_st {
 	bool    prepare_now;       /* force immediate prepares, even with placeholders. Set by user, default is 0 */
 	bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */
 	bool    dollaronly;        /* Only consider $1, $2 ... as valid placeholders */
+	bool    expand_array;      /* Transform arrays from the db into Perl arrays? Default is 1 */
 
 	int     pg_protocol;       /* value of PQprotocolVersion, usually 0, 2, or 3 */
 	int     pg_server_version; /* Server version e.g. 80100 */
@@ -131,6 +132,7 @@ int dbdpg_ready (SV *dbh, imp_dbh_t *imp_dbh);
 int dbdpg_result (SV *dbh, imp_dbh_t *imp_dbh);
 int dbdpg_cancel (SV *h, imp_dbh_t *imp_dbh);
 int dbdpg_cancel_sth (SV *sth, imp_sth_t *imp_sth);
+SV * pg_stringify_array(SV * input, const char * array_delim, int server_version);
 
 /* end of dbdimp.h */
 
