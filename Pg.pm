@@ -287,7 +287,7 @@ use 5.006001;
 			## We have at least one with a default value. See if we can determine sequences
 			my @def;
 			for (@$info) {
-				next unless $_->[2] =~ /^nextval\('([^']+)'::/o;
+				next unless $_->[2] =~ /^nextval\(+'([^']+)'::/o;
 				push @$_, $1;
 				push @def, $_;
 			}
