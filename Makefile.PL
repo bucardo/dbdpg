@@ -67,7 +67,7 @@ if ($serverversion < 1) {
 	die "Could not determine the PostgreSQL library version.\n".
 		"Please ensure that a valid path is given to the 'pg_config' command,\n".
 			"either manually or by setting the environment variables\n".
-				"POSTGRES_DATA, PSOTGRES_INCLUDE, and POSTGRES_LIB\n";
+				"POSTGRES_DATA, POSTGRES_INCLUDE, and POSTGRES_LIB\n";
 }
 
 if ($os =~ /Win32/) {
