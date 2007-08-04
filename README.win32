@@ -1,6 +1,9 @@
 
 How to get a working DBD::Pg on Windows
 
+Warning! This information may be outdated. Please ask on the mailing list for help 
+if you encounter any problems.
+
 Start with:
 MS VC++.Net Standard Edition
 MS VC++ Toolkit 2003
@@ -93,5 +96,5 @@ which you can invoke via "nmake test"
 Then install using "nmake install"
 
 If you have any problems or questions, please email the DBD::Pg 
-mailing list: dbdpg-general@gborg.postgresql.org
+mailing list: dbd-pg@perl.org
 
