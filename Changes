@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-1.50
+2.0.0
+	- Change versioning system to three numbered system.
 	- Add support for arrays: can pass in arrayrefs to execute, and 
 		they are automatically returned as arrays when fetching. [GSM]
 	- Overhauled the data type system. [GSM]

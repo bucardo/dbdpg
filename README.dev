@@ -478,17 +478,17 @@ going through all the tests.
 == Version Numbers ==
 =====================
 
-Version numbers are constrained by the Perl CPAN system, in which there is a major 
-and a minor number. Generally, we increment the minor version by one for each new 
-release. More major releases can bump up to the next "tens" place, e.g. from 1.33 
-to 1.40. Very major releases can bump the major number, but this should be an 
-extremely rare event. When in doubt, ask on the list. Any bump other than a single 
-increment should always be discussed there first anyways.
+Version numbers follow the Postgres convention: major, minor, and revision. (Note: older versions 
+of DBD::Pg used a two-number system up until version 1.49, after which it switched to 2.0.0).
+The major number should very, very rarely change, and is saved for the truly major changes 
+(e.g. those that may cause backwards compatibility problems). The minor revision is used to 
+indicate a change in functionality, new features, etc. The revision number is used for small 
+tweaks and bug fixes, and must be completely compatible with the version before it.
 
 Beta versions are simply the number *before* the new anticipated number, plus an 
 underscore to indicate the beta version. For example, if the current version is 
-1.41 and you are making betas for an upcoming 1.42 version, you should name the 
-beta version as 1.41_1. A second beta would be 1.41_2, etc.
+2.1.4 and you are making betas for an upcoming 2.2.4 version, you should name the 
+beta version as 2.2.4_1. A second beta would be 2.2.4_2, etc.
 
 Version numbers are currently set in five files:
 
