@@ -1,8 +1,6 @@
 #!perl -w
 
-# Test array stuff - currently not working!
-
-use Test::More qw/no_plan/;
+use Test::More;
 use DBI qw/:sql_types/;
 use DBD::Pg qw/:pg_types/;
 use strict;
@@ -12,7 +10,7 @@ $|=1;
 my ($sth,$result);
 
 if (defined $ENV{DBI_DSN}) {
-#	plan tests => 18;
+	plan tests => 224;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -33,7 +31,6 @@ my $cleararray = $dbh->prepare($SQL);
 $SQL = "INSERT INTO dbd_pg_test(id,pname,testarray) VALUES (99,'Array Testing',?)";
 my $addarray = $dbh->prepare($SQL);
 
-$dbh->{pg_flatten_arrays} = 0;
 $SQL = "SELECT testarray FROM dbd_pg_test WHERE pname= 'Array Testing'";
 my $getarray = $dbh->prepare($SQL);
 
@@ -42,19 +39,23 @@ q![]
 {}
 Empty array
 
-[[]]
+['']
+{""}
+Empty array
+
+[['']]
 {{""}}
 Empty array with two levels
 
-[[[]]]
+[[['']]]
 {{{""}}}
 Empty array with three levels
 
-[[],[]]
+[[''],['']]
 {{""},{""}}
 Two empty arrays
 
-[[[],[],[]]]
+[[[''],[''],['']]]
 {{{""},{""},{""}}}
 Three empty arrays at second level
 
@@ -152,11 +153,13 @@ NEED 80200: Simple undef test
 
 [[1,2],[undef,3],["four",undef],[undef,undef]]
 {{1,2},{NULL,3},{four,NULL},{NULL,NULL}} quote: {{"1","2"},{NULL,"3"},{"four",NULL},{NULL,NULL}}
-MEED 80200: Multiple undef test
+NEED 80200: Multiple undef test
 
 !;
 
 ## Note: We silently allow things like this: [[[]],[]]
+
+$dbh->{pg_expand_array} = 0;
 
 for my $test (split /\n\n/ => $array_tests) {
 	next unless $test =~ /\w/;
@@ -207,17 +210,233 @@ for my $test (split /\n\n/ => $array_tests) {
 }
 
 
+## Same thing, but expand the arrays
+$dbh->{pg_expand_array} = 1;
+
+for my $test (split /\n\n/ => $array_tests) {
+	next unless $test =~ /\w/;
+	my ($input,$expected,$msg) = split /\n/ => $test;
+	my $qexpected = $expected;
+	if ($expected =~ s/\s*quote:\s*(.+)//) {
+		$qexpected = $1;
+	}
+
+	if ($msg =~ s/NEED (\d+):\s*//) {
+		my $ver = $1;
+		if ($pgversion < $ver) {
+		  SKIP: {
+				skip 'Cannot test NULL arrays unless version 8.2 or better', 4;
+			}
+			next;
+		}
+	}
+
+	$cleararray->execute();
+	eval {
+		$addarray->execute(eval $input);
+	};
+	if ($expected =~ /error:\s+(.+)/i) {
+		like($@, qr{$1}, "Array failed : $msg : $input");
+	}
+	else {
+		is($@, q{}, "Array worked : $msg : $input");
+		$getarray->execute();
+		$result = $getarray->fetchall_arrayref()->[0][0];
+		$qexpected =~ s/{}/{''}/;
+		$qexpected =~ y/{}/[]/;
+		$qexpected =~ s/NULL/undef/g;
+		$qexpected =~ s/\\\\n/\\n/g;
+		$qexpected =~ s/\\\\"/\\"/g;
+		$qexpected =~ s/\\\\i/\\i/g;
+		$expected = eval $qexpected;
+		$@ and BAIL_OUT "Eval failed ($@) for $expected\n";
+		is_deeply($result, $expected, "Correct array inserted: $msg : $input");
+	}
+
+}
+
 $cleararray->execute();
-$addarray->execute([123]);
-$SQL = "SELECT testarray FROM dbd_pg_test WHERE pname = 'Array Testing'";
-$sth = $dbh->prepare($SQL);
-$sth->execute();
-$result = $sth->fetchall_arrayref()->[0][0];
 
-#is($result, [123], qq{Arrays rock});
+## Pure string to array conversion testing
 
+## Find a valid role to use
+$SQL = "SELECT rolname FROM pg_roles LIMIT 1";
+my $role = $dbh->selectall_arrayref($SQL)->[0][0];
 
+my $array_tests_out = 
+qq!1
+[1]
+Simple test of single array element
 
-## Now the other direction!
+1,2
+[1,2]
+Simple test of multiple array elements
+
+1,2,3
+[1,2,3]
+Simple test of multiple array elements
+
+'a','b'
+['a','b']
+Array with text items
+
+0.1,2.4
+[0.1,2.4]
+Array with numeric items
+
+'My"lrd','b','c'
+['My"lrd','b','c']
+Array with escaped items
+
+[1]
+[[1]]
+Multi-level integer array
+
+[[1,2]]
+[[[1,2]]]
+Multi-level integer array
+
+[[1],[2]]
+[[[1],[2]]]
+Multi-level integer array
+
+[[1],[2],[3]]
+[[[1],[2],[3]]]
+Multi-level integer array
+
+[[[1]],[[2]],[[3]]]
+[[[[1]],[[2]],[[3]]]]
+Multi-level integer array
+
+'abc',NULL
+['abc',undef]
+NEED 80200: Array with a null
+
+['abc','NULL',NULL,NULL,123::text]
+[['abc','NULL',undef,undef,'123']]
+NEED 80200: Array with many nulls and a quoted int
+
+['abc','']
+[['abc','']]
+Final item is empty
+
+1,NULL
+[1,undef]
+NEED 80200: Last item is NULL
+
+NULL
+[undef]
+NEED 80200: Only item is NULL
+
+NULL,NULL
+[undef,undef]
+NEED 80200: Two NULL items only
+
+NULL,NULL,NULL
+[undef,undef,undef]
+NEED 80200: Three NULL items only
+
+[123,NULL,456]
+[[123,undef,456]]
+NEED 80200: Middle item is NULL
+
+NULL,'abc'
+[undef,'abc']
+NEED 80200: First item is NULL
+
+'a','NULL'
+['a',"NULL"]
+Fake NULL is text
+
+[[[[[1,2,3]]]]]
+[[[[[[1,2,3]]]]]]
+Deep nesting
+
+[[[[[1],[2],[3]]]]]
+[[[[[[1],[2],[3]]]]]]
+Deep nesting
+
+[[[[[1]]],[[[2]]],[[[3]]]]]
+[[[[[[1]]],[[[2]]],[[[3]]]]]]
+Deep nesting
+
+[[[[[1]],[[2]],[[3]]]]]
+[[[[[[1]],[[2]],[[3]]]]]]
+Deep nesting
+
+'$role=ar'::aclitem,'$role=r'::aclitem
+['$role=ar/$role','$role=r/$role']
+Test of aclitem type
+
+1::bool
+['t']
+Test of boolean type
+
+1::bool,0::bool,'true'::boolean
+['t','f','t']
+Test of boolean types
+
+1::oid
+[1]
+Test of oid type - should not quote
+
+1::text
+['1']
+Text number should quote
+
+1,2,3
+[1,2,3]
+Unspecified int should not quote
+
+1::int
+[1]
+Integer number should quote
+
+'(1,2),(4,5)'::box,'(5,3),(4,5)'
+['(4,5),(1,2)','(5,5),(4,3)']
+Type 'box' works
+
+!;
+
+$Data::Dumper::Indent = 0;
+
+## Turn off WARNING from aclitem test
+$dbh->do("SET CLIENT_MIN_MESSAGES = 'ERROR'");
+
+for my $test (split /\n\n/ => $array_tests_out) {
+	next unless $test =~ /\w/;
+	my ($input,$expected,$msg) = split /\n/ => $test;
+	my $qexpected = $expected;
+	if ($expected =~ s/\s*quote:\s*(.+)//) {
+		$qexpected = $1;
+	}
+	if ($msg =~ s/NEED (\d+):\s*//) {
+		my $ver = $1;
+		if ($pgversion < $ver) {
+		  SKIP: {
+				skip 'Cannot test NULL arrays unless version 8.2 or better', 4;
+			}
+			next;
+		}
+	}
+
+	$SQL = qq{SELECT ARRAY[$input]};
+	my $result = '';
+	eval {
+		$result = $dbh->selectall_arrayref($SQL)->[0][0];
+	};
+	if ($result =~ /error:\s+(.+)/i) {
+		like($@, qr{$1}, "Array failed : $msg : $input");
+	}
+	else {
+		is($@, q{}, "Array worked : $msg : $input");
+		$expected = eval $expected;
+		$@ and BAIL_OUT "Eval failed ($@) for $expected\n";
+		## is_deeply does not handle type differences
+		is((Dumper $result), (Dumper $expected), "Array test $msg : $input");
+	}
+
+}
+
 
 ok ($dbh->disconnect, "Disconnect from database");

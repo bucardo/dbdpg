@@ -652,23 +652,23 @@ is_deeply( \%missing, {}, 'DB handle method "foreign_key_info" returns fields re
 $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test1',undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk1 = [
-					 undef,
-					 $schema,
-					 'dbd_pg_test1',
-					 'a',
-					 undef,
-					 $schema,
-					 'dbd_pg_test2',
-					 'f2',
-					 2,
-					 3,
-					 3,
-					 'dbd_pg_test2_fk1',
-					 'dbd_pg_test1_pk',
-					 '7',
-					 'PRIMARY',
-					 'int4',
-					 'int4'
+					 undef, ## Catalog
+					 $schema, ## Schema
+					 'dbd_pg_test1', ## Table
+					 'a', ## Column
+					 undef, ## FK Catalog
+					 $schema, ## FK Schema
+					 'dbd_pg_test2', ## FK Table
+					 'f2', ## FK Table
+					 2, ## Ordinal position
+					 3, ## Update rule
+					 3, ## Delete rule
+					 'dbd_pg_test2_fk1', ## FK name
+					 'dbd_pg_test1_pk',  ## UK name
+					 '7', ## deferability
+					 'PRIMARY', ## unique or primary
+					 'int4', ## uk data type
+					 'int4'  ## fk data type
 					];
 $expected = [$fk1];
 is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good pk');

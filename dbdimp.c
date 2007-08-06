@@ -924,7 +924,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			retsv = newRV(sv_2mortal((SV*)av));
 			while(--fields >= 0) {
 				x = PQftype(imp_sth->result, fields);
-				if (NUMERICOID==x) {
+				if (PG_NUMERIC==x) {
 					x = PQfmod(imp_sth->result, fields)-4;
 					(void)av_store(av, fields, newSViv(x % (x>>16)));
 				}
@@ -1009,11 +1009,11 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			while(--fields >= 0) {
 				x = PQftype(imp_sth->result, fields);
 				switch (x) {
-				case BPCHAROID:
-				case VARCHAROID:
+				case PG_BPCHAR:
+				case PG_VARCHAR:
 					sz = PQfmod(imp_sth->result, fields);
 					break;
-				case NUMERICOID:
+				case PG_NUMERIC:
 					sz = PQfmod(imp_sth->result, fields)-4;
 					if (sz > 0)
 						sz = sz >> 16;
@@ -2033,7 +2033,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 			currph->valuelen = sv_len(quotedval);
 			Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
 			currph->value = SvPVutf8_nolen(quotedval);
-			currph->bind_type = pg_type_data(CSTRINGARRAYOID);
+			currph->bind_type = pg_type_data(PG_CSTRINGARRAY);
 			is_array = DBDPG_TRUE;
 		}
 		else {
@@ -2051,7 +2051,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 	if (currph->isdefault || currph->iscurrent || is_array) {
 		if (NULL == currph->bind_type) {
 			imp_sth->numbound++;
-			currph->bind_type = pg_type_data(UNKNOWNOID);
+			currph->bind_type = pg_type_data(PG_UNKNOWN);
 		}
 		return 1;
 	}
@@ -2094,7 +2094,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
  	}
 	else if (NULL == currph->bind_type) { /* "sticky" data type */
 		/* This is the default type, but we will honor defaultval if we can */
-		currph->bind_type = pg_type_data(UNKNOWNOID);
+		currph->bind_type = pg_type_data(PG_UNKNOWN);
 		if (!currph->bind_type)
 			croak("Default type is bad!!!!???");
 	}
@@ -2105,7 +2105,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		if (imp_sth->prepared_by_us && NULL != imp_sth->prepare_name)
 			reprepare = DBDPG_TRUE;
 		/* Mark this statement as having binary if the type is bytea */
-		if (BYTEAOID==currph->bind_type->type_id)
+		if (PG_BYTEA==currph->bind_type->type_id)
 			imp_sth->has_binary = DBDPG_TRUE;
 	}
 
@@ -2146,7 +2146,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		(void)PerlIO_printf
 			(DBILOGFP, "dbdpg: Placeholder (%s) bound as type (%s) (type_id=%d), length %d, value of (%s)\n",
 			 name, currph->bind_type->type_name, currph->bind_type->type_id, currph->valuelen,
-			 BYTEAOID==currph->bind_type->type_id ? "(binary, not shown)" : value_string);
+			 PG_BYTEA==currph->bind_type->type_id ? "(binary, not shown)" : value_string);
 
 	return 1;
 
@@ -2279,6 +2279,120 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 
 } /* end of pg_stringify_array */
 
+/* ================================================================== */
+SV * pg_destringify_array(char * input, sql_type_info_t * coltype) {
+
+	AV*    av;              /* The main array we are returning a reference to */
+	AV*    newav;           /* Temporary array */
+	AV*    currentav;       /* The current array level */
+	AV*    topav;           /* Where each item starts at */
+	char*  string;
+	STRLEN section_size = 0;
+	bool   in_quote = 0;
+	int    opening_braces = 0;
+	int    closing_braces = 0;
+
+	/*
+	  Note: we don't do careful balance checking here, as this is coming straight from 
+	  the Postgres backend, and we rely on it to give us a sane and balanced structure
+	*/
+
+	/* Eat the opening brace and perform a sanity check */
+	if ('{' != *(input++))
+		croak("Tried to destringify a non-array!: %s", input);
+
+	/* Count how deep this array goes */
+	while ('{' == *input) {
+		opening_braces++;
+		input++;
+	}
+	input -= opening_braces;
+
+	Newx(string, strlen(input), char); /* Freed at end of this function */
+	string[0] = '\0';
+
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_stringify_array: -->%s<-- quote=%c\n", input, coltype->array_delimeter);
+
+	av = currentav = topav = newAV();
+
+	while (*input != '\0') {
+		if (in_quote) {
+			if ('"' == *input) {
+				in_quote = 0;
+				/* String will be stored by following delim or brace */
+				input++;
+				continue;
+			}
+			if ('\\' == *input) { /* Eat backslashes */
+				input++;
+			}
+			string[section_size++] = *input;
+		}
+		else if ('{' == *input) {
+			newav = newAV();
+			av_push(currentav, newRV_noinc((SV*)newav));
+			currentav = newav;
+		}
+		else if (coltype->array_delimeter == *input) {
+		}
+		else if ('}' == *input) {
+		}
+		else if ('"' == *input) {
+			in_quote = 1;
+		}
+		else {
+			string[section_size++] = *input;
+		}
+
+		if ('}' == *input
+			|| (coltype->array_delimeter == *input && '}' != *(input-1))) {
+			string[section_size] = '\0';
+			if (4 == section_size && 0 == strncmp(string, "NULL", 4) && '"' != *(input-1)) {
+				av_push(currentav, &PL_sv_undef);
+			}
+			else {
+				if (1 == coltype->svtype)
+					av_push(currentav, newSViv(SvIV(newSVpvn(string,section_size))));
+				else if (2 == coltype->svtype)
+					av_push(currentav, newSVnv(SvNV(newSVpvn(string,section_size))));
+				else
+					av_push(currentav, newSVpvn(string, section_size));
+			}
+			section_size = 0;
+		}
+
+		/* Handle all touching closing braces */
+		if ('}' == *input) {
+			if (closing_braces) {
+				while ('}' == *input) {
+					input++;
+				}
+			}
+			else {
+				while ('}' == *input) {
+					closing_braces++;
+					input++;
+				}
+				/* Set the new topav if required */
+				if ('\0' != *input && opening_braces > closing_braces) {
+					closing_braces = opening_braces - closing_braces;
+					while (closing_braces--) {
+						topav = (AV*)SvRV(AvARRAY(topav)[0]);
+					}
+				}
+			}
+			currentav = topav;
+		}
+		else {
+			input++;
+		}
+	}
+	Safefree(string);
+
+	return newRV((SV*)av);
+
+} /* end of pg_destringify_array */
 
 
 /* ================================================================== */
@@ -2502,7 +2616,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			Newz(0, paramLengths, (unsigned)imp_sth->numphs, int); /* freed below */
 			Newz(0, paramFormats, (unsigned)imp_sth->numphs, int); /* freed below */
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-				if (BYTEAOID==currph->bind_type->type_id) {
+				if (PG_BYTEA==currph->bind_type->type_id) {
 					paramLengths[x] = (int)currph->valuelen;
 					paramFormats[x] = 1;
 				}
@@ -2797,7 +2911,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 		DBIc_ACTIVE_off(imp_sth);
 		return Nullav; /* we reached the last tuple */
 	}
-	
+
 	av = DBIS->get_fbav(imp_sth);
 	num_fields = AvFILL(av)+1;
 	
@@ -2808,6 +2922,12 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 		Newz(0, imp_sth->type_info, (unsigned)num_fields, sql_type_info_t*); /* freed in dbd_st_destroy */
 		for (i = 0; i < num_fields; ++i) {
 			imp_sth->type_info[i] = pg_type_data((int)PQftype(imp_sth->result, i));
+			if (imp_sth->type_info[i] == NULL) {
+				if (dbis->debug >= 1)
+					(void)PerlIO_printf(DBILOGFP, "dbdpg: Unknown type returned by Postgres: %d. Setting to UNKNOWN\n",
+										PQftype(imp_sth->result, i));
+				imp_sth->type_info[i] = pg_type_data(PG_UNKNOWN);
+			}
 		}
 	}
 	
@@ -2818,25 +2938,32 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: Fetching a field\n");
 
 		sv = AvARRAY(av)[i];
+
 		if (PQgetisnull(imp_sth->result, imp_sth->cur_tuple, i)!=0) {
 			SvROK(sv) ? (void)sv_unref(sv) : (void)SvOK_off(sv);
 		}
 		else {
 			value = (char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
+
 			type_info = imp_sth->type_info[i];
 
-			if (type_info) {
-				type_info->dequote(value, &value_len); /* dequote in place */
-				if (BOOLOID == type_info->type_id && imp_dbh->pg_bool_tf)
-					*value = ('1' == *value) ? 't' : 'f';
+			if (type_info
+				&& 0 == strncmp(type_info->arrayout, "array", 5)
+				&& imp_dbh->expand_array) {
+				AvARRAY(av)[i] = pg_destringify_array(value, type_info);
 			}
-			else
-				value_len = strlen(value);
+			else {
+				if (type_info) {
+					type_info->dequote(value, &value_len); /* dequote in place */
+					if (PG_BOOL == type_info->type_id && imp_dbh->pg_bool_tf)
+						*value = ('1' == *value) ? 't' : 'f';
+				}
+				else
+					value_len = strlen(value);
 			
-			sv_setpvn(sv, value, value_len);
+				sv_setpvn(sv, value, value_len);
 			
-			if (type_info && (BPCHAROID == type_info->type_id) && chopblanks)
-				{
+				if (type_info && (PG_BPCHAR == type_info->type_id) && chopblanks) {
 					p = SvEND(sv);
 					len = SvCUR(sv);
 					while(len && ' ' == *--p)
@@ -2846,15 +2973,15 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 						*SvEND(sv) = '\0';
 					}
 				}
-			
+			}
 #ifdef is_utf8_string
 			if (imp_dbh->pg_enable_utf8 && type_info) {
 				SvUTF8_off(sv);
 				switch (type_info->type_id) {
-				case CHAROID:
-				case TEXTOID:
-				case BPCHAROID:
-				case VARCHAROID:
+				case PG_CHAR:
+				case PG_TEXT:
+				case PG_BPCHAR:
+				case PG_VARCHAR:
 					if (is_high_bit_set(value) && is_utf8_string((unsigned char*)value, value_len)) {
 						SvUTF8_on(sv);
 					}

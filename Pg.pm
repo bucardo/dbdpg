@@ -28,11 +28,31 @@ use 5.006001;
 		(
 		 async => [qw(PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT)],
 		 pg_types => [qw(
-			PG_BOOL PG_BYTEA PG_CHAR PG_INT8 PG_INT2 PG_INT4 PG_TEXT PG_OID PG_TID
-			PG_FLOAT4 PG_FLOAT8 PG_ABSTIME PG_RELTIME PG_TINTERVAL PG_BPCHAR
-			PG_VARCHAR PG_DATE PG_TIME PG_DATETIME PG_TIMESPAN PG_TIMESTAMP
-			PG_POINT PG_LINE PG_LSEG PG_BOX PG_PATH PG_POLYGON PG_CIRCLE
-			PG_INT4ARRAY
+			PG_ABSTIME PG_ABSTIMEARRAY PG_ACLITEM PG_ACLITEMARRAY PG_ANY
+			PG_ANYARRAY PG_ANYELEMENT PG_ANYENUM PG_ANYNONARRAY PG_BIT
+			PG_BITARRAY PG_BOOL PG_BOOLARRAY PG_BOX PG_BOXARRAY
+			PG_BPCHAR PG_BPCHARARRAY PG_BYTEA PG_BYTEAARRAY PG_CHAR
+			PG_CHARARRAY PG_CID PG_CIDARRAY PG_CIDR PG_CIDRARRAY
+			PG_CIRCLE PG_CIRCLEARRAY PG_CSTRING PG_CSTRINGARRAY PG_DATE
+			PG_DATEARRAY PG_FLOAT4 PG_FLOAT4ARRAY PG_FLOAT8 PG_FLOAT8ARRAY
+			PG_INET PG_INETARRAY PG_INT2 PG_INT2ARRAY PG_INT2VECTOR
+			PG_INT2VECTORARRAY PG_INT4 PG_INT4ARRAY PG_INT8 PG_INT8ARRAY
+			PG_INTERNAL PG_INTERVAL PG_INTERVALARRAY PG_LANGUAGE_HANDLER PG_LINE
+			PG_LINEARRAY PG_LSEG PG_LSEGARRAY PG_MACADDR PG_MACADDRARRAY
+			PG_MONEY PG_MONEYARRAY PG_NAME PG_NAMEARRAY PG_NUMERIC
+			PG_NUMERICARRAY PG_OID PG_OIDARRAY PG_OIDVECTOR PG_OIDVECTORARRAY
+			PG_OPAQUE PG_PATH PG_PATHARRAY PG_PG_ATTRIBUTE PG_PG_CLASS
+			PG_PG_PROC PG_PG_TYPE PG_POINT PG_POINTARRAY PG_POLYGON
+			PG_POLYGONARRAY PG_RECORD PG_REFCURSOR PG_REFCURSORARRAY PG_REGCLASS
+			PG_REGCLASSARRAY PG_REGOPER PG_REGOPERARRAY PG_REGOPERATOR PG_REGOPERATORARRAY
+			PG_REGPROC PG_REGPROCARRAY PG_REGPROCEDURE PG_REGPROCEDUREARRAY PG_REGTYPE
+			PG_REGTYPEARRAY PG_RELTIME PG_RELTIMEARRAY PG_SMGR PG_TEXT
+			PG_TEXTARRAY PG_TID PG_TIDARRAY PG_TIME PG_TIMEARRAY
+			PG_TIMESTAMP PG_TIMESTAMPARRAY PG_TIMESTAMPTZ PG_TIMESTAMPTZARRAY PG_TIMETZ
+			PG_TIMETZARRAY PG_TINTERVAL PG_TINTERVALARRAY PG_TRIGGER PG_UNKNOWN
+			PG_UUID PG_UUIDARRAY PG_VARBIT PG_VARBITARRAY PG_VARCHAR
+			PG_VARCHARARRAY PG_VOID PG_XID PG_XIDARRAY PG_XML
+			PG_XMLARRAY
 		)]
 	);
 
@@ -832,6 +852,7 @@ use 5.006001;
 				AND c.relnamespace = n2.oid
 				ORDER BY conrelid ASC
 				};
+
 		my $sth = $dbh->prepare($fk_sql);
 		$sth->execute();
 		my $info = $sth->fetchall_arrayref({});
@@ -842,13 +863,16 @@ use 5.006001;
 
 		## Figure out which columns we need information about
 		my %colnum;
-		for (@$info) {
-			$colnum{$_->{'conrelid'}}{$1}++ while $_->{'conkey'} =~ /(\d+)/go;
-			if ($_->{'contype'} eq 'f') {
-				$colnum{$_->{'confrelid'}}{$1}++ while $_->{'confkey'} =~ /(\d+)/go;
+		for my $row (@$info) {
+			for (@{$row->{'conkey'}}) {
+				$colnum{$row->{'conrelid'}}{$_}++;
+			}
+			if ($row->{'contype'} eq 'f') {
+				for (@{$row->{'confkey'}}) {
+					$colnum{$row->{'confrelid'}}{$_}++;
+				}
 			}
 		}
-
 		## Get the information about the columns computed above
 		my $SQL = qq{
 			SELECT a.attrelid, a.attnum, pg_catalog.quote_ident(a.attname) AS colname, 
@@ -876,7 +900,7 @@ use 5.006001;
 		my %ukey;
 		for my $c (grep { $_->{'contype'} ne 'f' } @$info) {
 			## Munge multi-column keys into sequential order
-			my $multi = join ' ' => sort split/\s*/, $c->{'conkey'};
+			my $multi = join ' ' => sort @{$c->{'conkey'}};
 			push @{$ukey{$c->{'conrelid'}}{$multi}}, $c;
 		}
 
@@ -884,12 +908,11 @@ use 5.006001;
 		my $fkinfo = [];
 		my $x=0;
 		for my $t (sort { $a->{'c_name'} cmp $b->{'c_name'} } grep { $_->{'contype'} eq 'f' } @$info) {
-
 			## We need to find which constraint row (if any) matches our confrelid-confkey combo
 			## by checking out ukey hash. We sort for proper matching of { 1 2 } vs. { 2 1 }
 			## No match means we have a pure index constraint
 			my $u;
-			my $multi = join ' ' => sort split/\s*/, $t->{'confkey'};
+			my $multi = join ' ' => sort @{$t->{'confkey'}};
 			if (exists $ukey{$t->{'confrelid'}}{$multi}) {
 				$u = $ukey{$t->{'confrelid'}}{$multi}->[0];
 			}
@@ -902,11 +925,9 @@ use 5.006001;
 
 			## ODBC is primary keys only
 			next if $odbc and ($u->{'contype'} ne 'p' or $multi eq 'index');
-
-			my (@conkey, @confkey);
-			push (@conkey, $1) while $t->{'conkey'} =~ /(\d+)/go;
-			push (@confkey, $1) while $t->{'confkey'} =~ /(\d+)/go;
-			for (my $y=0; $conkey[$y]; $y++) {
+			my $conkey = $t->{'conkey'};
+			my $confkey = $t->{'confkey'};
+			for (my $y=0; $conkey->[$y]; $y++) {
 				# UK_TABLE_CAT
 				$fkinfo->[$x][0] = undef;
 				# UK_TABLE_SCHEM
@@ -914,7 +935,7 @@ use 5.006001;
 				# UK_TABLE_NAME
 				$fkinfo->[$x][2] = $u->{'t_name'};
 				# UK_COLUMN_NAME
-				$fkinfo->[$x][3] = $attinfo{$t->{'confrelid'}}{$confkey[$y]}{'colname'};
+				$fkinfo->[$x][3] = $attinfo{$t->{'confrelid'}}{$confkey->[$y]}{'colname'};
 				# FK_TABLE_CAT
 				$fkinfo->[$x][4] = undef;
 				# FK_TABLE_SCHEM
@@ -922,9 +943,9 @@ use 5.006001;
 				# FK_TABLE_NAME
 				$fkinfo->[$x][6] = $t->{'t_name'};
 				# FK_COLUMN_NAME
-				$fkinfo->[$x][7] = $attinfo{$t->{'conrelid'}}{$conkey[$y]}{'colname'};
+				$fkinfo->[$x][7] = $attinfo{$t->{'conrelid'}}{$conkey->[$y]}{'colname'};
 				# ORDINAL_POSITION
-				$fkinfo->[$x][8] = $conkey[$y];
+				$fkinfo->[$x][8] = $conkey->[$y];
 				# UPDATE_RULE
 				$fkinfo->[$x][9] = "$t->{'update'}";
 				# DELETE_RULE
@@ -938,9 +959,9 @@ use 5.006001;
 				# UNIQUE_OR_PRIMARY
 				$fkinfo->[$x][14] = ($u->{'contype'} eq 'p' and $multi ne 'index') ? 'PRIMARY' : 'UNIQUE';
 				# UK_DATA_TYPE
-				$fkinfo->[$x][15] = $attinfo{$t->{'confrelid'}}{$confkey[$y]}{'typename'};
+				$fkinfo->[$x][15] = $attinfo{$t->{'confrelid'}}{$confkey->[$y]}{'typename'};
 				# FK_DATA_TYPE
-				$fkinfo->[$x][16] = $attinfo{$t->{'conrelid'}}{$conkey[$y]}{'typename'};
+				$fkinfo->[$x][16] = $attinfo{$t->{'conrelid'}}{$conkey->[$y]}{'typename'};
 				$x++;
 			} ## End each column in this foreign key
 		} ## End each foreign key
@@ -958,7 +979,6 @@ use 5.006001;
 			KEY_SEQ UPDATE_RULE DELETE_RULE FK_NAME PK_NAME
 			DEFERABILITY UNIQUE_OR_PRIMARY PK_DATA_TYPE FKDATA_TYPE
 		));
-
 		return _prepare_from_data('foreign_key_info', $fkinfo, $odbc ? \@ODBC_cols : \@CLI_cols);
 
 	}
