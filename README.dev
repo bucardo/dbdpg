@@ -487,8 +487,8 @@ tweaks and bug fixes, and must be completely compatible with the version before 
 
 Beta versions are simply the number *before* the new anticipated number, plus an 
 underscore to indicate the beta version. For example, if the current version is 
-2.1.4 and you are making betas for an upcoming 2.2.4 version, you should name the 
-beta version as 2.2.4_1. A second beta would be 2.2.4_2, etc.
+2.1.4 and you are making betas for an upcoming 2.1.5 version, you should name the 
+beta version as 2.1.4_1. A second beta would be 2.1.4_2, etc.
 
 Version numbers are currently set in five files:
 

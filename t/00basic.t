@@ -16,5 +16,5 @@ BEGIN {
 	use_ok('DBD::Pg');
 };
 
-like( $DBD::Pg::VERSION, qr/^[\d\._]+$/, qq{Found DBD::Pg::VERSION as "$DBD::Pg::VERSION"});
+like( $DBD::Pg::VERSION, qr/^v[\d\._]+$/, qq{Found DBD::Pg::VERSION as "$DBD::Pg::VERSION"});
 
