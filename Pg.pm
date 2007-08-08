@@ -3401,13 +3401,32 @@ transaction!
 
 =head2 Cursors
 
-Although PostgreSQL has a cursor concept, it has not been used in the current
-implementation. Cursors in PostgreSQL can only be used inside a transaction
-block. Because only one transaction block at a time is allowed, this would
-have implied the restriction not to use any nested C<SELECT> statements. Hence
-the C<execute> method fetches all data at once into data structures located in
-the front-end application. This approach must to be considered when selecting
-large amounts of data!
+Although PostgreSQL supports cursors, they have not been used in the current
+implementation. When DBD::Pg was defined, cursors in PostgreSQL could only be
+used inside a transaction block. Because only one transaction block at a time
+is allowed, this would have implied the restriction not to use any nested
+C<SELECT> statements. Therefore the C<execute> method fetches all data at
+once into data structures located in the front-end application. This fact
+must to be considered when selecting large amounts of data!
+
+You can use cursors in your application, but you'll need to do a little
+work.  First you must declare your cursor.  Now you can issue queries against
+the cursor, then select against your queries.  This typically results in a
+double loop, like this:
+
+  # Note: WITH HOLD is only available from PostgreSQL 7.4 on.  It is not
+  # needed if AutoCommit is off.
+  $dbh->do("DECLARE csr CURSOR WITH HOLD FOR $sql");
+  while (1) {
+    my $sth = $dbh->prepare("fetch 1000 from csr");
+    $sth->execute;
+    last if 0 == $sth->rows;
+
+    while (my $row = $sth->fetchrow_hashref) {
+      # Do something with the data.
+    }
+  }
+  $dbh->do("CLOSE csr");
 
 =head2 Datatype bool
 
