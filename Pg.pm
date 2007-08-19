@@ -1762,6 +1762,9 @@ Note that state can be called as either $sth->state or $dbh->state.
 The list of codes used by PostgreSQL can be found at:
 L<http://www.postgresql.org/docs/current/static/errcodes-appendix.html>
 
+Note that these codes are part of the SQL standard and only a small number 
+of them will be used by PostgreSQL.
+
 =item B<trace>
 
   $h->trace($trace_level);
