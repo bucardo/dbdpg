@@ -2153,7 +2153,10 @@ longer has to worry about quoting each value before sending it to the server.
 However, there are some drawbacks. The server cannot always choose the ideal
 parse plan because it will not know the arguments before hand. But for most
 situations in which you will be executing similar data many times, the default
-plan will probably work out well. Further discussion on this subject is beyond
+plan will probably work out well. Programs such as PgBouncer which cache connections 
+at a low level should not use prepared statements via DBD::Pg, or must take 
+extra care in the application to account for the fact that prepared statements 
+are not shared across database connections. Further discussion on this subject is beyond
 the scope of this documentation: please consult the pgsql-performance mailing
 list, L<http://archives.postgresql.org/pgsql-performance/>
 
