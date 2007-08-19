@@ -110,7 +110,7 @@ int dbd_db_ping(SV *dbh);
 int dbd_db_getfd (SV *dbh, imp_dbh_t *imp_dbh);
 SV * dbd_db_pg_notifies (SV *dbh, imp_dbh_t *imp_dbh);
 int pg_db_putline (SV *dbh, const char *buffer);
-int pg_db_getline (SV *dbh, char *buffer, int length);
+int pg_db_getline (SV *dbh, SV * svbuf, int length);
 int pg_db_endcopy (SV * dbh);
 void pg_db_pg_server_trace (SV *dbh, FILE *fh);
 void pg_db_pg_server_untrace (SV *dbh);

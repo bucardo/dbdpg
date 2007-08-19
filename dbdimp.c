@@ -3232,11 +3232,14 @@ pg_db_putline (SV * dbh, const char * buffer)
 
 /* ================================================================== */
 int
-pg_db_getline (SV * dbh, char * buffer, int length)
+pg_db_getline (SV * dbh, SV * svbuf, int length)
 {
 	D_imp_dbh(dbh);
 	int    copystatus;
 	char * tempbuf;
+	char * buffer;
+
+	buffer = SvPV_nolen(svbuf);
 
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_getline\n");
@@ -3262,8 +3265,7 @@ pg_db_getline (SV * dbh, char * buffer, int length)
 		pg_error(dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
 	}
 	else {
-		strncpy(buffer, tempbuf, strlen(tempbuf)+1);
-		buffer[strlen(tempbuf)] = '\0';
+		sv_setpv(svbuf, tempbuf);
 		PQfreemem(tempbuf);
 	}
 	return 0;
