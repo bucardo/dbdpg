@@ -481,6 +481,22 @@ while (<$oldfh>) {
 		next unless /\]/;
 		$step = 2;
 	}
+	elsif (2 == $step) {
+		if (/data types exported/) {
+			print $newfh $_;
+			$step = 0;
+			for (sort { $pgtype{$a}{define} cmp $pgtype{$b}{define} } keys %pgtype) {
+				printf $newfh "%s$pgtype{$_}{define}", !($step++ % 6) ? "\n" : " ";
+			}
+			print $newfh "\n\n";			
+			$step = 3;
+			next;
+		  }
+	}
+	elsif (3 == $step) {
+		next unless /sticky/;
+		$step = 4;
+	}
 	print $newfh $_;
 }
 close $newfh;
