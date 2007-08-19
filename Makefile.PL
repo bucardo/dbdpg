@@ -127,9 +127,10 @@ my %opts =
 	 AUTHOR         => 'Greg Sabino Mullane',
 	 ABSTRACT       => 'PostgreSQL database driver for the DBI module',
 	 PREREQ_PM      => {
-						'DBI' => 1.45,
-						'Test::Simple' => '0.60_01',
-						'Test::Harness' => '2.03',
+						'ExtUtils::MakeMaker' => '6.11',
+						'DBI'                 => '1.45',
+						'Test::Simple'        => '0.61',
+						'Test::Harness'       => '2.03',
 					   },
 	 CCFLAGS        => $comp_opts,
 	 PERL_MALLOC_OK => 1,
