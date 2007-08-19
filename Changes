@@ -1,11 +1,12 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Allow data_sources to accept optional arguments. [GSM]
 	- Change versioning system to three numbered system.
 	- Add support for arrays: can pass in arrayrefs to execute, and 
 		they are automatically returned as arrays when fetching. [GSM]
 	- Overhauled the data type system. [GSM]
-    - Fix bug in last_insert_id. (CPAN bug #15918) [orentocy@gmail.com]
+	- Fix bug in last_insert_id. (CPAN bug #15918) [orentocy@gmail.com]
 	- Complain loudly and fail to proceed if Makefile.PL finds no -lpq [GSM]
 	- Fix META.yml file. (CPAN bug #25759) [GSM]
 	- Force column names to respect utf8-ness. Per report from Ch Lamprect. [GSM]
