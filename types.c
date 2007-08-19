@@ -378,7 +378,6 @@ while(<F>) {
 		die "Bad line: $_\n";
    }
 }
-#die Dumper $pgtype{varchar};
 close(F);
 
 my ($oldfh,$newfh);
