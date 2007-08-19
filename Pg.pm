@@ -12,7 +12,6 @@
 
 use 5.006001;
 
-
 {
 	package DBD::Pg;
 
@@ -23,6 +22,7 @@ use 5.006001;
 	use Exporter ();
 	use vars qw(@ISA %EXPORT_TAGS $err $errstr $sqlstate $drh $dbh $DBDPG_DEFAULT);
 	@ISA = qw(DynaLoader Exporter);
+
 
 	%EXPORT_TAGS = 
 		(
@@ -62,7 +62,7 @@ use 5.006001;
 	}
 	$DBDPG_DEFAULT = DBD::Pg::DefaultValue->new();
 	Exporter::export_ok_tags('pg_types', 'async');
-	@EXPORT = qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT);
+	@EXPORT = qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT PG_BYTEA);
 
 	require_version DBI 1.45;
 
@@ -77,6 +77,7 @@ use 5.006001;
 		$drh = undef;
 	}
 
+	## Deprecated
 	sub _pg_use_catalog {
 		return 'pg_catalog.';
 	}
@@ -87,14 +88,12 @@ use 5.006001;
 
 		$class .= "::dr";
 
-		# not a 'my' since we use it above to prevent multiple drivers
-
 		$drh = DBI::_new_drh($class, {
-			'Name' => 'Pg',
-			'Version' => $VERSION,
-			'Err' => \$DBD::Pg::err,
-			'Errstr' => \$DBD::Pg::errstr,
-			'State' => \$DBD::Pg::sqlstate,
+			'Name'        => 'Pg',
+			'Version'     => $VERSION,
+			'Err'         => \$DBD::Pg::err,
+			'Errstr'      => \$DBD::Pg::errstr,
+			'State'       => \$DBD::Pg::sqlstate,
 			'Attribution' => "DBD::Pg $VERSION by Greg Sabino Mullane and others",
 		});
 
@@ -117,13 +116,14 @@ use 5.006001;
 		DBD::Pg::st->install_method("pg_result");
 		DBD::Pg::st->install_method("pg_ready");
 
-		$drh;
+		return $drh;
 
-	}
+	} ## end of driver
 
 
 	1;
-}
+
+} ## end of package DBD::Pg
 
 
 {
@@ -134,8 +134,13 @@ use 5.006001;
 	## Returns an array of formatted database names from the pg_database table
 	sub data_sources {
 		my $drh = shift;
-		## Connect to "postgres" when the minimum version we support is 8.0
-		my $dbh = DBD::Pg::dr::connect($drh, 'dbname=template1') or return undef;
+		my $attr = shift || '';
+		## Future: connect to "postgres" when the minimum version we support is 8.0
+		my $connstring = 'dbname=template1';
+		if (length $attr) {
+			$connstring .= ";$attr";
+		}
+		my $dbh = DBD::Pg::dr::connect($drh, $connstring) or return undef;
 		$dbh->{AutoCommit}=1;
 		my $SQL = "SELECT pg_catalog.quote_ident(datname) FROM pg_catalog.pg_database ORDER BY 1";
 		my $sth = $dbh->prepare($SQL);
@@ -152,23 +157,17 @@ use 5.006001;
 		## Allow "db" and "database" as synonyms for "dbname"
 		$dbname =~ s/\b(?:db|database)\s*=/dbname=/;
 
-		my $Name = $dbname;
+		my $name = $dbname;
 		if ($dbname =~ m#dbname\s*=\s*[\"\']([^\"\']+)#) {
-			$Name = "'$1'";
-			$dbname =~ s/"/'/g;
+			$name = "'$1'";
+			$dbname =~ s/\"/\'/g;
 		}
 		elsif ($dbname =~ m#dbname\s*=\s*([^;]+)#) {
-			$Name = $1;
+			$name = $1;
 		}
 
- 		$user = "" unless defined($user);
-		$pass = "" unless defined($pass);
-
-		$user = $ENV{DBI_USER} if $user eq "";
-		$pass = $ENV{DBI_PASS} if $pass eq "";
-
-		$user = "" unless defined($user);
-		$pass = "" unless defined($pass);
+ 		$user = defined($user) ? $user : defined $ENV{DBI_USER} ? $ENV{DBI_USER} : "";
+		$pass = defined($pass) ? $pass : defined $ENV{DBI_PASS} ? $ENV{DBI_PASS} : "";
 
 		my ($dbh) = DBI::_new_dbh($drh, {
 			'Name' => $dbname,
@@ -189,8 +188,7 @@ use 5.006001;
 		};
 	}
 
-
-}
+} ## end pf package DBD::Pg::dr
 
 
 {
@@ -1723,6 +1721,11 @@ This driver supports this method. Note that the necessary database connection
 to the database "template1" will be made on the localhost without any user
 authentication. Other preferences can only be set with the environment
 variables C<PGHOST>, C<PGPORT>, C<DBI_USER>, C<DBI_PASS>, and C<PGSERVICE>.
+
+You can also pass in options to add to the connection string as the second argument 
+to data_sources. For example, to specify an alternate port and host:
+
+  @data_sources = DBI->data_sources('Pg', 'port=5824;host=example.com');
 
 =back
 
