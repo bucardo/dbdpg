@@ -3404,9 +3404,10 @@ the COPY statement. Returns a 1 on sucessful input. Examples:
 
 Used to retrieve data from a table after the server has been put into COPY OUT 
 mode by calling "COPY tablename TO STDOUT". The first argument to pg_getline is 
-the variable into which the data will be stored. The second argument is the size 
-of the variable: this should be greater than the expected size of the row. Returns 
-a 1 on success, and an empty string when the last row has been fetched. Example:
+the variable into which the data will be stored (this variable should not be undefined, 
+or it may throw a warning). The second argument is the size of the variable: this should 
+be greater than the expected size of the row. Returns a 1 on success, and an empty 
+string when the last row has been fetched. Example:
 
   $dbh->do("COPY mytable TO STDOUT");
   my @data;
@@ -3420,8 +3421,9 @@ When done with pg_putline, call pg_endcopy to put the server back in
 a normal state. Returns a 1 on success. This method will fail if called when not 
 in a COPY IN or COPY OUT state. Note that you no longer need to send "\\.\n" when 
 in COPY IN mode: pg_endcopy will do this for you automatically as needed.
-pg_endcopy is only needed after getline if you are using the old-style method, 
-$dbh->func($data, 100, 'getline').
+Note that pg_endcopy is only needed after getline if you are using the 
+old-style method, $dbh->func($data, 100, 'getline'). If using pg_getline, 
+pg_endcopy should not be used.
 
 
 =back
