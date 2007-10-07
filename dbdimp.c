@@ -3002,6 +3002,22 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 
 
 /* ================================================================== */
+/* Pop off savepoints to the specified savepoint name */
+static void pg_db_free_savepoints_to (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
+{
+	I32 i;
+	for (i = av_len(imp_dbh->savepoints); i >= 0; i--) {
+		SV * elem = av_pop(imp_dbh->savepoints);
+		if (strEQ(SvPV_nolen(elem), savepoint)) {
+			sv_2mortal(elem);
+			break;
+		}
+		sv_2mortal(elem);
+	}
+}
+
+
+/* ================================================================== */
 int dbd_st_rows (SV * sth, imp_sth_t * imp_sth)
 {
 	if (dbis->debug >= 4)
@@ -3412,12 +3428,7 @@ int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 		return 0;
 	}
 
-	for (i = av_len(imp_dbh->savepoints); i >= 0; i--) {
-		SV	*elem = *av_fetch(imp_dbh->savepoints, i, 0);
-		if (strEQ(SvPV_nolen(elem), savepoint))
-			break;
-		(void)av_pop(imp_dbh->savepoints);
-	}
+	pg_db_free_savepoints_to(dbh, imp_dbh, savepoint);
 	return 1;
 }
 
@@ -3451,11 +3462,7 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 		return 0;
 	}
 
-	for (i = av_len(imp_dbh->savepoints); i >= 0; i--) {
-		SV	*elem = av_pop(imp_dbh->savepoints);
-		if (strEQ(SvPV_nolen(elem), savepoint))
-			break;
-	}
+	pg_db_free_savepoints_to(dbh, imp_dbh, savepoint);
 	return 1;
 }
 

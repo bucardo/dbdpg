@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Fix memory leak when using savepoints. (CPAN bug #29791)
+		[airwave@cpan.org]
 	- Allow data_sources to accept optional arguments. [GSM]
 	- Change versioning system to three numbered system.
 	- Add support for arrays: can pass in arrayrefs to execute, and 
