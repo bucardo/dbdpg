@@ -259,8 +259,8 @@ $cleararray->execute();
 
 ## Pure string to array conversion testing
 
-## Find a valid role to use
-$SQL = "SELECT rolname FROM pg_roles LIMIT 1";
+## Use ourselves as a valid role
+$SQL = "SELECT current_role";
 my $role = $dbh->selectall_arrayref($SQL)->[0][0];
 
 my $array_tests_out = 
