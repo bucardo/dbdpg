@@ -1,5 +1,5 @@
 use strict;
-use Test::More tests => 121;
+use Test::More tests => 133;
 
 use DBD::Pg qw(:pg_types :async);
 
@@ -124,6 +124,8 @@ is(PG_TSQUERY          ,  3615, 'PG_TSQUERY returns correct value');
 is(PG_TSQUERYARRAY     ,  3645, 'PG_TSQUERYARRAY returns correct value');
 is(PG_TSVECTOR         ,  3614, 'PG_TSVECTOR returns correct value');
 is(PG_TSVECTORARRAY    ,  3643, 'PG_TSVECTORARRAY returns correct value');
+is(PG_TXID_SNAPSHOT    ,  2970, 'PG_TXID_SNAPSHOT returns correct value');
+is(PG_TXID_SNAPSHOTARRAY,  2949, 'PG_TXID_SNAPSHOTARRAY returns correct value');
 is(PG_UNKNOWN          ,   705, 'PG_UNKNOWN returns correct value');
 is(PG_UUID             ,  2950, 'PG_UUID returns correct value');
 is(PG_UUIDARRAY        ,  2951, 'PG_UUIDARRAY returns correct value');

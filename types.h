@@ -88,6 +88,7 @@ sql_type_info_t* sql_type_data(int);
 #define           PG_TRIGGER  2279
 #define           PG_TSQUERY  3615
 #define          PG_TSVECTOR  3614
+#define     PG_TXID_SNAPSHOT  2970
 #define           PG_UNKNOWN  705
 #define              PG_UUID  2950
 #define            PG_VARBIT  1562
@@ -149,6 +150,7 @@ sql_type_info_t* sql_type_data(int);
 #define    PG_TINTERVALARRAY  1025
 #define      PG_TSQUERYARRAY  3645
 #define     PG_TSVECTORARRAY  3643
+#define PG_TXID_SNAPSHOTARRAY  2949
 #define         PG_UUIDARRAY  2951
 #define       PG_VARBITARRAY  1563
 #define      PG_VARCHARARRAY  1015

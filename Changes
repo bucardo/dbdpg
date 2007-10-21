@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Force SQL_REAL and SQL_NUMERIC to be float8 not float4.
+		(CPAN bug #30010) [GSM]
 	- Fix memory leak when using savepoints. (CPAN bug #29791)
 		[airwave@cpan.org]
 	- Allow data_sources to accept optional arguments. [GSM]
