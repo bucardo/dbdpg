@@ -5,8 +5,6 @@ use Config;
 use strict;
 use warnings;
 use 5.006001;
-use DBI 1.45;
-use DBI::DBD;
 
 my $VERSION = '2.0.0_1';
 
@@ -63,11 +61,12 @@ my $showlib = $ENV{POSTGRES_LIB} || '(not set)';
 print "POSTGRES_LIB: $showlib\n";
 print "OS: $os\n";
 
-if ($serverversion < 1) {
-	die "Could not determine the PostgreSQL library version.\n".
+if ($serverversion < 11) {
+	print "Could not determine the PostgreSQL library version.\n".
 		"Please ensure that a valid path is given to the 'pg_config' command,\n".
 			"either manually or by setting the environment variables\n".
 				"POSTGRES_DATA, POSTGRES_INCLUDE, and POSTGRES_LIB\n";
+	exit 0;
 }
 
 if ($os =~ /Win32/) {
@@ -85,16 +84,22 @@ if ($serverversion < 70400) {
 	exit 1;
 }
 
-
 my $dbi_arch_dir;
 if ($os eq 'MSWin32') {
 	$dbi_arch_dir = "\$(INSTALLSITEARCH)/auto/DBI";
 }
 else {
 	{
+		eval {
+			require DBI::DBD;
+		};
+		if ($@) {
+			print "Could not load DBI::DBD - is the DBI module installed?\n";
+			exit 0;
+		}
 		local *STDOUT; ## Prevent duplicate debug info as WriteMakefile also calls this
-		$dbi_arch_dir = dbd_dbi_arch_dir();
-  }
+		$dbi_arch_dir = DBI::DBD::dbd_dbi_arch_dir();
+	}
 }
 
 my $comp_opts = $Config{q{ccflags}} . " -DPGLIBVERSION=$serverversion -DPGDEFPORT=$defaultport";
@@ -157,7 +162,9 @@ if ($Config{dlsrc} =~ /dl_none/) {
 }
 
 sub MY::postamble {
+	no strict 'subs';
 	my $string = dbd_postamble;
+	use strict 'subs';
 	## Evil, evil stuff - but we really want to suppress the "duplicate function" message!
 	$string =~ s/dependancy/dependency/g; ## why not, while we are here
 	$string =~ s#(BASEEXT\)/g)#$1; s/^do\\\(/dontdo\\\(/#;
