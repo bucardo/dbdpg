@@ -163,7 +163,7 @@ if ($Config{dlsrc} =~ /dl_none/) {
 
 sub MY::postamble {
 	no strict 'subs';
-	my $string = dbd_postamble;
+	my $string = DBI::DBD::dbd_postamble();
 	use strict 'subs';
 	## Evil, evil stuff - but we really want to suppress the "duplicate function" message!
 	$string =~ s/dependancy/dependency/g; ## why not, while we are here
