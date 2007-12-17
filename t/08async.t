@@ -195,7 +195,7 @@ SKIP: {
 	ok(!$res, $t);
 
 	pass("Sleeping to allow query to finish");
-	sleep(2);
+	sleep(3);
 	$t=q{Method pg_ready() returns true when query is finished};
 	$res = $dbh->pg_ready();
 	ok($res, $t);
@@ -335,6 +335,7 @@ is_deeply($res, [[123]], $t);
 eval {
 	$dbh->do("DROP TABLE dbdpg_async_test");
 };
+$dbh->commit();
 $dbh->do("CREATE TABLE dbdpg_async_test(id INT, t TEXT)");
 $dbh->commit();
 $sth->execute();
