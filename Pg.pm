@@ -2863,7 +2863,7 @@ Examples:
   $sth->bind_param("$2", "Zool");
 
   ## We realize that the wrong data type was set above, so we change it:
-  $sth->bind_param("$1", 234, { pg_type => PG_INTEGER });
+  $sth->bind_param("$1", 234, { pg_type => SQL_INT4 });
 
   ## We also got the wrong value, so we change that as well.
   ## Because the data type is sticky, we don't need to change it
