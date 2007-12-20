@@ -1407,6 +1407,11 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 
 	while (1) {
 
+		/* Quick hack, will work on this more later: */
+		if (ch < 0) {
+			croak("Invalid string - utf-8 problem?");
+		}
+
 		/* Are we done processing this string? */
 		if (ch < 1) {
 			break;
