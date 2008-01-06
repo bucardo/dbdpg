@@ -1894,7 +1894,8 @@ static int dbd_st_prepare_statement (SV * sth, imp_sth_t * imp_sth)
 	}
 	/* Construct the statement, with proper placeholders */
 	for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-		strcat(statement, currseg->segment);
+		if (currseg->segment != NULL)
+			strcat(statement, currseg->segment);
 		if (currseg->placeholder) {
 			sprintf(strchr(statement, '\0'), "$%d", currseg->placeholder);
 		}
