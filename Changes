@@ -1,6 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Fix crash when executing query with two placeholders side by side.
+      Thanks to Daniel Browning for spotting this. [GSM]
+	- Fix bad PG_INTEGER example in docs, thanks to Xavi Drudis Ferran.
+		(CPAN bug #31545) [GSM]
 	- Force SQL_REAL and SQL_NUMERIC to be float8 not float4.
 		(CPAN bug #30010) [GSM]
 	- Fix memory leak when using savepoints. (CPAN bug #29791)
