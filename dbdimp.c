@@ -1851,7 +1851,7 @@ static int dbd_st_prepare_statement (SV * sth, imp_sth_t * imp_sth)
 				continue;
 			/* The parameter itself: dollar sign plus digit(s) */
 			for (x=1; x<7; x++) {
-				if (currseg->placeholder < pow((double)10,(double)x))
+				if (currseg->placeholder < powf((float)10,(float)x))
 					break;
 			}
 			if (x>=7)
@@ -2732,7 +2732,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 					continue;
 				/* The parameter itself: dollar sign plus digit(s) */
 				for (x=1; x<7; x++) {
-					if (currseg->placeholder < pow((double)10,(double)x))
+					if (currseg->placeholder < powf((float)10,(float)x))
 						break;
 				}
 				if (x>=7)

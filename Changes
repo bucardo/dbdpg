@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Switch from pow to powf to support AIX compiler issue.
+		(CPAN bug #24579) [GSM]
 	- Use adbin, not adsrc, when figuring out the sequence name for the 
 		last_insert_id() method. This allows the function to work properly 
 		if the sequence name is changed. Not that {pg_cache=>0} should be 
