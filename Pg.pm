@@ -3504,6 +3504,12 @@ or by manipulating the schema search path with C<SET search_path>, e.g.
 
 L<DBI>
 
+=head1 BUGS
+
+Quoting will not work properly if standard_conforming_strings is set to 'on', 
+so it is recommended that this be set to 'off' until full support for it can 
+be build into DBD::Pg.
+
 =head1 AUTHORS
 
 DBI and DBD-Oracle by Tim Bunce (Tim.Bunce@ig.co.uk)
