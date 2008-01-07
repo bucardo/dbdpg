@@ -15,6 +15,7 @@
 
 #include "Pg.h"
 #include <math.h>
+#include <wchar.h>
 
 /* Force preprocessors to use this variable. Default to something valid yet noticeable */
 #ifndef PGLIBVERSION
@@ -1343,7 +1344,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 
 	int placeholder_type; /* Which type we are in: one of 0,1,2,3 (none,?,$,:) */
 
- 	char ch; /* The current character being checked */
+ 	unsigned char ch; /* The current character being checked */
 
 	char quote; /* Current quote or comment character: used only in those two blocks */
 
@@ -1406,11 +1407,6 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 	ch = 1;
 
 	while (1) {
-
-		/* Quick hack, will work on this more later: */
-		if (ch < 0) {
-			croak("Invalid string - utf-8 problem?");
-		}
 
 		/* Are we done processing this string? */
 		if (ch < 1) {
