@@ -133,7 +133,7 @@ int dbdpg_result (SV *dbh, imp_dbh_t *imp_dbh);
 int dbdpg_cancel (SV *h, imp_dbh_t *imp_dbh);
 int dbdpg_cancel_sth (SV *sth, imp_sth_t *imp_sth);
 SV * pg_stringify_array(SV * input, const char * array_delim, int server_version);
-SV * pg_destringify_array(char * input, sql_type_info_t * coltype);
+SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_info_t * coltype);
 
 /* end of dbdimp.h */
 

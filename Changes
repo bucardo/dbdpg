@@ -19,6 +19,8 @@
 		[airwave@cpan.org]
 	- Allow data_sources to accept optional arguments. [GSM]
 	- Change versioning system to three numbered system.
+	- Make sure array items are marked as UTF as needed.
+		(CPAN bug #29656) [GSM]		
 	- Add support for arrays: can pass in arrayrefs to execute, and 
 		they are automatically returned as arrays when fetching. [GSM]
 	- Overhauled the data type system. [GSM]

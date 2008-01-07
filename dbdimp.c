@@ -65,7 +65,7 @@ static ExecStatusType _sqlstate(imp_dbh_t *imp_dbh, PGresult *result);
 static int dbd_db_rollback_commit (SV *dbh, imp_dbh_t *imp_dbh, char * action);
 static void dbd_st_split_statement (imp_sth_t *imp_sth, int version, char *statement);
 static int dbd_st_prepare_statement (SV *sth, imp_sth_t *imp_sth);
-static int is_high_bit_set(char *val);
+static int is_high_bit_set(char *val, STRLEN size);
 static int dbd_st_deallocate_statement(SV *sth, imp_sth_t *imp_sth);
 static PGTransactionStatusType dbd_db_txn_status (imp_dbh_t *imp_dbh);
 static int pg_db_start_txn (SV *dbh, imp_dbh_t *imp_dbh);
@@ -900,7 +900,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 				fieldname = PQfname(imp_sth->result, fields);
 				sv_fieldname = newSVpv(fieldname,0);
 #ifdef is_utf8_string
-				if (is_high_bit_set(fieldname) && is_utf8_string((unsigned char *)fieldname, strlen(fieldname)))
+				if (is_high_bit_set(fieldname, strlen(fieldname)) && is_utf8_string((unsigned char *)fieldname, strlen(fieldname)))
 					SvUTF8_on(sv_fieldname);
 #endif
 				(void)av_store(av, fields, sv_fieldname);
@@ -2282,7 +2282,7 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 } /* end of pg_stringify_array */
 
 /* ================================================================== */
-SV * pg_destringify_array(char * input, sql_type_info_t * coltype) {
+SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_info_t * coltype) {
 
 	AV*    av;              /* The main array we are returning a reference to */
 	AV*    newav;           /* Temporary array */
@@ -2358,8 +2358,19 @@ SV * pg_destringify_array(char * input, sql_type_info_t * coltype) {
 					av_push(currentav, newSViv(SvIV(newSVpvn(string,section_size))));
 				else if (2 == coltype->svtype)
 					av_push(currentav, newSVnv(SvNV(newSVpvn(string,section_size))));
-				else
-					av_push(currentav, newSVpvn(string, section_size));
+				else {
+					SV *sv = newSVpvn(string, section_size);
+#ifdef is_utf8_string
+					if (imp_dbh->pg_enable_utf8) {
+						SvUTF8_off(sv);
+						if (is_high_bit_set(string, section_size) && is_utf8_string((unsigned char*)string, section_size)) {
+							SvUTF8_on(sv);
+						}
+					}
+#endif
+					av_push(currentav, sv);
+
+				}
 			}
 			section_size = 0;
 		}
@@ -2875,9 +2886,9 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
 
 /* ================================================================== */
-static int is_high_bit_set(char * val)
+static int is_high_bit_set(char * val, STRLEN size)
 {
-	while (*val)
+	while (*val && size--)
 		if (*val++ & 0x80) return 1;
 	return 0;
 }
@@ -2952,7 +2963,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 			if (type_info
 				&& 0 == strncmp(type_info->arrayout, "array", 5)
 				&& imp_dbh->expand_array) {
-				AvARRAY(av)[i] = pg_destringify_array(value, type_info);
+				AvARRAY(av)[i] = pg_destringify_array(imp_dbh, value, type_info);
 			}
 			else {
 				if (type_info) {
@@ -2984,7 +2995,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 				case PG_TEXT:
 				case PG_BPCHAR:
 				case PG_VARCHAR:
-					if (is_high_bit_set(value) && is_utf8_string((unsigned char*)value, value_len)) {
+					if (is_high_bit_set(value, value_len) && is_utf8_string((unsigned char*)value, value_len)) {
 						SvUTF8_on(sv);
 					}
 					break;
