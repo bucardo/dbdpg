@@ -65,7 +65,7 @@ static ExecStatusType _sqlstate(imp_dbh_t *imp_dbh, PGresult *result);
 static int dbd_db_rollback_commit (SV *dbh, imp_dbh_t *imp_dbh, char * action);
 static void dbd_st_split_statement (imp_sth_t *imp_sth, int version, char *statement);
 static int dbd_st_prepare_statement (SV *sth, imp_sth_t *imp_sth);
-static int is_high_bit_set(char *val, STRLEN size);
+static int is_high_bit_set(unsigned char *val, STRLEN size);
 static int dbd_st_deallocate_statement(SV *sth, imp_sth_t *imp_sth);
 static PGTransactionStatusType dbd_db_txn_status (imp_dbh_t *imp_dbh);
 static int pg_db_start_txn (SV *dbh, imp_dbh_t *imp_dbh);
@@ -900,7 +900,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 				fieldname = PQfname(imp_sth->result, fields);
 				sv_fieldname = newSVpv(fieldname,0);
 #ifdef is_utf8_string
-				if (is_high_bit_set(fieldname, strlen(fieldname)) && is_utf8_string((unsigned char *)fieldname, strlen(fieldname)))
+				if (is_high_bit_set((unsigned char *)fieldname, strlen(fieldname)) && is_utf8_string((unsigned char *)fieldname, strlen(fieldname)))
 					SvUTF8_on(sv_fieldname);
 #endif
 				(void)av_store(av, fields, sv_fieldname);
@@ -2310,7 +2310,7 @@ SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_in
 	}
 	input -= opening_braces;
 
-	Newx(string, strlen(input), char); /* Freed at end of this function */
+	Newx(string, strlen((char *)input), char); /* Freed at end of this function */
 	string[0] = '\0';
 
 	if (dbis->debug >= 4)
@@ -2363,7 +2363,7 @@ SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_in
 #ifdef is_utf8_string
 					if (imp_dbh->pg_enable_utf8) {
 						SvUTF8_off(sv);
-						if (is_high_bit_set(string, section_size) && is_utf8_string((unsigned char*)string, section_size)) {
+						if (is_high_bit_set((unsigned char *)string, section_size) && is_utf8_string((unsigned char*)string, section_size)) {
 							SvUTF8_on(sv);
 						}
 					}
@@ -2886,7 +2886,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
 
 /* ================================================================== */
-static int is_high_bit_set(char * val, STRLEN size)
+static int is_high_bit_set(unsigned char * val, STRLEN size)
 {
 	while (*val && size--)
 		if (*val++ & 0x80) return 1;
@@ -2900,7 +2900,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 	D_imp_dbh_from_sth;
 	sql_type_info_t * type_info;
 	int               num_fields;
-	char *            value;
+	unsigned char *   value;
 	char *            p;
 	int               i;
 	int               chopblanks;
@@ -2956,7 +2956,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 			SvROK(sv) ? (void)sv_unref(sv) : (void)SvOK_off(sv);
 		}
 		else {
-			value = (char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
+			value = (unsigned char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
 
 			type_info = imp_sth->type_info[i];
 
@@ -2972,9 +2972,9 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 						*value = ('1' == *value) ? 't' : 'f';
 				}
 				else
-					value_len = strlen(value);
+					value_len = strlen((char *)value);
 			
-				sv_setpvn(sv, value, value_len);
+				sv_setpvn(sv, (char *)value, value_len);
 			
 				if (type_info && (PG_BPCHAR == type_info->type_id) && chopblanks) {
 					p = SvEND(sv);
@@ -3016,7 +3016,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 
 /* ================================================================== */
 /* Pop off savepoints to the specified savepoint name */
-static void pg_db_free_savepoints_to (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
+static void pg_db_free_savepoints_to (imp_dbh_t * imp_dbh, char * savepoint)
 {
 	I32 i;
 	for (i = av_len(imp_dbh->savepoints); i >= 0; i--) {
@@ -3416,7 +3416,6 @@ int pg_db_savepoint (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 {
 	int    status;
-	I32    i;
 	char * action;
 
 	if (dbis->debug >= 4)
@@ -3441,7 +3440,7 @@ int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 		return 0;
 	}
 
-	pg_db_free_savepoints_to(dbh, imp_dbh, savepoint);
+	pg_db_free_savepoints_to(imp_dbh, savepoint);
 	return 1;
 }
 
@@ -3450,7 +3449,6 @@ int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 {
 	int    status;
-	I32    i;
 	char * action;
 
 	if (dbis->debug >= 4)
@@ -3475,7 +3473,7 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 		return 0;
 	}
 
-	pg_db_free_savepoints_to(dbh, imp_dbh, savepoint);
+	pg_db_free_savepoints_to(imp_dbh, savepoint);
 	return 1;
 }
 
