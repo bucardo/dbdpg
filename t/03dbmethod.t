@@ -18,7 +18,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 203;
+	plan tests => 204;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -413,6 +413,13 @@ is( $result->{COLUMN_DEF}, undef, 'DB handle method "column_info" returns proper
 is( $result->{ORDINAL_POSITION}, 1, 'DB handle method "column_info" returns proper ORDINAL_POSITION');
 is( $result->{IS_NULLABLE}, 'NO', 'DB handle method "column_info" returns proper IS_NULLABLE');
 is( $result->{pg_type}, 'integer', 'DB handle method "column_info" returns proper pg_type');
+
+# Make sure we handle CamelCase Column Correctly
+$sth = $dbh->column_info('','','dbd_pg_test','CaseTest');
+$result = $sth->fetchall_arrayref({})->[0];
+$t = qq{DB handle method "column_info" works with non-lowercased columns};
+is( $result->{COLUMN_NAME}, q{"CaseTest"}, $t);
+
 
 #
 # Test of the "primary_key_info" database handle method
