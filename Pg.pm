@@ -290,7 +290,7 @@ use 5.006001;
 			$oid =~ /(\d+)/ or die qq{OID was not numeric?!?\n};
 			$oid = $1;
 			## This table has a primary key. Is there a sequence associated with it via a unique, indexed column?
-			$SQL = "SELECT a.attname, i.indisprimary, substring(d.adsrc for 128) AS def\n".
+			$SQL = "SELECT a.attname, i.indisprimary, pg_catalog.pg_get_expr(adbin,adrelid)\n".
 				"FROM pg_catalog.pg_index i, pg_catalog.pg_attribute a, pg_catalog.pg_attrdef d\n ".
 				"WHERE i.indrelid = $oid AND d.adrelid=a.attrelid AND d.adnum=a.attnum\n".
 				"  AND a.attrelid = $oid AND i.indisunique IS TRUE\n".
@@ -2328,7 +2328,8 @@ constraint, and which uses a sequence as a default value. If more than one colum
 meets these conditions, the primary key will be used. This involves some
 looking up of things in the system table, so DBD::Pg will cache the sequence
 name for susequent calls. If you need to disable this caching for some reason,
-you can control it via the C<pg_cache> attribute.
+(such as the sequence name changing), you can control it via the C<pg_cache> 
+attribute.
 
 Please keep in mind that this method is far from foolproof, so make your
 script use it properly. Specifically, make sure that it is called

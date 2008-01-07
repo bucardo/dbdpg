@@ -18,7 +18,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 200;
+	plan tests => 203;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -35,7 +35,7 @@ if ($got73) {
 	$dbh->do("SET search_path TO " . $dbh->quote_identifier($schema));
 }
 
-my ($SQL, $sth, $result, @result, $expected, $warning, $rows);
+my ($SQL, $sth, $result, @result, $expected, $warning, $rows, $t);
 
 # Quick simple "tests"
 
@@ -100,18 +100,41 @@ eval {
 };
 ok( ! $@, 'DB handle method "last_insert_id" works when called twice (cached) given a valid table');
 
+#$dbh->do("DROP SCHEMA IF EXISTS dbd_pg_testli CASCADE");
 $dbh->do("CREATE SCHEMA dbd_pg_testli");
+$dbh->do("CREATE SEQUENCE dbd_pg_testli.dbd_pg_testseq");
 $dbh->{Warn}=0;
-$dbh->do("CREATE TABLE dbd_pg_testli.litest(a serial primary key)");
+$dbh->do("CREATE TABLE dbd_pg_testli.dbd_pg_litest(a INTEGER PRIMARY KEY NOT NULL DEFAULT nextval('dbd_pg_testli.dbd_pg_testseq'))");
 $dbh->{Warn}=1;
-$dbh->do("INSERT INTO dbd_pg_testli.litest DEFAULT VALUES");
+$dbh->do("INSERT INTO dbd_pg_testli.dbd_pg_litest DEFAULT VALUES");
 eval {
-	$result = $dbh->last_insert_id(undef,'dbd_pg_testli','litest',undef);
+	$result = $dbh->last_insert_id(undef,'dbd_pg_testli','dbd_pg_litest',undef);
 };
 is ($@, q{}, 'DB handle method "last_insert_id" works when called with a schema not in the search path');
 is ($result, 1, qq{Got 1});
+$dbh->commit();
 
-$dbh->do("DROP TABLE dbd_pg_testli.litest CASCADE");
+
+$t=qq{ DB handle method "last_insert_id" fails when the sequence name is changed and cache is used};
+$dbh->do("ALTER SEQUENCE dbd_pg_testli.dbd_pg_testseq RENAME TO dbd_pg_testseq2");
+$dbh->commit();
+eval {
+	$dbh->last_insert_id(undef,'dbd_pg_testli','dbd_pg_litest',undef);
+};
+like ($@, qr{last_insert_id}, $t);
+$dbh->rollback();
+
+$t=qq{ DB handle method "last_insert_id" fails when the sequence name is changed and cache is turned off};
+$dbh->commit();
+eval {
+	$dbh->last_insert_id(undef,'dbd_pg_testli','dbd_pg_litest',undef, {pg_cache=>0});
+};
+is ($@, q{}, $t);
+is ($result, 1, qq{Got 1});
+
+
+$dbh->do("DROP TABLE dbd_pg_testli.dbd_pg_litest CASCADE");
+$dbh->do("DROP SEQUENCE dbd_pg_testli.dbd_pg_testseq2");
 $dbh->do("DROP SCHEMA dbd_pg_testli CASCADE");
 
 #

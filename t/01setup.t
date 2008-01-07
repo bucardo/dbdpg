@@ -42,7 +42,27 @@ $count = $sth->fetchall_arrayref()->[0][0];
 if (1==$count) {
 	$dbh->do(sprintf "DROP SEQUENCE %s%s", $schema ? "$schema." : '', 'dbd_pg_sequence');
 }
+$SQL = "SELECT COUNT(*) FROM pg_class WHERE relname=?";
+$sth = $dbh->prepare($SQL);
+$sth->execute('dbd_pg_litest');
+$count = $sth->fetchall_arrayref()->[0][0];
+if (1==$count) {
+	$dbh->do("DROP TABLE dbd_pg_testli.dbd_pg_litest");
+}
+$sth->execute('dbd_pg_testseq');
+$count = $sth->fetchall_arrayref()->[0][0];
+if (1==$count) {
+	$dbh->do("DROP SEQUENCE dbd_pg_testli.dbd_pg_testseq");
+}
 
+# Remove test schemas
+$SQL = "SELECT COUNT(*) FROM pg_namespace WHERE nspname=?";
+$sth = $dbh->prepare($SQL);
+$sth->execute('dbd_pg_testli');
+$count = $sth->fetchall_arrayref()->[0][0];
+if (1==$count) {
+	$dbh->do("DROP SCHEMA dbd_pg_testli CASCADE");
+}
 
 $dbh->do("CREATE SEQUENCE dbd_pg_sequence");
 # If you add columns to this, please do not use reserved words!
@@ -69,6 +89,7 @@ ok( $dbh->do($SQL), qq{Created test table "dbd_pg_test"})
 $dbh->do("COMMENT ON COLUMN dbd_pg_test.id IS 'Bob is your uncle'");
 
 # Double check that the file is there
+$sth = $dbh->prepare("SELECT 1 FROM pg_class WHERE relname = 'dbd_pg_test'");
 $sth->execute();
 $count = $sth->fetchall_arrayref()->[0][0];
 is( $count, 1, 'Test table was successfully created')
