@@ -662,6 +662,7 @@ use 5.006001;
 				, quote_ident(c.relname)
 				, quote_ident(c2.relname)
 				, i.indkey, quote_ident(t.spcname), quote_ident(t.spclocation)
+				, n.nspname, c.relname, c2.relname
 			FROM
 				pg_catalog.pg_class c
 				JOIN pg_catalog.pg_index i ON (i.indrelid = c.oid)
@@ -715,6 +716,9 @@ use 5.006001;
 				$pkinfo->[$x][6] = $attribs->{$_}{typename};
 				$pkinfo->[$x][7] = $info->[5];
 				$pkinfo->[$x][8] = $info->[6];
+				$pkinfo->[$x][9] = $info->[7];
+				$pkinfo->[$x][10] = $info->[8];
+				$pkinfo->[$x][11] = $info->[9];
 				$x++;
 			}
 		}
@@ -725,6 +729,10 @@ use 5.006001;
 			# TABLESPACES
 			$info->[7] = $info->[5];
 			$info->[8] = $info->[6];
+			# Unquoted names
+			$info->[9] = $info->[7];
+			$info->[10] = $info->[8];
+			$info->[11] = $info->[9];
 			# PK_NAME
 			$info->[5] = $info->[3];
 			# COLUMN_NAME
@@ -746,6 +754,7 @@ use 5.006001;
 		my @cols = (qw(TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME
 									 KEY_SEQ PK_NAME DATA_TYPE));
 		push @cols, 'pg_tablespace_name', 'pg_tablespace_location';
+		push @cols, 'pg_schema', 'pg_table', 'pg_column';
 
 		return _prepare_from_data('primary_key_info', $pkinfo, \@cols);
 
@@ -997,6 +1006,7 @@ use 5.006001;
 
 		my $tbl_sql = ();
 
+		my $extracols = q{,NULL::text AS pg_schema, NULL::text AS pg_table};
 		if ( # Rule 19a
 				(defined $catalog and $catalog eq '%')
 				and (defined $schema and $schema eq '')
@@ -1008,7 +1018,7 @@ use 5.006001;
 					 , NULL::text AS "TABLE_SCHEM"
 					 , NULL::text AS "TABLE_NAME"
 					 , NULL::text AS "TABLE_TYPE"
-					 , NULL::text AS "REMARKS"
+					 , NULL::text AS "REMARKS" $extracols
 					};
 		}
 		elsif (# Rule 19b
@@ -1016,12 +1026,13 @@ use 5.006001;
 					 and (defined $schema and $schema eq '%')
 					 and (defined $table and $table eq '')
 					) {
+			$extracols = q{,n.nspname AS pg_schema, NULL::text AS pg_table};
 			$tbl_sql = q{SELECT
 						 NULL::text AS "TABLE_CAT"
 					 , quote_ident(n.nspname) AS "TABLE_SCHEM"
 					 , NULL::text AS "TABLE_NAME"
 					 , NULL::text AS "TABLE_TYPE"
-					 , CASE WHEN n.nspname ~ '^pg_' THEN 'system schema' ELSE 'owned by ' || pg_get_userbyid(n.nspowner) END AS "REMARKS"
+					 , CASE WHEN n.nspname ~ '^pg_' THEN 'system schema' ELSE 'owned by ' || pg_get_userbyid(n.nspowner) END AS "REMARKS" $extracols
 					FROM pg_catalog.pg_namespace n
 					ORDER BY "TABLE_SCHEM"
 					};
@@ -1038,19 +1049,20 @@ use 5.006001;
 					 , NULL::text AS "TABLE_SCHEM"
 					 , NULL::text AS "TABLE_NAME"
 					 , 'TABLE'    AS "TABLE_TYPE"
-					 , 'relkind: r' AS "REMARKS"
+					 , 'relkind: r' AS "REMARKS" $extracols
 					UNION
 					SELECT
 					   NULL::text AS "TABLE_CAT"
 					 , NULL::text AS "TABLE_SCHEM"
 					 , NULL::text AS "TABLE_NAME"
 					 , 'VIEW'     AS "TABLE_TYPE"
-					 , 'relkind: v' AS "REMARKS"
+					 , 'relkind: v' AS "REMARKS" $extracols
 				};
 		}
 		else {
 			# Default SQL
 			my $showtablespace = '';
+			$extracols = q{,n.nspname AS pg_schema, c.relname AS pg_table};
 			my @search;
 			$showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(t.spclocation) AS "pg_tablespace_location"';
 
@@ -1084,7 +1096,7 @@ use 5.006001;
 							ELSE
 								CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END
 						END AS "TABLE_TYPE"
-					 , d.description AS "REMARKS" $showtablespace
+					 , d.description AS "REMARKS" $showtablespace $extracols
 				FROM pg_catalog.pg_class AS c
 					LEFT JOIN pg_catalog.pg_description AS d
 						ON (c.oid = d.objoid AND c.tableoid = d.classoid AND d.objsubid = 0)
@@ -2457,6 +2469,12 @@ that contain the name and location of the tablespace associated with
 this table. Tables that have not been assigned to a particular tablespace
 will return NULL (C<undef>) for both of these columns.
 
+Three additional fields are returned:
+
+  pg_schema - the unquoted name of the schema
+  pg_table - the unquoted name of the table
+  pg_column - the unquoted name of the column
+
 =item B<column_info>
 
   $sth = $dbh->column_info( $catalog, $schema, $table, $column );
@@ -2476,9 +2494,9 @@ Also, five additional non-standard fields are returned:
 
   pg_type - data type with additional info i.e. "character varying(20)"
   pg_constraint - holds column constraint definition
-  pg_schema - the unescaped name of the schema
-  pg_table - the unescaped name of the table
-  pg_column - the unescaped name of the column
+  pg_schema - the unquoted name of the schema
+  pg_table - the unquoted name of the table
+  pg_column - the unquoted name of the column
 
 Note that the TABLE_SCHEM, TABLE_NAME, and COLUMN_NAME fields all return 
 output wrapped in quote_ident(). If you need the unquoted version, use 
@@ -2489,15 +2507,21 @@ the pg_ fields above.
   $sth = $dbh->primary_key_info( $catalog, $schema, $table, \%attr );
 
 Supported by this driver as proposed by DBI. The $catalog argument is
-currently unused, and the $schema argument has no effect against
-servers running version 7.2 or older. There are no search patterns allowed,
-but leaving the $schema argument blank will cause the first table
-found in the schema search path to be used. An additional field, "DATA_TYPE",
-is returned and shows the data type for each of the arguments in the
-"COLUMN_NAME" field.
+currently unused. There are no search patterns allowed, but leaving the 
+$schema argument blank will cause the first table found in the schema 
+search path to be used. An additional field, "DATA_TYPE", is returned and 
+shows the data type for each of the arguments in the "COLUMN_NAME" field.
 
 This method will also return tablespace information for servers that support
 tablespaces. See the C<table_info> entry for more information.
+
+The five additional custom fields returned are:
+
+  pg_tablespace_name - Name of the tablespace, if any
+  pg_tablespace_location - Location of the tablespace
+  pg_schema - the unquoted name of the schema
+  pg_table - the unquoted name of the table
+  pg_column - the unquoted name of the column
 
 In addition to the standard format of returning one row for each column
 found for the primary key, you can pass the C<pg_onerow> attribute to force
