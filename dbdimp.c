@@ -1215,6 +1215,7 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 	imp_sth->has_binary       = DBDPG_FALSE; /* Are any of the params binary? */
 	imp_sth->has_default      = DBDPG_FALSE; /* Are any of the params DEFAULT? */
 	imp_sth->has_current      = DBDPG_FALSE; /* Are any of the params DEFAULT? */
+	imp_sth->use_inout        = DBDPG_FALSE; /* Are any of the placeholders using inout? */
 
 
 	/* We inherit some preferences from the database handle */
@@ -1678,6 +1679,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 				newph->defaultval = DBDPG_TRUE;
 				newph->isdefault  = DBDPG_FALSE;
 				newph->iscurrent  = DBDPG_FALSE;
+				newph->isinout    = DBDPG_FALSE;
 				Newx(newph->fooname, sectionsize+1, char); /* freed in dbd_st_destroy */
 				Copy(statement-sectionsize, newph->fooname, sectionsize, char);
 				newph->fooname[sectionsize] = '\0';
@@ -1764,6 +1766,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 			newph->defaultval = DBDPG_TRUE;
 			newph->isdefault  = DBDPG_FALSE;
 			newph->iscurrent  = DBDPG_FALSE;
+			newph->isinout    = DBDPG_FALSE;
 			/* Let the correct segment(s) point to it */
 			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 				if (currseg->placeholder==xint) {
@@ -1958,9 +1961,6 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_bind_ph ph_name: (%s) newvalue: %s(%lu)\n",
 							neatsvpv(ph_name,0), neatsvpv(newvalue,0), SvOK(newvalue));
 
-	if (is_inout!=0)
-		croak("bind_inout not supported by this driver");
-
 	if (0==imp_sth->numphs)
 		croak("Statement has no placeholders to bind");
 
@@ -2047,6 +2047,12 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		if (attribs) {
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: Bind attribs (%s)", neatsvpv(attribs,0));
 		}
+	}
+
+	if (is_inout) {
+		currph->isinout = DBDPG_TRUE;
+		imp_sth->use_inout = DBDPG_TRUE;
+		currph->inout = newvalue; /* Reference to a scalar */
 	}
 
 	/* We ignore attribs for these special cases */
@@ -2541,6 +2547,12 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				pg_error(sth, PGRES_FATAL_ERROR, "execute called with an unbound placeholder");
 				return -2;
 			}
+			if (currph->isinout) {
+				currph->valuelen = sv_len(currph->inout);
+				Renew(currph->value, currph->valuelen+1, char);
+				Copy(SvPV_nolen(currph->inout), currph->value, currph->valuelen, char);
+				currph->value[currph->valuelen] = '\0';
+			}
 		}
 	}
 
@@ -3008,7 +3020,18 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 	}
 	
 	imp_sth->cur_tuple += 1;
-	
+
+	/* Experimental inout support */
+	if (imp_sth->use_inout) {
+		ph_t *currph;
+		for (i=0,currph=imp_sth->ph; NULL != currph && i < num_fields; currph=currph->nextph,i++) {
+			if (currph->isinout) {
+				sv_copypv(currph->inout, AvARRAY(av)[i]);
+			}
+		}
+	}
+
+
 	return av;
 
 } /* end of dbd_st_fetch */

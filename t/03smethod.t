@@ -2,7 +2,6 @@
 
 # Test of the statement handle methods
 # The following methods are *not* currently tested here:
-# "bind_param_inout"
 # "execute"
 # "finish"
 # "dump_results"
@@ -13,7 +12,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 57;
+	plan tests => 69;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -114,6 +113,76 @@ my $client_level = '';
 $sth2 = $dbh->prepare("SHOW client_min_messages");
 $sth2->execute();
 $client_level = $sth2->fetchall_arrayref()->[0][0];
+
+#
+# Test of the "bind_param_inout" statement handle method
+#
+
+my $t = q{Values do not change if bind_param_inout is not called};
+
+my $var = 123;
+$sth = $dbh->prepare("SELECT 1+?::int");
+
+$t = q{Invalid placeholder fails for bind_param_inout};
+eval { $sth->bind_param_inout(0, \$var, 0); };
+like($@, qr{Cannot bind}, $t);
+
+eval { $sth->bind_param_inout(3, \$var, 0); };
+like($@, qr{Cannot bind}, $t);
+
+$t = q{Calling bind_param_inout with a non-scalar reference fails};
+eval { $sth->bind_param_inout(1, "noway", 0); };
+like($@, qr{needs a reference}, $t);
+
+eval { $sth->bind_param_inout(1, $t, 0); };
+like($@, qr{needs a reference}, $t);
+
+eval { $sth->bind_param_inout(1, [123], 0); };
+like($@, qr{needs a reference}, $t);
+
+
+$t = q{Calling bind_param_inout changes an integer value};
+eval { $sth->bind_param_inout(1, \$var, 0); };
+is($@, q{}, $t);
+$var = 999;
+$sth->execute();
+$sth->fetch;
+is($var, 1000, $t);
+
+$t = q{Calling bind_param_inout changes a string value};
+$sth = $dbh->prepare("SELECT 'X'||?::text");
+$sth->bind_param_inout(1, \$var, 0);
+$var = 'abc';
+$sth->execute();
+$sth->fetch;
+is($var, 'Xabc', $t);
+
+$t = q{Calling bind_param_inout changes a string to a float};
+$sth = $dbh->prepare("SELECT ?::float");
+$sth->bind_param_inout(1, \$var, 0);
+$var = '1e+6';
+$sth->execute();
+$sth->fetch;
+is($var, '1000000', $t);
+
+$t = q{Calling bind_param_inout works for second placeholder};
+$sth = $dbh->prepare("SELECT ?::float, 1+?::int");
+$sth->bind_param_inout(2, \$var, 0);
+$var = 111;
+$sth->execute(222,333);
+$sth->fetch;
+is($var, 112, $t);
+
+$t = q{Calling bind_param_inout changes two variables at once};
+my $var2 = 234;
+$sth = $dbh->prepare("SELECT 1+?::float, 1+?::int");
+$sth->bind_param_inout(1, \$var, 0);
+$sth->bind_param_inout(2, \$var2, 0);
+$var = 444; $var2 = 555;
+$sth->execute();
+$sth->fetch;
+is($var, 445, $t);
+is($var2, 556, $t);
 
 #
 # Test of the "bind_param_array" statement handle method

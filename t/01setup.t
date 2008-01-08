@@ -78,7 +78,7 @@ CREATE TABLE dbd_pg_test (
   testarray  text[][],
   testarray2 int[],
   "CaseTest" boolean,
-  bytetest   bytea
+  bytetest   bytea 
 )
 };
 

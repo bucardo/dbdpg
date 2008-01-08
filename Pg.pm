@@ -2875,7 +2875,27 @@ Examples:
 
 =item B<bind_param_inout>
 
-Currently not supported by this driver.
+Experimental support for this feature is provided. The first argument to 
+bind_param_inout should be a placeholder number. The second argument 
+should be a reference to a scalar variable in your script. The third argument 
+is not used and should simply be set to 0. Note that what this really does is 
+assign a returned column to the variable, in the order in which the column 
+appears. For example:
+
+  my $foo = 123;
+  $sth = $dbh->prepare("SELECT 1+?::int");
+  $sth->bind_param_inout(1, \$foo, 0);
+  $foo = 222;
+  $sth->execute(444);
+  $sth->fetch;
+
+The above will cause $foo to have a new value of "223" after the final fetch.
+Note that the variables bound in this manner are very sticky, and will trump any 
+values passed in to execute. This is because the binding is done as late as possible, 
+at the execute() stage, allowing the value to be changed between the time it was bound 
+and the time the query is executed. Thus, the above execute is the same as:
+
+  $sth->execute();
 
 =item B<bind_param_array>
 

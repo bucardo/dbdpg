@@ -63,6 +63,8 @@ struct ph_st {
 	bool   defaultval;          /* is it using a generic 'default' value? */
 	bool   iscurrent;           /* is it using a generic 'default' value? */
 	bool   isdefault;           /* Are we passing a literal 'DEFAULT'? */
+	bool   isinout;             /* Is this a bind_param_inout value? */
+	SV     *inout;              /* What variable we are updating via inout magic */
 	sql_type_info_t* bind_type; /* type information for this placeholder */
 	struct ph_st *nextph;       /* more linked list goodness */
 };
@@ -101,7 +103,8 @@ struct imp_sth_st {
 	bool   has_binary;       /* does it have one or more binary placeholders? */
 	bool   has_default;      /* does it have one or more 'DEFAULT' values? */
 	bool   has_current;      /* does it have one or more 'DEFAULT' values? */
-	bool   dollaronly;          /* Only use $1 as placeholders, allow all else */
+	bool   dollaronly;       /* Only use $1 as placeholders, allow all else */
+	bool   use_inout;        /* Any placeholders using inout? */
 };
 
 /* Other (non-static) functions we have added to dbdimp.c */

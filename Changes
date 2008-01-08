@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Very experimental support for bind_param_inout, use 
+		with caution. [GSM]
 	- Switch from pow to powf to support AIX compiler issue.
 		(CPAN bug #24579) [GSM]
 	- Use adbin, not adsrc, when figuring out the sequence name for the 
