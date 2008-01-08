@@ -18,7 +18,7 @@
 		strings from ruining the prepare. UTF-16 may still cause problems.
 		(CPAN bug #31577) [GSM]
 	- Fix crash when executing query with two placeholders side by side.
-      Thanks to Daniel Browning for spotting this. [GSM]
+		Thanks to Daniel Browning for spotting this. [GSM]
 	- Fix bad PG_INTEGER example in docs, thanks to Xavi Drudis Ferran.
 		(CPAN bug #31545) [GSM]
 	- Force SQL_REAL and SQL_NUMERIC to be float8 not float4.
