@@ -2,7 +2,8 @@
 
 2.0.0
 	- Add three new columns to column_info, to return unquoted 
-		version: pg_schema, pg_table, and pg_columns 
+		version: pg_schema, pg_table, and pg_columns. Add all 
+		three to primary_key_info, and the first two to table_info
 		(CPAN bug #20282) [GSM]
 	- Very experimental support for bind_param_inout, use 
 		with caution. [GSM]
