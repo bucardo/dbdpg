@@ -1,6 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Add three new columns to column_info, to return unquoted 
+		version: pg_schema, pg_table, and pg_columns 
+		(CPAN bug #20282) [GSM]
 	- Very experimental support for bind_param_inout, use 
 		with caution. [GSM]
 	- Switch from pow to powf to support AIX compiler issue.

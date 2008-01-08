@@ -409,6 +409,10 @@ use 5.006001;
 				, a.attnum AS "ORDINAL_POSITION"
 				, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
 				, pg_catalog.format_type(a.atttypid, a.atttypmod) AS "pg_type"
+				, '?' AS "pg_constraint"
+				, n.nspname AS "pg_schema"
+				, c.relname AS "pg_table"
+				, a.attname AS "pg_column"
 				, a.attrelid AS "pg_attrelid"
 				, a.attnum AS "pg_attnum"
 				, a.atttypmod AS "pg_atttypmod"
@@ -451,6 +455,9 @@ use 5.006001;
 			IS_NULLABLE          17
 			pg_type              18
 			pg_constraint        19
+			pg_schema            20
+			pg_table             21
+			pg_column            22
 			/);
 
 		my $oldconstraint_sth;
@@ -2465,10 +2472,17 @@ These fields are currently always returned with NULL (C<undef>) values:
    SQL_DATETIME_SUB
    CHAR_OCTET_LENGTH
 
-Also, two additional non-standard fields are returned:
+Also, five additional non-standard fields are returned:
 
   pg_type - data type with additional info i.e. "character varying(20)"
   pg_constraint - holds column constraint definition
+  pg_schema - the unescaped name of the schema
+  pg_table - the unescaped name of the table
+  pg_column - the unescaped name of the column
+
+Note that the TABLE_SCHEM, TABLE_NAME, and COLUMN_NAME fields all return 
+output wrapped in quote_ident(). If you need the unquoted version, use 
+the pg_ fields above.
 
 =item B<primary_key_info>
 
