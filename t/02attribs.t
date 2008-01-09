@@ -91,7 +91,7 @@ d InactiveDestroy (must be the last one tested)
 
 };
 
-my ($attrib,$SQL,$sth,$warning,$result);
+my ($attrib,$SQL,$sth,$warning,$result,$expected);
 
 #
 # Test of the database handle attribute "Statement"
@@ -186,9 +186,10 @@ SKIP: {
 		if ! exists $ENV{DBI_DSN};
 	skip qq{Cannot test DB handle attribute "Name": invalid DBI_DSN}, 1
 		if $ENV{DBI_DSN} !~ /^dbi:Pg:(.+)$/io;
-
+	$expected = $1;
 	$attrib = $dbh->{Name};
-	is( $attrib, $1, 'DB handle attribute "Name" returns same value as DBI_DSN');
+	$expected =~ s/(db|database)=/dbname=/;
+	is( $attrib, $expected, 'DB handle attribute "Name" returns same value as DBI_DSN');
 }
 
 #
@@ -412,7 +413,7 @@ $sth->finish();
 $sth = $dbh->prepare("DELETE FROM dbd_pg_test WHERE id=0");
 $sth->execute();
 $attrib = $sth->{'NUM_OF_FIELDS'};
-my $expected = undef;
+$expected = undef;
 is( $attrib, $expected, 'Statement handle attribute "NUM_OF_FIELDS" works correctly for DELETE');
 $attrib = $sth->{'NUM_OF_PARAMS'};
 is( $attrib, '0', 'Statement handle attribute "NUM_OF_PARAMS" works correctly with no placeholder');
