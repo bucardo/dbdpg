@@ -1012,7 +1012,7 @@ use 5.006001;
 				and (defined $schema and $schema eq '')
 				and (defined $table and $table eq '')
 			 ) {
-			$tbl_sql = q{
+			$tbl_sql = qq{
 					SELECT
 						 NULL::text AS "TABLE_CAT"
 					 , NULL::text AS "TABLE_SCHEM"
@@ -1027,7 +1027,7 @@ use 5.006001;
 					 and (defined $table and $table eq '')
 					) {
 			$extracols = q{,n.nspname AS pg_schema, NULL::text AS pg_table};
-			$tbl_sql = q{SELECT
+			$tbl_sql = qq{SELECT
 						 NULL::text AS "TABLE_CAT"
 					 , quote_ident(n.nspname) AS "TABLE_SCHEM"
 					 , NULL::text AS "TABLE_NAME"
@@ -1043,7 +1043,7 @@ use 5.006001;
 					 and (defined $table and $table eq '')
 					 and (defined $type and $type eq '%')
 					) {
-			$tbl_sql = q{
+			$tbl_sql = qq{
 					SELECT
 					   NULL::text AS "TABLE_CAT"
 					 , NULL::text AS "TABLE_SCHEM"
