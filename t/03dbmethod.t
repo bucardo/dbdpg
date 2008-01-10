@@ -17,7 +17,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 206;
+	plan tests => 208;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -80,6 +80,12 @@ $dbh->rollback();
 
 eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef,{sequence=>'dbd_pg_sequence'});
+};
+ok( ! $@, 'DB handle method "last_insert_id" works when given a valid sequence and an invalid table');
+like( $result, qr{^\d+$}, 'DB handle method "last_insert_id" returns a numeric value');
+
+eval {
+	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef, 'dbd_pg_sequence');
 };
 ok( ! $@, 'DB handle method "last_insert_id" works when given a valid sequence and an invalid table');
 like( $result, qr{^\d+$}, 'DB handle method "last_insert_id" returns a numeric value');
