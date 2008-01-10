@@ -211,20 +211,7 @@ use 5.006001;
 			'Statement' => $statement,
 		});
 
-		my $ph = DBD::Pg::st::_prepare($sth, $statement, @attribs) || 0;
-
-		if ($ph < 0) {
-			return undef;
-		}
-
-		if (@attribs and ref $attribs[0] and ref $attribs[0] eq 'HASH') {
-			# Feel ambitious? Move all this to dbdimp.c! :)
-			if (exists $attribs[0]->{bind_types}) {
-				my $bind = $attribs[0]->{bind_types};
-				## Until we are allowed to set just the type, we use a null
-				$sth->bind_param("$1",undef,"foo");
-			}
-		}
+		DBD::Pg::st::_prepare($sth, $statement, @attribs) || 0;
 
 		$sth;
 	}
