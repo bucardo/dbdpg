@@ -551,6 +551,34 @@ close $oldfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 
+## Rewrite 99_pod.t
+$file = 't/99_pod.t';
+open $oldfh, '<', $file or die qq{Could not open "$file": $!\n};
+open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
+$step = 0;
+while (<$oldfh>) {
+	if (0 == $step) {
+		if (/types.c/) {
+			print $newfh $_;
+			for (sort { $pgtype{$a}{define} cmp $pgtype{$b}{define} } keys %pgtype) {
+				print $newfh "\t\t qr{$pgtype{$_}{define}},\n";
+			}
+			print $newfh "\n";
+			$step = 1;
+			next;
+		}
+	}
+	elsif (1 == $step) {
+		next unless /;/;
+		$step = 2;
+	}
+	print $newfh $_;
+}
+close $newfh;
+close $oldfh;
+system("mv $file.tmp $file");
+print "Wrote $file\n";
+
 
 ## Rewrite types.c
 $file = "types.c";
