@@ -15,9 +15,12 @@ else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file.';
 }
 
-my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
-											 {RaiseError => 0, PrintError => 0, AutoCommit => 1});
-ok( defined $dbh, "Connect to database for test table creation");
+my $dbh;
+eval {
+	$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+						{RaiseError => 1, PrintError => 0, AutoCommit => 1});
+};
+is($@, q{}, "Connect to database for test table creation");
 
 # Remove the test relations if they exist
 my $schema = DBD::Pg::_pg_use_catalog($dbh);

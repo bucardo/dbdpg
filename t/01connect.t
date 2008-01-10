@@ -10,7 +10,7 @@ select((select(STDERR),$|=1)[0]);
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 8;
+	plan tests => 15;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file.';
 }
@@ -23,7 +23,7 @@ my ($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
 # the first is when we truly do not connect, usually a bad DBI_DSN;
 # the second is an invalid login, usually a bad DBI_USER or DBI_PASS
 
-my $dbh;
+my ($dbh,$t);
 eval {
 	$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 											{RaiseError => 1, PrintError => 0, AutoCommit => 0});
@@ -66,6 +66,52 @@ eval {
  $sth->execute();
 };
 ok( $@, 'Execute fails on a disconnected statement');
+
+# Try out various connection options
+SKIP: {
+	my $alias = qr{(database|db|dbname)};
+	if ($ENV{DBI_DSN} !~ /$alias\s*=\s*\S+/) {
+		skip "DBI_DSN contains no database option, so skipping connection tests", 4;
+	}
+
+	$t=q{Connect with invalid option fails};
+	my $oldname = $1;
+	(my $dbi = $ENV{DBI_DSN}) =~ s/$alias\s*=/dbbarf=/;
+	eval {
+		$dbh = DBI->connect($dbi, $ENV{DBI_USER}, $ENV{DBI_PASS}, {RaiseError=>1});
+	};
+	like ($@, qr{invalid connection option}, $t);
+	for my $opt (qw/db dbname database/) {
+		$t=qq{Connect using string '$opt' works};
+		($dbi = $ENV{DBI_DSN}) =~ s/$alias\s*=/$opt=/;
+		eval {
+			$dbh = DBI->connect($dbi, $ENV{DBI_USER}, $ENV{DBI_PASS}, {RaiseError=>1});
+		};
+		is($@, q{}, $t);
+	}
+
+	if ($ENV{DBI_DSN} =~ /$alias\s*=\s*"/) {
+		skip "DBI_DSN already contains quoted database, no need for explicit test", 1;
+	}
+	$t=q{Connect using a quoted database argument};
+	($dbi = $ENV{DBI_DSN}) =~ s/$alias\s*=(\w+)/'db="'.lc $2.'"'/e;
+	eval {
+		$dbh = DBI->connect($dbi, $ENV{DBI_USER}, $ENV{DBI_PASS}, {RaiseError=>1});
+	};
+	is($@, q{}, $t);
+}
+
+$t=q{Connect with an undefined user picks up $ENV{DBI_USER}};
+eval {
+	$dbh = DBI->connect($ENV{DBI_DSN}, undef, $ENV{DBI_PASS}, {RaiseError=>1});
+};
+is($@, q{}, $t);
+
+$t=q{Connect with an undefined password picks up $ENV{DBI_PASS}};
+eval {
+	$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, undef, {RaiseError=>1});
+};
+is($@, q{}, $t);
 
 END {
 	my $pv = sprintf("%vd", $^V);

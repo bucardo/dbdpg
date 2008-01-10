@@ -12,7 +12,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 69;
+	plan tests => 71;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -27,11 +27,19 @@ $dbh->do("SET search_path TO " . $dbh->quote_identifier
 		 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
 
 $dbh->do("DELETE FROM dbd_pg_test");
-my ($SQL, $sth, $sth2, $result, @result, $expected, $warning, $rows);
+my ($SQL, $sth, $sth2, $result, @result, $expected, $warning, $rows, $t);
 
 #
 # Test of the prepare flags
 #
+
+$t=q{Calling prepare() with no arguments gives an error};
+eval{ $sth = $dbh->prepare(); };
+like($@, qr{\+ 0}, $t);
+
+$t=q{Calling prepare() with an undefined value returns undef};
+$sth = $dbh->prepare(undef);
+is($sth, undef, $t);
 
 $SQL = "SELECT id FROM dbd_pg_test WHERE id = ?";
 $sth = $dbh->prepare($SQL);

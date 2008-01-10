@@ -1741,7 +1741,7 @@ Implemented by DBI, no driver-specific impact.
 
 This driver supports this method. Note that the necessary database connection
 to the database "template1" will be made on the localhost without any user
-authentication. Other preferences can only be set with the environment
+authentication. Other preferences can be set with the environment
 variables C<PGHOST>, C<PGPORT>, C<DBI_USER>, C<DBI_PASS>, and C<PGSERVICE>.
 
 You can also pass in options to add to the connection string as the second argument 
