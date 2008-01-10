@@ -172,9 +172,10 @@ use 5.006001;
 		$pass = defined($pass) ? $pass : defined $ENV{DBI_PASS} ? $ENV{DBI_PASS} : "";
 
 		my ($dbh) = DBI::_new_dbh($drh, {
-			'Name' => $dbname,
-			'User' => $user, 'CURRENT_USER' => $user,
-		});
+			'Name'         => $dbname,
+			'Username'     => $user,
+			'CURRENT_USER' => $user,
+		 });
 
 		# Connect to the database..
 		DBD::Pg::db::_login($dbh, $dbname, $user, $pass) or return undef;

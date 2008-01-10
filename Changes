@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Change $dbh->{User} to $dbh->{Username} [GSM]
 	- Add three new columns to column_info, to return unquoted 
 		version: pg_schema, pg_table, and pg_columns. Add all 
 		three to primary_key_info, and the first two to table_info
