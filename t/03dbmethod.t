@@ -2,7 +2,6 @@
 
 # Test of the database handle methods
 # The following methods are *not* (explicitly) tested here:
-# "clone"
 # "data_sources"
 # "disconnect"
 # "take_imp_data"
@@ -18,7 +17,7 @@ use strict;
 $|=1;
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 204;
+	plan tests => 206;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -1139,6 +1138,21 @@ SKIP: {
 	is($invalid, 0, qq{DB handle method "private_attribute_info" returns only internal names});
 
 }
+
+#
+# Test of the "clone" database handle method
+#
+
+$t=q{ Database handle method "clone" does not throw an error};
+my $dbh2;
+eval { $dbh2 = $dbh->clone(); };
+is($@, q{}, $t);
+$t=q{ Database handle method "clone" returns a valid database handle};
+eval {
+	$dbh2->do("SELECT 123");
+};
+is($@, q{}, $t);
+$dbh2->disconnect();
 
 #
 # Test of the "ping" database handle method
