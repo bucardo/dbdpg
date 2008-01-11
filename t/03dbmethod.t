@@ -87,7 +87,7 @@ $dbh->rollback();
 eval {
 	$dbh->last_insert_id(undef,undef,'dbd_pg_test',{sequence=>''});
 };
-ok($@, 'DB handle method "last_insert_id" fails when given an empty sequence argument');
+is($@, q{}, 'DB handle method "last_insert_id" fails works given an empty sequence argument');
 $dbh->rollback();
 
 eval {

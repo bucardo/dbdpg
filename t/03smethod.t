@@ -126,7 +126,7 @@ $client_level = $sth2->fetchall_arrayref()->[0][0];
 # Test of the "bind_param_inout" statement handle method
 #
 
-my $t = q{Values do not change if bind_param_inout is not called};
+$t = q{Values do not change if bind_param_inout is not called};
 
 my $var = 123;
 $sth = $dbh->prepare("SELECT 1+?::int");
