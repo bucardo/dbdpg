@@ -9,14 +9,15 @@ use strict;
 select((select(STDERR),$|=1)[0]);
 $|=1;
 
+## Define this here in case we get to the END block before a connection is made.
+my ($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
+
+my $bail = 0;
 if (defined $ENV{DBI_DSN}) {
 	plan tests => 15;
 } else {
-	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file.';
+	BAIL_OUT "DBI_DSN must be set";
 }
-
-## Define this here in case we get to the END block before a connection is made.
-my ($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
 
 # Trapping a connection error can be tricky, but we only have to do it 
 # this thoroughly one time. We are trapping two classes of errors:
@@ -117,14 +118,16 @@ END {
 	my $pv = sprintf("%vd", $^V);
 	my $schema = exists $ENV{DBD_SCHEMA} ? 
 		"\nDBD_SCHEMA        $ENV{DBD_SCHEMA}" : '';
+	my $dsn = exists $ENV{DBI_DSN} ? $ENV{DBI_DSN} : '?';
+	my $ver = defined $DBD::Pg::VERSION ? $DBD::Pg::VERSION : '?';
 	diag 
 		"\nProgram               Version\n".
 		"Perl                  $pv ($^O)\n".
-		"DBD::Pg               $DBD::Pg::VERSION\n".
+		"DBD::Pg               $ver\n".
 		"PostgreSQL (compiled) $pglibversion\n".
 		"PostgreSQL (target)   $pgversion\n".
 		"PostgreSQL (reported) $pgvstring\n".
 		"Default port          $pgdefport\n".
 		"DBI                   $DBI::VERSION\n".
-		"DBI_DSN               $ENV{DBI_DSN}$schema\n";
+		"DBI_DSN               $dsn$schema\n";
 }
