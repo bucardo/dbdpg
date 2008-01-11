@@ -1,7 +1,7 @@
 # -*-cperl-*-
 #  $Id$
 #
-#  Copyright (c) 2002-2007 Greg Sabino Mullane and others: see the Changes file
+#  Copyright (c) 2002-2008 Greg Sabino Mullane and others: see the Changes file
 #  Portions Copyright (c) 2002 Jeffrey W. Baker
 #  Portions Copyright (c) 1997-2001 Edmund Mergl
 #  Portions Copyright (c) 1994-1997 Tim Bunce

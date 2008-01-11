@@ -1,7 +1,7 @@
 /*
    $Id$
 
-   Copyright (c) 2000-2007 Greg Sabino Mullane and others: see the Changes file
+   Copyright (c) 2000-2008 Greg Sabino Mullane and others: see the Changes file
    Copyright (c) 1997-2000 Edmund Mergl
    Portions Copyright (c) 1994-1997 Tim Bunce
 
