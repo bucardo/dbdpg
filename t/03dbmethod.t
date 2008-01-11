@@ -62,20 +62,32 @@ $sth->execute(12,'Kiwi');
 
 $dbh->commit();
 eval {
-	$result = $dbh->last_insert_id(undef,undef,undef,undef);
+	$dbh->last_insert_id(undef,undef,undef,undef);
 };
-ok( $@, 'DB handle method "last_insert_id" given an error when no arguments are given');
+ok( $@, 'DB handle method "last_insert_id" fails when no arguments are given');
 
 eval {
-	$result = $dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistentsequence_test'});
+	$dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistentsequence_test'});
 };
 ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent sequence');
 $dbh->rollback();
 
 eval {
-	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef);
+	$dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef);
 };
 ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent table');
+$dbh->rollback();
+
+eval {
+	$dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',[]);
+};
+ok($@, 'DB handle method "last_insert_id" fails when given an arrayref as last argument');
+$dbh->rollback();
+
+eval {
+	$dbh->last_insert_id(undef,undef,'dbd_pg_test',{sequence=>''});
+};
+ok($@, 'DB handle method "last_insert_id" fails when given an empty sequence argument');
 $dbh->rollback();
 
 eval {
@@ -98,27 +110,29 @@ ok( ! $@, 'DB handle method "last_insert_id" works when given a valid table');
 eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef,'');
 };
-ok( ! $@, 'DB handle method "last_insert_id" works when given an empty attrib');
+is($@, q{}, 'DB handle method "last_insert_id" works when given an empty attrib');
 
 eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef);
 };
-ok( ! $@, 'DB handle method "last_insert_id" works when called twice (cached) given a valid table');
+is($@, q{}, 'DB handle method "last_insert_id" works when called twice (cached) given a valid table');
 
-#$dbh->do("DROP SCHEMA IF EXISTS dbd_pg_testli CASCADE");
+$dbh->{RaiseError} = 0;
+$dbh->do("DROP TABLE dbd_pg_testli.dbd_pg_litest"); $dbh->commit();
+$dbh->do("DROP SEQUENCE dbd_pg_testli.dbd_pg_testseq"); $dbh->commit();
+$dbh->do("DROP SEQUENCE dbd_pg_testli.dbd_pg_testseq2"); $dbh->commit();
+$dbh->do("DROP SCHEMA dbd_pg_testli"); $dbh->commit();
+$dbh->{RaiseError} = 1;
+$dbh->do("SET client_min_messages = 'ERROR'");
 $dbh->do("CREATE SCHEMA dbd_pg_testli");
 $dbh->do("CREATE SEQUENCE dbd_pg_testli.dbd_pg_testseq");
-$dbh->{Warn}=0;
 $dbh->do("CREATE TABLE dbd_pg_testli.dbd_pg_litest(a INTEGER PRIMARY KEY NOT NULL DEFAULT nextval('dbd_pg_testli.dbd_pg_testseq'))");
-$dbh->{Warn}=1;
 $dbh->do("INSERT INTO dbd_pg_testli.dbd_pg_litest DEFAULT VALUES");
 eval {
 	$result = $dbh->last_insert_id(undef,'dbd_pg_testli','dbd_pg_litest',undef);
 };
 is ($@, q{}, 'DB handle method "last_insert_id" works when called with a schema not in the search path');
-is ($result, 1, qq{Got 1});
 $dbh->commit();
-
 
 $t=qq{ DB handle method "last_insert_id" fails when the sequence name is changed and cache is used};
 $dbh->do("ALTER SEQUENCE dbd_pg_testli.dbd_pg_testseq RENAME TO dbd_pg_testseq2");
@@ -129,18 +143,16 @@ eval {
 like ($@, qr{last_insert_id}, $t);
 $dbh->rollback();
 
-$t=qq{ DB handle method "last_insert_id" fails when the sequence name is changed and cache is turned off};
+$t=qq{ DB handle method "last_insert_id" works when the sequence name is changed and cache is turned off};
 $dbh->commit();
 eval {
 	$dbh->last_insert_id(undef,'dbd_pg_testli','dbd_pg_litest',undef, {pg_cache=>0});
 };
 is ($@, q{}, $t);
-is ($result, 1, qq{Got 1});
 
-
-$dbh->do("DROP TABLE dbd_pg_testli.dbd_pg_litest CASCADE");
+$dbh->do("DROP TABLE dbd_pg_testli.dbd_pg_litest");
 $dbh->do("DROP SEQUENCE dbd_pg_testli.dbd_pg_testseq2");
-$dbh->do("DROP SCHEMA dbd_pg_testli CASCADE");
+$dbh->do("DROP SCHEMA dbd_pg_testli");
 
 #
 # Test of the "selectrow_array" database handle method
