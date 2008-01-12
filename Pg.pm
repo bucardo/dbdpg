@@ -1815,9 +1815,6 @@ reference to an array of hashes, each of which contains the following keys:
   PRIMARY_KEY flag is_primary_key
   REMARKS     attribute description
 
-The REMARKS field will be returned as C<NULL> for Postgres versions 7.1.x and
-older.
-
 =item lo_creat
 
   $lobjId = $dbh->func($mode, 'lo_creat');
@@ -3422,9 +3419,6 @@ PostgreSQL documentation for COPY be found at:
 
 http://www.postgresql.org/docs/current/static/sql-copy.html
 
-Note that 7.2 servers can only accept a small subset of later features in 
-the COPY command: most notably they do not accept column specifications.
-
 Once the COPY command has been issued, no other SQL commands are allowed 
 until after pg_endcopy has been successfully called. If in a COPY IN state, 
 you cannot use pg_getline, and if in COPY OUT state, you cannot use pg_putline.
@@ -3501,8 +3495,7 @@ work.  First you must declare your cursor.  Now you can issue queries against
 the cursor, then select against your queries.  This typically results in a
 double loop, like this:
 
-  # Note: WITH HOLD is only available from PostgreSQL 7.4 on.  It is not
-  # needed if AutoCommit is off.
+  # WITH HOLD is not needed if AutoCommit is off
   $dbh->do("DECLARE csr CURSOR WITH HOLD FOR $sql");
   while (1) {
     my $sth = $dbh->prepare("fetch 1000 from csr");
