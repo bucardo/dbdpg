@@ -2,7 +2,6 @@
 
 ## Run Perl::Critic against the source code and the tests
 ## This is highly customized, so take with a grain of salt
-## Mostly useful for the core developer(s)
 ## Requires TEST_CRITIC to be set
 
 use strict;
@@ -10,6 +9,8 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 select(($|=1,select(STDERR),$|=1)[1]);
+
+my @testfiles;
 
 if (!$ENV{TEST_CRITIC}) {
 	plan skip_all => 'Set the environment variable TEST_CRITIC to enable this test';
@@ -21,10 +22,71 @@ elsif ($Perl::Critic::VERSION < 0.23) {
 	plan skip_all => 'Perl::Critic must be version 0.23 or higher';
 }
 else {
-	plan tests => 1;
+	opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
+	@testfiles = map { "t/$_" } grep { /^\d+\w+\.t$/ } readdir $dir;
+	closedir $dir;
+	plan tests => 2+@testfiles;
 }
 
-## Specific exclusions:
+## Check the non-test files - just Pg.pm for now
+my $critic = Perl::Critic->new(-severity => 1);
+
+for my $filename (qw/Pg.pm/) {
+
+	if ($ENV{TEST_CRITIC_SKIPNONTEST}) {
+		pass qq{Skipping non-test file "$filename"};
+		next;
+	}
+
+	-e $filename or die qq{Could not find "$filename"!};
+	open my $oldstderr, '>&', STDERR or die 'Could not dupe STDERR';
+	close STDERR or die qq{Could not close STDERR: $!};
+	my @vio = $critic->critique($filename);
+	open STDERR, '>&', $oldstderr or die 'Could not recreate STDERR'; ## no critic
+	close $oldstderr or die qq{Could not close STDERR copy: $!};
+	my $vios = 0;
+  VIO: for my $v (@vio) {
+		my $d = $v->description();
+		(my $policy = $v->policy()) =~ s/Perl::Critic::Policy:://;
+		my $source = $v->source();
+
+		next if $policy =~ /ProhibitInterpolationOfLiterals/; ## For now
+
+		## Export problems that really aren't:
+		next if $d =~ /Subroutine "SQL_\w+" (?:not exported|is neither)/;
+		next if $d =~ /Subroutine "pg_\w+" not exported/;
+		next if $d =~ /Subroutine "looks_like_number" not exported/;
+
+		## These are mostly artifacts of P::C being confused by multiple package layout:
+		next if $policy =~ /ProhibitCallsToUndeclaredSubs/;
+		next if $policy =~ /ProhibitCallsToUnexportedSubs/;
+		next if $policy =~ /RequireExplicitPackage/;
+		next if $policy =~ /RequireUseStrict/;
+		next if $policy =~ /RequireUseWarnings/;
+		next if $policy =~ /RequireExplicitPackage/;
+
+		## Allow our sql and qw blocks to have tabs:
+		next if $policy =~ /ProhibitHardTabs/ and ($source =~ /sql = qq/i or $source =~ /qw[\(\/]/);
+
+		$vios++;
+		my $f = $v->filename();
+		my $l = $v->location();
+		my $line = $l->[0];
+		diag "\nFile: $f (line $line)\n";
+		diag "Vio: $d\n";
+		diag "Policy: $policy\n";
+		diag "Source: $source\n\n";
+	}
+	if ($vios) {
+		fail qq{ Failed Perl::Critic tests for file "$filename": $vios};
+	}
+	else {
+		pass qq{ File "$filename" passed all Perl::Critic tests};
+	}
+
+}
+
+## Specific exclusions for test scripts:
 my %ok =
 	(yaml => {
 			  sub => 'meta_spec_ok',
@@ -35,12 +97,7 @@ my %ok =
 	 signature => {
 			 sub => 'verify SIGNATURE_OK',
 			 },
-	 Pg => {
-			sub => 'foo',
-			}
 );
-
-
 for my $f (keys %ok) {
 	for my $ex (keys %{$ok{$f}}) {
 		if ($ex eq 'sub') {
@@ -54,69 +111,49 @@ for my $f (keys %ok) {
 	}
 }
 
-## Check the non-test files
-my $critic = Perl::Critic->new(-severity => 4, '-profile-strictness', 'quiet');
-
-for my $filename (qw/Pg.pm/) {
-	-e $filename or die qq{Could not find $filename\n};
-	diag "Running Perl::Critic on $filename...\n";
-	my @bad = $critic->critique($filename);
-	my $baditems = 0;
-  VIO: for my $v (@bad) {
-		my $d = $v->description();
-		my $f = $v->filename();
-		next if $d =~ /Subroutine "SQL_\w+" (?:not exported|is neither)/;
-		next if $d =~ /Subroutine "pg_\w+" not exported/;
-		next if $d =~ /Subroutine "looks_like_number" not exported/;
-		for my $k (sort keys %ok) {
-			next unless $f =~ /$k/;
-			for (@{$ok{$k}{OK}}) {
-				next VIO if $d =~ $_;
-			}
-		}
-		$baditems++;
-		my $l = $v->location();
-		my $line = $l->[0];
-		my $policy = $v->policy();
-		my $source = $v->source();
-		diag "$d ($f: $line)\n";
-		diag "[-$policy]\n";
-		diag "S=$source\n\n";
-	}
-}
-
-$critic = Perl::Critic->new(-severity => 1, -theme => 'core');
-
 ## Allow Test::More subroutines
 my $tm = join '|' => (qw/skip plan pass fail is ok diag BAIL_OUT/);
 my $testmoreok = qr{Subroutine "$tm" is neither};
 
-opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
-my @files = map { "t/$_" } grep { /\.t$/ } readdir $dir;
-closedir $dir;
+## Create a new critic for the tests
+$critic = Perl::Critic->new(-severity => 1);
 
-for my $filename (@files) {
-	diag "Running Perl::Critic on $filename...\n";
-	my @bad = $critic->critique($filename);
-	my $baditems = 0;
-  VIO: for my $v (@bad) {
+my $count = 1;
+for my $filename (@testfiles) {
+	-e $filename or die qq{Could not find "$filename"!};
+	my @vio = $critic->critique($filename);
+	my $vios = 0;
+  VIO: for my $v (@vio) {
 		my $d = $v->description();
+		(my $policy = $v->policy()) =~ s/Perl::Critic::Policy:://;
+		my $source = $v->source();
 		my $f = $v->filename();
+
+		## Skip common Test::More subroutines:
 		next if $d =~ $testmoreok;
+
+		## Skip other specific items:
 		for my $k (sort keys %ok) {
 			next unless $f =~ /$k/;
 			for (@{$ok{$k}{OK}}) {
 				next VIO if $d =~ $_;
 			}
 		}
-		$baditems++;
+
+		$vios++;
 		my $l = $v->location();
 		my $line = $l->[0];
-		my $policy = $v->policy();
-		my $source = $v->source();
-		diag "$d ($f: $line)\n";
-		diag "[-$policy]\n";
-		diag "S=$source\n\n";
+		diag "\nFile: $f (line $line)\n";
+		diag "Vio: $d\n";
+		diag "Policy: $policy\n";
+		diag "Source: $source\n\n";
+	}
+	my $SPACE = ++$count < 10 ? ' ' : '';
+	if ($vios) {
+		fail qq{${SPACE}Failed Perl::Critic tests for file "$filename": $vios};
+	}
+	else {
+		pass qq{${SPACE}File "$filename" passed all Perl::Critic tests};
 	}
 }
 
