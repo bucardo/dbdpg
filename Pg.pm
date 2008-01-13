@@ -12,7 +12,7 @@
 
 use strict;
 use warnings;
-use 5.006001;  
+use 5.006001;
 
 {
 	package DBD::Pg;
@@ -26,7 +26,7 @@ use 5.006001;
 	@ISA = qw(DynaLoader Exporter);
 
 
-	%EXPORT_TAGS = 
+	%EXPORT_TAGS =
 		(
 		 async => [qw(PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT)],
 		 pg_types => [qw(
@@ -164,11 +164,11 @@ use 5.006001;
 		$dbname =~ s/\b(?:db|database)\s*=/dbname=/;
 
 		my $name = $dbname;
-		if ($dbname =~ m#dbname\s*=\s*[\"\']([^\"\']+)#) {
+		if ($dbname =~ m{dbname\s*=\s*[\"\']([^\"\']+)}) {
 			$name = "'$1'";
 			$dbname =~ s/\"/\'/g;
 		}
-		elsif ($dbname =~ m#dbname\s*=\s*([^;]+)#) {
+		elsif ($dbname =~ m{dbname\s*=\s*([^;]+)}) {
 			$name = $1;
 		}
 
@@ -459,7 +459,7 @@ use 5.006001;
 			my $attnum = pop @$row;
 			my $aid = pop @$row;
 
-			$row->[$col_map{COLUMN_SIZE}] = 
+			$row->[$col_map{COLUMN_SIZE}] =
  				_calc_col_size($typmod,$row->[$col_map{COLUMN_SIZE}]);
 
 			# Replace the Pg type with the SQL_ type
@@ -1127,7 +1127,7 @@ use 5.006001;
 			COLUMN_NAME   => 'NAME',
 			DATA_TYPE     => 'TYPE',
 			COLUMN_SIZE   => 'SIZE',
-			NULLABLE 	    => 'NOTNULL',
+			NULLABLE      => 'NOTNULL',
 			REMARKS       => 'REMARKS',
 			COLUMN_DEF    => 'DEFAULT',
 			pg_constraint => 'CONSTRAINT',
@@ -1215,14 +1215,14 @@ use 5.006001;
 		my $PS = 'precision/scale';
 		my $LEN = 'length';
 		my $UN = undef;
-		my $ti = 
+		my $ti =
 			[
-			 $names,  
+			 $names,
 # name     sql_type          size   pfx/sfx crt   n/c/s    +-/P/I   local       min max  sub rdx itvl
 
-['unknown',  SQL_UNKNOWN_TYPE,  0,    $UN,$UN, $UN,  1,0,0, $UN,0,0, 'UNKNOWN',   $UN,$UN, 
+['unknown',  SQL_UNKNOWN_TYPE,  0,    $UN,$UN, $UN,  1,0,0, $UN,0,0, 'UNKNOWN',   $UN,$UN,
              SQL_UNKNOWN_TYPE,                                                             $UN, $UN, $UN ],
-['bytea',    SQL_VARBINARY,     $GIG, "'","'", $UN,  1,0,3, $UN,0,0, 'BYTEA',     $UN,$UN, 
+['bytea',    SQL_VARBINARY,     $GIG, "'","'", $UN,  1,0,3, $UN,0,0, 'BYTEA',     $UN,$UN,
              SQL_VARBINARY,                                                                $UN, $UN, $UN ],
 ['bpchar',   SQL_CHAR,          $GIG, "'","'", $LEN, 1,1,3, $UN,0,0, 'CHARACTER', $UN,$UN,
              SQL_CHAR,                                                                     $UN, $UN, $UN ],
@@ -1340,7 +1340,7 @@ use 5.006001;
       82 => ["SQL_BOOKMARK_PERSISTENCE",            0                         ],
       42 => ["SQL_CATALOG_TERM",                    ''                        ],
    10004 => ["SQL_COLLATION_SEQ",                   'ENCODING'                ], ## ??
-      22 => ["SQL_CONCAT_NULL_BEHAVIOR",            0                         ], 
+      22 => ["SQL_CONCAT_NULL_BEHAVIOR",            0                         ],
       23 => ["SQL_CURSOR_COMMIT_BEHAVIOR",          1                         ],
       24 => ["SQL_CURSOR_ROLLBACK_BEHAVIOR",        1                         ],
    10001 => ["SQL_CURSOR_SENSITIVITY",              1                         ],
@@ -1913,7 +1913,7 @@ $backend_pid ] of asynchronous notifications received. Note that this does
 not check if the connection to the database is still valid - for that, 
 use the c<ping> method. Also note that you may need to commit if not in 
 autocommit mode - new notices will not be picked up while in the middle of 
-a transation. An example:
+a transaction. An example:
 
   $dbh->do("LISTEN abc");
   $dbh->do("LISTEN def");
@@ -2342,7 +2342,7 @@ least one column in the table with a C<NOT NULL> constraint, that has a unique
 constraint, and which uses a sequence as a default value. If more than one column
 meets these conditions, the primary key will be used. This involves some
 looking up of things in the system table, so DBD::Pg will cache the sequence
-name for susequent calls. If you need to disable this caching for some reason,
+name for subsequent calls. If you need to disable this caching for some reason,
 (such as the sequence name changing), you can control it via the C<pg_cache> 
 attribute.
 
@@ -2679,7 +2679,7 @@ Implemented by DBI, no driver-specific impact.
 
 The default DBI method is overridden by a driver specific method that returns
 only the database name. Anything else from the connection string is stripped
-off. Note that, in contrast to the DBI specs, the DBD::Pg implementation fo
+off. Note that, in contrast to the DBI specs, the DBD::Pg implementation for
 this method is read-only.
 
 =item B<RowCacheSize>  (integer)
@@ -2776,8 +2776,8 @@ the server.
 
 =item B<pg_default_port> (integer, read-only)
 
-PostgreSQL specific attribute. Returns the default port used if none is 
-specifically givem.
+PostgreSQL specific attribute. Returns the default port used if none is
+specifically given.
 
 =item B<pg_options> (string, read-only)
 
@@ -3282,7 +3282,7 @@ currently running asynchronous query to complete. It has no effect if there is n
 =item pg_cancel
 
 This database-level method attempts to cancel any currently running asynchronous query. It returns true if 
-the cancel suceeded, and false otherwise. Note that a query that has finished before this method is executed 
+the cancel succeeded, and false otherwise. Note that a query that has finished before this method is executed 
 will also return false. B<WARNING>: a successful cancellation will leave the database in an unusable state, 
 so DBD::Pg will automatically clear out the error message and issue a ROLLBACK.
 
@@ -3291,7 +3291,7 @@ so DBD::Pg will automatically clear out the error message and issue a ROLLBACK.
 =item pg_ready
 
 This method can be called as a database handle method or (for convenience) as a statement handle method. Both simply 
-see if a previously issued asycnhronous query has completed yet. It returns true if the statement has finished, in which 
+see if a previously issued asynchronous query has completed yet. It returns true if the statement has finished, in which 
 case you should then call the pg_result() method. Calls to pg_ready() should only be used when you have other 
 things to do while the query is running. If you simply want to wait until the query is done, do not call pg_ready()
 over and over, but simply call the pg_result() method.
@@ -3308,7 +3308,7 @@ over and over, but simply call the pg_result() method.
 
 This database handle method returns the results of a previously issued asynchronous query. If the query is still 
 running, this method will wait until it has finished. The result returned is the number of rows: the same thing 
-that would have been returned by the asynchronous do() or execute() if it had been called without an asychronous flag.
+that would have been returned by the asynchronous do() or execute() if it had been called without an asynchronous flag.
 
   $result = $dbh->pg_result;
 
@@ -3441,7 +3441,7 @@ you cannot use pg_getline, and if in COPY OUT state, you cannot use pg_putline.
 Used to put data into a table after the server has been put into COPY IN mode 
 by calling "COPY tablename FROM STDIN". The only argument is the data you want 
 inserted. The default delimiter is a tab character, but this can be changed in 
-the COPY statement. Returns a 1 on sucessful input. Examples:
+the COPY statement. Returns a 1 on successful input. Examples:
 
   $dbh->do("COPY mytable FROM STDIN");
   $dbh->pg_putline("123\tPepperoni\t3\n");
