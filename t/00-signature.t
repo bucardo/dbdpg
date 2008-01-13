@@ -11,7 +11,7 @@ if (!$ENV{TEST_SIGNATURE}) {
 	plan skip_all => 'Set the environment variable TEST_SIGNATURE to enable this test';
 }
 else {
-	plan test => 1;
+	plan tests => 1;
 }
 if (!eval { require Module::Signature; 1 }) {
 	fail 'Could not find Module::Signature';
