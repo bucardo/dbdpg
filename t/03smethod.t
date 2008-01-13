@@ -413,7 +413,8 @@ $result = $sth->bind_columns(\$bindme, \$bindme2);
 is($result, 1, 'Statement handle method "bind_columns" returns the correct value');
 $sth->fetch();
 $expected = [33, 'Peach'];
-is_deeply( [$bindme, $bindme2], $expected, 'Statement handle method "bind_columns" correctly binds parameters');
+my $got = [$bindme, $bindme2];
+is_deeply( $got, $expected, 'Statement handle method "bind_columns" correctly binds parameters');
 $sth->finish();
 
 #

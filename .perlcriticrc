@@ -2,7 +2,7 @@ verbose = 9
 profile-strictness = quiet
 
 [Documentation::PodSpelling]
-stop_words = ActiveKids AutoCommit CachedKids ChildHandles ChopBlanks CompatMode CursorName DBD DBI Datatype ErrCount FetchHashKeyName HandleError HandleSetErr InactiveDestroy LongReadLen LongTruncOk Mergl Momjian Mullane NULLABLE OID PgBouncer PostgreSQL PrintError PrintWarn README RaiseError RowCache RowCacheSize SQL SQLSTATE SSL STDIN STDOUT Sabino Savepoints ShowErrorStatement TaintIn TaintOut TraceLevel UTF Username afterwards arrayrefs attr autocommit backend bitmask cancelled datatype dbd dbh errstr fd filename getfd getline largeobject len libpq pgbuiltin pgsql runtime savepoint savepoints schemas sslmode tablename tablespace tablespaces typename username varchar
+stop_words = ActiveKids AutoCommit CachedKids ChildHandles ChopBlanks CompatMode CursorName DBD DBI Datatype ErrCount FetchHashKeyName HandleError HandleSetErr InactiveDestroy LongReadLen LongTruncOk Mergl Momjian Mullane NULLABLE OID PgBouncer Postgres PostgreSQL PrintError PrintWarn README RaiseError RowCache RowCacheSize SQL SQLSTATE SSL STDIN STDOUT Sabino Savepoints ShowErrorStatement TaintIn TaintOut TraceLevel UTF Username afterwards arrayrefs attr autocommit backend bitmask cancelled datatype dbd dbh errstr fd filename getfd getline largeobject len libpq pgbuiltin pgsql runtime savepoint savepoints schemas sslmode tablename tablespace tablespaces typename username varchar
 
 [-Bangs::ProhibitCommentedOutCode]
 [-Bangs::ProhibitFlagComments]
@@ -45,6 +45,7 @@ stop_words = ActiveKids AutoCommit CachedKids ChildHandles ChopBlanks CompatMode
 [-Subroutines::RequireArgUnpacking]
 [-Tics::ProhibitLongLines]
 [-ValuesAndExpressions::ProhibitAccessOfPrivateData]
+[-ValuesAndExpressions::ProhibitCommaSeparatedStatements]
 [-ValuesAndExpressions::ProhibitEmptyQuotes]
 [-ValuesAndExpressions::ProhibitImplicitNewlines]
 [-ValuesAndExpressions::ProhibitMagicNumbers]
@@ -54,6 +55,7 @@ stop_words = ActiveKids AutoCommit CachedKids ChildHandles ChopBlanks CompatMode
 [-ValuesAndExpressions::RequireInterpolationOfMetachars]
 [-ValuesAndExpressions::RequireNumberSeparators]
 [-ValuesAndExpressions::RestrictLongStrings]
+[-Variables::ProhibitConditionalDeclarations]
 [-Variables::ProhibitLocalVars]
 [-Variables::ProhibitPackageVars]
 [-Variables::ProhibitPunctuationVars]
