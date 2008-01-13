@@ -82,6 +82,8 @@ $dbh->do("COMMENT ON COLUMN dbd_pg_test.id IS 'Bob is your uncle'");
 
 } ## end setup
 
+$dbh->commit() unless $dbh->{AutoCommit};
+
 if ($arg->{disconnect}) {
 $dbh->disconnect();
 return;
