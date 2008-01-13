@@ -14,11 +14,11 @@ README
 README.win32
 README.dev
 win32.mak
+t/dbdpg_test_setup.pl
 t/00-signature.t
 t/00basic.t
 t/01connect.t
 t/01constants.t
-t/01setup.t
 t/02attribs.t
 t/03dbmethod.t
 t/03smethod.t
@@ -29,6 +29,7 @@ t/08async.t
 t/09arrays.t
 t/12placeholders.t
 t/20savepoints.t
+t/99_perlcritic.t
 t/99_pod.t
 t/99_yaml.t
 t/99cleanup.t
