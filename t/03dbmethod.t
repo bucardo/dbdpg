@@ -77,15 +77,15 @@ ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent table
 $dbh->rollback();
 
 eval {
-	$dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',[]);
+	$dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef,[]);
 };
 ok($@, 'DB handle method "last_insert_id" fails when given an arrayref as last argument');
 $dbh->rollback();
 
 eval {
-	$dbh->last_insert_id(undef,undef,'dbd_pg_test',{sequence=>''});
+	$dbh->last_insert_id(undef,undef,'dbd_pg_test',undef,{sequence=>''});
 };
-is($@, q{}, 'DB handle method "last_insert_id" fails works given an empty sequence argument');
+is($@, q{}, 'DB handle method "last_insert_id" fails when given an empty sequence argument');
 $dbh->rollback();
 
 eval {
