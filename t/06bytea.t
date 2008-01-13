@@ -1,38 +1,40 @@
-#!perl -w
+#!perl
 
 ## Test bytea handling
 
-use Test::More;
-use DBI qw(:sql_types);
-use DBD::Pg qw(:pg_types);
 use strict;
-$|=1;
+use warnings;
+use Test::More;
+use DBI     ':sql_types';
+use DBD::Pg ':pg_types';
+use lib 't','.';
+require 'dbdpg_test_setup.pl';
+select(($|=1,select(STDERR),$|=1)[1]);
 
 if (defined $ENV{DBI_DSN}){
-	plan tests => 8;
+	plan tests => 7;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
 
-my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
-											 {RaiseError => 1, PrintError => 0, AutoCommit => 0});
-ok( defined $dbh, "Connect to database for bytea testing");
+my $dbh = connect_database();
+ok( defined $dbh, 'Connect to database for bytea testing');
 
 my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 if ($pgversion >= 80100) {
-  $dbh->do("SET escape_string_warning = false");
+  $dbh->do('SET escape_string_warning = false');
 }
 
 my $sth;
 
-$sth = $dbh->prepare(qq{INSERT INTO dbd_pg_test (id,bytetest) VALUES (?,?)});
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytetest) VALUES (?,?)});
 
 $sth->bind_param(2, undef, { pg_type => PG_BYTEA });
 ok($sth->execute(400, 'aa\\bb\\cc\\\0dd\\'), 'bytea insert test with string containing null and backslashes');
 ok($sth->execute(401, '\''), 'bytea insert test with string containing a single quote');
 ok($sth->execute(402, '\''), 'bytea (second) insert test with string containing a single quote');
 
-$sth = $dbh->prepare(qq{SELECT bytetest FROM dbd_pg_test WHERE id=?});
+$sth = $dbh->prepare(q{SELECT bytetest FROM dbd_pg_test WHERE id=?});
 
 $sth->execute(400);
 my $byte = $sth->fetchall_arrayref()->[0][0];
@@ -49,5 +51,5 @@ is ($result, $expected, 'quote properly handles bytea strings.');
 
 $sth->finish();
 
-$dbh->rollback();
-ok( $dbh->disconnect(), 'Disconnect from database');
+cleanup_database($dbh,'test');
+$dbh->disconnect();

@@ -2,6 +2,7 @@
 
 use strict;
 ## We cannot 'use warnings' here as PG_TSQUERY and others trip it up
+## no critic (RequireUseWarnings)
 use Test::More tests => 133;
 select(($|=1,select(STDERR),$|=1)[1]);
 

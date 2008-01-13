@@ -1,40 +1,40 @@
-#!perl -w
+#!perl
 
-use Test::More;
-use DBI qw/:sql_types/;
-use DBD::Pg qw/:pg_types/;
+## Test arrays
+
 use strict;
+use warnings;
+use Test::More;
 use Data::Dumper;
-$|=1;
-
-my ($sth,$result);
+use DBI     ':sql_types';
+use DBD::Pg ':pg_types';
+use lib 't','.';
+require 'dbdpg_test_setup.pl';
+select(($|=1,select(STDERR),$|=1)[1]);
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 224;
+	plan tests => 223;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
 
-my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
-                       {RaiseError => 1, PrintError => 0, AutoCommit => 0});
-ok( defined $dbh, "Connect to database for array testing");
+my ($sth,$result);
 
-if (DBD::Pg::_pg_use_catalog($dbh)) {
-	$dbh->do("SET search_path TO " . $dbh->quote_identifier
-					 (exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'public'));
-}
+my $dbh = connect_database();
+ok( defined $dbh, 'Connect to database for array testing');
+
 my $pgversion = $dbh->{pg_server_version};
 
-my $SQL = "DELETE FROM dbd_pg_test WHERE pname = 'Array Testing'";
+my $SQL = q{DELETE FROM dbd_pg_test WHERE pname = 'Array Testing'};
 my $cleararray = $dbh->prepare($SQL);
 
-$SQL = "INSERT INTO dbd_pg_test(id,pname,testarray) VALUES (99,'Array Testing',?)";
+$SQL = q{INSERT INTO dbd_pg_test(id,pname,testarray) VALUES (99,'Array Testing',?)};
 my $addarray = $dbh->prepare($SQL);
 
-$SQL = "SELECT testarray FROM dbd_pg_test WHERE pname= 'Array Testing'";
+$SQL = q{SELECT testarray FROM dbd_pg_test WHERE pname= 'Array Testing'};
 my $getarray = $dbh->prepare($SQL);
 
-my $array_tests = 
+my $array_tests =
 q![]
 {}
 Empty array
@@ -195,7 +195,7 @@ for my $test (split /\n\n/ => $array_tests) {
 	}
 
 	eval {
-		$result = $dbh->quote(eval $input);
+		$result = $dbh->quote(eval $input );
 	};
 	if ($qexpected =~ /error:\s+(.+)/i) {
 		my $errmsg = $1;
@@ -260,10 +260,10 @@ $cleararray->execute();
 ## Pure string to array conversion testing
 
 ## Use ourselves as a valid role
-$SQL = "SELECT current_role";
+$SQL = 'SELECT current_role';
 my $role = $dbh->selectall_arrayref($SQL)->[0][0];
 
-my $array_tests_out = 
+my $array_tests_out =
 qq!1
 [1]
 Simple test of single array element
@@ -401,7 +401,7 @@ Type 'box' works
 $Data::Dumper::Indent = 0;
 
 ## Turn off WARNING from aclitem test
-$dbh->do("SET CLIENT_MIN_MESSAGES = 'ERROR'");
+$dbh->do(q{SET CLIENT_MIN_MESSAGES = 'ERROR'});
 
 for my $test (split /\n\n/ => $array_tests_out) {
 	next unless $test =~ /\w/;
@@ -438,5 +438,5 @@ for my $test (split /\n\n/ => $array_tests_out) {
 
 }
 
-
-ok ($dbh->disconnect, "Disconnect from database");
+cleanup_database($dbh,'test');
+$dbh->disconnect;

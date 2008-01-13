@@ -1,7 +1,11 @@
-#!perl -w
+#!perl
 
-use Test::More;
+## Test META.yml for YAMLiciousness, requires Test::YAML::Meta
+
 use strict;
+use warnings;
+use Test::More;
+select(($|=1,select(STDERR),$|=1)[1]);
 
 plan tests => 2;
 
@@ -12,7 +16,7 @@ eval {
 };
 if ($@) {
 	SKIP: {
-		skip "Skipping Test::YAML::Meta tests: module not found", 2;
+		skip 'Skipping Test::YAML::Meta tests: module not found', 2;
 	}
 }
 elsif ($Test::YAML::Meta::VERSION < $V) {

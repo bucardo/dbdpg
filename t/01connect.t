@@ -1,11 +1,12 @@
-#!perl -w
+#!perl
 
-# Make sure we can connect and disconnect cleanly
-# All tests are stopped if we cannot make the first connect
+## Make sure we can connect and disconnect cleanly
+## All tests are stopped if we cannot make the first connect
 
 use strict;
 use warnings;
 use DBI;
+use DBD::Pg;
 use Test::More tests => 15;
 select(($|=1,select(STDERR),$|=1)[1]);
 
@@ -114,7 +115,7 @@ is($@, q{}, $t);
 
 END {
 	my $pv = sprintf('%vd', $^V);
-	my $schema = exists $ENV{DBD_SCHEMA} ? $ENV{DBD_SCHEMA} : 'dbd_pg_testschema';
+	my $schema = 'dbd_pg_testschema';
 	my $dsn = exists $ENV{DBI_DSN} ? $ENV{DBI_DSN} : '?';
 	my $ver = defined $DBD::Pg::VERSION ? $DBD::Pg::VERSION : '?';
 	my $user = exists $ENV{DBI_USER} ? $ENV{DBI_USER} : '<not set>';

@@ -1,26 +1,25 @@
-#!perl -w
+#!perl
 
-# Test asynchronous queries
-
-#use Test::More qw/no_plan/;
-use Test::More;
-use Time::HiRes qw/sleep/;
-use DBI;
-use DBD::Pg ':async';
+## Test asynchronous queries
 
 use strict;
-$|=1;
+use warnings;
+use Test::More;
+use Time::HiRes qw/sleep/;
+use DBD::Pg ':async';
+use lib 't','.';
+require 'dbdpg_test_setup.pl';
+select(($|=1,select(STDERR),$|=1)[1]);
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 67;
+	plan tests => 66;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
 
-my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
-					   {RaiseError => 1, PrintError => 0, AutoCommit => 0});
-ok( defined $dbh, "Connect to database for async testing");
+my $dbh = connect_database();
+ok( defined $dbh, 'Connect to database for async testing');
 
 my ($t,$sth,$count,$res,$expected,@data);
 my $pglibversion = $dbh->{pg_lib_version};
@@ -32,28 +31,28 @@ my $table = 'dbd_pg_test1';
 
 $t=q{Method do() works as expected with no args };
 eval {
-	$res = $dbh->do("SELECT 123");
+	$res = $dbh->do('SELECT 123');
 };
 is($@, q{}, $t);
 is($res, 1, $t);
 
 $t=q{Method do() works as expected with an unused attribute };
 eval {
-	$res = $dbh->do("SELECT 123", {pg_nosuch => 'arg'});
+	$res = $dbh->do('SELECT 123', {pg_nosuch => 'arg'});
 };
 is($@, q{}, $t);
 is($res, 1, $t);
 
 $t=q{Method do() works as expected with an unused attribute and a non-prepared param };
 eval {
-	$res = $dbh->do("SET random_page_cost TO ?", undef, '2.2');
+	$res = $dbh->do('SET random_page_cost TO ?', undef, '2.2');
 };
 is($@, q{}, $t);
 is($res, '0E0', $t);
 
 $t=q{Method do() works as expected with an unused attribute and multiple real bind params };
 eval {
-	$res = $dbh->do("SELECT count(*) FROM pg_class WHERE reltuples IN (?,?,?)", undef, 1,2,3);
+	$res = $dbh->do('SELECT count(*) FROM pg_class WHERE reltuples IN (?,?,?)', undef, 1,2,3);
 };
 is($@, q{}, $t);
 is($res, 1, $t);
@@ -66,7 +65,7 @@ like($@, qr{No asynchronous query is running}, $t);
 
 $t=q{Method do() works as expected with an asychronous flag };
 eval {
-	$res = $dbh->do("SELECT 123", {pg_async => PG_ASYNC});
+	$res = $dbh->do('SELECT 123', {pg_async => PG_ASYNC});
 };
 is($@, q{}, $t);
 is($res, '0E0', $t);
@@ -90,7 +89,7 @@ is($res, -1, $t);
 
 $t=q{Running do() after a cancelled query works};
 eval {
-	$res = $dbh->do("SELECT 123");
+	$res = $dbh->do('SELECT 123');
 };
 is($@, q{}, $t);
 
@@ -104,7 +103,7 @@ eval {
 };
 like($@, qr{No async}, $t);
 
-$res = $dbh->do("SELECT 123", {pg_async => PG_ASYNC});
+$res = $dbh->do('SELECT 123', {pg_async => PG_ASYNC});
 $t=q{Method pg_ready() works after a non-async query};
 ## Sleep a sub-second to make sure the server has caught up
 sleep 0.2;
@@ -132,15 +131,15 @@ is($res, q{}, $t);
 
 $t=q{Method do() runs after pg_cancel has cleared the async query};
 eval {
-	$dbh->do("SELECT 456");
+	$dbh->do('SELECT 456');
 };
 is($@, q{}, $t);
 
-$dbh->do("SELECT 'async2'", {pg_async => PG_ASYNC});
+$dbh->do(q{SELECT 'async2'}, {pg_async => PG_ASYNC});
 
 $t=q{Method do() fails when async query has not been cleared};
 eval {
-	$dbh->do("SELECT 'async_blocks'");
+	$dbh->do(q{SELECT 'async_blocks'});
 };
 like($@, qr{previous async}, $t);
 
@@ -173,7 +172,7 @@ like($@, qr{No async}, $t);
 
 $t=q{Database method do() works after pg_result()};
 eval {
-	$dbh->do("SELECT 123");
+	$dbh->do('SELECT 123');
 };
 is($@, q{}, $t);
 
@@ -181,20 +180,20 @@ SKIP: {
 
 
 	if ($pgversion < 80000) {
-		skip "Need pg_sleep() to perform rest of async tests: your Postgres is too old", 10;
+		skip 'Need pg_sleep() to perform rest of async tests: your Postgres is too old', 10;
 	}
 
 	my $time = time();
-	$res = $dbh->do("SELECT pg_sleep(2)", {pg_async => PG_ASYNC});
+	$res = $dbh->do('SELECT pg_sleep(2)', {pg_async => PG_ASYNC});
 	$time = time()-$time;
-	$t = qq{Database method do() returns right away when in async mode};
+	$t = q{Database method do() returns right away when in async mode};
 	cmp_ok($time, '<=', 1, $t);
 
 	$t=q{Method pg_ready() returns false when query is still running};
 	$res = $dbh->pg_ready();
 	ok(!$res, $t);
 
-	pass("Sleeping to allow query to finish");
+	pass('Sleeping to allow query to finish');
 	sleep(3);
 	$t=q{Method pg_ready() returns true when query is finished};
 	$res = $dbh->pg_ready();
@@ -202,7 +201,7 @@ SKIP: {
 
 	$t=q{Method do() will not work if async query not yet cleared};
 	eval {
-		$dbh->do("SELECT pg_sleep(2)", {pg_async => PG_ASYNC});
+		$dbh->do('SELECT pg_sleep(2)', {pg_async => PG_ASYNC});
 	};
 	like($@, qr{previous async}, $t);
 
@@ -222,7 +221,7 @@ SKIP: {
 
 	$t=q{Database method do() cancels the previous async when requested};
 	eval {
-		$res = $dbh->do("SELECT pg_sleep(2)", {pg_async => PG_ASYNC + PG_OLDQUERY_CANCEL});
+		$res = $dbh->do('SELECT pg_sleep(2)', {pg_async => PG_ASYNC + PG_OLDQUERY_CANCEL});
 	};
 	is($@, q{}, $t);
 
@@ -233,25 +232,25 @@ SKIP: {
 	is($@, q{}, $t);
 
 	## Now throw in some execute after the do()
-	$sth = $dbh->prepare("SELECT 567");
+	$sth = $dbh->prepare('SELECT 567');
 
 	$t = q{Running execute after async do() gives an error};
-	$dbh->do("SELECT pg_sleep(2)", {pg_async => PG_ASYNC});
+	$dbh->do('SELECT pg_sleep(2)', {pg_async => PG_ASYNC});
 	eval {
 		$res = $sth->execute();
 	};
 	like($@, qr{previous async}, $t);
 
 	$t = q{Running execute after async do() works when told to cancel};
-	$sth = $dbh->prepare("SELECT 678", {pg_async => PG_OLDQUERY_CANCEL});
+	$sth = $dbh->prepare('SELECT 678', {pg_async => PG_OLDQUERY_CANCEL});
 	eval {
 		$sth->execute();
 	};
 	is($@, q{}, $t);
 
 	$t = q{Running execute after async do() works when told to wait};
-	$dbh->do("SELECT pg_sleep(2)", {pg_async => PG_ASYNC});
-	$sth = $dbh->prepare("SELECT 678", {pg_async => PG_OLDQUERY_WAIT});
+	$dbh->do('SELECT pg_sleep(2)', {pg_async => PG_ASYNC});
+	$sth = $dbh->prepare('SELECT 678', {pg_async => PG_OLDQUERY_WAIT});
 	eval {
 		$sth->execute();
 	};
@@ -263,7 +262,7 @@ SKIP: {
 
 
 $t=q{Method execute() works when prepare has PG_ASYNC flag};
-$sth = $dbh->prepare("SELECT 123", {pg_async => PG_ASYNC});
+$sth = $dbh->prepare('SELECT 123', {pg_async => PG_ASYNC});
 eval {
 	$sth->execute();
 };
@@ -275,7 +274,7 @@ is($res, 1, $t);
 
 $t=q{Method do() fails when previous async prepare has been executed};
 eval {
-	$dbh->do("SELECT 123");
+	$dbh->do('SELECT 123');
 };
 like($@, qr{previous async}, $t);
 
@@ -299,7 +298,7 @@ $t=q{Method do() fails when previous execute async has not been cleared};
 $sth->execute();
 $sth->finish(); ## Ideally, this would clear out the async, but it cannot at the moment
 eval {
-	$dbh->do("SELECT 345");
+	$dbh->do('SELECT 345');
 };
 like($@, qr{previous async}, $t);
 
@@ -332,18 +331,14 @@ is($@, q{}, $t);
 $t=q{Method fetchall_arrayref returns correct result after pg_result};
 is_deeply($res, [[123]], $t);
 
-eval {
-	$dbh->do("DROP TABLE dbdpg_async_test");
-};
-$dbh->commit();
-$dbh->do("CREATE TABLE dbdpg_async_test(id INT, t TEXT)");
+$dbh->do('CREATE TABLE dbd_pg_test5(id INT, t TEXT)');
 $dbh->commit();
 $sth->execute();
 
 $t=q{Method prepare() works when passed in PG_OLDQUERY_CANCEL};
 
 my $sth2;
-my $SQL = "INSERT INTO dbdpg_async_test(id) SELECT 123 UNION SELECT 456";
+my $SQL = 'INSERT INTO dbd_pg_test5(id) SELECT 123 UNION SELECT 456';
 eval {
 	$sth2 = $dbh->prepare($SQL, {pg_async => PG_ASYNC + PG_OLDQUERY_CANCEL});
 };
@@ -380,7 +375,10 @@ is($@, q{}, $t);
 $t=q{Database method pg_result returns correct result after execute};
 is($res, 2, $t);
 
+$dbh->do('DROP TABLE dbd_pg_test5');
+
 ## TODO: More pg_sleep tests with execute
 
-ok( $dbh->disconnect(), 'Disconnect from database');
+cleanup_database($dbh,'test');
+$dbh->disconnect;
 

@@ -1,9 +1,11 @@
-#!perl -w
+#!perl
 
-use Test::More;
+## Check our Pod, requires Test::Pod
+
 use strict;
-
-# Check our Pod
+use warnings;
+use Test::More;
+select(($|=1,select(STDERR),$|=1)[1]);
 
 plan tests => 2;
 
@@ -13,10 +15,10 @@ eval {
 	Test::Pod->import;
 };
 if ($@ or $Test::Pod::VERSION < $PODVERSION) {
-	pass("Skipping Test::Pod testing");
+	pass('Skipping Test::Pod testing');
 }
 else {
-	pod_file_ok("Pg.pm");
+	pod_file_ok('Pg.pm');
 }
 
 ## We won't require everyone to have this, so silently move on if not found
@@ -26,10 +28,10 @@ eval {
 	Test::Pod::Coverage->import;
 };
 if ($@ or $Test::Pod::Coverage::VERSION < $PODCOVERVERSION) {
-	pass ("Skipping Test::Pod::Coverage testing");
+	pass ('Skipping Test::Pod::Coverage testing');
 }
 else {
-	my $trusted_names  = 
+	my $trusted_names  =
 		[
 		 qr{^CLONE$},
 		 qr{^driver$},
@@ -170,5 +172,5 @@ else {
 		 qr{PG_XMLARRAY},
 
 		];
-	pod_coverage_ok("DBD::Pg", {trustme => $trusted_names}, "DBD::Pg pod coverage okay");
+	pod_coverage_ok('DBD::Pg', {trustme => $trusted_names}, 'DBD::Pg pod coverage okay');
 }
