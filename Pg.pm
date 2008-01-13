@@ -10,7 +10,9 @@
 #  License or the Artistic License, as specified in the Perl README file.
 
 
-use 5.006001;
+use strict;
+use warnings;
+use 5.006001;  
 
 {
 	package DBD::Pg;
@@ -20,7 +22,7 @@ use 5.006001;
 	use DBI ();
 	use DynaLoader ();
 	use Exporter ();
-	use vars qw(@ISA %EXPORT_TAGS $err $errstr $sqlstate $drh $dbh $DBDPG_DEFAULT);
+	use vars qw(@ISA %EXPORT_TAGS $err $errstr $sqlstate $drh $dbh $DBDPG_DEFAULT @EXPORT);
 	@ISA = qw(DynaLoader Exporter);
 
 
@@ -77,6 +79,7 @@ use 5.006001;
 
 	sub CLONE {
 		$drh = undef;
+		return;
 	}
 
 	## Deprecated
@@ -135,6 +138,7 @@ use 5.006001;
 
 	## Returns an array of formatted database names from the pg_database table
 	sub data_sources {
+
 		my $drh = shift;
 		my $attr = shift || '';
 		## Future: connect to "postgres" when the minimum version we support is 8.0
@@ -153,7 +157,7 @@ use 5.006001;
 	}
 
 
-	sub connect {
+	sub connect { ## no critic (ProhibitBuiltinHomonyms)
 		my ($drh, $dbname, $user, $pass)= @_;
 
 		## Allow "db" and "database" as synonyms for "dbname"
@@ -183,7 +187,7 @@ use 5.006001;
 		my $version = $dbh->{pg_server_version};
 		$dbh->{private_dbdpg}{version} = $version;
 
-		$dbh;
+		return $dbh;
 	}
 
 	sub private_attribute_info {
@@ -213,7 +217,7 @@ use 5.006001;
 
 		DBD::Pg::st::_prepare($sth, $statement, @attribs) || 0;
 
-		$sth;
+		return $sth;
 	}
 
 	sub last_insert_id {
@@ -482,10 +486,12 @@ use 5.006001;
 		# Since we've processed the data in Perl, we have to jump through a hoop
 		# To turn it back into a statement handle
 		#
-		my $sth = _prepare_from_data(
-			'column_info',
-			$data,
-				[ sort { $col_map{$a} <=> $col_map{$b} } keys %col_map]);
+		return _prepare_from_data
+			(
+			 'column_info',
+			 $data,
+			 [ sort { $col_map{$a} <=> $col_map{$b} } keys %col_map]
+			 );
 	}
 
 	sub _prepare_from_data {
@@ -496,6 +502,7 @@ use 5.006001;
 	}
 
 	sub statistics_info {
+
 		my $dbh = shift;
 		my ($catalog, $schema, $table, $unique_only, $quick, $attr) = @_;
 
@@ -989,6 +996,7 @@ use 5.006001;
 
 
 	sub table_info {
+
 		my $dbh = shift;
 		my ($catalog, $schema, $table, $type) = @_;
 
@@ -1151,6 +1159,7 @@ use 5.006001;
 	}
 
 	sub _calc_col_size {
+
 		my $mod = shift;
 		my $size = shift;
 
@@ -1520,7 +1529,9 @@ use 5.006001;
 {
 	package DBD::Pg::st;
 
-	sub bind_param_array { ## The DBI version is broken, so we implement a near-copy here
+	sub bind_param_array {
+
+		## The DBI version is broken, so we implement a near-copy here
 		my $sth = shift;
 		my ($p_id, $value_array, $attr) = @_;
 
@@ -1548,7 +1559,7 @@ use 5.006001;
 
 		$$hash_of_arrays{$p_id} = $value_array;
 		return $sth->bind_param($p_id, '', $attr) if $attr; ## This is the big change so -w does not complain
-		1;
+		return 1;
 	} ## end bind_param_array
 
 	sub private_attribute_info {
@@ -3462,7 +3473,7 @@ string when the last row has been fetched. Example:
 
 =item B<pg_endcopy>
 
-When done with pg_putline, call pg_endcopy to put the server back in 
+When you are finished with pg_putline, call pg_endcopy to put the server back in 
 a normal state. Returns a 1 on success. This method will fail if called when not 
 in a COPY IN or COPY OUT state. Note that you no longer need to send "\\.\n" when 
 in COPY IN mode: pg_endcopy will do this for you automatically as needed.
