@@ -12,6 +12,7 @@
 
 use strict;
 use warnings;
+use Data::Dumper;
 use Test::More;
 use DBI     ':sql_types';
 use DBD::Pg ':pg_types';
@@ -20,7 +21,7 @@ require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 208;
+	plan tests => 207;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
@@ -1153,11 +1154,9 @@ $dbh->do('COPY dbd_pg_test(id,pname) TO STDOUT');
 {
 	local $SIG{__WARN__} = sub {};
 	$dbh->pg_getline($mtvar,100);
-	ok( 2==$dbh->ping(), 'DB handle method "ping" returns 2 when in COPY IN state');
-	## FIXME
-	1 while $dbh->pg_getline($mtvar,1000);
-	ok( 2==$dbh->ping(), 'DB handle method "ping" returns 2 immediately after COPY IN state');
 }
+ok( 2==$dbh->ping(), 'DB handle method "ping" returns 2 when in COPY IN state');
+1 while $dbh->pg_getline($mtvar,1000);
 
 $dbh->do('SELECT 123');
 
@@ -1171,7 +1170,8 @@ ok( 4==$dbh->ping(), 'DB handle method "ping" returns a 4 when inside a failed t
 $dbh->disconnect();
 ok( 0==$dbh->ping(), 'DB handle method "ping" fails (returns 0) on a disconnected handle');
 
-$dbh = connect_database();
+$dbh = connect_database({nosetup => 1});
+
 ok( defined $dbh, 'Reconnect to the database after disconnect');
 
 #
@@ -1189,8 +1189,6 @@ $dbh->commit();
 ok( 1==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 1 on an idle connection');
 
 $dbh->do('COPY dbd_pg_test(id,pname) TO STDOUT');
-$dbh->pg_getline($mtvar,100);
-## FIXME
 $dbh->pg_getline($mtvar,100);
 ok( 2==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 2 when in COPY IN state');
 1 while $dbh->pg_getline($mtvar,1000);
