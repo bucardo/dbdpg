@@ -106,6 +106,10 @@ use 5.006001;
 		DBD::Pg::db->install_method("pg_cancel");
 		DBD::Pg::db->install_method("pg_endcopy");
 		DBD::Pg::db->install_method("pg_getline");
+		DBD::Pg::db->install_method("pg_getcopydata");
+		DBD::Pg::db->install_method("pg_getcopydata_async");
+		DBD::Pg::db->install_method("pg_putcopydata");
+		DBD::Pg::db->install_method("pg_putcopyend");
 		DBD::Pg::db->install_method("pg_ping");
 		DBD::Pg::db->install_method("pg_putline");
 		DBD::Pg::db->install_method("pg_ready");
@@ -1770,7 +1774,7 @@ related to the current handle.
 
 =item B<state>
 
-  $str = $h->state;
+<  $str = $h->state;
 
 Supported by this driver. Returns a five-character "SQLSTATE" code.
 Success is indicated by a "00000" code, which gets mapped to an 
@@ -3411,11 +3415,10 @@ you can set the variable "pg_expand_array", which is true by default.
 
 =head2 COPY support
 
-DBD::Pg supports the COPY command through three functions: pg_putline, 
-pg_getline, and pg_endcopy. The COPY command allows data to be quickly 
-loaded or read from a table. The basic process is to issue a COPY 
-command via $dbh->do(), do either $dbh->pg_putline or $dbh->pg_getline, 
-and then issue a $dbh->pg_endcopy (for pg_putline only).
+DBD::Pg allows for the quick (bulk) reading and storing of data by using 
+the COPY command. The basic process is to use $dbh->do to issue a 
+COPY command, and then to either add rows using pg_putcopydata, or to 
+read them by using pg_getcopydata.
 
 The first step is to put the server into "COPY" mode. This is done by 
 sending a complete COPY command to the server, by using the do() method. 
@@ -3423,64 +3426,72 @@ For example:
 
   $dbh->do("COPY foobar FROM STDIN");
 
-This would tell the server to enter a COPY IN state. It is now ready to 
-receive information via the pg_putline method. The complete syntax of the 
+This would tell the server to enter a COPY OUT state. It is now ready to 
+receive information via the pg_putcopydata method. The complete syntax of the 
 COPY command is more complex and not documented here: the canonical 
 PostgreSQL documentation for COPY be found at:
 
 http://www.postgresql.org/docs/current/static/sql-copy.html
 
 Once the COPY command has been issued, no other SQL commands are allowed 
-until after pg_endcopy has been successfully called. If in a COPY IN state, 
-you cannot use pg_getline, and if in COPY OUT state, you cannot use pg_putline.
+until pg_putcopyend() has been issued, of the final pg_getcopydata has 
+been called.
+
+Note: All other COPY methods (pg_putline, pg_getline, etc.) are now 
+deprecated in favor of the pg_getcopydata, pg_putcopydata, and 
+pg_putcopyend.
 
 =over 4
 
-=item B<pg_putline>
-
-Used to put data into a table after the server has been put into COPY IN mode 
-by calling "COPY tablename FROM STDIN". The only argument is the data you want 
-inserted. The default delimiter is a tab character, but this can be changed in 
-the COPY statement. Returns a 1 on successful input. Examples:
-
-  $dbh->do("COPY mytable FROM STDIN");
-  $dbh->pg_putline("123\tPepperoni\t3\n");
-  $dbh->pg_putline("314\tMushroom\t8\n");
-  $dbh->pg_putline("6\tAnchovies\t100\n");
-  $dbh->pg_endcopy;
-
-  ## This example uses explicit columns and a custom delimiter
-  $dbh->do("COPY mytable(flavor, slices) FROM STDIN WITH DELIMITER '~'");
-  $dbh->pg_putline("Pepperoni~123\n");
-  $dbh->pg_putline("Mushroom~314\n");
-  $dbh->pg_putline("Anchovies~6\n");
-  $dbh->pg_endcopy;
-
-=item B<pg_getline>
+=item B<pg_getcopydata>
 
 Used to retrieve data from a table after the server has been put into COPY OUT 
-mode by calling "COPY tablename TO STDOUT". The first argument to pg_getline is 
-the variable into which the data will be stored (this variable should not be undefined, 
-or it may throw a warning). The second argument is the size of the variable: this should 
-be greater than the expected size of the row. Returns a 1 on success, and an empty 
-string when the last row has been fetched. Example:
+mode by calling "COPY tablename TO STDOUT". The first argument to pg_getcopydata 
+is the variable into which the data will be stored (this variable should not 
+be undefined, or it may throw a warning, although it may be a reference). This 
+argument returns a number greater than 1 indicating the new size of the variable, 
+or a -1 when the COPY has finished. Once a -1 has been returned, no other action is 
+necessary, as COPY mode will have already terminated. Example:
 
   $dbh->do("COPY mytable TO STDOUT");
   my @data;
   my $x=0;
-  1 while($dbh->pg_getline($data[$x++], 100));
-  pop @data; ## Remove final "\\.\n" line
+  1 while $dbh->pg_getcopydata($data[$x++]) > 0;
 
-=item B<pg_endcopy>
+There is also a variation of this function called pg_getcopydata_async, which, 
+as the name suggests, returns immediately. The only difference from the original 
+function is that this version may return a 0, indicating that the row is not 
+ready to be delivered yet. When this happens, the variable has not been changed, 
+and you will need to call the function again until you get a non-zero result.
 
-When you are finished with pg_putline, call pg_endcopy to put the server back in 
-a normal state. Returns a 1 on success. This method will fail if called when not 
-in a COPY IN or COPY OUT state. Note that you no longer need to send "\\.\n" when 
-in COPY IN mode: pg_endcopy will do this for you automatically as needed.
-Note that pg_endcopy is only needed after getline if you are using the 
-old-style method, $dbh->func($data, 100, 'getline'). If using pg_getline, 
-pg_endcopy should not be used.
+=item B<pg_putcopydata>
 
+Used to put data into a table after the server has been put into COPY IN mode 
+by calling "COPY tablename FROM STDIN". The only argument is the data you want 
+inserted. Issue a pg_putcopyend() when you have added all your rows.
+
+The default delimiter is a tab character, but this can be changed in 
+the COPY statement. Returns a 1 on successful input. Examples:
+
+  ## Simple example:
+  $dbh->do("COPY mytable FROM STDIN");
+  $dbh->pg_putcopydata("123\tPepperoni\t3\n");
+  $dbh->pg_putcopydata("314\tMushroom\t8\n");
+  $dbh->pg_putcopydata("6\tAnchovies\t100\n");
+  $dbh->pg_putcopyend();
+
+  ## This example uses explicit columns and a custom delimiter
+  $dbh->do("COPY mytable(flavor, slices) FROM STDIN WITH DELIMITER '~'");
+  $dbh->pg_putcopydata("Pepperoni~123\n");
+  $dbh->pg_putcopydata("Mushroom~314\n");
+  $dbh->pg_putcopydata("Anchovies~6\n");
+  $dbh->pg_putcopyend();
+
+=item B<pg_putcopyend>
+
+When you are finished with pg_putcopydata, call pg_putcopyend to let the server know 
+that you are done, and it will return to a normal, non-COPY state. Returns a 1 on 
+success. This method will fail if called when not in a COPY IN or COPY OUT state. 
 
 =back
 

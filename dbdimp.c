@@ -2431,8 +2431,14 @@ int pg_quickexec (SV * dbh, const char * sql, int asyncflag)
 		croak("execute on disconnected handle");
 
 	/* Abort if we are in the middle of a copy */
-	if (imp_dbh->copystate!=0)
-		croak("Must call pg_endcopy before issuing more commands");
+	if (imp_dbh->copystate != 0) {
+		if (PGRES_COPY_IN == imp_dbh->copystate) {
+			croak("Must call pg_putcopyend before issuing more commands");
+		}
+		else {
+			croak("Must call pg_getcopydata until no more rows before issuing more commands");
+		}
+	}			
 
 	/* If we are still waiting on an async, handle it */
 	if (imp_dbh->async_status) {
@@ -3300,7 +3306,7 @@ pg_db_getline (SV * dbh, SV * svbuf, int length)
 
 	/* We must be in COPY OUT state */
 	if (PGRES_COPY_OUT != imp_dbh->copystate)
-		croak("pg_getline can only be called directly after issuing a COPY OUT command\n");
+		croak("pg_getline can only be called directly after issuing a COPY command\n");
 
 	length = 0; /* Make compilers happy */
 	if (dbis->debug >= 5)
@@ -3322,6 +3328,135 @@ pg_db_getline (SV * dbh, SV * svbuf, int length)
 	}
 	return 0;
 
+}
+
+
+/* ================================================================== */
+int
+pg_db_getcopydata (SV * dbh, SV * dataline, int async)
+{
+	D_imp_dbh(dbh);
+	int    copystatus;
+	char * tempbuf;
+
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_getcopydata\n");
+
+	/* We must be in COPY OUT state */
+	if (PGRES_COPY_OUT != imp_dbh->copystate)
+		croak("pg_getcopydata can only be called directly after issuing a COPY command\n");
+
+	tempbuf = NULL;
+
+	copystatus = PQgetCopyData(imp_dbh->conn, &tempbuf, async);
+
+	if (copystatus > 0) {
+		sv_setpv(dataline, tempbuf);
+		PQfreemem(tempbuf);
+	}
+	else if (0 == copystatus) { /* async and still in progress: consume and return */
+		if (!PQconsumeInput(imp_dbh->conn)) {
+			pg_error(dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+			return -2;
+		}
+	}
+	else if (-1 == copystatus) {
+		PGresult * result;
+		ExecStatusType status;
+		SvCUR_set(dataline, 0);
+		imp_dbh->copystate=0;
+		result = PQgetResult(imp_dbh->conn);
+		status = _sqlstate(imp_dbh, result);
+		PQclear(result);
+		if (PGRES_COMMAND_OK != status) {
+			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
+		}
+	}
+	else {
+		pg_error(dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+	}
+	return copystatus;
+}
+
+/* ================================================================== */
+int
+pg_db_putcopydata (SV * dbh, SV * dataline)
+{
+	D_imp_dbh(dbh);
+	int copystatus;
+
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_putcopydata\n");
+
+	/* We must be in COPY IN state */
+	if (PGRES_COPY_IN != imp_dbh->copystate)
+		croak("pg_putcopydata can only be called directly after issuing a COPY command\n");
+
+	copystatus = PQputCopyData
+		(
+		 imp_dbh->conn,
+		 SvUTF8(dataline) ? SvPVutf8_nolen(dataline) : SvPV_nolen(dataline),
+		 (int)sv_len(dataline)
+		 );
+
+	if (1 == copystatus) {
+	}
+	else if (0 == copystatus) { /* non-blocking mode only */
+	}
+	else {
+		pg_error(dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+	}
+
+	return copystatus == 1 ? 1 : 0;
+}
+
+/* ================================================================== */
+int pg_db_putcopyend (SV * dbh)
+{
+
+	/* If in COPY_IN mode, terminate the COPYing */
+	/* Returns 1 on success, otherwise 0 (plus a probably warning/error) */
+
+	D_imp_dbh(dbh);
+	int            copystatus;
+
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_pg_putcopyend\n");
+
+	if (0 == imp_dbh->copystate) {
+		warn("pg_putcopyend cannot be called until a COPY is issued");
+		return 0;
+	}
+
+	if (PGRES_COPY_OUT == imp_dbh->copystate) {
+		warn("PQputcopyend does not need to be called when using PGgetcopydata");
+		return 0;
+	}
+
+	/* Must be PGRES_COPY_IN at this point */
+
+	copystatus = PQputCopyEnd(imp_dbh->conn, NULL);
+
+	if (1 == copystatus) {
+		PGresult * result;
+		ExecStatusType status;
+		imp_dbh->copystate = 0;
+		result = PQgetResult(imp_dbh->conn);
+		status = _sqlstate(imp_dbh, result);
+		PQclear(result);
+		if (PGRES_COMMAND_OK != status) {
+			pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
+			return 0;
+		}
+		return 1;
+	}
+	else if (0 == copystatus) { /* non-blocking mode only */
+		return 0;
+	}
+	else {
+		pg_error(dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+		return 0;
+	}
 }
 
 

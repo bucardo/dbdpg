@@ -4,13 +4,15 @@
 
 use strict;
 use warnings;
+use Data::Dumper;
 use Test::More;
+use Test::Warn;
 use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 25;
+	plan tests => 54;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -136,6 +138,168 @@ eval {
 };
 ok($@, 'pg_endcopy fails when called twice after COPY OUT');
 
+
+
+
+
+
+
+
+##
+## Test the new COPY methods
+##
+
+$dbh->do("DELETE FROM $table");
+
+my $t=q{pg_putcopydata fails if not after a COPY statement};
+eval {
+	$dbh->pg_putcopydata("pizza\tpie");
+};
+like($@, qr{COPY command}, $t);
+
+$t=q{pg_getcopydata fails if not after a COPY statement};
+eval {
+	$dbh->pg_getcopydata($data[0]);
+};
+like($@, qr{COPY command}, $t);
+
+$t=q{pg_getcopydata_async fails if not after a COPY statement};
+eval {
+	$dbh->pg_getcopydata_async($data[0]);
+};
+like($@, qr{COPY command}, $t);
+
+$t=q{pg_putcopyend warns but does not die if not after a COPY statement};
+warning_like (sub { $dbh->pg_putcopyend(); }, qr/until a COPY/, $t);
+
+$t=q{pg_getcopydata does not work if we are using COPY .. FROM};
+$dbh->rollback();
+$dbh->do("COPY $table FROM STDIN");
+eval {
+	$dbh->pg_getcopydata($data[0]);
+};
+like($@, qr{COPY command}, $t);
+
+$t=q{pg_putcopydata does not work if we are using COPY .. TO};
+$dbh->rollback();
+$dbh->do("COPY $table TO STDOUT");
+eval {
+	$dbh->pg_putcopydata("pizza\tpie");
+};
+like($@, qr{COPY command}, $t);
+
+$t=q{pg_putcopydata works and returns a 1 on success};
+$dbh->rollback();
+$dbh->do("COPY $table FROM STDIN");
+$result = $dbh->pg_putcopydata("15\tBlueberry");
+is ($result, 1, $t);
+
+$t=q{pg_putcopydata works on second call};
+$dbh->rollback();
+$dbh->do("COPY $table FROM STDIN");
+$result = $dbh->pg_putcopydata("16\tMoreBlueberries");
+is ($result, 1, $t);
+
+$t=q{pg_putcopydata fails with invalid data};
+$dbh->rollback();
+$dbh->do("COPY $table FROM STDIN");
+eval {
+	$dbh->pg_putcopydata();
+};
+ok($@, $t);
+
+$t=q{Calling pg_getcopydata gives an errors when in the middle of COPY .. FROM};
+eval {
+	$dbh->pg_getcopydata($data[0]);
+};
+like($@, qr{COPY command}, $t);
+
+$t=q{Calling do() gives an error when in the middle of COPY .. FROM};
+eval {
+	$dbh->do('SELECT 123');
+};
+like($@, qr{call pg_putcopyend}, $t);
+
+$t=q{pg_putcopydata works after a rude non-COPY attempt};
+eval {
+	$result = $dbh->pg_putcopydata("17\tMoreBlueberries");
+};
+is($@, q{}, $t);
+is ($result, 1, $t);
+
+$t=q{pg_putcopyend works and returns a 1};
+eval {
+	$result = $dbh->pg_putcopyend();
+};
+is($@, q{}, $t);
+is ($result, 1, $t);
+
+$dbh->commit();
+$t=q{pg_putcopydata fails after pg_putcopyend is called};
+eval {
+	$result = $dbh->pg_putcopydata('root');
+};
+like($@, qr{COPY command}, $t);
+
+$t=q{Normal queries work after pg_putcopyend is called};
+eval {
+	$dbh->do('SELECT 123');
+};
+is($@, q{}, $t);
+
+$t=q{Data from pg_putcopydata was entered correctly};
+$result = $dbh->selectall_arrayref("SELECT id2,val2 FROM $table ORDER BY id2");
+$expected = [['12','Mulberry'],['13','Strawberry'],[14,'Blueberry'],[17,'MoreBlueberries']];
+is_deeply($result, $expected, $t);
+
+$dbh->do("COPY $table TO STDOUT");
+$t=q{pg_getcopydata fails when argument is not a variable};
+eval {
+	$dbh->pg_getcopydata('wrongo');
+};
+like($@, qr{read-only}, $t);
+
+$t=q{pg_getcopydata works and returns the length of the string};
+$data[0] = 'old';
+eval {
+	$dbh->pg_getcopydata($data[0]);
+};
+is($@, q{}, $t);
+is($data[0], "13\tStrawberry\n", $t);
+
+$t=q{pg_getcopydata works when argument is a reference};
+eval {
+	$dbh->pg_getcopydata(\$data[0]);
+};
+is($@, q{}, $t);
+is($data[0], "14\tBlueberry\n", $t);
+
+$t=q{Calling do() gives an error when in the middle of COPY .. TO};
+eval {
+	$dbh->do('SELECT 234');
+};
+like($@, qr{pg_getcopydata}, $t);
+
+$t=q{Calling pg_putcopydata gives an errors when in the middle of COPY .. TO};
+eval {
+	$dbh->pg_putcopydata('pie');
+};
+like($@, qr{COPY command}, $t);
+
+$t=q{pg_getcopydata returns 0 when no more data};
+$dbh->pg_getcopydata(\$data[0]);
+eval {
+	$result = $dbh->pg_getcopydata(\$data[0]);
+};
+is($@, q{}, $t);
+is($data[0], '', $t);
+is($result, -1, $t);
+
+$t=q{Normal queries work after pg_getcopydata runs out};
+eval {
+	$dbh->do('SELECT 234');
+};
+is($@, q{}, $t);
 
 #
 # Make sure rollback and commit reset our internal copystate tracking

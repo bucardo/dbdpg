@@ -1,6 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Overhaul COPY functions: deprecate pg_getline, pg_putline, 
+		and pg_endcopy. The new functions are pg_getcopydata, 
+		pg_getcopydata_asyn, pg_putcopydata, and pg_putcopyend. [GSM]
 	- Change $dbh->{User} to $dbh->{Username} [GSM]
 	- Add three new columns to column_info, to return unquoted 
 		version: pg_schema, pg_table, and pg_columns. Add all 
@@ -12,7 +15,7 @@
 		(CPAN bug #24579) [GSM]
 	- Use adbin, not adsrc, when figuring out the sequence name for the 
 		last_insert_id() method. This allows the function to work properly 
-		if the sequence name is changed. Not that {pg_cache=>0} should be 
+		if the sequence name is changed. Note that {pg_cache=>0} should be 
 		passed to the function if you expect this might happen.
 		(CPAN bug #30924) [GSM]
 	- Use unsigned chars when parsing passed-in queries, preventing UTF-8 

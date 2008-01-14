@@ -529,6 +529,42 @@ pg_getline(dbh, buf, len)
 		SvSETMAGIC(ST(1));
 		ST(0) = (-1 != ret) ? &sv_yes : &sv_no;
 
+I32
+pg_getcopydata(dbh, dataline)
+	INPUT:
+		SV * dbh
+	CODE:
+		RETVAL = pg_db_getcopydata(dbh, SvROK(ST(1)) ? SvRV(ST(1)) : ST(1), 0);
+	OUTPUT:
+		RETVAL
+
+I32
+pg_getcopydata_async(dbh, dataline)
+	INPUT:
+		SV * dbh
+	CODE:
+		RETVAL = pg_db_getcopydata(dbh, SvROK(ST(1)) ? SvRV(ST(1)) : ST(1), 1);
+	OUTPUT:
+		RETVAL
+
+I32
+pg_putcopydata(dbh, dataline)
+	INPUT:
+		SV * dbh
+		SV * dataline
+	CODE:
+		RETVAL = pg_db_putcopydata(dbh, dataline);
+	OUTPUT:
+		RETVAL
+
+I32
+pg_putcopyend(dbh)
+	INPUT:
+		SV * dbh
+	CODE:
+		RETVAL = pg_db_putcopyend(dbh);
+	OUTPUT:
+		RETVAL
 
 void
 getline(dbh, buf, len)

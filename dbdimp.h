@@ -109,6 +109,10 @@ struct imp_sth_st {
 
 /* Other (non-static) functions we have added to dbdimp.c */
 
+int pg_db_getcopydata (SV *dbh, SV * dataline, int async);
+int pg_db_putcopydata (SV *dbh, SV * dataline);
+int pg_db_putcopyend (SV * dbh);
+
 int dbd_db_ping(SV *dbh);
 int dbd_db_getfd (SV *dbh, imp_dbh_t *imp_dbh);
 SV * dbd_db_pg_notifies (SV *dbh, imp_dbh_t *imp_dbh);
