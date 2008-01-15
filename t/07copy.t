@@ -6,7 +6,6 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Test::More;
-use Test::Warn;
 use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
@@ -170,7 +169,13 @@ eval {
 like($@, qr{COPY command}, $t);
 
 $t=q{pg_putcopyend warns but does not die if not after a COPY statement};
-warning_like (sub { $dbh->pg_putcopyend(); }, qr/until a COPY/, $t);
+eval { require Test::Warn; };
+if ($@) {
+	pass('Skipping Test::Warn test');
+}
+else {
+	Test::Warn::warning_like (sub { $dbh->pg_putcopyend(); }, qr/until a COPY/, $t);
+}
 
 $t=q{pg_getcopydata does not work if we are using COPY .. FROM};
 $dbh->rollback();
