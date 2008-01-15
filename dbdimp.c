@@ -102,7 +102,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 		connect_string_size += strlen("user='' ") + 2*strlen(uid);
 	if (strlen(pwd))
 		connect_string_size += strlen("password='' ") + 2*strlen(pwd);
-	Newx(conn_str, connect_string_size+1, char); /* freed below */
+	New(0, conn_str, connect_string_size+1, char); /* freed below */
 
 	/* Change all semi-colons in dbname to a space, unless single-quoted */
 	dest = conn_str;
@@ -253,7 +253,7 @@ static void pg_error (SV * h, ExecStatusType error_num, char * error_msg)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_error (%s) number=%d\n",
 							error_msg, error_num);
 
-	Newx(err, strlen(error_msg)+1, char); /* freed below */
+	New(0, err, strlen(error_msg)+1, char); /* freed below */
 	strcpy(err, error_msg);
 
 	/* Strip final newline so line number appears for warn/die */
@@ -970,7 +970,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			int y;
 			retsv = newRV(sv_2mortal((SV*)av));
 
-			Newx(statement, 100, char); /* freed below */
+			New(0, statement, 100, char); /* freed below */
 			statement[0] = '\0';
 			while(--fields >= 0) {
 				nullable=2;
@@ -1089,7 +1089,7 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 
 		if (strEQ("pg_prepare_name", key)) {
 			Safefree(imp_sth->prepare_name);
-			Newx(imp_sth->prepare_name, vl+1, char); /* freed in dbd_st_destroy */
+			New(0, imp_sth->prepare_name, vl+1, char); /* freed in dbd_st_destroy */
 			Copy(value, imp_sth->prepare_name, vl, char);
 			imp_sth->prepare_name[vl] = '\0';
 			return 1;
@@ -1259,7 +1259,7 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 			statement++;
 		}
 		newsize = mypos-wordstart;
-		Newx(imp_sth->firstword, newsize+1, char); /* freed in dbd_st_destroy */
+		New(0, imp_sth->firstword, newsize+1, char); /* freed in dbd_st_destroy */
 		Copy(statement-newsize, imp_sth->firstword, newsize, char);
 		imp_sth->firstword[newsize] = '\0';
 
@@ -1383,13 +1383,13 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 		imp_sth->numphs    = 0;
 		imp_sth->totalsize = strlen(statement);
 
-		Newx(imp_sth->seg, 1, seg_t); /* freed in dbd_st_destroy */
+		New(0, imp_sth->seg, 1, seg_t); /* freed in dbd_st_destroy */
 		imp_sth->seg->placeholder = 0;
 		imp_sth->seg->nextseg     = NULL;
 		imp_sth->seg->ph          = NULL;
 
 		if (imp_sth->totalsize > 0) {
-			Newx(imp_sth->seg->segment, imp_sth->totalsize+1, char); /* freed in dbd_st_destroy */
+			New(0, imp_sth->seg->segment, imp_sth->totalsize+1, char); /* freed in dbd_st_destroy */
 			Copy(statement, imp_sth->seg->segment, imp_sth->totalsize+1, char);
 		}
 		else {
@@ -1522,7 +1522,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 
 			/* We only need to create a dollarstring if something was between the two dollar signs */
 			if (sectionsize >= 1) {
-				Newx(dollarstring, sectionsize, char); /* note: a true array, not a null-terminated string */
+				New(0, dollarstring, sectionsize, char); /* note: a true array, not a null-terminated string */
 				strncpy(dollarstring, statement-sectionsize, sectionsize);
 			}
 
@@ -1645,7 +1645,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 			continue;
 
 		/* If we got here, we have a segment that needs to be saved */
-		Newx(newseg, 1, seg_t); /* freed in dbd_st_destroy */
+		New(0, newseg, 1, seg_t); /* freed in dbd_st_destroy */
 		newseg->nextseg = NULL;
 		newseg->placeholder = 0;
 		newseg->ph = NULL;
@@ -1669,7 +1669,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 			if (0==newseg->placeholder) {
 				imp_sth->numphs++;
 				newseg->placeholder = imp_sth->numphs;
-				Newx(newph, 1, ph_t); /* freed in dbd_st_destroy */
+				New(0, newph, 1, ph_t); /* freed in dbd_st_destroy */
 				newseg->ph        = newph;
 				newph->nextph     = NULL;
 				newph->bind_type  = NULL;
@@ -1680,7 +1680,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 				newph->isdefault  = DBDPG_FALSE;
 				newph->iscurrent  = DBDPG_FALSE;
 				newph->isinout    = DBDPG_FALSE;
-				Newx(newph->fooname, sectionsize+1, char); /* freed in dbd_st_destroy */
+				New(0, newph->fooname, sectionsize+1, char); /* freed in dbd_st_destroy */
 				Copy(statement-sectionsize, newph->fooname, sectionsize, char);
 				newph->fooname[sectionsize] = '\0';
 				if (NULL==currph) {
@@ -1695,7 +1695,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 
 		sectionsize = sectionstop-sectionstart; /* 4-0 for "ABCD" */
 		if (sectionsize>0) {
-			Newx(newseg->segment, sectionsize+1, char); /* freed in dbd_st_destroy */
+			New(0, newseg->segment, sectionsize+1, char); /* freed in dbd_st_destroy */
 			Copy(statement-(currpos-sectionstart), newseg->segment, sectionsize, char);
 			newseg->segment[sectionsize] = '\0';
 			imp_sth->totalsize += sectionsize;
@@ -1756,7 +1756,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 	/* Create sequential placeholders */
 	if (3 != imp_sth->placeholder_type) {
 		for (xint=1; xint <= imp_sth->numphs; xint++) {
-			Newx(newph, 1, ph_t); /* freed in dbd_st_destroy */
+			New(0, newph, 1, ph_t); /* freed in dbd_st_destroy */
 			newph->nextph     = NULL;
 			newph->bind_type  = NULL;
 			newph->value      = NULL;
@@ -1869,7 +1869,7 @@ static int dbd_st_prepare_statement (SV * sth, imp_sth_t * imp_sth)
 		}
 	}
 
-	Newx(statement, execsize+1, char); /* freed below */
+	New(0, statement, execsize+1, char); /* freed below */
 
 	if (oldprepare) {
 		sprintf(statement, "PREPARE %s", imp_sth->prepare_name);
@@ -2316,7 +2316,7 @@ SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_in
 	}
 	input -= opening_braces;
 
-	Newx(string, strlen((char *)input), char); /* Freed at end of this function */
+	New(0, string, strlen((char *)input), char); /* Freed at end of this function */
 	string[0] = '\0';
 
 	if (dbis->debug >= 4)
@@ -2759,7 +2759,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			}
 
 			/* Create the statement */
-			Newx(statement, execsize+1, char); /* freed below */
+			New(0, statement, execsize+1, char); /* freed below */
 			statement[0] = '\0';
 			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 				strcat(statement, currseg->segment);
@@ -2808,7 +2808,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 					execsize += currseg->ph->quotedlen;
 			}
 
-			Newx(statement, execsize+1, char); /* freed below */
+			New(0, statement, execsize+1, char); /* freed below */
 			statement[0] = '\0';
 			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 				strcat(statement, currseg->segment);
@@ -3135,7 +3135,7 @@ static int dbd_st_deallocate_statement (SV * sth, imp_sth_t * imp_sth)
 				SV		*sp = Nullsv;
 				char	*cmd;
 				sp = *av_fetch(imp_dbh->savepoints, alen, 0);
-				Newx(cmd, SvLEN(sp) + 13, char); /* Freed below */
+				New(0, cmd, SvLEN(sp) + 13, char); /* Freed below */
 				if (dbis->debug >= 4)
 					(void)PerlIO_printf(DBILOGFP, "dbdpg: Rolling back to savepoint %s\n", SvPV_nolen(sp));
 				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
@@ -3156,7 +3156,7 @@ static int dbd_st_deallocate_statement (SV * sth, imp_sth_t * imp_sth)
 		}
 	}
 
-	Newx(stmt, strlen("DEALLOCATE ") + strlen(imp_sth->prepare_name) + 1, char); /* freed below */
+	New(0, stmt, strlen("DEALLOCATE ") + strlen(imp_sth->prepare_name) + 1, char); /* freed below */
 
 	sprintf(stmt, "DEALLOCATE %s", imp_sth->prepare_name);
 
@@ -3536,7 +3536,7 @@ int pg_db_savepoint (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_savepoint (%s)\n", savepoint);
 
-	Newx(action, strlen(savepoint) + 11, char); /* freed below */
+	New(0, action, strlen(savepoint) + 11, char); /* freed below */
 
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
@@ -3579,7 +3579,7 @@ int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_rollback_to (%s)\n", savepoint);
 
-	Newx(action, strlen(savepoint) + 13, char);
+	New(0, action, strlen(savepoint) + 13, char);
 
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
@@ -3612,7 +3612,7 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_db_release (%s)\n", savepoint);
 
-	Newx(action, strlen(savepoint) + 9, char);
+	New(0, action, strlen(savepoint) + 9, char);
 
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
