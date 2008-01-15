@@ -23,6 +23,8 @@ my ($sth,$result);
 my $dbh = connect_database();
 ok( defined $dbh, 'Connect to database for array testing');
 
+$dbh->do('SET escape_string_warning = false');
+
 my $pgversion = $dbh->{pg_server_version};
 
 my $SQL = q{DELETE FROM dbd_pg_test WHERE pname = 'Array Testing'};
