@@ -1,9 +1,11 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Skip item if no matching key in foreign_key_info.
+		(CPAN bug #32308) [GSM]
 	- Overhaul COPY functions: deprecate pg_getline, pg_putline, 
 		and pg_endcopy. The new functions are pg_getcopydata, 
-		pg_getcopydata_asyn, pg_putcopydata, and pg_putcopyend. [GSM]
+		pg_getcopydata_async, pg_putcopydata, and pg_putcopyend. [GSM]
 	- Change $dbh->{User} to $dbh->{Username} [GSM]
 	- Add three new columns to column_info, to return unquoted 
 		version: pg_schema, pg_table, and pg_columns. Add all 

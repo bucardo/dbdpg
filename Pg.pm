@@ -935,11 +935,14 @@ use 5.006001;
 				## Mark this as an index so we can fudge things later on
 				$multi = "index";
 				## Grab the first one found, modify later on as needed
-				$u = (values %{$ukey{$t->{'confrelid'}}})[0]->[0];
+				$u = ((values %{$ukey{$t->{'confrelid'}}})[0]||[])->[0];
+				## Bail in case there was no match
+				next if ! ref $u;
 			}
 
 			## ODBC is primary keys only
 			next if $odbc and ($u->{'contype'} ne 'p' or $multi eq 'index');
+
 			my $conkey = $t->{'conkey'};
 			my $confkey = $t->{'confkey'};
 			for (my $y=0; $conkey->[$y]; $y++) {
