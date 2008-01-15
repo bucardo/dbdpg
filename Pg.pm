@@ -3213,7 +3213,8 @@ created after the one being released are also destroyed.
 
 It is possible to send a query to the backend and have your script do other work while the query is 
 running on the backend. Both queries sent by the do() method, and by the execute() method can be 
-sent asynchronously. The basic usage is as follows:
+sent asynchronously. (NOTE: This will only work if DBD::Pg has been compiled against Postgres libraries 
+of version 8.0 or greater) The basic usage is as follows:
 
   use DBD::Pg ':async';
 

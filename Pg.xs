@@ -621,6 +621,8 @@ _pg_type_info (type_sv=Nullsv)
 		ST(0) = sv_2mortal( newSViv( type_num ) );
 	}
 
+#if PGLIBVERSION >= 80000
+
 void
 pg_result(dbh)
 	SV * dbh
@@ -648,6 +650,8 @@ pg_cancel(dbh)
 	CODE:
 	D_imp_dbh(dbh);
 	ST(0) = dbdpg_cancel(dbh, imp_dbh) ? &sv_yes : &sv_no;
+
+#endif
 
 # -- end of DBD::Pg::db
 
@@ -679,6 +683,8 @@ pg_cancel(sth)
 	D_imp_sth(sth);
 	ST(0) = dbdpg_cancel_sth(sth, imp_sth) ? &sv_yes : &sv_no;
 
+#if PGLIBVERSION >= 80000
+
 void
 pg_result(sth)
 	SV * sth
@@ -693,6 +699,8 @@ pg_result(sth)
 			XST_mUNDEF(0);
 		else
 			XST_mIV(0, ret);
+
+#endif
 
 
 # end of Pg.xs

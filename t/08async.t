@@ -11,18 +11,22 @@ use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
-if (defined $ENV{DBI_DSN}) {
+my $dbh = connect_database();
+my $pglibversion = $dbh->{pg_lib_version};
+
+if ($pglibversion < 80000) {
+	plan skip_all => 'Cannot run asynchronous queries with pre-8.0 libraries.';
+}
+elsif (defined $ENV{DBI_DSN}) {
 	plan tests => 66;
 }
 else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
 
-my $dbh = connect_database();
 ok( defined $dbh, 'Connect to database for async testing');
 
 my ($t,$sth,$count,$res,$expected,@data);
-my $pglibversion = $dbh->{pg_lib_version};
 my $pgversion = $dbh->{pg_server_version};
 my $table = 'dbd_pg_test1';
 

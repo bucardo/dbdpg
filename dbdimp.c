@@ -43,6 +43,21 @@ PGresult *PQprepare(PGconn *a, const char *b, const char *c, int d, const Oid *e
 int PQserverVersion(const PGconn *a);
 int PQserverVersion(const PGconn *a) { if (!a) return 0; croak ("Called wrong PQserverVersion"); }
 
+typedef struct pg_cancel PGcancel;
+int	PQcancel(PGcancel *cancel, char *errbuf, int errbufsize);
+int	PQcancel(PGcancel *cancel, char *errbuf, int errbufsize) {
+	croak ("Called wrong PQcancel");
+}
+PGcancel *PQgetCancel(PGconn *conn);
+PGcancel *PQgetCancel(PGconn *conn) {
+	croak ("Called wrong PQgetCancel");
+}
+void PQfreeCancel(PGcancel *cancel);
+void PQfreeCancel(PGcancel *cancel) {
+	croak ("Called wrong PQfreeCancel");
+}
+
+
 #endif
 
 #ifndef PGErrorVerbosity
