@@ -1,5 +1,6 @@
 TODO: 
 
+- Mention RETURNING clause support in docs.
 - Play nicely with standard_confirming_strings (CPAN bug #27538)
 - Update pg_getline and remove the size requirement
 - Use WITH HOLD for cursor work
