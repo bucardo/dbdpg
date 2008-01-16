@@ -24,7 +24,7 @@ if ($pglibversion < 80000) {
 	plan skip_all => 'Cannot run asynchronous queries with pre-8.0 libraries.';
 }
 
-plan tests => 66;
+plan tests => 67;
 
 ok( defined $dbh, 'Connect to database for async testing');
 
@@ -185,12 +185,19 @@ is($@, q{}, $t);
 SKIP: {
 
 
-	if ($pgversion < 80000) {
-		skip 'Need pg_sleep() to perform rest of async tests: your Postgres is too old', 10;
+	if ($pgversion < 80200) {
+		skip 'Need pg_sleep() to perform rest of async tests: your Postgres is too old', 14;
 	}
 
+	eval {
+		$dbh->do('SELECT pg_sleep(0)');
+	};
+	is($@, q{}, 'Calling pg_sleep works as expected');
+
 	my $time = time();
-	$res = $dbh->do('SELECT pg_sleep(2)', {pg_async => PG_ASYNC});
+	eval {
+		$res = $dbh->do('SELECT pg_sleep(3)', {pg_async => PG_ASYNC});
+	};
 	$time = time()-$time;
 	$t = q{Database method do() returns right away when in async mode};
 	cmp_ok($time, '<=', 1, $t);

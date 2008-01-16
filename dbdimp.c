@@ -3986,7 +3986,9 @@ int dbdpg_ready (h, imp_dbh)
 		 imp_dbh_t *imp_dbh;
 {
 
-	if (dbis->debug >= 4) { (void)PerlIO_printf(DBILOGFP, "dbdpg: pg_st_ready\n"); }
+	if (dbis->debug >= 4) {
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_st_ready, async_status is %d\n",imp_dbh->async_status);
+	}
 
 	if (0 == imp_dbh->async_status) {
 		pg_error(h, PGRES_FATAL_ERROR, "No asynchronous query is running\n");
