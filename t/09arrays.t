@@ -265,7 +265,7 @@ $cleararray->execute();
 
 ## Use ourselves as a valid role
 my $role = 'SKIP';
-if ($pgversion >= 80000) {
+if ($pgversion >= 80100) {
 	$SQL = 'SELECT current_role';
 	$role = $dbh->selectall_arrayref($SQL)->[0][0];
 }
@@ -426,10 +426,10 @@ for my $test (split /\n\n/ => $array_tests_out) {
 			next;
 		}
 	}
-	if ($pgversion < 80000) {
+	if ($pgversion < 80200) {
 		if ($input =~ /SKIP/ or $test =~ /Fake NULL|boolean/) {
 		  SKIP: {
-				skip 'Cannot test some array items on old pre-8.0 servers', 1;
+				skip 'Cannot test some array items on pre-8.2 servers', 1;
 			}
 			next;
 		}
