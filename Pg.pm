@@ -657,6 +657,11 @@ use 5.006001;
 			$whereclause .= "\n\t\t\tAND n.nspname = " . $dbh->quote($schema);
 		}
 
+		my $TSJOIN = 'pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
+		if ($dbh->{private_dbdpg}{version} < 80000) {
+			$TSJOIN = '(SELECT 0 AS oid, 0 AS spcname, 0 AS spclocation LIMIT 0) AS t ON (t.oid=1)';
+		}
+
 		my $pri_key_sql = qq{
 			SELECT
 				  c.oid
@@ -670,7 +675,7 @@ use 5.006001;
 				JOIN pg_catalog.pg_index i ON (i.indrelid = c.oid)
 				JOIN pg_catalog.pg_class c2 ON (c2.oid = i.indexrelid)
 				LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-				LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)
+				LEFT JOIN $TSJOIN
 			WHERE
 				i.indisprimary IS TRUE
 			$whereclause
@@ -1067,10 +1072,9 @@ use 5.006001;
 		}
 		else {
 			# Default SQL
-			my $showtablespace = '';
 			$extracols = q{,n.nspname AS pg_schema, c.relname AS pg_table};
 			my @search;
-			$showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(t.spclocation) AS "pg_tablespace_location"';
+			my $showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(t.spclocation) AS "pg_tablespace_location"';
 
 			## If the schema or table has an underscore or a %, use a LIKE comparison
 			if (defined $schema and length $schema) {
@@ -1091,6 +1095,10 @@ use 5.006001;
 			}
 			push @search, "c.relkind $typesearch";
 
+			my $TSJOIN = 'pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
+			if ($dbh->{private_dbdpg}{version} < 80000) {
+				$TSJOIN = '(SELECT 0 AS oid, 0 AS spcname, 0 AS spclocation LIMIT 0) AS t ON (t.oid=1)';
+			}
 			my $whereclause = join "\n\t\t\t\t\t AND " => @search;
 			$tbl_sql = qq{
 				SELECT NULL::text AS "TABLE_CAT"
@@ -1107,7 +1115,7 @@ use 5.006001;
 					LEFT JOIN pg_catalog.pg_description AS d
 						ON (c.oid = d.objoid AND c.tableoid = d.classoid AND d.objsubid = 0)
 					LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-					LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)
+					LEFT JOIN $TSJOIN
 				WHERE $whereclause
 				ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
 				};

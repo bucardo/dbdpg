@@ -13,7 +13,7 @@ require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 223;
+	plan tests => 196;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -23,9 +23,11 @@ my ($sth,$result);
 my $dbh = connect_database();
 ok( defined $dbh, 'Connect to database for array testing');
 
-$dbh->do('SET escape_string_warning = false');
-
 my $pgversion = $dbh->{pg_server_version};
+
+if ($pgversion >= 80100) {
+  $dbh->do('SET escape_string_warning = false');
+}
 
 my $SQL = q{DELETE FROM dbd_pg_test WHERE pname = 'Array Testing'};
 my $cleararray = $dbh->prepare($SQL);
@@ -262,8 +264,11 @@ $cleararray->execute();
 ## Pure string to array conversion testing
 
 ## Use ourselves as a valid role
-$SQL = 'SELECT current_role';
-my $role = $dbh->selectall_arrayref($SQL)->[0][0];
+my $role = 'SKIP';
+if ($pgversion >= 80000) {
+	$SQL = 'SELECT current_role';
+	$role = $dbh->selectall_arrayref($SQL)->[0][0];
+}
 
 my $array_tests_out =
 qq!1
@@ -416,7 +421,15 @@ for my $test (split /\n\n/ => $array_tests_out) {
 		my $ver = $1;
 		if ($pgversion < $ver) {
 		  SKIP: {
-				skip 'Cannot test NULL arrays unless version 8.2 or better', 4;
+				skip 'Cannot test NULL arrays unless version 8.2 or better', 1;
+			}
+			next;
+		}
+	}
+	if ($pgversion < 80000) {
+		if ($input =~ /SKIP/ or $test =~ /Fake NULL|boolean/) {
+		  SKIP: {
+				skip 'Cannot test some array items on old pre-8.0 servers', 1;
 			}
 			next;
 		}
@@ -431,13 +444,12 @@ for my $test (split /\n\n/ => $array_tests_out) {
 		like($@, qr{$1}, "Array failed : $msg : $input");
 	}
 	else {
-		is($@, q{}, "Array worked : $msg : $input");
 		$expected = eval $expected;
 		$@ and BAIL_OUT "Eval failed ($@) for $expected\n";
 		## is_deeply does not handle type differences
 		is((Dumper $result), (Dumper $expected), "Array test $msg : $input");
 	}
-
+	
 }
 
 cleanup_database($dbh,'test');

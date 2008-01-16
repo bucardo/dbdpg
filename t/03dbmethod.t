@@ -30,6 +30,7 @@ else {
 my $dbh = connect_database();
 ok( defined $dbh, 'Connect to database for database handle method testing');
 
+my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 my ($schema,$schema2) = ('dbd_pg_testschema', 'dbd_pg_testschema2');
 my ($table1,$table2,$table3) = ('dbd_pg_test1','dbd_pg_test2','dbd_pg_test3');
 my ($sequence2,$sequence3) = ('dbd_pg_testsequence2','dbd_pg_testsequence3');
@@ -127,25 +128,33 @@ eval {
 };
 is ($@, q{}, 'DB handle method "last_insert_id" works when called with a schema not in the search path');
 $dbh->commit();
-
 $t=q{ DB handle method "last_insert_id" fails when the sequence name is changed and cache is used};
-$dbh->do("ALTER SEQUENCE $schema2.$sequence2 RENAME TO $sequence3");
-$dbh->commit();
-eval {
-	$dbh->last_insert_id(undef,$schema2,$table2,undef);
-};
-like ($@, qr{last_insert_id}, $t);
-$dbh->rollback();
 
-$t=q{ DB handle method "last_insert_id" works when the sequence name is changed and cache is turned off};
-$dbh->commit();
-eval {
-	$dbh->last_insert_id(undef,$schema2,$table2,undef, {pg_cache=>0});
-};
-is ($@, q{}, $t);
+SKIP: {
+	if ($pgversion < 80000) {
+		$dbh->do("DROP TABLE $schema2.$table2");
+		$dbh->do("DROP SEQUENCE $schema2.$sequence2");
+		skip 'Cannot test sequence rename on pre-8.0 servers', 2;
+	}
+	$dbh->do("ALTER SEQUENCE $schema2.$sequence2 RENAME TO $sequence3");
+	$dbh->commit();
+	eval {
+		$dbh->last_insert_id(undef,$schema2,$table2,undef);
+	};
+	like ($@, qr{last_insert_id}, $t);
+	$dbh->rollback();
 
-$dbh->do("DROP TABLE $schema2.$table2");
-$dbh->do("DROP SEQUENCE $schema2.$sequence3");
+	$t=q{ DB handle method "last_insert_id" works when the sequence name is changed and cache is turned off};
+	$dbh->commit();
+	eval {
+		$dbh->last_insert_id(undef,$schema2,$table2,undef, {pg_cache=>0});
+	};
+	is ($@, q{}, $t);
+	$dbh->do("DROP TABLE $schema2.$table2");
+	$dbh->do("DROP SEQUENCE $schema2.$sequence3");
+}
+
+
 $dbh->do("DROP SCHEMA $schema2");
 
 #
@@ -477,6 +486,9 @@ SKIP: {
 
 	$DBI::VERSION >= 1.52
 		or skip 'DBI must be at least version 1.52 to test the database handle method "statistics_info"', 10;
+
+	$dbh->{private_dbdpg}{version} >= 800000
+		or skip 'Server must be version 8.0 or higher to test database handle method "statistics_info"', 10;
 
 	$sth = $dbh->statistics_info(undef,undef,undef,undef,undef);
 	is ($sth, undef, 'DB handle method "statistics_info" returns undef: no table');
@@ -1088,7 +1100,6 @@ like( $result, qr/^\d+$/, 'DB handle method "getfd" returns a number');
 # Test of the "state" database handle method
 #
 
-my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 $result = $dbh->state();
 is( $result, q{}, q{DB handle method "state" returns an empty string on success});
 
