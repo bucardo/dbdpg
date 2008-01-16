@@ -196,7 +196,7 @@ SKIP: {
 
 	my $time = time();
 	eval {
-		$res = $dbh->do('SELECT pg_sleep(3)', {pg_async => PG_ASYNC});
+		$res = $dbh->do('SELECT pg_sleep(2)', {pg_async => PG_ASYNC});
 	};
 	$time = time()-$time;
 	$t = q{Database method do() returns right away when in async mode};
