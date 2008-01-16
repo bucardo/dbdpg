@@ -131,10 +131,10 @@ $dbh->commit();
 $t=q{ DB handle method "last_insert_id" fails when the sequence name is changed and cache is used};
 
 SKIP: {
-	if ($pgversion < 80200) {
+	if ($pgversion < 80300) {
 		$dbh->do("DROP TABLE $schema2.$table2");
 		$dbh->do("DROP SEQUENCE $schema2.$sequence2");
-		skip 'Cannot test sequence rename on pre-8.2 servers', 2;
+		skip 'Cannot test sequence rename on pre-8.3 servers', 2;
 	}
 	$dbh->do("ALTER SEQUENCE $schema2.$sequence2 RENAME TO $sequence3");
 	$dbh->commit();

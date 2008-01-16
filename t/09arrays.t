@@ -13,7 +13,7 @@ require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 196;
+	plan tests => 214;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -183,12 +183,12 @@ for my $test (split /\n\n/ => $array_tests) {
 		}
 	}
 
-
 	$cleararray->execute();
 	eval {
 		$addarray->execute(eval $input);
 	};
 	if ($expected =~ /error:\s+(.+)/i) {
+		like($@, qr{$1}, "Array failed : $msg : $input");
 		like($@, qr{$1}, "Array failed : $msg : $input");
 	}
 	else {
@@ -204,6 +204,7 @@ for my $test (split /\n\n/ => $array_tests) {
 	if ($qexpected =~ /error:\s+(.+)/i) {
 		my $errmsg = $1;
 		$errmsg =~ s/bind/quote/;
+		like($@, qr{$errmsg}, "Array quote failed : $msg : $input");
 		like($@, qr{$errmsg}, "Array quote failed : $msg : $input");
 	}
 	else {
@@ -229,7 +230,7 @@ for my $test (split /\n\n/ => $array_tests) {
 		my $ver = $1;
 		if ($pgversion < $ver) {
 		  SKIP: {
-				skip 'Cannot test NULL arrays unless version 8.2 or better', 4;
+				skip 'Cannot test NULL arrays unless version 8.2 or better', 2;
 			}
 			next;
 		}
@@ -240,6 +241,7 @@ for my $test (split /\n\n/ => $array_tests) {
 		$addarray->execute(eval $input);
 	};
 	if ($expected =~ /error:\s+(.+)/i) {
+		like($@, qr{$1}, "Array failed : $msg : $input");
 		like($@, qr{$1}, "Array failed : $msg : $input");
 	}
 	else {
