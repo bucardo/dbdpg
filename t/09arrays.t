@@ -255,7 +255,6 @@ for my $test (split /\n\n/ => $array_tests) {
 		$qexpected =~ s/\\\\"/\\"/g;
 		$qexpected =~ s/\\\\i/\\i/g;
 		$expected = eval $qexpected;
-		$@ and BAIL_OUT "Eval failed ($@) for $expected\n";
 		is_deeply($result, $expected, "Correct array inserted: $msg : $input");
 	}
 
@@ -273,7 +272,7 @@ if ($pgversion >= 80100) {
 }
 
 my $array_tests_out =
-qq!1
+q!1
 [1]
 Simple test of single array element
 
@@ -440,7 +439,6 @@ for my $test (split /\n\n/ => $array_tests_out) {
 	}
 	else {
 		$expected = eval $expected;
-		$@ and BAIL_OUT "Eval failed ($@) for $expected\n";
 		## is_deeply does not handle type differences
 		is((Dumper $result), (Dumper $expected), "Array test $msg : $input");
 	}

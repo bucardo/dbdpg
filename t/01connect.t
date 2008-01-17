@@ -7,15 +7,17 @@ use strict;
 use warnings;
 use DBI;
 use DBD::Pg;
-use Test::More tests => 15;
+use Test::More;
 select(($|=1,select(STDERR),$|=1)[1]);
 
 ## Define this here in case we get to the END block before a connection is made.
 my ($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
 
 my $bail = 0;
-if (!defined $ENV{DBI_DSN}) {
-	BAIL_OUT 'Cannot run tests unless DBI_DSN is defined. See the README file';
+if (defined $ENV{DBI_DSN}){
+	plan tests => 15;
+} else {
+	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
 
 # Trapping a connection error can be tricky, but we only have to do it 
