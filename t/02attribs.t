@@ -179,7 +179,7 @@ is( $attrib, 'Pg', '$dbh->{Driver}{Name} returns correct value of "Pg"');
 #
 
 SKIP: {
-	if (!exists $ENV{DBI_DSN} or $ENV{DBI_DSN} !~ /^dbi:Pg:(.*)$/) {
+	if (!exists $ENV{DBI_DSN} or $ENV{DBI_DSN} !~ /^dbi:Pg:(.+)$/) {
 		skip q{Cannot test DB handle attribute "Name": invalid DBI_DSN}, 1;
 	}
 	else {
