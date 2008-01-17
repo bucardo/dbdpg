@@ -491,10 +491,9 @@ The major number should very, very rarely change, and is saved for the truly maj
 indicate a change in functionality, new features, etc. The revision number is used for small 
 tweaks and bug fixes, and must be completely compatible with the version before it.
 
-Beta versions are simply the number *before* the new anticipated number, plus an 
-underscore to indicate the beta version. For example, if the current version is 
-2.1.4 and you are making betas for an upcoming 2.1.5 version, you should name the 
-beta version as 2.1.4_1. A second beta would be 2.1.4_2, etc.
+Beta versions are the vesion with an undercore at the end of it. The tells CPAN not to consider 
+this a "real" release. For example, if the upcoming release is 1.2.3, the first release 
+candidate would be 1.2.3_1. A second would be 1.2.3_2 etc.
 
 Version numbers are currently set in five files:
 

@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Be much more flexible in test connection options. [GSM]
 	- Skip item if no matching key in foreign_key_info.
 		(CPAN bug #32308) [GSM]
 	- Overhaul COPY functions: deprecate pg_getline, pg_putline, 
