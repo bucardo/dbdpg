@@ -13,7 +13,7 @@ require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
 if (defined $ENV{DBI_DSN}) {
-	plan tests => 214;
+	plan tests => 213;
 } else {
 	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
@@ -373,10 +373,6 @@ Deep nesting
 [[[[[[1]],[[2]],[[3]]]]]]
 Deep nesting
 
-'$role=ar'::aclitem,'$role=r'::aclitem
-['$role=ar/$role','$role=r/$role']
-Test of aclitem type
-
 1::bool
 ['t']
 Test of boolean type
@@ -408,9 +404,6 @@ Type 'box' works
 !;
 
 $Data::Dumper::Indent = 0;
-
-## Turn off WARNING from aclitem test
-$dbh->do(q{SET CLIENT_MIN_MESSAGES = 'ERROR'});
 
 for my $test (split /\n\n/ => $array_tests_out) {
 	next unless $test =~ /\w/;
@@ -451,7 +444,7 @@ for my $test (split /\n\n/ => $array_tests_out) {
 		## is_deeply does not handle type differences
 		is((Dumper $result), (Dumper $expected), "Array test $msg : $input");
 	}
-	
+
 }
 
 cleanup_database($dbh,'test');
