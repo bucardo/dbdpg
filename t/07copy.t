@@ -140,12 +140,6 @@ eval {
 ok($@, 'pg_endcopy fails when called twice after COPY OUT');
 
 
-
-
-
-
-
-
 ##
 ## Test the new COPY methods
 ##
@@ -215,7 +209,7 @@ eval {
 };
 ok($@, $t);
 
-$t=q{Calling pg_getcopydata gives an errors when in the middle of COPY .. FROM};
+$t=q{Calling pg_getcopydata gives an error when in the middle of COPY .. FROM};
 eval {
 	$dbh->pg_getcopydata($data[0]);
 };
