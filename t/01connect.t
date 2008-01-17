@@ -8,16 +8,20 @@ use warnings;
 use DBI;
 use DBD::Pg;
 use Test::More;
+use lib 't','.';
+require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
 ## Define this here in case we get to the END block before a connection is made.
 my ($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
 
-my $bail = 0;
-if (defined $ENV{DBI_DSN}){
+my $dbh = connect_database();
+
+if (! defined $dbh) {
+	plan skip_all => 'Connection to database failed, cannot continue testing';
+}
+else {
 	plan tests => 15;
-} else {
-	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
 }
 
 # Trapping a connection error can be tricky, but we only have to do it 
@@ -25,20 +29,7 @@ if (defined $ENV{DBI_DSN}){
 # the first is when we truly do not connect, usually a bad DBI_DSN;
 # the second is an invalid login, usually a bad DBI_USER or DBI_PASS
 
-my ($dbh,$t);
-
-eval {
-	$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
-											{RaiseError => 1, PrintError => 0, AutoCommit => 0});
-};
-if ($@) {
-	if (! $DBI::errstr) {
-		BAIL_OUT "Could not connect: $@";
-	}
-	else {
-		BAIL_OUT "Could not connect: $DBI::errstr";
-	}
-}
+my ($t);
 
 pass('Established a connection to the database');
 
@@ -50,14 +41,13 @@ $pgvstring = $dbh->selectall_arrayref('SELECT VERSION()')->[0][0];
 ok( $dbh->disconnect(), 'Disconnect from the database');
 
 # Connect two times. From this point onward, do a simpler connection check
-ok( $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
-												{RaiseError => 1, PrintError => 0, AutoCommit => 0}),
-		'Connected with first database handle');
+$dbh = connect_database();
 
-my $dbh2;
-ok( $dbh2 = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
-												 {RaiseError => 1, PrintError => 0, AutoCommit => 0}),
-		'Connected with second database handle');
+pass('Connected with first database handle');
+
+my $dbh2 = connect_database();
+
+pass('Connected with second database handle');
 
 my $sth = $dbh->prepare('SELECT 123');
 ok ( $dbh->disconnect(), 'Disconnect with first database handle');
@@ -70,6 +60,7 @@ eval {
 ok( $@, 'Execute fails on a disconnected statement');
 
 # Try out various connection options
+$ENV{DBI_DSN} ||= '';
 SKIP: {
 	my $alias = qr{(database|db|dbname)};
 	if ($ENV{DBI_DSN} !~ /$alias\s*=\s*\S+/) {
@@ -123,8 +114,14 @@ END {
 	my $user = exists $ENV{DBI_USER} ? $ENV{DBI_USER} : '<not set>';
 
 	my $extra = '';
-	for (sort qw/HOST HOSTADDR PORT DATABASE USER PASSWORD OPTIONS SERVICE SSLMODE SYSCONFDIR/) {
+	for (sort qw/HOST HOSTADDR PORT DATABASE USER PASSWORD PASSFILE OPTIONS REALM
+                 REQUIRESSL KRBSRVNAME CONNECT_TIMEOUT SERVICE SSLMODE SYSCONFDIR/) {
 		my $name = "PG$_";
+		if (exists $ENV{$name} and defined $ENV{$name}) {
+			$extra .= sprintf "\n%-21s $ENV{$name}", $name;
+		}
+	}
+	for my $name (qw/DBI_DRIVER DBI_USER DBI_PASS DBI_AUTOPROXY/) {
 		if (exists $ENV{$name} and defined $ENV{$name}) {
 			$extra .= sprintf "\n%-21s $ENV{$name}", $name;
 		}

@@ -107,15 +107,15 @@ Do steps 1 to 3 as a normal user, not as root!
 TESTING:
 --------
 
-The tests are designed to connect to a live database.  The following
-environment variables must be set for the tests to run:
+The tests rely on being able to connect to a valid Postgres database. 
+The easiest way to ensure this is to set the following environment variables:
 
 	DBI_DSN=dbi:Pg:dbname=<database>
 	DBI_USER=<username>
 	DBI_PASS=<password>
 
-If you are running on a non-standard port, you must add it 
-to the DBI_DSN variable like this:
+If you are running on a non-standard port, you must set PGPORT or 
+add it to the DBI_DSN variable like this:
 
 	DBI_DSN='dbi:Pg:dbname=<database>;port=<port#>'
 
@@ -123,10 +123,6 @@ Put double quotes around the dbname if it has a semicolon
 or a space inside of it:
 
 	DBI_DSN='dbi:Pg:dbname="<data;base>"'
-
-The tests assume that a schema named "public" is available. To override 
-this, set the environment variable DBD_SCHEMA to a valid schema 
-before testing.
 
 You can increase the verbosity of the tests by setting the 
 environment variable TEST_VERBOSE. You can also enable tracing 

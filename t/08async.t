@@ -11,11 +11,12 @@ use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
-if (!defined $ENV{DBI_DSN}) {
-	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
+my $dbh = connect_database();
+
+if (!defined $dbh) {
+	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 
-my $dbh = connect_database();
 my $pglibversion = $dbh->{pg_lib_version};
 
 if ($pglibversion < 80000) {

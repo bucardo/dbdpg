@@ -6,13 +6,13 @@ use warnings;
 use DBI;
 select(($|=1,select(STDERR),$|=1)[1]);
 
-my @schemas = 
+my @schemas =
 	(
 	 'dbd_pg_testschema',
 	 'dbd_pg_testschema2',
 	 );
 
-my @tables = 
+my @tables =
 	(
 	 'dbd_pg_test5',
 	 'dbd_pg_test4',
@@ -24,7 +24,7 @@ my @tables =
 	 'dbd_pg_test',
 	 );
 
-my @sequences = 
+my @sequences =
 	(
 	 'dbd_pg_testsequence',
 	 'dbd_pg_testschema2.dbd_pg_testsequence2',
@@ -46,8 +46,11 @@ sub connect_database {
 	my $dbh = $arg->{dbh} || '';
 
 	if (!$dbh) {
-		$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
-							{RaiseError => 1, PrintError => 0, AutoCommit => 1});
+		eval {
+			$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+								{RaiseError => 1, PrintError => 0, AutoCommit => 1});
+		};
+		$@ and return undef;
 	}
 	if ($arg->{nosetup}) {
 		$dbh->do("SET search_path TO $S");
@@ -57,9 +60,9 @@ sub connect_database {
 
 		$dbh->do("CREATE SCHEMA $S");
 		$dbh->do("SET search_path TO $S");
-		$dbh->do("CREATE SEQUENCE dbd_pg_testsequence");
+		$dbh->do('CREATE SEQUENCE dbd_pg_testsequence');
 		# If you add columns to this, please do not use reserved words!
-		my $SQL = qq{
+		my $SQL = q{
 CREATE TABLE dbd_pg_test (
   id         integer not null primary key,
   lii        integer unique not null default nextval('dbd_pg_testsequence'),
@@ -78,7 +81,7 @@ CREATE TABLE dbd_pg_test (
 $dbh->{Warn} = 0;
 $dbh->do($SQL);
 $dbh->{Warn} = 1;
-$dbh->do("COMMENT ON COLUMN dbd_pg_test.id IS 'Bob is your uncle'");
+$dbh->do(q{COMMENT ON COLUMN dbd_pg_test.id IS 'Bob is your uncle'});
 
 } ## end setup
 
@@ -98,7 +101,7 @@ return $dbh;
 sub schema_exists {
 
 	my ($dbh,$schema) = @_;
-	my $SQL = "SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = ?";
+	my $SQL = 'SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = ?';
 	my $sth = $dbh->prepare_cached($SQL);
 	my $count = $sth->execute($schema);
 	$sth->finish();
@@ -110,8 +113,8 @@ sub schema_exists {
 sub relation_exists {
 
 	my ($dbh,$schema,$name) = @_;
-	my $SQL = "SELECT 1 FROM pg_catalog.pg_class c, pg_catalog.pg_namespace n ".
-		"WHERE n.oid=c.relnamespace AND n.nspname = ? AND c.relname = ?";
+	my $SQL = 'SELECT 1 FROM pg_catalog.pg_class c, pg_catalog.pg_namespace n '.
+		'WHERE n.oid=c.relnamespace AND n.nspname = ? AND c.relname = ?';
 	my $sth = $dbh->prepare_cached($SQL);
 	my $count = $sth->execute($schema,$name);
 	$sth->finish();
@@ -147,6 +150,8 @@ sub cleanup_database {
 		$dbh->do("DROP SCHEMA $schema");
 	}
 	$dbh->commit() if ! $dbh->{AutoCommit};
+
+	return;
 
 }
 

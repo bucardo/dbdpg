@@ -9,13 +9,15 @@ use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
-if (defined $ENV{DBI_DSN}) {
+my $dbh = connect_database({nosetup => 1});
+
+if (defined $dbh) {
 	plan tests => 1;
-} else {
-	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
+}
+else {
+	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 
-my $dbh = connect_database({nosetup => 1});
 ok( defined $dbh, 'Connect to database for cleanup');
 
 cleanup_database($dbh);

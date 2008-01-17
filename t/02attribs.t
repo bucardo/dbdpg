@@ -11,14 +11,15 @@ use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
-if (defined $ENV{DBI_DSN}) {
+my $dbh = connect_database();
+
+if (defined $dbh) {
 	plan tests => 132;
 }
 else {
-	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
+	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 
-my $dbh = connect_database();
 ok( defined $dbh, 'Connect to database for handle attributes testing');
 
 my $attributes_tested = q{
@@ -178,8 +179,8 @@ is( $attrib, 'Pg', '$dbh->{Driver}{Name} returns correct value of "Pg"');
 #
 
 SKIP: {
-	if ($ENV{DBI_DSN} !~ /^dbi:Pg:(.*)$/) {
-		fail(q{Cannot test DB handle attribute "Name": invalid DBI_DSN});
+	if (!exists $ENV{DBI_DSN} or $ENV{DBI_DSN} !~ /^dbi:Pg:(.*)$/) {
+		skip q{Cannot test DB handle attribute "Name": invalid DBI_DSN}, 1;
 	}
 	else {
 		$expected = $1 || $ENV{PGDATABASE};

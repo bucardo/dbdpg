@@ -10,13 +10,15 @@ use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
-if (defined $ENV{DBI_DSN}) {
+my $dbh = connect_database();
+
+if (defined $dbh) {
 	plan tests => 3;
-} else {
-	plan skip_all => 'Cannot run test unless DBI_DSN is defined. See the README file';
+}
+else {
+	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 
-my $dbh = connect_database();
 ok( defined $dbh, 'Connect to database for savepoint testing');
 
 my $pgversion = $dbh->{pg_server_version};
