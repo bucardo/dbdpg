@@ -488,7 +488,7 @@ SKIP: {
 	$DBI::VERSION >= 1.52
 		or skip 'DBI must be at least version 1.52 to test the database handle method "statistics_info"', 10;
 
-	$dbh->{private_dbdpg}{version} >= 800000
+	$dbh->{private_dbdpg}{version} >= 80000
 		or skip 'Server must be version 8.0 or higher to test database handle method "statistics_info"', 10;
 
 	$sth = $dbh->statistics_info(undef,undef,undef,undef,undef);
@@ -1134,11 +1134,11 @@ SKIP: {
 # Test of the "clone" database handle method
 #
 
-$t=q{ Database handle method "clone" does not throw an error};
+$t=q{Database handle method "clone" does not throw an error};
 my $dbh2;
 eval { $dbh2 = $dbh->clone(); };
 is($@, q{}, $t);
-$t=q{ Database handle method "clone" returns a valid database handle};
+$t=q{Database handle method "clone" returns a valid database handle};
 eval {
 	$dbh2->do('SELECT 123');
 };
