@@ -15,7 +15,9 @@ select(($|=1,select(STDERR),$|=1)[1]);
 ## Define this here in case we get to the END block before a connection is made.
 my ($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
 
-my $dbh = connect_database();
+my ($dbh,$connerror,$helpconnect);
+
+($helpconnect,$connerror,$dbh) = connect_database();
 
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -121,10 +123,26 @@ END {
 			$extra .= sprintf "\n%-21s $ENV{$name}", $name;
 		}
 	}
-	for my $name (qw/DBI_DRIVER DBI_USER DBI_PASS DBI_AUTOPROXY/) {
+	for my $name (qw/DBI_DRIVER DBI_AUTOPROXY/) {
 		if (exists $ENV{$name} and defined $ENV{$name}) {
 			$extra .= sprintf "\n%-21s $ENV{$name}", $name;
 		}
+	}
+
+	if ($helpconnect) {
+		$extra .= "\nAdjusted:             ";
+		if ($helpconnect & 1) {
+			$extra .= 'DBI_DSN ';
+		}
+		if ($helpconnect & 4) {
+			$extra .= 'DBI_USER';
+		}
+	}
+
+	if (defined $connerror) {
+		$connerror =~ s/.+?failed: //;
+		$connerror =~ s{\n at t/dbdpg.*}{}m;
+		$extra .= "\nError was: $connerror";
 	}
 
 	diag

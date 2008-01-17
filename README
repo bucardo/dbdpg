@@ -133,6 +133,9 @@ result in extremely verbose output.
 When reporting test failures, please use TEST_VERBOSE=1, do *not* 
 set DBD_TRACE unless requested, and send only the relevant sections.
 
+If the first connection fails and DBI_DSN is not set, the tests may 
+attempt to connect as the user 'postgres' to the database 'postgres'. 
+See the t/dbdpg_test_setup.pl for the exact process.
 
 TROUBLESHOOTING:
 ----------------
