@@ -119,7 +119,7 @@ my $testmoreok = qr{Subroutine "$tm" is neither};
 $critic = Perl::Critic->new(-severity => 1);
 
 my $count = 1;
-for my $filename (@testfiles) {
+for my $filename (sort @testfiles) {
 	-e $filename or die qq{Could not find "$filename"!};
 	my @vio = $critic->critique($filename);
 	my $vios = 0;
