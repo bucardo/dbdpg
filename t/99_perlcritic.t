@@ -23,7 +23,7 @@ elsif ($Perl::Critic::VERSION < 0.23) {
 }
 else {
 	opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
-	@testfiles = map { "t/$_" } grep { /^\d+\w+\.t$/ } readdir $dir;
+	@testfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
 	closedir $dir;
 	plan tests => 2+@testfiles;
 }
@@ -139,6 +139,9 @@ for my $filename (@testfiles) {
 				next VIO if $d =~ $_;
 			}
 		}
+
+		## Skip included file package warning
+		next if $policy =~ /RequireExplicitPackage/ and $filename =~ /setup/;
 
 		$vios++;
 		my $l = $v->location();
