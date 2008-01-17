@@ -45,6 +45,10 @@ sub connect_database {
 
 	my $dbh = $arg->{dbh} || '';
 
+	if (!defined $ENV{DBI_DSN}) {
+		$ENV{DBI_DSN} = 'dbi:Pg:';
+	}
+
 	if (!$dbh) {
 		eval {
 			$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
