@@ -544,6 +544,11 @@ SKIP: {
 	],
 	};
 
+	## Early versions of 8.1 have a difference in hash index pages, which I think was corrected in 8.1.5:
+	if ($pgversion =~ /8.1.[01234]/) {
+		$correct_stats->{three}[5][11] = 0;
+	}
+
 	my $stats;
 
 	$sth = $dbh->statistics_info(undef,$schema,$table1,undef,undef);
