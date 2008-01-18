@@ -2855,8 +2855,6 @@ To use PostgreSQL data types, import the list of values like this:
 
   use DBD::Pg qw(:pg_types);
 
-(The one exception is PG_BYTEA which is exported by default, and does 
-not require the above import before being used).
 You can then set the data types by setting the value of the C<pg_type>
 key in the hash passed to C<bind_param>. 
 The current list of Postgres data types exported is:
