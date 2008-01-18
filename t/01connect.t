@@ -13,9 +13,10 @@ require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
 ## Define this here in case we get to the END block before a connection is made.
-my ($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
-
-my ($dbh,$connerror,$helpconnect);
+BEGIN {
+	use vars qw/$pgversion $pglibversion $pgvstring $pgdefport $helpconnect $dbh $connerror/;
+	($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
+}
 
 ($helpconnect,$connerror,$dbh) = connect_database();
 
