@@ -3051,7 +3051,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 				   sv_copypv(currph->inout, AvARRAY(av)[i]);
 				*/
 				STRLEN len;
-				const char * const s = SvPV_const(AvARRAY(av)[i],len);
+				const char * const s = SvPV(AvARRAY(av)[i],len);
 				sv_setpvn(currph->inout, s, len);
 				if (SvUTF8(AvARRAY(av)[i]))
 					SvUTF8_on(currph->inout);
