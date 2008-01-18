@@ -39,7 +39,7 @@ for my $filename (qw/Pg.pm/) {
 	}
 
 	-e $filename or die qq{Could not find "$filename"!};
-	open my $oldstderr, '>&', STDERR or die 'Could not dupe STDERR';
+	open my $oldstderr, '>&', \*STDERR or die 'Could not dupe STDERR';
 	close STDERR or die qq{Could not close STDERR: $!};
 	my @vio = $critic->critique($filename);
 	open STDERR, '>&', $oldstderr or die 'Could not recreate STDERR'; ## no critic
