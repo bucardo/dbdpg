@@ -257,6 +257,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 
 
 /* ================================================================== */
+
 /* Database specific error handling. */
 static void pg_error (SV * h, ExecStatusType error_num, char * error_msg)
 {
@@ -313,14 +314,11 @@ static ExecStatusType _result(imp_dbh_t * imp_dbh, const char * sql)
 	ExecStatusType status;
 
 	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: _result (%s)\n", sql);
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: _result sql=(%s)\n", sql);
 
 	result = PQexec(imp_dbh->conn, sql);
 
 	status = _sqlstate(imp_dbh, result);
-
-	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: _result status is %d\n", status);
 
 	PQclear(result);
 
@@ -336,14 +334,11 @@ static ExecStatusType _sqlstate(imp_dbh_t * imp_dbh, PGresult * result)
 	ExecStatusType status   = PGRES_FATAL_ERROR; /* until proven otherwise */
 	bool           stateset = DBDPG_FALSE;
 
-	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: _sqlstate\n");
-
 	if (result)
 		status = PQresultStatus(result);
 
-	if (dbis->debug >= 6)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: _sqlstate status is %d\n", status);
+	if (dbis->debug >= 5)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: _sqlstate PQresultStatus returned %d\n", status);
 
 	/*
 	  Because PQresultErrorField may not work completely when an error occurs, and 
@@ -377,8 +372,12 @@ static ExecStatusType _sqlstate(imp_dbh_t * imp_dbh, PGresult * result)
 		}
 	}
 
-	if (dbis->debug >= 6)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: _sqlstate set to %s\n", imp_dbh->sqlstate);
+	if (dbis->debug >= 5)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: _sqlstate set imp_dbh->sqlstate to %s\n", imp_dbh->sqlstate);
+
+	if (dbis->debug >= 7)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: _sqlstate txn_status is %d\n", dbd_db_txn_status(imp_dbh));
+
 
 	return status;
 
@@ -424,10 +423,6 @@ int dbd_db_ping (SV * dbh)
 /* ================================================================== */
 static PGTransactionStatusType dbd_db_txn_status (imp_dbh_t * imp_dbh)
 {
-
-	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_txn_status\n");
-
 	return PQtransactionStatus(imp_dbh->conn);
 
 } /* end of dbd_db_txn_status */
@@ -455,6 +450,9 @@ static int dbd_db_rollback_commit (SV * dbh, imp_dbh_t * imp_dbh, char * action)
 	   ask it for the status directly and double-check things */
 
 	tstatus = dbd_db_txn_status(imp_dbh);
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_%s txn_status is %d\n", action, tstatus);
+
 	if (PQTRANS_IDLE == tstatus) { /* Not in a transaction */
 		if (imp_dbh->done_begin) {
 			/* We think we ARE in a transaction but we really are not */
@@ -2439,7 +2437,7 @@ int pg_quickexec (SV * dbh, const char * sql, int asyncflag)
 	int            rows = 0;
 
 	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbdpg_quickexec query=(%s) async=(%d) async_status=(%d)\n",
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_quickexec begins; query=(%s) async=(%d) async_status=(%d)\n",
 							sql, asyncflag, imp_dbh->async_status);
 
 	if (NULL == imp_dbh->conn)
@@ -2527,6 +2525,9 @@ int pg_quickexec (SV * dbh, const char * sql, int asyncflag)
 		PQclear(result);
 	else
 		return -2;
+
+	if (dbis->debug >= 4)
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_quickexec ends; returns %d\n", rows);
 
 	return rows;
 
@@ -3146,7 +3147,7 @@ static int dbd_st_deallocate_statement (SV * sth, imp_sth_t * imp_sth)
 	/* What is our status? */
 	tstatus = dbd_db_txn_status(imp_dbh);
 	if (dbis->debug >= 5)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: Transaction status is %d\n", tstatus);
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: txn_status is %d\n", tstatus);
 
 	/* If we are in a failed transaction, rollback before deallocating */
 	if (PQTRANS_INERROR == tstatus) {
