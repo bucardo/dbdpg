@@ -25,8 +25,9 @@ else {
 	opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
 	@testfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
 	closedir $dir;
-	plan tests => 2+@testfiles;
+	plan tests => 3+@testfiles;
 }
+ok(@testfiles, 'Found files in test directory');
 
 ## Check the non-test files - just Pg.pm for now
 my $critic = Perl::Critic->new(-severity => 1);
@@ -151,7 +152,7 @@ for my $filename (sort @testfiles) {
 		diag "Policy: $policy\n";
 		diag "Source: $source\n\n";
 	}
-	my $SPACE = ++$count < 10 ? ' ' : '';
+	my $SPACE = ++$count < 9 ? ' ' : '';
 	if ($vios) {
 		fail qq{${SPACE}Failed Perl::Critic tests for file "$filename": $vios};
 	}
