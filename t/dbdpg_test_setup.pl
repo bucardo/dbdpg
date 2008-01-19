@@ -68,12 +68,23 @@ sub connect_database {
 				$helpconnect += 2;
 			}
 			$helpconnect += 4;
-			$ENV{DBI_USER} = 'postgres';
+			$ENV{DBI_USER} = $^O =~ /bsd/ ? '_postgresql' : 'postgres';
 			eval {
 				$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 									{RaiseError => 1, PrintError => 0, AutoCommit => 1});
 			};
-			return $helpconnect, $@, undef if $@;
+			if ($@) {
+				## Try one final time for Beastie
+				if ($ENV{DBI_USER} ne 'postgres') {
+					$helpconnect += 8;
+					$ENV{DBI_USER} = 'postgres';
+					eval {
+						$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+											{RaiseError => 1, PrintError => 0, AutoCommit => 1});
+					};
+				}
+				return $helpconnect, $@, undef if $@;
+			}
 		}
 	}
 	if ($arg->{nosetup}) {
