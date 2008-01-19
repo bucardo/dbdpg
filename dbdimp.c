@@ -2419,10 +2419,11 @@ SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_in
 int pg_quickexec (SV * dbh, const char * sql, int asyncflag)
 {
 	D_imp_dbh(dbh);
-	PGresult *     result;
-	ExecStatusType status = PGRES_FATAL_ERROR; /* Assume the worst */
-	char *         cmdStatus = NULL;
-	int            rows = 0;
+	PGresult *              result;
+	ExecStatusType          status = PGRES_FATAL_ERROR; /* Assume the worst */
+	PGTransactionStatusType txn_status;
+	char *                  cmdStatus = NULL;
+	int                     rows = 0;
 
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_quickexec begins; query=(%s) async=(%d) async_status=(%d)\n",
@@ -2514,8 +2515,20 @@ int pg_quickexec (SV * dbh, const char * sql, int asyncflag)
 	else
 		return -2;
 
+	txn_status = PQtransactionStatus(imp_dbh->conn);
+
+	if (PQTRANS_IDLE == txn_status) {
+		imp_dbh->done_begin = DBDPG_FALSE;
+		imp_dbh->copystate=0;
+		/* If begin_work has been called, turn AutoCommit back on and BegunWork off */
+		if (DBIc_has(imp_dbh, DBIcf_BegunWork)!=0) {
+			DBIc_set(imp_dbh, DBIcf_AutoCommit, 1);
+			DBIc_set(imp_dbh, DBIcf_BegunWork, 0);
+		}
+	}
+
 	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_quickexec ends; returns %d\n", rows);
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_quickexec ends; rows=%d, txn_status=%d\n", rows, txn_status);
 
 	return rows;
 
@@ -2879,7 +2892,15 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			ret = atoi(PQcmdTuples(imp_sth->result));
 		}
 		else {
-			/* We assume that no rows are affected for successful commands (e.g. ALTER TABLE) */
+			/* No rows affected, but check for change of state */
+			if (PQTRANS_IDLE == PQtransactionStatus(imp_dbh->conn)) {
+				imp_dbh->done_begin = DBDPG_FALSE;
+				/* If begin_work has been called, turn AutoCommit back on and BegunWork off */
+				if (DBIc_has(imp_dbh, DBIcf_BegunWork)!=0) {
+					DBIc_set(imp_dbh, DBIcf_AutoCommit, 1);
+					DBIc_set(imp_dbh, DBIcf_BegunWork, 0);
+				}
+			}
 			return 0;
 		}
 	}

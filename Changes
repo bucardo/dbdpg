@@ -1,6 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Check transaction status after each command, to allow 
+		things such as 'PREPARE TRANSACTION' to work properly.
+		(CPAN bug #32423) [GSM]
 	- Allow raw transaction statements through - in other words, 
 		do not croak if $dbh->prepare("COMMIT") is attempted. Not 
 		only was this a little too controlling, there is a growing 

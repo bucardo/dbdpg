@@ -14,7 +14,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if (defined $dbh) {
-	plan tests => 6;
+	plan tests => 13;
 }
 else {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -55,6 +55,38 @@ $sth->execute(600,$DBDPG_DEFAULT);
 };
 $sth->execute(602,123);
 ok (!$@, qq{Using \$DBDPG_DEFAULT ($DBDPG_DEFAULT) works});
+
+#
+# Test transaction status changes
+#
+
+$dbh->{AutoCommit} = 1;
+$dbh->begin_work();
+$dbh->do('SELECT 123');
+
+$t = q{Raw ROLLBACK via do() resets the transaction status correctly};
+eval { $dbh->do('ROLLBACK'); };
+is($@, q{}, $t);
+eval { $dbh->begin_work(); };
+is($@, q{}, $t);
+
+$t = q{Using dbh->commit() resets the transaction status correctly};
+eval { $dbh->commit(); };
+is($@, q{}, $t);
+eval { $dbh->begin_work(); };
+is($@, q{}, $t);
+
+$t = q{Raw COMMIT via do() resets the transaction status correctly};
+eval { $dbh->do('COMMIT'); };
+is($@, q{}, $t);
+eval { $dbh->begin_work(); };
+is($@, q{}, $t);
+
+$t = q{Calling COMMIT via prepare/execute resets the transaction status correctly};
+$sth = $dbh->prepare('COMMIT');
+$sth->execute();
+eval { $dbh->begin_work(); };
+is($@, q{}, $t);
 
 cleanup_database($dbh,'test');
 $dbh->disconnect();
