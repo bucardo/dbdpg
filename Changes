@@ -1,6 +1,11 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Allow raw transaction statements through - in other words, 
+		do not croak if $dbh->prepare("COMMIT") is attempted. Not 
+		only was this a little too controlling, there is a growing 
+		host of other commands such as "COMMIT PREPARED" that we
+		need to allow. [GSM].
 	- Be much more flexible in test connection options. [GSM]
 	- Skip item if no matching key in foreign_key_info.
 		(CPAN bug #32308) [GSM]

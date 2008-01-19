@@ -1276,18 +1276,6 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 		Copy(statement-newsize, imp_sth->firstword, newsize, char);
 		imp_sth->firstword[newsize] = '\0';
 
-		/* Try to prevent transaction commands unless "pg_direct" is set */
-		if (0==strcasecmp(imp_sth->firstword, "BEGIN") ||
-			0==strcasecmp(imp_sth->firstword, "END") ||
-			0==strcasecmp(imp_sth->firstword, "ABORT") ||
-			0==strcasecmp(imp_sth->firstword, "COMMIT") ||
-			0==strcasecmp(imp_sth->firstword, "ROLLBACK") ||
-			0==strcasecmp(imp_sth->firstword, "RELEASE") ||
-			0==strcasecmp(imp_sth->firstword, "SAVEPOINT")
-			) {
-			if (!imp_sth->direct)
-				croak ("Please use DBI functions for transaction handling");
-		}
 		/* Note whether this is preparable DML */
 		if (0==strcasecmp(imp_sth->firstword, "SELECT") ||
 			0==strcasecmp(imp_sth->firstword, "INSERT") ||
