@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name                : DBD-Pg
-version             : 2.0.0_4
+version             : 2.0.0_5
 abstract            : DBI PostgreSQL interface
 author:              
   - Greg Sabino Mullane <greg@turnstep.com>
