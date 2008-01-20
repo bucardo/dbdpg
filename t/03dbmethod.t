@@ -544,8 +544,8 @@ SKIP: {
 	],
 	};
 
-	## Early versions of 8.1 have a difference in hash index pages, which I think was corrected in 8.1.5:
-	if ($pgversion =~ /8.1.[01234]/) {
+	## 8.1 has differences in hash index pages
+	if ($pgversion =~ /8\.1\./) {
 		$correct_stats->{three}[5][11] = 0;
 	}
 
