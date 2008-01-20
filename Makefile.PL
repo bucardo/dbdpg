@@ -102,7 +102,14 @@ else {
 	}
 }
 
-my $comp_opts = $Config{q{ccflags}} . " -DPGLIBVERSION=$serverversion -DPGDEFPORT=$defaultport";
+my $defines = " -DPGLIBVERSION=$serverversion -DPGDEFPORT=$defaultport";
+my $comp_opts = $Config{q{ccflags}} . $defines;
+
+for (1..$Config{config_argc}) {
+	my $arg = $Config{"config_arg$_"};
+	## Not used for the moment
+	#$defines .= " $arg" if $arg =~ /^\-D/;
+}
 
 if ($ENV{DBDPG_GCCDEBUG}) {
 	warn "Enabling many compiler options\n";
@@ -168,6 +175,37 @@ sub MY::postamble {
 	## Evil, evil stuff - but we really want to suppress the "duplicate function" message!
 	$string =~ s/dependancy/dependency/g; ## why not, while we are here
 	$string =~ s#(BASEEXT\)/g)#$1; s/^do\\\(/dontdo\\\(/#;
+
+	$string .= <<'MAKE_SPLINT';
+
+## This must be version 3.1.2 or better: earlier versions have many 
+## problems parsing the DBI header files
+SPLINT = splint
+
+## Temp directory, for use with +keep
+SPLINT_TMP = $(TMP)/splint_dbdpg
+
+SPLINTFLAGS =            \
+  +ignoresigns           \
+  +posixstrictlib        \
+  -tmpdir $(SPLINT_TMP)  \
+  -message-stream-stdout \
+  +showdeephistory       \
+
+SPLINTFLAGS_TEST = 
+
+SDEFINES = 
+
+CCFLAGS2 = -D_REENTRANT -D_GNU_SOURCE -DTHREADS_HAVE_PIDS -DDEBIAN -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DPGLIBVERSION=80111 -DPGDEFPORT=5432
+
+splint: $(H_FILES) $(C_FILES)
+	$(MKPATH) $(SPLINT_TMP)
+	$(SPLINT) $(SPLINTFLAGS) $(SPLINTFLAGS_TEST) $(SDEFINES) -I$(PERL_INC) $(INC) $(C_FILES)
+
+MAKE_SPLINT
+
+	$string =~ s/SDEFINES = /SDEFINES =$defines/;
+
 	return $string;
 }
 
