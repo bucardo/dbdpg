@@ -1,7 +1,7 @@
 ^_build
 ^Build$
 ^Makefile$
-^Makefile\.old$
+^Makefile.old$
 ^blib
 ~$
 \.bak$
