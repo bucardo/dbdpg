@@ -94,7 +94,10 @@ sub connect_database {
 	else {
 		cleanup_database($dbh);
 
-		$dbh->do("CREATE SCHEMA $S");
+		eval {
+			$dbh->do("CREATE SCHEMA $S");
+		};
+		$@ and return $helpconnect, $@, undef;
 		$dbh->do("SET search_path TO $S");
 		$dbh->do('CREATE SEQUENCE dbd_pg_testsequence');
 		# If you add columns to this, please do not use reserved words!
