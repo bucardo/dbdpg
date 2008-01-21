@@ -1788,7 +1788,7 @@ related to the current handle.
 
 =item B<state>
 
-<  $str = $h->state;
+  $str = $h->state;
 
 Supported by this driver. Returns a five-character "SQLSTATE" code.
 Success is indicated by a "00000" code, which gets mapped to an 
@@ -3582,7 +3582,7 @@ L<DBI>
 
 Quoting will not work properly if standard_conforming_strings is set to 'on', 
 so it is recommended that this be set to 'off' until full support for it can 
-be build into DBD::Pg.
+be built into DBD::Pg.
 
 =head1 AUTHORS
 
