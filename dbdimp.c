@@ -18,6 +18,10 @@
 #include <wchar.h>
 #include <strings.h>
 
+#ifndef NAMEDATALEN
+#define NAMEDATALEN 64
+#endif
+
 /* Force preprocessors to use this variable. Default to something valid yet noticeable */
 #ifndef PGLIBVERSION
 #define PGLIBVERSION 80009
