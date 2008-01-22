@@ -16,6 +16,7 @@
 #include "Pg.h"
 #include <math.h>
 #include <wchar.h>
+#include <strings.h>
 
 /* Force preprocessors to use this variable. Default to something valid yet noticeable */
 #ifndef PGLIBVERSION
@@ -103,7 +104,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	char *         dest;
 	bool           inquote = DBDPG_FALSE;
 	STRLEN         connect_string_size;
-	ExecStatusType status;
+	ConnStatusType connstatus;
 
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_db_login\n");
@@ -185,9 +186,9 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	strncpy(imp_dbh->sqlstate, "25P01", 6); /* "NO ACTIVE SQL TRANSACTION" */
 
 	/* Check to see that the backend connection was successfully made */
-	status = PQstatus(imp_dbh->conn);
-	if (CONNECTION_OK != status) {
-		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
+	connstatus = PQstatus(imp_dbh->conn);
+	if (CONNECTION_OK != connstatus) {
+		pg_error(dbh, (ExecStatusType)connstatus, PQerrorMessage(imp_dbh->conn));
 		strncpy(imp_dbh->sqlstate, "08006", 6); /* "CONNECTION FAILURE" */
 		PQfinish(imp_dbh->conn);
 		sv_free((SV *)imp_dbh->savepoints);
@@ -208,6 +209,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	if (imp_dbh->pg_server_version <= 0) {
 		PGresult *result;
 		int	cnt, vmaj, vmin, vrev;
+		ExecStatusType status;
 
 		result = PQexec(imp_dbh->conn, "SELECT version(), 'DBD::Pg'");
 		status = _sqlstate(imp_dbh, result);
@@ -724,6 +726,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			imp_dbh->pg_bool_tf = newval!=0 ? DBDPG_TRUE : DBDPG_FALSE;
 			return 1;
 		}
+		break;
 
 	case 13: /* pg_errorlevel */
 
@@ -739,6 +742,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			}
 			return 1;
 		}
+		break;
 
 	case 14: /* pg_prepare_now  pg_enable_utf8 */
 
@@ -755,6 +759,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			return 1;
 		}
 #endif
+		break;
 
 	case 15: /* pg_expand_array */
 
@@ -762,6 +767,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			imp_dbh->expand_array = newval ? DBDPG_TRUE : DBDPG_FALSE;
 			return 1;
 		}
+		break;
 
 	case 17: /* pg_server_prepare */
 
@@ -774,6 +780,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			}
 			return 1;
 		}
+		break;
 
 	case 25: /* pg_placeholder_dollaronly */
 
@@ -781,6 +788,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			imp_dbh->dollaronly = newval ? DBDPG_TRUE : DBDPG_FALSE;
 			return 1;
 		}
+		break;
 	}
 
 	return 0;
@@ -936,12 +944,13 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 
 		if (strEQ("SCALE", key)) {
 			AV *av = newAV();
+			Oid o;
 			retsv = newRV(sv_2mortal((SV*)av));
 			while(--fields >= 0) {
-				x = PQftype(imp_sth->result, fields);
-				if (PG_NUMERIC==x) {
-					x = PQfmod(imp_sth->result, fields)-4;
-					(void)av_store(av, fields, newSViv(x % (x>>16)));
+				o = PQftype(imp_sth->result, fields);
+				if (PG_NUMERIC == o) {
+					o = PQfmod(imp_sth->result, fields)-4;
+					(void)av_store(av, fields, newSViv(o % (o>>16)));
 				}
 				else {
 					(void)av_store(av, fields, &sv_undef);
@@ -1020,10 +1029,11 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 		if (strEQ("PRECISION", key)) {
 			AV *av = newAV();
 			int sz = 0;
+			Oid o;
 			retsv = newRV(sv_2mortal((SV*)av));
 			while(--fields >= 0) {
-				x = PQftype(imp_sth->result, fields);
-				switch (x) {
+				o = PQftype(imp_sth->result, fields);
+				switch (o) {
 				case PG_BPCHAR:
 				case PG_VARCHAR:
 					sz = PQfmod(imp_sth->result, fields);
@@ -1091,6 +1101,7 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 			imp_sth->async_flag = SvIV(valuesv);
 			return 1;
 		}
+		break;
 
 	case 14: /* pg_prepare_now */
 
@@ -1098,6 +1109,7 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 			imp_sth->prepare_now = strEQ(value,"0") ? DBDPG_FALSE : DBDPG_TRUE;
 			return 1;
 		}
+		break;
 
 	case 15: /* pg_prepare_name */
 
@@ -1108,6 +1120,7 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 			imp_sth->prepare_name[vl] = '\0';
 			return 1;
 		}
+		break;
 
 	case 17: /* pg_server_prepare*/
 
@@ -1115,6 +1128,7 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 			imp_sth->server_prepare = strEQ(value,"0") ? DBDPG_FALSE : DBDPG_TRUE;
 			return 1;
 		}
+		break;
 
 	case 25: /* pg_placeholder_dollaronly */
 
@@ -1122,6 +1136,7 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 			imp_sth->dollaronly = SvTRUE(valuesv) ? DBDPG_TRUE : DBDPG_FALSE;
 			return 1;
 		}
+		break;
 	}
 
 	return 0;
@@ -1874,7 +1889,7 @@ static int dbd_st_prepare_statement (SV * sth, imp_sth_t * imp_sth)
 	New(0, statement, execsize+1, char); /* freed below */
 
 	if (oldprepare) {
-		sprintf(statement, "PREPARE %s", imp_sth->prepare_name);
+		snprintf(statement, NAMEDATALEN+8, "PREPARE %s", imp_sth->prepare_name);
 		if (imp_sth->numphs!=0) {
 			strcat(statement, "(");
 			for (x=0, currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
@@ -3065,7 +3080,6 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 				/* When we have Perl 5.7.3 or better as a pre-req:
 				   sv_copypv(currph->inout, AvARRAY(av)[i]);
 				*/
-				STRLEN len;
 				const char * const s = SvPV(AvARRAY(av)[i],len);
 				sv_setpvn(currph->inout, s, len);
 				if (SvUTF8(AvARRAY(av)[i]))
@@ -3177,7 +3191,7 @@ static int dbd_st_deallocate_statement (SV * sth, imp_sth_t * imp_sth)
 				New(0, cmd, SvLEN(sp) + 13, char); /* Freed below */
 				if (dbis->debug >= 4)
 					(void)PerlIO_printf(DBILOGFP, "dbdpg: Rolling back to savepoint %s\n", SvPV_nolen(sp));
-				sprintf(cmd,"rollback to %s",SvPV_nolen(sp));
+				snprintf(cmd, NAMEDATALEN+12, "rollback to %s", SvPV_nolen(sp));
 				strncpy(tempsqlstate, imp_dbh->sqlstate, strlen(imp_dbh->sqlstate)+1);
 				status = _result(imp_dbh, cmd);
 				Safefree(cmd);
@@ -3197,7 +3211,7 @@ static int dbd_st_deallocate_statement (SV * sth, imp_sth_t * imp_sth)
 
 	New(0, stmt, strlen("DEALLOCATE ") + strlen(imp_sth->prepare_name) + 1, char); /* freed below */
 
-	sprintf(stmt, "DEALLOCATE %s", imp_sth->prepare_name);
+	snprintf(stmt, NAMEDATALEN + 11, "DEALLOCATE %s", imp_sth->prepare_name);
 
 	if (dbis->debug >= 5)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: Deallocating (%s)\n", imp_sth->prepare_name);
@@ -3580,7 +3594,7 @@ int pg_db_savepoint (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
 
-	sprintf(action, "savepoint %s", savepoint);
+	snprintf(action, NAMEDATALEN + 10, "savepoint %s", savepoint);
 
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit)))
@@ -3623,7 +3637,7 @@ int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
 
-	sprintf(action,"rollback to %s",savepoint);
+	snprintf(action, NAMEDATALEN + 12, "rollback to %s", savepoint);
 
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit)))
@@ -3656,7 +3670,7 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
 
-	sprintf(action,"release %s",savepoint);
+	snprintf(action, NAMEDATALEN + 8, "release %s", savepoint);
 
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit)))
