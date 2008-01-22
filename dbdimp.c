@@ -2251,12 +2251,16 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 			}
 			else {
 				sv_catpv(value, "\"");
+				if (SvUTF8(svitem))
+					SvUTF8_on(value);
 				string = SvPV(svitem, svlen);
 				while (svlen--) {
-					sv_catpvf(value, "%s%c", /* upgrades to utf8 for us */
-							  '\"'==*string ? "\\" : 
-							  '\\'==*string ? "\\\\" :
-							  "", *string);
+					if ('\"' == *string)
+						sv_catpvn(value, "\\", 1);
+					if ('\\' == *string) {
+						sv_catpvn(value, "\\\\", 2);
+					}
+					sv_catpvn(value, string, 1);
 					string++;
 				}
 				sv_catpv(value, "\"");

@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Make sure arrays handle UTF-8 smoothly (CPAN bug #32479) [GSM]
 	- Check transaction status after each command, to allow 
 		things such as 'PREPARE TRANSACTION' to work properly.
 		(CPAN bug #32423) [GSM]
