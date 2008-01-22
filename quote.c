@@ -331,7 +331,7 @@ void dequote_bytea(string, retlen)
 			*result++ = *string++;
 		}
 	}
-	result = '\0';
+	*result = '\0';
 	string = result - (*retlen);
 	return;
 }
