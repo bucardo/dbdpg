@@ -190,6 +190,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 		pg_error(dbh, status, PQerrorMessage(imp_dbh->conn));
 		strncpy(imp_dbh->sqlstate, "08006", 6); /* "CONNECTION FAILURE" */
 		PQfinish(imp_dbh->conn);
+		sv_free((SV *)imp_dbh->savepoints);
 		return 0;
 	}
 
