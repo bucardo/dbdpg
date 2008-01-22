@@ -458,7 +458,7 @@ SKIP: {
 
 	my $quoted = $dbh->quote($utf8_str);
 	is( $quoted, qq{'$utf8_str'}, 'quote() handles utf8' );
-	my $quoted = $dbh->quote([$utf8_str, $utf8_str]);
+	$quoted = $dbh->quote([$utf8_str, $utf8_str]);
 	is( $quoted, qq!{"$utf8_str","$utf8_str"}!, 'quote() handles utf8 inside array' );
 
 	$dbh->do("DELETE FROM dbd_pg_test");
