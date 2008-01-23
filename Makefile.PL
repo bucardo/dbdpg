@@ -186,11 +186,14 @@ SPLINT = splint
 SPLINT_TMP = $(TMP)/splint_dbdpg
 
 SPLINTFLAGS =            \
-  +ignoresigns           \
-  +posixstrictlib        \
-  -tmpdir $(SPLINT_TMP)  \
   -message-stream-stdout \
+  -tmpdir $(SPLINT_TMP)  \
+  +posixstrictlib        \
+  +ignoresigns           \
   +showdeephistory       \
+  -predboolint           \
+  -nullpass              \
+  +charint               \
 
 SPLINTFLAGS_TEST = 
 
