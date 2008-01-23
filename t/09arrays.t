@@ -465,7 +465,7 @@ SKIP: {
     ok Encode::is_utf8( $quoted ), 'Quoted array of strings should be UTF-8';
 
 	$dbh->do('DELETE FROM dbd_pg_test');
-	$SQL = q{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, '$quoted', 'one')};
+	$SQL = qq{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, '$quoted', 'one')};
 	eval {
 		$dbh->do($SQL);
 	};
