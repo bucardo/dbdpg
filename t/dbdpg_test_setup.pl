@@ -68,7 +68,10 @@ sub connect_database {
 				$helpconnect += 2;
 			}
 			$helpconnect += 4;
-			$ENV{DBI_USER} = $^O =~ /bsd/ ? '_postgresql' : 'postgres';
+			$ENV{DBI_USER} = $^O =~
+				/openbsd/ ? '_postgresql'
+				: $^O =~ /bsd/i ? 'pgsql'
+				: 'postgres';
 			eval {
 				$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
 									{RaiseError => 1, PrintError => 0, AutoCommit => 1});
