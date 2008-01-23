@@ -18,10 +18,6 @@
 #include <wchar.h>
 #include <strings.h>
 
-#ifndef NAMEDATALEN
-#define NAMEDATALEN 64
-#endif
-
 #ifndef powf
 #define powf (float)pow
 #endif
@@ -1897,7 +1893,7 @@ static int dbd_st_prepare_statement (SV * sth, imp_sth_t * imp_sth)
 	New(0, statement, execsize+1, char); /* freed below */
 
 	if (oldprepare) {
-		snprintf(statement, NAMEDATALEN+8, "PREPARE %s", imp_sth->prepare_name);
+		sprintf(statement, "PREPARE %s", imp_sth->prepare_name);
 		if (imp_sth->numphs!=0) {
 			strcat(statement, "(");
 			for (x=0, currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
@@ -3199,7 +3195,7 @@ static int dbd_st_deallocate_statement (SV * sth, imp_sth_t * imp_sth)
 				New(0, cmd, SvLEN(sp) + 13, char); /* Freed below */
 				if (dbis->debug >= 4)
 					(void)PerlIO_printf(DBILOGFP, "dbdpg: Rolling back to savepoint %s\n", SvPV_nolen(sp));
-				snprintf(cmd, NAMEDATALEN+12, "rollback to %s", SvPV_nolen(sp));
+				sprintf(cmd, "rollback to %s", SvPV_nolen(sp));
 				strncpy(tempsqlstate, imp_dbh->sqlstate, strlen(imp_dbh->sqlstate)+1);
 				status = _result(imp_dbh, cmd);
 				Safefree(cmd);
@@ -3219,7 +3215,7 @@ static int dbd_st_deallocate_statement (SV * sth, imp_sth_t * imp_sth)
 
 	New(0, stmt, strlen("DEALLOCATE ") + strlen(imp_sth->prepare_name) + 1, char); /* freed below */
 
-	snprintf(stmt, NAMEDATALEN + 11, "DEALLOCATE %s", imp_sth->prepare_name);
+	sprintf(stmt, "DEALLOCATE %s", imp_sth->prepare_name);
 
 	if (dbis->debug >= 5)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: Deallocating (%s)\n", imp_sth->prepare_name);
@@ -3602,7 +3598,7 @@ int pg_db_savepoint (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
 
-	snprintf(action, NAMEDATALEN + 10, "savepoint %s", savepoint);
+	sprintf(action, "savepoint %s", savepoint);
 
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit)))
@@ -3645,7 +3641,7 @@ int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
 
-	snprintf(action, NAMEDATALEN + 12, "rollback to %s", savepoint);
+	sprintf(action, "rollback to %s", savepoint);
 
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit)))
@@ -3678,7 +3674,7 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
 
-	snprintf(action, NAMEDATALEN + 8, "release %s", savepoint);
+	sprintf(action, "release %s", savepoint);
 
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit)))
