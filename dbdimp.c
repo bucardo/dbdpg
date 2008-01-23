@@ -22,6 +22,10 @@
 #define NAMEDATALEN 64
 #endif
 
+#ifndef powf
+#define powf (float)pow
+#endif
+
 /* Force preprocessors to use this variable. Default to something valid yet noticeable */
 #ifndef PGLIBVERSION
 #define PGLIBVERSION 80009

@@ -814,60 +814,58 @@ $attrib = $dbh->{Active};
 is( $attrib, '', 'Database handle attribute "Active" is false after disconnect');
 
 SKIP: {
-	skip 'Cannot test database handle "InactiveDestroy" on a non-forking system', 4
-		if $^O =~ /MSWin/;
+	skip 'Cannot test database handle "InactiveDestroy" on a non-forking system', 8
+		if $^O =~ /Win/;
 
 	require Test::Simple;
 
-	SKIP: {
-		skip 'Test::Simple version 0.47 or better required for testing of attribute "InactiveDestroy"', 4
-			if $Test::Simple::VERSION < 0.47;
+	skip 'Test::Simple version 0.47 or better required for testing of attribute "InactiveDestroy"', 8
+		if $Test::Simple::VERSION < 0.47;
 
-		# Test of forking. Hang on to your hats
+	# Test of forking. Hang on to your hats
 
-		my $answer = 42;
-		$SQL = "SELECT $answer FROM dbd_pg_test WHERE id > ? LIMIT 1";
+	my $answer = 42;
+	$SQL = "SELECT $answer FROM dbd_pg_test WHERE id > ? LIMIT 1";
 
-		for my $destroy (0,1) {
+	for my $destroy (0,1) {
 
-			$dbh = connect_database({nosetup => 1, AutoCommit => 1});
-			$sth = $dbh->prepare($SQL);
+		$dbh = connect_database({nosetup => 1, AutoCommit => 1});
+		$sth = $dbh->prepare($SQL);
+		$sth->execute(1);
+		$sth->finish();
+
+		# Desired flow: parent test, child test, child kill, parent test
+
+		if (fork) {
 			$sth->execute(1);
-			$sth->finish();
+			my $val = $sth->fetchall_arrayref()->[0][0];
+			is( $val, $answer, qq{Parent in fork test is working properly ("InactiveDestroy" = $destroy)});
+			# Let the child exit
+			select(undef,undef,undef,0.3);
+		}
+		else { # Child
+			$dbh->{InactiveDestroy} = $destroy;
+			select(undef,undef,undef,0.1); # Age before beauty
+			exit; ## Calls disconnect via DESTROY unless InactiveDestroy set
+		}
 
-			# Desired flow: parent test, child test, child kill, parent test
-
-			if (fork) {
-				$sth->execute(1);
-				my $val = $sth->fetchall_arrayref()->[0][0];
-				is( $val, $answer, qq{Parent in fork test is working properly ("InactiveDestroy" = $destroy)});
-				# Let the child exit
-				select(undef,undef,undef,0.3);
-			}
-			else { # Child
-				$dbh->{InactiveDestroy} = $destroy;
-				select(undef,undef,undef,0.1); # Age before beauty
-				exit; ## Calls disconnect via DESTROY unless InactiveDestroy set
-			}
-
-			if ($destroy) {
-				# The database handle should still be active
-				ok ( $dbh->ping(), qq{Ping works after the child has exited ("InactiveDestroy" = $destroy)});
-				my $state = $dbh->state();
-				is( $state, '', q{Successful ping returns a SQLSTATE code of 00000 (empty string)});
-				## The statement handle should still be usable
-				$sth->execute(1);
-				my $val = $sth->fetchall_arrayref()->[0][0];
-				is ($val, $answer, q{Statement handle works after forking});
-			}
-			else {
-				# The database handle should be dead
-				ok ( !$dbh->ping(), qq{Ping fails after the child has exited ("InactiveDestroy" = $destroy)});
-				my $state = $dbh->state();
-				is( $state, '22000', q{Failed ping returns a SQLSTATE code of 22000});
-				ok ( -2==$dbh->pg_ping(),
-					 q{pg_ping gives an error code of -2 after the child has exited ("InactiveDestroy" = $destroy)});
-			}
+		if ($destroy) {
+			# The database handle should still be active
+			ok ( $dbh->ping(), qq{Ping works after the child has exited ("InactiveDestroy" = $destroy)});
+			my $state = $dbh->state();
+			is( $state, '', q{Successful ping returns a SQLSTATE code of 00000 (empty string)});
+			## The statement handle should still be usable
+			$sth->execute(1);
+			my $val = $sth->fetchall_arrayref()->[0][0];
+			is ($val, $answer, q{Statement handle works after forking});
+		}
+		else {
+			# The database handle should be dead
+			ok ( !$dbh->ping(), qq{Ping fails after the child has exited ("InactiveDestroy" = $destroy)});
+			my $state = $dbh->state();
+			is( $state, '22000', q{Failed ping returns a SQLSTATE code of 22000});
+			ok ( -2==$dbh->pg_ping(),
+				 q{pg_ping gives an error code of -2 after the child has exited ("InactiveDestroy" = $destroy)});
 		}
 	}
 }

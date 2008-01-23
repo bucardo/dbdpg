@@ -167,6 +167,8 @@ sub cleanup_database {
 	my $dbh = shift;
 	my $type = shift || 0;
 
+	return unless defined $dbh and ref $dbh and $dbh->ping();
+
 	## For now, we always run and disregard the type
 
 	$dbh->rollback() if ! $dbh->{AutoCommit};
