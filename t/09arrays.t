@@ -464,14 +464,14 @@ SKIP: {
 	is( $quoted, qq!{"$utf8_str","$utf8_str"}!, 'quote() handles utf8 inside array' );
     ok Encode::is_utf8( $quoted ), 'Quoted array of strings should be UTF-8';
 
-	$dbh->do("DELETE FROM dbd_pg_test");
-	$SQL = "INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, '$quoted', 'one')";
+	$dbh->do('DELETE FROM dbd_pg_test');
+	$SQL = q{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, '$quoted', 'one')};
 	eval {
 		$dbh->do($SQL);
 	};
 	is($@, q{}, 'Inserting utf-8 into an array via quoted do() works');
 
-	$SQL = "SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1";
+	$SQL = q{SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1};
 	$sth = $dbh->prepare($SQL);
 	$sth->execute();
 	$result = $sth->fetchall_arrayref()->[0];
@@ -481,15 +481,15 @@ SKIP: {
     ok Encode::is_utf8( $result->[1][0] ), 'Selected string should be UTF-8';
     ok Encode::is_utf8( $result->[1][1] ), 'Selected string should be UTF-8';
 
-	$dbh->do("DELETE FROM dbd_pg_test");
-	$SQL = "INSERT INTO dbd_pg_test (id, testarray, val) VALUES (?, ?, 'one')";
+	$dbh->do('DELETE FROM dbd_pg_test');
+	$SQL = q{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (?, ?, 'one')};
 	$sth = $dbh->prepare($SQL);
 	eval {
 		$sth->execute(1,['Bob',$utf8_str]);
 	};
 	is($@, q{}, 'Inserting utf-8 into an array via prepare and arrayref works');
 
-	$SQL = "SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1";
+	$SQL = q{SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1};
 	$sth = $dbh->prepare($SQL);
 	$sth->execute();
 	$result = $sth->fetchall_arrayref()->[0];
@@ -499,10 +499,10 @@ SKIP: {
     ok !Encode::is_utf8( $result->[1][0] ), 'Selected ASCII string should not be UTF-8';
     ok Encode::is_utf8( $result->[1][1] ), 'Selected string should be UTF-8';
 
-	$dbh->do("DELETE FROM dbd_pg_test");
-	$SQL = qq{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, '{"noutfhere"}', 'one')};
+	$dbh->do('DELETE FROM dbd_pg_test');
+	$SQL = q{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, '{"noutfhere"}', 'one')};
 	$dbh->do($SQL);
-	$SQL = "SELECT testarray FROM dbd_pg_test WHERE id = 1";
+	$SQL = q{SELECT testarray FROM dbd_pg_test WHERE id = 1};
 	$sth = $dbh->prepare($SQL);
 	$sth->execute();
 	$result = $sth->fetchall_arrayref()->[0][0];
