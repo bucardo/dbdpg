@@ -266,13 +266,6 @@ $cleararray->execute();
 
 ## Pure string to array conversion testing
 
-## Use ourselves as a valid role
-my $role = 'SKIP';
-if ($pgversion >= 80100) {
-	$SQL = 'SELECT current_role';
-	$role = $dbh->selectall_arrayref($SQL)->[0][0];
-}
-
 my $array_tests_out =
 q!1
 [1]
@@ -451,7 +444,7 @@ for my $test (split /\n\n/ => $array_tests_out) {
 
 SKIP: {
 	eval { require Encode; };
-	skip 'Encode module is needed for unicode tests', 5 if $@;
+	skip 'Encode module is needed for unicode tests', 14 if $@;
 
 	local $dbh->{pg_enable_utf8} = 1;
 	my $utf8_str = chr(0x100).'dam'; # LATIN CAPITAL LETTER A WITH MACRON
