@@ -196,12 +196,6 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 	CODE:
 	{
 		D_imp_dbh(dbh);
-		sql_type_info_t *type_info;
-		char *to_quote;
-		char *quoted;
-		STRLEN len=0;
-		STRLEN retlen=0;
-		SV **svp;
 
 		SvGETMAGIC(to_quote_sv);
 
@@ -215,6 +209,11 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 			RETVAL = pg_stringify_array(to_quote_sv, ",", imp_dbh->pg_server_version);
 		}
 		else {
+			sql_type_info_t *type_info;
+			char *quoted;
+			const char *to_quote;
+			STRLEN retlen=0;
+			STRLEN len=0;
 
 			/* If no valid type is given, we default to unknown */
 			if (!type_sv || !SvOK(type_sv)) {
@@ -227,6 +226,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 					type_info = sql_type_data(SvIV(type_sv));
 				}
 				else {
+					SV **svp;
 					if ((svp = hv_fetch((HV*)SvRV(type_sv),"pg_type", 7, 0)) != NULL) {
 						type_info = pg_type_data(SvIV(*svp));
 					}
@@ -283,7 +283,6 @@ void do(dbh, statement, attr=Nullsv, ...)
 	{
 		int retval;
 		int asyncflag = 0;
-		SV **svp;
 
 		if (strlen(statement)<1) { /* Corner case */
 			XST_mUNDEF(0);
@@ -291,6 +290,7 @@ void do(dbh, statement, attr=Nullsv, ...)
 		}
 
 		if (attr && SvROK(attr) && SvTYPE(SvRV(attr)) == SVt_PVHV) {
+			SV **svp;
 			if ((svp = hv_fetch((HV*)SvRV(attr),"pg_async", 8, 0)) != NULL) {
 			   asyncflag = SvIV(*svp);
 			}
@@ -301,7 +301,7 @@ void do(dbh, statement, attr=Nullsv, ...)
 		}
 		else { /* We've got bind arguments, so we do the whole prepare/execute route */
 			imp_sth_t *imp_sth;
-			SV * sth = dbixst_bounce_method("prepare", 3);
+			SV * const sth = dbixst_bounce_method("prepare", 3);
 			if (!SvROK(sth))
 				XSRETURN_UNDEF;
 			imp_sth = (imp_sth_t*)(DBIh_COM(sth));
@@ -392,7 +392,7 @@ lo_creat(dbh, mode)
 	SV * dbh
 	int mode
 	CODE:
-		unsigned int ret = pg_db_lo_creat(dbh, mode);
+		const unsigned int ret = pg_db_lo_creat(dbh, mode);
 		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &sv_undef;
 
 
@@ -402,7 +402,7 @@ lo_open(dbh, lobjId, mode)
 	unsigned int lobjId
 	int mode
 	CODE:
-		int ret = pg_db_lo_open(dbh, lobjId, mode);
+		const int ret = pg_db_lo_open(dbh, lobjId, mode);
 		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
 
 
@@ -421,7 +421,7 @@ lo_read(dbh, fd, buf, len)
 	char * buf
 	size_t len
 	PREINIT:
-		SV *bufsv = SvROK(ST(2)) ? SvRV(ST(2)) : ST(2);
+		SV * const bufsv = SvROK(ST(2)) ? SvRV(ST(2)) : ST(2);
 		int ret;
 	CODE:
 		sv_setpvn(bufsv,"",0); /* Make sure we can grow it safely */
@@ -443,7 +443,7 @@ lo_write(dbh, fd, buf, len)
 	char * buf
 	size_t len
 	CODE:
-		int ret = pg_db_lo_write(dbh, fd, buf, len);
+		const int ret = pg_db_lo_write(dbh, fd, buf, len);
 		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
 
 
@@ -454,7 +454,7 @@ lo_lseek(dbh, fd, offset, whence)
 	int offset
 	int whence
 	CODE:
-		int ret = pg_db_lo_lseek(dbh, fd, offset, whence);
+		const int ret = pg_db_lo_lseek(dbh, fd, offset, whence);
 		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
 
 
@@ -463,7 +463,7 @@ lo_tell(dbh, fd)
 	SV * dbh
 	int fd
 	CODE:
-		int ret = pg_db_lo_tell(dbh, fd);
+		const int ret = pg_db_lo_tell(dbh, fd);
 		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
 
 
@@ -480,7 +480,7 @@ lo_import(dbh, filename)
 	SV * dbh
 	char * filename
 	CODE:
-		unsigned int ret = pg_db_lo_import(dbh, filename);
+		const unsigned int ret = pg_db_lo_import(dbh, filename);
 		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &sv_undef;
 
 
@@ -610,9 +610,9 @@ _pg_type_info (type_sv=Nullsv)
 	CODE:
 	{
 		int type_num = 0;
-		sql_type_info_t *type_info;
 
 		if (type_sv && SvOK(type_sv)) {
+			sql_type_info_t *type_info;
 			if SvMAGICAL(type_sv)
 				(void)mg_get(type_sv);
 			type_info = pg_type_data(SvIV(type_sv));

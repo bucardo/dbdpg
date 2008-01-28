@@ -78,14 +78,14 @@ typedef enum
 	(SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV &&					\
 	 SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
-static void pg_error(SV *h, ExecStatusType error_num, char *error_msg);
+static void pg_error(SV *h, ExecStatusType error_num, const char *error_msg);
 static void pg_warn (void * arg, const char * message);
 static ExecStatusType _result(imp_dbh_t *imp_dbh, const char *sql);
 static ExecStatusType _sqlstate(imp_dbh_t *imp_dbh, PGresult *result);
 static int dbd_db_rollback_commit (SV *dbh, imp_dbh_t *imp_dbh, char * action);
 static void dbd_st_split_statement (imp_sth_t *imp_sth, int version, char *statement);
 static int dbd_st_prepare_statement (SV *sth, imp_sth_t *imp_sth);
-static int is_high_bit_set(unsigned char *val, STRLEN size);
+static int is_high_bit_set(const unsigned char *val, STRLEN size);
 static int dbd_st_deallocate_statement(SV *sth, imp_sth_t *imp_sth);
 static PGTransactionStatusType dbd_db_txn_status (imp_dbh_t *imp_dbh);
 static int pg_db_start_txn (SV *dbh, imp_dbh_t *imp_dbh);
@@ -118,9 +118,9 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 
 	/* Figure out how large our connection string is going to be */
 	connect_string_size = strlen(dbname);
-	if (strlen(uid))
+	if (*uid)
 		connect_string_size += strlen("user='' ") + 2*strlen(uid);
-	if (strlen(pwd))
+	if (*pwd)
 		connect_string_size += strlen("password='' ") + 2*strlen(pwd);
 	New(0, conn_str, connect_string_size+1, char); /* freed below */
 
@@ -139,7 +139,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	*dest = '\0';
 
 	/* Add in the user and/or password if they exist, escaping single quotes and backslashes */
-	if (strlen(uid)) {
+	if (*uid) {
 		strcat(conn_str, " user='");
 		dest = conn_str;
 		while(*dest != '\0')
@@ -152,7 +152,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 		*dest = '\0';
 		strcat(conn_str, "'");
 	}
-	if (strlen(pwd)) {
+	if (*pwd) {
 		strcat(conn_str, " password='");
 		dest = conn_str;
 		while(*dest != '\0')
@@ -266,7 +266,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 /* ================================================================== */
 
 /* Database specific error handling. */
-static void pg_error (SV * h, ExecStatusType error_num, char * error_msg)
+static void pg_error (SV * h, ExecStatusType error_num, const char * error_msg)
 {
 	D_imp_xxh(h);
 	char *      err;
@@ -1838,7 +1838,6 @@ static int dbd_st_prepare_statement (SV * sth, imp_sth_t * imp_sth)
 	int          status = -1;
 	seg_t *      currseg;
 	bool         oldprepare = DBDPG_TRUE;
-	int          params = 0;
 	Oid *        paramTypes = NULL;
 	ph_t *       currph;
 
@@ -1930,6 +1929,7 @@ static int dbd_st_prepare_statement (SV * sth, imp_sth_t * imp_sth)
 		status = _result(imp_dbh, statement);
 	}
 	else {
+		int params = 0;
 		if (imp_sth->numbound!=0) {
 			params = imp_sth->numphs;
 			Newz(0, paramTypes, (unsigned)imp_sth->numphs, Oid);
@@ -2316,7 +2316,6 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_info_t * coltype) {
 
 	AV*    av;              /* The main array we are returning a reference to */
-	AV*    newav;           /* Temporary array */
 	AV*    currentav;       /* The current array level */
 	AV*    topav;           /* Where each item starts at */
 	char*  string;
@@ -2363,7 +2362,7 @@ SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_in
 			string[section_size++] = *input;
 		}
 		else if ('{' == *input) {
-			newav = newAV();
+			AV * const newav = newAV();
 			av_push(currentav, newRV_noinc((SV*)newav));
 			currentav = newav;
 		}
@@ -2378,8 +2377,7 @@ SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_in
 			string[section_size++] = *input;
 		}
 
-		if ('}' == *input
-			|| (coltype->array_delimeter == *input && '}' != *(input-1))) {
+		if ('}' == *input || (coltype->array_delimeter == *input && '}' != *(input-1))) {
 			string[section_size] = '\0';
 			if (4 == section_size && 0 == strncmp(string, "NULL", 4) && '"' != *(input-1)) {
 				av_push(currentav, &PL_sv_undef);
@@ -2573,7 +2571,6 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	Oid *         paramTypes = NULL;
 	seg_t *       currseg;
 	char *        statement = NULL;
-	char *        cmdStatus = NULL;
 	int           num_fields;
 	int           ret = -2;
 	
@@ -2906,11 +2903,13 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	}
 	else if (PGRES_COMMAND_OK == status) {
 		/* non-select statement */
+		char *cmdStatus = NULL;
 		if (imp_sth->result) {
 			cmdStatus = PQcmdStatus(imp_sth->result);
 		}
 		if (dbis->debug >= 5)
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: Status was PGRES_COMMAND_OK\n");
+                /* XXX DANGER We could be comparing against NULL */
 		if ((0==strncmp(cmdStatus, "DELETE", 6)) || (0==strncmp(cmdStatus, "INSERT", 6)) || 
 			(0==strncmp(cmdStatus, "UPDATE", 6))) {
 			ret = atoi(PQcmdTuples(imp_sth->result));
@@ -2953,7 +2952,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
 
 /* ================================================================== */
-static int is_high_bit_set(unsigned char * val, STRLEN size)
+static int is_high_bit_set(const unsigned char * val, STRLEN size)
 {
 	while (*val && size--)
 		if (*val++ & 0x80) return 1;
@@ -3102,11 +3101,11 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 
 /* ================================================================== */
 /* Pop off savepoints to the specified savepoint name */
-static void pg_db_free_savepoints_to (imp_dbh_t * imp_dbh, char * savepoint)
+static void pg_db_free_savepoints_to (imp_dbh_t * imp_dbh, const char *savepoint)
 {
 	I32 i;
 	for (i = av_len(imp_dbh->savepoints); i >= 0; i--) {
-		SV * elem = av_pop(imp_dbh->savepoints);
+		SV * const elem = av_pop(imp_dbh->savepoints);
 		if (strEQ(SvPV_nolen(elem), savepoint)) {
 			sv_2mortal(elem);
 			break;
@@ -3189,9 +3188,8 @@ static int dbd_st_deallocate_statement (SV * sth, imp_sth_t * imp_sth)
 			/* If a savepoint has been set, rollback to the last savepoint instead of the entire transaction */
 			I32	alen = av_len(imp_dbh->savepoints);
 			if (alen > -1) {
-				SV		*sp = Nullsv;
 				char	*cmd;
-				sp = *av_fetch(imp_dbh->savepoints, alen, 0);
+				SV * const sp = *av_fetch(imp_dbh->savepoints, alen, 0);
 				New(0, cmd, SvLEN(sp) + 13, char); /* Freed below */
 				if (dbis->debug >= 4)
 					(void)PerlIO_printf(DBILOGFP, "dbdpg: Rolling back to savepoint %s\n", SvPV_nolen(sp));
@@ -3628,7 +3626,7 @@ int pg_db_savepoint (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 
 
 /* ================================================================== */
-int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
+int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, const char *savepoint)
 {
 	int    status;
 	char * action;
@@ -3930,11 +3928,8 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
 
 /* ================================================================== */
 /* Return the result of an asynchronous query, waiting if needed */
-int dbdpg_result (h, imp_dbh)
-		 SV *h;
-		 imp_dbh_t *imp_dbh;
+int dbdpg_result (SV *h, imp_dbh_t *imp_dbh)
 {
-
 	PGresult *result;
 	ExecStatusType status = PGRES_FATAL_ERROR;
 	int rows;
@@ -4023,11 +4018,8 @@ Returns:
 ==================================================================
 */
 
-int dbdpg_ready (h, imp_dbh)
-		 SV *h;
-		 imp_dbh_t *imp_dbh;
+int dbdpg_ready(SV *h, imp_dbh_t *imp_dbh)
 {
-
 	if (dbis->debug >= 4) {
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_st_ready, async_status is %d\n",imp_dbh->async_status);
 	}
@@ -4056,11 +4048,8 @@ In this case, pg_cancel will return false.
 NOTE: We only return true if we cancelled and rolled back!
 */
 
-int dbdpg_cancel(h, imp_dbh)
-	 SV *h;
-	 imp_dbh_t *imp_dbh;
+int dbdpg_cancel(SV *h, imp_dbh_t *imp_dbh)
 {
-
 	PGcancel *cancel;
 	char errbuf[256];
 	PGresult *result;
@@ -4123,15 +4112,11 @@ int dbdpg_cancel(h, imp_dbh)
 } /* end of dbdpg_cancel */
 
 
-int dbdpg_cancel_sth(sth, imp_sth)
-	 SV *sth;
-	 imp_sth_t *imp_sth;
+int dbdpg_cancel_sth(SV *sth, imp_sth_t *imp_sth)
 {
+        D_imp_dbh_from_sth;
 
-    D_imp_dbh_from_sth;
-	bool cancel_result;
-
-	cancel_result = dbdpg_cancel(sth, imp_dbh);
+	const bool cancel_result = dbdpg_cancel(sth, imp_dbh);
 
 	dbd_st_finish(sth, imp_sth);
 

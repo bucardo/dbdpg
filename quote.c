@@ -3,7 +3,7 @@
    $Id$
 
    Copyright (c) 2003-2008 Greg Sabino Mullane and others: see the Changes file
-   
+
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.
 
@@ -12,10 +12,7 @@
 #include "Pg.h"
 #include "types.h"
 
-char * null_quote(string, len, retlen)
-	char *string;
-	STRLEN len;
-	STRLEN *retlen;
+char * null_quote(const char *string, STRLEN len, STRLEN *retlen)
 {
 	char *result;
 	New(0, result, len+1, char);
@@ -26,15 +23,13 @@ char * null_quote(string, len, retlen)
 }
 
 
-char * quote_string(string, len, retlen)
-		 char * string;
-		 STRLEN len;
-		 STRLEN * retlen;
+char * quote_string(const char *string, STRLEN len, STRLEN *retlen)
 {
 	char * result;
 	STRLEN oldlen = len;
 
-	result = string;
+	const char * const tmp = string;
+
 	(*retlen) = 2;
 	while (len > 0 && *string != '\0') {
 		if (*string == '\'' || *string == '\\') {
@@ -44,7 +39,7 @@ char * quote_string(string, len, retlen)
 		string++;
 		len--;
 	}
-	string = result;
+	string = tmp;
 	New(0, result, 1+(*retlen), char);
 	*result++ = '\'';
 	len = oldlen;
@@ -61,15 +56,13 @@ char * quote_string(string, len, retlen)
 }
 
 
-char * quote_geom(string, len, retlen)
-	char * string;
-	STRLEN len;
-	STRLEN * retlen;
+char * quote_geom(const char *string, STRLEN len, STRLEN *retlen)
 {
 	char * result;
+        const char *tmp;
 
 	len = 0; /* stops compiler warnings. Remove entirely someday */
-	result = string;
+	tmp = string;
 	(*retlen) = 2;
 	while (*string != '\0') {
 		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
@@ -78,7 +71,7 @@ char * quote_geom(string, len, retlen)
 		(*retlen)++;
 		string++;
 	}
-	string = result;
+	string = tmp;
 	New(0, result, 1+(*retlen), char);
 	*result++ = '\'';
 	while (*string != '\0') {
@@ -89,15 +82,12 @@ char * quote_geom(string, len, retlen)
 	return result - (*retlen);
 }
 
-char * quote_path(string, len, retlen)
-	char * string;
-	STRLEN len;
-	STRLEN * retlen;
+char * quote_path(const char *string, STRLEN len, STRLEN *retlen)
 {
 	char * result;
+	const char * const tmp = string;
 
 	len = 0; /* stops compiler warnings. Remove entirely someday */
-	result = string;
 	(*retlen) = 2;
 	while (*string != '\0') {
 		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
@@ -107,7 +97,7 @@ char * quote_path(string, len, retlen)
 		(*retlen)++;
 		string++;
 	}
-	string = result;
+	string = tmp;
 	New(0, result, 1+(*retlen), char);
 	*result++ = '\'';
 	while (*string != '\0') {
@@ -118,15 +108,12 @@ char * quote_path(string, len, retlen)
 	return result - (*retlen);
 }
 
-char * quote_circle(string, len, retlen)
-	char * string;
-	STRLEN len;
-	STRLEN * retlen;
+char * quote_circle(const char *string, STRLEN len, STRLEN *retlen)
 {
 	char * result;
+	const char * const tmp = string;
 
 	len = 0; /* stops compiler warnings. Remove entirely someday */
-	result = string;
 	(*retlen) = 2;
 	while (*string != '\0') {
 		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
@@ -136,7 +123,7 @@ char * quote_circle(string, len, retlen)
 		(*retlen)++;
 		string++;
 	}
-	string = result;
+	string = tmp;
 	New(0, result, 1+(*retlen), char);
 	*result++ = '\'';
 	while (*string != '\0') {
@@ -148,12 +135,9 @@ char * quote_circle(string, len, retlen)
 }
 
 
-char * quote_bytea(string, len, retlen)
-		 unsigned char * string;
-		 STRLEN len;
-		 STRLEN * retlen;
+char * quote_bytea(char *string, STRLEN len, STRLEN *retlen)
 {
-	unsigned char * result;
+	char * result;
 	STRLEN oldlen = len;
 
 	result = string;
@@ -175,7 +159,7 @@ char * quote_bytea(string, len, retlen)
 		len--;
 	}
 	string = result;
-	New(0, result, 1+(*retlen), unsigned char);
+	New(0, result, 1+(*retlen), char);
 	*result++ = '\'';
 	len = oldlen;
 	while (len > 0) {
@@ -204,10 +188,7 @@ char * quote_bytea(string, len, retlen)
 	return (char *)result - (*retlen);
 }
 
-char * quote_sql_binary(string, len, retlen)
-		 unsigned char *string;
-		 STRLEN	len;
-		 STRLEN	*retlen;
+char * quote_sql_binary(char *string, STRLEN len, STRLEN *retlen)
 {
 	
 	/* We are going to return a quote_bytea() for backwards compat but
@@ -219,18 +200,15 @@ char * quote_sql_binary(string, len, retlen)
 
 
 
-char * quote_bool(value, len, retlen) 
-		 char *value;
-		 STRLEN	len;
-		 STRLEN	*retlen;
+char * quote_bool(const char *value, STRLEN len, STRLEN *retlen) 
 {
 	char *result;
 	long int int_value;
 	STRLEN	max_len=6;
 	
 	len = 0;
-	if (isDIGIT(*(char*)value)) {
- 		/* For now -- will go away when quote* take SVs */
+	if (isDIGIT(*(const char*)value)) {
+		/* For now -- will go away when quote* take SVs */
 		int_value = atoi(value);
 	} else {
 		int_value = 42; /* Not true, not false. Just is */
@@ -252,20 +230,18 @@ char * quote_bool(value, len, retlen)
 
 
 
-char * quote_integer(value, len, retlen) 
-		 char *value;
-		 STRLEN	len;
-		 STRLEN	*retlen;
+char * quote_integer(const char *value, STRLEN len, STRLEN *retlen) 
 {
 	char *result;
 	STRLEN max_len=6;
+        const int intval = *((const int*)value);
 	len = 0;
 
 	New(0, result, max_len, char);
 	
-	if (0 == *((int*)value) )
+	if (0 == intval)
 		strncpy(result,"FALSE\0",6);
-	if (1 == *((int*)value))
+	else if (1 == intval)
 		strncpy(result,"TRUE\0",5);
 	
 	*retlen = strlen(result);
@@ -276,29 +252,23 @@ char * quote_integer(value, len, retlen)
 
 
 
-void dequote_char(string, retlen)
-		 char *string;
-		 STRLEN *retlen;
+void dequote_char(const char *string, STRLEN *retlen)
 {
 	/* TODO: chop_blanks if requested */
 	*retlen = strlen(string);
 }
 
 
-void dequote_string (string, retlen)
-		 char *string;
-		 STRLEN *retlen;
+void dequote_string(const char *string, STRLEN *retlen)
 {
 	*retlen = strlen(string);
 }
 
 
 
-void dequote_bytea(string, retlen)
-		 unsigned char *string;
-		 STRLEN *retlen;
+void dequote_bytea(char *string, STRLEN *retlen)
 {
-	unsigned char *result;
+	char *result;
 
 	(*retlen) = 0;
 
@@ -315,9 +285,9 @@ void dequote_bytea(string, retlen)
 				string +=2;
 			}
 			else if (
-							 (*(string+1) >= '0' && *(string+1) <= '3') &&
-							 (*(string+2) >= '0' && *(string+2) <= '7') &&
-							 (*(string+3) >= '0' && *(string+3) <= '7'))
+				 (*(string+1) >= '0' && *(string+1) <= '3') &&
+				 (*(string+2) >= '0' && *(string+2) <= '7') &&
+				 (*(string+3) >= '0' && *(string+3) <= '7'))
 				{
 					*result++ = (*(string+1)-'0')*64 + (*(string+2)-'0')*8 + (*(string+3)-'0');
 					string += 4;
@@ -332,7 +302,6 @@ void dequote_bytea(string, retlen)
 		}
 	}
 	*result = '\0';
-	string = result - (*retlen);
 	return;
 }
 
@@ -343,9 +312,7 @@ void dequote_bytea(string, retlen)
 	it might be nice to let people go the other way too. Say when talking
 	to something that uses SQL_BINARY
  */
-void dequote_sql_binary (string, retlen)
-		 unsigned char *string;
-		 STRLEN *retlen;
+void dequote_sql_binary(char *string, STRLEN *retlen)
 {
 	/* We are going to retun a dequote_bytea(), JIC */
 	warn("Use of SQL_BINARY invalid in dequote()");
@@ -356,9 +323,7 @@ void dequote_sql_binary (string, retlen)
 
 
 
-void dequote_bool (string, retlen)
-		 char *string;
-		 STRLEN *retlen;
+void dequote_bool(char *string, STRLEN *retlen)
 {
 	switch(*string){
 	case 'f': *string = '0'; break;
@@ -371,9 +336,7 @@ void dequote_bool (string, retlen)
 
 
 
-void null_dequote (string, retlen)
-		 char *string;
-		 STRLEN *retlen;
+void null_dequote(const char *string, STRLEN *retlen)
 {
 	*retlen = strlen(string);
 }

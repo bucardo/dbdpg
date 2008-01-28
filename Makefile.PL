@@ -123,7 +123,7 @@ if ($ENV{DBDPG_GCCDEBUG}) {
 	$comp_opts .= ' -Wunknown-pragmas -Wstrict-aliasing';
 	$comp_opts .= ' -Wall'; ## all of above, but we enumerate anyway
 	$comp_opts .= ' -Wextra -Wdeclaration-after-statement -Wendif-labels -Wpointer-arith';
-	$comp_opts .= ' -Wbad-function-cast -Wcast-qual -Wcast-align -Wconversion -Wsign-compare -Waggregate-return';
+	$comp_opts .= ' -Wbad-function-cast -Wcast-qual -Wcast-align -Wsign-compare -Waggregate-return';
 	$comp_opts .= ' -Wmissing-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wpacked -Winline -Winvalid-pch';
 	$comp_opts .= ' -Wdisabled-optimization'; ## Not terribly useful
 	$comp_opts .= ' -Wnested-externs'; ## Does not like Perl__notused (from DBIXS;)
@@ -175,6 +175,19 @@ sub MY::postamble {
 	## Evil, evil stuff - but we really want to suppress the "duplicate function" message!
 	$string =~ s/dependancy/dependency/g; ## why not, while we are here
 	$string =~ s#(BASEEXT\)/g)#$1; s/^do\\\(/dontdo\\\(/#;
+
+        my $tags = <<'MAKE_FRAG';
+.PHONY: tags
+
+tags:
+	ctags -f tags --recurse --totals \
+		--exclude=blib \
+		--exclude=.svn \
+		--exclude='*~' \
+		--languages=Perl,C --langmap=c:+.h,Perl:+.t \
+
+MAKE_FRAG
+        $string = "$string\n$tags\n";
 
 	$string .= <<'MAKE_SPLINT';
 
