@@ -1688,11 +1688,9 @@ call after each transaction. For further details please refer to the
 PostgreSQL documentation at L<http://www.postgresql.org/docs/>.
 
 For authentication with username and password, appropriate entries have to be
-made in F<pg_hba.conf>. Please refer to the comments in the F<pg_hba.conf> and
-the F<pg_passwd> files for the different types of authentication. Note that
-for these two parameters DBI distinguishes between empty and undefined. If
-these parameters are undefined DBI substitutes the values of the environment
-variables C<DBI_USER> and C<DBI_PASS> if present.
+made in the F<pg_hba.conf> file. If the username and password entries passed 
+via connect() are undefined (as opposed to being empty), DBI will use the 
+environment variables C<DBI_USER> and C<DBI_PASS> if they exists.
 
 You can also connect by using a service connection file, which is named 
 "pg_service.conf." The location of this file can be controlled by 
@@ -3442,17 +3440,17 @@ For example:
 This would tell the server to enter a COPY OUT state. It is now ready to 
 receive information via the pg_putcopydata method. The complete syntax of the 
 COPY command is more complex and not documented here: the canonical 
-PostgreSQL documentation for COPY be found at:
+PostgreSQL documentation for COPY can be found at:
 
 http://www.postgresql.org/docs/current/static/sql-copy.html
 
 Once the COPY command has been issued, no other SQL commands are allowed 
-until pg_putcopyend() has been issued, of the final pg_getcopydata has 
+until pg_putcopyend() has been issued, or the final pg_getcopydata has 
 been called.
 
 Note: All other COPY methods (pg_putline, pg_getline, etc.) are now 
 deprecated in favor of the pg_getcopydata, pg_putcopydata, and 
-pg_putcopyend.
+pg_putcopyend methods.
 
 =over 4
 
