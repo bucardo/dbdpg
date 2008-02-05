@@ -2304,11 +2304,11 @@ syntax is supported by DBD::Pg, its use is highly discouraged.
 The different types of placeholders cannot be mixed within a statement, but you may
 use different ones for each statement handle you have. Again, this is not encouraged.
 
-
-If your queries use operators that contain question marks (some of the native 
-Postgres geometric operators for example) you can tell DBD::Pg to ignore any 
-non-dollar sign placeholders by setting the "pg_placeholder_dollaronly" 
-attribute at either the database handle or the statement handle level. Examples:
+If your queries use operators that contain question marks (e.g. some of the native 
+Postgres geometric operators) or array slices (e.g. data[100:300]), you can tell 
+DBD::Pg to ignore any non-dollar sign placeholders by setting the 
+"pg_placeholder_dollaronly" attribute at either the database handle or the statement 
+handle level. Examples:
 
   $dbh->{pg_placeholder_dollaronly} = 1;
   $sth = $dbh->prepare(q{SELECT * FROM mytable WHERE lseg1 ?# lseg2 AND name = $1});
