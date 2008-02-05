@@ -23,7 +23,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if (defined $dbh) {
-	plan tests => 207;
+	plan tests => 208;
 }
 else {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -65,30 +65,37 @@ $dbh->commit();
 eval {
 	$dbh->last_insert_id(undef,undef,undef,undef);
 };
-ok( $@, 'DB handle method "last_insert_id" fails when no arguments are given');
+like( $@, qr{last_insert_id.*least}, 'DB handle method "last_insert_id" fails when no arguments are given');
 
 eval {
 	$dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistentsequence_test'});
 };
-ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent sequence');
+like( $@, qr{ERROR}, 'DB handle method "last_insert_id" fails when given a non-existent sequence');
 $dbh->rollback();
 
 eval {
 	$dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef);
 };
-ok( $@, 'DB handle method "last_insert_id" fails when given a non-existent table');
+like( $@, qr{not find}, 'DB handle method "last_insert_id" fails when given a non-existent table');
 $dbh->rollback();
 
 eval {
 	$dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef,[]);
 };
-ok($@, 'DB handle method "last_insert_id" fails when given an arrayref as last argument');
+like($@, qr{last_insert_id.*hashref}, 'DB handle method "last_insert_id" fails when given an arrayref as last argument');
 $dbh->rollback();
 
 eval {
 	$dbh->last_insert_id(undef,undef,'dbd_pg_test',undef,{sequence=>''});
 };
-is($@, q{}, 'DB handle method "last_insert_id" fails when given an empty sequence argument');
+is($@, q{}, 'DB handle method "last_insert_id" works when given an empty sequence argument');
+$dbh->rollback();
+
+$dbh->do('CREATE TEMP TABLE dbd_pg_test_temp(a int)');
+eval {
+	$dbh->last_insert_id(undef,undef,'dbd_pg_test_temp',undef);
+};
+like($@, qr{last_insert_id}, 'DB handle method "last_insert_id" fails when given a table with no primary key');
 $dbh->rollback();
 
 eval {

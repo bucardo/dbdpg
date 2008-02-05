@@ -248,7 +248,8 @@ use 5.006001;
 				$attr = {sequence => $attr};
 			}
 			elsif (ref $attr ne 'HASH') {
-				return $dbh->set_err(1, "last_insert_id must be passed a hashref as the final argument");
+				$dbh->set_err(1, "last_insert_id must be passed a hashref as the final argument");
+				return undef;
 			}
 			## Named sequence overrides any table or schema settings
 			if (exists $attr->{sequence} and length $attr->{sequence}) {
@@ -265,10 +266,10 @@ use 5.006001;
 		elsif (! defined $sequence) {
 			## At this point, we must have a valid table name
 			if (! length $table) {
-				return $dbh->set_err(1, "last_insert_id needs at least a sequence or table name");
+				$dbh->set_err(1, "last_insert_id needs at least a sequence or table name");
+				return undef;
 			}
 			my @args = ($table);
-
 			## Make sure the table in question exists and grab its oid
 			my ($schemajoin,$schemawhere) = ('','');
 			if (length $schema) {
@@ -283,7 +284,8 @@ use 5.006001;
 				$sth->finish();
 				my $message = qq{Could not find the table "$table"};
 				length $schema and $message .= qq{ in the schema "$schema"};
-				return $dbh->set_err(1, $message);
+				$dbh->set_err(1, $message);
+				return undef;
 			}
 			my $oid = $sth->fetchall_arrayref()->[0][0];
 			$oid =~ /(\d+)/ or die qq{OID was not numeric?!?\n};
@@ -300,6 +302,7 @@ use 5.006001;
 			if (!defined $count or $count eq '0E0') {
 				$sth->finish();
 				$dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"});
+				return undef;
 			}
 			my $info = $sth->fetchall_arrayref();
 
@@ -327,7 +330,8 @@ use 5.006001;
 		}
 
 		$sth = $dbh->prepare_cached("SELECT currval(?)");
-		$sth->execute($sequence);
+		$count = $sth->execute($sequence);
+		return undef if ! defined $count;
 		return $sth->fetchall_arrayref()->[0][0];
 
 	} ## end of last_insert_id
