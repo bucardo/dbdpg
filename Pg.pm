@@ -278,6 +278,9 @@ use 5.006001;
 				push @args, $schema;
 			}
 			$SQL = "SELECT c.oid FROM pg_catalog.pg_class c $schemajoin\n WHERE relname = ?$schemawhere";
+			if (! length $schema) {
+				$SQL .= " AND pg_catalog.pg_table_is_visible(c.oid)";
+			}
 			$sth = $dbh->prepare_cached($SQL);
 			$count = $sth->execute(@args);
 			if (!defined $count or $count eq '0E0') {
