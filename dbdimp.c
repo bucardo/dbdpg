@@ -2344,7 +2344,7 @@ SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_in
 	string[0] = '\0';
 
 	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_stringify_array: -->%s<-- quote=%c\n", input, coltype->array_delimeter);
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: pg_destringify_array: -->%s<-- quote=%c\n", input, coltype->array_delimeter);
 
 	av = currentav = topav = newAV();
 
