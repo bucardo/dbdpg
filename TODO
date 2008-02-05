@@ -2,7 +2,6 @@ TODO:
 
 - Mention RETURNING clause support in docs.
 - Play nicely with standard_confirming_strings (CPAN bug #27538)
-- Update pg_getline and remove the size requirement
 - Use WITH HOLD for cursor work
 - Start testing with a thread-enabled Perl
 - Support for new error protocol
@@ -12,7 +11,6 @@ TODO:
    things like arrays can be serialized by the quote function.  This will
    take care of broken chopblanks and pg_bool_tf (pass the  quote/dequote 
    options struct to function quote/dequote functions).
-- Implement a clean UTF-8 support.
 - Allow user callbacks to quote user-defined types?
 - Rename functions and add defines to avoid problems with static linking of multi DBDs
 - Move to the Module::Build system
