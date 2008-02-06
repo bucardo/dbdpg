@@ -1,6 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 2.0.0
+	- Quick support for named trace level 'SQL' [GSM]
 	- Allow objects with stringification overloading to work with quote().
 		(CPAN bug #32868) [David E. Wheeler and GSM]
 	- Make sure arrays handle UTF-8 smoothly (CPAN bug #32479) [GSM]
