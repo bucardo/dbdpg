@@ -1,5 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.0.1
+
+	- Remove '//' style comments to make strict ANSI compilers happy.
+		(Trevor Inman) [CPAN bug #33089]
+
 2.0.0 Released February 2008
 
 Major changes:

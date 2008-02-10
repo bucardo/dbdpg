@@ -17,7 +17,7 @@ use 5.006001;
 {
 	package DBD::Pg;
 
-	our $VERSION = '2.0.0';;
+	our $VERSION = '2.0.1';;
 
 	use DBI ();
 	use DynaLoader ();
@@ -1625,7 +1625,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 2.0.0 of the DBD::Pg module
+This documents version 2.0.1 of the DBD::Pg module
 
 =head1 SYNOPSIS
 
