@@ -31,6 +31,8 @@ if ($pgversion >= 80100) {
   $dbh->do('SET escape_string_warning = false');
 }
 
+
+
 my $SQL = q{DELETE FROM dbd_pg_test WHERE pname = 'Array Testing'};
 my $cleararray = $dbh->prepare($SQL);
 
@@ -437,7 +439,6 @@ for my $test (split /\n\n/ => $array_tests_out) {
 		## is_deeply does not handle type differences
 		is((Dumper $result), (Dumper $expected), "Array test $msg : $input");
 	}
-
 }
 
 ## Check utf-8 in and out of the database
