@@ -1,33 +1,37 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.0.0
-	- Quick support for named trace level 'SQL' [GSM]
-	- Allow objects with stringification overloading to work with quote().
-		(CPAN bug #32868) [David E. Wheeler and GSM]
-	- Make sure arrays handle UTF-8 smoothly (CPAN bug #32479) [GSM]
-	- Check transaction status after each command, to allow 
-		things such as 'PREPARE TRANSACTION' to work properly.
-		(CPAN bug #32423) [GSM]
+2.0.0 Released February 2008
+
+Major changes:
+
+	- Make minimum supported server 7.4. [GSM]
+	- Overhaul COPY functions: deprecate pg_getline, pg_putline, 
+		and pg_endcopy. The new functions are pg_getcopydata, 
+		pg_getcopydata_async, pg_putcopydata, and pg_putcopyend. [GSM]
+	- Add support for arrays: can pass in arrayrefs to execute, and 
+		they are automatically returned as arrays when fetching. [GSM]
+	- Add support for asynchronous queries. [GSM]
 	- Allow raw transaction statements through - in other words, 
 		do not croak if $dbh->prepare("COMMIT") is attempted. Not 
 		only was this a little too controlling, there is a growing 
 		host of other commands such as "COMMIT PREPARED" that we
 		need to allow. [GSM].
-	- Be much more flexible in test connection options. [GSM]
-	- Skip item if no matching key in foreign_key_info.
-		(CPAN bug #32308) [GSM]
-	- Overhaul COPY functions: deprecate pg_getline, pg_putline, 
-		and pg_endcopy. The new functions are pg_getcopydata, 
-		pg_getcopydata_async, pg_putcopydata, and pg_putcopyend. [GSM]
-	- Change $dbh->{User} to $dbh->{Username} [GSM]
-	- Add three new columns to column_info, to return unquoted 
-		version: pg_schema, pg_table, and pg_columns. Add all 
-		three to primary_key_info, and the first two to table_info
-		(CPAN bug #20282) [GSM]
-	- Very experimental support for bind_param_inout, use 
-		with caution. [GSM]
-	- Switch from pow to powf to support AIX compiler issue.
-		(CPAN bug #24579) [GSM]
+	- Check transaction status after each command, to allow 
+		things such as 'PREPARE TRANSACTION' to work properly.
+		(CPAN bug #32423) [GSM]
+	- Overhauled the data type system. [GSM]
+	- Switch from cvs to subversion. Switch from gborg to perl.org.
+	- Change versioning system to three numbered system.
+
+Bug fixes:
+
+	- Add $dbh->{pg_placeholder_dollaronly} to allow '?' and other symbols 
+		to be used in prepared statements without getting interpreted as 
+		placeholders, i.e. the geometric operator '?#' (CPAN bug #24124) [GSM]
+	- Fix memory leak in bytea quoting. (CPAN bug #21392). Fix memory leak 
+		in pg_notifies. [Stephen Marshall smarshall@wsi.com]
+	- Fix memory leak when using savepoints. (CPAN bug #29791)
+		[airwave@cpan.org]
 	- Use adbin, not adsrc, when figuring out the sequence name for the 
 		last_insert_id() method. This allows the function to work properly 
 		if the sequence name is changed. Note that {pg_cache=>0} should be 
@@ -38,38 +42,49 @@
 		(CPAN bug #31577) [GSM]
 	- Fix crash when executing query with two placeholders side by side.
 		Thanks to Daniel Browning for spotting this. [GSM]
-	- Fix bad PG_INTEGER example in docs, thanks to Xavi Drudis Ferran.
-		(CPAN bug #31545) [GSM]
-	- Force SQL_REAL and SQL_NUMERIC to be float8 not float4.
-		(CPAN bug #30010) [GSM]
-	- Fix memory leak when using savepoints. (CPAN bug #29791)
-		[airwave@cpan.org]
-	- Allow data_sources to accept optional arguments. [GSM]
-	- Change versioning system to three numbered system.
+	- Skip item if no matching key in foreign_key_info.
+		(CPAN bug #32308) [GSM]
+	- Fix bug in last_insert_id. (CPAN bug #15918) [orentocy@gmail.com]
+	- Fix pg_description join in table_info(). [Max Cohan max@endpoint.com]
+	- Make sure arrays handle UTF-8 smoothly (CPAN bug #32479) [GSM]
+	- Force column names to respect utf8-ness. Per report from Ch Lamprect. [GSM]
 	- Make sure array items are marked as UTF as needed.
 		(CPAN bug #29656) [GSM]		
-	- Add support for arrays: can pass in arrayrefs to execute, and 
-		they are automatically returned as arrays when fetching. [GSM]
-	- Overhauled the data type system. [GSM]
-	- Fix bug in last_insert_id. (CPAN bug #15918) [orentocy@gmail.com]
+	- Force SQL_REAL and SQL_NUMERIC to be float8 not float4.
+		(CPAN bug #30010) [GSM]
+	- Allow objects with stringification overloading to work with quote().
+		(CPAN bug #32868) [David E. Wheeler and GSM]
+	- Use prepare_cached in last_insert_id function. (CPAN bug #24313)
+	- Switch from pow to powf to support AIX compiler issue.
+		(CPAN bug #24579) [GSM]
+
+Enhancements and API changes:
+
 	- Complain loudly and fail to proceed if Makefile.PL finds no -lpq [GSM]
-	- Fix META.yml file. (CPAN bug #25759) [GSM]
-	- Force column names to respect utf8-ness. Per report from Ch Lamprect. [GSM]
-	- Add support for asynchronous queries. [GSM]
-	- Make minimum supported server 7.4. [GSM]
-	- Add private_attribute_info() method. [GSM]
-	- Add SQL_INTERVAL and others to types.c [GSM]
+	- Add three new columns to column_info, to return unquoted 
+		version: pg_schema, pg_table, and pg_columns. Add all 
+		three to primary_key_info, and the first two to table_info
+		(CPAN bug #20282) [GSM]
+	- Change $dbh->{User} to $dbh->{Username} [GSM]
 	- Change $dbh->{Name} to return the entire DSN string, minus the 
 		'dbi:Pg:' part. Thanks to Mark Stosberg for the idea. [GSM]
-	- Add $dbh->{pg_placeholder_dollaronly} to allow '?' and other symbols 
-		to be used in prepared statements without getting interpreted as 
-		placeholders, i.e. the geometric operator '?#' (CPAN bug #24124) [GSM]
-	- Use prepare_cached in last_insert_id function. (CPAN bug #24313)
-	- Switch from cvs to subversion. Switch from gborg to perl.org.
-	- Fix pg_description join in table_info(). [Max Cohan max@endpoint.com]
-	- Fix memory leak in bytea quoting. (CPAN bug #21392). Fix memory leak 
-		in pg_notifies. [Stephen Marshall smarshall@wsi.com]
+	- Allow data_sources to accept optional arguments. [GSM]
+	- Add private_attribute_info() method. [GSM]
+	- Add SQL_INTERVAL and others to types.c [GSM]
 	- Added statistics_info function [Brandon Black blblack@gmail.com]
+	- Be much more flexible in test connection options. [GSM]
+	- Overhaul test suite, allow tests to be run individually. [GSM]
+
+New and experimental:
+
+	- Quick support for named trace level 'SQL' [GSM]
+	- Very experimental support for bind_param_inout, use with caution. [GSM]
+
+Documentation fixes:
+
+	- Fix bad PG_INTEGER example in docs, thanks to Xavi Drudis Ferran.
+		(CPAN bug #31545) [GSM]
+	- Fix META.yml file. (CPAN bug #25759) [GSM]
 
 1.49 May 7, 2006
 	- Thanks to Backcountry.com for sponsoring work on this release. [GSM]
