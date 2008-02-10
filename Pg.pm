@@ -1808,6 +1808,12 @@ L<http://www.postgresql.org/docs/current/static/errcodes-appendix.html>
 Note that these codes are part of the SQL standard and only a small number 
 of them will be used by PostgreSQL.
 
+Common ones to note:
+
+  00000 Successful completion
+  25P01 No active SQL transaction
+  25P02 In failed SQL transaction
+
 =item B<trace>
 
   $h->trace($trace_level);
