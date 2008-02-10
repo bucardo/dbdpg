@@ -925,7 +925,6 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			SV * sv_fieldname;
 			retsv = newRV(sv_2mortal((SV*)av));
 			while(--fields >= 0) {
-				//fieldname = newSVpv(PQfname(imp_sth->result, fields),0);
 				fieldname = PQfname(imp_sth->result, fields);
 				sv_fieldname = newSVpv(fieldname,0);
 #ifdef is_utf8_string
@@ -1095,7 +1094,6 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 	char * key = SvPV(keysv,kl);
 	STRLEN vl;
 	char * value = SvPV(valuesv,vl);
-	//	unsigned int newval = SvTRUE(valuesv);
 
 	if (dbis->debug >= 4)
 		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_st_STORE (%s) (%s) sth=%d\n", key, value, sth);
@@ -2497,7 +2495,7 @@ int pg_quickexec (SV * dbh, const char * sql, int asyncflag)
 		return -2;
 	  }
 	  imp_dbh->async_status = 1;
-	  imp_dbh->async_sth = NULL; // Needed?
+	  imp_dbh->async_sth = NULL; /* Needed? */
 	  if (dbis->debug >= 4) (void)PerlIO_printf(DBILOGFP, "dbdpg: PQsendQuery worked\n");
 	  return 0;
 	}
