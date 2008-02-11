@@ -576,8 +576,8 @@ Download the tarball to a completely different system, unpack and test it.
 
 * Announce to the "internal" lists
 
-dbdpg-general
-pgsql-interfaces
+dbd-pg@perl.org
+pgsql-interfaces@postgresql.org
 
 * Upload to CPAN and test.
 
@@ -587,9 +587,9 @@ has the same checksums.
 
 * Announce to the "public" lists
 
-dbdpg-general
-pgsql-interfaces
-dbi-users, dbi-dev, dbi-announce
+dbd-pg@perl.org
+pgsql-interfaces@postgresql.org
+dbi-users@perl.org, dbi-dev@perl.org, dbi-announce@perl.org
 
 The format for DBI announcements:
 To: dbi-announce@perl.org
