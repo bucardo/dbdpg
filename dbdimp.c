@@ -1983,8 +1983,8 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
    	maxlen = 0; /* not used, this makes the compiler happy */
 
 	if (dbis->debug >= 4)
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_bind_ph ph_name: (%s) newvalue: %s(%lu)\n",
-							neatsvpv(ph_name,0), neatsvpv(newvalue,0), SvOK(newvalue));
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: dbd_bind_ph ph_name: (%s)\n",
+							neatsvpv(ph_name,0));
 
 	if (0==imp_sth->numphs)
 		croak("Statement has no placeholders to bind");
@@ -2068,7 +2068,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		}
 	}
 	if (dbis->debug >= 5) {
-		(void)PerlIO_printf(DBILOGFP, "dbdpg: Bind (%s) <== (%s) (type=%ld)\n", name, neatsvpv(newvalue,0), (long)sql_type);
+		(void)PerlIO_printf(DBILOGFP, "dbdpg: Bind (%s) (type=%ld)\n", name, (long)sql_type);
 		if (attribs) {
 			(void)PerlIO_printf(DBILOGFP, "dbdpg: Bind attribs (%s)", neatsvpv(attribs,0));
 		}
@@ -2755,7 +2755,9 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		if (dbis->debug >= 10) {
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
 				(void)PerlIO_printf(DBILOGFP, "dbdpg: PQexecPrepared item #%d\n", x);
-				(void)PerlIO_printf(DBILOGFP, "dbdpg: -> Value: (%s)\n", paramValues[x]);
+				(void)PerlIO_printf(DBILOGFP, "dbdpg: -> Value: (%s)\n",
+									(paramFormats && paramFormats[x]==1) ? "(binary, not shown)" 
+									: paramValues[x]);
 				(void)PerlIO_printf(DBILOGFP, "dbdpg: -> Length: (%d)\n", paramLengths ? paramLengths[x] : 0);
 				(void)PerlIO_printf(DBILOGFP, "dbdpg: -> Format: (%d)\n", paramFormats ? paramFormats[x] : 0);
 			}
