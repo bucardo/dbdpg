@@ -6,7 +6,7 @@ use strict;
 use warnings;
 use 5.006001;
 
-my $VERSION = '2.0.1';
+use version; my $VERSION = qv("2.0.1");
 
 my $lib;
 BEGIN {
