@@ -5,6 +5,8 @@
 	- Use version.pm [CPAN bug #33206] [GSM]
 	- Remove '//' style comments to make strict ANSI compilers happy.
 		(Trevor Inman) [CPAN bug #33089]
+	- Make 03dbmethod.t pass minor test for version 8.1.9
+		[CPAN bug #33282]
 
 2.0.0 Released February 2008
 

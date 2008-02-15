@@ -594,7 +594,7 @@ SKIP: {
 	};
 
 	## 8.1 has differences in hash index pages
-	if ($pgversion =~ /^801/) {
+	if ($pgversion < 80109) {
 		$correct_stats->{three}[5][11] = 0;
 	}
 
