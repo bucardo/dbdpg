@@ -14,7 +14,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 ## Define this here in case we get to the END block before a connection is made.
 BEGIN {
-	use vars qw/$pgversion $pglibversion $pgvstring $pgdefport $helpconnect $dbh $connerror/;
+	use vars qw/$pgversion $pglibversion $pgvstring $pgdefport $helpconnect $dbh $connerror %set/;
 	($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
 }
 
@@ -47,6 +47,14 @@ ok( $dbh->disconnect(), 'Disconnect from the database');
 $dbh = connect_database();
 
 pass('Connected with first database handle');
+
+## Grab some important values used for debugging
+my @vals = qw/array_nulls backslash_quote server_encoding standard_confirming_strings/;
+my $SQL = 'SELECT name,setting FROM pg_settings WHERE name IN (' .
+	(join ',' => map { qq{'$_'} } @vals) . ')';
+for (@{$dbh->selectall_arrayref($SQL)}) {
+	$set{$_->[0]} = $_->[1];
+}
 
 my $dbh2 = connect_database();
 
@@ -128,6 +136,11 @@ END {
 		if (exists $ENV{$name} and defined $ENV{$name}) {
 			$extra .= sprintf "\n%-21s $ENV{$name}", $name;
 		}
+	}
+
+	## More helpful stuff
+	for (sort keys %set) {
+		$extra .= sprintf "\n%-21s %s", $_, $set{$_};
 	}
 
 	if ($helpconnect) {
