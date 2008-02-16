@@ -318,6 +318,13 @@ like( $result, qr/^\d+$/, q{DB handle attribute "pg_socket" returns a value});
 $result = $dbh->{pg_pid};
 like( $result, qr/^\d+$/, q{DB handle attribute "pg_pid" returns a value});
 
+## If Encode is available, we will insert some non-ASCII into the test table
+## Since this will fail with client encodings such as BIG5, we force UTF8
+my $old_encoding = $dbh->selectall_arrayref('SHOW client_encoding')->[0][0];
+if ($old_encoding ne 'UTF8') {
+	$dbh->do(q{SET NAMES 'UTF8'});
+}
+
 # Attempt to test whether or not we can get unicode out of the database
 SKIP: {
 	eval { require Encode; };
@@ -530,6 +537,11 @@ q{SELECT * FROM dbd_pg_test},
 	like ( $result, qr/^$expected/, qq{Statement handle attribute "pg_cmd_status" works for '$expected'});
 }
 
+## From this point forward, it is safe to use the client's native encoding again
+if ($old_encoding ne 'UTF8') {
+	$dbh->do(qq{SET NAMES '$old_encoding'});
+}
+
 #
 # Test of the handle attribute "Active"
 #
@@ -621,7 +633,7 @@ else {
 		$warning = '';
 		local $SIG{__WARN__} = sub { $warning = shift; };
 		$dbh->{RaiseError} = 0;
-		
+
 		$dbh->{PrintError} = 1;
 		$sth = $dbh->prepare($SQL);
 		$sth->execute();

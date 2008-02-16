@@ -117,12 +117,18 @@ ok( $count >= 1, 'prepare with large number of parameters works');
 
 $sth->finish();
 
+## Force client encoding, as we cannot use backslashes in client-only encodings
+my $old_encoding = $dbh->selectall_arrayref('SHOW client_encoding')->[0][0];
+if ($old_encoding ne 'UTF8') {
+	$dbh->do(q{SET NAMES 'UTF8'});
+}
+
 ## Test our parsing of backslashes
 $sth = $dbh->prepare(q{SELECT '\\'?'});
 eval {
 	$sth->execute();
 };
-ok( !$@, 'prepare with backslashes inside quotes works');
+is($@, q{}, 'prepare with backslashes inside quotes works');
 $sth->finish();
 $dbh->commit();
 

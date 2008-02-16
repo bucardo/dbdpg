@@ -458,6 +458,12 @@ SKIP: {
 	is( $quoted, qq!{"$utf8_str","$utf8_str"}!, 'quote() handles utf8 inside array' );
     ok Encode::is_utf8( $quoted ), 'Quoted array of strings should be UTF-8';
 
+	## Workaround for client encodings such as SJIS
+	my $old_encoding = $dbh->selectall_arrayref('SHOW client_encoding')->[0][0];
+	if ($old_encoding ne 'UTF8') {
+		$dbh->do(q{SET NAMES 'UTF8'});
+	}
+
 	$dbh->do('DELETE FROM dbd_pg_test');
 	$SQL = qq{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, '$quoted', 'one')};
 	eval {
