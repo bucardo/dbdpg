@@ -323,7 +323,8 @@ challenges to using splint:
 
 1) Getting it to work in the first place. As the Makefile.PL section says, you need at least 
 version 3.1.2. You also need to include all the relevant files, which Makefile.PL should do 
-for you.
+for you. Note that 'make splint' expects the TMP environment variable to be set to a writeable 
+directory.
 
 2) Limiting the amount of results. splint is extremely verbose, so one must usually limit 
 what sort of things are returned. Again, the Makefile.PL has a partial list.

@@ -200,6 +200,8 @@ SPLINT_TMP = $(TMP)/splint_dbdpg
 
 SPLINTFLAGS =            \
   -message-stream-stdout \
+  -linelen 90            \
+  -boolops               \
   -tmpdir $(SPLINT_TMP)  \
   +posixstrictlib        \
   +ignoresigns           \

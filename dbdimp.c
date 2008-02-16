@@ -91,8 +91,6 @@ static PGTransactionStatusType dbd_db_txn_status (imp_dbh_t *imp_dbh);
 static int pg_db_start_txn (SV *dbh, imp_dbh_t *imp_dbh);
 static int handle_old_async(SV * handle, imp_dbh_t * imp_dbh, int asyncflag);
 
-DBISTATE_DECLARE;
-
 /* ================================================================== */
 void dbd_init (dbistate_t *dbistate)
 {
@@ -740,7 +738,9 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 		if (strEQ("pg_errorlevel", key)) {
 			/* Introduced in 7.4 servers */
 			if (imp_dbh->pg_protocol >= 3) {
-				newval = SvIV(valuesv);
+				if (SvOK(valuesv)) {
+					newval = (unsigned)SvIV(valuesv);
+				}
 				/* Default to "1" if an invalid value is passed in */
 				imp_dbh->pg_errorlevel = 0==newval ? 0 : 2==newval ? 2 : 1;
 				(void)PQsetErrorVerbosity(imp_dbh->conn, imp_dbh->pg_errorlevel); /* pre-7.4 does nothing */
@@ -781,7 +781,9 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 		if (strEQ("pg_server_prepare", key)) {
 			/* No point changing this if the server does not support it */
 			if (imp_dbh->pg_protocol >= 3) {
-				newval = SvIV(valuesv);
+				if (SvOK(valuesv)) {
+					newval = (unsigned)SvIV(valuesv);
+				}
 				/* Default to "2" if an invalid value is passed in */
 				imp_dbh->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
 			}
@@ -1194,7 +1196,7 @@ SV * dbd_db_pg_notifies (SV * dbh, imp_dbh_t * imp_dbh)
 
 	status = PQconsumeInput(imp_dbh->conn);
 	if (0 == status) { 
-		pg_error(dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+		pg_error(dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
 		return &sv_undef;
 	}
 
@@ -1298,10 +1300,10 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 		imp_sth->firstword[newsize] = '\0';
 
 		/* Note whether this is preparable DML */
-		if (0==strcasecmp(imp_sth->firstword, "SELECT") ||
-			0==strcasecmp(imp_sth->firstword, "INSERT") ||
-			0==strcasecmp(imp_sth->firstword, "UPDATE") ||
-			0==strcasecmp(imp_sth->firstword, "DELETE")
+		if (0 == strcasecmp(imp_sth->firstword, "SELECT") ||
+			0 == strcasecmp(imp_sth->firstword, "INSERT") ||
+			0 == strcasecmp(imp_sth->firstword, "UPDATE") ||
+			0 == strcasecmp(imp_sth->firstword, "DELETE")
 			) {
 			imp_sth->is_dml = DBDPG_TRUE;
 		}
@@ -1685,6 +1687,7 @@ static void dbd_st_split_statement (imp_sth_t * imp_sth, int version, char * sta
 				if (0==strncmp(thisph->fooname, statement-sectionsize, sectionsize)) {
 					newseg->placeholder = xint;
 					newseg->ph = thisph;
+					Safefree(thisph);
 					break;
 				}
 			}
@@ -2317,7 +2320,7 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 } /* end of pg_stringify_array */
 
 /* ================================================================== */
-SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_info_t * coltype) {
+static SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_info_t * coltype) {
 
 	AV*    av;              /* The main array we are returning a reference to */
 	AV*    currentav;       /* The current array level */
@@ -2375,7 +2378,7 @@ SV * pg_destringify_array(imp_dbh_t *imp_dbh, unsigned char * input, sql_type_in
 		else if ('}' == *input) {
 		}
 		else if ('"' == *input) {
-			in_quote = 1;
+			in_quote = (bool)1;
 		}
 		else {
 			string[section_size++] = *input;
@@ -4062,7 +4065,7 @@ int dbdpg_ready(SV *h, imp_dbh_t *imp_dbh)
 	  return -2;
 	}
 
-	return ! PQisBusy(imp_dbh->conn);
+	return PQisBusy(imp_dbh->conn) ? 0 : 1;
 
 } /* end of dbdpg_ready */
 
