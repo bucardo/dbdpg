@@ -26,6 +26,6 @@ SKIP: {
 
 	my $t=q{Version comparison does not throw a warning};
 
-	Test::Warn::warnings_are (sub {$DBD::Pg::VERSION <= "1.49"}, [], $t );
+	Test::Warn::warnings_are (sub {$DBD::Pg::VERSION <= '1.49'}, [], $t );
 }
 

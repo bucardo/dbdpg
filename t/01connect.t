@@ -127,7 +127,7 @@ END {
 	my $extra = '';
 	for (sort qw/HOST HOSTADDR PORT DATABASE USER PASSWORD PASSFILE OPTIONS REALM
                  REQUIRESSL KRBSRVNAME CONNECT_TIMEOUT SERVICE SSLMODE SYSCONFDIR
-				 CLIENTENCODING/) {
+                 CLIENTENCODING/) {
 		my $name = "PG$_";
 		if (exists $ENV{$name} and defined $ENV{$name}) {
 			$extra .= sprintf "\n%-21s $ENV{$name}", $name;
