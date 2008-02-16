@@ -49,7 +49,7 @@ $dbh = connect_database();
 pass('Connected with first database handle');
 
 ## Grab some important values used for debugging
-my @vals = qw/array_nulls backslash_quote server_encoding standard_confirming_strings/;
+my @vals = qw/array_nulls backslash_quote server_encoding client_encoding standard_confirming_strings/;
 my $SQL = 'SELECT name,setting FROM pg_settings WHERE name IN (' .
 	(join ',' => map { qq{'$_'} } @vals) . ')';
 for (@{$dbh->selectall_arrayref($SQL)}) {
@@ -126,7 +126,8 @@ END {
 
 	my $extra = '';
 	for (sort qw/HOST HOSTADDR PORT DATABASE USER PASSWORD PASSFILE OPTIONS REALM
-                 REQUIRESSL KRBSRVNAME CONNECT_TIMEOUT SERVICE SSLMODE SYSCONFDIR/) {
+                 REQUIRESSL KRBSRVNAME CONNECT_TIMEOUT SERVICE SSLMODE SYSCONFDIR
+				 CLIENTENCODING/) {
 		my $name = "PG$_";
 		if (exists $ENV{$name} and defined $ENV{$name}) {
 			$extra .= sprintf "\n%-21s $ENV{$name}", $name;
