@@ -124,16 +124,20 @@ eval {
 };
 ok( !$@, 'prepare with backslashes inside quotes works');
 $sth->finish();
+$dbh->commit();
 
 ## Test do() with placeholders, both DML and non-DML
 eval {
   $dbh->do(q{SET search_path TO ?}, undef, 'public');
 };
 ok( !$@, 'do() called with non-DML placeholder works');
+$dbh->commit();
+
 eval {
   $dbh->do(q{SELECT ?::text}, undef, 'public');
 };
 ok( !$@, 'do() called with non-DML placeholder works');
+$dbh->commit();
 
 ## Test a non-DML placeholder
 eval {
@@ -141,6 +145,7 @@ eval {
   $sth->execute('public');
 };
 ok( !$@, 'prepare/execute with non-DML placeholder works');
+$dbh->commit();
 
 
 ## Make sure we can allow geometric and other placeholders
@@ -149,6 +154,7 @@ eval {
 	$sth->execute();
 };
 like ($@, qr{unbound placeholder}, q{prepare/execute does not allows geometric operators});
+$dbh->commit();
 
 $dbh->{pg_placeholder_dollaronly} = 1;
 eval {
@@ -157,6 +163,7 @@ eval {
 	$sth->finish();
 };
 is ($@, q{}, q{prepare/execute allows geometric operator ?- when dollaronly set});
+$dbh->commit();
 
 eval {
 	$sth = $dbh->prepare(q{SELECT lseg'(1,0),(1,1)' ?# lseg '(2,3),(4,5)'});
