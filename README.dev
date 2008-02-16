@@ -306,6 +306,10 @@ versions of DBI into different directories, then adjust PERL5LIB with aliases:
 alias dbi156='export PERL5LIB=/home/greg/perl/dbi156/lib/perl5/site_perl/5.10.0/i686-linux'
 alias dbi157='export PERL5LIB=/home/greg/perl/dbi157/lib/perl5/site_perl/5.10.0/i686-linux'
 
+Different encoding should also be tested: a good one for flushing out problems is BIG5, as 
+it is not supported as a server encoding, only a client one. The simplest way to do this 
+is to export the PGCLIENTENCODING variable to 'BIG5' before running the tests.
+
 * Using splint
 
 Another great program to use is splint, which is a "tool for statically checking C programs for 

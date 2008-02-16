@@ -5,7 +5,7 @@ TODO:
 - Use WITH HOLD for cursor work
 - Start testing with a thread-enabled Perl
 - Support for new error protocol
-- Support new DBI trace scheme
+- Support new DBI trace scheme (partially done)
 - Create a .ppm for Windows
 - Change quote and dequote functions to take Sv instead of string so that
    things like arrays can be serialized by the quote function.  This will
@@ -15,3 +15,5 @@ TODO:
 - Rename functions and add defines to avoid problems with static linking of multi DBDs
 - Move to the Module::Build system
 - Remove libpq dependency
+- Handle and/or better tests for different encoding, especially those not 
+   supported as a server encoding (e.g. BIG5)
