@@ -230,22 +230,25 @@ MAKE_SPLINT
 my $output = WriteMakefile(%opts);
 
 if (!exists $output->{EXTRALIBS} or $output->{EXTRALIBS} !~ /\-lpq/) {
+
+	my $makefile = exists $output->{MAKEFILE}
+		? "\nRemoving ($output->{MAKEFILE})\n" : '';
+
 	warn qq{
 ==========================================================
 
 WARNING! No libpq libraries were detected!
 
-You need to install the postgresql-libs package for your system, 
+You need to install the postgresql-libs package for your system,
+
 or set the POSTGRES_LIB environment variable to the correct place.
-
-Removing $output->{MAKEFILE}
-
+$makefile
 ===========================================================
 
 };
 
 	## Do not let make proceed
-	unlink $output->{MAKEFILE};
+	unlink $output->{MAKEFILE} if $makefile;
 
 	exit 1;
 }
