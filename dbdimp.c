@@ -91,6 +91,8 @@ static PGTransactionStatusType pg_db_txn_status (pTHX_ imp_dbh_t *imp_dbh);
 static int pg_db_start_txn (pTHX_ SV *dbh, imp_dbh_t *imp_dbh);
 static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, int asyncflag);
 
+DBISTATE_DECLARE;
+
 /* ================================================================== */
 void dbd_init (dbistate_t *dbistate)
 {
@@ -254,8 +256,10 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 		/* If using 3.0 protocol but not yet version 8, switch to "smart" */
 		PGLIBVERSION >= 80000 ? 1 : 2 : 0;
 
-	/* Tell DBI that imp_dbh is all ready to go */
+	/* Tell DBI that we should call destroy when the handle dies */
 	DBIc_IMPSET_on(imp_dbh);
+
+	/* Tell DBI that we should call disconnect when the handle dies */
 	DBIc_ACTIVE_on(imp_dbh);
 
 	return 1;
@@ -1356,6 +1360,7 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 		}
 	}
 
+	/* Tell DBI to call destroy when this handle ends */
 	DBIc_IMPSET_on(imp_sth);
 
 	return 1;

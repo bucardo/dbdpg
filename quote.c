@@ -20,6 +20,7 @@
 
 char * null_quote(const char *string, STRLEN len, STRLEN *retlen)
 {
+	dTHX;
 	char *result;
 	New(0, result, len+1, char);
 	strncpy(result,string,len);
@@ -31,6 +32,7 @@ char * null_quote(const char *string, STRLEN len, STRLEN *retlen)
 
 char * quote_string(const char *string, STRLEN len, STRLEN *retlen)
 {
+	dTHX;
 	char * result;
 	STRLEN oldlen = len;
 
@@ -64,6 +66,7 @@ char * quote_string(const char *string, STRLEN len, STRLEN *retlen)
 
 char * quote_geom(const char *string, STRLEN len, STRLEN *retlen)
 {
+	dTHX;
 	char * result;
         const char *tmp;
 
@@ -90,6 +93,7 @@ char * quote_geom(const char *string, STRLEN len, STRLEN *retlen)
 
 char * quote_path(const char *string, STRLEN len, STRLEN *retlen)
 {
+	dTHX;
 	char * result;
 	const char * const tmp = string;
 
@@ -116,6 +120,7 @@ char * quote_path(const char *string, STRLEN len, STRLEN *retlen)
 
 char * quote_circle(const char *string, STRLEN len, STRLEN *retlen)
 {
+	dTHX;
 	char * result;
 	const char * const tmp = string;
 
@@ -143,6 +148,7 @@ char * quote_circle(const char *string, STRLEN len, STRLEN *retlen)
 
 char * quote_bytea(char *string, STRLEN len, STRLEN *retlen)
 {
+	dTHX;
 	char * result;
 	STRLEN oldlen = len;
 
@@ -196,7 +202,7 @@ char * quote_bytea(char *string, STRLEN len, STRLEN *retlen)
 
 char * quote_sql_binary(char *string, STRLEN len, STRLEN *retlen)
 {
-	
+	dTHX;
 	/* We are going to return a quote_bytea() for backwards compat but
 		 we warn first */
 	warn("Use of SQL_BINARY invalid in quote()");
@@ -208,6 +214,7 @@ char * quote_sql_binary(char *string, STRLEN len, STRLEN *retlen)
 
 char * quote_bool(const char *value, STRLEN len, STRLEN *retlen) 
 {
+	dTHX;
 	char *result;
 	long int int_value;
 	STRLEN	max_len=6;
@@ -238,6 +245,7 @@ char * quote_bool(const char *value, STRLEN len, STRLEN *retlen)
 
 char * quote_integer(const char *value, STRLEN len, STRLEN *retlen) 
 {
+	dTHX;
 	char *result;
 	STRLEN max_len=6;
         const int intval = *((const int*)value);
@@ -267,6 +275,7 @@ void dequote_char(const char *string, STRLEN *retlen)
 
 void dequote_string(const char *string, STRLEN *retlen)
 {
+	dTHX;
 	*retlen = strlen(string);
 }
 
@@ -274,6 +283,7 @@ void dequote_string(const char *string, STRLEN *retlen)
 
 void dequote_bytea(char *string, STRLEN *retlen)
 {
+	dTHX;
 	char *result;
 
 	(*retlen) = 0;
@@ -320,6 +330,7 @@ void dequote_bytea(char *string, STRLEN *retlen)
  */
 void dequote_sql_binary(char *string, STRLEN *retlen)
 {
+	dTHX;
 	/* We are going to retun a dequote_bytea(), JIC */
 	warn("Use of SQL_BINARY invalid in dequote()");
 	dequote_bytea(string, retlen);
@@ -331,6 +342,7 @@ void dequote_sql_binary(char *string, STRLEN *retlen)
 
 void dequote_bool(char *string, STRLEN *retlen)
 {
+	dTHX;
 	switch(*string){
 	case 'f': *string = '0'; break;
 	case 't': *string = '1'; break;
@@ -344,6 +356,7 @@ void dequote_bool(char *string, STRLEN *retlen)
 
 void null_dequote(const char *string, STRLEN *retlen)
 {
+	dTHX;
 	*retlen = strlen(string);
 }
 
