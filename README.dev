@@ -99,6 +99,9 @@ dbdimp.c - The main C file, which does most of the heavy lifting for the DBD::Pg
 
 dbdimp.h - Helper file for dbdimp.c.
 
+dbivport.h - DBI portability macros. This should be the latest version from the 
+  DBI subversion repository.
+
 Pg.pm - The main Perl file, which contains DBD::Pg packages and code   for the 
   methods. Often times code here calls code from Pg.xs and dbdimp.c.
   This file contains a version number in two places (once in the code, once 

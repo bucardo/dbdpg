@@ -8,6 +8,7 @@
 	- Force client encoding of UTF8 for some tests.
 	- Make 03dbmethod.t pass minor test for version 8.1.9
 		[CPAN bug #33282]
+	- Add a local copy of dbivport.h
 
 2.0.0 Released February 2008
 
