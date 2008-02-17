@@ -77,7 +77,7 @@ Makefile.PL - The main file that starts everything off. Used by ExtUtils::MakeMa
 
 Makefile - Generated automatically by Makefile.PL
 
-META.yml - YAML description file. Updated by hand and contains a version number.
+META.yml - YAML description file. Updated by hand and contains version number in two places.
 
 
 * Distribution files:
@@ -478,10 +478,10 @@ the first release candidate would be 2.2.3_1. A second would be 2.2.3_2 etc.
 Version numbers are currently set in five files:
 
 README (one or two places)
-Pg.pm (two places!)
+Pg.pm (two places)
 Changes
 Makefile.PL
-META.yml
+META.yml (two places)
 
 
 ===============
