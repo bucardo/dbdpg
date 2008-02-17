@@ -5,6 +5,7 @@
 	- Use version.pm [CPAN bug #33206] [GSM]
 	- Add PERL_NO_GET_CONTEXT #define to improve performance on threaded Perls
 	- Raise the minimum DBI version to 1.52.
+	- Allow arrayrefs into bind_col (CPAN bug #33193) [GSM]
 	- Remove '//' style comments to make strict ANSI compilers happy.
 		(Trevor Inman) [CPAN bug #33089]
 	- Force client encoding of UTF8 for some tests.

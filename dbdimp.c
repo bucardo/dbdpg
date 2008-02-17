@@ -3069,7 +3069,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 		SV *sv;
 
 		if (dbis->debug >= 5)
-			(void)PerlIO_printf(DBILOGFP, "dbdpg: Fetching a field\n");
+			(void)PerlIO_printf(DBILOGFP, "dbdpg: Fetching field #%d\n", i);
 
 		sv = AvARRAY(av)[i];
 
@@ -3084,7 +3084,8 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 			if (type_info
 				&& 0 == strncmp(type_info->arrayout, "array", 5)
 				&& imp_dbh->expand_array) {
-				AvARRAY(av)[i] = pg_destringify_array(aTHX_ imp_dbh, value, type_info);
+				//fprintf(stderr, "Hey! We gots an array!\n");
+				sv_replace(sv, pg_destringify_array(aTHX_ imp_dbh, value, type_info));
 			}
 			else {
 				if (type_info) {
