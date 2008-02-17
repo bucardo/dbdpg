@@ -140,7 +140,7 @@ my %opts =
 	 ABSTRACT       => 'PostgreSQL database driver for the DBI module',
 	 PREREQ_PM      => {
 						'ExtUtils::MakeMaker' => '6.11',
-						'DBI'                 => '1.45',
+						'DBI'                 => '1.52',
 						'Test::Simple'        => '0.61',
 						'Test::Harness'       => '2.03',
 					   },

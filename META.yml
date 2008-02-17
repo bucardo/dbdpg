@@ -10,17 +10,17 @@ distribution_type   : module
 dynamic_config      : 1
 
 requires:
-  DBI               : 1.45
+  DBI               : 1.52
 recommends:
   Test::YAML::Meta  : 0.03
   Test::Pod         : 0.95
 build_requires:
-  DBI               : 1.45
+  DBI               : 1.52
   Test::Harness     : 2.03
   Test::Simple      : 0.47
   Module::Signature : 0.50
 configure_requires:
-  DBI               : 1.45
+  DBI               : 1.52
 
 provides:
   DBD::Pg:

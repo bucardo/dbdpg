@@ -461,22 +461,17 @@ is_deeply( $attrib, $expected, q{Statement handle attribute "ParamValues" works 
 # Test of the statement handle attribute "ParamTypes"
 #
 
-SKIP: {
-	skip 'DBI must be at least version 1.49 to test the DB handle attribute "ParamTypes"', 2
-		if $DBI::VERSION < 1.49;
-
-	$sth = $dbh->prepare('SELECT id FROM dbd_pg_test WHERE id=? AND val=? AND lii=?');
-	$sth->bind_param(1, 1, SQL_INTEGER);
-	$sth->bind_param(2, 'TMW', SQL_VARCHAR);
-	$attrib = $sth->{ParamTypes};
-	$expected = {1 => 'int4', 2 => 'varchar', 3 => undef};
-	is_deeply( $attrib, $expected, q{Statement handle attribute "ParamTypes" works before execute});
-	$sth->bind_param(3, 3, {pg_type => PG_INT4});
-	$sth->execute();
-	$attrib = $sth->{ParamTypes};
-	$expected->{3} = 'int4';
-	is_deeply( $attrib, $expected, q{Statement handle attribute "ParamTypes" works after execute});
-}
+$sth = $dbh->prepare('SELECT id FROM dbd_pg_test WHERE id=? AND val=? AND lii=?');
+$sth->bind_param(1, 1, SQL_INTEGER);
+$sth->bind_param(2, 'TMW', SQL_VARCHAR);
+$attrib = $sth->{ParamTypes};
+$expected = {1 => 'int4', 2 => 'varchar', 3 => undef};
+is_deeply( $attrib, $expected, q{Statement handle attribute "ParamTypes" works before execute});
+$sth->bind_param(3, 3, {pg_type => PG_INT4});
+$sth->execute();
+$attrib = $sth->{ParamTypes};
+$expected->{3} = 'int4';
+is_deeply( $attrib, $expected, q{Statement handle attribute "ParamTypes" works after execute});
 
 #
 # Test of the statement handle attribute "RowsInCache"

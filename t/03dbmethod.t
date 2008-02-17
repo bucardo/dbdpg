@@ -532,40 +532,35 @@ is_deeply( \@result, $expected, 'DB handle method "primary_key" returns empty li
 # Test of the "statistics_info" database handle method
 #
 
-SKIP: {
+$dbh->{private_dbdpg}{version} >= 80000
+	or skip 'Server must be version 8.0 or higher to test database handle method "statistics_info"', 10;
 
-	$DBI::VERSION >= 1.52
-		or skip 'DBI must be at least version 1.52 to test the database handle method "statistics_info"', 10;
+$sth = $dbh->statistics_info(undef,undef,undef,undef,undef);
+is ($sth, undef, 'DB handle method "statistics_info" returns undef: no table');
 
-	$dbh->{private_dbdpg}{version} >= 80000
-		or skip 'Server must be version 8.0 or higher to test database handle method "statistics_info"', 10;
+## Invalid table
+$sth = $dbh->statistics_info(undef,undef,'dbd_pg_test9',undef,undef);
+is ($sth, undef, 'DB handle method "statistics_info" returns undef: bad table');
 
-	$sth = $dbh->statistics_info(undef,undef,undef,undef,undef);
-	is ($sth, undef, 'DB handle method "statistics_info" returns undef: no table');
+## Create some tables with various indexes
+{
+	local $SIG{__WARN__} = sub {};
+	$dbh->do("CREATE TABLE $table1 (a INT, b INT NOT NULL, c INT NOT NULL, ".
+			 'CONSTRAINT dbd_pg_test1_pk PRIMARY KEY (a))');
+	$dbh->do("ALTER TABLE $table1 ADD CONSTRAINT dbd_pg_test1_uc1 UNIQUE (b)");
+	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test1_index_c ON $table1(c)");
+	$dbh->do("CREATE TABLE $table2 (a INT, b INT, c INT, PRIMARY KEY(a,b), UNIQUE(b,c))");
+	$dbh->do("CREATE INDEX dbd_pg_test2_skipme ON $table2(c,(a+b))");
+	$dbh->do("CREATE TABLE $table3 (a INT, b INT, c INT, PRIMARY KEY(a)) WITH OIDS");
+	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_index_b ON $table3(b)");
+	$dbh->do("CREATE INDEX dbd_pg_test3_index_c ON $table3 USING hash(c)");
+	$dbh->do("CREATE INDEX dbd_pg_test3_oid ON $table3(oid)");
+	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_pred ON $table3(c) WHERE c > 0 AND c < 45");
+	$dbh->commit();
+}
 
-	## Invalid table
-	$sth = $dbh->statistics_info(undef,undef,'dbd_pg_test9',undef,undef);
-	is ($sth, undef, 'DB handle method "statistics_info" returns undef: bad table');
-
-	## Create some tables with various indexes
-	{
-		local $SIG{__WARN__} = sub {};
-		$dbh->do("CREATE TABLE $table1 (a INT, b INT NOT NULL, c INT NOT NULL, ".
-				 'CONSTRAINT dbd_pg_test1_pk PRIMARY KEY (a))');
-		$dbh->do("ALTER TABLE $table1 ADD CONSTRAINT dbd_pg_test1_uc1 UNIQUE (b)");
-		$dbh->do("CREATE UNIQUE INDEX dbd_pg_test1_index_c ON $table1(c)");
-		$dbh->do("CREATE TABLE $table2 (a INT, b INT, c INT, PRIMARY KEY(a,b), UNIQUE(b,c))");
-		$dbh->do("CREATE INDEX dbd_pg_test2_skipme ON $table2(c,(a+b))");
-		$dbh->do("CREATE TABLE $table3 (a INT, b INT, c INT, PRIMARY KEY(a)) WITH OIDS");
-		$dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_index_b ON $table3(b)");
-		$dbh->do("CREATE INDEX dbd_pg_test3_index_c ON $table3 USING hash(c)");
-		$dbh->do("CREATE INDEX dbd_pg_test3_oid ON $table3(oid)");
-		$dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_pred ON $table3(c) WHERE c > 0 AND c < 45");
-		$dbh->commit();
-	}
-
-	my $correct_stats = {
-	one => [
+my $correct_stats = {
+one => [
 	[ undef, $schema, $table1, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef ],
 	[ undef, $schema, $table1, '0', undef, 'dbd_pg_test1_index_c', 'btree',  1, 'c', 'A', '0', '1', undef ],
 	[ undef, $schema, $table1, '0', undef, 'dbd_pg_test1_pk',      'btree',  1, 'a', 'A', '0', '1', undef ],
@@ -591,57 +586,57 @@ SKIP: {
 	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef ],
 	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))' ],
 	],
-	};
+};
 
-	## 8.1 has differences in hash index pages
-	if ($pgversion < 80109) {
-		$correct_stats->{three}[5][11] = 0;
-	}
+## 8.1 has differences in hash index pages
+if ($pgversion < 80109) {
+	$correct_stats->{three}[5][11] = 0;
+}
 
+my $stats;
+
+$sth = $dbh->statistics_info(undef,$schema,$table1,undef,undef);
+$stats = $sth->fetchall_arrayref;
+is_deeply($stats, $correct_stats->{one}, "Correct stats output for $table1");
+
+$sth = $dbh->statistics_info(undef,$schema,$table2,undef,undef);
+$stats = $sth->fetchall_arrayref;
+is_deeply($stats, $correct_stats->{two}, "Correct stats output for $table2");
+
+$sth = $dbh->statistics_info(undef,$schema,$table3,undef,undef);
+$stats = $sth->fetchall_arrayref;
+is_deeply($stats, $correct_stats->{three}, "Correct stats output for $table3");
+
+$sth = $dbh->statistics_info(undef,$schema,$table3,1,undef);
+$stats = $sth->fetchall_arrayref;
+is_deeply($stats, $correct_stats->{three_uo}, "Correct stats output for $table3 (unique only)");
+
+{
 	my $stats;
 
-	$sth = $dbh->statistics_info(undef,$schema,$table1,undef,undef);
+	$sth = $dbh->statistics_info(undef,undef,$table1,undef,undef);
 	$stats = $sth->fetchall_arrayref;
 	is_deeply($stats, $correct_stats->{one}, "Correct stats output for $table1");
 
-	$sth = $dbh->statistics_info(undef,$schema,$table2,undef,undef);
+	$sth = $dbh->statistics_info(undef,undef,$table2,undef,undef);
 	$stats = $sth->fetchall_arrayref;
 	is_deeply($stats, $correct_stats->{two}, "Correct stats output for $table2");
 
-	$sth = $dbh->statistics_info(undef,$schema,$table3,undef,undef);
+	$sth = $dbh->statistics_info(undef,undef,$table3,undef,undef);
 	$stats = $sth->fetchall_arrayref;
 	is_deeply($stats, $correct_stats->{three}, "Correct stats output for $table3");
 
-	$sth = $dbh->statistics_info(undef,$schema,$table3,1,undef);
+	$sth = $dbh->statistics_info(undef,undef,$table3,1,undef);
 	$stats = $sth->fetchall_arrayref;
 	is_deeply($stats, $correct_stats->{three_uo}, "Correct stats output for $table3 (unique only)");
+}
 
-	{
-        my $stats;
+# Clean everything up
+$dbh->do("DROP TABLE $table3");
+$dbh->do("DROP TABLE $table2");
+$dbh->do("DROP TABLE $table1");
 
-		$sth = $dbh->statistics_info(undef,undef,$table1,undef,undef);
-        $stats = $sth->fetchall_arrayref;
-		is_deeply($stats, $correct_stats->{one}, "Correct stats output for $table1");
-
-		$sth = $dbh->statistics_info(undef,undef,$table2,undef,undef);
-        $stats = $sth->fetchall_arrayref;
-		is_deeply($stats, $correct_stats->{two}, "Correct stats output for $table2");
-
-		$sth = $dbh->statistics_info(undef,undef,$table3,undef,undef);
-        $stats = $sth->fetchall_arrayref;
-		is_deeply($stats, $correct_stats->{three}, "Correct stats output for $table3");
-
-		$sth = $dbh->statistics_info(undef,undef,$table3,1,undef);
-        $stats = $sth->fetchall_arrayref;
-		is_deeply($stats, $correct_stats->{three_uo}, "Correct stats output for $table3 (unique only)");
-	}
-
-	# Clean everything up
-	$dbh->do("DROP TABLE $table3");
-	$dbh->do("DROP TABLE $table2");
-	$dbh->do("DROP TABLE $table1");
-
-} ## end of statistics_info tests
+## end of statistics_info tests
 
 
 #

@@ -68,7 +68,7 @@ use 5.006001;
 	Exporter::export_ok_tags('pg_types', 'async');
 	@EXPORT = qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT PG_BYTEA);
 
-	require_version DBI 1.45;
+	require_version DBI 1.52;
 
 	bootstrap DBD::Pg $VERSION;
 
