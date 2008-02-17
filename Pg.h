@@ -50,10 +50,4 @@ static int errno;
 #include "quote.h"
 #include "types.h"
 
-/* defines for Driver.xst to let it know what functions to include */
-
-#define dbd_st_rows dbd_st_rows
-#define dbd_discon_all dbd_discon_all
-#define dbd_st_fetchrow_hashref valid
-
 /* end of Pg.h */

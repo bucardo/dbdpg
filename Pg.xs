@@ -335,7 +335,7 @@ getfd(dbh)
 	CODE:
 		int ret;
 		D_imp_dbh(dbh);
-		ret = dbd_db_getfd(dbh, imp_dbh);
+		ret = pg_db_getfd(dbh, imp_dbh);
 		ST(0) = sv_2mortal( newSViv( ret ) );
 
 
@@ -351,7 +351,7 @@ pg_notifies(dbh)
 	SV * dbh
 	CODE:
 		D_imp_dbh(dbh);
-		ST(0) = dbd_db_pg_notifies(dbh, imp_dbh);
+		ST(0) = pg_db_pg_notifies(dbh, imp_dbh);
 
 
 void
@@ -629,7 +629,7 @@ pg_result(dbh)
 	CODE:
 		int ret;
 		D_imp_dbh(dbh);
-		ret = dbdpg_result(dbh, imp_dbh);
+		ret = pg_db_result(dbh, imp_dbh);
 		if (ret == 0)
 			XST_mPV(0, "0E0");
 		else if (ret < -1)
@@ -642,14 +642,14 @@ pg_ready(dbh)
 	SV *dbh
 	CODE:
 		D_imp_dbh(dbh);
-		ST(0) = sv_2mortal(newSViv(dbdpg_ready(dbh, imp_dbh)));
+		ST(0) = sv_2mortal(newSViv(pg_db_ready(dbh, imp_dbh)));
 
 void
 pg_cancel(dbh)
 	SV *dbh
 	CODE:
 	D_imp_dbh(dbh);
-	ST(0) = dbdpg_cancel(dbh, imp_dbh) ? &sv_yes : &sv_no;
+	ST(0) = pg_db_cancel(dbh, imp_dbh) ? &sv_yes : &sv_no;
 
 #endif
 
@@ -674,14 +674,14 @@ pg_ready(sth)
 	CODE:
 		D_imp_sth(sth);
 		D_imp_dbh_from_sth;
-		ST(0) = sv_2mortal(newSViv(dbdpg_ready(sth, imp_dbh)));
+		ST(0) = sv_2mortal(newSViv(pg_db_ready(sth, imp_dbh)));
 
 void
 pg_cancel(sth)
 	SV *sth
 	CODE:
 	D_imp_sth(sth);
-	ST(0) = dbdpg_cancel_sth(sth, imp_sth) ? &sv_yes : &sv_no;
+	ST(0) = pg_db_cancel_sth(sth, imp_sth) ? &sv_yes : &sv_no;
 
 #if PGLIBVERSION >= 80000
 
@@ -692,7 +692,7 @@ pg_result(sth)
 		int ret;
 		D_imp_sth(sth);
 		D_imp_dbh_from_sth;
-		ret = dbdpg_result(sth, imp_dbh);
+		ret = pg_db_result(sth, imp_dbh);
 		if (ret == 0)
 			XST_mPV(0, "0E0");
 		else if (ret < -1)

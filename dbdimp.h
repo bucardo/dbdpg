@@ -107,39 +107,134 @@ struct imp_sth_st {
 	bool   use_inout;        /* Any placeholders using inout? */
 };
 
-/* Other (non-static) functions we have added to dbdimp.c */
 
-int pg_db_getcopydata (SV *dbh, SV * dataline, int async);
-int pg_db_putcopydata (SV *dbh, SV * dataline);
-int pg_db_putcopyend (SV * dbh);
+/* Avoid name clashes by assigning DBI funcs to a pg_ name. */
+/* In order of appearance in dbdimp.c */
 
+#define dbd_init  pg_init
+extern void dbd_init (dbistate_t *dbistate);
+
+#define dbd_db_login  pg_db_login
+int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char * pwd);
+
+#define dbd_db_ping  pg_db_ping
 int dbd_db_ping(SV *dbh);
-int dbd_db_getfd (SV *dbh, imp_dbh_t *imp_dbh);
-SV * dbd_db_pg_notifies (SV *dbh, imp_dbh_t *imp_dbh);
-int pg_db_putline (SV *dbh, const char *buffer);
-int pg_db_getline (SV *dbh, SV * svbuf, int length);
-int pg_db_endcopy (SV * dbh);
-void pg_db_pg_server_trace (SV *dbh, FILE *fh);
-void pg_db_pg_server_untrace (SV *dbh);
-int pg_db_savepoint (SV *dbh, imp_dbh_t *imp_dbh, char * savepoint);
-int pg_db_rollback_to (SV *dbh, imp_dbh_t *imp_dbh, const char * savepoint);
-int pg_db_release (SV *dbh, imp_dbh_t *imp_dbh, char * savepoint);
-unsigned int pg_db_lo_creat (SV *dbh, int mode);
-int pg_db_lo_open (SV *dbh, unsigned int lobjId, int mode);
-int pg_db_lo_close (SV *dbh, int fd);
-int pg_db_lo_read (SV *dbh, int fd, char *buf, size_t len);
-int pg_db_lo_write (SV *dbh, int fd, char *buf, size_t len);
-int pg_db_lo_lseek (SV *dbh, int fd, int offset, int whence);
-int pg_db_lo_tell (SV *dbh, int fd);
-int pg_db_lo_unlink (SV *dbh, unsigned int lobjId);
-unsigned int pg_db_lo_import (SV *dbh, char *filename);
-int pg_db_lo_export (SV *dbh, unsigned int lobjId, char *filename);
-int pg_quickexec (SV *dbh, const char *sql, int asyncflag);
-int dbdpg_ready (SV *dbh, imp_dbh_t *imp_dbh);
-int dbdpg_result (SV *dbh, imp_dbh_t *imp_dbh);
-int dbdpg_cancel (SV *h, imp_dbh_t *imp_dbh);
-int dbdpg_cancel_sth (SV *sth, imp_sth_t *imp_sth);
+
+#define dbd_db_commit  pg_db_commit
+int dbd_db_commit (SV * dbh, imp_dbh_t * imp_dbh);
+
+#define dbd_db_rollback  pg_db_rollback
+int dbd_db_rollback (SV * dbh, imp_dbh_t * imp_dbh);
+
+#define dbd_db_disconnect  pg_db_disconnect
+int dbd_db_disconnect (SV * dbh, imp_dbh_t * imp_dbh);
+
+#define dbd_db_destroy  pg_db_destroy
+void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh);
+
+#define dbd_db_FETCH_attrib  pg_db_FETCH_attrib
+SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv);
+
+#define dbd_db_STORE_attrib  pg_db_STORE_attrib
+int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv);
+
+#define dbd_st_FETCH_attrib  pg_st_FETCH_attrib
+SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv);
+
+#define dbd_st_STORE_attrib  pg_st_STORE_attrib
+int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv);
+
+#define dbd_discon_all  pg_discon_all
+int dbd_discon_all (SV * drh, imp_drh_t * imp_drh);
+
+#define dbd_st_prepare  pg_st_prepare
+int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attribs);
+
+#define dbd_bind_ph pg_bind_ph
+int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV sql_type, SV * attribs, int is_inout, IV maxlen);
+
+#define dbd_st_execute pg_st_execute
+int dbd_st_execute (SV * sth, imp_sth_t * imp_sth);
+
+#define dbd_st_fetch  pg_st_fetch
+AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth);
+
+#define dbd_st_rows pg_st_rows
+int dbd_st_rows (SV * sth, imp_sth_t * imp_sth);
+
+#define dbd_st_finish  pg_st_finidh
+int dbd_st_finish (SV * sth, imp_sth_t * imp_sth);
+
+#define dbd_st_destroy  pg_st_destroy
+void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth);
+
+#define dbd_st_blob_read pg_st_blob_read
+int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, long len, SV * destrv, long destoffset);
+
+/* 
+   Everything else should map back to the DBI version, or be handled by Pg.pm
+   TODO: Explicitly map out each one.
+*/
+
+
+/* Custom PG functions, in order they appear in dbdimp.c */
+
+int pg_db_getfd (SV *dbh, imp_dbh_t * imp_dbh);
+
+SV * pg_db_pg_notifies (SV *dbh, imp_dbh_t *imp_dbh);
+
 SV * pg_stringify_array(SV * input, const char * array_delim, int server_version);
 
-/* end of dbdimp.h */
+int pg_quickexec (SV *dbh, const char *sql, int asyncflag);
 
+int pg_db_putline (SV *dbh, const char *buffer);
+
+int pg_db_getline (SV *dbh, SV * svbuf, int length);
+
+int pg_db_getcopydata (SV *dbh, SV * dataline, int async);
+
+int pg_db_putcopydata (SV *dbh, SV * dataline);
+
+int pg_db_putcopyend (SV * dbh);
+
+int pg_db_endcopy (SV * dbh);
+
+void pg_db_pg_server_trace (SV *dbh, FILE *fh);
+
+void pg_db_pg_server_untrace (SV *dbh);
+
+int pg_db_savepoint (SV *dbh, imp_dbh_t *imp_dbh, char * savepoint);
+
+int pg_db_rollback_to (SV *dbh, imp_dbh_t *imp_dbh, const char * savepoint);
+
+int pg_db_release (SV *dbh, imp_dbh_t *imp_dbh, char * savepoint);
+
+unsigned int pg_db_lo_creat (SV *dbh, int mode);
+
+int pg_db_lo_open (SV *dbh, unsigned int lobjId, int mode);
+
+int pg_db_lo_close (SV *dbh, int fd);
+
+int pg_db_lo_read (SV *dbh, int fd, char *buf, size_t len);
+
+int pg_db_lo_write (SV *dbh, int fd, char *buf, size_t len);
+
+int pg_db_lo_lseek (SV *dbh, int fd, int offset, int whence);
+
+int pg_db_lo_tell (SV *dbh, int fd);
+
+int pg_db_lo_unlink (SV *dbh, unsigned int lobjId);
+
+unsigned int pg_db_lo_import (SV *dbh, char *filename);
+
+int pg_db_lo_export (SV *dbh, unsigned int lobjId, char *filename);
+
+int pg_db_result (SV *h, imp_dbh_t *imp_dbh);
+
+int pg_db_ready(SV *h, imp_dbh_t *imp_dbh);
+
+int pg_db_cancel (SV *h, imp_dbh_t *imp_dbh);
+
+int pg_db_cancel_sth (SV *sth, imp_sth_t *imp_sth);
+
+/* end of dbdimp.h */
