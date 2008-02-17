@@ -23,6 +23,13 @@ static int errno;
 
 #include "libpq-fe.h"
 
+#ifndef INV_READ
+#define INV_READ 0x00040000
+#endif
+#ifndef INV_WRITE
+#define INV_WRITE 0x00020000
+#endif
+
 #ifdef BUFSIZ
 #undef BUFSIZ
 #endif
