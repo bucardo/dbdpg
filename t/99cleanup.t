@@ -19,5 +19,5 @@ plan tests => 1;
 isnt( $dbh, undef, 'Connect to database for cleanup');
 
 cleanup_database($dbh);
-$dbh->disconnect();
+$dbh->disconnect() if defined $dbh andref $dbh;
 
