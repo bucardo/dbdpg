@@ -13,14 +13,12 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 my $dbh = connect_database();
 
-if (defined $dbh) {
-	plan tests => 132;
-}
-else {
+if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
+plan tests => 132;
 
-ok( defined $dbh, 'Connect to database for handle attributes testing');
+isnt( $dbh, undef, 'Connect to database for handle attributes testing');
 
 my $attributes_tested = q{
 
@@ -109,18 +107,18 @@ is( $attrib, $SQL, 'DB handle attribute "Statement" returns the last prepared qu
 # Test of bogus database/statement handle attributes
 #
 
-## DBI switched from error to warnign in 1.43
+## DBI switched from error to warning in 1.43
 $warning=q{};
 eval {
 	local $SIG{__WARN__} = sub { $warning = shift; };
 	$dbh->{CrazyDiamond}=1;
 };
-ok( (length $warning or $@), 'Error or warning when setting an invalid database handle attribute');
+isnt( $warning, q{}, 'Error or warning when setting an invalid database handle attribute');
 
 eval {
 	$dbh->{private_dbdpg_CrazyDiamond}=1;
 };
-ok( !$@, 'Setting a private attribute on a database handle does not throw an error');
+is( $@, q{}, 'Setting a private attribute on a database handle does not throw an error');
 
 $sth = $dbh->prepare('SELECT 123');
 
@@ -129,12 +127,12 @@ eval {
 	local $SIG{__WARN__} = sub { $warning = shift; };
 	$sth->{CrazyDiamond}=1;
 };
-ok( (length $warning or $@), 'Error or warning when setting an invalid statement handle attribute');
+isnt( $warning, q{}, 'Error or warning when setting an invalid statement handle attribute');
 
 eval {
 	$sth->{private_dbdpg_CrazyDiamond}=1;
 };
-ok( !$@, 'Setting a private attribute on a statement handle does not throw an error');
+is( $@, q{}, 'Setting a private attribute on a statement handle does not throw an error');
 
 #
 # Test of the database handle attribute "AutoCommit"
@@ -144,14 +142,14 @@ $dbh->do('DELETE FROM dbd_pg_test');
 ok( $dbh->commit(), 'Commit after deleting all rows from dbd_pg_test');
 
 my $dbh2 = connect_database({AutoCommit => 1});
-ok( defined $dbh2, 'Connect to database with second database handle, AutoCommit on');
+isnt( $dbh2, undef, 'Connect to database with second database handle, AutoCommit on');
 
 ok( $dbh->do(q{INSERT INTO dbd_pg_test (id, pname, val) VALUES (1, 'Coconut', 'Mango')}),
 		'Insert a row into the database with first database handle');
 
 
 my $rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM dbd_pg_test WHERE id = 1}))[0];
-cmp_ok($rows, '==', 0, 'Second database handle cannot see insert from first');
+is( $rows, 0, 'Second database handle cannot see insert from first');
 
 ok( $dbh->do(q{INSERT INTO dbd_pg_test (id, pname, val) VALUES (2, 'Grapefruit', 'Pomegranate')}),
 		'Insert a row into the database with second database handle');
@@ -162,7 +160,7 @@ cmp_ok($rows, '==', 1, 'First database handle can see insert from second');
 ok( $dbh->commit, 'Commit transaction with first database handle');
 
 $rows = ($dbh2->selectrow_array(q{SELECT COUNT(*) FROM dbd_pg_test WHERE id = 1}))[0];
-cmp_ok($rows, '==', 1, 'Second database handle can see insert from first');
+is( $rows, 1, 'Second database handle can see insert from first');
 
 ok( $dbh2->disconnect(), 'Disconnect with second database handle');
 
@@ -196,10 +194,10 @@ SKIP: {
 #
 
 $attrib = $dbh->{RowCacheSize};
-ok( !defined $attrib, 'DB handle attribute "RowCacheSize" returns undef');
+is( $attrib, undef, 'DB handle attribute "RowCacheSize" returns undef');
 $dbh->{RowCacheSize} = 42;
 $attrib = $dbh->{RowCacheSize};
-ok( !defined $attrib, 'Setting DB handle attribute "RowCacheSize" has no effect');
+is( $attrib, undef, 'Setting DB handle attribute "RowCacheSize" has no effect');
 
 #
 # Test of the database handle attribute "Username"
@@ -213,7 +211,7 @@ is( $attrib, $ENV{DBI_USER}, 'DB handle attribute "Username" returns the same va
 #
 
 my $value = $dbh->{PrintWarn};
-is ($value, 1, q{DB handle attribute "PrintWarn" defaults to on});
+is( $value, 1, q{DB handle attribute "PrintWarn" defaults to on});
 
 {
 
@@ -223,7 +221,7 @@ $warning = q{};
 eval {
 	$dbh->do('CREATE TEMP TABLE dbd_pg_test_temp(id INT PRIMARY KEY)');
 };
-ok (!$@, q{DB handle attribute "PrintWarn" works when on});
+is( $@, q{}, q{DB handle attribute "PrintWarn" works when on});
 like($warning, qr{dbd_pg_test_temp}, q{DB handle attribute "PrintWarn" shows warnings when on});
 
 $dbh->rollback();
@@ -232,8 +230,8 @@ $warning = q{};
 eval {
 	$dbh->do('CREATE TEMP TABLE dbd_pg_test_temp(id INT PRIMARY KEY)');
 };
-ok (!$@, q{DB handle attribute "PrintWarn" works when on});
-is($warning, q{}, q{DB handle attribute "PrintWarn" shows warnings when on});
+is( $@, q{}, q{DB handle attribute "PrintWarn" works when on});
+is( $warning, q{}, q{DB handle attribute "PrintWarn" shows warnings when on});
 
 $dbh->{PrintWarn}=1;
 $dbh->rollback();
@@ -259,10 +257,10 @@ like( $dbh->{pg_protocol}, qr/^\d+$/, 'Database handle attribute "pg_protocol" r
 # Test of the database handle attribute "pg_errorlevel"
 #
 
-cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" returns the default (1)');
+is( $dbh->{pg_errorlevel}, 1, 'Database handle attribute "pg_errorlevel" returns the default (1)');
 
 $dbh->{pg_errorlevel} = 3;
-cmp_ok( 1, '==', $dbh->{pg_errorlevel}, 'Database handle attribute "pg_errorlevel" defaults to 1 if invalid');
+is( $dbh->{pg_errorlevel}, 1, 'Database handle attribute "pg_errorlevel" defaults to 1 if invalid');
 
 #
 # Test of the database handle attribute "pg_bool_tf"
@@ -632,13 +630,13 @@ else {
 		$dbh->{PrintError} = 1;
 		$sth = $dbh->prepare($SQL);
 		$sth->execute();
-		ok( $warning, 'Warning thrown when database handle attribute "PrintError" is on');
+		isnt( $warning, undef, 'Warning thrown when database handle attribute "PrintError" is on');
 
 		undef $warning;
 		$dbh->{PrintError} = 0;
 		$sth = $dbh->prepare($SQL);
 		$sth->execute();
-		ok( !$warning, 'No warning thrown when database handle attribute "PrintError" is off');
+		is( $warning, undef, 'No warning thrown when database handle attribute "PrintError" is off');
 	}
 }
 
@@ -652,14 +650,14 @@ if ($client_level ne 'error') {
 		$sth = $dbh->prepare($SQL);
 		$sth->execute();
 	};
-	ok (!$@, 'No error produced when database handle attribute "RaiseError" is off');
-	
+	is ($@, q{}, 'No error produced when database handle attribute "RaiseError" is off');
+
 	$dbh->{RaiseError} = 1;
 	eval {
 		$sth = $dbh->prepare($SQL);
 		$sth->execute();
 	};
-	ok ($@, 'Error produced when database handle attribute "RaiseError" is off');
+	isnt( $@, q{}, 'Error produced when database handle attribute "RaiseError" is off');
 }
 
 
@@ -868,10 +866,10 @@ SKIP: {
 		}
 		else {
 			# The database handle should be dead
-			ok ( !$dbh->ping(), qq{Ping fails after the child has exited ("InactiveDestroy" = $destroy)});
+			is ( $dbh->ping(), 0, qq{Ping fails after the child has exited ("InactiveDestroy" = $destroy)});
 			my $state = $dbh->state();
 			is( $state, '22000', q{Failed ping returns a SQLSTATE code of 22000});
-			ok ( -2==$dbh->pg_ping(),
+			is ( $dbh->pg_ping(), -2,
 				 q{pg_ping gives an error code of -2 after the child has exited ("InactiveDestroy" = $destroy)});
 		}
 	}

@@ -14,14 +14,12 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 my $dbh = connect_database();
 
-if (defined $dbh) {
-	plan tests => 227;
-}
-else {
+if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
+plan tests => 227;
 
-ok( defined $dbh, 'Connect to database for array testing');
+isnt( $dbh, undef, 'Connect to database for array testing');
 
 my ($sth,$result);
 
@@ -192,14 +190,14 @@ for my $test (split /\n\n/ => $array_tests) {
 		$addarray->execute(eval $input);
 	};
 	if ($expected =~ /error:\s+(.+)/i) {
-		like($@, qr{$1}, "Array failed : $msg : $input");
-		like($@, qr{$1}, "Array failed : $msg : $input");
+		like( $@, qr{$1}, "Array failed : $msg : $input");
+		like( $@, qr{$1}, "Array failed : $msg : $input");
 	}
 	else {
-		is($@, q{}, "Array worked : $msg : $input");
+		is( $@, q{}, "Array worked : $msg : $input");
 		$getarray->execute();
 		$result = $getarray->fetchall_arrayref()->[0][0];
-		is($result, $expected, "Correct array inserted: $msg : $input");
+		is( $result, $expected, "Correct array inserted: $msg : $input");
 	}
 
 	eval {
@@ -208,12 +206,12 @@ for my $test (split /\n\n/ => $array_tests) {
 	if ($qexpected =~ /error:\s+(.+)/i) {
 		my $errmsg = $1;
 		$errmsg =~ s/bind/quote/;
-		like($@, qr{$errmsg}, "Array quote failed : $msg : $input");
-		like($@, qr{$errmsg}, "Array quote failed : $msg : $input");
+		like( $@, qr{$errmsg}, "Array quote failed : $msg : $input");
+		like( $@, qr{$errmsg}, "Array quote failed : $msg : $input");
 	}
 	else {
-		is($@, q{}, "Array quote worked : $msg : $input");
-		is($result, $qexpected, "Correct array quote: $msg : $input");
+		is( $@, q{}, "Array quote worked : $msg : $input");
+		is( $result, $qexpected, "Correct array quote: $msg : $input");
 	}
 
 }
@@ -245,11 +243,11 @@ for my $test (split /\n\n/ => $array_tests) {
 		$addarray->execute(eval $input);
 	};
 	if ($expected =~ /error:\s+(.+)/i) {
-		like($@, qr{$1}, "Array failed : $msg : $input");
-		like($@, qr{$1}, "Array failed : $msg : $input");
+		like( $@, qr{$1}, "Array failed : $msg : $input");
+		like( $@, qr{$1}, "Array failed : $msg : $input");
 	}
 	else {
-		is($@, q{}, "Array worked : $msg : $input");
+		is( $@, q{}, "Array worked : $msg : $input");
 		$getarray->execute();
 		$result = $getarray->fetchall_arrayref()->[0][0];
 		$qexpected =~ s/{}/{''}/;
@@ -259,7 +257,7 @@ for my $test (split /\n\n/ => $array_tests) {
 		$qexpected =~ s/\\\\"/\\"/g;
 		$qexpected =~ s/\\\\i/\\i/g;
 		$expected = eval $qexpected;
-		is_deeply($result, $expected, "Correct array inserted: $msg : $input");
+		is_deeply( $result, $expected, "Correct array inserted: $msg : $input");
 	}
 
 }
@@ -432,12 +430,12 @@ for my $test (split /\n\n/ => $array_tests_out) {
 		$result = $dbh->selectall_arrayref($SQL)->[0][0];
 	};
 	if ($result =~ /error:\s+(.+)/i) {
-		like($@, qr{$1}, "Array failed : $msg : $input");
+		like( $@, qr{$1}, "Array failed : $msg : $input");
 	}
 	else {
 		$expected = eval $expected;
 		## is_deeply does not handle type differences
-		is((Dumper $result), (Dumper $expected), "Array test $msg : $input");
+		is( (Dumper $result), (Dumper $expected), "Array test $msg : $input");
 	}
 }
 
@@ -449,14 +447,14 @@ SKIP: {
 
 	local $dbh->{pg_enable_utf8} = 1;
 	my $utf8_str = chr(0x100).'dam'; # LATIN CAPITAL LETTER A WITH MACRON
-    ok Encode::is_utf8( $utf8_str ), 'String should be UTF-8';
+    ok( Encode::is_utf8( $utf8_str ), 'String should be UTF-8');
 
 	my $quoted = $dbh->quote($utf8_str);
 	is( $quoted, qq{'$utf8_str'}, 'quote() handles utf8' );
-    ok Encode::is_utf8( $quoted ), 'Quoted string should be UTF-8';
+    ok( Encode::is_utf8( $quoted ), 'Quoted string should be UTF-8');
 	$quoted = $dbh->quote([$utf8_str, $utf8_str]);
 	is( $quoted, qq!{"$utf8_str","$utf8_str"}!, 'quote() handles utf8 inside array' );
-    ok Encode::is_utf8( $quoted ), 'Quoted array of strings should be UTF-8';
+    ok( Encode::is_utf8( $quoted ), 'Quoted array of strings should be UTF-8');
 
 	## Workaround for client encodings such as SJIS
 	my $old_encoding = $dbh->selectall_arrayref('SHOW client_encoding')->[0][0];
@@ -469,7 +467,7 @@ SKIP: {
 	eval {
 		$dbh->do($SQL);
 	};
-	is($@, q{}, 'Inserting utf-8 into an array via quoted do() works');
+	is( $@, q{}, 'Inserting utf-8 into an array via quoted do() works');
 
 	$SQL = q{SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1};
 	$sth = $dbh->prepare($SQL);
@@ -477,9 +475,9 @@ SKIP: {
 	$result = $sth->fetchall_arrayref()->[0];
 	my $t = q{Retreiving an array containing utf-8 works};
 	my $expected = [1,[$utf8_str,$utf8_str],'one'];
-	is_deeply($result, $expected, $t);
-    ok Encode::is_utf8( $result->[1][0] ), 'Selected string should be UTF-8';
-    ok Encode::is_utf8( $result->[1][1] ), 'Selected string should be UTF-8';
+	is_deeply( $result, $expected, $t);
+    ok( Encode::is_utf8( $result->[1][0] ), 'Selected string should be UTF-8');
+    ok( Encode::is_utf8( $result->[1][1] ), 'Selected string should be UTF-8');
 
 	$dbh->do('DELETE FROM dbd_pg_test');
 	$SQL = q{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (?, ?, 'one')};
@@ -487,7 +485,7 @@ SKIP: {
 	eval {
 		$sth->execute(1,['Bob',$utf8_str]);
 	};
-	is($@, q{}, 'Inserting utf-8 into an array via prepare and arrayref works');
+	is( $@, q{}, 'Inserting utf-8 into an array via prepare and arrayref works');
 
 	$SQL = q{SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1};
 	$sth = $dbh->prepare($SQL);
@@ -495,9 +493,9 @@ SKIP: {
 	$result = $sth->fetchall_arrayref()->[0];
 	$t = q{Retreiving an array containing utf-8 works};
 	$expected = [1,['Bob',$utf8_str],'one'];
-	is_deeply($result, $expected, $t);
-    ok !Encode::is_utf8( $result->[1][0] ), 'Selected ASCII string should not be UTF-8';
-    ok Encode::is_utf8( $result->[1][1] ), 'Selected string should be UTF-8';
+	is_deeply( $result, $expected, $t);
+    ok( !Encode::is_utf8( $result->[1][0] ), 'Selected ASCII string should not be UTF-8');
+    ok( Encode::is_utf8( $result->[1][1] ), 'Selected string should be UTF-8');
 
 	$dbh->do('DELETE FROM dbd_pg_test');
 	$SQL = q{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, '{"noutfhere"}', 'one')};

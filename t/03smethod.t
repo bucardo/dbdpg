@@ -16,14 +16,12 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 my $dbh = connect_database();
 
-if (defined $dbh) {
-	plan tests => 75;
-}
-else {
+if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
+plan tests => 75;
 
-ok( defined $dbh, 'Connect to database for statement handle method testing');
+isnt( $dbh, undef, 'Connect to database for statement handle method testing');
 
 my $pglibversion = $dbh->{pg_lib_version};
 
@@ -35,11 +33,11 @@ my ($SQL, $sth, $sth2, $result, @result, $expected, $warning, $rows, $t);
 
 $t=q{Calling prepare() with no arguments gives an error};
 eval{ $sth = $dbh->prepare(); };
-like($@, qr{\+ 0}, $t);
+like( $@, qr{\+ 0}, $t);
 
 $t=q{Calling prepare() with an undefined value returns undef};
 $sth = $dbh->prepare(undef);
-is($sth, undef, $t);
+is( $sth, undef, $t);
 
 $SQL = 'SELECT id FROM dbd_pg_test WHERE id = ?';
 $sth = $dbh->prepare($SQL);
@@ -66,7 +64,7 @@ else {
 eval {
 	$sth = $dbh->prepare('SELECT 123', ['I am not a hashref!']);
 };
-like ($@, qr{not a hash}, 'Prepare failes when sent a non-hashref');
+like( $@, qr{not a hash}, 'Prepare failes when sent a non-hashref');
 
 
 # Make sure that undefs are converted to NULL.
@@ -102,7 +100,7 @@ $dbh->do("PREPARE $myname(int) AS SELECT COUNT(*) FROM pg_class WHERE reltuples 
 $sth = $dbh->prepare('SELECT ?');
 $sth->bind_param(1, 1, SQL_INTEGER);
 $sth->{pg_prepare_name} = $myname;
-ok($sth->execute(1), 'Prepare/execute works with pg_prepare_name');
+ok( $sth->execute(1), 'Prepare/execute works with pg_prepare_name');
 $dbh->do("DEALLOCATE $myname");
 
 
@@ -133,29 +131,29 @@ $sth = $dbh->prepare('SELECT 1+?::int');
 
 $t = q{Invalid placeholder fails for bind_param_inout};
 eval { $sth->bind_param_inout(0, \$var, 0); };
-like($@, qr{Cannot bind}, $t);
+like( $@, qr{Cannot bind}, $t);
 
 eval { $sth->bind_param_inout(3, \$var, 0); };
-like($@, qr{Cannot bind}, $t);
+like( $@, qr{Cannot bind}, $t);
 
 $t = q{Calling bind_param_inout with a non-scalar reference fails};
 eval { $sth->bind_param_inout(1, 'noway', 0); };
-like($@, qr{needs a reference}, $t);
+like( $@, qr{needs a reference}, $t);
 
 eval { $sth->bind_param_inout(1, $t, 0); };
-like($@, qr{needs a reference}, $t);
+like( $@, qr{needs a reference}, $t);
 
 eval { $sth->bind_param_inout(1, [123], 0); };
-like($@, qr{needs a reference}, $t);
+like( $@, qr{needs a reference}, $t);
 
 
 $t = q{Calling bind_param_inout changes an integer value};
 eval { $sth->bind_param_inout(1, \$var, 0); };
-is($@, q{}, $t);
+is( $@, q{}, $t);
 $var = 999;
 $sth->execute();
 $sth->fetch;
-is($var, 1000, $t);
+is( $var, 1000, $t);
 
 $t = q{Calling bind_param_inout changes a string value};
 $sth = $dbh->prepare(q{SELECT 'X'||?::text});
@@ -163,7 +161,7 @@ $sth->bind_param_inout(1, \$var, 0);
 $var = 'abc';
 $sth->execute();
 $sth->fetch;
-is($var, 'Xabc', $t);
+is( $var, 'Xabc', $t);
 
 $t = q{Calling bind_param_inout changes a string to a float};
 $sth = $dbh->prepare('SELECT ?::float');
@@ -171,7 +169,7 @@ $sth->bind_param_inout(1, \$var, 0);
 $var = '1e+6';
 $sth->execute();
 $sth->fetch;
-is($var, '1000000', $t);
+is( $var, '1000000', $t);
 
 $t = q{Calling bind_param_inout works for second placeholder};
 $sth = $dbh->prepare('SELECT ?::float, 1+?::int');
@@ -179,7 +177,7 @@ $sth->bind_param_inout(2, \$var, 0);
 $var = 111;
 $sth->execute(222,333);
 $sth->fetch;
-is($var, 112, $t);
+is( $var, 112, $t);
 
 $t = q{Calling bind_param_inout changes two variables at once};
 my $var2 = 234;
@@ -189,8 +187,8 @@ $sth->bind_param_inout(2, \$var2, 0);
 $var = 444; $var2 = 555;
 $sth->execute();
 $sth->fetch;
-is($var, 445, $t);
-is($var2, 556, $t);
+is( $var, 445, $t);
+is( $var2, 556, $t);
 
 #
 # Test of the "bind_param_array" statement handle method
@@ -202,27 +200,27 @@ $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, val) VALUES (?,?)');
 eval {
 	$sth->bind_param_array(1, [ 30, 31, 32 ], SQL_INTEGER);
 };
-ok( !$@, 'Statement handle method "bind_param_array" works binding three values to the first placeholder');
+is( $@, q{}, 'Statement handle method "bind_param_array" works binding three values to the first placeholder');
 
 eval {
 	$sth->bind_param_array(2, 'Mulberry');
 };
-ok( !$@, 'Statement handle method "bind_param_array" works binding one scalar value to the second placeholder');
+is( $@, q{}, 'Statement handle method "bind_param_array" works binding one scalar value to the second placeholder');
 
 eval {
 	$sth->bind_param_array(2, [ 'Mango', 'Strawberry', 'Gooseberry' ]);
 };
-ok( !$@, 'Statement handle method "bind_param_array" works binding three values to the second placeholder');
+is( $@, q{}, 'Statement handle method "bind_param_array" works binding three values to the second placeholder');
 
 eval {
 	$sth->bind_param_array(1, [ 30 ]);
 };
-ok( $@, 'Statement handle method "bind_param_array" fails when binding one value to the first placeholder');
+isnt( $@, q{}, 'Statement handle method "bind_param_array" fails when binding one value to the first placeholder');
 
 eval {
 	$sth->bind_param_array(2, [ 'Plantain', 'Apple' ]);
 };
-ok( $@, 'Statement handle method "bind_param_array" fails when binding two values to the second placeholder');
+isnt( $@, q{}, 'Statement handle method "bind_param_array" fails when binding two values to the second placeholder');
 
 #
 # Test of the "execute_array" statement handle method
@@ -361,7 +359,7 @@ $sth->execute();
 eval {
 	$sth->fetchall_hashref();
 };
-ok( $@, 'Statement handle method "fetchall_hashref" gives an error when called with no arguments');
+isnt( $@, q{}, 'Statement handle method "fetchall_hashref" gives an error when called with no arguments');
 
 $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (33,34)');
 $sth->execute();
@@ -425,9 +423,9 @@ my $bindme2;
 eval {
 	$sth->bind_columns(1);
 };
-ok( $@, 'Statement handle method "bind_columns" fails when called with wrong number of arguments');
+isnt( $@, q{}, 'Statement handle method "bind_columns" fails when called with wrong number of arguments');
 $result = $sth->bind_columns(\$bindme, \$bindme2);
-is($result, 1, 'Statement handle method "bind_columns" returns the correct value');
+is( $result, 1, 'Statement handle method "bind_columns" returns the correct value');
 $sth->fetch();
 $expected = [33, 'Peach'];
 my $got = [$bindme, $bindme2];
@@ -448,8 +446,8 @@ eval {
 $result = $sth->state();
 like( $result, qr/^[A-Z0-9]{5}$/, q{Statement handle method "state" returns a five-character code on error});
 my $result2 = $dbh->state();
-is ($result, $result2, q{Statement and database handle method "state" return same code});
-is ($result, '42703', q{Statement handle method "state" returns expected code});
+is( $result, $result2, q{Statement and database handle method "state" return same code});
+is( $result, '42703', q{Statement handle method "state" returns expected code});
 
 #
 # Test of the statement handle method "private_attribute_info"
@@ -466,8 +464,8 @@ SKIP: {
 	for my $name (keys %$private) {
 		$name =~ /^pg_\w+/ ? $valid++ : $invalid++;
 	}
-	ok($valid >= 1, q{Statement handle method "private_attribute_info" returns at least one record});
-	is($invalid, 0, q{Statement handle method "private_attribute_info" returns only internal names});
+	cmp_ok($valid, '>=', 1, q{Statement handle method "private_attribute_info" returns at least one record});
+	is( $invalid, 0, q{Statement handle method "private_attribute_info" returns only internal names});
 	$sth->finish();
 }
 

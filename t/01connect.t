@@ -23,11 +23,9 @@ BEGIN {
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-else {
-	plan tests => 15;
-}
+plan tests => 15;
 
-# Trapping a connection error can be tricky, but we only have to do it 
+# Trapping a connection error can be tricky, but we only have to do it
 # this thoroughly one time. We are trapping two classes of errors:
 # the first is when we truly do not connect, usually a bad DBI_DSN;
 # the second is an invalid login, usually a bad DBI_USER or DBI_PASS
@@ -36,10 +34,10 @@ my ($t);
 
 pass('Established a connection to the database');
 
-$pgversion = $dbh->{pg_server_version};
+$pgversion    = $dbh->{pg_server_version};
 $pglibversion = $dbh->{pg_lib_version};
-$pgdefport = $dbh->{pg_default_port};
-$pgvstring = $dbh->selectall_arrayref('SELECT VERSION()')->[0][0];
+$pgdefport    = $dbh->{pg_default_port};
+$pgvstring    = $dbh->selectall_arrayref('SELECT VERSION()')->[0][0];
 
 ok( $dbh->disconnect(), 'Disconnect from the database');
 
@@ -94,7 +92,7 @@ SKIP: {
 		is($@, q{}, $t);
 	}
 
-	if ($ENV{DBI_DSN} =~ /$alias\s*=\s*"/) {
+	if ($ENV{DBI_DSN} =~ /$alias\s*=\s*\"/) {
 		skip 'DBI_DSN already contains quoted database, no need for explicit test', 1;
 	}
 	$t=q{Connect using a quoted database argument};

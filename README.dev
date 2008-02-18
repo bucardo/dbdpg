@@ -131,7 +131,8 @@ types.h - Helper file for types.c
 
 t/dbdpg_test_setup.pl - Common connection, schema creation, and schema destruction subs.
 
-t/00basic.t - Very basic test to see if DBI and DBD::Pg load properly.
+t/00basic.t - Very basic test to see if DBI and DBD::Pg load properly. Requires Test::Warn 
+  for the version warning test.
 
 t/00-signature.t - Uses Module::Signature to verify SIGNATURE file. All tests are skipped 
   if the environment variable TEST_SIGNATURE is not set.

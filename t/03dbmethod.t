@@ -22,14 +22,12 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 my $dbh = connect_database();
 
-if (defined $dbh) {
-	plan tests => 216;
-}
-else {
+if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
+plan tests => 216;
 
-ok( defined $dbh, 'Connect to database for database handle method testing');
+isnt( $dbh, undef, 'Connect to database for database handle method testing');
 
 my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 my ($schema,$schema2) = ('dbd_pg_testschema', 'dbd_pg_testschema2');
@@ -82,48 +80,48 @@ $dbh->rollback();
 eval {
 	$dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef,[]);
 };
-like($@, qr{last_insert_id.*hashref}, 'DB handle method "last_insert_id" fails when given an arrayref as last argument');
+like( $@, qr{last_insert_id.*hashref}, 'DB handle method "last_insert_id" fails when given an arrayref as last argument');
 $dbh->rollback();
 
 eval {
 	$dbh->last_insert_id(undef,undef,'dbd_pg_test',undef,{sequence=>''});
 };
-is($@, q{}, 'DB handle method "last_insert_id" works when given an empty sequence argument');
+is( $@, q{}, 'DB handle method "last_insert_id" works when given an empty sequence argument');
 $dbh->rollback();
 
 $dbh->do('CREATE TEMP TABLE dbd_pg_test_temp(a int)');
 eval {
 	$dbh->last_insert_id(undef,undef,'dbd_pg_test_temp',undef);
 };
-like($@, qr{last_insert_id}, 'DB handle method "last_insert_id" fails when given a table with no primary key');
+like( $@, qr{last_insert_id}, 'DB handle method "last_insert_id" fails when given a table with no primary key');
 $dbh->rollback();
 
 eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef,{sequence=>'dbd_pg_testsequence'});
 };
-is($@, q{}, 'DB handle method "last_insert_id" works when given a valid sequence and an invalid table');
+is( $@, q{}, 'DB handle method "last_insert_id" works when given a valid sequence and an invalid table');
 like( $result, qr{^\d+$}, 'DB handle method "last_insert_id" returns a numeric value');
 
 eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef, 'dbd_pg_testsequence');
 };
-is($@, q{}, 'DB handle method "last_insert_id" works when given a valid sequence and an invalid table');
+is( $@, q{}, 'DB handle method "last_insert_id" works when given a valid sequence and an invalid table');
 like( $result, qr{^\d+$}, 'DB handle method "last_insert_id" returns a numeric value');
 
 eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef);
 };
-is($@, q{}, 'DB handle method "last_insert_id" works when given a valid table');
+is( $@, q{}, 'DB handle method "last_insert_id" works when given a valid table');
 
 eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef,'');
 };
-is($@, q{}, 'DB handle method "last_insert_id" works when given an empty attrib');
+is( $@, q{}, 'DB handle method "last_insert_id" works when given an empty attrib');
 
 eval {
 	$result = $dbh->last_insert_id(undef,undef,'dbd_pg_test',undef);
 };
-is($@, q{}, 'DB handle method "last_insert_id" works when called twice (cached) given a valid table');
+is( $@, q{}, 'DB handle method "last_insert_id" works when called twice (cached) given a valid table');
 
 $dbh->do("CREATE SCHEMA $schema2");
 $dbh->do("CREATE SEQUENCE $schema2.$sequence2");
@@ -163,16 +161,16 @@ $dbh->do("SET search_path = $schema,$schema2,public");
 eval {
 	$result = $dbh->last_insert_id(undef,undef,$table2,undef,{pg_cache=>1});
 };
-is($@, q{}, $t);
-is($result, 200, $t);
+is( $@, q{}, $t);
+is( $result, 200, $t);
 
 $t=q{ Setting cache on (implicit) returns last result, even if search_path changes};
 $dbh->do("SET search_path = $schema,$schema2,public");
 eval {
 	$result = $dbh->last_insert_id(undef,undef,$table2,undef);
 };
-is($@, q{}, $t);
-is($result, 200, $t);
+is( $@, q{}, $t);
+is( $result, 200, $t);
 
 $dbh->commit();
 
@@ -189,7 +187,7 @@ SKIP: {
 	eval {
 		$dbh->last_insert_id(undef,$schema2,$table2,undef);
 	};
-	like ($@, qr{last_insert_id}, $t);
+	like( $@, qr{last_insert_id}, $t);
 	$dbh->rollback();
 
 	$t=q{ DB handle method "last_insert_id" works when the sequence name is changed and cache is turned off};
@@ -197,7 +195,7 @@ SKIP: {
 	eval {
 		$dbh->last_insert_id(undef,$schema2,$table2,undef, {pg_cache=>0});
 	};
-	is ($@, q{}, $t);
+	is( $@, q{}, $t);
 	$dbh->do("DROP TABLE $schema2.$table2");
 	$dbh->do("DROP SEQUENCE $schema2.$sequence3");
 }
@@ -214,18 +212,18 @@ $dbh->do("DROP SEQUENCE $sequence4");
 $SQL = 'SELECT id FROM dbd_pg_test ORDER BY id';
 @result = $dbh->selectrow_array($SQL);
 $expected = [10];
-is_deeply(\@result, $expected, 'DB handle method "selectrow_array" works');
+is_deeply( \@result, $expected, 'DB handle method "selectrow_array" works');
 
 #
 # Test of the "selectrow_arrayref" database handle method
 #
 
 $result = $dbh->selectrow_arrayref($SQL);
-is_deeply($result, $expected, 'DB handle method "selectrow_arrayref" works');
+is_deeply( $result, $expected, 'DB handle method "selectrow_arrayref" works');
 
 $sth = $dbh->prepare($SQL);
 $result = $dbh->selectrow_arrayref($sth);
-is_deeply($result, $expected, 'DB handle method "selectrow_arrayref" works with a prepared statement handle');
+is_deeply( $result, $expected, 'DB handle method "selectrow_arrayref" works with a prepared statement handle');
 
 #
 # Test of the "selectrow_hashref" database handle method
@@ -233,11 +231,11 @@ is_deeply($result, $expected, 'DB handle method "selectrow_arrayref" works with 
 
 $result = $dbh->selectrow_hashref($SQL);
 $expected = {id => 10};
-is_deeply($result, $expected, 'DB handle method "selectrow_hashref" works');
+is_deeply( $result, $expected, 'DB handle method "selectrow_hashref" works');
 
 $sth = $dbh->prepare($SQL);
 $result = $dbh->selectrow_hashref($sth);
-is_deeply($result, $expected, 'DB handle method "selectrow_hashref" works with a prepared statement handle');
+is_deeply( $result, $expected, 'DB handle method "selectrow_hashref" works with a prepared statement handle');
 
 #
 # Test of the "selectall_arrayref" database handle method
@@ -245,20 +243,20 @@ is_deeply($result, $expected, 'DB handle method "selectrow_hashref" works with a
 
 $result = $dbh->selectall_arrayref($SQL);
 $expected = [[10],[11],[12]];
-is_deeply($result, $expected, 'DB handle method "selectall_arrayref" works');
+is_deeply( $result, $expected, 'DB handle method "selectall_arrayref" works');
 
 $sth = $dbh->prepare($SQL);
 $result = $dbh->selectall_arrayref($sth);
-is_deeply($result, $expected, 'DB handle method "selectall_arrayref" works with a prepared statement handle');
+is_deeply( $result, $expected, 'DB handle method "selectall_arrayref" works with a prepared statement handle');
 
 $result = $dbh->selectall_arrayref($SQL, {MaxRows => 2});
 $expected = [[10],[11]];
-is_deeply($result, $expected, 'DB handle method "selectall_arrayref" works with the MaxRows attribute');
+is_deeply( $result, $expected, 'DB handle method "selectall_arrayref" works with the MaxRows attribute');
 
 $SQL = 'SELECT id, val FROM dbd_pg_test ORDER BY id';
 $result = $dbh->selectall_arrayref($SQL, {Slice => [1]});
 $expected = [['Roseapple'],['Pineapple'],['Kiwi']];
-is_deeply($result, $expected, 'DB handle method "selectall_arrayref" works with the Slice attribute');
+is_deeply( $result, $expected, 'DB handle method "selectall_arrayref" works with the Slice attribute');
 
 #
 # Test of the "selectall_hashref" database handle method
@@ -266,11 +264,11 @@ is_deeply($result, $expected, 'DB handle method "selectall_arrayref" works with 
 
 $result = $dbh->selectall_hashref($SQL,'id');
 $expected = {10=>{id =>10,val=>'Roseapple'},11=>{id=>11,val=>'Pineapple'},12=>{id=>12,val=>'Kiwi'}};
-is_deeply($result, $expected, 'DB handle method "selectall_hashref" works');
+is_deeply( $result, $expected, 'DB handle method "selectall_hashref" works');
 
 $sth = $dbh->prepare($SQL);
 $result = $dbh->selectall_hashref($sth,'id');
-is_deeply($result, $expected, 'DB handle method "selectall_hashref" works with a prepared statement handle');
+is_deeply( $result, $expected, 'DB handle method "selectall_hashref" works with a prepared statement handle');
 
 #
 # Test of the "selectcol_arrayref" database handle method
@@ -278,18 +276,18 @@ is_deeply($result, $expected, 'DB handle method "selectall_hashref" works with a
 
 $result = $dbh->selectcol_arrayref($SQL);
 $expected = [10,11,12];
-is_deeply($result, $expected, 'DB handle method "selectcol_arrayref" works');
+is_deeply( $result, $expected, 'DB handle method "selectcol_arrayref" works');
 
 $result = $dbh->selectcol_arrayref($sth);
 is_deeply($result, $expected, 'DB handle method "selectcol_arrayref" works with a prepared statement handle');
 
 $result = $dbh->selectcol_arrayref($SQL, {Columns=>[2,1]});
 $expected = ['Roseapple',10,'Pineapple',11,'Kiwi',12];
-is_deeply($result, $expected, 'DB handle method "selectcol_arrayref" works with the Columns attribute');
+is_deeply( $result, $expected, 'DB handle method "selectcol_arrayref" works with the Columns attribute');
 
 $result = $dbh->selectcol_arrayref($SQL, {Columns=>[2], MaxRows => 1});
 $expected = ['Roseapple'];
-is_deeply($result, $expected, 'DB handle method "selectcol_arrayref" works with the MaxRows attribute');
+is_deeply( $result, $expected, 'DB handle method "selectcol_arrayref" works with the MaxRows attribute');
 
 #
 # Test of the "commit" and "rollback" database handle methods
@@ -328,13 +326,13 @@ $dbh->{AutoCommit}=0;
 eval {
 	$dbh->begin_work();
 };
-ok( $@, 'DB handle method "begin_work" gives a warning when AutoCommit is on');
+isnt( $@, q{}, 'DB handle method "begin_work" gives a warning when AutoCommit is on');
 
 $dbh->{AutoCommit}=1;
 eval {
 	$dbh->begin_work();
 };
-ok( !$@, 'DB handle method "begin_work" gives no warning when AutoCommit is off');
+is( $@, q{}, 'DB handle method "begin_work" gives no warning when AutoCommit is off');
 ok( !$dbh->{AutoCommit}, 'DB handle method "begin_work" sets AutoCommit to off');
 $dbh->commit();
 ok( $dbh->{AutoCommit}, 'DB handle method "commit" after "begin_work" sets AutoCommit to on');
@@ -343,7 +341,7 @@ $dbh->{AutoCommit}=1;
 eval {
 	$dbh->begin_work();
 };
-ok( !$@, 'DB handle method "begin_work" gives no warning when AutoCommit is off');
+is( $@, q{}, 'DB handle method "begin_work" gives no warning when AutoCommit is off');
 ok( !$dbh->{AutoCommit}, 'DB handle method "begin_work" sets AutoCommit to off');
 $dbh->rollback();
 ok( $dbh->{AutoCommit}, 'DB handle method "rollback" after "begin_work" sets AutoCommit to on');
@@ -357,7 +355,7 @@ $dbh->{AutoCommit}=0;
 eval {
   $dbh->get_info();
 };
-ok ($@, 'DB handle method "get_info" with no arguments gives an error');
+isnt( $@, q{}, 'DB handle method "get_info" with no arguments gives an error');
 
 my %get_info = (
   SQL_MAX_DRIVER_CONNECTIONS =>  0,
@@ -536,11 +534,11 @@ $dbh->{private_dbdpg}{version} >= 80000
 	or skip 'Server must be version 8.0 or higher to test database handle method "statistics_info"', 10;
 
 $sth = $dbh->statistics_info(undef,undef,undef,undef,undef);
-is ($sth, undef, 'DB handle method "statistics_info" returns undef: no table');
+is( $sth, undef, 'DB handle method "statistics_info" returns undef: no table');
 
 ## Invalid table
 $sth = $dbh->statistics_info(undef,undef,'dbd_pg_test9',undef,undef);
-is ($sth, undef, 'DB handle method "statistics_info" returns undef: bad table');
+is( $sth, undef, 'DB handle method "statistics_info" returns undef: bad table');
 
 ## Create some tables with various indexes
 {
@@ -597,38 +595,38 @@ my $stats;
 
 $sth = $dbh->statistics_info(undef,$schema,$table1,undef,undef);
 $stats = $sth->fetchall_arrayref;
-is_deeply($stats, $correct_stats->{one}, "Correct stats output for $table1");
+is_deeply( $stats, $correct_stats->{one}, "Correct stats output for $table1");
 
 $sth = $dbh->statistics_info(undef,$schema,$table2,undef,undef);
 $stats = $sth->fetchall_arrayref;
-is_deeply($stats, $correct_stats->{two}, "Correct stats output for $table2");
+is_deeply( $stats, $correct_stats->{two}, "Correct stats output for $table2");
 
 $sth = $dbh->statistics_info(undef,$schema,$table3,undef,undef);
 $stats = $sth->fetchall_arrayref;
-is_deeply($stats, $correct_stats->{three}, "Correct stats output for $table3");
+is_deeply( $stats, $correct_stats->{three}, "Correct stats output for $table3");
 
 $sth = $dbh->statistics_info(undef,$schema,$table3,1,undef);
 $stats = $sth->fetchall_arrayref;
-is_deeply($stats, $correct_stats->{three_uo}, "Correct stats output for $table3 (unique only)");
+is_deeply( $stats, $correct_stats->{three_uo}, "Correct stats output for $table3 (unique only)");
 
 {
 	my $stats;
 
 	$sth = $dbh->statistics_info(undef,undef,$table1,undef,undef);
 	$stats = $sth->fetchall_arrayref;
-	is_deeply($stats, $correct_stats->{one}, "Correct stats output for $table1");
+	is_deeply( $stats, $correct_stats->{one}, "Correct stats output for $table1");
 
 	$sth = $dbh->statistics_info(undef,undef,$table2,undef,undef);
 	$stats = $sth->fetchall_arrayref;
-	is_deeply($stats, $correct_stats->{two}, "Correct stats output for $table2");
+	is_deeply( $stats, $correct_stats->{two}, "Correct stats output for $table2");
 
 	$sth = $dbh->statistics_info(undef,undef,$table3,undef,undef);
 	$stats = $sth->fetchall_arrayref;
-	is_deeply($stats, $correct_stats->{three}, "Correct stats output for $table3");
+	is_deeply( $stats, $correct_stats->{three}, "Correct stats output for $table3");
 
 	$sth = $dbh->statistics_info(undef,undef,$table3,1,undef);
 	$stats = $sth->fetchall_arrayref;
-	is_deeply($stats, $correct_stats->{three_uo}, "Correct stats output for $table3 (unique only)");
+	is_deeply( $stats, $correct_stats->{three_uo}, "Correct stats output for $table3 (unique only)");
 }
 
 # Clean everything up
@@ -645,7 +643,7 @@ $dbh->do("DROP TABLE $table1");
 
 ## Neither pktable nor fktable specified
 $sth = $dbh->foreign_key_info(undef,undef,undef,undef,undef,undef);
-is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: no pk / no fk');
+is( $sth, undef, 'DB handle method "foreign_key_info" returns undef: no pk / no fk');
 
 # Drop any tables that may exist
 my $fktables = join ',' => map { "'dbd_pg_test$_'" } (1..3);
@@ -658,15 +656,15 @@ $SQL = "SELECT relname FROM pg_catalog.pg_class WHERE relkind='r' AND relname IN
 }
 ## Invalid primary table
 $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test9',undef,undef,undef);
-is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: bad pk / no fk');
+is( $sth, undef, 'DB handle method "foreign_key_info" returns undef: bad pk / no fk');
 
 ## Invalid foreign table
 $sth = $dbh->foreign_key_info(undef,undef,undef,undef,undef,'dbd_pg_test9');
-is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: no pk / bad fk');
+is( $sth, undef, 'DB handle method "foreign_key_info" returns undef: no pk / bad fk');
 
 ## Both primary and foreign are invalid
 $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test9',undef,undef,'dbd_pg_test9');
-is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: bad fk / bad fk');
+is( $sth, undef, 'DB handle method "foreign_key_info" returns undef: bad fk / bad fk');
 
 ## Create a pk table
 {
@@ -680,7 +678,7 @@ is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: bad fk / ba
 
 ## Good primary with no foreign keys
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
-is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: good pk (but unreferenced)');
+is( $sth, undef, 'DB handle method "foreign_key_info" returns undef: good pk (but unreferenced)');
 
 ## Create a simple foreign key table
 {
@@ -692,14 +690,14 @@ is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: good pk (bu
 
 ## Bad primary with good foreign
 $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test9',undef,undef,$table2);
-is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: bad pk / good fk');
+is( $sth, undef, 'DB handle method "foreign_key_info" returns undef: bad pk / good fk');
 
 ## Good primary, good foreign, bad schemas
 my $testschema = 'dbd_pg_test_badschema11';
 $sth = $dbh->foreign_key_info(undef,$testschema,$table1,undef,undef,$table2);
-is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: good pk / good fk / bad pk schema');
+is( $sth, undef, 'DB handle method "foreign_key_info" returns undef: good pk / good fk / bad pk schema');
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,$testschema,$table2);
-is ($sth, undef, 'DB handle method "foreign_key_info" returns undef: good pk / good fk / bad fk schema');
+is( $sth, undef, 'DB handle method "foreign_key_info" returns undef: good pk / good fk / bad fk schema');
 
 ## Good primary
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
@@ -743,17 +741,17 @@ my $fk1 = [
 					 'int4'  ## fk data type
 					];
 $expected = [$fk1];
-is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good pk');
+is_deeply( $result, $expected, 'DB handle method "foreign_key_info" works for good pk');
 
 ## Same with explicit table
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,$table2);
 $result = $sth->fetchall_arrayref();
-is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good pk / good fk');
+is_deeply( $result, $expected, 'DB handle method "foreign_key_info" works for good pk / good fk');
 
 ## Foreign table only
 $sth = $dbh->foreign_key_info(undef,undef,undef,undef,undef,$table2);
 $result = $sth->fetchall_arrayref();
-is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good fk');
+is_deeply( $result, $expected, 'DB handle method "foreign_key_info" works for good fk');
 
 ## Add a foreign key to an explicit unique constraint
 {
@@ -783,7 +781,7 @@ my $fk2 = [
 					 'int4'
           ];
 $expected = [$fk1,$fk2];
-is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good pk / explicit fk');
+is_deeply( $result, $expected, 'DB handle method "foreign_key_info" works for good pk / explicit fk');
 
 ## Add a foreign key to an implicit unique constraint (a unique index on a column)
 {
@@ -813,7 +811,7 @@ my $fk3 = [
 					 'int4'
           ];
 $expected = [$fk3,$fk1,$fk2];
-is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good pk / implicit fk');
+is_deeply( $result, $expected, 'DB handle method "foreign_key_info" works for good pk / implicit fk');
 
 ## Create another foreign key table to point to the first (primary) table
 {
@@ -845,13 +843,13 @@ my $fk4 = [
 					 'int4'
           ];
 $expected = [$fk3,$fk1,$fk2,$fk4];
-is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for multiple fks');
+is_deeply( $result, $expected, 'DB handle method "foreign_key_info" works for multiple fks');
 
 ## Test that explicit naming two tables brings back only those tables
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,$table3);
 $result = $sth->fetchall_arrayref();
 $expected = [$fk4];
-is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for good pk / good fk (only)');
+is_deeply( $result, $expected, 'DB handle method "foreign_key_info" works for good pk / good fk (only)');
 
 ## Multi-column madness
 {
@@ -890,7 +888,7 @@ my $fk5 = [
 my @fk6 = @$fk5; my $fk6 = \@fk6; $fk6->[3] = 'a'; $fk6->[7] = 'f3'; $fk6->[8] = 3;
 my @fk7 = @$fk5; my $fk7 = \@fk7; $fk7->[3] = 'b'; $fk7->[7] = 'f2'; $fk7->[8] = 2;
 $expected = [$fk3,$fk1,$fk2,$fk5,$fk6,$fk7];
-is_deeply ($result, $expected, 'DB handle method "foreign_key_info" works for multi-column keys');
+is_deeply( $result, $expected, 'DB handle method "foreign_key_info" works for multi-column keys');
 
 # Clean everything up
 {
@@ -932,7 +930,7 @@ else {
 	$badresult = 'Array reference not returned';
 }
 diag "type_info_all problem: $badresult" if $badresult;
-ok ( !$badresult, 'DB handle method "type_info_all" returns a valid structure');
+ok( !$badresult, 'DB handle method "type_info_all" returns a valid structure');
 
 #
 # Test of the "type_info" database handle method
@@ -987,7 +985,7 @@ is( $dbh->quote(1, 4), 1, 'DB handle method "quote" works with a supplied data t
 
 ## Points
 eval { $result = $dbh->quote(q{123,456}, { pg_type => PG_POINT }); };
-ok( !$@, 'DB handle method "quote" works with type PG_POINT');
+is( $@, q{}, 'DB handle method "quote" works with type PG_POINT');
 is( $result, q{'123,456'}, 'DB handle method "quote" returns correct value for type PG_POINT');
 eval { $result = $dbh->quote(q{[123,456]}, { pg_type => PG_POINT }); };
 like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_POINT string');
@@ -996,7 +994,7 @@ like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails 
 
 ## Lines and line segments
 eval { $result = $dbh->quote(q{123,456}, { pg_type => PG_LINE }); };
-ok( !$@, 'DB handle method "quote" works with valid PG_LINE string');
+is( $@, q{}, 'DB handle method "quote" works with valid PG_LINE string');
 eval { $result = $dbh->quote(q{[123,456]}, { pg_type => PG_LINE }); };
 like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_LINE string');
 eval { $result = $dbh->quote(q{<123,456}, { pg_type => PG_LINE }); };
@@ -1008,7 +1006,7 @@ like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails 
 
 ## Boxes
 eval { $result = $dbh->quote(q{1,2,3,4}, { pg_type => PG_BOX }); };
-ok( !$@, 'DB handle method "quote" works with valid PG_BOX string');
+is( $@, q{}, 'DB handle method "quote" works with valid PG_BOX string');
 eval { $result = $dbh->quote(q{[1,2,3,4]}, { pg_type => PG_BOX }); };
 like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_BOX string');
 eval { $result = $dbh->quote(q{1,2,3,4,cheese}, { pg_type => PG_BOX }); };
@@ -1016,7 +1014,7 @@ like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails 
 
 ## Paths - can have optional square brackets
 eval { $result = $dbh->quote(q{[(1,2),(3,4)]}, { pg_type => PG_PATH }); };
-ok( !$@, 'DB handle method "quote" works with valid PG_PATH string');
+is( $@, q{}, 'DB handle method "quote" works with valid PG_PATH string');
 is( $result, q{'[(1,2),(3,4)]'}, 'DB handle method "quote" returns correct value for type PG_PATH');
 eval { $result = $dbh->quote(q{<(1,2),(3,4)>}, { pg_type => PG_PATH }); };
 like( $@, qr{Invalid input for geometric path type}, 'DB handle method "quote" fails with invalid PG_PATH string');
@@ -1025,7 +1023,7 @@ like( $@, qr{Invalid input for geometric path type}, 'DB handle method "quote" f
 
 ## Polygons
 eval { $result = $dbh->quote(q{1,2,3,4}, { pg_type => PG_POLYGON }); };
-ok( !$@, 'DB handle method "quote" works with valid PG_POLYGON string');
+is( $@, q{}, 'DB handle method "quote" works with valid PG_POLYGON string');
 eval { $result = $dbh->quote(q{[1,2,3,4]}, { pg_type => PG_POLYGON }); };
 like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails with invalid PG_POLYGON string');
 eval { $result = $dbh->quote(q{1,2,3,4,cheese}, { pg_type => PG_POLYGON }); };
@@ -1033,7 +1031,7 @@ like( $@, qr{Invalid input for geometric type}, 'DB handle method "quote" fails 
 
 ## Circles - can have optional angle brackets
 eval { $result = $dbh->quote(q{<(1,2,3)>}, { pg_type => PG_CIRCLE }); };
-ok( !$@, 'DB handle method "quote" works with valid PG_CIRCLE string');
+is( $@, q{}, 'DB handle method "quote" works with valid PG_CIRCLE string');
 is( $result, q{'<(1,2,3)>'}, 'DB handle method "quote" returns correct value for type PG_CIRCLE');
 eval { $result = $dbh->quote(q{[(1,2,3)]}, { pg_type => PG_CIRCLE }); };
 like( $@, qr{Invalid input for geometric circle type}, 'DB handle method "quote" fails with invalid PG_CIRCLE string');
@@ -1085,15 +1083,15 @@ $dbh->{AutoCommit}=1; $dbh->{AutoCommit}=0; ## Catch error where not in begin
 my ($R,$W) = ($dbh->{pg_INV_READ}, $dbh->{pg_INV_WRITE});
 my $RW = $R|$W;
 my $object = $dbh->func($R, 'lo_creat');
-like($object, qr/^\d+$/o, 'DB handle method "lo_creat" returns a valid descriptor for reading');
+like( $object, qr/^\d+$/o, 'DB handle method "lo_creat" returns a valid descriptor for reading');
 $object = $dbh->func($W, 'lo_creat');
-like($object, qr/^\d+$/o, 'DB handle method "lo_creat" returns a valid descriptor for writing');
+like( $object, qr/^\d+$/o, 'DB handle method "lo_creat" returns a valid descriptor for writing');
 
 my $handle = $dbh->func($object, $W, 'lo_open');
-like($handle, qr/^\d+$/o, 'DB handle method "lo_open" returns a valid descriptor for writing');
+like( $handle, qr/^\d+$/o, 'DB handle method "lo_open" returns a valid descriptor for writing');
 
 $result = $dbh->func($handle, 0, 0, 'lo_lseek');
-cmp_ok($result, '==', 0, 'DB handle method "lo_lseek" works when writing');
+is( $result, 0, 'DB handle method "lo_lseek" works when writing');
 
 my $buf = 'tangelo mulberry passionfruit raspberry plantain' x 500;
 $result = $dbh->func($handle, $buf, length($buf), 'lo_write');
@@ -1104,10 +1102,10 @@ ok( $result, 'DB handle method "lo_close" works after write');
 
 # Reopen for reading
 $handle = $dbh->func($object, $R, 'lo_open');
-like($handle, qr/^\d+$/o, 'DB handle method "lo_open" returns a valid descriptor for reading');
+like( $handle, qr/^\d+$/o, 'DB handle method "lo_open" returns a valid descriptor for reading');
 
 $result = $dbh->func($handle, 11, 0, 'lo_lseek');
-cmp_ok($result, '==', 11, 'DB handle method "lo_lseek" works when reading');
+is( $result, 11, 'DB handle method "lo_lseek" works when reading');
 
 $result = $dbh->func($handle, 'lo_tell');
 is( $result, 11, 'DB handle method "lo_tell" works');
@@ -1137,7 +1135,7 @@ ok( $result, 'DB handle method "lo_unlink" works');
 eval {
   $dbh->func('pg_notifies');
 };
-ok( !$@, 'DB handle method "pg_notifies" does not throw an error');
+is( $@, q{}, 'DB handle method "pg_notifies" does not throw an error');
 
 #
 # Test of the "getfd" database handle method
@@ -1174,8 +1172,8 @@ SKIP: {
 	for my $name (keys %$private) {
 		$name =~ /^pg_\w+/ ? $valid++ : $invalid++;
 	}
-	ok($valid >= 1, q{DB handle method "private_attribute_info" returns at least one record});
-	is($invalid, 0, q{DB handle method "private_attribute_info" returns only internal names});
+	ok( $valid >= 1, q{DB handle method "private_attribute_info" returns at least one record});
+	is( $invalid, 0, q{DB handle method "private_attribute_info" returns only internal names});
 
 }
 
@@ -1186,28 +1184,28 @@ SKIP: {
 $t=q{Database handle method "clone" does not throw an error};
 my $dbh2;
 eval { $dbh2 = $dbh->clone(); };
-is($@, q{}, $t);
+is( $@, q{}, $t);
 $t=q{Database handle method "clone" returns a valid database handle};
 eval {
 	$dbh2->do('SELECT 123');
 };
-is($@, q{}, $t);
+is( $@, q{}, $t);
 $dbh2->disconnect();
 
 #
 # Test of the "ping" database handle method
 #
 
-ok( 1==$dbh->ping(), 'DB handle method "ping" returns 1 on an idle connection');
+is( $dbh->ping(), 1, 'DB handle method "ping" returns 1 on an idle connection');
 
 $dbh->do('SELECT 123');
 
 $result = 3;
-ok( $result==$dbh->ping(), 'DB handle method "ping" returns 3 for a good connection inside a transaction');
+is( $result, $dbh->ping(), 'DB handle method "ping" returns 3 for a good connection inside a transaction');
 
 $dbh->commit();
 
-ok( 1==$dbh->ping(), 'DB handle method "ping" returns 1 on an idle connection');
+is( $dbh->ping(), 1, 'DB handle method "ping" returns 1 on an idle connection');
 
 my $mtvar; ## This is an implicit test of getline: please leave this var undefined
 
@@ -1216,55 +1214,54 @@ $dbh->do('COPY dbd_pg_test(id,pname) TO STDOUT');
 	local $SIG{__WARN__} = sub {};
 	$dbh->pg_getline($mtvar,100);
 }
-ok( 2==$dbh->ping(), 'DB handle method "ping" returns 2 when in COPY IN state');
+is( $dbh->ping(), 2, 'DB handle method "ping" returns 2 when in COPY IN state');
 1 while $dbh->pg_getline($mtvar,1000);
 
 $dbh->do('SELECT 123');
 
-ok( 3==$dbh->ping(), 'DB handle method "ping" returns 3 for a good connection inside a transaction');
+is( $dbh->ping(), 3, 'DB handle method "ping" returns 3 for a good connection inside a transaction');
 
 eval {
 	$dbh->do('DBD::Pg creating an invalid command for testing');
 };
-ok( 4==$dbh->ping(), 'DB handle method "ping" returns a 4 when inside a failed transaction');
+is( $dbh->ping(), 4, 'DB handle method "ping" returns a 4 when inside a failed transaction');
 
 $dbh->disconnect();
-ok( 0==$dbh->ping(), 'DB handle method "ping" fails (returns 0) on a disconnected handle');
+is( $dbh->ping(), 0, 'DB handle method "ping" fails (returns 0) on a disconnected handle');
 
 $dbh = connect_database({nosetup => 1});
 
-ok( defined $dbh, 'Reconnect to the database after disconnect');
+isnt( $dbh, undef, 'Reconnect to the database after disconnect');
 
 #
 # Test of the "pg_ping" database handle method
 #
 
-ok( 1==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 1 on an idle connection');
+is( $dbh->pg_ping(), 1, 'DB handle method "pg_ping" returns 1 on an idle connection');
 
 $dbh->do('SELECT 123');
 
-ok( 3==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 3 for a good connection inside a transaction');
+is( $dbh->pg_ping(), 3, 'DB handle method "pg_ping" returns 3 for a good connection inside a transaction');
 
 $dbh->commit();
 
-ok( 1==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 1 on an idle connection');
+is( $dbh->pg_ping(), 1, 'DB handle method "pg_ping" returns 1 on an idle connection');
 
 $dbh->do('COPY dbd_pg_test(id,pname) TO STDOUT');
 $dbh->pg_getline($mtvar,100);
-ok( 2==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 2 when in COPY IN state');
+is( $dbh->pg_ping(), 2, 'DB handle method "pg_ping" returns 2 when in COPY IN state');
 1 while $dbh->pg_getline($mtvar,1000);
-ok( 2==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 2 immediately after COPY IN state');
+is( $dbh->pg_ping(), 2, 'DB handle method "pg_ping" returns 2 immediately after COPY IN state');
 
 $dbh->do('SELECT 123');
 
-ok( 3==$dbh->pg_ping(), 'DB handle method "pg_ping" returns 3 for a good connection inside a transaction');
+is( $dbh->pg_ping(), 3, 'DB handle method "pg_ping" returns 3 for a good connection inside a transaction');
 
 eval {
 	$dbh->do('DBD::Pg creating an invalid command for testing');
 };
-ok( 4==$dbh->pg_ping(), 'DB handle method "pg_ping" returns a 4 when inside a failed transaction');
+is( $dbh->pg_ping(), 4, 'DB handle method "pg_ping" returns a 4 when inside a failed transaction');
 
 cleanup_database($dbh,'test');
 $dbh->disconnect();
-ok( -1==$dbh->pg_ping(), 'DB handle method "pg_ping" fails (returns 0) on a disconnected handle');
-
+is( $dbh->pg_ping(), -1, 'DB handle method "pg_ping" fails (returns 0) on a disconnected handle');

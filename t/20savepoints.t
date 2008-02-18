@@ -12,17 +12,14 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 my $dbh = connect_database();
 
-if (defined $dbh) {
-	plan tests => 3;
-}
-else {
+if (!defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
+plan tests => 3;
 
-ok( defined $dbh, 'Connect to database for savepoint testing');
+isnt( $dbh, undef, 'Connect to database for savepoint testing');
 
 my $pgversion = $dbh->{pg_server_version};
-	use Data::Dumper;
 
 SKIP: {
 	skip 'Cannot test savepoints on pre-8.0 servers', 2 if $pgversion < 80000;
@@ -46,7 +43,7 @@ SKIP: {
 	$dbh->commit;
 
 	my $ids = $dbh->selectcol_arrayref('SELECT id FROM dbd_pg_test WHERE pname = ?',undef,$str);
-	ok (eq_set($ids, [500, 502]), 'Only row 500 and 502 should be committed');
+	ok( eq_set($ids, [500, 502]), 'Only row 500 and 502 should be committed');
 
 	## Create 503, then release the savepoint
 	$dbh->pg_savepoint('dbd_pg_test_savepoint');
@@ -58,7 +55,7 @@ SKIP: {
 	$dbh->commit;
 
 	$ids = $dbh->selectcol_arrayref('SELECT id FROM dbd_pg_test WHERE pname = ?',undef,$str);
-	ok (eq_set($ids, [500, 502, 503, 504]), 'Implicit rollback on deallocate should rollback to last savepoint');
+	ok( eq_set($ids, [500, 502, 503, 504]), 'Implicit rollback on deallocate should rollback to last savepoint');
 }
 
 $dbh->do('DELETE FROM dbd_pg_test');
