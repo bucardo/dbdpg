@@ -27,7 +27,7 @@ struct imp_dbh_st {
 	bool    dollaronly;        /* Only consider $1, $2 ... as valid placeholders */
 	bool    expand_array;      /* Transform arrays from the db into Perl arrays? Default is 1 */
 
-	int     pg_protocol;       /* value of PQprotocolVersion, usually 0, 2, or 3 */
+	int     pg_protocol;       /* value of PQprotocolVersion, usually 3 (could also be 0) */
 	int     pg_server_version; /* Server version e.g. 80100 */
 	int     pid_number;        /* prefixed before prepare_number */
 	int     prepare_number;    /* internal prepared statement name modifier */

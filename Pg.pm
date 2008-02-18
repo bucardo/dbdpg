@@ -2762,7 +2762,7 @@ show all available information.
 =item B<pg_protocol> (integer, read-only)
 
 PostgreSQL specific attribute. Returns the version of the PostgreSQL server.
-If DBD::Pg is unable to figure out the version, it will return a "0". Otherwise, 
+If DBD::Pg is unable to figure out the version, it will return a "0". Otherwise,
 a "3" is returned.
 
 =item B<pg_lib_version> (integer, read-only)
@@ -3570,12 +3570,11 @@ Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
 
 =head2 Schema support
 
-PostgreSQL version 7.3 introduced schema support. Note that the PostgreSQL
-schema concept may differ from those of other databases. In a nutshell, a schema
-is a named collection of objects within a single database. Please refer to the
+The PostgreSQL schema concept may differ from those of other databases. In a nutshell, 
+a schema is a named collection of objects within a single database. Please refer to the
 PostgreSQL documentation for more details.
 
-Currently, DBD::Pg does not provide explicit support for PostgreSQL schemas.
+DBD::Pg does not provide explicit support for PostgreSQL schemas.
 However, schema functionality may be used without any restrictions by
 explicitly addressing schema objects, e.g.
 

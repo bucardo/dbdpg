@@ -251,10 +251,8 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	imp_dbh->async_status   = 0;
 	imp_dbh->async_sth      = NULL;
 
-	/* If the server can handle it, we default to "smart", otherwise "off" */
-	imp_dbh->server_prepare = imp_dbh->pg_protocol >= 3 ? 
-		/* If using 3.0 protocol but not yet version 8, switch to "smart" */
-		PGLIBVERSION >= 80000 ? 1 : 2 : 0;
+	/* Switch to "smart" if not at server version 8 */
+	imp_dbh->server_prepare = PGLIBVERSION >= 80000 ? 1 : 2;
 
 	/* Tell DBI that we should call destroy when the handle dies */
 	DBIc_IMPSET_on(imp_dbh);
@@ -749,17 +747,14 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 	case 13: /* pg_errorlevel */
 
 		if (strEQ("pg_errorlevel", key)) {
-			/* Introduced in 7.4 servers */
-			if (imp_dbh->pg_protocol >= 3) {
-				if (SvOK(valuesv)) {
-					newval = (unsigned)SvIV(valuesv);
-				}
-				/* Default to "1" if an invalid value is passed in */
-				imp_dbh->pg_errorlevel = 0==newval ? 0 : 2==newval ? 2 : 1;
-				(void)PQsetErrorVerbosity(imp_dbh->conn, imp_dbh->pg_errorlevel); /* pre-7.4 does nothing */
-				if (dbis->debug >= 5)
-					(void)PerlIO_printf(DBILOGFP, "dbdpg: Reset error verbosity to %d\n", imp_dbh->pg_errorlevel);
+			if (SvOK(valuesv)) {
+				newval = (unsigned)SvIV(valuesv);
 			}
+			/* Default to "1" if an invalid value is passed in */
+			imp_dbh->pg_errorlevel = 0==newval ? 0 : 2==newval ? 2 : 1;
+			(void)PQsetErrorVerbosity(imp_dbh->conn, imp_dbh->pg_errorlevel);
+			if (dbis->debug >= 5)
+				(void)PerlIO_printf(DBILOGFP, "dbdpg: Reset error verbosity to %d\n", imp_dbh->pg_errorlevel);
 			return 1;
 		}
 		break;
@@ -767,9 +762,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 	case 14: /* pg_prepare_now  pg_enable_utf8 */
 
 		if (strEQ("pg_prepare_now", key)) {
-			if (imp_dbh->pg_protocol >= 3) {
-				imp_dbh->prepare_now = newval ? DBDPG_TRUE : DBDPG_FALSE;
-			}
+			imp_dbh->prepare_now = newval ? DBDPG_TRUE : DBDPG_FALSE;
 			return 1;
 		}
 
@@ -792,14 +785,11 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 	case 17: /* pg_server_prepare */
 
 		if (strEQ("pg_server_prepare", key)) {
-			/* No point changing this if the server does not support it */
-			if (imp_dbh->pg_protocol >= 3) {
-				if (SvOK(valuesv)) {
-					newval = (unsigned)SvIV(valuesv);
-				}
-				/* Default to "2" if an invalid value is passed in */
-				imp_dbh->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
+			if (SvOK(valuesv)) {
+				newval = (unsigned)SvIV(valuesv);
 			}
+			/* Default to "2" if an invalid value is passed in */
+			imp_dbh->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
 			return 1;
 		}
 		break;
@@ -1280,18 +1270,14 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 	/* Parse and set any attributes passed in */
 	if (attribs) {
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_server_prepare", 17, 0)) != NULL) {
-			if (imp_dbh->pg_protocol >= 3) {
-				int newval = SvIV(*svp);
-				/* Default to "2" if an invalid value is passed in */
-				imp_sth->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
-			}
+			int newval = SvIV(*svp);
+			/* Default to "2" if an invalid value is passed in */
+			imp_sth->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
 		}
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_direct", 9, 0)) != NULL)
 			imp_sth->direct = 0==SvIV(*svp) ? DBDPG_FALSE : DBDPG_TRUE;
 		else if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_prepare_now", 14, 0)) != NULL) {
-			if (imp_dbh->pg_protocol >= 3) {
-				imp_sth->prepare_now = 0==SvIV(*svp) ? DBDPG_FALSE : DBDPG_TRUE;
-			}
+			imp_sth->prepare_now = 0==SvIV(*svp) ? DBDPG_FALSE : DBDPG_TRUE;
 		}
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_placeholder_dollaronly", 25, 0)) != NULL) {
 			imp_sth->dollaronly = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
@@ -1335,19 +1321,17 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 	  We prepare it right away if:
 	  1. The statement is DML
 	  2. The attribute "direct" is false
-	  3. The backend can handle server-side prepares
-	  4. The attribute "pg_server_prepare" is not 0
-	  5. The attribute "pg_prepare_now" is true
-	  6. We are compiled on a 8 or greater server
+	  3. The attribute "pg_server_prepare" is not 0
+	  4. The attribute "pg_prepare_now" is true
+	  5. We are compiled on a 8 or greater server
 	*/
 	if (dbis->debug >= 5)
 	(void)PerlIO_printf(DBILOGFP,
-	"dbdpg: Immediate prepare decision: dml=%d direct=%d protocol=%d server_prepare=%d prepare_now=%d PGLIBVERSION=%d\n",
-	 imp_sth->is_dml, imp_sth->direct, imp_dbh->pg_protocol, imp_sth->server_prepare, imp_sth->prepare_now, PGLIBVERSION);
+	"dbdpg: Immediate prepare decision: dml=%d direct=%d server_prepare=%d prepare_now=%d PGLIBVERSION=%d\n",
+	 imp_sth->is_dml, imp_sth->direct, imp_sth->server_prepare, imp_sth->prepare_now, PGLIBVERSION);
 
 	if (imp_sth->is_dml
 		&& !imp_sth->direct
-		&& imp_dbh->pg_protocol >= 3
 		&& 0 != imp_sth->server_prepare
 		&& imp_sth->prepare_now
 		&& PGLIBVERSION >= 80000
@@ -2670,7 +2654,6 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
 	/* If using plain old PQexec, we need to quote each value ourselves */
 	if (!imp_sth->is_dml
-		|| imp_dbh->pg_protocol < 3
 		|| imp_sth->has_default
 		|| imp_sth->has_current
 		|| (1 != imp_sth->server_prepare
@@ -2733,22 +2716,20 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	/* We use the new server_side prepare style if:
 	   1. The statement is DML
 	   2. The attribute "pg_direct" is false
-	   3. We can handle server-side prepares
-	   4. The attribute "pg_server_prepare" is not 0
-	   5. There is one or more placeholders
-	   6. There are no DEFAULT values
-	   7a. The attribute "pg_server_prepare" is 1
+	   3. The attribute "pg_server_prepare" is not 0
+	   4. There is one or more placeholders
+	   5. There are no DEFAULT values
+	   6a. The attribute "pg_server_prepare" is 1
 	   OR
-	   7b. All placeholders are bound (and "pg_server_prepare" is 2)
+	   6b. All placeholders are bound (and "pg_server_prepare" is 2)
 	*/
 	if (dbis->debug >= 7) {
 		(void)PerlIO_printf
-			(DBILOGFP, "dbdpg: PQexec* decision: dml=%d direct=%d protocol=%d server_prepare=%d numbound=%d numphs=%d default=%d\n",
-			 imp_sth->is_dml, imp_sth->direct, imp_dbh->pg_protocol, imp_sth->server_prepare, imp_sth->numbound, imp_sth->numphs, imp_sth->has_default);
+			(DBILOGFP, "dbdpg: PQexec* decision: dml=%d direct=%d server_prepare=%d numbound=%d numphs=%d default=%d\n",
+			 imp_sth->is_dml, imp_sth->direct, imp_sth->server_prepare, imp_sth->numbound, imp_sth->numphs, imp_sth->has_default);
 	}
 	if (imp_sth->is_dml
 		&& !imp_sth->direct
-		&& imp_dbh->pg_protocol >= 3
 		&& 0 != imp_sth->server_prepare
 		&& !imp_sth->has_default
 		&& !imp_sth->has_current
@@ -2815,7 +2796,6 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		/* PQexecParams */
 
 		if (imp_sth->is_dml
-			&& imp_dbh->pg_protocol >= 3
 			&& imp_sth->numphs
 			&& !imp_sth->has_default
 			&& !imp_sth->has_current
