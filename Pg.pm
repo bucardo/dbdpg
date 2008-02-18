@@ -202,7 +202,7 @@ use 5.006001;
 		};
 	}
 
-} ## end pf package DBD::Pg::dr
+} ## end of package DBD::Pg::dr
 
 
 {
