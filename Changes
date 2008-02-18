@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.0.1
+2.1.0
 
 	- Use version.pm [CPAN bug #33206] [GSM]
 	- Add PERL_NO_GET_CONTEXT #define to improve performance on threaded Perls
