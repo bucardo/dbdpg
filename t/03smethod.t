@@ -17,7 +17,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if (defined $dbh) {
-	plan tests => 71;
+	plan tests => 75;
 }
 else {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -263,7 +263,7 @@ is( $rows, 4, 'Statement method handle "execute_array" returns correct number of
 
 $sth = $dbh->prepare('SELECT id+200, val FROM dbd_pg_test');
 my $goodrows = $sth->execute();
-$sth2 = $dbh->prepare('INSERT INTO dbd_pg_test (id, val) VALUES (?,?)');
+$sth2 = $dbh->prepare(q{INSERT INTO dbd_pg_test (id, val) VALUES (?,?)});
 $sth2->bind_param(1,'',SQL_INTEGER);
 my $fetch_tuple_sub = sub { $sth->fetchrow_arrayref() };
 undef @tuple_status;
@@ -400,10 +400,26 @@ is( $result, 1, 'Statement handle method "bind_col" returns the correct value');
 $sth->fetch();
 is( $bindme, 'Peach', 'Statement handle method "bind_col" correctly binds parameters');
 
+$dbh->do(q{UPDATE dbd_pg_test SET testarray = '{2,3,55}' WHERE id = 33});
+
+$t=q{Statement handle method 'bind_col' works with arrays};
+my $bindarray;
+$sth = $dbh->prepare('SELECT id, testarray FROM dbd_pg_test WHERE id = 33');
+$sth->execute();
+$result = $sth->bind_col(1, \$bindme);
+is( $result, 1, 'Statement handle method "bind_col" returns the correct value');
+$result = $sth->bind_col(2, \$bindarray);
+is( $result, 1, 'Statement handle method "bind_col" returns the correct value');
+$sth->fetch();
+is( $bindme, '33', 'Statement handle method "bind_col" correctly binds parameters');
+is_deeply( $bindarray, [2,3,55], 'Statement handle method "bind_col" correctly binds arrayref');
+
+
 #
 # Test of the "bind_columns" statement handle method
 #
 
+$sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (33,34) ORDER BY id');
 $sth->execute();
 my $bindme2;
 eval {
