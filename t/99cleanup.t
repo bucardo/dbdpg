@@ -11,7 +11,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 my $dbh = connect_database({nosetup => 1});
 
-if (defined $dbh) {
+if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 plan tests => 1;
