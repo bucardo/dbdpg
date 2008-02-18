@@ -12,6 +12,7 @@ BEGIN {
 	use_ok('DBI') or BAIL_OUT 'Cannot continue without DBI';
 	use_ok('DBD::Pg') or BAIL_OUT 'Cannot continue without DBD::Pg';
 }
+use DBD::Pg;
 like( $DBD::Pg::VERSION, qr/^[\d\._]+$/, qq{Found DBD::Pg::VERSION as "$DBD::Pg::VERSION"});
 
 SKIP: {
