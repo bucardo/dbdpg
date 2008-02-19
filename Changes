@@ -1,8 +1,12 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.1.0
+2.2.0
 
 	- Introduced enhanced trace flags [GSM]
+
+2.1.1
+
+	- Better URLs to cpan.org resources.
 
 2.1.0 Released February 18, 2008
 
