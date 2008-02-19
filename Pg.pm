@@ -1875,9 +1875,8 @@ flags to a number which can passed to the L<trace()> method.
 DBD::Pg currently supports the only DBI-specific flag, SQL, 
 as well as the ones listed below.
 
-DBD::Pg only supports one flag, B<SQL>, that is defined with 
-DBI itself. Flags can be combined by using the param_trace_flags 
-method, which simply calls param_trace_flag() on each item and 
+Flags can be combined by using the param_trace_flags method, 
+which simply calls param_trace_flag() on each item and 
 combines them.
 
 Sometimes you may wish to turn the tracing on before you connect 
@@ -1885,7 +1884,7 @@ to the database. The second example above shows a way of doing this:
 the call to DBD::Pg->param_trace_flags provides a number than can 
 be fed to DBI->trace before you create a database handle.
 
-DBD::Pg supports provides the following tracing flags:
+DBD::Pg supports the following trace flags:
 
 =over 4
 
