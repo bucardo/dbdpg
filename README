@@ -5,7 +5,7 @@ THIS IS A TEST VERSION (2.1.0_1) AND SHOULD BE USED
 FOR TESTING PURPOSES ONLY. PLEASE USE A STABLE 
 VERSION (no underscore) BY VISITING:
 
-http://search.cpan.org/~dbdpg/
+http://search.cpan.org/dist/DBD-Pg/
 ===================================================
 
 DBD::Pg  --  the DBI PostgreSQL interface for Perl
@@ -17,7 +17,7 @@ DESCRIPTION:
 
 This is version 2.1.0_1 of DBD-Pg.  The web site for this interface is at:
 
-	http://search.cpan.org/~dbdpg/
+	http://search.cpan.org/dist/DBD-Pg/
 
 For further information about DBI look at:
 
@@ -45,7 +45,7 @@ HOW TO GET THE LATEST VERSION:
 
 Use the following URL to look for new versions of this module: 
 
-http://search.cpan.org/~dbdpg/
+http://search.cpan.org/dist/DBD-Pg/
 
 
 IF YOU HAVE PROBLEMS OR COMMENTS:

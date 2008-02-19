@@ -541,7 +541,7 @@ THIS IS A TEST VERSION (2.4.1_2) AND SHOULD BE USED
 FOR TESTING PURPOSES ONLY. PLEASE USE A STABLE 
 VERSION (no underscore) BY VISITING:
 
-http://search.cpan.org/~dbdpg/
+http://search.cpan.org/dist/DBD-Pg/
 ===================================================
 
 * If not a beta version, remove the above warning from the README.
@@ -706,7 +706,7 @@ resources depend on the subject:
 * DBD::Pg
 
 The canonical URL:
-http://search.cpan.org/~dbdpg/DBD-Pg-1.41/
+http://search.cpan.org/dist/DBD-Pg/
 
 * DBI
 
