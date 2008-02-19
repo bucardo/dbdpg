@@ -141,8 +141,8 @@ my %opts =
 	 PREREQ_PM      => {
 						'ExtUtils::MakeMaker' => '6.11',
 						'DBI'                 => '1.52',
-						'Test::Simple'        => '0.61',
-						'Test::Harness'       => '2.03',
+						'Test::More'          => '0.61',
+						'version'             => '0',
 					   },
 	 CCFLAGS        => $comp_opts,
 	 PERL_MALLOC_OK => 1,

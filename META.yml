@@ -11,15 +11,18 @@ dynamic_config      : 1
 
 requires:
   DBI               : 1.52
+  version           : 0
 recommends:
   Test::YAML::Meta  : 0.03
   Test::Pod         : 0.95
+  Test::Warn        : 0.08
+  Module::Signature : 0.50
 build_requires:
   DBI               : 1.52
-  Test::Harness     : 2.03
-  Test::Simple      : 0.47
-  Module::Signature : 0.50
+  version           : 0
+  Test::More        : 0.61
 configure_requires:
+  version           : 0
   DBI               : 1.52
 
 provides:
