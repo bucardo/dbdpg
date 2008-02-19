@@ -1862,26 +1862,26 @@ distinguish it from DBI tracing output.
 
 Implemented by DBI, no driver-specific impact.
 
-=item B<param_trace_flag> and B<param_trace_flags>
+=item B<parse_trace_flag> and B<parse_trace_flags>
 
-  $dbh->trace($dbh->param_trace_flag('SQL|LIBPQ'));
-  $dbh->trace($dbh->param_trace_flag('1|START'));
+  $dbh->trace($dbh->parse_trace_flag('SQL|LIBPQ'));
+  $dbh->trace($dbh->parse_trace_flag('1|START'));
 
-  my $value = DBD::Pg->param_trace_flags('LIBPQ');
+  my $value = DBD::Pg->parse_trace_flags('LIBPQ');
   DBI->trace($value);
 
-The param_trace_flags method is used to convert one or more named 
+The parse_trace_flags method is used to convert one or more named 
 flags to a number which can passed to the L<trace()> method.
 DBD::Pg currently supports the only DBI-specific flag, SQL, 
 as well as the ones listed below.
 
-Flags can be combined by using the param_trace_flags method, 
-which simply calls param_trace_flag() on each item and 
+Flags can be combined by using the parse_trace_flags method, 
+which simply calls parse_trace_flag() on each item and 
 combines them.
 
 Sometimes you may wish to turn the tracing on before you connect 
 to the database. The second example above shows a way of doing this: 
-the call to DBD::Pg->param_trace_flags provides a number than can 
+the call to DBD::Pg->parse_trace_flags provides a number than can 
 be fed to DBI->trace before you create a database handle.
 
 DBD::Pg supports the following trace flags:
@@ -1940,15 +1940,15 @@ differentiate it from the DBI tracing output. This string is not shown if the
 only thing determining the output was a trace flag, and the trace level was 0. 
 For example, this would not show the prefix:
 
-  $dbh->trace($dbh->param_trace_flags('LIBPQ'));
+  $dbh->trace($dbh->parse_trace_flags('LIBPQ'));
 
 In this example, the prefix would be shown:
 
-  $dbh->trace($dbh->param_trace_flags('LIBPQ|1'));
+  $dbh->trace($dbh->parse_trace_flags('LIBPQ|1'));
 
 You can force this prefix on by setting the PREFIX flag. For example:
 
-  $dbh->trace($dbh->param_trace_flags('LIBPQ|PREFIX'));
+  $dbh->trace($dbh->parse_trace_flags('LIBPQ|PREFIX'));
 
 =item QUOTE
 
