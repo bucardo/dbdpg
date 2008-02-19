@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.1.0
+2.1.0 Released February 18, 2008
 
 	- Use version.pm [CPAN bug #33206] [GSM]
 	- Add PERL_NO_GET_CONTEXT #define to improve performance on threaded Perls
@@ -13,7 +13,7 @@
 		[CPAN bug #33282]
 	- Add a local copy of dbivport.h
 
-2.0.0 Released February 2008
+2.0.0 Released February 10, 2008
 
 Major changes:
 
