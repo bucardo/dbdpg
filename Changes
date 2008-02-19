@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.1.0
+
+	- Introduced enhanced trace flags [GSM]
+
 2.1.0 Released February 18, 2008
 
 	- Use version.pm [CPAN bug #33206] [GSM]

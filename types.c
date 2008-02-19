@@ -153,9 +153,12 @@ static sql_type_info_t pg_types[] = {
 	{PG_XML, "xml", ',', "xml_out", quote_string, dequote_string, {0}, 0, 0},
 };
 
-sql_type_info_t* pg_type_data(sql_type)
-	int sql_type;
+sql_type_info_t* pg_type_data(int sql_type)
 {
+	dTHX;
+
+	if (TSTART) TRC(DBILOGFP, "%spg_type_data sql_type=%d\n", THEADER, sql_type);
+
 	switch(sql_type) {
 
 		case PG_ABSTIMEARRAY:      return &pg_types[0];
@@ -320,9 +323,13 @@ static sql_type_info_t sql_types[] = {
 	{SQL_VARCHAR, "SQL_VARCHAR", ',', "none", quote_string, dequote_string, {PG_VARCHAR}, 1, 0},
 };
 
-sql_type_info_t* sql_type_data(sql_type)
-	int sql_type;
-{	switch(sql_type) {
+sql_type_info_t* sql_type_data(int sql_type)
+{
+	dTHX;
+
+	if (TSTART) TRC(DBILOGFP, "%ssql_type_data sql_type=%d\n", THEADER, sql_type);
+
+	switch(sql_type) {
 		case SQL_BOOLEAN:                      return &sql_types[0];
 		case SQL_VARBINARY:                    return &sql_types[2];
 		case SQL_CHAR:                         return &sql_types[3];
@@ -646,9 +653,12 @@ for my $name (sort {$a cmp $b } keys %pgtype) {
 print $newfh "\};\n\n";
 
 print $newfh 
-"sql_type_info_t* pg_type_data(sql_type)
-\tint sql_type;
+"sql_type_info_t* pg_type_data(int sql_type)
 {
+\tdTHX;
+
+\tif (TSTART) TRC(DBILOGFP, \"%spg_type_data sql_type=%d\\n\", THEADER, sql_type);
+
 \tswitch(sql_type) {
 \n";
 
@@ -674,7 +684,9 @@ for my $name (sort { $a cmp $b } keys %pgtype) {
 }
 print $newfh "\};\n\n";
 
-print $newfh "sql_type_info_t* sql_type_data(sql_type)\n\tint sql_type;\n\{\tswitch(sql_type) \{\n";
+print $newfh "sql_type_info_t* sql_type_data(int sql_type)\n\{\n";
+print $newfh "\tdTHX;\n\n\tif (TSTART) TRC(DBILOGFP, \"%ssql_type_data sql_type=%d\\n\", THEADER, sql_type);\n\n";
+print $newfh "\tswitch(sql_type) \{\n";
 for (sort { $pos{$a} <=> $pos{$b} } keys %pos) {
 	printf $newfh qq{\t\tcase %-*s return \&sql_types\[%d\];\n}, 1+$maxlen, "$_:", $pos{$_};
 }

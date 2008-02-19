@@ -17,7 +17,7 @@ use 5.006001;
 {
 	package DBD::Pg;
 
-	use version; our $VERSION = qv("2.1.0");
+	use version; our $VERSION = qv("2.1.0_1");
 
 	use DBI ();
 	use DynaLoader ();
@@ -76,6 +76,24 @@ use 5.006001;
 	$errstr = "";   # holds error string for DBI::errstr
 	$sqlstate = ""; # holds five character SQLSTATE code
 	$drh = undef;   # holds driver handle once initialized
+
+	## These two methods are here to allow calling before connect()
+	sub parse_trace_flag {
+		my ($class, $flag) = @_;
+		return 0x01000000 if $flag eq 'LIBPQ';
+		return 0x02000000 if $flag eq 'START';
+		return 0x04000000 if $flag eq 'STOP';
+		return 0x08000000 if $flag eq 'LOGIN';
+		return 0x0F000000 if $flag eq 'QUOTE';
+		return 0x10000000 if $flag eq 'ERROR';
+		return 0x11000000 if $flag eq 'WARN';
+		return 0x12000000 if $flag eq 'PREFIX';
+		return DBI::parse_trace_flag($dbh, $flag);
+	}
+	sub parse_trace_flags {
+		my ($class, $flags) = @_;
+		return DBI::parse_trace_flags($class, $flags);
+	}
 
 	sub CLONE {
 		$drh = undef;
@@ -211,6 +229,11 @@ use 5.006001;
 	use DBI qw(:sql_types);
 
 	use strict;
+
+	sub parse_trace_flag {
+		my ($dbh, $flag) = @_;
+		return DBD::Pg->parse_trace_flag($flag);
+	}
 
 	sub prepare {
 		my($dbh, $statement, @attribs) = @_;
@@ -1625,7 +1648,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 2.1.0 of the DBD::Pg module
+This documents version 2.1.0_1 of the DBD::Pg module
 
 =head1 SYNOPSIS
 
@@ -1816,10 +1839,21 @@ Common ones to note:
 
 =item B<trace>
 
-  $h->trace($trace_level);
-  $h->trace($trace_level, $trace_filename);
+  $h->trace($trace_settings);
+  $h->trace($trace_settings, $trace_filename);
+  $trace_settings = $h->trace;
 
-Implemented by DBI, no driver-specific impact.
+Changes the trace settings on a database or statement handle. 
+The optional second argument specifies a file to write the 
+trace information to. If no filename is given, the information 
+is written to STDERR. Note that tracing can be set globally as 
+well by setting C<DBI-E<gt>trace>, or by using the environment 
+variable C<DBI_TRACE>.
+
+The value is either a numeric level or a named flag. For the 
+flags, see L<param_trace_flag>. Note that flag levels usually 
+cause DBD::Pg to start most items with "dbdpg: " to help 
+distinguish it from DBI tracing output.
 
 =item B<trace_msg>
 
@@ -1827,6 +1861,104 @@ Implemented by DBI, no driver-specific impact.
   $h->trace_msg($message_text, $min_level);
 
 Implemented by DBI, no driver-specific impact.
+
+=item B<param_trace_flag> and B<param_trace_flags>
+
+  $dbh->trace($dbh->param_trace_flag('SQL|LIBPQ'));
+  $dbh->trace($dbh->param_trace_flag('1|START'));
+
+  my $value = DBD::Pg->param_trace_flags('LIBPQ');
+  DBI->trace($value);
+
+The param_trace_flags method is used to convert one or more named 
+flags to a number which can passed to the L<trace()> method.
+DBD::Pg currently supports the only DBI-specific flag, SQL, 
+as well as the ones listed below.
+
+DBD::Pg only supports one flag, B<SQL>, that is defined with 
+DBI itself. Flags can be combined by using the param_trace_flags 
+method, which simply calls param_trace_flag() on each item and 
+combines them.
+
+Sometimes you may wish to turn the tracing on before you connect 
+to the database. The second example above shows a way of doing this: 
+the call to DBD::Pg->param_trace_flags provides a number than can 
+be fed to DBI->trace before you create a database handle.
+
+DBD::Pg supports provides the following tracing flags:
+
+=over 4
+
+=item SQL
+
+Output all SQL statements. Note that the output provided will not 
+necessarily be in a form suitable to passing directly to Postgres, 
+as server-side prepared statements are used extensively by DBD::Pg.
+
+=item LIBPQ
+
+Outputs the name of each libpq function (without arguments) immediately 
+before running it. This is a good way to trace the flow of your program 
+at a low level. This information is also output if the trace level 
+is set to 4 or greater.
+
+=item START
+
+Outputs the name of each function, and other information such as the function 
+arguments or important global variables, as each function starts. This information 
+is also output if the trace level is set to 4 or greater.
+ Note that if the trace 
+level if 4 or more, the output will be prefixed with "dbdpg: " to help differentiate 
+it from the DBI trace output.
+
+=item STOP
+
+Outputs a simple message at the very end of each function. This output also appears, 
+and will have a "dbdpg: " prepended to it, if the trace level is set to 5 or higher.
+
+=item LOGIN
+
+Outputs a message showing the connection string right before a new database connection 
+is attempted, a message when the connection was successful, and a message right after 
+the database has been disconnected.
+
+=item ERROR
+
+Outputs any errors received in the format:
+
+  Error at pg_error: sqlstate=X error_num=Y error=Z
+
+=item WARN
+
+Outputs any warnings received in the format:
+
+  Warning at pg_warn: (X) DBIc_WARN=Y PrintWarn=Z
+
+=item PREFIX
+
+Normally, each line of trace output is started with the string "dbdpg: " to help 
+differentiate it from the DBI tracing output. This string is not shown if the 
+only thing determining the output was a trace flag, and the trace level was 0. 
+For example, this would not show the prefix:
+
+  $dbh->trace($dbh->param_trace_flags('LIBPQ'));
+
+In this example, the prefix would be shown:
+
+  $dbh->trace($dbh->param_trace_flags('LIBPQ|1'));
+
+You can force this prefix on by setting the PREFIX flag. For example:
+
+  $dbh->trace($dbh->param_trace_flags('LIBPQ|PREFIX'));
+
+=item QUOTE
+
+Outputs a message at the start of each quoting function. Not very useful outside of 
+DBD::Pg internal debugging purposes.
+
+=back
+
+See the DBI section on L<TRACING> for more information.
 
 =item B<func>
 
@@ -3570,7 +3702,7 @@ Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
 
 =head2 Schema support
 
-The PostgreSQL schema concept may differ from those of other databases. In a nutshell, 
+The PostgreSQL schema concept may differ from those of other databases. In a nutshell,
 a schema is a named collection of objects within a single database. Please refer to the
 PostgreSQL documentation for more details.
 

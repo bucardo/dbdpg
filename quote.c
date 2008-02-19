@@ -22,6 +22,9 @@ char * null_quote(const char *string, STRLEN len, STRLEN *retlen)
 {
 	dTHX;
 	char *result;
+
+	if (TSTARTQ) TRC(DBILOGFP, "%snull_quote\n", THEADER);
+
 	New(0, result, len+1, char);
 	strncpy(result,string,len);
 	result[len]='\0';
@@ -35,8 +38,9 @@ char * quote_string(const char *string, STRLEN len, STRLEN *retlen)
 	dTHX;
 	char * result;
 	STRLEN oldlen = len;
-
 	const char * const tmp = string;
+
+	if (TSTARTQ) TRC(DBILOGFP, "%squote_string\n", THEADER);
 
 	(*retlen) = 2;
 	while (len > 0 && *string != '\0') {
@@ -70,6 +74,8 @@ char * quote_geom(const char *string, STRLEN len, STRLEN *retlen)
 	char * result;
         const char *tmp;
 
+	if (TSTARTQ) TRC(DBILOGFP, "%squote_geom\n", THEADER);
+
 	len = 0; /* stops compiler warnings. Remove entirely someday */
 	tmp = string;
 	(*retlen) = 2;
@@ -96,6 +102,8 @@ char * quote_path(const char *string, STRLEN len, STRLEN *retlen)
 	dTHX;
 	char * result;
 	const char * const tmp = string;
+
+	if (TSTARTQ) TRC(DBILOGFP, "%squote_path\n", THEADER);
 
 	len = 0; /* stops compiler warnings. Remove entirely someday */
 	(*retlen) = 2;
@@ -124,6 +132,8 @@ char * quote_circle(const char *string, STRLEN len, STRLEN *retlen)
 	char * result;
 	const char * const tmp = string;
 
+	if (TSTARTQ) TRC(DBILOGFP, "%squote_circle\n", THEADER);
+
 	len = 0; /* stops compiler warnings. Remove entirely someday */
 	(*retlen) = 2;
 	while (*string != '\0') {
@@ -151,6 +161,8 @@ char * quote_bytea(char *string, STRLEN len, STRLEN *retlen)
 	dTHX;
 	char * result;
 	STRLEN oldlen = len;
+
+	if (TSTARTQ) TRC(DBILOGFP, "%squote_bytea\n", THEADER);
 
 	result = string;
 	(*retlen) = 2;
@@ -219,6 +231,8 @@ char * quote_bool(const char *value, STRLEN len, STRLEN *retlen)
 	long int int_value;
 	STRLEN	max_len=6;
 	
+	if (TSTARTQ) TRC(DBILOGFP, "%squote_bool\n", THEADER);
+
 	len = 0;
 	if (isDIGIT(*(const char*)value)) {
 		/* For now -- will go away when quote* take SVs */
@@ -251,6 +265,8 @@ char * quote_integer(const char *value, STRLEN len, STRLEN *retlen)
         const int intval = *((const int*)value);
 	len = 0;
 
+	if (TSTARTQ) TRC(DBILOGFP, "%squote_integer\n", THEADER);
+
 	New(0, result, max_len, char);
 	
 	if (0 == intval)
@@ -268,7 +284,9 @@ char * quote_integer(const char *value, STRLEN len, STRLEN *retlen)
 
 void dequote_char(const char *string, STRLEN *retlen)
 {
+	dTHX;
 	/* TODO: chop_blanks if requested */
+	if (TSTARTQ) TRC(DBILOGFP, "%sdequote_char\n", THEADER);
 	*retlen = strlen(string);
 }
 
@@ -276,6 +294,7 @@ void dequote_char(const char *string, STRLEN *retlen)
 void dequote_string(const char *string, STRLEN *retlen)
 {
 	dTHX;
+	if (TSTARTQ) TRC(DBILOGFP, "%sdequote_string\n", THEADER);
 	*retlen = strlen(string);
 }
 
@@ -285,6 +304,8 @@ void dequote_bytea(char *string, STRLEN *retlen)
 {
 	dTHX;
 	char *result;
+
+	if (TSTARTQ) TRC(DBILOGFP, "%sdequote_bytea\n", THEADER);
 
 	(*retlen) = 0;
 
@@ -321,8 +342,6 @@ void dequote_bytea(char *string, STRLEN *retlen)
 	return;
 }
 
-
-
 /*
 	This one is not used in PG, but since we have a quote_sql_binary,
 	it might be nice to let people go the other way too. Say when talking
@@ -331,6 +350,9 @@ void dequote_bytea(char *string, STRLEN *retlen)
 void dequote_sql_binary(char *string, STRLEN *retlen)
 {
 	dTHX;
+
+	if (TSTARTQ) TRC(DBILOGFP, "%sdequote_sql_binary\n", THEADER);
+
 	/* We are going to retun a dequote_bytea(), JIC */
 	warn("Use of SQL_BINARY invalid in dequote()");
 	dequote_bytea(string, retlen);
@@ -343,6 +365,9 @@ void dequote_sql_binary(char *string, STRLEN *retlen)
 void dequote_bool(char *string, STRLEN *retlen)
 {
 	dTHX;
+
+	if (TSTARTQ) TRC(DBILOGFP, "%sdequote_bool\n", THEADER);
+
 	switch(*string){
 	case 'f': *string = '0'; break;
 	case 't': *string = '1'; break;
@@ -357,7 +382,9 @@ void dequote_bool(char *string, STRLEN *retlen)
 void null_dequote(const char *string, STRLEN *retlen)
 {
 	dTHX;
+	if (TSTARTQ) TRC(DBILOGFP, "%snull_dequote\n", THEADER);
 	*retlen = strlen(string);
+
 }
 
 /* end of quote.c */
