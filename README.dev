@@ -720,7 +720,7 @@ The DBI announcement list:
 http://lists.perl.org/showlist.cgi?name=dbi-announce
 
 The latest DBI:
-http://search.cpan.org/~timb/DBI/
+http://search.cpan.org/dist/DBI/
 
 The source code of other DBDs can be a useful tool as well.
 
