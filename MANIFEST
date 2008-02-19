@@ -13,7 +13,6 @@ README.dev
 win32.mak
 
 Pg.h
-Pg.pm
 Pg.xs
 dbivport.h
 dbdimp.c
