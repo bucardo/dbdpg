@@ -6,7 +6,7 @@ use strict;
 use warnings;
 use 5.006001;
 
-use version; my $VERSION = qv('2.1.1_1');
+use version; my $VERSION = qv('2.1.2');
 
 my $lib;
 BEGIN {
@@ -60,6 +60,20 @@ print "POSTGRES_INCLUDE: $showinc\n";
 my $showlib = $ENV{POSTGRES_LIB} || '(not set)';
 print "POSTGRES_LIB: $showlib\n";
 print "OS: $os\n";
+
+my $baddir;
+for my $d (qw/HOME INCLUDE LIB/) {
+	next if ! exists $ENV{"POSTGRES_$d"};
+	if (! -d $ENV{"POSTGRES_$d"}) {
+		printf "The environment variable %s points to a non-existent directory: %s\n",
+			"POSTGRES_$d", $ENV{"POSTGRES_$d"};
+		$baddir++;
+	}
+}
+if ($baddir) {
+	print "Cannot build unless the directories exist, exiting.\n";
+	exit 0;
+}
 
 if ($serverversion < 11) {
 	print "Could not determine the PostgreSQL library version.\n".
