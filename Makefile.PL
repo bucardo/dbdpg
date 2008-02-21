@@ -62,7 +62,7 @@ print "POSTGRES_LIB: $showlib\n";
 print "OS: $os\n";
 
 my $baddir;
-for my $d (qw/HOME INCLUDE LIB/) {
+for my $d (qw/HOME INCLUDE/) {
 	next if ! exists $ENV{"POSTGRES_$d"};
 	if (! -d $ENV{"POSTGRES_$d"}) {
 		printf "The environment variable %s points to a non-existent directory: %s\n",

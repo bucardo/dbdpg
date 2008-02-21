@@ -4,13 +4,17 @@
 
 	- Introduced enhanced trace flags [GSM]
 
+2.1.3 Released February 20, 2008
+
+	- Do not check POSTGRES_LIB, if may have -lssl flag.
+
 2.1.2 Released February 19, 2008
 
 	- Do not build if environment variables POSTGRES_HOME, POSTGRES_LIB, 
 		or POSTGRES_INCLUDE are set but not valid.
 	- Fix dependency requirements, especially version.pm
 
-2.1.1
+2.1.1 Released February 19, 2008
 
 	- Better URLs to cpan.org resources.
 
