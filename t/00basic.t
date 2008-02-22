@@ -13,7 +13,7 @@ BEGIN {
 	use_ok('DBD::Pg') or BAIL_OUT 'Cannot continue without DBD::Pg';
 }
 use DBD::Pg;
-like( $DBD::Pg::VERSION, qr/^[\d\._]+$/, qq{Found DBD::Pg::VERSION as "$DBD::Pg::VERSION"});
+like( $DBD::Pg::VERSION, qr/^v?\d+\.\d+\.\d+(?:_\d+)?$/, qq{Found DBD::Pg::VERSION as "$DBD::Pg::VERSION"});
 
 SKIP: {
 	eval { require Test::Warn; };
