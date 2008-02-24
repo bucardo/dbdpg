@@ -6,7 +6,8 @@ use strict;
 use warnings;
 use 5.006001;
 
-use version; my $VERSION = qv('2.1.2');
+## No version.pm for this one, as the prereqs are not loaded yet.
+my $VERSION = '2.1.3_1';
 
 my $lib;
 BEGIN {
