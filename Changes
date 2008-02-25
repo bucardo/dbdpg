@@ -2,7 +2,10 @@
 
 2.2.0
 
-	- Introduced enhanced trace flags [GSM]
+	- Introduced enhanced trace flags. See the documentation 
+		 on parse_trace_flags() for details. [GSM]
+	- Remove version.pm dependency from Makefile.PL
+		(CPAN bug #33429)
 
 2.1.3 Released February 20, 2008
 
