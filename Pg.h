@@ -10,9 +10,16 @@
 
 */
 
+#include <strings.h>
+#include <math.h>
+#include <wchar.h>
 
 #ifdef WIN32
 static int errno;
+#define strcasecmp(s1,s2) lstrcmpiA((s1), (s2))
+#ifndef snprintf
+#define snprintf _snprintf
+#endif
 #endif
 
 #define DBDPG_TRUE (bool)1
@@ -20,6 +27,11 @@ static int errno;
 #define PG_ASYNC 1
 #define PG_OLDQUERY_CANCEL 2
 #define PG_OLDQUERY_WAIT 4
+
+/* Force preprocessors to use this variable. Default to something valid yet noticeable */
+#ifndef PGLIBVERSION
+#define PGLIBVERSION 80009
+#endif
 
 #include "libpq-fe.h"
 
@@ -46,9 +58,11 @@ static int errno;
 
 #include <dbd_xsh.h>    /* installed by the DBI module */
 
+DBISTATE_DECLARE;
+
+#include "types.h"
 #include "dbdimp.h"
 #include "quote.h"
-#include "types.h"
 
 #define TLEVEL	     (DBIS->debug & DBIc_TRACE_LEVEL_MASK)
 #define TFLAGS	     (DBIS->debug & DBIc_TRACE_FLAGS_MASK)

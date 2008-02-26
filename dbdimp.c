@@ -14,22 +14,9 @@
 
 
 #include "Pg.h"
-#include <math.h>
-#include <wchar.h>
-#include <strings.h>
 
 #ifndef powf
 #define powf (float)pow
-#endif
-
-/* Force preprocessors to use this variable. Default to something valid yet noticeable */
-#ifndef PGLIBVERSION
-#define PGLIBVERSION 80009
-#endif
-
-#ifdef WIN32
-#define snprintf _snprintf
-#define strcasecmp(s1,s2) lstrcmpiA((s1), (s2))
 #endif
 
 #define sword signed int
@@ -90,8 +77,6 @@ static int pg_st_deallocate_statement(pTHX_ SV *sth, imp_sth_t *imp_sth);
 static PGTransactionStatusType pg_db_txn_status (pTHX_ imp_dbh_t *imp_dbh);
 static int pg_db_start_txn (pTHX_ SV *dbh, imp_dbh_t *imp_dbh);
 static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, int asyncflag);
-
-DBISTATE_DECLARE;
 
 /* ================================================================== */
 void dbd_init (dbistate_t *dbistate)

@@ -17,8 +17,6 @@
 #define strncasecmp(a,b,c) _strnicmp((a),(b),(c))
 #endif
 
-DBISTATE_DECLARE;
-
 MODULE = DBD::Pg	PACKAGE = DBD::Pg
 
 

@@ -9,8 +9,6 @@
 	License or the Artistic License, as specified in the Perl README file.
 */
 
-#include "types.h"
-
 /* Define drh implementor data structure */
 struct imp_drh_st {
 	dbih_drc_t com; /* MUST be first element in structure */

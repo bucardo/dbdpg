@@ -10,13 +10,6 @@
 */
 
 #include "Pg.h"
-#include "types.h"
-
-#ifdef WIN32
-#ifndef snprint
-#define snprintf _snprintf
-#endif
-#endif
 
 char * null_quote(const char *string, STRLEN len, STRLEN *retlen)
 {
