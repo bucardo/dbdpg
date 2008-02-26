@@ -50,12 +50,12 @@ $t = q{Database handle method 'server_trace_flags' returns 0x01000100 for 'SQL|P
 $num = $dbh->parse_trace_flags('SQL|PGLIBPQ');
 is( $num, 0x01000100, $t);
 
-$t = q{Database handle method 'server_trace_flags' returns 0x03000100 for 'SQL|PGLIBPQ|PGBEGIN'};
-$num = $dbh->parse_trace_flags('SQL|PGLIBPQ|PGBEGIN');
+$t = q{Database handle method 'server_trace_flags' returns 0x03000100 for 'SQL|PGLIBPQ|PGSTART'};
+$num = $dbh->parse_trace_flags('SQL|PGLIBPQ|PGSTART');
 is( $num, 0x03000100, $t);
 
 my $flagexp = 24;
-for my $flag (qw/PGLIBPQ PGBEGIN PGEND PGPREFIX PGLOGIN PGQUOTE/) {
+for my $flag (qw/PGLIBPQ PGSTART PGEND PGPREFIX PGLOGIN PGQUOTE/) {
 	my $hex = 2**$flagexp++;
 	$t = qq{Database handle method 'server_trace_flags' returns $hex for flag $flag};
 	$num = $dbh->parse_trace_flags($flag);
@@ -111,10 +111,10 @@ PQclear
 };
 	is($info, $expected, $t);
 
-	$t=q{Trace flag 'PGBEGIN' works as expected};
+	$t=q{Trace flag 'PGSTART' works as expected};
 	seek $fh, 0, 0;
 	truncate $fh, tell($fh);
-	$dbh->trace($dbh->parse_trace_flags('PGBEGIN'), $filename);
+	$dbh->trace($dbh->parse_trace_flags('PGSTART'), $filename);
 	$dbh->do($SQL);
 	$dbh->commit();
 	$dbh->trace(0);
@@ -135,7 +135,7 @@ Begin _sqlstate
 	$t=q{Trace flag 'PGPREFIX' works as expected};
 	seek $fh, 0, 0;
 	truncate $fh, tell($fh);
-	$dbh->trace($dbh->parse_trace_flags('PGBEGIN|PGPREFIX'), $filename);
+	$dbh->trace($dbh->parse_trace_flags('PGSTART|PGPREFIX'), $filename);
 	$dbh->do($SQL);
 	$dbh->commit();
 	$dbh->trace(0);
@@ -224,13 +224,13 @@ Disconnection complete
 	$info =~ s/(Login connection string: ).+/$1/g;
 	is($info, "$expected", $t);
 
-	$t=q{Trace flag 'PGPREFIX' and 'PGBEGIN' append to 'PGLOGIN' work as expected};
+	$t=q{Trace flag 'PGPREFIX' and 'PGSTART' append to 'PGLOGIN' work as expected};
 	seek $fh, 0, 0;
 	truncate $fh, tell($fh);
 	DBI->trace($flagval, $filename);
 	$dbh = connect_database({nosetup => 1});
 	$dbh->do($SQL);
-	$flagval += $dbh->parse_trace_flags('PGPREFIX|PGBEGIN');
+	$flagval += $dbh->parse_trace_flags('PGPREFIX|PGSTART');
 	$dbh->trace($flagval);
 	$dbh->do($SQL);
 	$dbh->trace(0);

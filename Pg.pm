@@ -81,7 +81,7 @@ use 5.006001;
 	sub parse_trace_flag {
 		my ($class, $flag) = @_;
 		return 0x01000000 if $flag eq 'PGLIBPQ';
-		return 0x02000000 if $flag eq 'PGBEGIN';
+		return 0x02000000 if $flag eq 'PGSTART';
 		return 0x04000000 if $flag eq 'PGEND';
 		return 0x08000000 if $flag eq 'PGPREFIX';
 		return 0x10000000 if $flag eq 'PGLOGIN';
@@ -1864,7 +1864,7 @@ Implemented by DBI, no driver-specific impact.
 =item B<parse_trace_flag> and B<parse_trace_flags>
 
   $dbh->trace($dbh->parse_trace_flag('SQL|PGLIBPQ'));
-  $dbh->trace($dbh->parse_trace_flag('1|PGBEGIN'));
+  $dbh->trace($dbh->parse_trace_flag('1|PGSTART'));
 
   my $value = DBD::Pg->parse_trace_flags('PGLIBPQ');
   DBI->trace($value);
@@ -1902,7 +1902,7 @@ before running it. This is a good way to trace the flow of your program
 at a low level. This information is also output if the trace level 
 is set to 4 or greater.
 
-=item PGBEGIN
+=item PGSTART
 
 Outputs the name of each internal DBD::Pg function, and other information such as 
 the function arguments or important global variables, as each function starts. This 

@@ -97,7 +97,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	STRLEN         connect_string_size;
 	ConnStatusType connstatus;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_db_login\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_login\n", THEADER);
   
 	/* DBD::Pg syntax: 'dbname=dbname;host=host;port=port', 'User', 'Pass' */
 	/* libpq syntax: 'dbname=dbname host=host port=port user=uid password=pwd' */
@@ -274,7 +274,7 @@ static void pg_error (pTHX_ SV * h, ExecStatusType error_num, const char * error
 	char *      err;
 	imp_dbh_t * imp_dbh = (imp_dbh_t *)(DBIc_TYPE(imp_xxh) == DBIt_ST ? DBIc_PARENT_COM(imp_xxh) : imp_xxh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_error (message: %s number: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_error (message: %s number: %d)\n",
 					THEADER, error_msg, error_num);
 
 	New(0, err, strlen(error_msg)+1, char); /* freed below */
@@ -301,7 +301,7 @@ static void pg_warn (void * arg, const char * message)
 	dTHX;
 	D_imp_dbh( sv_2mortal(newRV((SV*)arg)) );
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_warn (message: %s DBIc_WARN: %d PrintWarn: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_warn (message: %s DBIc_WARN: %d PrintWarn: %d)\n",
 							 THEADER,
 							 message, DBIc_WARN(imp_dbh) ? 1 : 0,
 							 DBIc_is(imp_dbh, DBIcf_PrintWarn) ? 1 : 0);
@@ -321,7 +321,7 @@ static ExecStatusType _result(pTHX_ imp_dbh_t * imp_dbh, const char * sql)
 	PGresult *     result;
 	ExecStatusType status;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin _result (sql: %s)\n", THEADER, sql);
+	if (TSTART) TRC(DBILOGFP, "%sBegin _result (sql: %s)\n", THEADER, sql);
 
 	if (TSQL) TRC(DBILOGFP, "%s;\n\n", sql);
 
@@ -346,7 +346,7 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
 	ExecStatusType status   = PGRES_FATAL_ERROR; /* until proven otherwise */
 	bool           stateset = DBDPG_FALSE;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin _sqlstate\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin _sqlstate\n", THEADER);
 
 	if (result) {
 		TRACE_PQRESULTSTATUS;
@@ -409,7 +409,7 @@ int dbd_db_ping (SV * dbh)
 	PGTransactionStatusType tstatus;
 	ExecStatusType          status;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_db_ping\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_ping\n", THEADER);
 
 	if (NULL == imp_dbh->conn) {
 		if (TEND) TRC(DBILOGFP, "%sEnd dbd_db_ping (error: no connection)\n", THEADER);
@@ -449,7 +449,7 @@ int dbd_db_ping (SV * dbh)
 static PGTransactionStatusType pg_db_txn_status (pTHX_ imp_dbh_t * imp_dbh)
 {
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin PGTransactionStatusType\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin PGTransactionStatusType\n", THEADER);
 	TRACE_PQTRANSACTIONSTATUS;
 	return PQtransactionStatus(imp_dbh->conn);
 
@@ -464,7 +464,7 @@ static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, char * ac
 	PGTransactionStatusType tstatus;
 	ExecStatusType          status;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_rollback_commit (action: %s AutoCommit: %d BegunWork: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_rollback_commit (action: %s AutoCommit: %d BegunWork: %d)\n",
 					THEADER,
 					action,
 					DBIc_is(imp_dbh, DBIcf_AutoCommit) ? 1 : 0,
@@ -543,7 +543,7 @@ static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, char * ac
 int dbd_db_commit (SV * dbh, imp_dbh_t * imp_dbh)
 {
 	dTHX;
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_db_commit\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_commit\n", THEADER);
 	return pg_db_rollback_commit(aTHX_ dbh, imp_dbh, "commit");
 }
 
@@ -551,7 +551,7 @@ int dbd_db_commit (SV * dbh, imp_dbh_t * imp_dbh)
 int dbd_db_rollback (SV * dbh, imp_dbh_t * imp_dbh)
 {
 	dTHX;
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_db_rollback\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_rollback\n", THEADER);
 	return pg_db_rollback_commit(aTHX_ dbh, imp_dbh, "rollback");
 }
 
@@ -561,7 +561,7 @@ int dbd_db_disconnect (SV * dbh, imp_dbh_t * imp_dbh)
 {
    	dTHX;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_db_disconnect\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_disconnect\n", THEADER);
 
 	/* We assume that disconnect will always work	
 	   since most errors imply already disconnected. */
@@ -595,7 +595,7 @@ void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
 {
 	dTHX;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_db_destroy\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_destroy\n", THEADER);
 
 	if (DBIc_ACTIVE(imp_dbh))
 		(void)dbd_db_disconnect(dbh, imp_dbh);
@@ -627,7 +627,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 	char * key = SvPV(keysv,kl);
 	SV *   retsv = Nullsv;
 	
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_db_FETCH (key: %s dbh: %d)\n", THEADER, key, dbh);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_FETCH (key: %s dbh: %d)\n", THEADER, key, dbh);
 	
 	switch (kl) {
 
@@ -768,7 +768,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 	unsigned int newval = SvTRUE(valuesv);
 	int          retval = 0;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_db_STORE (key: %s newval: %d)\n", THEADER, key, newval);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_STORE (key: %s newval: %d)\n", THEADER, key, newval);
 	
 	switch (kl) {
 
@@ -865,7 +865,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 	SV *              retsv = Nullsv;
 	int               fields, x;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_st_FETCH (key: %s sth: %d)\n", THEADER, key, sth);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_FETCH (key: %s sth: %d)\n", THEADER, key, sth);
 	
 	/* Some can be done before we have a result: */
 	switch (kl) {
@@ -1178,7 +1178,7 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 	char * value = SvPV(valuesv,vl);
 	int    retval = 0;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_st_STORE (key: %s value: %s sth: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_STORE (key: %s value: %s sth: %d)\n",
 					THEADER, key, value, sth);
 	
 	switch (kl) {
@@ -1238,7 +1238,7 @@ int dbd_discon_all (SV * drh, imp_drh_t * imp_drh)
 {
 	dTHX;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_discon_all (drh: %d)\n", THEADER, drh);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_discon_all (drh: %d)\n", THEADER, drh);
 
 	/* The disconnect_all concept is flawed and needs more work */
 	if (!PL_dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
@@ -1258,7 +1258,7 @@ int pg_db_getfd (SV * dbh, imp_dbh_t * imp_dbh)
 {
 	dTHX;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_getfd (dbh: %d)\n", THEADER, dbh);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_getfd (dbh: %d)\n", THEADER, dbh);
 
 	TRACE_PQSOCKET;
 	return PQsocket(imp_dbh->conn);
@@ -1275,7 +1275,7 @@ SV * pg_db_pg_notifies (SV * dbh, imp_dbh_t * imp_dbh)
 	AV *       ret;
 	SV *       retsv;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_pg_notifies\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_pg_notifies\n", THEADER);
 
 	TRACE_PQCONSUMEINPUT;
 	status = PQconsumeInput(imp_dbh->conn);
@@ -1317,7 +1317,7 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 	STRLEN mypos=0, wordstart, newsize; /* Used to find and set firstword */
 	SV **svp; /* To help parse the arguments */
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_st_prepare (statement: %s)\n", THEADER, statement);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_prepare (statement: %s)\n", THEADER, statement);
 
 	/* Set default values for this statement handle */
 	imp_sth->placeholder_type = 0;
@@ -1478,7 +1478,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 	ph_t *newph, *thisph, *currph = NULL; /* Placeholder structures to help build ll */
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_st_split_statement\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_st_split_statement\n", THEADER);
 	if (TRACE6) TRC(DBILOGFP, "%spg_st_split_statement: (%s)\n", THEADER, statement);
 	
 	/*
@@ -1932,7 +1932,7 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 	Oid *        paramTypes = NULL;
 	ph_t *       currph;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_st_prepare_statement\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_st_prepare_statement\n", THEADER);
 
 #if PGLIBVERSION >= 80000
 	oldprepare = DBDPG_FALSE;
@@ -2076,7 +2076,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 
    	maxlen = 0; /* not used, this makes the compiler happy */
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_bind_ph (ph_name: %s)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_bind_ph (ph_name: %s)\n",
 					THEADER,
 					neatsvpv(ph_name,0));
 
@@ -2300,7 +2300,7 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 	STRLEN svlen;
 	SV * value;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_stringify_array\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_stringify_array\n", THEADER);
 
 	toparr = (AV *) SvRV(input);
 	value = newSVpv("{", 1);
@@ -2426,7 +2426,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 	int    opening_braces = 0;
 	int    closing_braces = 0;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_destringify_array (string: %s quotechar: %c)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_destringify_array (string: %s quotechar: %c)\n",
 					THEADER, input, coltype->array_delimeter);
 
 	/*
@@ -2551,7 +2551,7 @@ int pg_quickexec (SV * dbh, const char * sql, int asyncflag)
 	char *                  cmdStatus = NULL;
 	int                     rows = 0;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_quickexec (query: %s async: %d async_status: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_quickexec (query: %s async: %d async_status: %d)\n",
 			THEADER, sql, asyncflag, imp_dbh->async_status);
 
 	if (NULL == imp_dbh->conn)
@@ -2698,7 +2698,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	int           num_fields;
 	int           ret = -2;
 	
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_st_execute\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_execute\n", THEADER);
 	
 	if (NULL == imp_dbh->conn)
 		croak("execute on disconnected handle");
@@ -3115,7 +3115,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 /* ================================================================== */
 static int is_high_bit_set(pTHX_ const unsigned char * val, STRLEN size)
 {
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin is_high_bit_set\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin is_high_bit_set\n", THEADER);
 	while (*val && size--)
 		if (*val++ & 0x80) return 1;
 	return 0;
@@ -3137,7 +3137,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 	STRLEN            len;
 	AV *              av;
 	
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_st_fetch\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_fetch\n", THEADER);
 
 	/* Check that execute() was executed successfully */
 	if ( !DBIc_ACTIVE(imp_sth) ) {
@@ -3276,7 +3276,7 @@ static void pg_db_free_savepoints_to (pTHX_ imp_dbh_t * imp_dbh, const char *sav
 {
 	I32 i;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_free_savepoints_to\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_free_savepoints_to\n", THEADER);
 
 	for (i = av_len(imp_dbh->savepoints); i >= 0; i--) {
 		SV * const elem = av_pop(imp_dbh->savepoints);
@@ -3296,7 +3296,7 @@ int dbd_st_rows (SV * sth, imp_sth_t * imp_sth)
 {
 	dTHX;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_st_rows (sth: %d)\n", THEADER, sth);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_rows (sth: %d)\n", THEADER, sth);
 
 	return imp_sth->rows;
 
@@ -3309,7 +3309,7 @@ int dbd_st_finish (SV * sth, imp_sth_t * imp_sth)
 	dTHX;
 	D_imp_dbh_from_sth;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbdpg_finish (sth: %d async: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbdpg_finish (sth: %d async: %d)\n",
 					THEADER, sth, imp_dbh->async_status);
 	
 	if (DBIc_ACTIVE(imp_sth) && imp_sth->result) {
@@ -3345,7 +3345,7 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 	int                     status;
 	PGTransactionStatusType tstatus;
 	
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_st_deallocate_statement\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_st_deallocate_statement\n", THEADER);
 
 	if (NULL == imp_dbh->conn || NULL == imp_sth->prepare_name) {
 		if (TEND) TRC(DBILOGFP, "%sEnd pg_st_deallocate_statement (0)\n", THEADER);
@@ -3428,7 +3428,7 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 	ph_t *  currph;
 	ph_t *  nextph;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_st_destroy\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_destroy\n", THEADER);
 
 	if (NULL == imp_sth->seg) /* Already been destroyed! */
 		croak("dbd_st_destroy called twice!");
@@ -3508,7 +3508,7 @@ pg_db_putline (SV * dbh, const char * buffer)
 	D_imp_dbh(dbh);
 	int copystatus;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_putline\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_putline\n", THEADER);
 
 	/* We must be in COPY IN state */
 	if (PGRES_COPY_IN != imp_dbh->copystate)
@@ -3544,7 +3544,7 @@ pg_db_getline (SV * dbh, SV * svbuf, int length)
 
 	buffer = SvPV_nolen(svbuf);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_getline\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_getline\n", THEADER);
 
 	tempbuf = NULL;
 
@@ -3588,7 +3588,7 @@ pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 	int    copystatus;
 	char * tempbuf;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_getcopydata\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_getcopydata\n", THEADER);
 
 	/* We must be in COPY OUT state */
 	if (PGRES_COPY_OUT != imp_dbh->copystate)
@@ -3647,7 +3647,7 @@ pg_db_putcopydata (SV * dbh, SV * dataline)
 	D_imp_dbh(dbh);
 	int copystatus;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_putcopydata\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_putcopydata\n", THEADER);
 
 	/* We must be in COPY IN state */
 	if (PGRES_COPY_IN != imp_dbh->copystate)
@@ -3687,7 +3687,7 @@ int pg_db_putcopyend (SV * dbh)
 	D_imp_dbh(dbh);
 	int copystatus;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_putcopyend\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_putcopyend\n", THEADER);
 
 	if (0 == imp_dbh->copystate) {
 		warn("pg_putcopyend cannot be called until a COPY is issued");
@@ -3747,7 +3747,7 @@ int pg_db_endcopy (SV * dbh)
 	PGresult *     result;
 	ExecStatusType status;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_endcopy\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_endcopy\n", THEADER);
 
 	if (0==imp_dbh->copystate)
 		croak("pg_endcopy cannot be called until a COPY is issued");
@@ -3795,7 +3795,7 @@ void pg_db_pg_server_trace (SV * dbh, FILE * fh)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_pg_server_trace\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_pg_server_trace\n", THEADER);
 
 	TRACE_PQTRACE;
 	PQtrace(imp_dbh->conn, fh);
@@ -3811,7 +3811,7 @@ void pg_db_pg_server_untrace (SV * dbh)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_pg_server_untrace\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_pg_server_untrace\n", THEADER);
 
 	TRACE_PQUNTRACE;
 	PQuntrace(imp_dbh->conn);
@@ -3828,7 +3828,7 @@ int pg_db_savepoint (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	int    status;
 	char * action;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_savepoint (name: %s)\n", THEADER, savepoint);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_savepoint (name: %s)\n", THEADER, savepoint);
 
 	New(0, action, strlen(savepoint) + 11, char); /* freed below */
 
@@ -3879,7 +3879,7 @@ int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, const char *savepoint)
 	int    status;
 	char * action;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_rollback_to (name: %s)\n", THEADER, savepoint);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_rollback_to (name: %s)\n", THEADER, savepoint);
 
 	New(0, action, strlen(savepoint) + 13, char);
 
@@ -3918,7 +3918,7 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	int    status;
 	char * action;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_release (name: %s)\n", THEADER, savepoint);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_release (name: %s)\n", THEADER, savepoint);
 
 	New(0, action, strlen(savepoint) + 9, char);
 
@@ -3956,7 +3956,7 @@ static int pg_db_start_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh)
 {
 	int status = -1;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_start_txn\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_start_txn\n", THEADER);
 
 	/* If not autocommit, start a new transaction */
 	if (!imp_dbh->done_begin && !DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
@@ -3982,7 +3982,7 @@ unsigned int pg_db_lo_creat (SV * dbh, int mode)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_pg_lo_creat (mode: %d)\n", THEADER, mode);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_pg_lo_creat (mode: %d)\n", THEADER, mode);
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
 		return 0; /* No other option, because lo_creat returns an Oid */
@@ -3996,7 +3996,7 @@ int pg_db_lo_open (SV * dbh, unsigned int lobjId, int mode)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_pg_lo_open (mode: %d objectid: %ld)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_pg_lo_open (mode: %d objectid: %ld)\n",
 					THEADER, mode, lobjId);
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
@@ -4011,7 +4011,7 @@ int pg_db_lo_close (SV * dbh, int fd)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_lo_close (fd: %d)\n", THEADER, fd);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_close (fd: %d)\n", THEADER, fd);
 
 	return lo_close(imp_dbh->conn, fd); /* <0 on error, 0 if ok */
 }
@@ -4022,7 +4022,7 @@ int pg_db_lo_read (SV * dbh, int fd, char * buf, size_t len)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_lo_read (fd: %d length: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_read (fd: %d length: %d)\n",
 					THEADER, fd, len);
 
 	return lo_read(imp_dbh->conn, fd, buf, len); /* bytes read, <0 on error */
@@ -4034,7 +4034,7 @@ int pg_db_lo_write (SV * dbh, int fd, char * buf, size_t len)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_lo_write (fd: %d length: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_write (fd: %d length: %d)\n",
 					THEADER, fd, len);
 
 	return lo_write(imp_dbh->conn, fd, buf, len); /* bytes written, <0 on error */
@@ -4046,7 +4046,7 @@ int pg_db_lo_lseek (SV * dbh, int fd, int offset, int whence)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_lo_lseek (fd: %d offset: %d whence: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_lseek (fd: %d offset: %d whence: %d)\n",
 					THEADER, fd, offset, whence);
 
 	return lo_lseek(imp_dbh->conn, fd, offset, whence); /* new position, -1 on error */
@@ -4058,7 +4058,7 @@ int pg_db_lo_tell (SV * dbh, int fd)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_lo_tell (fd: %d)\n", THEADER, fd);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_tell (fd: %d)\n", THEADER, fd);
 
 	return lo_tell(imp_dbh->conn, fd); /* current position, <0 on error */
 }
@@ -4069,7 +4069,7 @@ int pg_db_lo_unlink (SV * dbh, unsigned int lobjId)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_lo_unlink (objectid: %d)\n", THEADER, lobjId);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_unlink (objectid: %d)\n", THEADER, lobjId);
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
 		return -2;
@@ -4083,7 +4083,7 @@ unsigned int pg_db_lo_import (SV * dbh, char * filename)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_lo_import (filename: %s)\n", THEADER, filename);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_import (filename: %s)\n", THEADER, filename);
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
 		return 0; /* No other option, because lo_import returns an Oid */
@@ -4097,7 +4097,7 @@ int pg_db_lo_export (SV * dbh, unsigned int lobjId, char * filename)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_lo_export (objectid: %d filename: %s)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_export (objectid: %d filename: %s)\n",
 					THEADER, lobjId, filename);
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
@@ -4118,7 +4118,7 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
 	SV *   bufsv;
 	char * tmp;
 	
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin dbd_st_blob_read (objectid: %d offset: %d length: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_blob_read (objectid: %d offset: %d length: %d)\n",
 					THEADER, lobjId, offset, len);
 
 	/* safety checks */
@@ -4213,7 +4213,7 @@ int pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 	int rows;
 	char *cmdStatus = NULL;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_result\n", THEADER);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_result\n", THEADER);
 
 	if (1 != imp_dbh->async_status) {
 		pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running\n");
@@ -4310,7 +4310,7 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 {
 	dTHX;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_ready (async status: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_ready (async status: %d)\n",
 					THEADER, imp_dbh->async_status);
 
 	if (0 == imp_dbh->async_status) {
@@ -4352,7 +4352,7 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
 	PGresult *result;
 	ExecStatusType status;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_cancel (async status: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_cancel (async status: %d)\n",
 					THEADER, imp_dbh->async_status);
 
 	if (0 == imp_dbh->async_status) {
@@ -4429,7 +4429,7 @@ int pg_db_cancel_sth(SV *sth, imp_sth_t *imp_sth)
 	D_imp_dbh_from_sth;
 	bool cancel_result;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin pg_db_cancel_sth (async status: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_cancel_sth (async status: %d)\n",
 					THEADER, imp_dbh->async_status);
 
 	cancel_result = pg_db_cancel(sth, imp_dbh);
@@ -4453,7 +4453,7 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, int asyncfla
 	PGresult *result;
 	ExecStatusType status;
 
-	if (TBEGIN) TRC(DBILOGFP, "%sBegin handle_old_sync (flag: %d)\n", THEADER, asyncflag);
+	if (TSTART) TRC(DBILOGFP, "%sBegin handle_old_sync (flag: %d)\n", THEADER, asyncflag);
 
 	if (asyncflag & PG_OLDQUERY_CANCEL) {
 		/* Cancel the outstanding query */
