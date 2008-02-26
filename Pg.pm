@@ -17,7 +17,7 @@ use 5.006001;
 {
 	package DBD::Pg;
 
-	use version; our $VERSION = qv('2.1.1_1');
+	use version; our $VERSION = qv('2.1.3_1');
 
 	use DBI ();
 	use DynaLoader ();
@@ -80,14 +80,12 @@ use 5.006001;
 	## These two methods are here to allow calling before connect()
 	sub parse_trace_flag {
 		my ($class, $flag) = @_;
-		return 0x01000000 if $flag eq 'LIBPQ';
-		return 0x02000000 if $flag eq 'START';
-		return 0x04000000 if $flag eq 'STOP';
-		return 0x08000000 if $flag eq 'LOGIN';
-		return 0x0F000000 if $flag eq 'QUOTE';
-		return 0x10000000 if $flag eq 'ERROR';
-		return 0x11000000 if $flag eq 'WARN';
-		return 0x12000000 if $flag eq 'PREFIX';
+		return 0x01000000 if $flag eq 'PGLIBPQ';
+		return 0x02000000 if $flag eq 'PGBEGIN';
+		return 0x04000000 if $flag eq 'PGEND';
+		return 0x08000000 if $flag eq 'PGPREFIX';
+		return 0x10000000 if $flag eq 'PGLOGIN';
+		return 0x20000000 if $flag eq 'PGQUOTE';
 		return DBI::parse_trace_flag($dbh, $flag);
 	}
 	sub parse_trace_flags {
@@ -1648,7 +1646,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 2.1.1_1 of the DBD::Pg module
+This documents version 2.1.3_1 of the DBD::Pg module
 
 =head1 SYNOPSIS
 
@@ -1853,7 +1851,8 @@ variable C<DBI_TRACE>.
 The value is either a numeric level or a named flag. For the 
 flags, see L<param_trace_flag>. Note that flag levels usually 
 cause DBD::Pg to start most items with "dbdpg: " to help 
-distinguish it from DBI tracing output.
+distinguish it from DBI tracing output, although this can be turned 
+off with the PGNOPREFIX flag.
 
 =item B<trace_msg>
 
@@ -1864,10 +1863,10 @@ Implemented by DBI, no driver-specific impact.
 
 =item B<parse_trace_flag> and B<parse_trace_flags>
 
-  $dbh->trace($dbh->parse_trace_flag('SQL|LIBPQ'));
-  $dbh->trace($dbh->parse_trace_flag('1|START'));
+  $dbh->trace($dbh->parse_trace_flag('SQL|PGLIBPQ'));
+  $dbh->trace($dbh->parse_trace_flag('1|PGBEGIN'));
 
-  my $value = DBD::Pg->parse_trace_flags('LIBPQ');
+  my $value = DBD::Pg->parse_trace_flags('PGLIBPQ');
   DBI->trace($value);
 
 The parse_trace_flags method is used to convert one or more named 
@@ -1893,64 +1892,39 @@ DBD::Pg supports the following trace flags:
 Output all SQL statements. Note that the output provided will not 
 necessarily be in a form suitable to passing directly to Postgres, 
 as server-side prepared statements are used extensively by DBD::Pg.
+For maximum portability of output (but with a potential small performance 
+hit), use $dbh->{pg_server_prepare} = 0;
 
-=item LIBPQ
+=item PGLIBPQ
 
 Outputs the name of each libpq function (without arguments) immediately 
 before running it. This is a good way to trace the flow of your program 
 at a low level. This information is also output if the trace level 
 is set to 4 or greater.
 
-=item START
+=item PGBEGIN
 
-Outputs the name of each function, and other information such as the function 
-arguments or important global variables, as each function starts. This information 
-is also output if the trace level is set to 4 or greater.
- Note that if the trace 
-level if 4 or more, the output will be prefixed with "dbdpg: " to help differentiate 
-it from the DBI trace output.
+Outputs the name of each internal DBD::Pg function, and other information such as 
+the function arguments or important global variables, as each function starts. This 
+information is also output if the trace level is set to 4 or greater.
 
-=item STOP
+=item PGEND
 
-Outputs a simple message at the very end of each function. This output also appears, 
-and will have a "dbdpg: " prepended to it, if the trace level is set to 5 or higher.
+Outputs a simple message at the very end of each function. This is also output if the 
+trace level is set to 4 or greater.
 
-=item LOGIN
+=item PGPREFIX
+
+Forces each line of trace output to begin with the string "dbdpg: ". This helps to 
+differentiate it from the DBI tracing output.
+
+=item PGLOGIN
 
 Outputs a message showing the connection string right before a new database connection 
 is attempted, a message when the connection was successful, and a message right after 
-the database has been disconnected.
+the database has been disconnected. Also output if trace level is 5 or greater.
 
-=item ERROR
-
-Outputs any errors received in the format:
-
-  Error at pg_error: sqlstate=X error_num=Y error=Z
-
-=item WARN
-
-Outputs any warnings received in the format:
-
-  Warning at pg_warn: (X) DBIc_WARN=Y PrintWarn=Z
-
-=item PREFIX
-
-Normally, each line of trace output is started with the string "dbdpg: " to help 
-differentiate it from the DBI tracing output. This string is not shown if the 
-only thing determining the output was a trace flag, and the trace level was 0. 
-For example, this would not show the prefix:
-
-  $dbh->trace($dbh->parse_trace_flags('LIBPQ'));
-
-In this example, the prefix would be shown:
-
-  $dbh->trace($dbh->parse_trace_flags('LIBPQ|1'));
-
-You can force this prefix on by setting the PREFIX flag. For example:
-
-  $dbh->trace($dbh->parse_trace_flags('LIBPQ|PREFIX'));
-
-=item QUOTE
+=item PGQUOTE
 
 Outputs a message at the start of each quoting function. Not very useful outside of 
 DBD::Pg internal debugging purposes.

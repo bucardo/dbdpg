@@ -55,45 +55,39 @@ static int errno;
 
 #define TSQL	     (TFLAGS & 256) /* Defined in DBI */
 
-#define FLAGS_LIBPQ  0x01000000
-#define FLAGS_START  0x02000000
-#define FLAGS_END    0x04000000
-#define FLAGS_LOGIN  0x08000000
-#define FLAGS_QUOTE  0x0F000000
-#define FLAGS_ERROR  0x10000000
-#define FLAGS_WARN   0x11000000
-#define FLAGS_PREFIX 0x12000000
+#define FLAGS_LIBPQ    0x01000000
+#define FLAGS_BEGIN    0x02000000
+#define FLAGS_END      0x04000000
+#define FLAGS_PREFIX   0x08000000
+#define FLAGS_LOGIN    0x10000000
+#define FLAGS_QUOTE    0x20000000
 
 #define TFLIBPQ      (TFLAGS & FLAGS_LIBPQ)
-#define TFSTART      (TFLAGS & FLAGS_START)
+#define TFBEGIN      (TFLAGS & FLAGS_BEGIN)
 #define TFEND        (TFLAGS & FLAGS_END)
+#define TFPREFIX     (TFLAGS & FLAGS_PREFIX)
 #define TFLOGIN      (TFLAGS & FLAGS_LOGIN)
 #define TFQUOTE      (TFLAGS & FLAGS_QUOTE)
-#define TFERROR      (TFLAGS & FLAGS_ERROR)
-#define TFPREFIX     (TFLAGS & FLAGS_PREFIX)
-#define TFWARN       (TFLAGS & FLAGS_WARN)
 
-#define TRACE1       (TLEVEL >= 1) /* Do not use directly: DBI only */
-#define TRACE2       (TLEVEL >= 2) /* Do not use directly: DBI only */
-#define TRACE3       (TLEVEL >= 3)
-#define TRACE4       (TLEVEL >= 4)
-#define TRACE5       (TLEVEL >= 5)
+#define TRACE1       (TLEVEL >= 1) /* Avoid using directly: DBI only */
+#define TRACE2       (TLEVEL >= 2) /* Avoid using directly: DBI only */
+#define TRACE3       (TLEVEL >= 3) /* Basic debugging */
+#define TRACE4       (TLEVEL >= 4) /* More detailed debugging */
+#define TRACE5       (TLEVEL >= 5) /* Very detailed debugging */
 #define TRACE6       (TLEVEL >= 6)
 #define TRACE7       (TLEVEL >= 7)
 #define TRACE8       (TLEVEL >= 8)
 
 #define TLIBPQ       (TRACE5 || TFLIBPQ)
-#define TSTART       (TRACE4 || TFSTART) /* Start of a major function */
+#define TBEGIN       (TRACE4 || TFBEGIN) /* Beginning of a major function */
 #define TEND         (TRACE4 || TFEND)   /* End of a major function   */
 #define TLOGIN       (TRACE5 || TFLOGIN) /* Connect and disconnect    */
-#define TSTARTQ      (TRACE4 || TFQUOTE) /* Quote functions           */
-#define TERROR       (TRACE3 || TFERROR) /* pg_error calls            */
-#define TWARN        (TRACE3 || TFWARN)  /* pg_warn calls             */
+#define TSTARTQ      (TRACE6 || TFQUOTE) /* Quote functions           */
 
 #define TRACEWARN    (TRACE1) /* Non-fatal but serious problems */
 
 /* Do we show a "dbdpg: " header? */
-#define THEADER      (TLEVEL || TFPREFIX) ? "dbdpg: " : ""
+#define THEADER      (TFPREFIX) ? "dbdpg: " : ""
 
 #define TRC (void)PerlIO_printf
 
