@@ -19,6 +19,14 @@ This is version 2.1.3_1 of DBD-Pg.  The web site for this interface is at:
 
 	http://search.cpan.org/dist/DBD-Pg/
 
+The development of DBD::Pg can be tracked at:
+
+    http://svn.perl.org/modules/DBD-Pg/trunk/
+
+The mailing list is at:
+
+    http://www.nntp.perl.org/group/perl.dbd.pg/
+
 For further information about DBI look at:
 
 	http://dbi.perl.org/
