@@ -9,7 +9,7 @@
 
 2.1.3 Released February 20, 2008
 
-	- Do not check POSTGRES_LIB, if may have -lssl flag.
+	- Do not assume POSTGRES_LIB is a plain dirname, as it may have " -lssl".
 
 2.1.2 Released February 19, 2008
 
