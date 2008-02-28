@@ -1,18 +1,15 @@
 TODO: 
 
 - Mention RETURNING clause support in docs.
-- Play nicely with standard_confirming_strings (CPAN bug #27538)
+- Play nicely with standard_conforming_strings (CPAN bug #27538)
 - Use WITH HOLD for cursor work
 - Start testing with a thread-enabled Perl
-- Support for new error protocol
-- Support new DBI trace scheme (partially done)
 - Create a .ppm for Windows
 - Change quote and dequote functions to take Sv instead of string so that
    things like arrays can be serialized by the quote function.  This will
-   take care of broken chopblanks and pg_bool_tf (pass the  quote/dequote 
+   take care of broken chopblanks and pg_bool_tf (pass the quote/dequote 
    options struct to function quote/dequote functions).
 - Allow user callbacks to quote user-defined types?
-- Rename functions and add defines to avoid problems with static linking of multi DBDs
 - Move to the Module::Build system
 - Remove libpq dependency
 - Handle and/or better tests for different encoding, especially those not 
