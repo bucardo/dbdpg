@@ -271,23 +271,21 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 static void pg_error (pTHX_ SV * h, ExecStatusType error_num, const char * error_msg)
 {
 	D_imp_xxh(h);
-	char *      err;
+	size_t error_len;
 	imp_dbh_t * imp_dbh = (imp_dbh_t *)(DBIc_TYPE(imp_xxh) == DBIt_ST ? DBIc_PARENT_COM(imp_xxh) : imp_xxh);
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_error (message: %s number: %d)\n",
 					THEADER, error_msg, error_num);
 
-	New(0, err, strlen(error_msg)+1, char); /* freed below */
-	strcpy(err, error_msg);
+	error_len = strlen(error_msg);
 
 	/* Strip final newline so line number appears for warn/die */
-	if (err[strlen(err)] == 10)
-		err[strlen(err)] = '\0';
+	if (error_len > 0 && error_msg[error_len-1] == 10)
+		error_len--;
 
 	sv_setiv(DBIc_ERR(imp_xxh), (IV)error_num);
-	sv_setpv(DBIc_ERRSTR(imp_xxh), (char*)err);
+	sv_setpvn(DBIc_ERRSTR(imp_xxh), (char*)error_msg, error_len);
 	sv_setpv(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate);
-	Safefree(err);
 
 	if (TEND) TRC(DBILOGFP, "%sEnd pg_error\n", THEADER);
 
@@ -1056,13 +1054,10 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			PGresult *result;
 			int status = -1;
 			D_imp_dbh_from_sth;
-			char *statement;
 			int nullable; /* 0 = not nullable, 1 = nullable 2 = unknown */
 			int y;
 			retsv = newRV(sv_2mortal((SV*)av));
 
-			New(0, statement, 100, char); /* freed below */
-			statement[0] = '\0';
 			while(--fields >= 0) {
 				nullable=2;
 				TRACE_PQFTABLE;
@@ -1070,9 +1065,9 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 				TRACE_PQFTABLECOL;
 				y = PQftablecol(imp_sth->result, fields);
 				if (InvalidOid != x && y > 0) { /* We know what table and column this came from */
-					sprintf(statement,
+					char statement[128];
+					snprintf(statement, sizeof(statement),
 							"SELECT attnotnull FROM pg_catalog.pg_attribute WHERE attrelid=%d AND attnum=%d", x, y);
-					statement[strlen(statement)]='\0';
 					TRACE_PQEXEC;
 					result = PQexec(imp_dbh->conn, statement);
 					TRACE_PQRESULTSTATUS;
@@ -1097,7 +1092,6 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 				}
 				(void)av_store(av, fields, newSViv(nullable));
 			}
-			Safefree(statement);
 		}
 		break;
 
