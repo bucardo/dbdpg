@@ -17,7 +17,7 @@ like( $DBD::Pg::VERSION, qr/^v?\d+\.\d+\.\d+(?:_\d+)?$/, qq{Found DBD::Pg::VERSI
 
 SKIP: {
 	eval { require Test::Warn; };
-	$@ and skip 'Need Test::Warn to test vesion warning', 1;
+	$@ and skip 'Need Test::Warn to test version warning', 1;
 
 	my $t=q{Version comparison does not throw a warning};
 
