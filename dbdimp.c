@@ -284,7 +284,7 @@ static void pg_error (pTHX_ SV * h, ExecStatusType error_num, const char * error
 		error_len--;
 
 	sv_setiv(DBIc_ERR(imp_xxh), (IV)error_num);
-	sv_setpvn(DBIc_ERRSTR(imp_xxh), (char*)error_msg, error_len);
+	sv_setpvn(DBIc_ERRSTR(imp_xxh), error_msg, error_len);
 	sv_setpv(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate);
 
 	if (TEND) TRC(DBILOGFP, "%sEnd pg_error\n", THEADER);
