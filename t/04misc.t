@@ -16,7 +16,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 36;
+plan tests => 54;
 
 isnt( $dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -55,10 +55,20 @@ $num = $dbh->parse_trace_flags('SQL|pglibpq|pgstart');
 is( $num, 0x03000100, $t);
 
 my $flagexp = 24;
+my $sth = $dbh->prepare('SELECT 1');
 for my $flag (qw/pglibpq pgstart pgend pgprefix pglogin pgquote/) {
 	my $hex = 2**$flagexp++;
+	$t = qq{Database handle method 'server_trace_flag' returns $hex for flag $flag};
+	$num = $dbh->parse_trace_flag($flag);
+	is( $num, $hex, $t);
 	$t = qq{Database handle method 'server_trace_flags' returns $hex for flag $flag};
 	$num = $dbh->parse_trace_flags($flag);
+	is( $num, $hex, $t);
+	$t = qq{Statement handle method 'server_trace_flag' returns $hex for flag $flag};
+	$num = $sth->parse_trace_flag($flag);
+	is( $num, $hex, $t);
+	$t = qq{Statement handle method 'server_trace_flags' returns $hex for flag $flag};
+	$num = $sth->parse_trace_flag($flag);
 	is( $num, $hex, $t);
 }
 
@@ -208,7 +218,7 @@ Disconnection complete
 	$info =~ s/(Login connection string: ).+/$1/g;
 	is($info, "$expected$expected", $t);
 
-	$t=q{Trace flag 'pglogin' works as expected with DBD::Pg->parse_trace_flags()};
+	$t=q{Trace flag 'pglogin' works as expected with DBD::Pg->parse_trace_flag()};
 	seek $fh, 0, 0;
 	truncate $fh, tell($fh);
 	DBI->trace($flagval, $filename);

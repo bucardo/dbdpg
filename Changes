@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.2.2
+
+	- Add parse_trace_flag as statement handle method.
+
 2.2.1
 
 	- Fixed memory leaks in dbdimp.c (CPAN bug #33743)
