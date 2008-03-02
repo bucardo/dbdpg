@@ -80,12 +80,12 @@ use 5.006001;
 	## These two methods are here to allow calling before connect()
 	sub parse_trace_flag {
 		my ($class, $flag) = @_;
-		return 0x01000000 if $flag eq 'PGLIBPQ';
-		return 0x02000000 if $flag eq 'PGSTART';
-		return 0x04000000 if $flag eq 'PGEND';
-		return 0x08000000 if $flag eq 'PGPREFIX';
-		return 0x10000000 if $flag eq 'PGLOGIN';
-		return 0x20000000 if $flag eq 'PGQUOTE';
+		return 0x01000000 if $flag eq 'pglibpq';
+		return 0x02000000 if $flag eq 'pgstart';
+		return 0x04000000 if $flag eq 'pgend';
+		return 0x08000000 if $flag eq 'pgprefix';
+		return 0x10000000 if $flag eq 'pglogin';
+		return 0x20000000 if $flag eq 'pgquote';
 		return DBI::parse_trace_flag($dbh, $flag);
 	}
 	sub parse_trace_flags {
@@ -1849,10 +1849,7 @@ well by setting C<DBI-E<gt>trace>, or by using the environment
 variable C<DBI_TRACE>.
 
 The value is either a numeric level or a named flag. For the 
-flags, see L<param_trace_flag>. Note that flag levels usually 
-cause DBD::Pg to start most items with "dbdpg: " to help 
-distinguish it from DBI tracing output, although this can be turned 
-off with the PGNOPREFIX flag.
+flags that DBD::Pg uses, see L<param_trace_flag>.
 
 =item B<trace_msg>
 
@@ -1863,10 +1860,10 @@ Implemented by DBI, no driver-specific impact.
 
 =item B<parse_trace_flag> and B<parse_trace_flags>
 
-  $dbh->trace($dbh->parse_trace_flag('SQL|PGLIBPQ'));
-  $dbh->trace($dbh->parse_trace_flag('1|PGSTART'));
+  $dbh->trace($dbh->parse_trace_flag('SQL|pglibpq'));
+  $dbh->trace($dbh->parse_trace_flag('1|pgstart'));
 
-  my $value = DBD::Pg->parse_trace_flags('PGLIBPQ');
+  my $value = DBD::Pg->parse_trace_flags('pglibpq');
   DBI->trace($value);
 
 The parse_trace_flags method is used to convert one or more named 
@@ -1895,36 +1892,36 @@ as server-side prepared statements are used extensively by DBD::Pg.
 For maximum portability of output (but with a potential small performance 
 hit), use $dbh->{pg_server_prepare} = 0;
 
-=item PGLIBPQ
+=item pglibpq
 
 Outputs the name of each libpq function (without arguments) immediately 
 before running it. This is a good way to trace the flow of your program 
 at a low level. This information is also output if the trace level 
 is set to 4 or greater.
 
-=item PGSTART
+=item pgstart
 
 Outputs the name of each internal DBD::Pg function, and other information such as 
 the function arguments or important global variables, as each function starts. This 
 information is also output if the trace level is set to 4 or greater.
 
-=item PGEND
+=item pgend
 
 Outputs a simple message at the very end of each function. This is also output if the 
 trace level is set to 4 or greater.
 
-=item PGPREFIX
+=item pgprefix
 
 Forces each line of trace output to begin with the string "dbdpg: ". This helps to 
 differentiate it from the DBI tracing output.
 
-=item PGLOGIN
+=item pglogin
 
 Outputs a message showing the connection string right before a new database connection 
 is attempted, a message when the connection was successful, and a message right after 
 the database has been disconnected. Also output if trace level is 5 or greater.
 
-=item PGQUOTE
+=item pgquote
 
 Outputs a message at the start of each quoting function. Not very useful outside of 
 DBD::Pg internal debugging purposes.

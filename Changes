@@ -8,6 +8,7 @@
 		[Alexey Tourbin]
 	- Fixed char count in Renew() (CPAN bug #33738)
 		[Alexey Tourbin]
+	- Change local trace_flags to lowercase.
 
 2.2.0 Released February 27, 2008 (subversion r10849)
 

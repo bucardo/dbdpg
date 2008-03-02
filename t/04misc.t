@@ -34,8 +34,8 @@ $t = q{Method 'server_trace_flag' returns 0x00000100 for DBI value 'SQL'};
 $num = DBD::Pg->parse_trace_flag('SQL');
 is( $num, 0x00000100, $t);
 
-$t = q{Method 'server_trace_flag' returns 0x01000000 for DBD::Pg flag 'PGLIBPQ'};
-$num = DBD::Pg->parse_trace_flag('PGLIBPQ');
+$t = q{Method 'server_trace_flag' returns 0x01000000 for DBD::Pg flag 'pglibpq'};
+$num = DBD::Pg->parse_trace_flag('pglibpq');
 is( $num, 0x01000000, $t);
 
 $t = q{Database handle method 'server_trace_flag' returns undef on bogus argument};
@@ -46,16 +46,16 @@ $t = q{Database handle method 'server_trace_flag' returns 0x00000100 for DBI val
 $num = $dbh->parse_trace_flag('SQL');
 is( $num, 0x00000100, $t);
 
-$t = q{Database handle method 'server_trace_flags' returns 0x01000100 for 'SQL|PGLIBPQ'};
-$num = $dbh->parse_trace_flags('SQL|PGLIBPQ');
+$t = q{Database handle method 'server_trace_flags' returns 0x01000100 for 'SQL|pglibpq'};
+$num = $dbh->parse_trace_flags('SQL|pglibpq');
 is( $num, 0x01000100, $t);
 
-$t = q{Database handle method 'server_trace_flags' returns 0x03000100 for 'SQL|PGLIBPQ|PGSTART'};
-$num = $dbh->parse_trace_flags('SQL|PGLIBPQ|PGSTART');
+$t = q{Database handle method 'server_trace_flags' returns 0x03000100 for 'SQL|pglibpq|pgstart'};
+$num = $dbh->parse_trace_flags('SQL|pglibpq|pgstart');
 is( $num, 0x03000100, $t);
 
 my $flagexp = 24;
-for my $flag (qw/PGLIBPQ PGSTART PGEND PGPREFIX PGLOGIN PGQUOTE/) {
+for my $flag (qw/pglibpq pgstart pgend pgprefix pglogin pgquote/) {
 	my $hex = 2**$flagexp++;
 	$t = qq{Database handle method 'server_trace_flags' returns $hex for flag $flag};
 	$num = $dbh->parse_trace_flags($flag);
@@ -84,10 +84,10 @@ SKIP: {
 	$expected = qq{begin;\n\n$SQL;\n\ncommit;\n\n};
 	is($info, $expected, $t);
 
-	$t=q{Trace flag 'PGLIBPQ' works as expected};
+	$t=q{Trace flag 'pglibpq' works as expected};
 	seek $fh, 0, 0;
 	truncate $fh, tell($fh);
-	$dbh->trace($dbh->parse_trace_flag('PGLIBPQ'), $filename);
+	$dbh->trace($dbh->parse_trace_flag('pglibpq'), $filename);
 	$dbh->do($SQL);
 	$dbh->commit();
 	$dbh->trace(0);
@@ -111,10 +111,10 @@ PQclear
 };
 	is($info, $expected, $t);
 
-	$t=q{Trace flag 'PGSTART' works as expected};
+	$t=q{Trace flag 'pgstart' works as expected};
 	seek $fh, 0, 0;
 	truncate $fh, tell($fh);
-	$dbh->trace($dbh->parse_trace_flags('PGSTART'), $filename);
+	$dbh->trace($dbh->parse_trace_flags('pgstart'), $filename);
 	$dbh->do($SQL);
 	$dbh->commit();
 	$dbh->trace(0);
@@ -132,10 +132,10 @@ Begin _sqlstate
 };
 	is($info, $expected, $t);
 
-	$t=q{Trace flag 'PGPREFIX' works as expected};
+	$t=q{Trace flag 'pgprefix' works as expected};
 	seek $fh, 0, 0;
 	truncate $fh, tell($fh);
-	$dbh->trace($dbh->parse_trace_flags('PGSTART|PGPREFIX'), $filename);
+	$dbh->trace($dbh->parse_trace_flags('pgstart|pgprefix'), $filename);
 	$dbh->do($SQL);
 	$dbh->commit();
 	$dbh->trace(0);
@@ -153,10 +153,10 @@ dbdpg: Begin _sqlstate
 };
 	is($info, $expected, $t);
 
-	$t=q{Trace flag 'PGEND' works as expected};
+	$t=q{Trace flag 'pgend' works as expected};
 	seek $fh, 0, 0;
 	truncate $fh, tell($fh);
-	$dbh->trace($dbh->parse_trace_flags('PGEND'), $filename);
+	$dbh->trace($dbh->parse_trace_flags('pgend'), $filename);
 	$dbh->do($SQL);
 	$dbh->commit();
 	$dbh->trace(0);
@@ -175,10 +175,10 @@ End pg_db_rollback_commit (result: 1)
 };
 	is($info, $expected, $t);
 
-	$t=q{Trace flag 'PGLOGIN' returns undef if no activity};
+	$t=q{Trace flag 'pglogin' returns undef if no activity};
 	seek $fh, 0, 0;
 	truncate $fh, tell($fh);
-	$dbh->trace($dbh->parse_trace_flags('PGLOGIN'), $filename);
+	$dbh->trace($dbh->parse_trace_flags('pglogin'), $filename);
 	$dbh->do($SQL);
 	$dbh->commit();
 	$dbh->trace(0);
@@ -187,9 +187,9 @@ End pg_db_rollback_commit (result: 1)
 	$expected = undef;
 	is($info, $expected, $t);
 
-	$t=q{Trace flag 'PGLOGIN' works as expected with DBD::Pg->parse_trace_flag()};
+	$t=q{Trace flag 'pglogin' works as expected with DBD::Pg->parse_trace_flag()};
 	$dbh->disconnect();
-	my $flagval = DBD::Pg->parse_trace_flag('PGLOGIN');
+	my $flagval = DBD::Pg->parse_trace_flag('pglogin');
 	seek $fh, 0, 0;
 	truncate $fh, tell($fh);
 	DBI->trace($flagval, $filename);
@@ -208,7 +208,7 @@ Disconnection complete
 	$info =~ s/(Login connection string: ).+/$1/g;
 	is($info, "$expected$expected", $t);
 
-	$t=q{Trace flag 'PGLOGIN' works as expected with DBD::Pg->parse_trace_flags()};
+	$t=q{Trace flag 'pglogin' works as expected with DBD::Pg->parse_trace_flags()};
 	seek $fh, 0, 0;
 	truncate $fh, tell($fh);
 	DBI->trace($flagval, $filename);
@@ -224,13 +224,13 @@ Disconnection complete
 	$info =~ s/(Login connection string: ).+/$1/g;
 	is($info, "$expected", $t);
 
-	$t=q{Trace flag 'PGPREFIX' and 'PGSTART' append to 'PGLOGIN' work as expected};
+	$t=q{Trace flag 'pgprefix' and 'pgstart' appended to 'pglogin' work as expected};
 	seek $fh, 0, 0;
 	truncate $fh, tell($fh);
 	DBI->trace($flagval, $filename);
 	$dbh = connect_database({nosetup => 1});
 	$dbh->do($SQL);
-	$flagval += $dbh->parse_trace_flags('PGPREFIX|PGSTART');
+	$flagval += $dbh->parse_trace_flags('pgprefix|pgstart');
 	$dbh->trace($flagval);
 	$dbh->do($SQL);
 	$dbh->trace(0);
