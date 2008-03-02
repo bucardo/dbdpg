@@ -2769,7 +2769,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				currph->quotedlen = 7;
 			}
 			else if (currph->iscurrent) {
-				Renew(currph->quoted, 8, char); /* freed in dbd_st_destroy */
+				Renew(currph->quoted, 18, char); /* freed in dbd_st_destroy */
 				strncpy(currph->quoted, "CURRENT_TIMESTAMP", 18);
 				currph->quotedlen = 17;
 			}

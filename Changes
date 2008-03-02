@@ -4,6 +4,8 @@
 
 	- Fixed strlen problems in dbdimp.c (CPAN bug #33737)
 		[Alexey Tourbin]
+	- Fixed char count in Renew() (CPAN bug #33738)
+		[Alexey Tourbin]
 
 2.2.0 Released February 27, 2008 (subversion r10849)
 
