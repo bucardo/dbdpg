@@ -3824,12 +3824,8 @@ int pg_db_savepoint (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_savepoint (name: %s)\n", THEADER, savepoint);
 
-	New(0, action, strlen(savepoint) + 11, char); /* freed below */
-
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
-
-	sprintf(action, "savepoint %s", savepoint);
 
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit))) {
@@ -3849,6 +3845,8 @@ int pg_db_savepoint (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 		imp_dbh->done_begin = DBDPG_TRUE;
 	}
 
+	New(0, action, strlen(savepoint) + 11, char); /* freed below */
+	sprintf(action, "savepoint %s", savepoint);
 	status = _result(aTHX_ imp_dbh, action);
 	Safefree(action);
 
@@ -3875,12 +3873,8 @@ int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, const char *savepoint)
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_rollback_to (name: %s)\n", THEADER, savepoint);
 
-	New(0, action, strlen(savepoint) + 13, char);
-
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
-
-	sprintf(action, "rollback to %s", savepoint);
 
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit))) {
@@ -3888,6 +3882,8 @@ int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, const char *savepoint)
 		return 0;
 	}
 
+	New(0, action, strlen(savepoint) + 13, char);
+	sprintf(action, "rollback to %s", savepoint);
 	status = _result(aTHX_ imp_dbh, action);
 	Safefree(action);
 
@@ -3914,12 +3910,8 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_release (name: %s)\n", THEADER, savepoint);
 
-	New(0, action, strlen(savepoint) + 9, char);
-
 	if (imp_dbh->pg_server_version < 80000)
 		croak("Savepoints are only supported on server version 8.0 or higher");
-
-	sprintf(action, "release %s", savepoint);
 
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit))) {
@@ -3927,6 +3919,8 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 		return 0;
 	}
 
+	New(0, action, strlen(savepoint) + 9, char);
+	sprintf(action, "release %s", savepoint);
 	status = _result(aTHX_ imp_dbh, action);
 	Safefree(action);
 

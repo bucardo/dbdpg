@@ -2,6 +2,8 @@
 
 2.2.1
 
+	- Fixed memory leaks in dbdimp.c (CPAN bug #33743)
+		[Alexey Tourbin]
 	- Fixed strlen problems in dbdimp.c (CPAN bug #33737)
 		[Alexey Tourbin]
 	- Fixed char count in Renew() (CPAN bug #33738)
