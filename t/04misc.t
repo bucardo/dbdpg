@@ -283,7 +283,7 @@ isnt( $result[0], undef, $t);
 # Test the use of $DBDPG_DEFAULT
 #
 
-my $sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id, pname) VALUES (?,?)});
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id, pname) VALUES (?,?)});
 eval {
 $sth->execute(600,$DBDPG_DEFAULT);
 };
