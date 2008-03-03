@@ -3193,7 +3193,6 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 			if (type_info
 				&& 0 == strncmp(type_info->arrayout, "array", 5)
 				&& imp_dbh->expand_array) {
-				//fprintf(stderr, "Hey! We gots an array!\n");
 				sv_replace(sv, pg_destringify_array(aTHX_ imp_dbh, value, type_info));
 			}
 			else {
