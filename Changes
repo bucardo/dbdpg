@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.2.2
+2.2.2 Released March 3, 2008
+
+	- Remove non-working tracing from types.c and quote.c
 
 	- Add parse_trace_flag as statement handle method.
 
