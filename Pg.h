@@ -74,14 +74,12 @@ DBISTATE_DECLARE;
 #define FLAGS_END      0x04000000
 #define FLAGS_PREFIX   0x08000000
 #define FLAGS_LOGIN    0x10000000
-#define FLAGS_QUOTE    0x20000000
 
 #define TFLIBPQ      (TFLAGS & FLAGS_LIBPQ)
 #define TFSTART      (TFLAGS & FLAGS_START)
 #define TFEND        (TFLAGS & FLAGS_END)
 #define TFPREFIX     (TFLAGS & FLAGS_PREFIX)
 #define TFLOGIN      (TFLAGS & FLAGS_LOGIN)
-#define TFQUOTE      (TFLAGS & FLAGS_QUOTE)
 
 #define TRACE1       (TLEVEL >= 1) /* Avoid using directly: DBI only */
 #define TRACE2       (TLEVEL >= 2) /* Avoid using directly: DBI only */
@@ -96,7 +94,6 @@ DBISTATE_DECLARE;
 #define TSTART       (TRACE4 || TFSTART) /* Start of a major function */
 #define TEND         (TRACE4 || TFEND)   /* End of a major function   */
 #define TLOGIN       (TRACE5 || TFLOGIN) /* Connect and disconnect    */
-#define TSTARTQ      (TRACE6 || TFQUOTE) /* Quote functions           */
 
 #define TRACEWARN    (TRACE1) /* Non-fatal but serious problems */
 

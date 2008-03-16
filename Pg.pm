@@ -1929,11 +1929,6 @@ Outputs a message showing the connection string right before a new database conn
 is attempted, a message when the connection was successful, and a message right after 
 the database has been disconnected. Also output if trace level is 5 or greater.
 
-=item pgquote
-
-Outputs a message at the start of each quoting function. Not very useful outside of 
-DBD::Pg internal debugging purposes.
-
 =back
 
 See the DBI section on L<TRACING> for more information.
