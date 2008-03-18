@@ -52,17 +52,17 @@ typedef struct seg_st seg_t;
 
 /* The placeholders are also a linked list */
 struct ph_st {
-	char  *fooname;             /* Name if using :foo style */
+	char  *fooname;             /* name if using :foo style */
 	char  *value;               /* the literal passed-in value, may be binary */
 	STRLEN valuelen;            /* length of the value */
 	char  *quoted;              /* quoted version of the value, for PQexec only */
 	STRLEN quotedlen;           /* length of the quoted value */
 	bool   referenced;          /* used for PREPARE AS construction */
 	bool   defaultval;          /* is it using a generic 'default' value? */
-	bool   iscurrent;           /* is it using a generic 'default' value? */
-	bool   isdefault;           /* Are we passing a literal 'DEFAULT'? */
-	bool   isinout;             /* Is this a bind_param_inout value? */
-	SV     *inout;              /* What variable we are updating via inout magic */
+	bool   iscurrent;           /* do we want to use a literal CURRENT_TIMESTAMP? */
+	bool   isdefault;           /* are we passing a literal 'DEFAULT'? */
+	bool   isinout;             /* is this a bind_param_inout value? */
+	SV     *inout;              /* what variable we are updating via inout magic */
 	sql_type_info_t* bind_type; /* type information for this placeholder */
 	struct ph_st *nextph;       /* more linked list goodness */
 };
