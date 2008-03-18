@@ -874,7 +874,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			retsv = newSViv((IV)imp_sth->direct);
 		break;
 
-	case 10: /* ParamTypes  pg_segments */
+	case 10: /* ParamTypes */
 
 		if (strEQ("ParamTypes", key)) {
 			HV *pvhv = newHV();
@@ -894,18 +894,9 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			}
 			retsv = newRV_noinc((SV*)pvhv);
 		}
-		else if (strEQ("pg_segments", key)) {
-			AV *arr = newAV();
-			seg_t *currseg;
-			int i;
-			for (i=0,currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg,i++) {
-				av_push(arr, newSVpv(currseg->segment ? currseg->segment : "NULL",0));
-			}
-			retsv = newRV_noinc((SV*)arr);
-		}
 		break;
 
-	case 11: /* ParamValues */
+	case 11: /* ParamValues pg_segments */
 
 		if (strEQ("ParamValues", key)) {
 			HV *pvhv = newHV();
@@ -926,6 +917,15 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 				}
 			}
 			retsv = newRV_noinc((SV*)pvhv);
+		}
+		else if (strEQ("pg_segments", key)) {
+			AV *arr = newAV();
+			seg_t *currseg;
+			int i;
+			for (i=0,currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg,i++) {
+				av_push(arr, newSVpv(currseg->segment ? currseg->segment : "NULL",0));
+			}
+			retsv = newRV_noinc((SV*)arr);
 		}
 		break;
 
