@@ -19,7 +19,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 75;
+plan tests => 87;
 
 isnt( $dbh, undef, 'Connect to database for statement handle method testing');
 
@@ -468,6 +468,64 @@ SKIP: {
 	is( $invalid, 0, q{Statement handle method "private_attribute_info" returns only internal names});
 	$sth->finish();
 }
+
+
+#
+# Test of the statement handle method "pg_numbound"
+#
+
+$dbh->rollback();
+$t=q{Statement handle attribute pg_numbound returns 0 if no placeholders};
+$sth = $dbh->prepare('SELECT 123');
+is($sth->{pg_numbound}, 0, $t);
+
+$sth->execute();
+is($sth->{pg_numbound}, 0, $t);
+
+$t=q{Statement handle attribute pg_numbound returns 0 if no placeholders bound yet};
+$sth = $dbh->prepare('SELECT 123 WHERE 1 > ? AND 2 > ?');
+is($sth->{pg_numbound}, 0, $t);
+
+$t=q{Statement handle attribute pg_numbound returns 1 if one placeholder bound};
+$sth->bind_param(1, 123);
+is($sth->{pg_numbound}, 1, $t);
+
+$t=q{Statement handle attribute pg_numbound returns 2 if two placeholders bound};
+$sth->bind_param(2, 345);
+is($sth->{pg_numbound}, 2, $t);
+
+$t=q{Statement handle attribute pg_numbound returns 1 if one placeholders bound as NULL};
+$sth = $dbh->prepare('SELECT 123 WHERE 1 > ? AND 2 > ?');
+$sth->bind_param(1, undef);
+is($sth->{pg_numbound}, 1, $t);
+
+#
+# Test of the statement handle method "pg_bound"
+#
+
+$t=q{Statement handle attribute pg_bound returns an empty hash if no placeholders};
+$sth = $dbh->prepare('SELECT 123');
+is_deeply($sth->{pg_bound}, {}, $t);
+
+$sth->execute();
+is_deeply($sth->{pg_bound}, {}, $t);
+
+$t=q{Statement handle attribute pg_bound returns correct value if no placeholders bound yet};
+$sth = $dbh->prepare('SELECT 123 WHERE 1 > ? AND 2 > ?');
+is_deeply($sth->{pg_bound}, {1=>0, 2=>0}, $t);
+
+$t=q{Statement handle attribute pg_bound returns correct value if one placeholder bound};
+$sth->bind_param(2, 123);
+is_deeply($sth->{pg_bound}, {1=>0, 2=>1}, $t);
+
+$t=q{Statement handle attribute pg_bound returns correct value if two placeholders bound};
+$sth->bind_param(1, 123);
+is_deeply($sth->{pg_bound}, {1=>1, 2=>1}, $t);
+
+$t=q{Statement handle attribute pg_numbound returns 1 if one placeholders bound as NULL};
+$sth = $dbh->prepare('SELECT 123 WHERE 1 > ? AND 2 > ?');
+$sth->bind_param(1, undef);
+is_deeply($sth->{pg_bound}, {1=>1, 2=>0}, $t);
 
 
 cleanup_database($dbh,'test');

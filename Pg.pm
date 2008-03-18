@@ -3264,6 +3264,17 @@ Supported by this driver as proposed by DBI.
 
 Not supported by this driver.
 
+=item B<pg_numbound>  (integer, read-only)
+
+PostgreSQL specific attribute. Returns the number of placeholders
+that are currently bound (via bind_param).
+
+=item B<pg_bound>  (hash-ref, read-only)
+
+PostgreSQL specific attribute. Returns a hash of all named placeholders. The
+key is the name of the placeholder, and the value is a 0 or a 1, indicating if
+the placeholder has been bound yet (e.g. via bind_param)
+
 =item B<pg_size>  (array-ref, read-only)
 
 PostgreSQL specific attribute. It returns a reference to an array of integer

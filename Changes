@@ -1,7 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-???
+2.3.0
 
+	- Add $sth->pg_bound() and $sth->pg_numbound [GSM]
 	- Fix broken fetch of $sth->{pg_segments} [GSM]
 
 2.2.2 Released March 3, 2008 (subversion r10873)

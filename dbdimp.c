@@ -868,6 +868,22 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 	/* Some can be done before we have a result: */
 	switch (kl) {
 
+	case 8: /* pg_bound */
+
+		if (strEQ("pg_bound", key)) {
+			HV *pvhv = newHV();
+			ph_t *currph;
+			int i;
+			for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
+				(void)hv_store_ent 
+					(pvhv,
+					 (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1)),
+					 newSViv(NULL == currph->bind_type ? 0 : 1), 0);
+			}
+			retsv = newRV_noinc((SV*)pvhv);
+		}
+		break;
+
 	case 9: /* pg_direct */
 
 		if (strEQ("pg_direct", key))
@@ -896,7 +912,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 		}
 		break;
 
-	case 11: /* ParamValues pg_segments */
+	case 11: /* ParamValues pg_segments pg_numbound */
 
 		if (strEQ("ParamValues", key)) {
 			HV *pvhv = newHV();
@@ -926,6 +942,14 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 				av_push(arr, newSVpv(currseg->segment ? currseg->segment : "NULL",0));
 			}
 			retsv = newRV_noinc((SV*)arr);
+		}
+		else if (strEQ("pg_numbound", key)) {
+			ph_t *currph;
+			int i = 0;
+			for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
+				i += NULL == currph->bind_type ? 0 : 1;
+			}
+			retsv = newSViv(i);
 		}
 		break;
 
