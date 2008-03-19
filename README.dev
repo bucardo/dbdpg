@@ -557,7 +557,7 @@ A good way to do this is to use the tests in 99_pod.t - they will run automatica
 part of the test suite if the right modules are installed.
 
 * Update the SIGNATURE file with Module::Signature. Make sure this is done *after* 
-you check everything else in, due to the the $Id$ lines.
+you check everything else in, due to the the magic (dollarsign)Id lines.
 
 * Run "perl Makefile.PL"
 
