@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.4.x Released March 2008
+
+	- Add $sth->{pg_current_row} [GSM]
+
 2.3.0 Released March 19, 2008 (subversion r10951)
 
 	- Add $sth->{pg_bound} and $sth->{pg_numbound} [GSM]

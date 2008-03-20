@@ -3264,6 +3264,11 @@ Supported by this driver as proposed by DBI.
 
 Not supported by this driver.
 
+=item B<pg_current_row>  (integer, read-only)
+
+PostgreSQL specific attribute. Returns the number of the tuple (row) that was
+most recently fetched. Returns zero before and after fetching is performed.
+
 =item B<pg_numbound>  (integer, read-only)
 
 PostgreSQL specific attribute. Returns the number of placeholders

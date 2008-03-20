@@ -953,10 +953,12 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 		}
 		break;
 
-	case 14: /* pg_prepare_now */
+	case 14: /* pg_prepare_now pg_current_row */
 
 		if (strEQ("pg_prepare_now", key))
 			retsv = newSViv((IV)imp_sth->prepare_now);
+		else if (strEQ("pg_current_row", key))
+			retsv = newSViv(imp_sth->cur_tuple);
 		break;
 
 	case 15: /* pg_prepare_name */

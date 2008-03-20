@@ -19,7 +19,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 87;
+plan tests => 96;
 
 isnt( $dbh, undef, 'Connect to database for statement handle method testing');
 
@@ -522,11 +522,44 @@ $t=q{Statement handle attribute pg_bound returns correct value if two placeholde
 $sth->bind_param(1, 123);
 is_deeply($sth->{pg_bound}, {1=>1, 2=>1}, $t);
 
+#
+# Test of the statement handle method "pg_numbound"
+#
+
 $t=q{Statement handle attribute pg_numbound returns 1 if one placeholders bound as NULL};
 $sth = $dbh->prepare('SELECT 123 WHERE 1 > ? AND 2 > ?');
 $sth->bind_param(1, undef);
 is_deeply($sth->{pg_bound}, {1=>1, 2=>0}, $t);
 
+
+#
+# Test of the statement handle method "pg_current_row"
+#
+
+$t=q{Statement handle attribute pg_current_row returns zero until first row fetched};
+$sth = $dbh->prepare('SELECT 1 FROM pg_class LIMIT 5');
+is($sth->{pg_current_row}, 0, $t);
+
+$t=q{Statement handle attribute pg_current_row returns zero until first row fetched};
+$sth->execute();
+is($sth->{pg_current_row}, 0, $t);
+
+$t=q{Statement handle attribute pg_current_row returns 1 after a fetch};
+$sth->fetch();
+is($sth->{pg_current_row}, 1, $t);
+
+$t=q{Statement handle attribute pg_current_row returns correct value while fetching};
+my $x = 2;
+while (defined $sth->fetch()) {
+	is($sth->{pg_current_row}, $x++, $t);
+}
+$t=q{Statement handle attribute pg_current_row returns 0 when done fetching};
+is($sth->{pg_current_row}, 0, $t);
+
+$t=q{Statement handle attribute pg_current_row returns 0 after fetchall_arrayref};
+$sth->execute();
+$sth->fetchall_arrayref();
+is($sth->{pg_current_row}, 0, $t);
 
 cleanup_database($dbh,'test');
 $dbh->rollback();
