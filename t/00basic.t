@@ -5,7 +5,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 4;
+use Test::More tests => 3;
 select(($|=1,select(STDERR),$|=1)[1]);
 
 BEGIN {
@@ -15,11 +15,3 @@ BEGIN {
 use DBD::Pg;
 like( $DBD::Pg::VERSION, qr/^v?\d+\.\d+\.\d+(?:_\d+)?$/, qq{Found DBD::Pg::VERSION as "$DBD::Pg::VERSION"});
 
-SKIP: {
-	eval { require Test::Warn; };
-	$@ and skip 'Need Test::Warn to test version warning', 1;
-
-	my $t=q{Version comparison does not throw a warning};
-
-	Test::Warn::warnings_are (sub {$DBD::Pg::VERSION <= '1.49'}, [], $t );
-}
