@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.4.x Released March 2008
+2.4.x Released March 21, 2008
 
 	- Remove problematic and unneeded Test::Warn test from 00basic.t.
 	- Add $sth->{pg_current_row} [GSM]
