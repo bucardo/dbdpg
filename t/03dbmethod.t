@@ -587,7 +587,7 @@ one => [
 };
 
 ## 8.1 has differences in hash index pages
-if ($pgversion < 80109) {
+if ($pgversion < 80109 or $pgversion == 80200) {
 	$correct_stats->{three}[5][11] = 0;
 }
 
