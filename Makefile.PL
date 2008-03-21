@@ -120,12 +120,6 @@ else {
 my $defines = " -DPGLIBVERSION=$serverversion -DPGDEFPORT=$defaultport";
 my $comp_opts = $Config{q{ccflags}} . $defines;
 
-for (1..$Config{config_argc}) {
-	my $arg = $Config{"config_arg$_"};
-	## Not used for the moment
-	#$defines .= " $arg" if $arg =~ /^\-D/;
-}
-
 if ($ENV{DBDPG_GCCDEBUG}) {
 	warn "Enabling many compiler options\n";
 	$comp_opts .= ' -Wchar-subscripts -Wcomment';
