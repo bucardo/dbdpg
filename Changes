@@ -2,6 +2,7 @@
 
 2.4.x Released March 2008
 
+	- Remove problematic and unneeded Test::Warn test from 00basic.t.
 	- Add $sth->{pg_current_row} [GSM]
 
 2.3.0 Released March 19, 2008 (subversion r10951)
