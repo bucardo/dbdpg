@@ -82,7 +82,7 @@ SKIP: {
 	eval {
 		$dbh = DBI->connect($dbi, $ENV{DBI_USER}, $ENV{DBI_PASS}, {RaiseError=>1});
 	};
-	like ($@, qr{invalid connection option}, $t);
+	like ($@, qr{DBI connect.+failed:}, $t);
 	for my $opt (qw/db dbname database/) {
 		$t=qq{Connect using string '$opt' works};
 		($dbi = $ENV{DBI_DSN}) =~ s/$alias\s*=/$opt=/;
