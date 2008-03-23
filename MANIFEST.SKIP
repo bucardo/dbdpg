@@ -17,5 +17,6 @@ dbdimp.o
 pm_to_blib
 \.tmp$
 \.svn/*
+\.blame$
 ^tmp/*
 cover_db/
