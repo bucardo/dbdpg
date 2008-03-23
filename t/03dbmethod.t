@@ -492,8 +492,9 @@ is( $result->{COLUMN_NAME}, q{"CaseTest"}, $t);
 
 SKIP: {
 
-    skip 'DB handle method column_info attribute "pg_enum_values" requires at least Postgres 8.3', 2
-        unless $dbh->{pg_server_version} >= 80300;
+	if ($pgversion < 80300) {
+		skip 'DB handle method column_info attribute "pg_enum_values" requires at least Postgres 8.3', 2;
+	}
 
     {
         local $dbh->{Warn} = 0;
@@ -509,8 +510,8 @@ SKIP: {
 	$t = q{'DB handle method "column_info" returns proper pg_enum_values'};
     is_deeply( $result->{pg_enum_values}, [ qw( foo bar baz buz ) ], $t);
 
-	$dbh->do("DROP TABLE dbd_pg_enum_test");
-	$dbh->do("DROP TYPE dbd_pg_enumerated");
+	$dbh->do('DROP TABLE dbd_pg_enum_test');
+	$dbh->do('DROP TYPE dbd_pg_enumerated');
 }
 
 #
