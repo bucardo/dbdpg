@@ -339,16 +339,23 @@ $result = $sth->fetchall_arrayref({});
 $expected = [{id => 35, val => 'Guava'},{id => 36, val => 'Lemon'}];
 is_deeply( $result, $expected, 'Statement handle method "fetchall_arrayref" works with an empty hashref slice');
 
-# Test of the 'maxrows' argument
-$sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id >= 33 ORDER BY id ASC LIMIT 10');
-$sth->execute();
-$result = $sth->fetchall_arrayref(undef,2);
-$expected = [[33,'Peach'],[34,'Huckleberry']];
-is_deeply( $result, $expected, q{Statement handle method "fetchall_arrayref" works with a 'maxrows' argument});
-$result = $sth->fetchall_arrayref([1],2);
-$expected = [['Guava'],['Lemon']];
-is_deeply( $result, $expected, q{Statement handle method "fetchall_arrayref" works with an arrayref slice and a 'maxrows' argument});
-$sth->finish();
+
+SKIP: {
+	if ($DBI::VERSION >= 1.603) {
+		skip 'fetchall_arrayref max rows broken in DBI 1.603', 2;
+	}
+
+	# Test of the 'maxrows' argument
+	$sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id >= 33 ORDER BY id ASC LIMIT 10');
+	$sth->execute();
+	$result = $sth->fetchall_arrayref(undef,2);
+	$expected = [[33,'Peach'],[34,'Huckleberry']];
+	is_deeply( $result, $expected, q{Statement handle method "fetchall_arrayref" works with a 'maxrows' argument});
+	$result = $sth->fetchall_arrayref([1],2);
+	$expected = [['Guava'],['Lemon']];
+	is_deeply( $result, $expected, q{Statement handle method "fetchall_arrayref" works with an arrayref slice and a 'maxrows' argument});
+	$sth->finish();
+}
 
 #
 # Test of the "fetchall_hashref" statement handle method
@@ -457,6 +464,7 @@ SKIP: {
 	if ($DBI::VERSION < 1.54) {
 		skip 'DBI must be at least version 1.54 to test private_attribute_info', 2;
 	}
+
 
 	$sth = $dbh->prepare('SELECT 123');
 	my $private = $sth->private_attribute_info();
