@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 216;
+plan tests => 218;
 
 isnt( $dbh, undef, 'Connect to database for database handle method testing');
 
@@ -490,6 +490,28 @@ $result = $sth->fetchall_arrayref({})->[0];
 $t = q{DB handle method "column_info" works with non-lowercased columns};
 is( $result->{COLUMN_NAME}, q{"CaseTest"}, $t);
 
+SKIP: {
+
+    skip 'DB handle method column_info attribute "pg_enum_values" requires at least Postgres 8.3', 2
+        unless $dbh->{pg_server_version} >= 80300;
+
+    {
+        local $dbh->{Warn} = 0;
+
+        $dbh->do( q{CREATE TYPE dbd_pg_enumerated AS ENUM ('foo', 'bar', 'baz', 'buz')} );
+        $dbh->do( q{CREATE TEMP TABLE dbd_pg_enum_test ( is_enum dbd_pg_enumerated NOT NULL )} );
+    }
+
+    $sth = $dbh->column_info('','','dbd_pg_enum_test','is_enum');
+    $result = $sth->fetchall_arrayref({})->[0];
+	$t = q{DB handle method "column_info" returns proper pg_type};
+    is( $result->{pg_type}, 'dbd_pg_enumerated', $t);
+	$t = q{'DB handle method "column_info" returns proper pg_enum_values'};
+    is_deeply( $result->{pg_enum_values}, [ qw( foo bar baz buz ) ], $t);
+
+	$dbh->do("DROP TABLE dbd_pg_enum_test");
+	$dbh->do("DROP TYPE dbd_pg_enumerated");
+}
 
 #
 # Test of the "primary_key_info" database handle method

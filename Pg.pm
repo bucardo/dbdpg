@@ -443,6 +443,8 @@ use 5.006001;
 				, a.attrelid AS "pg_attrelid"
 				, a.attnum AS "pg_attnum"
 				, a.atttypmod AS "pg_atttypmod"
+				, t.typtype AS "_pg_type_typtype"
+				, t.oid AS "_pg_type_oid"
 			FROM
 				pg_catalog.pg_type t
 				JOIN pg_catalog.pg_attribute a ON (t.oid = a.atttypid)
@@ -485,11 +487,14 @@ use 5.006001;
 			pg_schema            20
 			pg_table             21
 			pg_column            22
+			pg_enum_values       23
 			/);
 
 		my $oldconstraint_sth;
 
 		for my $row (@$data) {
+			my $typoid = pop @$row;
+			my $typtype = pop @$row;
 			my $typmod = pop @$row;
 			my $attnum = pop @$row;
 			my $aid = pop @$row;
@@ -498,9 +503,7 @@ use 5.006001;
  				_calc_col_size($typmod,$row->[$col_map{COLUMN_SIZE}]);
 
 			# Replace the Pg type with the SQL_ type
-			my $w = $row->[$col_map{DATA_TYPE}];
 			$row->[$col_map{DATA_TYPE}] = DBD::Pg::db::pg_type_info($dbh,$row->[$col_map{DATA_TYPE}]);
-			$w = $row->[$col_map{DATA_TYPE}];
 
 			# Add pg_constraint
 			my $SQL = "SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND ".
@@ -512,11 +515,16 @@ use 5.006001;
 			else {
 				$row->[19] = undef;
 			}
-			$col_map{pg_constraint} = 19;
-		}
 
-		# get rid of atttypmod that we no longer need
-		delete $col_map{pg_atttypmod};
+			if ( $typtype eq 'e' ) {
+				my $SQL = "SELECT enumlabel FROM pg_catalog.pg_enum "
+					."WHERE enumtypid = $typoid ORDER BY oid";
+				$row->[23] = $dbh->selectcol_arrayref($SQL);
+			}
+			else {
+				$row->[23] = undef;
+			}
+		}
 
 		# Since we've processed the data in Perl, we have to jump through a hoop
 		# To turn it back into a statement handle
@@ -2620,13 +2628,14 @@ These fields are currently always returned with NULL (C<undef>) values:
    SQL_DATETIME_SUB
    CHAR_OCTET_LENGTH
 
-Also, five additional non-standard fields are returned:
+Also, six additional non-standard fields are returned:
 
   pg_type - data type with additional info i.e. "character varying(20)"
   pg_constraint - holds column constraint definition
   pg_schema - the unquoted name of the schema
   pg_table - the unquoted name of the table
   pg_column - the unquoted name of the column
+  pg_enum_values - an array reference of allowed values for an enum column
 
 Note that the TABLE_SCHEM, TABLE_NAME, and COLUMN_NAME fields all return 
 output wrapped in quote_ident(). If you need the unquoted version, use 
