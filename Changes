@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.5.0 Released March 23, 2008
+2.5.0 Released March 23, 2008 (subversion r10990)
 
 	- Add pg_enum_values to $dbh->column_info()
 		[Dave Rolsky] (CPAN ticket #34351)
