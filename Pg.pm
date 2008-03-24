@@ -362,23 +362,20 @@ use 5.006001;
 
 	sub ping {
 		my $dbh = shift;
-		local $SIG{__WARN__} = sub { } if $dbh->{PrintError};
-		local $dbh->{RaiseError} = 0 if $dbh->{RaiseError};
+		local $SIG{__WARN__} = sub { } if $dbh->FETCH('PrintError');
 		my $ret = DBD::Pg::db::_ping($dbh);
 		return $ret < 1 ? 0 : $ret;
 	}
 
 	sub pg_ping {
 		my $dbh = shift;
-		local $SIG{__WARN__} = sub { } if $dbh->{PrintError};
-		local $dbh->{RaiseError} = 0 if $dbh->{RaiseError};
+		local $SIG{__WARN__} = sub { } if $dbh->FETCH('PrintError');
 		return DBD::Pg::db::_ping($dbh);
 	}
 
 	sub pg_type_info {
 		my($dbh,$pg_type) = @_;
-		local $SIG{__WARN__} = sub { } if $dbh->{PrintError};
-		local $dbh->{RaiseError} = 0 if $dbh->{RaiseError};
+		local $SIG{__WARN__} = sub { } if $dbh->FETCH('PrintError');
 		my $ret = DBD::Pg::db::_pg_type_info($pg_type);
 		return $ret;
 	}
@@ -1411,7 +1408,7 @@ use 5.006001;
       45 => ["SQL_TABLE_TERM",                      "table"                   ],
       46 => ["SQL_TXN_CAPABLE",                     2                         ],
       72 => ["SQL_TXN_ISOLATION_OPTION",            15                        ],
-      47  => ["SQL_USER_NAME",                      $dbh->{CURRENT_USER}      ],
+      47 => ["SQL_USER_NAME",                       $dbh->{CURRENT_USER}      ],
 
 ## Supported SQL
 
