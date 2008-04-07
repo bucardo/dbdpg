@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.5.1 Released April 7, 2008
+2.5.1 Released April 7, 2008 (subversion r11056)
 
 	- Correctly handle negative PID numbers on Win32 systems when
 		generating prepared statement names (CPAN bug # 34738) [GSM]
