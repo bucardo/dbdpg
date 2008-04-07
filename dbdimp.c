@@ -1960,8 +1960,11 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 
 	Renew(imp_sth->prepare_name, 25, char); /* freed in dbd_st_destroy */
 
-	/* Name is simply "dbdpg_PID_#" */
-	sprintf(imp_sth->prepare_name,"dbdpg_%d_%d", imp_dbh->pid_number, imp_dbh->prepare_number);
+	/* Name is "dbdpg_xPID_#", where x is 'p'ositive or 'n'egative */
+	sprintf(imp_sth->prepare_name,"dbdpg_%c%d_%d",
+			(imp_dbh->pid_number < 0 ? 'n' : 'p'),
+			abs(imp_dbh->pid_number),
+			imp_dbh->prepare_number);
 
 	if (TRACE5)
 		TRC(DBILOGFP, "%sNew statement name (%s), oldprepare is %d\n",
