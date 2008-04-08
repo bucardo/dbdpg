@@ -238,7 +238,8 @@ MAKE_SPLINT
 
 my $output = WriteMakefile(%opts);
 
-if (!exists $output->{EXTRALIBS} or $output->{EXTRALIBS} !~ /\-lpq/) {
+if ($os !~ /Win32/ and
+	(!exists $output->{EXTRALIBS} or $output->{EXTRALIBS} !~ /\-lpq/)) {
 
 	my $makefile = exists $output->{MAKEFILE}
 		? "\nRemoving ($output->{MAKEFILE})\n" : '';
