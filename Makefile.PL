@@ -7,7 +7,7 @@ use warnings;
 use 5.006001;
 
 ## No version.pm for this one, as the prereqs are not loaded yet.
-my $VERSION = '2.5.1';
+my $VERSION = '2.5.2';
 
 my $lib;
 BEGIN {
@@ -100,21 +100,16 @@ if ($serverversion < 70400) {
 }
 
 my $dbi_arch_dir;
-if ($os eq 'MSWin32') {
-	$dbi_arch_dir = "\$(INSTALLSITEARCH)/auto/DBI";
-}
-else {
-	{
-		eval {
-			require DBI::DBD;
-		};
-		if ($@) {
-			print "Could not load DBI::DBD - is the DBI module installed?\n";
-			exit 0;
-		}
-		local *STDOUT; ## Prevent duplicate debug info as WriteMakefile also calls this
-		$dbi_arch_dir = DBI::DBD::dbd_dbi_arch_dir();
+{
+	eval {
+		require DBI::DBD;
+	};
+	if ($@) {
+		print "Could not load DBI::DBD - is the DBI module installed?\n";
+		exit 0;
 	}
+	local *STDOUT; ## Prevent duplicate debug info as WriteMakefile also calls this
+	$dbi_arch_dir = DBI::DBD::dbd_dbi_arch_dir();
 }
 
 my $defines = " -DPGLIBVERSION=$serverversion -DPGDEFPORT=$defaultport";
@@ -238,8 +233,8 @@ MAKE_SPLINT
 
 my $output = WriteMakefile(%opts);
 
-if ($os !~ /Win32/ and
-	(!exists $output->{EXTRALIBS} or $output->{EXTRALIBS} !~ /\-lpq/)) {
+if (!exists $output->{EXTRALIBS} or 
+	($output->{EXTRALIBS} !~ /\-lpq/ and $output->{EXTRALIBS} !~ /libpq/)) {
 
 	my $makefile = exists $output->{MAKEFILE}
 		? "\nRemoving ($output->{MAKEFILE})\n" : '';
