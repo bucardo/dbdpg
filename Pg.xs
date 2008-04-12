@@ -282,7 +282,7 @@ void do(dbh, statement, attr=Nullsv, ...)
 		int retval;
 		int asyncflag = 0;
 
-		if (strlen(statement)<1) { /* Corner case */
+		if (statement[0] == '\0') { /* Corner case */
 			XST_mUNDEF(0);
 			return;
 		}
