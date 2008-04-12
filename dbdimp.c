@@ -3170,7 +3170,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 	}
 	
 	TRACE_PQNTUPLES;
-	if (imp_sth->cur_tuple == PQntuples(imp_sth->result) ) {
+	if (imp_sth->cur_tuple == imp_sth->rows) {
 		if (TRACE5)
 			TRC(DBILOGFP, "%sFetched the last tuple (%d)\n", THEADER, imp_sth->cur_tuple);
 		imp_sth->cur_tuple = 0;
