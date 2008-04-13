@@ -3,6 +3,7 @@
 2.5.2 Released April, 2008
 
 	- Fix minor build issue with Strawberry Perl [GSM]
+	- Various performance improvements [GSM]
 
 2.5.1 Released April 7, 2008 (subversion r11056)
 

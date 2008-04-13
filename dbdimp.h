@@ -103,6 +103,7 @@ struct imp_sth_st {
 	bool   has_current;      /* does it have one or more 'DEFAULT' values? */
 	bool   dollaronly;       /* Only use $1 as placeholders, allow all else */
 	bool   use_inout;        /* Any placeholders using inout? */
+	bool   all_bound;        /* Have all placeholders been bound? */
 };
 
 

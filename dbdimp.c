@@ -1363,6 +1363,7 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 	imp_sth->has_default      = DBDPG_FALSE; /* Are any of the params DEFAULT? */
 	imp_sth->has_current      = DBDPG_FALSE; /* Are any of the params DEFAULT? */
 	imp_sth->use_inout        = DBDPG_FALSE; /* Are any of the placeholders using inout? */
+	imp_sth->all_bound        = DBDPG_FALSE; /* Have all placeholders been bound? */
 
 
 	/* We inherit some preferences from the database handle */
@@ -2741,7 +2742,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		croak("Must call pg_endcopy before issuing more commands");
 
 	/* Ensure that all the placeholders have been bound */
-	if (imp_sth->numphs!=0) {
+	if (!imp_sth->all_bound && imp_sth->numphs!=0) {
 		for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 			if (NULL == currph->bind_type) {
 				pg_error(aTHX_ sth, PGRES_FATAL_ERROR, "execute called with an unbound placeholder");
@@ -2755,6 +2756,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				currph->value[currph->valuelen] = '\0';
 			}
 		}
+		imp_sth->all_bound = DBDPG_TRUE;
 	}
 
 	/* Check for old async transactions */
