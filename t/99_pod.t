@@ -14,10 +14,11 @@ eval {
 	require Test::Pod;
 	Test::Pod->import;
 };
-if ($@ or $Test::Pod::VERSION < $PODVERSION) {
-	pass('Skipping Test::Pod testing');
-}
-else {
+
+SKIP: {
+	if ($@ or $Test::Pod::VERSION < $PODVERSION) {
+		skip "Test::Pod $PODVERSION is required", 2;
+	}
 	pod_file_ok('Pg.pm');
 	pod_file_ok('lib/Bundle/DBD/Pg.pm');
 }
@@ -28,10 +29,12 @@ eval {
 	require Test::Pod::Coverage;
 	Test::Pod::Coverage->import;
 };
-if ($@ or $Test::Pod::Coverage::VERSION < $PODCOVERVERSION) {
-	pass ('Skipping Test::Pod::Coverage testing');
-}
-else {
+SKIP: {
+
+	if ($@ or $Test::Pod::Coverage::VERSION < $PODCOVERVERSION) {
+		skip "Test::Pod::Coverage $PODCOVERVERSION is required", 1;
+	}
+
 	my $trusted_names  =
 		[
 		 qr{^CLONE$},
@@ -174,5 +177,4 @@ else {
 
 		];
 	pod_coverage_ok('DBD::Pg', {trustme => $trusted_names}, 'DBD::Pg pod coverage okay');
-
 }
