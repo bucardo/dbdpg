@@ -79,6 +79,8 @@ Makefile - Generated automatically by Makefile.PL
 
 META.yml - YAML description file. Updated by hand and contains version number in two places.
 
+lib/Bundle/DBD/Pg.pm - Simple file used to enable perl -MCPAN -e 'install Bundle::DBD::Pg'
+  Contains a version number.
 
 * Distribution files:
 
@@ -476,13 +478,14 @@ Beta versions (aka release candidates) are the version with an underscore at the
 tells CPAN not to consider this a "real" release. For example, if the upcoming release is 2.2.3, 
 the first release candidate would be 2.2.3_1. A second would be 2.2.3_2 etc.
 
-Version numbers are currently set in five files:
+Version numbers are currently set in six files:
 
 README (one or two places)
 Pg.pm (two places)
 Changes
 Makefile.PL
 META.yml (two places)
+lib/Bundle/DBD/Pg.pm
 
 
 ===============

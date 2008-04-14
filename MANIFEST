@@ -50,3 +50,5 @@ t/lib/App/Info/RDBMS.pm
 t/lib/App/Info/RDBMS/PostgreSQL.pm
 t/lib/App/Info/Request.pm
 t/lib/App/Info/Util.pm
+
+lib/Bundle/DBD/Pg.pm

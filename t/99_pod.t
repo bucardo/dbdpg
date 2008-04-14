@@ -7,7 +7,7 @@ use warnings;
 use Test::More;
 select(($|=1,select(STDERR),$|=1)[1]);
 
-plan tests => 2;
+plan tests => 3;
 
 my $PODVERSION = '0.95';
 eval {
@@ -19,6 +19,7 @@ if ($@ or $Test::Pod::VERSION < $PODVERSION) {
 }
 else {
 	pod_file_ok('Pg.pm');
+	pod_file_ok('lib/Bundle/DBD/Pg.pm');
 }
 
 ## We won't require everyone to have this, so silently move on if not found
@@ -173,4 +174,5 @@ else {
 
 		];
 	pod_coverage_ok('DBD::Pg', {trustme => $trusted_names}, 'DBD::Pg pod coverage okay');
+
 }

@@ -4,8 +4,9 @@
 
 	- Make pg_notifies a true function, so that you can now
 		use $dbh->pg_notifies instead of $dbh->func('pg_notifies') [GSM]
-	- Fix minor build issue with Strawberry Perl [GSM]
 	- Various performance improvements [GSM]
+	- Fix minor build issue with Strawberry Perl [GSM]
+	- Add Bundle::DBD::Pg [GSM]
 
 2.5.1 Released April 7, 2008 (subversion r11056)
 
