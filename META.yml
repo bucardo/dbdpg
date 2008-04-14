@@ -35,6 +35,9 @@ provides:
   DBD::Pg:
     file              : Pg.pm
     version           : 2.6.0
+  Bundle::DBD::Pg:
+    file              : lib/Bundle/DBD/Pg.pm
+    version           : 2.6.0
 
 keywords:
   - Postgres
