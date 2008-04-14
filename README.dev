@@ -77,7 +77,7 @@ Makefile.PL - The main file that starts everything off. Used by ExtUtils::MakeMa
 
 Makefile - Generated automatically by Makefile.PL
 
-META.yml - YAML description file. Updated by hand and contains version number in two places.
+META.yml - YAML description file. Updated by hand and contains version number in three places.
 
 lib/Bundle/DBD/Pg.pm - Simple file used to enable perl -MCPAN -e 'install Bundle::DBD::Pg'
   Contains a version number.
@@ -486,7 +486,7 @@ README (one or two places)
 Pg.pm (two places)
 Changes
 Makefile.PL
-META.yml (two places)
+META.yml (three places)
 lib/Bundle/DBD/Pg.pm
 
 
