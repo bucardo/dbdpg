@@ -124,6 +124,7 @@ use 5.006001;
 		DBD::Pg::db->install_method("pg_getline");
 		DBD::Pg::db->install_method("pg_getcopydata");
 		DBD::Pg::db->install_method("pg_getcopydata_async");
+		DBD::Pg::db->install_method("pg_notifies");
 		DBD::Pg::db->install_method("pg_putcopydata");
 		DBD::Pg::db->install_method("pg_putcopyend");
 		DBD::Pg::db->install_method("pg_ping");
@@ -2043,39 +2044,11 @@ object or C<undef> upon failure.
 Exports a large object into a Unix file. Returns false upon failure, true
 otherwise.
 
-=item pg_notifies
-
-  $ret = $dbh->func('pg_notifies');
-
-Returns either C<undef> or a reference to two-element array [ $table,
-$backend_pid ] of asynchronous notifications received. Note that this does
-not check if the connection to the database is still valid - for that, 
-use the c<ping> method. Also note that you may need to commit if not in 
-autocommit mode - new notices will not be picked up while in the middle of 
-a transaction. An example:
-
-  $dbh->do("LISTEN abc");
-  $dbh->do("LISTEN def");
-
-  ## Hang around until we get the message we want
-  LISTENLOOP: {
-    while (my $notify = $dbh->func('pg_notifies')) {
-      my ($name, $pid) = @$notify;
-      print qq{I received notice "$name" from PID $pid\n};
-      ## Do something based on the notice received
-    }
-    $dbh->ping() or die qq{Ping failed!};
-    $dbh->commit();
-    sleep(5);
-    redo;
-  }
-
 =item getfd
 
   $fd = $dbh->func('getfd');
 
-Returns fd of the actual connection to server. Can be used with select() and
-func('pg_notifies'). Deprecated in favor of C<< $dbh->{pg_socket} >>.
+Deprecated, use C<< $dbh->{pg_socket} >> instead.
 
 =back
 
@@ -2541,6 +2514,33 @@ issue a "begin" until immediately before the next given command.
   $rc  = $dbh->disconnect;
 
 Supported by this driver as proposed by DBI.
+
+=item pg_notifies
+
+  $ret = $dbh->pg_notifies;
+
+Returns either C<undef> or a reference to two-element array [ $table,
+$backend_pid ] of asynchronous notifications received. Note that this does
+not check if the connection to the database is still valid - for that,
+use the c<ping> method. Also note that you may need to commit if not in
+autocommit mode - new notices will not be picked up while in the middle of
+a transaction. An example:
+
+  $dbh->do("LISTEN abc");
+  $dbh->do("LISTEN def");
+
+  ## Hang around until we get the message we want
+  LISTENLOOP: {
+    while (my $notify = $dbh->pg_notifies) {
+      my ($name, $pid) = @$notify;
+      print qq{I received notice "$name" from PID $pid\n};
+      ## Do something based on the notice received
+    }
+    $dbh->ping() or die qq{Ping failed!};
+    $dbh->commit();
+    sleep(5);
+    redo;
+  }
 
 =item B<ping>
 

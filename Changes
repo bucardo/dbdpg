@@ -2,6 +2,8 @@
 
 2.5.2 Released April, 2008
 
+	- Make pg_notifies a true function, so that you can now
+		use $dbh->pg_notifies instead of $dbh->func('pg_notifies') [GSM]
 	- Fix minor build issue with Strawberry Perl [GSM]
 	- Various performance improvements [GSM]
 
