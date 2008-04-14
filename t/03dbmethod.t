@@ -34,7 +34,7 @@ my ($schema,$schema2) = ('dbd_pg_testschema', 'dbd_pg_testschema2');
 my ($table1,$table2,$table3) = ('dbd_pg_test1','dbd_pg_test2','dbd_pg_test3');
 my ($sequence2,$sequence3,$sequence4) = ('dbd_pg_testsequence2','dbd_pg_testsequence3','dbd_pg_testsequence4');
 
-my ($SQL, $sth, $result, @result, $expected, $warning, $rows, $t);
+my ($SQL, $sth, $result, @result, $expected, $warning, $rows, $t, $info);
 
 # Quick simple "tests"
 
@@ -1162,13 +1162,13 @@ my $pid = $dbh->selectall_arrayref('SELECT pg_backend_pid()')->[0][0];
 $dbh->do("LISTEN $notify_name");
 $dbh->do("NOTIFY $notify_name");
 $dbh->commit();
-my $info = $dbh->func('pg_notifies');
+$info = $dbh->func('pg_notifies');
 is_deeply($info, [$notify_name, $pid], $t);
 
 $t=q{DB handle method "pg_notifies" returns the correct values};
 $dbh->do("NOTIFY $notify_name");
 $dbh->commit();
-my $info = $dbh->pg_notifies;;
+$info = $dbh->pg_notifies;;
 is_deeply($info, [$notify_name, $pid], $t);
 
 #
