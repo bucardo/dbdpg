@@ -78,7 +78,7 @@ environment variable and add "-lssl" to it, like this:
 
 	export POSTGRES_LIB="/usr/local/pgsql/lib -lssl"
 
-Now, take the usual steps to install DBD::Pg:
+The usual steps to install DBD::Pg:
 
 	1.   perl Makefile.PL
 	2.   make
