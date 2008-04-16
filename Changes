@@ -1,11 +1,11 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.6.0 Released April 14, 2008
+2.6.0 Released April 16, 2008
 
 	- Make pg_notifies a true function, so that you can now
 		use $dbh->pg_notifies instead of $dbh->func('pg_notifies') [GSM]
 	- Various performance improvements [GSM]
-	- Fix minor build issue with Strawberry Perl [GSM]
+	- Fix minor build and compilation issues with Strawberry Perl [GSM]
 	- Add Bundle::DBD::Pg [GSM]
 
 2.5.1 Released April 7, 2008 (subversion r11056)
