@@ -10,16 +10,18 @@
 
 */
 
-#include <strings.h>
 #include <math.h>
 #include <wchar.h>
 
 #ifdef WIN32
 static int errno;
-#define strcasecmp(s1,s2) lstrcmpiA((s1), (s2))
+#include <string.h>
+#define strcasecmp(s1,s2) stricmp((s1), (s2))
 #ifndef snprintf
 #define snprintf _snprintf
 #endif
+#else
+#include <strings.h>
 #endif
 
 #define DBDPG_TRUE (bool)1
