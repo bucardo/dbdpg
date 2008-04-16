@@ -1339,6 +1339,9 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_prepare (statement: %s)\n", THEADER, statement);
 
+	if ('\0' == *statement)
+		croak ("Cannot prepare empty statement");
+
 	/* Set default values for this statement handle */
 	imp_sth->placeholder_type = 0;
 	imp_sth->numsegs          = 0;
@@ -1364,7 +1367,6 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 	imp_sth->has_current      = DBDPG_FALSE; /* Are any of the params DEFAULT? */
 	imp_sth->use_inout        = DBDPG_FALSE; /* Are any of the placeholders using inout? */
 	imp_sth->all_bound        = DBDPG_FALSE; /* Have all placeholders been bound? */
-
 
 	/* We inherit some preferences from the database handle */
 	imp_sth->server_prepare   = imp_dbh->server_prepare;
@@ -1529,7 +1531,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		}
 		if (TRACE6) TRC(DBILOGFP, "%sdirect split = (%s) length=(%d)\n",
 						THEADER, imp_sth->seg->segment, imp_sth->totalsize);
-		if (TEND) TRC(DBILOGFP, "%sEnd pg_St_split_statement (direct)\n", THEADER);
+		if (TEND) TRC(DBILOGFP, "%sEnd pg_st_split_statement (direct)\n", THEADER);
 		return;
 	}
 
