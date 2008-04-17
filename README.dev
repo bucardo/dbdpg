@@ -713,6 +713,9 @@ resources depend on the subject:
 The canonical URL:
 http://search.cpan.org/dist/DBD-Pg/
 
+* CPAN::Reporter test results:
+http://cpantesters.perl.org/show/DBD-Pg.html
+
 * DBI
 
 The DBI developers list:

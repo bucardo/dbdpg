@@ -125,6 +125,10 @@ If the first connection fails and DBI_DSN is not set, the tests may
 attempt to connect as the user 'postgres' to the database 'postgres'. 
 See the t/dbdpg_test_setup.pl for the exact process.
 
+Please consdier installing CPAN::Reporter so that your tests are 
+automatically gathered and reported, which helps the development 
+of DBD::Pg.
+
 TROUBLESHOOTING:
 ----------------
 
