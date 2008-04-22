@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.6.1 Released April 22, 2008
+2.6.1 Released April 22, 2008 (subversion r11133)
 
 	- Don't free placeholder section, fixes problem when using 
 		more than one named placeholder with the same name.
