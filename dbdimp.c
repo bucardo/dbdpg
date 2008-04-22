@@ -1796,7 +1796,6 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 				if (0==strncmp(thisph->fooname, statement-sectionsize, sectionsize)) {
 					newseg->placeholder = xint;
 					newseg->ph = thisph;
-					Safefree(thisph);
 					break;
 				}
 			}
