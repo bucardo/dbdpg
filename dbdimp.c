@@ -625,7 +625,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 	char * key = SvPV(keysv,kl);
 	SV *   retsv = Nullsv;
 	
-	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_FETCH (key: %s dbh: %d)\n", THEADER, key, dbh);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_FETCH (key: %s dbh: %d)\n", THEADER, key, (int)dbh);
 	
 	switch (kl) {
 
@@ -863,7 +863,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 	SV *              retsv = Nullsv;
 	int               fields, x;
 
-	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_FETCH (key: %s sth: %d)\n", THEADER, key, sth);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_FETCH (key: %s sth: %d)\n", THEADER, key, (int)sth);
 	
 	/* Some can be done before we have a result: */
 	switch (kl) {
@@ -1199,7 +1199,7 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 	int    retval = 0;
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_STORE (key: %s value: %s sth: %d)\n",
-					THEADER, key, value, sth);
+					THEADER, key, value, (int)sth);
 	
 	switch (kl) {
 
@@ -1258,7 +1258,7 @@ int dbd_discon_all (SV * drh, imp_drh_t * imp_drh)
 {
 	dTHX;
 
-	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_discon_all (drh: %d)\n", THEADER, drh);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_discon_all (drh: %d)\n", THEADER, (int)drh);
 
 	/* The disconnect_all concept is flawed and needs more work */
 	if (!PL_dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
@@ -1278,7 +1278,7 @@ int pg_db_getfd (SV * dbh, imp_dbh_t * imp_dbh)
 {
 	dTHX;
 
-	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_getfd (dbh: %d)\n", THEADER, dbh);
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_getfd (dbh: %d)\n", THEADER, (int)dbh);
 
 	TRACE_PQSOCKET;
 	return PQsocket(imp_dbh->conn);
@@ -1922,12 +1922,12 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 			THEADER);
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 			TRC(DBILOGFP, "%sPH: (%d) ID: (%d) SEG: (%s)\n",
-				THEADER, currseg->placeholder, NULL==currseg->ph ? 0 : currseg->ph, currseg->segment);
+				THEADER, currseg->placeholder, NULL==currseg->ph ? 0 : (int)currseg->ph, currseg->segment);
 		}
 		TRC(DBILOGFP, "%sPlaceholder number, fooname, id:\n", THEADER);
 		for (xlen=1,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,xlen++) {
 			TRC(DBILOGFP, "%s#%d FOONAME: (%s) ID: (%d)\n",
-				THEADER, xlen, currph->fooname, currph);
+				THEADER, xlen, currph->fooname, (int)currph);
 		}
 	}
 
@@ -2229,7 +2229,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 			}
 		}
 		else {
-			croak("Cannot bind %s unknown pg_type %" IVdf, name, pg_type);
+			croak("Cannot bind %s unknown pg_type %d", name, pg_type);
 		}
 	}
 	else if (sql_type) {
@@ -2239,10 +2239,10 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
            the insert.
 		*/
 		if (!(currph->bind_type = sql_type_data((int)sql_type))) {
-			croak("Cannot bind param %s: unknown sql_type %d", name, sql_type);
+			croak("Cannot bind param %s: unknown sql_type %ld", name, sql_type);
 		}
 		if (!(currph->bind_type = pg_type_data(currph->bind_type->type.pg))) {
-			croak("Cannot find a pg_type for %" IVdf, sql_type);
+			croak("Cannot find a pg_type for %ld", sql_type);
 		}
  	}
 	else if (NULL == currph->bind_type) { /* "sticky" data type */
@@ -3344,7 +3344,7 @@ int dbd_st_rows (SV * sth, imp_sth_t * imp_sth)
 {
 	dTHX;
 
-	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_rows (sth: %d)\n", THEADER, sth);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_rows (sth: %d)\n", THEADER, (int)sth);
 
 	return imp_sth->rows;
 
@@ -3358,7 +3358,7 @@ int dbd_st_finish (SV * sth, imp_sth_t * imp_sth)
 	D_imp_dbh_from_sth;
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin dbdpg_finish (sth: %d async: %d)\n",
-					THEADER, sth, imp_dbh->async_status);
+					THEADER, (int)sth, imp_dbh->async_status);
 	
 	if (DBIc_ACTIVE(imp_sth) && imp_sth->result) {
 		TRACE_PQCLEAR;
@@ -4038,7 +4038,7 @@ int pg_db_lo_open (SV * dbh, unsigned int lobjId, int mode)
 	dTHX;
 	D_imp_dbh(dbh);
 
-	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_pg_lo_open (mode: %d objectid: %ld)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_pg_lo_open (mode: %d objectid: %d)\n",
 					THEADER, mode, lobjId);
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
@@ -4160,7 +4160,7 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
 	SV *   bufsv;
 	char * tmp;
 	
-	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_blob_read (objectid: %d offset: %d length: %d)\n",
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_blob_read (objectid: %d offset: %ld length: %ld)\n",
 					THEADER, lobjId, offset, len);
 
 	/* safety checks */
