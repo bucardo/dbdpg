@@ -10,11 +10,12 @@ require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
 my $dbh = connect_database();
+my $t;
 
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 26;
+plan tests => 27;
 
 isnt( $dbh, undef, 'Connect to database for placeholder testing');
 
@@ -178,13 +179,14 @@ is( $@, q{}, q{prepare/execute allows geometric operator ?# when dollaronly set}
 
 is( $dbh->{pg_placeholder_dollaronly}, 1, q{Value of placeholder_dollaronly can be retrieved});
 
+$t=q{prepare/execute does not allow use of raw ? and :foo forms};
 $dbh->{pg_placeholder_dollaronly} = 0;
 eval {
 	$sth = $dbh->prepare(q{SELECT uno ?: dos ? tres :foo bar $1});
 	$sth->execute();
 	$sth->finish();
 };
-like( $@, qr{mix placeholder}, q{prepare/execute does not allow use of raw ? and :foo forms});
+like( $@, qr{mix placeholder}, $t);
 
 $dbh->{pg_placeholder_dollaronly} = 1;
 eval {
@@ -202,6 +204,13 @@ eval {
 	$sth->finish();
 };
 like( $@, qr{unbound placeholder}, q{pg_placeholder_dollaronly can be called as part of prepare()});
+
+$t=q{prepare works with identical named placeholders};
+eval {
+	$sth = $dbh->prepare(q{SELECT :row, :row, :row, :yourboat});
+	$sth->finish();
+};
+is($@, q{}, $t);
 
 $dbh->rollback();
 
