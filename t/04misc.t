@@ -5,6 +5,7 @@
 use strict;
 use warnings;
 use Test::More;
+use Data::Dumper;
 use DBI;
 use DBD::Pg;
 use lib 't','.';
@@ -267,7 +268,12 @@ eval {
 };
 is( $@, q{}, 'The data_sources() method did not throw an exception');
 
-is( grep (/^dbi:Pg:dbname=template1$/, @result), '1', 'The data_sources() method returns a template1 listing');
+if (! defined $result[0]) {
+	fail 'The data_sources() method returned an empty list';
+}
+else {
+	is( grep (/^dbi:Pg:dbname=template1$/, @result), '1', 'The data_sources() method returns a template1 listing');
+}
 
 $t=q{The data_sources() returns undef when fed a bogus second argument};
 @result = DBI->data_sources('Pg','foobar');

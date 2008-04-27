@@ -1,5 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.6.2
+
+	- Allow 'make test' create a test database from scratch if
+		if it can't find an existing one to use. [GSM]
+
 2.6.1 Released April 22, 2008 (subversion r11133)
 
 	- Don't free placeholder section, fixes problem when using 

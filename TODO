@@ -14,5 +14,3 @@ TODO:
 - Remove libpq dependency
 - Handle and/or better tests for different encoding, especially those not 
    supported as a server encoding (e.g. BIG5)
-- Be more aggressive and finding or creating a database for 
-   complete testing.

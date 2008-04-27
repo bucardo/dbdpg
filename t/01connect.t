@@ -20,15 +20,10 @@ BEGIN {
 
 ($helpconnect,$connerror,$dbh) = connect_database();
 
-if (! defined $dbh) {
+if (! defined $dbh or $connerror) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 15;
-
-# Trapping a connection error can be tricky, but we only have to do it
-# this thoroughly one time. We are trapping two classes of errors:
-# the first is when we truly do not connect, usually a bad DBI_DSN;
-# the second is an invalid login, usually a bad DBI_USER or DBI_PASS
+plan tests => 13;
 
 my ($t);
 
@@ -77,43 +72,27 @@ SKIP: {
 	}
 
 	$t=q{Connect with invalid option fails};
-	my $oldname = $1;
-	(my $dbi = $ENV{DBI_DSN}) =~ s/$alias\s*=/dbbarf=/;
-	eval {
-		$dbh = DBI->connect($dbi, $ENV{DBI_USER}, $ENV{DBI_PASS}, {RaiseError=>1});
-	};
-	like ($@, qr{DBI connect.+failed:}, $t);
+	my $err;
+	(undef,$err,$dbh) = connect_database({ dbreplace => 'dbbarf' });
+	like ($err, qr{DBI connect.+failed:}, $t);
+
 	for my $opt (qw/db dbname database/) {
 		$t=qq{Connect using string '$opt' works};
-		($dbi = $ENV{DBI_DSN}) =~ s/$alias\s*=/$opt=/;
-		eval {
-			$dbh = DBI->connect($dbi, $ENV{DBI_USER}, $ENV{DBI_PASS}, {RaiseError=>1});
-		};
-		is($@, q{}, $t);
+		$dbh and $dbh->disconnect();
+		(undef,$err,$dbh) = connect_database({dbreplace => $opt});
+		is($err, '', $t);
 	}
 
 	if ($ENV{DBI_DSN} =~ /$alias\s*=\s*\"/) {
 		skip 'DBI_DSN already contains quoted database, no need for explicit test', 1;
 	}
 	$t=q{Connect using a quoted database argument};
-	($dbi = $ENV{DBI_DSN}) =~ s/$alias\s*=(\w+)/'db="'.lc $2.'"'/e;
 	eval {
-		$dbh = DBI->connect($dbi, $ENV{DBI_USER}, $ENV{DBI_PASS}, {RaiseError=>1});
+		$dbh and $dbh->disconnect();
+		(undef,$err,$dbh) = connect_database({dbquotes => 1});
 	};
 	is($@, q{}, $t);
 }
-
-$t=q{Connect with an undefined user picks up $ENV{DBI_USER}};
-eval {
-	$dbh = DBI->connect($ENV{DBI_DSN}, undef, $ENV{DBI_PASS}, {RaiseError=>1});
-};
-is($@, q{}, $t);
-
-$t=q{Connect with an undefined password picks up $ENV{DBI_PASS}};
-eval {
-	$dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, undef, {RaiseError=>1});
-};
-is($@, q{}, $t);
 
 END {
 	my $pv = sprintf('%vd', $^V);
@@ -150,9 +129,12 @@ END {
 		if ($helpconnect & 4) {
 			$extra .= 'DBI_USER';
 		}
+		if ($helpconnect & 16) {
+			$extra .= 'initdb';
+		}
 	}
 
-	if (defined $connerror) {
+	if (defined $connerror and length $connerror) {
 		$connerror =~ s/.+?failed: //;
 		$connerror =~ s{\n at t/dbdpg.*}{}m;
 		$extra .= "\nError was: $connerror";

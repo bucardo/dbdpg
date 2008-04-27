@@ -11,7 +11,7 @@ use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
-my $dbh = connect_database();
+my ($helpconnect,$connerror,$dbh) = connect_database();
 
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -91,6 +91,11 @@ d InactiveDestroy (must be the last one tested)
 };
 
 my ($attrib,$SQL,$sth,$warning,$result,$expected);
+
+# Get the DSN and user from the test file, if it exists
+my ($testdsn, $testuser) = get_test_settings();
+
+
 
 #
 # Test of the database handle attribute "Statement"
@@ -177,16 +182,15 @@ is( $attrib, 'Pg', '$dbh->{Driver}{Name} returns correct value of "Pg"');
 #
 
 SKIP: {
-	if (!exists $ENV{DBI_DSN} or $ENV{DBI_DSN} !~ /^dbi:Pg:(.+)$/) {
-		skip q{Cannot test DB handle attribute "Name": invalid DBI_DSN}, 1;
+
+	if (! length $testdsn or $testdsn !~ /^dbi:Pg:(.+)/) {
+		skip q{Cannot test DB handle attribute "Name" invalid DBI_DSN}, 1;
 	}
-	else {
-		$expected = $1 || $ENV{PGDATABASE};
-		defined $expected and length $expected or skip 'Cannot test unless database name known', 1;
-		$attrib = $dbh->{Name};
-		$expected =~ s/(db|database)=/dbname=/;
-		is( $attrib, $expected, 'DB handle attribute "Name" returns same value as DBI_DSN');
-	}
+	$expected = $1 || $ENV{PGDATABASE};
+	defined $expected and length $expected or skip 'Cannot test unless database name known', 1;
+	$attrib = $dbh->{Name};
+	$expected =~ s/(db|database)=/dbname=/;
+	is( $attrib, $expected, 'DB handle attribute "Name" returns same value as DBI_DSN');
 }
 
 #
@@ -204,7 +208,7 @@ is( $attrib, undef, 'Setting DB handle attribute "RowCacheSize" has no effect');
 #
 
 $attrib = $dbh->{Username};
-is( $attrib, $ENV{DBI_USER}, 'DB handle attribute "Username" returns the same value as DBI_USER');
+is( $attrib, $testuser, 'DB handle attribute "Username" returns the same value as DBI_USER');
 
 #
 # Test of the "PrintWarn" database handle attribute

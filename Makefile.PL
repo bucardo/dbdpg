@@ -188,7 +188,7 @@ my %opts =
 	 PERL_MALLOC_OK => 1,
 	 NEEDS_LINKING  => 1,
 	 NO_META        => 1,
-	 clean          => { FILES => 'trace Pg.xsi' },
+	 clean          => { FILES => 'trace Pg.xsi README.testdatabase' },
 );
 
 if ($os eq 'hpux') {
