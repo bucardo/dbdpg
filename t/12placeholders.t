@@ -130,12 +130,16 @@ if ($old_encoding ne 'UTF8') {
 	$dbh->do(q{SET NAMES 'UTF8'});
 }
 
+my $SQL = 'SHOW backslash_quote';
+my $backslash = $dbh->selectall_arrayref($SQL)->[0][0];
+
 $t=q{Prepare with backslashes inside quotes works};
 $sth = $dbh->prepare(q{SELECT '\\'?'});
 eval {
 	$sth->execute();
 };
-is( $@, q{}, $t);
+my $expected = $backslash eq 'off' ? qr{unsafe} : qr{};
+like( $@, $expected, $t);
 $sth->finish();
 $dbh->commit();
 
