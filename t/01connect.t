@@ -42,7 +42,7 @@ $dbh = connect_database();
 pass('Connected with first database handle');
 
 ## Grab some important values used for debugging
-my @vals = qw/array_nulls backslash_quote server_encoding client_encoding standard_confirming_strings/;
+my @vals = qw/array_nulls backslash_quote server_encoding client_encoding standard_conforming_strings/;
 my $SQL = 'SELECT name,setting FROM pg_settings WHERE name IN (' .
 	(join ',' => map { qq{'$_'} } @vals) . ')';
 for (@{$dbh->selectall_arrayref($SQL)}) {
@@ -100,6 +100,7 @@ END {
 	my $dsn = exists $ENV{DBI_DSN} ? $ENV{DBI_DSN} : '?';
 	my $ver = defined $DBD::Pg::VERSION ? $DBD::Pg::VERSION : '?';
 	my $user = exists $ENV{DBI_USER} ? $ENV{DBI_USER} : '<not set>';
+	my $offset = 27;
 
 	my $extra = '';
 	for (sort qw/HOST HOSTADDR PORT DATABASE USER PASSWORD PASSFILE OPTIONS REALM
@@ -107,18 +108,18 @@ END {
                  CLIENTENCODING/) {
 		my $name = "PG$_";
 		if (exists $ENV{$name} and defined $ENV{$name}) {
-			$extra .= sprintf "\n%-21s $ENV{$name}", $name;
+			$extra .= sprintf "\n%-*s $ENV{$name}", $offset, $name;
 		}
 	}
 	for my $name (qw/DBI_DRIVER DBI_AUTOPROXY/) {
 		if (exists $ENV{$name} and defined $ENV{$name}) {
-			$extra .= sprintf "\n%-21s $ENV{$name}", $name;
+			$extra .= sprintf "\n%-*s $ENV{$name}", $offset, $name;
 		}
 	}
 
 	## More helpful stuff
 	for (sort keys %set) {
-		$extra .= sprintf "\n%-21s %s", $_, $set{$_};
+		$extra .= sprintf "\n%-*s %s", $offset, $_, $set{$_};
 	}
 
 	if ($helpconnect) {
@@ -141,15 +142,15 @@ END {
 	}
 
 	diag
-		"\nDBI                   Version $DBI::VERSION\n".
-		"DBD::Pg               Version $ver\n".
-		"Perl                  Version $pv\n".
-		"OS                    $^O\n".
-		"PostgreSQL (compiled) $pglibversion\n".
-		"PostgreSQL (target)   $pgversion\n".
-		"PostgreSQL (reported) $pgvstring\n".
-		"Default port          $pgdefport\n".
-		"DBI_DSN               $dsn\n".
-		"DBI_USER              $user\n".
-		"Test schema           $schema$extra\n";
+		"\nDBI                         Version $DBI::VERSION\n".
+		"DBD::Pg                     Version $ver\n".
+		"Perl                        Version $pv\n".
+		"OS                          $^O\n".
+		"PostgreSQL (compiled)       $pglibversion\n".
+		"PostgreSQL (target)         $pgversion\n".
+		"PostgreSQL (reported)       $pgvstring\n".
+		"Default port                $pgdefport\n".
+		"DBI_DSN                     $dsn\n".
+		"DBI_USER                    $user\n".
+		"Test schema                 $schema$extra\n";
 }
