@@ -190,7 +190,7 @@ sub connect_database {
 		## Do we have initdb available?
 		$info = '';
 		eval {
-			$info = qx{initdb --help};
+			$info = qx{initdb --help 2>&1};
 		};
 		last GETHANDLE if $@;
 
