@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.6.2 Released April 30, 2008
+2.6.2 Released April 30, 2008 (subversion r11161)
 
 	- Fix coredump when pg_getcopydata copies 0 rows into a 
 		freshly created var. (CPAN bug #35556) [David Harris]
