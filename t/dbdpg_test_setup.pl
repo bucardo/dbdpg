@@ -351,7 +351,7 @@ sub connect_database {
 			print $fh "## Testdir: $test_database_dir\n" if 16 == $helpconnect;
 			print $fh "## Testowner: $su\n" if $su;
 		}
-		close $fh or dir qq{Could not close "$helpfile": $!\n};
+		close $fh or die qq{Could not close "$helpfile": $!\n};
 	}
 
   GOTDBH:
