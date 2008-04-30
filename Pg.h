@@ -142,6 +142,7 @@ DBISTATE_DECLARE;
 #define TRACE_PQNTUPLES            TRACE_XX "%sPQntuples\n",             THEADER)
 #define TRACE_PQOIDVALUE           TRACE_XX "%sPQoidValue\n",            THEADER)
 #define TRACE_PQOPTIONS            TRACE_XX "%sPQoptions\n",             THEADER)
+#define TRACE_PQPARAMETERSTATUS    TRACE_XX "%sPQparameterStatus\n",     THEADER)
 #define TRACE_PQPASS               TRACE_XX "%sPQpass\n",                THEADER)
 #define TRACE_PQPORT               TRACE_XX "%sPQport\n",                THEADER)
 #define TRACE_PQPREPARE            TRACE_XX "%sPQprepare\n",             THEADER)

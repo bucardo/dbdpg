@@ -204,51 +204,40 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	TRACE_PQSERVERVERSION;
 	imp_dbh->pg_server_version = PQserverVersion(imp_dbh->conn);
 #endif
-	if (imp_dbh->pg_server_version <= 0) {
-		PGresult *result;
-		int	cnt, vmaj, vmin, vrev;
-		ExecStatusType status;
-		TRACE_PQEXEC;
-		result = PQexec(imp_dbh->conn, "SELECT version(), 'DBD::Pg'");
-		status = _sqlstate(aTHX_ imp_dbh, result);
 
-		if (!result || PGRES_TUPLES_OK != status || (0==PQntuples(result))) {
-			if (TRACEWARN)
-				TRC(DBILOGFP, "%sCould not get version from the server, status was %d\n",
-					THEADER, status);
-		}
-		else {
-			TRACE_PQGETVALUE;
-			cnt = sscanf(PQgetvalue(result,0,0), "PostgreSQL %d.%d.%d", &vmaj, &vmin, &vrev);
-			if (cnt >= 2) {
-				if (cnt == 2) /* Account for devel version e.g. 8.3beta1 */
-					vrev = 0;
-				imp_dbh->pg_server_version = (100 * vmaj + vmin) * 100 + vrev;
-			}
-			else if (TRACEWARN) {
-				TRACE_PQGETVALUE;
-				TRC(DBILOGFP, "%sWARNING: unable to parse version from \"%s\"\n",
-					THEADER, PQgetvalue(result,0,0));
-			}
-		}
-		if (result) {
-			TRACE_PQCLEAR;
-			PQclear(result);
+	if (imp_dbh->pg_server_version <= 0) {
+		int	cnt, vmaj, vmin, vrev;
+		cnt = sscanf(PQparameterStatus(imp_dbh->conn, "server_version"), "%d.%d.%d",
+					 &vmaj, &vmin, &vrev);
+		if (cnt >= 2) {
+			if (cnt == 2) /* Account for devel version e.g. 8.3beta1 */
+				vrev = 0;
+			imp_dbh->pg_server_version = (100 * vmaj + vmin) * 100 + vrev;
 		}
 	}
 
-	imp_dbh->pg_bool_tf     = DBDPG_FALSE;
-	imp_dbh->pg_enable_utf8 = DBDPG_FALSE;
- 	imp_dbh->prepare_now    = DBDPG_FALSE;
-	imp_dbh->done_begin     = DBDPG_FALSE;
-	imp_dbh->dollaronly     = DBDPG_FALSE;
-	imp_dbh->expand_array   = DBDPG_TRUE;
-	imp_dbh->pid_number     = getpid();
-	imp_dbh->prepare_number = 1;
-	imp_dbh->copystate      = 0;
-	imp_dbh->pg_errorlevel  = 1; /* Default */
-	imp_dbh->async_status   = 0;
-	imp_dbh->async_sth      = NULL;
+	/* Check the status of standard_conforming_strings */
+	imp_dbh->standard_escape = DBDPG_FALSE;
+	if (imp_dbh->pg_server_version >= 80100) { /* cannot be true until 8.1 */
+		TRACE_PQPARAMETERSTATUS;
+		if (NULL != PQparameterStatus(imp_dbh->conn, "standard_conforming_strings")
+			&& 0==strncmp("on", PQparameterStatus(imp_dbh->conn, "standard_conforming_strings"), 2)) {
+			imp_dbh->standard_escape = DBDPG_TRUE;
+		}
+	}
+
+	imp_dbh->pg_bool_tf      = DBDPG_FALSE;
+	imp_dbh->pg_enable_utf8  = DBDPG_FALSE;
+ 	imp_dbh->prepare_now     = DBDPG_FALSE;
+	imp_dbh->done_begin      = DBDPG_FALSE;
+	imp_dbh->dollaronly      = DBDPG_FALSE;
+	imp_dbh->expand_array    = DBDPG_TRUE;
+	imp_dbh->pid_number      = getpid();
+	imp_dbh->prepare_number  = 1;
+	imp_dbh->copystate       = 0;
+	imp_dbh->pg_errorlevel   = 1; /* Default */
+	imp_dbh->async_status    = 0;
+	imp_dbh->async_sth       = NULL;
 
 	/* If using server version 7.4, switch to "smart" */
 	imp_dbh->server_prepare = PGLIBVERSION >= 80000 ? 1 : 2;
