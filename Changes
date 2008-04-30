@@ -5,7 +5,7 @@
 	- Fix coredump when pg_getcopydata copies 0 rows into a 
 		freshly created var. (CPAN bug #35556) [David Harris]
 	- Allow 'make test' create a test database from scratch if
-		if it can't find an existing one to use. [GSM]
+		it cannot find an existing one to use. [GSM]
 
 2.6.1 Released April 22, 2008 (subversion r11133)
 
