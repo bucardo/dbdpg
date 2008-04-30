@@ -14,3 +14,5 @@ TODO:
 - Remove libpq dependency
 - Handle and/or better tests for different encoding, especially those not 
    supported as a server encoding (e.g. BIG5)
+- Add a mode to disallow multi-statement strings
+
