@@ -23,8 +23,10 @@ stop_words = ActiveKids AutoCommit CachedKids ChildHandles ChopBlanks CompatMode
 [-Documentation::RequirePODUseEncodingUTF8]
 [-Editor::RequireEmacsFileVariables]
 [-ErrorHandling::RequireCarping]
+[-InputOutput::ProhibitBacktickOperators]
 [-InputOutput::ProhibitOneArgSelect]
 [-InputOutput::RequireCheckedSyscalls]
+[-InputOutput::RequireBriefOpen]
 [-Lax::ProhibitComplexMappings::LinesNotStatements]
 [-Lax::ProhibitEmptyQuotes::ExceptAsFallback]
 [-Lax::ProhibitStringyEval::ExceptForRequire]
@@ -72,4 +74,3 @@ stop_words = ActiveKids AutoCommit CachedKids ChildHandles ChopBlanks CompatMode
 [-Modules::RequirePerlVersion]
 [-Modules::RequireVersionVar]
 [-ValuesAndExpressions::ProhibitEscapedCharacters]
-

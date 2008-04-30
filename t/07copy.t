@@ -303,7 +303,7 @@ eval {
 is($@, q{}, $t);
 
 $t=q{pg_getcopydata works when pulling from an empty table into an empty var};
-$dbh->do("COPY (SELECT 1 FROM pg_class LIMIT 0) TO STDOUT");
+$dbh->do(q{COPY (SELECT 1 FROM pg_class LIMIT 0) TO STDOUT});
 eval {
 	my $newvar;
 	$dbh->pg_getcopydata($newvar);

@@ -27,7 +27,7 @@ else {
 	closedir $dir;
 	plan tests => 5+@testfiles;
 }
-ok(@testfiles, 'Found files in test directory');
+ok(@testfiles, ' Found files in test directory');
 
 ## Check some non-test files
 my $critic = Perl::Critic->new(-severity => 1);
@@ -152,7 +152,7 @@ for my $filename (sort @testfiles) {
 		diag "Policy: $policy\n";
 		diag "Source: $source\n\n";
 	}
-	my $SPACE = ++$count < 9 ? ' ' : '';
+	my $SPACE = ++$count < 7 ? ' ' : '';
 	if ($vios) {
 		fail qq{${SPACE}Failed Perl::Critic tests for file "$filename": $vios};
 	}

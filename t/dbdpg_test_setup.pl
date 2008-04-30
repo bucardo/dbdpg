@@ -228,7 +228,7 @@ sub connect_database {
 				print $fh "This is a test directory for DBD::Pg and may be removed\n";
 				print $fh "You may want to ensure the postmaster has been stopped first.\n";
 				print $fh "Check the port in the postgresql.conf file\n";
-				close $fh;
+				close $fh or die qq{Could not close "$readme": $!\n};
 			}
 			my $founduser = 0;
 			$su = $testuser = '';
@@ -297,7 +297,7 @@ sub connect_database {
 			last GETHANDLE;
 		}
 		print $cfh "\n\n## DBD::Pg testing port\nport=$testport\n\n";
-		close $cfh;
+		close $cfh or die qq{Could not close "$conf": $!\n};
 
 		## Attempt to start up the test server
 		$info = '';
@@ -338,7 +338,7 @@ sub connect_database {
 
 	if (open my $fh, '>', $helpfile) {
 		print $fh "## This is a temporary file created for testing DBD::Pg\n";
-		print $fh "## Created: " . scalar localtime() . "\n";
+		print $fh '## Created: ' . scalar localtime() . "\n";
 		print $fh "## Feel free to remove it!\n";
 		print $fh "## Helpconnect: $helpconnect\n";
 		if ($@) {
@@ -351,7 +351,7 @@ sub connect_database {
 			print $fh "## Testdir: $test_database_dir\n" if 16 == $helpconnect;
 			print $fh "## Testowner: $su\n" if $su;
 		}
-		close $fh;
+		close $fh or dir qq{Could not close "$helpfile": $!\n};
 	}
 
   GOTDBH:
