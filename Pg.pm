@@ -3597,7 +3597,8 @@ pg_putcopyend methods.
 =item B<pg_getcopydata>
 
 Used to retrieve data from a table after the server has been put into COPY OUT 
-mode by calling "COPY tablename TO STDOUT". The first argument to pg_getcopydata 
+mode by calling "COPY tablename TO STDOUT". Data is always returned 
+one data row at a time. The first argument to pg_getcopydata 
 is the variable into which the data will be stored (this variable should not 
 be undefined, or it may throw a warning, although it may be a reference). This 
 argument returns a number greater than 1 indicating the new size of the variable, 
@@ -3614,6 +3615,7 @@ as the name suggests, returns immediately. The only difference from the original
 function is that this version may return a 0, indicating that the row is not 
 ready to be delivered yet. When this happens, the variable has not been changed, 
 and you will need to call the function again until you get a non-zero result.
+(Data is still always returned one data row at a time.)
 
 =item B<pg_putcopydata>
 
