@@ -3653,7 +3653,7 @@ pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 	else if (-1 == copystatus) {
 		PGresult * result;
 		ExecStatusType status;
-		SvCUR_set(dataline, 0);
+		sv_setpv(dataline, "");
 		imp_dbh->copystate=0;
 		TRACE_PQGETRESULT;
 		result = PQgetResult(imp_dbh->conn);

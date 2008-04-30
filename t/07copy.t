@@ -13,7 +13,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if (defined $dbh) {
-	plan tests => 54;
+	plan tests => 55;
 }
 else {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -299,6 +299,14 @@ is($result, -1, $t);
 $t=q{Normal queries work after pg_getcopydata runs out};
 eval {
 	$dbh->do('SELECT 234');
+};
+is($@, q{}, $t);
+
+$t=q{pg_getcopydata works when pulling from an empty table into an empty var};
+$dbh->do("COPY (SELECT 1 FROM pg_class LIMIT 0) TO STDOUT");
+eval {
+	my $newvar;
+	$dbh->pg_getcopydata($newvar);
 };
 is($@, q{}, $t);
 
