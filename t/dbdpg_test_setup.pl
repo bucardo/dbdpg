@@ -496,9 +496,9 @@ sub cleanup_database {
 
 sub shutdown_test_database {
 
-	if (-e $test_database_dir) {
+	if (-e $test_database_dir and -e "$test_database_dir/postmaster.pid") {
 		eval {
-			qx{pg_ctl -D $test_database_dir -m fast stop};
+			qx{pg_ctl -D $test_database_dir -m fast stop 2>&1};
 		};
 		return $@;
 	}
