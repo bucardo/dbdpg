@@ -26,6 +26,7 @@ my ($sth,$count,$result,$expected,@data);
 my $table = 'dbd_pg_test4';
 $dbh->do(qq{CREATE TABLE $table(id2 integer, val2 text)});
 $dbh->commit();
+my $pgversion = $dbh->{pg_server_version};
 
 #
 # Test of the pg_putline and pg_endcopy methods
@@ -302,13 +303,16 @@ eval {
 };
 is($@, q{}, $t);
 
-$t=q{pg_getcopydata works when pulling from an empty table into an empty var};
-$dbh->do(q{COPY (SELECT 1 FROM pg_class LIMIT 0) TO STDOUT});
-eval {
-	my $newvar;
-	$dbh->pg_getcopydata($newvar);
+SKIP: {
+	$pgversion < 80200 and skip 'Server version 8.2 or greater needed for test', 1;
+	$t=q{pg_getcopydata works when pulling from an empty table into an empty var};
+	$dbh->do(q{COPY (SELECT 1 FROM pg_class LIMIT 0) TO STDOUT});
+	eval {
+		my $newvar;
+		$dbh->pg_getcopydata($newvar);
+	};
+	is($@, q{}, $t);
 };
-is($@, q{}, $t);
 
 #
 # Make sure rollback and commit reset our internal copystate tracking
