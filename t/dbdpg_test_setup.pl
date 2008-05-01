@@ -194,7 +194,7 @@ sub connect_database {
 		};
 		last GETHANDLE if $@;
 
-		if ($info !~ /\@postgresql\.org/) {
+		if (!defined $info or $info !~ /\@postgresql\.org/) {
 			$@ = 'Bad initdb output';
 			last GETHANDLE;
 		}
@@ -353,6 +353,8 @@ sub connect_database {
 		}
 		close $fh or die qq{Could not close "$helpfile": $!\n};
 	}
+
+	$@ and return $helpconnect, $@, undef;
 
   GOTDBH:
 	## This allows things like data_sources() to work if we did an initdb
