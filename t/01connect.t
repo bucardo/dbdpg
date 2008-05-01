@@ -123,7 +123,7 @@ END {
 	}
 
 	if ($helpconnect) {
-		$extra .= "\nAdjusted:             ";
+		$extra .= sprintf "\n%-*s ", $offset, 'Adjusted:';
 		if ($helpconnect & 1) {
 			$extra .= 'DBI_DSN ';
 		}
