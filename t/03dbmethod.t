@@ -609,11 +609,6 @@ one => [
 	],
 };
 
-## 8.1 has differences in hash index pages
-if ($pgversion < 80109 or $pgversion == 80200) {
-	$correct_stats->{three}[5][11] = 0;
-}
-
 my $stats;
 
 $sth = $dbh->statistics_info(undef,$schema,$table1,undef,undef);
@@ -626,6 +621,8 @@ is_deeply( $stats, $correct_stats->{two}, "Correct stats output for $table2");
 
 $sth = $dbh->statistics_info(undef,$schema,$table3,undef,undef);
 $stats = $sth->fetchall_arrayref;
+## Too many intra-version differences to try for an exact number here:
+$correct_stats->{three}[5][11] = $stats->[5][11] = 0;
 is_deeply( $stats, $correct_stats->{three}, "Correct stats output for $table3");
 
 $sth = $dbh->statistics_info(undef,$schema,$table3,1,undef);
@@ -645,6 +642,7 @@ is_deeply( $stats, $correct_stats->{three_uo}, "Correct stats output for $table3
 
 	$sth = $dbh->statistics_info(undef,undef,$table3,undef,undef);
 	$stats = $sth->fetchall_arrayref;
+	$correct_stats->{three}[5][11] = $stats->[5][11] = 0;
 	is_deeply( $stats, $correct_stats->{three}, "Correct stats output for $table3");
 
 	$sth = $dbh->statistics_info(undef,undef,$table3,1,undef);
