@@ -11,7 +11,7 @@
 
 #include "Pg.h"
 
-char * null_quote(const char *string, STRLEN len, STRLEN *retlen)
+char * null_quote(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
 	char *result;
@@ -24,14 +24,14 @@ char * null_quote(const char *string, STRLEN len, STRLEN *retlen)
 }
 
 
-char * quote_string(const char *string, STRLEN len, STRLEN *retlen)
+char * quote_string(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
 	char * result;
 	STRLEN oldlen = len;
 	const char * const tmp = string;
 
-	(*retlen) = 2;
+	(*retlen) = estring ? 3 : 2;
 	while (len > 0 && *string != '\0') {
 		if (*string == '\'' || *string == '\\') {
 			(*retlen)++;
@@ -42,7 +42,13 @@ char * quote_string(const char *string, STRLEN len, STRLEN *retlen)
 	}
 	string = tmp;
 	New(0, result, 1+(*retlen), char);
-	*result++ = '\'';
+	if (estring) {
+		*result++ = 'E';
+		*result++ = '\'';
+	}
+	else {
+		*result++ = '\'';
+	}
 	len = oldlen;
 	while (len > 0 && *string != '\0') {
 		if (*string == '\'' || *string == '\\') {
@@ -57,7 +63,7 @@ char * quote_string(const char *string, STRLEN len, STRLEN *retlen)
 }
 
 
-char * quote_geom(const char *string, STRLEN len, STRLEN *retlen)
+char * quote_geom(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
 	char * result;
@@ -65,7 +71,7 @@ char * quote_geom(const char *string, STRLEN len, STRLEN *retlen)
 
 	len = 0; /* stops compiler warnings. Remove entirely someday */
 	tmp = string;
-	(*retlen) = 2;
+	(*retlen) = estring ? 3 : 2;
 	while (*string != '\0') {
 		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
 			&& *string != ',' && (*string < '0' || *string > '9'))
@@ -75,7 +81,13 @@ char * quote_geom(const char *string, STRLEN len, STRLEN *retlen)
 	}
 	string = tmp;
 	New(0, result, 1+(*retlen), char);
-	*result++ = '\'';
+	if (estring) {
+		*result++ = 'E';
+		*result++ = '\'';
+	}
+	else {
+		*result++ = '\'';
+	}
 	while (*string != '\0') {
 		*result++ = *string++;
 	}
@@ -84,14 +96,14 @@ char * quote_geom(const char *string, STRLEN len, STRLEN *retlen)
 	return result - (*retlen);
 }
 
-char * quote_path(const char *string, STRLEN len, STRLEN *retlen)
+char * quote_path(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
 	char * result;
 	const char * const tmp = string;
 
 	len = 0; /* stops compiler warnings. Remove entirely someday */
-	(*retlen) = 2;
+	(*retlen) = estring ? 3 : 2;
 	while (*string != '\0') {
 		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
 			&& *string != ',' && *string != '[' && *string != ']'
@@ -102,7 +114,13 @@ char * quote_path(const char *string, STRLEN len, STRLEN *retlen)
 	}
 	string = tmp;
 	New(0, result, 1+(*retlen), char);
-	*result++ = '\'';
+	if (estring) {
+		*result++ = 'E';
+		*result++ = '\'';
+	}
+	else {
+		*result++ = '\'';
+	}
 	while (*string != '\0') {
 		*result++ = *string++;
 	}
@@ -111,14 +129,14 @@ char * quote_path(const char *string, STRLEN len, STRLEN *retlen)
 	return result - (*retlen);
 }
 
-char * quote_circle(const char *string, STRLEN len, STRLEN *retlen)
+char * quote_circle(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
 	char * result;
 	const char * const tmp = string;
 
 	len = 0; /* stops compiler warnings. Remove entirely someday */
-	(*retlen) = 2;
+	(*retlen) = estring ? 3 : 2;
 	while (*string != '\0') {
 		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
 			&& *string != ',' && *string != '<' && *string != '>'
@@ -129,7 +147,13 @@ char * quote_circle(const char *string, STRLEN len, STRLEN *retlen)
 	}
 	string = tmp;
 	New(0, result, 1+(*retlen), char);
-	*result++ = '\'';
+	if (estring) {
+		*result++ = 'E';
+		*result++ = '\'';
+	}
+	else {
+		*result++ = '\'';
+	}
 	while (*string != '\0') {
 		*result++ = *string++;
 	}
@@ -139,14 +163,14 @@ char * quote_circle(const char *string, STRLEN len, STRLEN *retlen)
 }
 
 
-char * quote_bytea(char *string, STRLEN len, STRLEN *retlen)
+char * quote_bytea(char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
 	char * result;
 	STRLEN oldlen = len;
 
 	result = string;
-	(*retlen) = 2;
+	(*retlen) = estring ? 3 : 2;
 	while (len > 0) {
 		if (*string == '\'') {
 			(*retlen) += 2;
@@ -165,7 +189,13 @@ char * quote_bytea(char *string, STRLEN len, STRLEN *retlen)
 	}
 	string = result;
 	New(0, result, 1+(*retlen), char);
-	*result++ = '\'';
+	if (estring) {
+		*result++ = 'E';
+		*result++ = '\'';
+	}
+	else {
+		*result++ = '\'';
+	}
 	len = oldlen;
 	while (len > 0) {
 		if (*string == '\'') { /* Single quote becomes double quotes */
@@ -193,19 +223,19 @@ char * quote_bytea(char *string, STRLEN len, STRLEN *retlen)
 	return (char *)result - (*retlen);
 }
 
-char * quote_sql_binary(char *string, STRLEN len, STRLEN *retlen)
+char * quote_sql_binary(char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
 	/* We are going to return a quote_bytea() for backwards compat but
 		 we warn first */
 	warn("Use of SQL_BINARY invalid in quote()");
-	return quote_bytea(string, len, retlen);
+	return quote_bytea(string, len, retlen, estring);
 	
 }
 
 
 
-char * quote_bool(const char *value, STRLEN len, STRLEN *retlen) 
+char * quote_bool(const char *value, STRLEN len, STRLEN *retlen, int estring) 
 {
 	dTHX;
 	char *result;
@@ -236,7 +266,7 @@ char * quote_bool(const char *value, STRLEN len, STRLEN *retlen)
 
 
 
-char * quote_integer(const char *value, STRLEN len, STRLEN *retlen) 
+char * quote_integer(const char *value, STRLEN len, STRLEN *retlen, int estring) 
 {
 	dTHX;
 	char *result;
@@ -259,7 +289,7 @@ char * quote_integer(const char *value, STRLEN len, STRLEN *retlen)
 
 
 
-void dequote_char(const char *string, STRLEN *retlen)
+void dequote_char(const char *string, STRLEN *retlen, int estring)
 {
 	dTHX;
 	/* TODO: chop_blanks if requested */
@@ -267,7 +297,7 @@ void dequote_char(const char *string, STRLEN *retlen)
 }
 
 
-void dequote_string(const char *string, STRLEN *retlen)
+void dequote_string(const char *string, STRLEN *retlen, int estring)
 {
 	dTHX;
 	*retlen = strlen(string);
@@ -275,7 +305,7 @@ void dequote_string(const char *string, STRLEN *retlen)
 
 
 
-void dequote_bytea(char *string, STRLEN *retlen)
+void dequote_bytea(char *string, STRLEN *retlen, int estring)
 {
 	dTHX;
 	char *result;
@@ -320,20 +350,20 @@ void dequote_bytea(char *string, STRLEN *retlen)
 	it might be nice to let people go the other way too. Say when talking
 	to something that uses SQL_BINARY
  */
-void dequote_sql_binary(char *string, STRLEN *retlen)
+void dequote_sql_binary(char *string, STRLEN *retlen, int estring)
 {
 	dTHX;
 
 	/* We are going to retun a dequote_bytea(), JIC */
 	warn("Use of SQL_BINARY invalid in dequote()");
-	dequote_bytea(string, retlen);
+	dequote_bytea(string, retlen, estring);
 	return;
 	/* Put dequote_sql_binary function here at some point */
 }
 
 
 
-void dequote_bool(char *string, STRLEN *retlen)
+void dequote_bool(char *string, STRLEN *retlen, int estring)
 {
 	dTHX;
 
@@ -348,7 +378,7 @@ void dequote_bool(char *string, STRLEN *retlen)
 
 
 
-void null_dequote(const char *string, STRLEN *retlen)
+void null_dequote(const char *string, STRLEN *retlen, int estring)
 {
 	dTHX;
 	*retlen = strlen(string);

@@ -626,11 +626,15 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		}
 		break;
 
-	case 6: /* pg_pid */
+	case 6: /* pg_pid pg_scs */
 
 		if (strEQ("pg_pid", key)) {
 			TRACE_PQBACKENDPID;
 			retsv = newSViv((IV)PQbackendPID(imp_dbh->conn));
+		}
+		else if (strEQ("pg_scs", key)) {
+			TRACE_PQPARAMETERSTATUS;
+			retsv = newSVpv(PQparameterStatus(imp_dbh->conn,"standard_conforming_strings"),0);
 		}
 		break;
 
@@ -731,8 +735,17 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		if (strEQ("pg_placeholder_dollaronly", key))
 			retsv = newSViv((IV)imp_dbh->dollaronly);
 		break;
+
+	case 30: /* pg_standard_conforming_strings */
+
+		if (strEQ("pg_standard_conforming_strings", key)) {
+			TRACE_PQPARAMETERSTATUS;
+			retsv = newSVpv(PQparameterStatus(imp_dbh->conn,"standard_conforming_strings"),0);
+		}
+		break;
+
 	}
-	
+
 	if (TEND) TRC(DBILOGFP, "%sEnd dbd_db_FETCH_attrib\n", THEADER);
 
 	if (!retsv)
@@ -2813,7 +2826,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				if (currph->quoted)
 					Safefree(currph->quoted);
 				currph->quoted = currph->bind_type->quote
-					(currph->value, currph->valuelen, &currph->quotedlen); /* freed in dbd_st_destroy */
+					(currph->value, currph->valuelen, &currph->quotedlen, 0); /* freed in dbd_st_destroy */
 			}
 		}
 		/* Set the size of each actual in-place placeholder */

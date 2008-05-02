@@ -1,7 +1,6 @@
 TODO: 
 
 - Mention RETURNING clause support in docs.
-- Play nicely with standard_conforming_strings (CPAN bug #27538)
 - Use WITH HOLD for cursor work
 - Start testing with a thread-enabled Perl
 - Create a .ppm for Windows

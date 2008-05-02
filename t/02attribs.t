@@ -16,7 +16,7 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 132;
+plan tests => 138;
 
 isnt( $dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -90,7 +90,7 @@ d InactiveDestroy (must be the last one tested)
 
 };
 
-my ($attrib,$SQL,$sth,$warning,$result,$expected);
+my ($attrib,$SQL,$sth,$warning,$result,$expected,$t);
 
 # Get the DSN and user from the test file, if it exists
 my ($testdsn, $testuser) = get_test_settings();
@@ -320,6 +320,26 @@ like( $result, qr/^\d+$/, q{DB handle attribute "pg_socket" returns a value});
 $result = $dbh->{pg_pid};
 like( $result, qr/^\d+$/, q{DB handle attribute "pg_pid" returns a value});
 
+$t=q{DB handle attribute "pg_standard_conforming_strings" returns a valid value};
+my $oldscs = $dbh->{pg_standard_conforming_strings};
+like( $oldscs, qr/^on|off$/, $t);
+
+$dbh->do("SET standard_conforming_strings = on");
+$t=q{DB handle attribute "pg_standard_conforming_strings" returns correct value};
+$result = $dbh->{pg_standard_conforming_strings};
+is( $result, 'on', $t);
+$t=q{DB handle attribute "pg_scs" returns correct value};
+$result = $dbh->{pg_scs};
+is( $result, 'on', $t);
+
+$dbh->do("SET standard_conforming_strings = off");
+$t=q{DB handle attribute "pg_standard_conforming_strings" returns correct value};
+$result = $dbh->{pg_standard_conforming_strings};
+is( $result, 'off', $t);
+$t=q{DB handle attribute "pg_scs" returns correct value};
+$result = $dbh->{pg_scs};
+is( $result, 'off', $t);
+
 ## If Encode is available, we will insert some non-ASCII into the test table
 ## Since this will fail with client encodings such as BIG5, we force UTF8
 my $old_encoding = $dbh->selectall_arrayref('SHOW client_encoding')->[0][0];
@@ -336,7 +356,15 @@ SKIP: {
 	$sth->execute(1);
 	local $dbh->{pg_enable_utf8} = 1;
 	my $utf8_str = chr(0x100).'dam'; # LATIN CAPITAL LETTER A WITH MACRON
-	is( $dbh->quote( $utf8_str ), "'$utf8_str'", 'quote() handles utf8.' );
+
+	$dbh->do("SET standard_conforming_strings = off");
+	$t=q{Database method quote() handles utf8};
+	is( $dbh->quote( $utf8_str ),  "'$utf8_str'", $t);
+
+	$dbh->do("SET standard_conforming_strings = on");
+	$t=q{Database method quote() handles utf8};
+	is( $dbh->quote( $utf8_str ),  "E'$utf8_str'", $t);
+
 	$SQL = "INSERT INTO dbd_pg_test (id, pname, val) VALUES (40, '$utf8_str', 'Orange')";
 	is( $dbh->do($SQL), '1', 'Able to insert unicode character into the database');
 	$sth->execute(40);
@@ -349,6 +377,8 @@ SKIP: {
 	ok( !Encode::is_utf8($name2), 'ASCII text returned from database does not have utf8 bit set');
 	$sth->finish();
 }
+
+$dbh->do("SET standard_conforming_strings = $oldscs");
 
 
 #
