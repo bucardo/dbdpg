@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.6.4 Released May 2, 2008
+
+	- More tweaks to the test suite.
+
 2.6.3 Released May 1, 2008 (subversion r11169)
 
 	- Minor tweaks to the test suite.
