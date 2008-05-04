@@ -7,7 +7,7 @@ DESCRIPTION:
 ------------
 
 This is version 2.7.0 of DBD-Pg.  The web site for this interface, and 
-the latst vesion, can be found at:
+the latest version, can be found at:
 
 	http://search.cpan.org/dist/DBD-Pg/
 
@@ -129,7 +129,7 @@ If the first connection fails and DBI_DSN is not set, the tests may
 attempt to connect as the user 'postgres' to the database 'postgres'. 
 See the t/dbdpg_test_setup.pl for the exact process.
 
-Please consdier installing CPAN::Reporter so that your tests are 
+Please consider installing CPAN::Reporter so that your tests are 
 automatically gathered and reported, which helps the development 
 of DBD::Pg.
 
@@ -145,7 +145,7 @@ did a simple emulation of placeholders, so the rules were not as strict.
 You should either rewrite your queries to make them legal SQL syntax for 
 PostgreSQL, or turn off server-side prepares.
 
-To change your queries, make sure that the type of each placholder can 
+To change your queries, make sure that the type of each placeholder can 
 be determined by the PostgreSQL parser. So instead of:
 
   SELECT ?
@@ -159,7 +159,7 @@ and features), do this at the top of your scripts:
 
 $dbh->{pg_server_prepare} = 0;
 
-This can also be set for individual queries at the statment handle level: see 
+This can also be set for individual queries at the statement handle level: see 
 the documentation for more details.
 
 * PostgreSQL library issues:
@@ -265,7 +265,7 @@ Running DBD-Pg scripts on Win32 needs some configuration work
 on the server side:
 
     o add a postgres user with the same name as the NT-User 
-      (eg Administrator)
+      (e.g. Administrator)
     o make sure, that your pg_hba.conf on the server is configured,
       such that a connection from another host will be accepted
 
