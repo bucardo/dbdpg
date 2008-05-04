@@ -4254,7 +4254,7 @@ int pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 	dTHX;
 	PGresult *result;
 	ExecStatusType status = PGRES_FATAL_ERROR;
-	int rows;
+	int rows = 0;
 	char *cmdStatus = NULL;
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_result\n", THEADER);
