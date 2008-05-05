@@ -203,7 +203,7 @@ sub connect_database {
 		warn "Please wait, creating new database for testing\n";
 		$info = '';
 		eval {
-			$info = qx{initdb -E UTF8 -D $test_database_dir 2>&1};
+			$info = qx{initdb -E UTF8 --locale=C -D $test_database_dir 2>&1};
 		};
 		last GETHANDLE if $@;
 
@@ -235,7 +235,7 @@ sub connect_database {
 				$founduser++;
 				$info = '';
 				eval {
-					$info = qx{su -l $user -c "initdb -E UTF8 -D $test_database_dir" 2>&1};
+					$info = qx{su -l $user -c "initdb -E UTF8 --locale=C -D $test_database_dir" 2>&1};
 				};
 				if (!$@ and $info =~ /owned by user "$user"/) {
 					$testuser = $user;
@@ -321,6 +321,7 @@ sub connect_database {
 		## Attempt to connect to this server
 		sleep 1;
 		$testdsn = "dbi:Pg:dbname=postgres;port=$testport";
+		$^O =~ /Win32/ and $testdsn .= ";host=localhost";
 		my $loop = 1;
 	  STARTUP: {
 			eval {
