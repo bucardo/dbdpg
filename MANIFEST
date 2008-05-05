@@ -40,6 +40,7 @@ t/12placeholders.t
 t/20savepoints.t
 t/99_perlcritic.t
 t/99_pod.t
+t/99_spellcheck.t
 t/99_yaml.t
 t/99cleanup.t
 

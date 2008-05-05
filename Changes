@@ -2,7 +2,8 @@
 
 2.7.0 
 
-	- Support for standard_conforming_strings [GSM]
+	- Support for standard_conforming_strings. [GSM]
+	- Add spell checker to tests. [GSM]
 
 2.6.4 Released May 2, 2008 (subversion r11186)
 
