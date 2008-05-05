@@ -4423,7 +4423,7 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
 	TRACE_PQGETCANCEL;
 	cancel = PQgetCancel(imp_dbh->conn);
 
-	/* This almost always works. If not, free our structure and complain looudly */
+	/* This almost always works. If not, free our structure and complain loudly */
 	TRACE_PQGETCANCEL;
 	if (! PQcancel(cancel,errbuf,sizeof(errbuf))) {
 		TRACE_PQFREECANCEL;

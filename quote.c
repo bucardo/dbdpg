@@ -354,7 +354,7 @@ void dequote_sql_binary(char *string, STRLEN *retlen, int estring)
 {
 	dTHX;
 
-	/* We are going to retun a dequote_bytea(), JIC */
+	/* We are going to return a dequote_bytea(), just in case */
 	warn("Use of SQL_BINARY invalid in dequote()");
 	dequote_bytea(string, retlen, estring);
 	return;
