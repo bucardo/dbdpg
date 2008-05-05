@@ -1,6 +1,7 @@
 #!perl
 
 ## Check our Pod, requires Test::Pod
+## Also done if available: Test::Pod::Coverage
 
 use strict;
 use warnings;
