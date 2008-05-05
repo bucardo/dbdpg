@@ -19,7 +19,7 @@ elsif (!eval { require Text::SpellChecker; 1 }) {
 else {
 	opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
 	@testfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
-	closedir $dir;
+	closedir $dir or die qq{Could not closedir "$dir": $!\n};
 	plan tests => 18+@testfiles;
 }
 
@@ -54,6 +54,7 @@ sub spellcheck {
 	for (sort keys %badword) {
 		diag "$_\n";
 	}
+	return;
 }
 
 
@@ -64,7 +65,7 @@ for my $file (qw/README Changes TODO README.dev README.win32/) {
 	}
 	else {
 		{ local $/; $_ = <$fh>; }
-		close $fh;
+		close $fh or warn qq{Could not close "$file": $!\n};
 		if ($file eq 'Changes') {
 			s{\b(?:from|by) [A-Z][\w \.]+[<\[\n]}{}gs;
 			s{\b[Tt]hanks to ([A-Z]\w+\W){1,3}}{}gs;
@@ -77,7 +78,6 @@ for my $file (qw/README Changes TODO README.dev README.win32/) {
 			s/^\t\$.+//gsm;
 		}
 		spellcheck($file => $_, $file);
-		close $fh;
 	}
 }
 
@@ -103,7 +103,7 @@ SKIP: {
 	}
     {
 		## For XS files...
-		package File::Comments::Plugin::Catchall;
+		package File::Comments::Plugin::Catchall; ## no critic
 		use strict;
 		use warnings;
 		use File::Comments::Plugin;
@@ -127,7 +127,7 @@ SKIP: {
 
 
 	for my $file (@testfiles, qw{Makefile.PL Pg.xs Pg.pm lib/Bundle/DBD/Pg.pm
-					 dbdimp.c dbdimp.h types.c quote.c quote.h Pg.h types.h}) {
+        dbdimp.c dbdimp.h types.c quote.c quote.h Pg.h types.h}) {
 		## Tests as well?
 		if (! -e $file) {
 			fail(qq{Could not find the file "$file"!});

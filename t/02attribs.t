@@ -324,7 +324,7 @@ $t=q{DB handle attribute "pg_standard_conforming_strings" returns a valid value}
 my $oldscs = $dbh->{pg_standard_conforming_strings};
 like( $oldscs, qr/^on|off$/, $t);
 
-$dbh->do("SET standard_conforming_strings = on");
+$dbh->do('SET standard_conforming_strings = on');
 $t=q{DB handle attribute "pg_standard_conforming_strings" returns correct value};
 $result = $dbh->{pg_standard_conforming_strings};
 is( $result, 'on', $t);
@@ -332,7 +332,7 @@ $t=q{DB handle attribute "pg_scs" returns correct value};
 $result = $dbh->{pg_scs};
 is( $result, 'on', $t);
 
-$dbh->do("SET standard_conforming_strings = off");
+$dbh->do('SET standard_conforming_strings = off');
 $t=q{DB handle attribute "pg_standard_conforming_strings" returns correct value};
 $result = $dbh->{pg_standard_conforming_strings};
 is( $result, 'off', $t);
@@ -357,11 +357,11 @@ SKIP: {
 	local $dbh->{pg_enable_utf8} = 1;
 	my $utf8_str = chr(0x100).'dam'; # LATIN CAPITAL LETTER A WITH MACRON
 
-	$dbh->do("SET standard_conforming_strings = off");
+	$dbh->do('SET standard_conforming_strings = off');
 	$t=q{Database method quote() handles utf8};
 	is( $dbh->quote( $utf8_str ),  "'$utf8_str'", $t);
 
-	$dbh->do("SET standard_conforming_strings = on");
+	$dbh->do('SET standard_conforming_strings = on');
 	$t=q{Database method quote() handles utf8};
 	is( $dbh->quote( $utf8_str ),  "E'$utf8_str'", $t);
 

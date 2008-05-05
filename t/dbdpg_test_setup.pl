@@ -195,7 +195,7 @@ sub connect_database {
 		last GETHANDLE if $@;
 
 		if (!defined $info or $info !~ /\@postgresql\.org/) {
-			$@ = defined $info ? "Bad initdb output: $info" : "Bad initdb output";
+			$@ = defined $info ? "Bad initdb output: $info" : 'Bad initdb output';
 			last GETHANDLE;
 		}
 
@@ -321,7 +321,7 @@ sub connect_database {
 		## Attempt to connect to this server
 		sleep 1;
 		$testdsn = "dbi:Pg:dbname=postgres;port=$testport";
-		$^O =~ /Win32/ and $testdsn .= ";host=localhost";
+		$^O =~ /Win32/ and $testdsn .= ';host=localhost';
 		my $loop = 1;
 	  STARTUP: {
 			eval {
