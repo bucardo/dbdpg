@@ -93,15 +93,15 @@
 
 2.1.0 Released February 18, 2008 (subversion r10793)
 
-	- Use version.pm [CPAN bug #33206] [GSM]
+	- Use version.pm (CPAN bug #33206) [GSM]
 	- Add PERL_NO_GET_CONTEXT #define to improve performance on threaded Perls
 	- Raise the minimum DBI version to 1.52.
 	- Allow arrayrefs into bind_col (CPAN bug #33193) [GSM]
 	- Remove '//' style comments to make strict ANSI compilers happy.
-		(Trevor Inman) [CPAN bug #33089]
+		[Trevor Inman] (CPAN bug #33089)
 	- Force client encoding of UTF8 for some tests.
 	- Make 03dbmethod.t pass minor test for version 8.1.9
-		[CPAN bug #33282]
+		(CPAN bug #33282)
 	- Add a local copy of dbivport.h
 
 2.0.0 Released February 10, 2008 (subversion r10715)
@@ -358,7 +358,7 @@ Documentation fixes:
 	- Changed "noprefix" to pg_noprefix
 
 1.32 Wed Feb 25 18:24:18 UTC 2004
-	- Bugfix for memory allocation problems on win systems
+	- Bug fix for memory allocation problems on win systems
 		[Rafael Kitover <caelum@debian.org>]
 	- Rewrote the foreign_key_info() method to handle 
 		multi-column keys. [GSM]
@@ -395,7 +395,7 @@ Documentation fixes:
 		(CPAN bugs #4818,4432) [Rudy Lippan]
 	- Duplicate rows bug with column_info() REMARKS has been fixed. However,
 		support for Postgres 7.1.x which worked briefly for 1.31 has now been
-		dropped for this feature. (Mark Stosberg)
+		dropped for this feature. [Mark Stosberg]
 	- Bumped required Perl version to 5.6.1 in Makefile.PL. We were already
 		already requiring 5.6.1 for Pg.pm since 1.31.
 	- Removed extra "return" statement in quote.c to make Solaris happy
@@ -442,7 +442,7 @@ Documentation fixes:
 	- Added tests for POD validation [Mark Stosberg]
 	- Several improvements to column_info, including:
 		- Fixed column_info so NULLABLE field shows correctly. [kevin@sysexperts.com]
-		- REMARKS field works now [Mark Stosberg]
+		- REMARKS field works now [Mark Stosberbg]
 		- COLUMN_DEF fixed
 		- COLUMN_SIZE fixed
 		- pg_constraint column added to display column constraints
@@ -525,7 +525,7 @@ Documentation fixes:
  
 1.01 Jun 27, 2001
 	- fixed core dump when trying to use a BYTEA value with
-		a byte outside 0..127 Alex Pilosov <alex@pilosoft.com>
+		a byte outside 0..127. Thanks to Alex Pilosov <alex@pilosoft.com>
 
 1.00 May 27, 2001
 	- Fetching all records now resets Active flag as it should.
@@ -534,7 +534,7 @@ Documentation fixes:
 	- fix the segmentation fault in pg_error.
 
 0.98 Apr 25, 2001
-	- bug-fix for core-dump after any failed function call.
+	- bug fix for core-dump after any failed function call.
 	- applied patch from Alex Pilosov <alex@pilosoft.com> 
 		which adds support for the datatype bytea
 
@@ -560,7 +560,7 @@ Documentation fixes:
 		(now 128 Kbytes)
 	- apply patch from Tom Lane, which fixes a segmentation fault when
 		inserting large amounts of text.
-	- apply patch from Peter Haworth pmh@edison.ioppublishing.com,
+	- apply patch from Peter Haworth <pmh@edison.ioppublishing.com>,
 		which removes the newlines from the error messages and which 
 		quotes date placeholders.
 
@@ -596,7 +596,7 @@ Documentation fixes:
 	- proposal from Philip Warner <pjw@rhyme.com.au>:
 		increase BUFSIZE from 1024 to 32768 in order to improve I/O performance.
 	- bug-fix in Makefile.PL for $POSTGRES_HOME not defined
-		spotted by mdalphin@amgen.com (Mark Dalphin)
+		spotted by mdalphin@amgen.com [Mark Dalphin]
 	- bug-fix for data-type datetime in type_info_all
 		spotted by Alan Grover <awgrover@iconnect-inc.com>
 	- bug-fix for escaped 's spotted by Hankin <hankin@consultco.com>
@@ -635,8 +635,7 @@ Documentation fixes:
 
 0.86 Aug 21, 1998
 	- added /usr/lib/ to search path for libpq.
-	- added ChopBlanks, patch from 
-		Victor Krasinsky <victor@rdovira.lviv.ua>
+	- added ChopBlanks, patch from Victor Krasinsky <victor@rdovira.lviv.ua>
 	- changed test.pl to test multiple database handles
 
 0.85 July 19, 1998
@@ -686,11 +685,11 @@ Documentation fixes:
 0.72 April 20, 1998
 	- applied patch from Michael J Schout <mschout@gkg.net>
 		which fixed the bug with queries containing the cast operator.
-	- applied patch from "Irving Reid" <irving@tor.securecomputing.com>
+	- applied patch from Irving Reid <irving@tor.securecomputing.com>
 		which fixed a memory leak.
 
 0.71 April 04, 1998
-	- applied patch from "Irving Reid" 
+	- applied patch from Irving Reid
 		<irving@tor.securecomputing.com> which fixed the
 		the problem with the InactiveDestroy message.
 
