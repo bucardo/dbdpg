@@ -11,19 +11,20 @@ the latest version, can be found at:
 
 	http://search.cpan.org/dist/DBD-Pg/
 
-The development of DBD::Pg can be tracked at:
-
-    http://svn.perl.org/modules/DBD-Pg/trunk/
-
 The mailing list is at:
 
     http://www.nntp.perl.org/group/perl.dbd.pg/
+
+The development of DBD::Pg can be tracked at:
+
+    http://svn.perl.org/modules/DBD-Pg/trunk/
 
 For information about PostgreSQL, visit:
 
 	http://www.postgresql.org/
 
 For information on what has changed for each version, see the Changes files.
+
 
 IF YOU HAVE PROBLEMS OR COMMENTS:
 ---------------------------------
@@ -38,6 +39,8 @@ are connecting to. The easiest way to gather all of this
 information is to run "make test", which outputs it all early in 
 the tests.
 
+You can also try the #postgresql channel on irc.freenode.net, which 
+usually (but not always) has people who can help you with DBD::Pg.
 
 BUG REPORTS
 -----------
