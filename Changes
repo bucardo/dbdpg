@@ -4,6 +4,7 @@
 
 	- Support for standard_conforming_strings. [GSM]
 	- Add spell checker to tests. [GSM]
+	- More tweaks to the testing suite. [GSM]
 
 2.6.4 Released May 2, 2008 (subversion r11186)
 

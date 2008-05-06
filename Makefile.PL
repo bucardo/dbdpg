@@ -11,6 +11,7 @@ my $VERSION = '2.7.0';
 
 my $lib;
 BEGIN {
+	use vars qw/$sep/;
     my %sep = (
 			   MacOS   => ':',
                MSWin32 => '\\',
@@ -19,8 +20,8 @@ BEGIN {
                NetWare => '\\',
                dos     => '\\',
 			   );
-    my $s = $sep{$^O} || '/';
-    $lib = join $s, 't', 'lib';
+    $sep = $sep{$^O} || '/';
+    $lib = join $sep, 't', 'lib';
 }
 
 use lib $lib;
@@ -73,7 +74,15 @@ require App::Info::RDBMS::PostgreSQL;
 require App::Info::Handler::Prompt;
 my $p = App::Info::Handler::Prompt->new;
 my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $p);
-my ($major_ver, $minor_ver, $patch, $conf) = map {$pg->$_} qw/major_version minor_version patch_version configure/;
+my ($major_ver, $minor_ver, $patch, $conf, $bindir) = map {$pg->$_}
+	qw/major_version minor_version patch_version configure bin_dir/;
+my $initdb = '';
+if (-d $bindir) {
+	my $testinitdb = "$bindir${sep}initdb";
+	if (-e $testinitdb) {
+		$initdb = $testinitdb;
+	}
+}
 my $serverversion = sprintf '%d%.02d%.02d', $major_ver, $minor_ver, $patch;
 my $defaultport = $conf =~ /with-pgport=(\d+)/ ? $1 : 5432;
 
@@ -206,6 +215,15 @@ elsif ($os =~ /Win32/) {
 
 if ($Config{dlsrc} =~ /dl_none/) {
     $opts{LINKTYPE} = 'static';
+}
+
+{
+	package MY;
+	sub MY::test {
+		my $string = shift->SUPER::test(@_);
+		$string =~ s/(PERL_DL_NONLAZY=1)/PGINITDB="$initdb" $1/g;
+		return $string;
+	}
 }
 
 sub MY::postamble { ## no critic ProhibitQualifiedSubDeclarations
