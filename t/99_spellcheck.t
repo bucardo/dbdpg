@@ -586,6 +586,7 @@ sv
 turnstep
 
 ## Changes:
+spellcheck
 gborg
 n's
 Pg's
