@@ -1,6 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.7.0
+2.6.6 Released May 7, 2008
+
+	- Fix minor problem in t/99_spellcheck.t
 
 2.6.5 Released May 7, 2008 (subversion r11209)
 
