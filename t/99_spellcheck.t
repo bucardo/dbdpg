@@ -106,8 +106,8 @@ SKIP: {
 		package File::Comments::Plugin::Catchall; ## no critic
 		use strict;
 		use warnings;
-		use File::Comments::Plugin;
-		use File::Comments::Plugin::C;
+		require File::Comments::Plugin;
+		require File::Comments::Plugin::C;
 
 		our @ISA     = qw(File::Comments::Plugin::C);
 
