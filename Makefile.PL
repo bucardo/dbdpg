@@ -7,7 +7,7 @@ use warnings;
 use 5.006001;
 
 ## No version.pm for this one, as the prereqs are not loaded yet.
-my $VERSION = '2.7.0';
+my $VERSION = '2.6.5';
 
 my $lib;
 BEGIN {
@@ -218,8 +218,8 @@ if ($Config{dlsrc} =~ /dl_none/) {
 }
 
 {
-	package MY;
-	sub MY::test {
+	package MY; ## no critic
+	sub MY::test { ## no critic
 		my $string = shift->SUPER::test(@_);
 		$string =~ s/(PERL_DL_NONLAZY=1)/PGINITDB="$initdb" $1/g;
 		return $string;

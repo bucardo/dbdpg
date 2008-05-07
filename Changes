@@ -1,8 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.7.0 
+2.6.5 Released May 7, 2008
 
-	- Support for standard_conforming_strings. [GSM]
 	- Add spell checker to tests. [GSM]
 	- More tweaks to the testing suite. [GSM]
 

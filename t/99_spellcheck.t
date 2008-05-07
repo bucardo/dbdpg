@@ -572,8 +572,10 @@ david
 drnoble
 engsci
 fe
+freenode
 gmx
 hdf
+irc
 jmore
 landgren
 pc

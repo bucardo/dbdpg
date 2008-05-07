@@ -40,7 +40,7 @@ my $helpfile = 'README.testdatabase';
 
 ## If we create our own cluster, store it here:
 my $test_database_dir = 'dbdpg_test_database';
-## TODO: Handle Win32 better with slashes and su
+## TODO: Handle Win32 better with slashes and user change
 
 use vars qw/$fh/;
 
@@ -200,7 +200,7 @@ sub connect_database {
 		};
 		last GETHANDLE if $@;
 		if (!defined $info or $info !~ /\@postgresql\.org/) {
-			$@ = defined $initdb ? "Bad initdb output: $info" : "Bad initdb output";
+			$@ = defined $initdb ? "Bad initdb output: $info" : 'Bad initdb output';
 			last GETHANDLE;
 		}
 
@@ -215,7 +215,7 @@ sub connect_database {
 		};
 		last GETHANDLE if $@;
 		if (!defined $info or $info !~ /\@postgresql\.org/) {
-			$@ = defined $initdb ? "Bad pg_ctl output: $info" : "Bad pg_ctl output";
+			$@ = defined $initdb ? "Bad pg_ctl output: $info" : 'Bad pg_ctl output';
 			last GETHANDLE;
 		}
 
@@ -283,7 +283,7 @@ sub connect_database {
 			## Assume this is already good to go
 		}
 		elsif ($info !~ /pg_ctl/) {
-			$@ = "initdb did not give a pg_ctl string";
+			$@ = 'initdb did not give a pg_ctl string';
 			last GETHANDLE;
 		}
 
