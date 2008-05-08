@@ -281,7 +281,7 @@ sub connect_database {
 			## Assume this is already good to go
 		}
 		elsif ($info !~ /pg_ctl/) {
-			$@ = 'initdb did not give a pg_ctl string';
+			$@ = "initdb did not give a pg_ctl string: $info";
 			last GETHANDLE;
 		}
 
