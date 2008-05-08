@@ -205,8 +205,7 @@ sub connect_database {
 
 		## Make sure pg_ctl is available as well before we go further
 		if (! -e $pg_ctl) {
-		  $@ = 'Could not find a pg_ctl executable to start the test database';
-		  last GETHANDLE;
+			$pg_ctl = 'pg_ctl';
 		}
 		$info = '';
 		eval {
