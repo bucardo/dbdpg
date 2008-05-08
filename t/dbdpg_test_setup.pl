@@ -191,8 +191,7 @@ sub connect_database {
 		## Use the initdb found by App::Info
 		my $initdb = $ENV{PGINITDB} || '';
 		if (!$initdb or ! -e $initdb) {
-			$@ = 'Could not find an initdb executable to create a test database';
-			last GETHANDLE;
+			$initdb = 'initdb';
 		}
 		$info = '';
 		eval {
