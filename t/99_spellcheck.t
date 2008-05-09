@@ -593,6 +593,7 @@ Pg's
 qw
 
 ## Pg.pm:
+lseg
 afterwards
 
 ## Pg.xs:
@@ -670,6 +671,7 @@ implementor
 ph
 
 ## quote.c:
+estring
 SVs
 compat
 

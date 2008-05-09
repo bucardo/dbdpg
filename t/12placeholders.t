@@ -25,9 +25,10 @@ if ($pgversion >= 80100) {
 }
 
 # Make sure that quoting works properly.
+my $E = $pgversion >= 80100 ? q{E} : q{};
 $t=q{Quoting works properly};
 my $quo = $dbh->quote('\\\'?:');
-is( $quo, q{'\\\\''?:'}, $t);
+is( $quo, qq{${E}'\\\\''?:'}, $t);
 
 $t=q{Quoting works with a function call};
 # Make sure that quoting works with a function call.
@@ -134,7 +135,9 @@ my $SQL = 'SHOW backslash_quote';
 my $backslash = $dbh->selectall_arrayref($SQL)->[0][0];
 
 $t=q{Prepare with backslashes inside quotes works};
-$sth = $dbh->prepare(q{SELECT '\\'?'});
+my $scs = $dbh->{pg_scs};
+$SQL = $scs ? q{SELECT E'\\'?'} : q{SELECT '\\'?'};
+$sth = $dbh->prepare($SQL);
 eval {
 	$sth->execute();
 };

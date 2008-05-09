@@ -216,16 +216,6 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 		}
 	}
 
-	/* Check the status of standard_conforming_strings */
-	imp_dbh->standard_escape = DBDPG_FALSE;
-	if (imp_dbh->pg_server_version >= 80100) { /* cannot be true until 8.1 */
-		TRACE_PQPARAMETERSTATUS;
-		if (NULL != PQparameterStatus(imp_dbh->conn, "standard_conforming_strings")
-			&& 0==strncmp("on", PQparameterStatus(imp_dbh->conn, "standard_conforming_strings"), 2)) {
-			imp_dbh->standard_escape = DBDPG_TRUE;
-		}
-	}
-
 	imp_dbh->pg_bool_tf      = DBDPG_FALSE;
 	imp_dbh->pg_enable_utf8  = DBDPG_FALSE;
  	imp_dbh->prepare_now     = DBDPG_FALSE;
@@ -2825,8 +2815,12 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			else {
 				if (currph->quoted)
 					Safefree(currph->quoted);
-				currph->quoted = currph->bind_type->quote
-					(currph->value, currph->valuelen, &currph->quotedlen, 0); /* freed in dbd_st_destroy */
+				currph->quoted = currph->bind_type->quote(
+					currph->value,
+					currph->valuelen,
+					&currph->quotedlen,
+					imp_dbh->pg_server_version >= 80100 ? 1 : 0
+														  ); /* freed in dbd_st_destroy */
 			}
 		}
 		/* Set the size of each actual in-place placeholder */

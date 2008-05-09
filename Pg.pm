@@ -2750,10 +2750,20 @@ Implemented by DBI, no driver-specific impact.
 
   $rv = $dbh->quote($value, $data_type);
 
-This module implements its own C<quote> method. In addition to the DBI method it
-also doubles the backslash, because PostgreSQL treats a backslash as an escape
-character. You may also quote arrayrefs and received a string suitable for 
-passing into Postgres array columns.
+This module implements its own C<quote> method. For simple string types, both backslashes 
+and single quotes are doubled. You may also quote arrayrefs and receive a string 
+suitable for passing into Postgres array columns.
+
+If the value contains backslashes, and the server is version 8.1 or higher, 
+then the escaped string syntax will be used (which places a capital E before 
+the first single quote). This syntax is always used when quoting bytea values 
+on servers 8.1 and higher.
+
+The C<data_type> argument is optional and should be one of the type constants 
+exported by DBD::Pg (such as PG_BYTEA). In addition to string, bytea, char, bool, 
+and other standard types, the following geometric types are supported: point, line, 
+lseg, box, path, polygon, and circle (PG_POINT, PG_LINE, PG_LSEG, PG_BOX, 
+PG_POLYGON, and PG_CIRCLE).
 
 B<NOTE:> The undocumented (and invalid) support for the C<SQL_BINARY> data
 type is officially deprecated. Use C<PG_BYTEA> with C<bind_param()> instead:
@@ -2829,18 +2839,6 @@ Implemented by DBI, not used by this driver.
 =item B<Username>  (string, read-only)
 
 Supported by this driver as proposed by DBI.
-
-=item B<pg_auto_escape> (boolean)
-
-PostgreSQL specific attribute. If true, then quotes and backslashes in all
-parameters will be escaped in the following way:
-
-  escape quote with a quote (SQL)
-  escape backslash with a backslash
-
-The default is on. Note that PostgreSQL also accepts quotes that are
-escaped by a backslash. Any other ASCII character can be used directly in a
-string constant.
 
 =item B<pg_enable_utf8> (boolean)
 

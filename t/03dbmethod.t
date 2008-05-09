@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 220;
+plan tests => 222;
 
 isnt( $dbh, undef, 'Connect to database for database handle method testing');
 
@@ -998,6 +998,14 @@ my $foo;
 	is( $dbh->quote($foo), q{NULL}, 'DB handle method "quote" works with an undefined value');
 }
 is( $dbh->quote(1, 4), 1, 'DB handle method "quote" works with a supplied data type argument');
+
+## Various backslash tests
+my $E = $pgversion >= 80100 ? q{E} : q{};
+$t=q{DB handle method "quote" works properly with backslashes};
+is( $dbh->quote('foo\\bar'), qq{${E}'foo\\\\bar'}, $t);
+
+$t=q{DB handle method "quote" works properly without backslashes};
+is( $dbh->quote('foobar'), q{'foobar'}, $t);
 
 #
 # Test various quote types

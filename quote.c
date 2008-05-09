@@ -11,6 +11,12 @@
 
 #include "Pg.h"
 
+/*
+The 'estring' indicates if the server is capable of using the E'' syntax
+In other words, is it 8.1 or better?
+It must arrive as 0 or 1
+*/
+
 char * null_quote(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
@@ -31,24 +37,28 @@ char * quote_string(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	STRLEN oldlen = len;
 	const char * const tmp = string;
 
-	(*retlen) = estring ? 3 : 2;
+	(*retlen) = 2;
 	while (len > 0 && *string != '\0') {
-		if (*string == '\'' || *string == '\\') {
+		if (*string == '\'')
+			(*retlen)++;
+		else if (*string == '\\') {
+			if (estring == 1)
+				estring = 2;
 			(*retlen)++;
 		}
 		(*retlen)++;
 		string++;
 		len--;
 	}
+	if (estring == 2)
+		(*retlen)++;
+
 	string = tmp;
 	New(0, result, 1+(*retlen), char);
-	if (estring) {
+	if (estring == 2)
 		*result++ = 'E';
-		*result++ = '\'';
-	}
-	else {
-		*result++ = '\'';
-	}
+	*result++ = '\'';
+
 	len = oldlen;
 	while (len > 0 && *string != '\0') {
 		if (*string == '\'' || *string == '\\') {
@@ -71,7 +81,7 @@ char * quote_geom(const char *string, STRLEN len, STRLEN *retlen, int estring)
 
 	len = 0; /* stops compiler warnings. Remove entirely someday */
 	tmp = string;
-	(*retlen) = estring ? 3 : 2;
+	(*retlen) = 2;
 	while (*string != '\0') {
 		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
 			&& *string != ',' && (*string < '0' || *string > '9'))
@@ -81,13 +91,8 @@ char * quote_geom(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	}
 	string = tmp;
 	New(0, result, 1+(*retlen), char);
-	if (estring) {
-		*result++ = 'E';
-		*result++ = '\'';
-	}
-	else {
-		*result++ = '\'';
-	}
+	*result++ = '\'';
+
 	while (*string != '\0') {
 		*result++ = *string++;
 	}
@@ -103,7 +108,7 @@ char * quote_path(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	const char * const tmp = string;
 
 	len = 0; /* stops compiler warnings. Remove entirely someday */
-	(*retlen) = estring ? 3 : 2;
+	(*retlen) = 2;
 	while (*string != '\0') {
 		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
 			&& *string != ',' && *string != '[' && *string != ']'
@@ -114,13 +119,8 @@ char * quote_path(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	}
 	string = tmp;
 	New(0, result, 1+(*retlen), char);
-	if (estring) {
-		*result++ = 'E';
-		*result++ = '\'';
-	}
-	else {
-		*result++ = '\'';
-	}
+	*result++ = '\'';
+
 	while (*string != '\0') {
 		*result++ = *string++;
 	}
@@ -136,7 +136,7 @@ char * quote_circle(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	const char * const tmp = string;
 
 	len = 0; /* stops compiler warnings. Remove entirely someday */
-	(*retlen) = estring ? 3 : 2;
+	(*retlen) = 2;
 	while (*string != '\0') {
 		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
 			&& *string != ',' && *string != '<' && *string != '>'
@@ -147,13 +147,8 @@ char * quote_circle(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	}
 	string = tmp;
 	New(0, result, 1+(*retlen), char);
-	if (estring) {
-		*result++ = 'E';
-		*result++ = '\'';
-	}
-	else {
-		*result++ = '\'';
-	}
+	*result++ = '\'';
+
 	while (*string != '\0') {
 		*result++ = *string++;
 	}
@@ -169,8 +164,9 @@ char * quote_bytea(char *string, STRLEN len, STRLEN *retlen, int estring)
 	char * result;
 	STRLEN oldlen = len;
 
+	/* For this one, always use the E'' format if we can */
 	result = string;
-	(*retlen) = estring ? 3 : 2;
+	(*retlen) = 2;
 	while (len > 0) {
 		if (*string == '\'') {
 			(*retlen) += 2;
@@ -188,14 +184,14 @@ char * quote_bytea(char *string, STRLEN len, STRLEN *retlen, int estring)
 		len--;
 	}
 	string = result;
+	if (estring)
+		(*retlen)++;
+
 	New(0, result, 1+(*retlen), char);
-	if (estring) {
+	if (estring)
 		*result++ = 'E';
-		*result++ = '\'';
-	}
-	else {
-		*result++ = '\'';
-	}
+	*result++ = '\'';
+
 	len = oldlen;
 	while (len > 0) {
 		if (*string == '\'') { /* Single quote becomes double quotes */

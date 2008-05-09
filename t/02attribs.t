@@ -16,9 +16,11 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 131;
+plan tests => 137;
 
 isnt( $dbh, undef, 'Connect to database for handle attributes testing');
+
+my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 
 my $attributes_tested = q{
 
@@ -320,6 +322,32 @@ like( $result, qr/^\d+$/, q{DB handle attribute "pg_socket" returns a value});
 $result = $dbh->{pg_pid};
 like( $result, qr/^\d+$/, q{DB handle attribute "pg_pid" returns a value});
 
+SKIP: {
+
+	skip 'Cannot test standard_conforming_strings on pre 8.1 servers', 5;
+
+	$t=q{DB handle attribute "pg_standard_conforming_strings" returns a valid value};
+	my $oldscs = $dbh->{pg_standard_conforming_strings};
+	like( $oldscs, qr/^on|off$/, $t);
+
+	$dbh->do('SET standard_conforming_strings = on');
+	$t=q{DB handle attribute "pg_standard_conforming_strings" returns correct value};
+	$result = $dbh->{pg_standard_conforming_strings};
+	is( $result, 'on', $t);
+	$t=q{DB handle attribute "pg_scs" returns correct value};
+	$result = $dbh->{pg_scs};
+	is( $result, 'on', $t);
+
+	$dbh->do('SET standard_conforming_strings = off');
+	$t=q{DB handle attribute "pg_standard_conforming_strings" returns correct value};
+	$result = $dbh->{pg_standard_conforming_strings};
+	is( $result, 'off', $t);
+	$t=q{DB handle attribute "pg_scs" returns correct value};
+	$result = $dbh->{pg_scs};
+	is( $result, 'off', $t);
+	$dbh->do("SET standard_conforming_strings = $oldscs");
+}
+
 ## If Encode is available, we will insert some non-ASCII into the test table
 ## Since this will fail with client encodings such as BIG5, we force UTF8
 my $old_encoding = $dbh->selectall_arrayref('SHOW client_encoding')->[0][0];
@@ -336,7 +364,7 @@ SKIP: {
 	$sth->execute(1);
 	local $dbh->{pg_enable_utf8} = 1;
 	my $utf8_str = chr(0x100).'dam'; # LATIN CAPITAL LETTER A WITH MACRON
-
+	is( $dbh->quote( $utf8_str ),  "'$utf8_str'", $t);
 	$SQL = "INSERT INTO dbd_pg_test (id, pname, val) VALUES (40, '$utf8_str', 'Orange')";
 	is( $dbh->do($SQL), '1', 'Able to insert unicode character into the database');
 	$sth->execute(40);

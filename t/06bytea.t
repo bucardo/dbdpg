@@ -46,7 +46,8 @@ is( $byte, '\'', 'Received correct text from BYTEA column with quote');
 
 my $string = "abc\123\\def\0ghi";
 my $result = $dbh->quote($string, { pg_type => PG_BYTEA });
-my $expected = qq{'abc\123\\\\\\\\def\\\\000ghi'};
+my $E = $pgversion >= 80100 ? q{E} : q{};
+my $expected = qq{${E}'abc\123\\\\\\\\def\\\\000ghi'};
 is( $result, $expected, 'quote properly handles bytea strings.');
 
 $sth->finish();
