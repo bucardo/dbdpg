@@ -3686,10 +3686,10 @@ double loop, like this:
 The current implementation of PostgreSQL returns 't' for true and 'f' for
 false. From the Perl point of view, this is a rather unfortunate
 choice. DBD::Pg therefore translates the result for the C<BOOL> data type in a
-Perlish manner: 'f' -> '0' and 't' -> '1'. This way the application does
-not have to check the database-specific returned values for the data-type
-C<BOOL> because Perl treats '0' as false and '1' as true. You may set the
-C<pg_bool_tf> attribute to a true value to change the values back to 't' and
+Perlish manner: 'f' becomes the number C<0> and 't' becomes the number C<1>. This way 
+the application does not have to check the database-specific returned values for 
+the data-type C<BOOL> because Perl treats C<0> as false and C<1> as true. You may 
+set the C<pg_bool_tf> attribute to a true value to change the values back to 't' and
 'f' if you wish.
 
 Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
@@ -3699,7 +3699,9 @@ Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
 
 The PostgreSQL schema concept may differ from those of other databases. In a nutshell,
 a schema is a named collection of objects within a single database. Please refer to the
-PostgreSQL documentation for more details.
+PostgreSQL documentation for more details:
+
+L<http://www.postgresql.org/docs/current/static/ddl-schemas.html>
 
 DBD::Pg does not provide explicit support for PostgreSQL schemas.
 However, schema functionality may be used without any restrictions by
@@ -3717,30 +3719,25 @@ L<DBI>
 
 =head1 BUGS
 
-Quoting will not work properly if standard_conforming_strings is set to 'on', 
-so it is recommended that this be set to 'off' until full support for it can 
-be built into DBD::Pg.
+To report a bug, or view the current list of bugs, please visit 
+http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
 
 =head1 AUTHORS
 
-DBI and DBD-Oracle by Tim Bunce (Tim.Bunce@ig.co.uk)
+DBI by Tim Bunce L<http://www.tim.bunce.name>
 
 DBD-Pg by Edmund Mergl (E.Mergl@bawue.de) and Jeffrey W. Baker
 (jwbaker@acm.org). By David Wheeler <david@justatheory.com>, Jason
 Stewart <jason@openinformatics.com>, Bruce Momjian <pgman@candle.pha.pa.us>, 
-Greg Sabino Mullane <greg@turnstep.com>, and others after v1.13.
+Greg Sabino Mullane <greg@turnstep.com>, and others: see the C<Changes>
+file for a complete list.
 
-Parts of this package have been copied from DBI and DBD-Oracle.
+Parts of this package were originally copied from DBI and DBD-Oracle.
 
 B<Mailing List>
 
 The current maintainers may be reached through the 'dbd-pg' mailing list:
 <dbd-pg@perl.org>
-
-B<Bug Reports>
-
-If you feel certain you have found a bug, you can report it by sending
-an email to <bug-dbd-pg@rt.cpan.org>.
 
 =head1 COPYRIGHT
 
