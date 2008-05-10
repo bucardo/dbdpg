@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.7.0
+2.7.0 Released May 10, 2008
 
 	- Have $dbh->quote() return E'' when server is >= 8.1
 		and string contains backslashes. Fixes any 
