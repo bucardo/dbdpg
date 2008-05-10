@@ -135,7 +135,7 @@ my $SQL = 'SHOW backslash_quote';
 my $backslash = $dbh->selectall_arrayref($SQL)->[0][0];
 
 $t=q{Prepare with backslashes inside quotes works};
-my $scs = $dbh->{pg_scs};
+my $scs = $dbh->{pg_standard_conforming_strings};
 $SQL = $scs ? q{SELECT E'\\'?'} : q{SELECT '\\'?'};
 $sth = $dbh->prepare($SQL);
 eval {

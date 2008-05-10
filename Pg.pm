@@ -1567,12 +1567,29 @@ use 5.006001;
 
 	sub private_attribute_info {
 		return {
-				pg_bool_tf                => undef,
-				pg_enable_utf8            => undef,
-				pg_errorlevel             => undef,
-				pg_prepare_now            => undef,
-				pg_placeholder_dollaronly => undef,
-				pg_server_prepare         => undef,
+				pg_async_status                => undef,
+				pg_bool_tf                     => undef,
+				pg_db                          => undef,
+				pg_default_port                => undef,
+				pg_enable_utf8                 => undef,
+				pg_errorlevel                  => undef,
+				pg_expand_array                => undef,
+				pg_host                        => undef,
+				pg_INV_READ                    => undef,
+				pg_INV_WRITE                   => undef,
+				pg_lib_version                 => undef,
+				pg_options                     => undef,
+				pg_pass                        => undef,
+				pg_pid                         => undef,
+				pg_placeholder_dollaronly      => undef,
+				pg_port                        => undef,
+				pg_prepare_now                 => undef,
+				pg_protocol                    => undef,
+				pg_server_prepare              => undef,
+				pg_server_version              => undef,
+				pg_socket                      => undef,
+				pg_standard_conforming_strings => undef,
+				pg_user                        => undef,
 		};
 	}
 }
@@ -1621,27 +1638,20 @@ use 5.006001;
 
 	sub private_attribute_info {
 		return {
-				pg_bool_tf                => undef,
-				pg_db                     => undef,
-				pg_default_port           => undef,
-				pg_enable_utf8            => undef,
-				pg_errorlevel             => undef,
-				pg_host                   => undef,
-				pg_INV_READ               => undef,
-				pg_INV_WRITE              => undef,
-				pg_lib_version            => undef,
-				pg_options                => undef,
-				pg_pass                   => undef,
-				pg_pid                    => undef,
-				pg_pid_number             => undef,
+				pg_async                  => undef,
+				pg_bound                  => undef,
+				pg_current_row            => undef,
+				pg_direct                 => undef,
+				pg_numbound               => undef,
+				pg_cmd_status             => undef,
+				pg_oid_status             => undef,
 				pg_placeholder_dollaronly => undef,
-				pg_port                   => undef,
+				pg_prepare_name           => undef,
 				pg_prepare_now            => undef,
-				pg_protocol               => undef,
+				pg_segments               => undef,
 				pg_server_prepare         => undef,
-				pg_server_version         => undef,
-				pg_socket                 => undef,
-				pg_user                   => undef,
+				pg_size                   => undef,
+				pg_type                   => undef,
 		};
     }
 
@@ -1655,20 +1665,21 @@ __END__
 
 DBD::Pg - PostgreSQL database driver for the DBI module
 
-=head1 VERSION
-
-This documents version 2.7.0 of the DBD::Pg module
-
 =head1 SYNOPSIS
 
   use DBI;
 
   $dbh = DBI->connect("dbi:Pg:dbname=$dbname", "", "", {AutoCommit => 0});
+  # The AutoCommit attribute should always be explicitly set
 
   # For some advanced uses you may need PostgreSQL type values:
   use DBD::Pg qw(:pg_types);
 
   # See the DBI module documentation for full details
+
+=head1 VERSION
+
+This documents version 2.7.0 of the DBD::Pg module
 
 =head1 DESCRIPTION
 
@@ -1694,8 +1705,8 @@ syntax:
 
   $dbh = DBI->connect("dbi:Pg:dbname=$dbname", "", "");
 
-This connects to the database $dbname on the default port (usually 5432) without 
-any user authentication.
+This connects to the database named in the $dbname variable on the default port (usually 5432) 
+without any user authentication.
 
 The following connect statement shows almost all possible parameters:
 
@@ -1718,13 +1729,7 @@ specific environment variables, and then use hard-coded defaults:
   service    PGSERVICE             (none)
   sslmode    PGSSLMODE             (none)
 
-* Can also use "db" or "database"
-
-The options parameter specifies runtime options for the Postgres
-backend. Common usage is to increase the number of buffers with the C<-B>
-option. Also important is the C<-F> option, which disables automatic fsync()
-call after each transaction. For further details please refer to the
-PostgreSQL documentation at L<http://www.postgresql.org/docs/>.
+* May also use the word C<db> or C<database>
 
 For authentication with username and password, appropriate entries have to be
 made in the F<pg_hba.conf> file. If the username and password entries passed 
@@ -1741,7 +1746,7 @@ service named "zephyr", you could use:
 
   $dbh = DBI->connect("dbi:Pg:service=zephyr", "", "");
 
-You could also set $ENV{PGSERVICE} to "zephyr" and connect like this:
+You could also set C<$ENV{PGSERVICE}> to "zephyr" and connect like this:
 
   $dbh = DBI->connect("dbi:Pg:", "", "");
 
@@ -1792,13 +1797,13 @@ Implemented by DBI, no driver-specific impact.
 
   @data_sources = DBI->data_sources('Pg');
 
-This driver supports this method. Note that the necessary database connection
-to the database "template1" will be made on the localhost without any user
-authentication. Other preferences can be set with the environment
-variables C<PGHOST>, C<PGPORT>, C<DBI_USER>, C<DBI_PASS>, and C<PGSERVICE>.
+This driver supports this method. Unless the environment variable C<DBI_DSN> is set, 
+a connection will be attempted to the database C<template1>. The normal connection 
+environment variables also apply, such as C<PGHOST>, C<PGPORT>, C<DBI_USER>, 
+C<DBI_PASS>, and C<PGSERVICE>.
 
 You can also pass in options to add to the connection string as the second argument 
-to data_sources. For example, to specify an alternate port and host:
+to the C<data_sources> method. For example, to specify an alternate port and host:
 
   @data_sources = DBI->data_sources('Pg', 'port=5824;host=example.com');
 
@@ -1807,7 +1812,9 @@ to data_sources. For example, to specify an alternate port and host:
 =head1 METHODS COMMON TO ALL HANDLES
 
 For all of the methods below, $h can be either a database handle ($dbh) 
-or a statement handle ($sth).
+or a statement handle ($sth). Note that $dbh and $sth can be replaced with 
+any variable name you choose: these are just the names most often used. Another 
+common variable used in this documentation is $rv, which stands for "return value".
 
 =over 4
 
@@ -1816,26 +1823,41 @@ or a statement handle ($sth).
   $rv = $h->err;
 
 Supported by this driver as proposed by DBI. For the connect method it returns
-C<PQstatus>. In all other cases it returns C<PQresultStatus> of the current
-handle.
+C<PQstatus>, which is a number used by libpq. A value of 0 indicates no error 
+(CONNECTION_OK), while any other number indicates a failed connection. The only 
+number commonly seen is 1 (CONNECTION_BAD). See the libpq documentation for the 
+complete list of return codes.
+
+In all other non-connect cases it returns the C<PQresultStatus> of the current
+handle. This is a number used by libpq and is one of:
+
+  0  Empty query string
+  1  A command that returns no data successfully completed.
+  2  A command that returns data sucessfully completed.
+  3  A C<COPY OUT> command is still in progress.
+  4  A C<COPY IN> command is still in progress.
+  5  A bad response was received from the backend.
+  6  A nonfatal error occurred (a notice or warning message)
+  7  A fatal error was returned: the last query failed.
 
 =item B<errstr>
 
   $str = $h->errstr;
 
-Supported by this driver as proposed by DBI. It returns the C<PQerrorMessage>
-related to the current handle.
+Supported by this driver as proposed by DBI. It returns the last error that was 
+reported by Postgres. This message is affected by the L</pg_error_level> setting.
 
 =item B<state>
 
   $str = $h->state;
 
 Supported by this driver. Returns a five-character "SQLSTATE" code.
-Success is indicated by a "00000" code, which gets mapped to an 
-empty string by DBI. A code of S8006 indicates a connection failure, 
+Success is indicated by a C<00000> code, which gets mapped to an 
+empty string by DBI. A code of C<S8006> indicates a connection failure, 
 usually because the connection to the PostgreSQL server has been lost.
 
-Note that state can be called as either $sth->state or $dbh->state.
+While this method can be called as either $sth->state or $dbh->state, it 
+is usually clearer to always use the $dbh method.
 
 The list of codes used by PostgreSQL can be found at:
 L<http://www.postgresql.org/docs/current/static/errcodes-appendix.html>
@@ -1843,11 +1865,12 @@ L<http://www.postgresql.org/docs/current/static/errcodes-appendix.html>
 Note that these codes are part of the SQL standard and only a small number 
 of them will be used by PostgreSQL.
 
-Common ones to note:
+Common codes:
 
   00000 Successful completion
   25P01 No active SQL transaction
   25P02 In failed SQL transaction
+  S8006 Connection failure
 
 =item B<trace>
 
@@ -1863,14 +1886,15 @@ well by setting C<DBI-E<gt>trace>, or by using the environment
 variable C<DBI_TRACE>.
 
 The value is either a numeric level or a named flag. For the 
-flags that DBD::Pg uses, see L<param_trace_flag>.
+flags that DBD::Pg uses, see L</param_trace_flag>.
 
 =item B<trace_msg>
 
   $h->trace_msg($message_text);
   $h->trace_msg($message_text, $min_level);
 
-Implemented by DBI, no driver-specific impact.
+Implemented by DBI, no driver-specific impact. Writes a message to the current trace output. 
+With a second argument, only writes the message if the minimum level is currently set.
 
 =item B<parse_trace_flag> and B<parse_trace_flags>
 
@@ -1882,7 +1906,7 @@ Implemented by DBI, no driver-specific impact.
 
 The parse_trace_flags method is used to convert one or more named 
 flags to a number which can passed to the L<trace()> method.
-DBD::Pg currently supports the only DBI-specific flag, SQL, 
+DBD::Pg currently supports the only DBI-specific flag, C<SQL>, 
 as well as the ones listed below.
 
 Flags can be combined by using the parse_trace_flags method, 
@@ -1891,8 +1915,8 @@ combines them.
 
 Sometimes you may wish to turn the tracing on before you connect 
 to the database. The second example above shows a way of doing this: 
-the call to DBD::Pg->parse_trace_flags provides a number than can 
-be fed to DBI->trace before you create a database handle.
+the call to C<DBD::Pg->parse_trace_flags> provides a number than can 
+be fed to C<DBI->trace> before you create a database handle.
 
 DBD::Pg supports the following trace flags:
 
@@ -2077,7 +2101,7 @@ it is connected and statement handle is active until it is finished.
 
 =item B<Executed> (boolean, read-only)
 
-Implemented by DBI, no driver-specific impact. Requires DBI 1.41 or greater.
+Implemented by DBI, no driver-specific impact.
 
 =item B<Kids> (integer, read-only)
 
@@ -2226,8 +2250,8 @@ WARNING: DBD::Pg now uses true prepared statements by sending them
 to the backend to be prepared by the PostgreSQL server. Statements 
 that were legal before may no longer work. See below for details.
 
-Prepares a statement for later execution. PostgreSQL supports prepared
-statements, which enables DBD::Pg to only send the query once, and
+The prepare method prepares a statement for later execution. PostgreSQL supports 
+prepared statements, which enables DBD::Pg to only send the query once, and
 simply send the arguments for every subsequent call to execute().
 DBD::Pg can use these server-side prepared statements, or it can
 just send the entire query to the server each time. The best way
@@ -2235,8 +2259,8 @@ is automatically chosen for each query. This will be sufficient for
 most users: keep reading for a more detailed explanation and some
 optional flags.
 
-Statements that do not begin with the word "SELECT", "INSERT", 
-"UPDATE", or "DELETE" will not be sent to be server-side prepared.
+Queries that do not begin with the word "SELECT", "INSERT", 
+"UPDATE", or "DELETE" are never sent as server-side prepared statements.
 
 Deciding whether or not to use prepared statements depends on many factors, 
 but you can force them to be used or not used by passing the 
@@ -2248,12 +2272,13 @@ value of "2", because server-side statements were only partially supported
 in that version. In this case, it only uses server-side prepares if all 
 parameters are specifically bound. 
 
-The pg_server_prepare attribute can also be set at connection time like so:
+The C<pg_server_prepare> attribute can also be set at connection time like so:
 
   $dbh = DBI->connect($DBNAME, $DBUSER, $DBPASS,
                       { AutoCommit => 0,
                         RaiseError => 1,
-                        pg_server_prepare => 0 });
+                        pg_server_prepare => 0,
+                      });
 
 or you may set it after your database handle is created:
 
@@ -2294,24 +2319,25 @@ list, L<http://archives.postgresql.org/pgsql-performance/>
 
 Only certain commands will be sent to a server-side prepare: currently these
 include C<SELECT>, C<INSERT>, C<UPDATE>, and C<DELETE>. DBD::Pg uses a simple
-naming scheme for the prepared statements: C<dbdpg_#>, where "#" starts at 1 and
-increases. This number is tracked at the database handle level, so multiple
-statement handles will not collide. If you use your own prepare statements, do
-not name them "dbdpg_"!
+naming scheme for the prepared statements: C<dbdpg_XY_Z>, where Y is the current 
+PID, X is either 'p' or 'n' depending on if the PID is a positive or negative 
+number, and Z is a number that starts at 1 and increases each time a new statement 
+is prepared. This number is tracked at the database handle level, so multiple
+statement handles will not collide.
 
 You cannot send more than one command at a time in the same prepare command, 
 by separating them with semi-colons, when using server-side prepares.
 
-The actual C<PREPARE> is not performed until the first execute is called, due
+The actual C<PREPARE> is usually not performed until the first execute is called, due
 to the fact that information on the data types (provided by C<bind_param>) may
-be given after the prepare but before the execute.
+be provided after the prepare but before the execute.
 
-A server-side prepare can also happen before the first execute. If the server can
-handle the server-side prepare and the statement has no placeholders, it will
+A server-side prepare may happen before the first execute. If the server can
+handle the server-side prepare, and the statement has no placeholders, it will
 be prepared right away. It will also be prepared if the C<pg_prepare_now> attribute
 is passed. Similarly, the <pg_prepare_now> attribute can be set to 0 to ensure that
-the statement is B<not> prepared immediately, although cases in which you would
-want this may be rare. Finally, you can set the default behavior of all prepare
+the statement is B<not> prepared immediately, although the cases in which you would
+want this are very rare. Finally, you can set the default behavior of all prepare
 statements by setting the C<pg_prepare_now> attribute on the database handle:
 
   $dbh->{pg_prepare_now} = 1;
@@ -2341,13 +2367,13 @@ number of placeholders as your prepared statement. Example:
   $sth->{pg_prepare_name} = "mystat";
   $sth->execute(123);
 
-The above will run this query:
+The above will run the equivalent of this query on the backend:
+
+  EXECUTE mystat(123);
+
+which is the equivalent of:
 
   SELECT COUNT(*) FROM pg_class WHERE reltuples < 123;
-
-Note: DBD::Pg will not escape your custom prepared statement name, so don't
-use a name that needs escaping! DBD::Pg uses the prepare names C<dbdpg_#>
-internally, so please do not use those either.
 
 You can force DBD::Pg to send your query directly to the server by adding
 the C<pg_direct> attribute to your prepare call. This is not recommended,
@@ -2356,30 +2382,32 @@ but is added just in case you need it.
 =item B<Placeholders>
 
 There are three types of placeholders that can be used in DBD::Pg. The first is
-the question mark method, in which each placeholder is represented by a single
-question mark. This is the method recommended by the DBI specs and is the most
-portable. Each question mark is replaced by a "dollar sign number" in the order
+the "question mark" type, in which each placeholder is represented by a single
+question mark character. This is the method recommended by the DBI specs and is the most
+portable. Each question mark is internally replaced by a "dollar sign number" in the order
 in which they appear in the query (important when using C<bind_param>).
 
-The second method is to use "dollar sign numbers" directly. This is the method
-that PostgreSQL uses internally and is overall probably the best method to use
+The method second type of placeholder is "dollar sign numbers". This is the method
+that Postgres uses internally and is overall probably the best method to use
 if you do not need compatibility with other database systems. DBD::Pg, like
 PostgreSQL, allows the same number to be used more than once in the query.
-Numbers must start with "1" and increment by one value. If the same number
-appears more than once in a query, it is treated as a single parameter and all
-instances are replaced at once. Examples:
+Numbers must start with "1" and increment by one value (but can appear in any order 
+within the query). If the same number appears more than once in a query, it is treated as a 
+single parameter and all instances are replaced at once. Examples:
 
 Not legal:
 
-  $SQL = 'SELECT count(*) FROM pg_class WHERE relpages > $2';
+  $SQL = 'SELECT count(*) FROM pg_class WHERE relpages > $2'; # Does not start with 1
 
-  $SQL = 'SELECT count(*) FROM pg_class WHERE relpages BETWEEN $1 AND $3';
+  $SQL = 'SELECT count(*) FROM pg_class WHERE relpages BETWEEN $1 AND $3'; # Missing 2
 
 Legal:
 
   $SQL = 'SELECT count(*) FROM pg_class WHERE relpages > $1';
 
   $SQL = 'SELECT count(*) FROM pg_class WHERE relpages BETWEEN $1 AND $2';
+
+  $SQL = 'SELECT count(*) FROM pg_class WHERE relpages BETWEEN $2 AND $1'; # legal but confusing
 
   $SQL = 'SELECT count(*) FROM pg_class WHERE relpages BETWEEN $1 AND $2 AND reltuples > $1';
 
@@ -2390,15 +2418,17 @@ statement will replace both placeholders:
 
   $sth->bind_param(1, 2045);
 
-While execute requires only a single argument as well:
+While a simple execute with no bind_param calls requires only a single argument as well:
 
   $sth->execute(2045);
 
-The final placeholder method is the named parameters in the format ":foo". While this
-syntax is supported by DBD::Pg, its use is highly discouraged.
+The final placeholder type is "named parameters" in the format ":foo". While this
+syntax is supported by DBD::Pg, its use is highly discouraged in favor of 
+dollar-sign numbers.
 
 The different types of placeholders cannot be mixed within a statement, but you may
-use different ones for each statement handle you have. Again, this is not encouraged.
+use different ones for each statement handle you have. This is confusing at best, so 
+stick to one style within your program.
 
 If your queries use operators that contain question marks (e.g. some of the native 
 Postgres geometric operators) or array slices (e.g. data[100:300]), you can tell 
@@ -2434,7 +2464,6 @@ want a simple test, use "SELECT 123" or the ping() function. If
 neither attr nor bind_values is given, the query will be sent directly 
 to the server without the overhead of creating a statement handle and 
 running prepare and execute.
-
 
 =item B<last_insert_id>
 
@@ -2818,7 +2847,7 @@ elsewhere in this document.
 
 =item B<pg_bool_tf> (boolean)
 
-PostgreSQL specific attribute. If true, boolean values will be returned
+DBD::Pg specific attribute. If true, boolean values will be returned
 as the characters 't' and 'f' instead of '1' and '0'.
 
 =item B<Driver>  (handle)
@@ -2842,7 +2871,7 @@ Supported by this driver as proposed by DBI.
 
 =item B<pg_enable_utf8> (boolean)
 
-PostgreSQL specific attribute. If true, then the C<utf8> flag will be turned
+DBD::Pg specific attribute. If true, then the C<utf8> flag will be turned
 for returned character data (if the data is valid UTF-8). For details about
 the C<utf8> flag, see L<Encode|Encode>. This attribute is only relevant under
 perl 5.8 and later.
@@ -2859,7 +2888,7 @@ Constant to be used for the mode in C<lo_creat> and C<lo_open>.
 
 =item B<pg_errorlevel> (integer)
 
-PostgreSQL specific attribute. Sets the amount of information returned by the server's 
+DBD::Pg specific attribute. Sets the amount of information returned by the server's 
 error messages. Valid entries are 0, 1, and 2. Any other number will be forced to the 
 default value of 1.
 
@@ -2870,67 +2899,101 @@ show all available information.
 
 =item B<pg_protocol> (integer, read-only)
 
-PostgreSQL specific attribute. Returns the version of the PostgreSQL server.
+DBD::Pg specific attribute. Returns the version of the PostgreSQL server.
 If DBD::Pg is unable to figure out the version, it will return a "0". Otherwise,
 a "3" is returned.
 
 =item B<pg_lib_version> (integer, read-only)
 
-PostgreSQL specific attribute. Indicates which version of PostgreSQL that 
+DBD::Pg specific attribute. Indicates which version of PostgreSQL that 
 DBD::Pg was compiled against. In other words, which libraries were used. 
 Returns a number with major, minor, and revision together; version 8.1.4 
 would be returned as 80104.
 
 =item B<pg_server_version> (integer, read-only)
 
-PostgreSQL specific attribute. Indicates which version of PostgreSQL that 
+DBD::Pg specific attribute. Indicates which version of PostgreSQL that 
 the current database handle is connected to. Returns a number with major, 
 minor, and revision together; version 8.0.1 would be 80001.
 
 =item B<pg_db> (string, read-only)
 
-PostgreSQL specific attribute. Returns the name of the current database.
+DBD::Pg specific attribute. Returns the name of the current database.
 
 =item B<pg_user> (string, read-only)
 
-PostgreSQL specific attribute. Returns the name of the user that
+DBD::Pg specific attribute. Returns the name of the user that
 connected to the server.
 
 =item B<pg_pass> (string, read-only)
 
-PostgreSQL specific attribute. Returns the password used to connect
+DBD::Pg specific attribute. Returns the password used to connect
 to the server.
 
 =item B<pg_host> (string, read-only)
 
-PostgreSQL specific attribute. Returns the host of the current
+DBD::Pg specific attribute. Returns the host of the current
 server connection. Locally connected hosts will return an empty
 string.
 
 =item B<pg_port> (integer, read-only)
 
-PostgreSQL specific attribute. Returns the port of the connection to
+DBD::Pg specific attribute. Returns the port of the connection to
 the server.
 
 =item B<pg_default_port> (integer, read-only)
 
-PostgreSQL specific attribute. Returns the default port used if none is
+DBD::Pg specific attribute. Returns the default port used if none is
 specifically given.
 
 =item B<pg_options> (string, read-only)
 
-PostgreSQL specific attribute. Returns the command-line options passed
+DBD::Pg specific attribute. Returns the command-line options passed
 to the server. May be an empty string.
 
-=item B<pg_socket> (number, read-only)
+=item B<pg_socket> (integer, read-only)
 
-PostgreSQL specific attribute. Returns the file description number of
+DBD::Pg specific attribute. Returns the file description number of
 the connection socket to the server.
 
-=item B<pg_pid> (number, read-only)
+=item B<pg_pid> (integer, read-only)
 
-PostgreSQL specific attribute. Returns the process id (PID) of the
+DBD::Pg specific attribute. Returns the process id (PID) of the
 backend server process handling the connection.
+
+=item B<pg_standard_conforming_strings> (boolean, read-only)
+
+DBD::Pg specific attribute.  Returns if the server is currently using 
+standard conforming strings or not.
+
+=item B<pg_async_status> (integer, read-only)
+
+DBD::Pg specific attribute. Returns the current status of an asynchronous 
+command. 0 indicates no asynchronous command is in progress, 1 indicates that 
+an asynchronous command has started and -1 indicated that an asynchronous command 
+has been cancelled.
+
+=item B<pg_prepare_now> (boolean)
+
+DBD::Pg specific attribute. Default is off. If true, then the C<prepare()> method will 
+immediately prepare commands, rather than waiting until the first execute.
+
+=item B<pg_server_prepare> (integer)
+
+DBD::Pg specific attribute. Indicates if DBD::Pg should attempt to use server-side 
+prepared statements. The default value, 1, indicates that prepared statements should 
+be used whenever possible. See the section on the C<prepare()> method for more information.
+
+=item B<pg_placeholder_dollaronly> (boolean)
+
+DBD::Pg specific attribute. Defaults to false. When true, question marks inside of statements 
+are not treated as placeholders. Useful for statements that contain unquoted question 
+marks, such as geometric operators.
+
+=item B<pg_expand_array> (boolean, read-only)
+
+DBD::Pg specific attribute. Defaults to false. If false, arrays returned from the server will 
+not be changed into a Perl arrayref, but remain as a string.
 
 =back
 
@@ -3196,46 +3259,46 @@ Implemented by DBI, no driver-specific impact.
 
 Implemented by DBI, no driver-specific impact.
 
-=item B<NAME>  (array-ref, read-only)
+=item B<NAME>  (arrayref, read-only)
 
 Supported by this driver as proposed by DBI.
 
-=item B<NAME_lc>  (array-ref, read-only)
+=item B<NAME_lc>  (arrayref, read-only)
 
 Implemented by DBI, no driver-specific impact.
 
-=item B<NAME_uc>  (array-ref, read-only)
+=item B<NAME_uc>  (arrayref, read-only)
 
 Implemented by DBI, no driver-specific impact.
 
-=item B<NAME_hash>  (hash-ref, read-only)
+=item B<NAME_hash>  (hashref, read-only)
 
 Implemented by DBI, no driver-specific impact.
 
-=item B<NAME_lc_hash>  (hash-ref, read-only)
+=item B<NAME_lc_hash>  (hashref, read-only)
 
 Implemented by DBI, no driver-specific impact.
 
-=item B<NAME_uc_hash>  (hash-ref, read-only)
+=item B<NAME_uc_hash>  (hashref, read-only)
 
 Implemented by DBI, no driver-specific impact.
 
-=item B<TYPE>  (array-ref, read-only)
+=item B<TYPE>  (arrayref, read-only)
 
 Supported by this driver as proposed by DBI
 
-=item B<PRECISION>  (array-ref, read-only)
+=item B<PRECISION>  (arrayref, read-only)
 
 Supported by this driver. C<NUMERIC> types will return the precision. Types of
 C<CHAR> and C<VARCHAR> will return their size (number of characters). Other
 types will return the number of I<bytes>.
 
-=item B<SCALE>  (array-ref, read-only)
+=item B<SCALE>  (arrayref, read-only)
 
 Supported by this driver as proposed by DBI. The only type
 that will return a value currently is C<NUMERIC>.
 
-=item B<NULLABLE>  (array-ref, read-only)
+=item B<NULLABLE>  (arrayref, read-only)
 
 Supported by this driver as proposed by DBI.
 
@@ -3270,39 +3333,78 @@ Not supported by this driver.
 
 =item B<pg_current_row>  (integer, read-only)
 
-PostgreSQL specific attribute. Returns the number of the tuple (row) that was
+DBD::Pg specific attribute. Returns the number of the tuple (row) that was
 most recently fetched. Returns zero before and after fetching is performed.
 
 =item B<pg_numbound>  (integer, read-only)
 
-PostgreSQL specific attribute. Returns the number of placeholders
+DBD::Pg specific attribute. Returns the number of placeholders
 that are currently bound (via bind_param).
 
-=item B<pg_bound>  (hash-ref, read-only)
+=item B<pg_bound>  (hashref, read-only)
 
-PostgreSQL specific attribute. Returns a hash of all named placeholders. The
+DBD::Pg specific attribute. Returns a hash of all named placeholders. The
 key is the name of the placeholder, and the value is a 0 or a 1, indicating if
 the placeholder has been bound yet (e.g. via bind_param)
 
-=item B<pg_size>  (array-ref, read-only)
+=item B<pg_size>  (arrayref, read-only)
 
-PostgreSQL specific attribute. It returns a reference to an array of integer
+DBD::Pg specific attribute. It returns a reference to an array of integer
 values for each column. The integer shows the size of the column in
 bytes. Variable length columns are indicated by -1.
 
-=item B<pg_type>  (array-ref, read-only)
+=item B<pg_type>  (arrayref, read-only)
 
-PostgreSQL specific attribute. It returns a reference to an array of strings
+DBD::Pg specific attribute. It returns a reference to an array of strings
 for each column. The string shows the name of the data_type.
+
+=item B<pg_segments> (arrayref, read-only)
+
+DBD::Pg specific attribute. Returns an arrayref of the query split on the 
+placeholders.
 
 =item B<pg_oid_status> (integer, read-only)
 
-PostgreSQL specific attribute. It returns the OID of the last INSERT command.
+DBD::Pg specific attribute. It returns the OID of the last INSERT command.
 
 =item B<pg_cmd_status> (integer, read-only)
 
-PostgreSQL specific attribute. It returns the type of the last
+DBD::Pg specific attribute. It returns the type of the last
 command. Possible types are: "INSERT", "DELETE", "UPDATE", "SELECT".
+
+=item B<pg_direct> (boolean)
+
+DBD::Pg specific attribute. Default is false. If true, the query is passed 
+directly to the backend without parsing for placeholders.
+
+=item B<pg_prepare_now> (boolean)
+
+DBD::Pg specific attribute. Default is off. If true, the query will be immediately 
+prepared, rather than waiting for the C<execute()> call.
+
+=item B<pg_prepare_name> (string)
+
+DBD::Pg specific attribute. Specifies the name of the prepared statement to use for this 
+statement handle. Not normally needed, see the section on the C<prepare()> method for 
+more information.
+
+=item B<pg_server_prepare> (integer)
+
+DBD::Pg specific attribute. Indicates if DBD::Pg should attempt to use server-side 
+prepared statements for this statement handle. The default value, 1, indicates that prepared 
+statements should be used whenever possible. See the section on the C<prepare()> method for 
+more information.
+
+=item B<pg_placeholder_dollaronly> (boolean)
+
+DBD::Pg specific attribute. Defaults to off. When true, question marks inside of the query 
+being prepared are not treated as placeholders. Useful for statements that contain unquoted question 
+marks, such as geometric operators.
+
+=item B<pg_async> (integer)
+
+DBD::Pg specific attribute. Indicates the current behavior for asynchronous queries. See the section 
+on L</Asynchronous Constants> for more information.
 
 =back
 

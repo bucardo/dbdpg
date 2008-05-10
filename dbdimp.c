@@ -616,15 +616,11 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		}
 		break;
 
-	case 6: /* pg_pid pg_scs */
+	case 6: /* pg_pid */
 
 		if (strEQ("pg_pid", key)) {
 			TRACE_PQBACKENDPID;
 			retsv = newSViv((IV)PQbackendPID(imp_dbh->conn));
-		}
-		else if (strEQ("pg_scs", key)) {
-			TRACE_PQPARAMETERSTATUS;
-			retsv = newSVpv(PQparameterStatus(imp_dbh->conn,"standard_conforming_strings"),0);
 		}
 		break;
 
@@ -662,7 +658,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 			retsv = boolSV(DBIc_has(imp_dbh, DBIcf_AutoCommit));
 		else if (strEQ("pg_bool_tf", key))
 			retsv = newSViv((IV)imp_dbh->pg_bool_tf);
-		else if (strEQ("pg_pid_number", key))
+		else if (strEQ("pg_pid_number", key)) /* Undocumented on purpose */
 			retsv = newSViv((IV)imp_dbh->pid_number);
 		else if (strEQ("pg_options", key)) {
 			TRACE_PQOPTIONS;

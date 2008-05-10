@@ -16,7 +16,7 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 137;
+plan tests => 135;
 
 isnt( $dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -324,7 +324,7 @@ like( $result, qr/^\d+$/, q{DB handle attribute "pg_pid" returns a value});
 
 SKIP: {
 
-	skip 'Cannot test standard_conforming_strings on pre 8.1 servers', 5;
+	skip 'Cannot test standard_conforming_strings on pre 8.1 servers', 3;
 
 	$t=q{DB handle attribute "pg_standard_conforming_strings" returns a valid value};
 	my $oldscs = $dbh->{pg_standard_conforming_strings};
@@ -334,16 +334,10 @@ SKIP: {
 	$t=q{DB handle attribute "pg_standard_conforming_strings" returns correct value};
 	$result = $dbh->{pg_standard_conforming_strings};
 	is( $result, 'on', $t);
-	$t=q{DB handle attribute "pg_scs" returns correct value};
-	$result = $dbh->{pg_scs};
-	is( $result, 'on', $t);
 
 	$dbh->do('SET standard_conforming_strings = off');
 	$t=q{DB handle attribute "pg_standard_conforming_strings" returns correct value};
 	$result = $dbh->{pg_standard_conforming_strings};
-	is( $result, 'off', $t);
-	$t=q{DB handle attribute "pg_scs" returns correct value};
-	$result = $dbh->{pg_scs};
 	is( $result, 'off', $t);
 	$dbh->do("SET standard_conforming_strings = $oldscs");
 }
