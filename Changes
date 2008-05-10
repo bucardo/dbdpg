@@ -2,9 +2,8 @@
 
 2.7.0 Released May 10, 2008
 
-	- Have $dbh->quote() return E'' when server is >= 8.1
-		and string contains backslashes. Fixes any 
-		problems with standard_conforming_strings.
+	- Have $dbh->quote() return E'' when server is >= 8.1 and string contains 
+		backslashes. Fixes any problems with standard_conforming_strings.
 		(CPAN bug #27538) [GSM]
 
 2.6.6 Released May 7, 2008 (subversion r11214)
