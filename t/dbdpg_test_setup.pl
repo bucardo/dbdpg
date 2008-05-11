@@ -136,7 +136,7 @@ sub connect_database {
 
 	if (! $testdsn) {
 		$helpconnect = 1;
-		$testdsn = 'dbi:Pg:';
+		$testdsn = $^O =~ /Win32/ ? 'dbi:Pg:host=localhost' : 'dbi:Pg:';
 	}
 	if (! $testuser) {
 		$testuser = 'postgres';
@@ -195,7 +195,7 @@ sub connect_database {
 		}
 		$info = '';
 		eval {
-			$info = qx{$initdb --help};
+			$info = qx{$initdb --help 2>&1};
 		};
 		last GETHANDLE if $@;
 		if (!defined $info or $info !~ /\@postgresql\.org/) {
@@ -323,7 +323,7 @@ sub connect_database {
 			$@ = qq{Could not open "$conf": $!};
 			last GETHANDLE;
 		}
-		print $cfh "\n\n## DBD::Pg testing port\nport=$testport\n\n";
+		print $cfh "\n\n## DBD::Pg testing parameters\nport=$testport\nmax_connections=3\n\n";
 		close $cfh or die qq{Could not close "$conf": $!\n};
 
 		## Attempt to start up the test server
@@ -348,6 +348,9 @@ sub connect_database {
 
 		## Attempt to connect to this server
 		$testdsn = "dbi:Pg:dbname=postgres;port=$testport";
+		if ($^O =~ /Win32/) {
+			$testdsn .= ';host=localhost';
+		}
 		my $loop = 1;
 	  STARTUP: {
 			eval {
@@ -469,7 +472,6 @@ sub get_test_settings {
 		}
 		close $fh or die qq{Could not close "$helpfile": $!\n};
 	}
-
 
 	return $testdsn, $testuser, $helpconnect, $su, $testdir, $pg_ctl;
 }
