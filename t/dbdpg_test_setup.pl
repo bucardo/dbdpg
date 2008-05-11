@@ -221,7 +221,7 @@ sub connect_database {
 		warn "Please wait, creating new database for testing\n";
 		$info = '';
 		eval {
-			$info = qx{$initdb -E UTF8 -D $test_database_dir/data 2>&1};
+			$info = qx{$initdb --locale=C -E UTF8 -D $test_database_dir/data 2>&1};
 		};
 		last GETHANDLE if $@;
 
@@ -254,7 +254,7 @@ sub connect_database {
 				$founduser++;
 				$info = '';
 				eval {
-					$info = qx{su -m $user -c "$initdb -E UTF8 -D $test_database_dir/data" 2>&1};
+					$info = qx{su -m $user -c "$initdb --locale=C -E UTF8 -D $test_database_dir/data" 2>&1};
 				};
 				if (!$@ and $info =~ /owned by user "$user"/) {
 					$testuser = $user;
