@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.7.1 Released May 11, 2008
+
+	- Yet more minor testing tweaks. [GSM]
+
 2.7.0 Released May 10, 2008 (subversion r11239)
 
 	- Have $dbh->quote() return E'' when server is >= 8.1 and string contains 
