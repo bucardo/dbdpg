@@ -323,7 +323,9 @@ sub connect_database {
 			$@ = qq{Could not open "$conf": $!};
 			last GETHANDLE;
 		}
-		print $cfh "\n\n## DBD::Pg testing parameters\nport=$testport\nmax_connections=3\n\n";
+		print $cfh "\n\n## DBD::Pg testing parameters\nport=$testport\nmax_connections=3\n";
+		print $cfh "listen_addresses='localhost'\n" if $^O =~ /Win32/;
+		print $cfh "\n";
 		close $cfh or die qq{Could not close "$conf": $!\n};
 
 		## Attempt to start up the test server
