@@ -199,7 +199,7 @@ sub connect_database {
 		};
 		last GETHANDLE if $@;
 		if (!defined $info or $info !~ /\@postgresql\.org/) {
-			$@ = defined $initdb ? "Bad initdb output: $info" : 'Bad initdb output';
+			$@ = defined $info ? "Bad initdb output: $info" : 'Bad initdb output';
 			last GETHANDLE;
 		}
 
