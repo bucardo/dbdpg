@@ -1,5 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.7.2
+
+	- Fix typo in docs with trace_parser_flags() (Martin J. Evans)
+	- More testing tweaks [GSM]
+
 2.7.1 Released May 11, 2008 (subversion r11250)
 
 	- Yet more minor testing tweaks. [GSM]
