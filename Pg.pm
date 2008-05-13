@@ -1898,10 +1898,10 @@ With a second argument, only writes the message if the minimum level is currentl
 
 =item B<parse_trace_flag> and B<parse_trace_flags>
 
-  $h->trace($h->parse_trace_flag('SQL|pglibpq'));
-  $h->trace($h->parse_trace_flag('1|pgstart'));
+  $h->trace($h->parse_trace_flags('SQL|pglibpq'));
+  $h->trace($h->parse_trace_flags('1|pgstart'));
 
-  my $value = DBD::Pg->parse_trace_flags('pglibpq');
+  my $value = DBD::Pg->parse_trace_flag('pglibpq');
   DBI->trace($value);
 
 The parse_trace_flags method is used to convert one or more named 
