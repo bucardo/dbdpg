@@ -86,7 +86,7 @@ use 5.006001;
 		return 0x08000000 if $flag eq 'pgprefix';
 		return 0x10000000 if $flag eq 'pglogin';
 		return 0x20000000 if $flag eq 'pgquote';
-		return DBI::parse_trace_flag($dbh, $flag);
+		return DBI::parse_trace_flag($class, $flag);
 	}
 	sub parse_trace_flags {
 		my ($class, $flags) = @_;
