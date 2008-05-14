@@ -2474,7 +2474,8 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 			if ('\\' == *input) { /* Eat backslashes */
 				input++;
 			}
-			string[section_size++] = *input;
+			string[section_size++] = *input++;
+			continue;
 		}
 		else if ('{' == *input) {
 			AV * const newav = newAV();

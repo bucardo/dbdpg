@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 227;
+plan tests => 245;
 
 isnt( $dbh, undef, 'Connect to database for array testing');
 
@@ -104,6 +104,18 @@ Simple 1-D numeric array
 ['abc']
 {abc} quote: {"abc"}
 Simple 1-D text array
+
+['a','b,c']
+{a,"b,c"} quote: {"a","b,c"}
+Text array with commas and quotes
+
+['a','b,}']
+{a,"b,}"} quote: {"a","b,}"}
+Text array with commas, escaped closing brace
+
+['a','b,]']
+{a,"b,]"} quote: {"a","b,]"}
+Text array with commas, escaped closing bracket
 
 [1,2]
 {1,2} quote: {"1","2"}
@@ -256,8 +268,19 @@ for my $test (split /\n\n/ => $array_tests) {
 		$qexpected =~ s/\\\\n/\\n/g;
 		$qexpected =~ s/\\\\"/\\"/g;
 		$qexpected =~ s/\\\\i/\\i/g;
+		if ($msg =~ /closing brace/) {
+			$qexpected =~ s/]"/}"/;
+		}
 		$expected = eval $qexpected;
 		is_deeply( $result, $expected, "Correct array inserted: $msg : $input");
+	}
+
+	if ($msg =~ /STOP/) {
+		warn "Exiting for DEBUGGING. Result is:\n";
+		warn Dumper $result;
+		cleanup_database($dbh,'test');
+		$dbh->disconnect;
+		exit;
 	}
 
 }
