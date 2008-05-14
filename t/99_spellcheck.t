@@ -586,6 +586,7 @@ sv
 turnstep
 
 ## Changes:
+destringifying
 spellcheck
 gborg
 n's
