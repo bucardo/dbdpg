@@ -1909,13 +1909,13 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		TRC(DBILOGFP, "%sPlaceholder numbers, ph id, and segments:\n",
 			THEADER);
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-			TRC(DBILOGFP, "%sPH: (%d) ID: (%d) SEG: (%s)\n",
-				THEADER, currseg->placeholder, NULL==currseg->ph ? 0 : (int)currseg->ph, currseg->segment);
+			TRC(DBILOGFP, "%sPH: (%d) SEG: (%s)\n",
+				THEADER, currseg->placeholder, currseg->segment);
 		}
 		TRC(DBILOGFP, "%sPlaceholder number, fooname, id:\n", THEADER);
 		for (xlen=1,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,xlen++) {
-			TRC(DBILOGFP, "%s#%d FOONAME: (%s) ID: (%d)\n",
-				THEADER, xlen, currph->fooname, (int)currph);
+			TRC(DBILOGFP, "%s#%d FOONAME: (%s)\n",
+				THEADER, xlen, currph->fooname);
 		}
 	}
 
@@ -3350,8 +3350,8 @@ int dbd_st_finish (SV * sth, imp_sth_t * imp_sth)
 	dTHX;
 	D_imp_dbh_from_sth;
 
-	if (TSTART) TRC(DBILOGFP, "%sBegin dbdpg_finish (sth: %d async: %d)\n",
-					THEADER, (int)sth, imp_dbh->async_status);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbdpg_finish (async: %d)\n",
+					THEADER, imp_dbh->async_status);
 	
 	if (DBIc_ACTIVE(imp_sth) && imp_sth->result) {
 		TRACE_PQCLEAR;
