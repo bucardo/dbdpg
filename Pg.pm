@@ -3758,7 +3758,7 @@ transaction!
 =head2 Cursors
 
 Although PostgreSQL supports cursors, they have not been used in the current
-implementation. When DBD::Pg was defined, cursors in PostgreSQL could only be
+implementation. When DBD::Pg was created, cursors in PostgreSQL could only be
 used inside a transaction block. Because only one transaction block at a time
 is allowed, this would have implied the restriction not to use any nested
 C<SELECT> statements. Therefore the C<execute> method fetches all data at
