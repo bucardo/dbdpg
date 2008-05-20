@@ -2212,7 +2212,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 	if (pg_type) {
 		if ((currph->bind_type = pg_type_data(pg_type))) {
 			if (!currph->bind_type->bind_ok) { /* Re-evaluate with new prepare */
-				croak("Cannot bind %s, sql_type %s not supported by DBD::Pg",
+				croak("Cannot bind %s, pg_type %s not supported by DBD::Pg",
 					  name, currph->bind_type->type_name);
 			}
 		}
