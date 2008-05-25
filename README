@@ -125,7 +125,7 @@ within the tests themselves by setting DBD_TRACE to whatever
 trace level you want. Be aware that setting the trace level can 
 result in extremely verbose output.
 
-When reporting test failures, please use TEST_VERBOSE=1, do *not* 
+When reporting test failures, please use TEST_VERBOSE=1, but do *not* 
 set DBD_TRACE unless requested, and send only the relevant sections.
 
 If the first connection fails and DBI_DSN is not set, the tests may 
