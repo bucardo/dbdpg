@@ -80,16 +80,20 @@ sub connect_database {
 		if ($arg->{dbquotes}) {
 			$testdsn =~ s/$alias\s*=(\w+)/'db="'.lc $2.'"'/e;
 		}
+
 		eval {
 			$dbh = DBI->connect($testdsn, $testuser, '',
 								{RaiseError => 1, PrintError => 0, AutoCommit => 1});
 		};
-		if ($@) {
-			if ($@ !~ /domain socket/ or 16 != $helpconnect) {
-				return $helpconnect, $@, undef;
-			}
 
-			## If we created it, and it was shut down, start it up again
+		goto GOTDBH unless $@;
+
+		if ($@ =~ /invalid connection option/) {
+			return $helpconnect, $@, undef;
+		}
+
+		## If this was created by us, try and restart it
+		if (16 == $helpconnect) {
 			warn "Restarting test database $testdsn at $testdir\n";
 
 			my $COM = qq{$pg_ctl -l $testdir/dbdpg_test.logfile -D $testdir start};
@@ -122,14 +126,14 @@ sub connect_database {
 				return $helpconnect, $@, $dbh;
 			}
 
-		} ## end got an error on connect attempt
+			## We've got a good connection, so do final tweaks and return
+			goto GOTDBH;
 
-		## We've got a good connection, so do final tweaks and return
-		goto GOTDBH;
+		} ## end error and we created this database
 
 	} ## end got testdsn and testuser
 
-	## No previous info, so start connection attempt from scratch
+	## No previous info (or failed attempt), so start new connection attempt from scratch
 
 	$testdsn ||= $ENV{DBI_DSN};
 	$testuser ||= $ENV{DBI_USER};
