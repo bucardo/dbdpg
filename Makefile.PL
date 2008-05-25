@@ -109,7 +109,7 @@ print "OS: $os\n";
 
 my $baddir;
 for my $d (qw/HOME INCLUDE/) {
-	next if ! exists $ENV{"POSTGRES_$d"};
+	next if ! exists $ENV{"POSTGRES_$d"} or ! length $ENV{"POSTGRES_$d"};
 	if (! -d $ENV{"POSTGRES_$d"}) {
 		printf "The environment variable %s points to a non-existent directory: %s\n",
 			"POSTGRES_$d", $ENV{"POSTGRES_$d"};
