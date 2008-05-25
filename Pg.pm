@@ -2548,12 +2548,12 @@ Supported by this driver as proposed by DBI.
 
   $ret = $dbh->pg_notifies;
 
-Returns either C<undef> or a reference to two-element array [ $table,
-$backend_pid ] of asynchronous notifications received. Note that this does
-not check if the connection to the database is still valid - for that,
-use the c<ping> method. Also note that you may need to commit if not in
-autocommit mode - new notices will not be picked up while in the middle of
-a transaction. An example:
+Looks for any asycnhronous notifications received and returns either C<undef> 
+or a reference to a three-element array consisting of an event name, the PID 
+of the backend that sent the NOTIFY command, and the optional payload string. 
+Note that this does not check if the connection to the database is still valid first - 
+for that, use the c<ping> method. You may need to commit if not in autocommit mode - 
+new notices will not be picked up while in the middle of a transaction. An example:
 
   $dbh->do("LISTEN abc");
   $dbh->do("LISTEN def");
@@ -2561,8 +2561,8 @@ a transaction. An example:
   ## Hang around until we get the message we want
   LISTENLOOP: {
     while (my $notify = $dbh->pg_notifies) {
-      my ($name, $pid) = @$notify;
-      print qq{I received notice "$name" from PID $pid\n};
+      my ($name, $pid, $payload) = @$notify;
+      print qq{I received notice "$name" from PID $pid, payload was "$payload"\n};
       ## Do something based on the notice received
     }
     $dbh->ping() or die qq{Ping failed!};
@@ -2570,6 +2570,9 @@ a transaction. An example:
     sleep(5);
     redo;
   }
+
+Payloads will always be an empty string unless you are connecting to a Postgres 
+server version 8.4 or higher.
 
 =item B<ping>
 

@@ -1169,13 +1169,13 @@ $dbh->do("LISTEN $notify_name");
 $dbh->do("NOTIFY $notify_name");
 $dbh->commit();
 $info = $dbh->func('pg_notifies');
-is_deeply($info, [$notify_name, $pid], $t);
+is_deeply($info, [$notify_name, $pid, ''], $t);
 
 $t=q{DB handle method "pg_notifies" returns the correct values};
 $dbh->do("NOTIFY $notify_name");
 $dbh->commit();
 $info = $dbh->pg_notifies;;
-is_deeply($info, [$notify_name, $pid], $t);
+is_deeply($info, [$notify_name, $pid, ''], $t);
 
 #
 # Test of the "getfd" database handle method
