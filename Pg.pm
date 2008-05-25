@@ -2548,7 +2548,7 @@ Supported by this driver as proposed by DBI.
 
   $ret = $dbh->pg_notifies;
 
-Looks for any asycnhronous notifications received and returns either C<undef> 
+Looks for any asynchronous notifications received and returns either C<undef> 
 or a reference to a three-element array consisting of an event name, the PID 
 of the backend that sent the NOTIFY command, and the optional payload string. 
 Note that this does not check if the connection to the database is still valid first - 
@@ -3157,6 +3157,18 @@ supports using DEFAULT in prepared statements.
 
 DBD::Pg also supports passing in arrays to execute: simply pass in an arrayref, 
 and DBD::Pg will flatten it into a string suitable for input on the backend.
+
+If you are using Postgres version 8.2 or greater, you can also use any of the 
+fetch methods to retrieve the values of a C<RETURNING> clause after you execute 
+an C<UPDATE>, C<DELETE>, or C<INSERT>. For example:
+
+  $dbh->do(q{CREATE TABLE abc (id SERIAL, country TEXT)});
+  $SQL = q{INSERT INTO abc (country) VALUES (?) RETURNING id};
+  $sth = $dbh->prepare($SQL);
+  $sth->execute('France');
+  $countryid = $sth->fetch()->[0];
+  $sth->execute('New Zealand');
+  $countryid = $sth->fetch()->[0];
 
 =item B<execute_array>
 

@@ -712,6 +712,8 @@ oldfh
 pos
 printf
 qq
+slashstar
+starslash
 sqlc
 sqltype
 src

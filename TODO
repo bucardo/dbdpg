@@ -1,6 +1,5 @@
 TODO: 
 
-- Mention RETURNING clause support in docs.
 - Use WITH HOLD for cursor work
 - Start testing with a thread-enabled Perl
 - Create a .ppm for Windows
