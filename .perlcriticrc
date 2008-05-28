@@ -39,6 +39,8 @@ stop_words = ActiveKids AutoCommit CachedKids ChildHandles ChopBlanks CompatMode
 [-Modules::RequireEndWithOne]
 [-References::ProhibitDoubleSigils]
 [-RegularExpressions::ProhibitCaptureWithoutTest]
+[-RegularExpressions::ProhibitEnumeratedClasses]
+[-RegularExpressions::ProhibitEscapedMetacharacters]
 [-RegularExpressions::ProhibitFixedStringMatches]
 [-RegularExpressions::RequireExtendedFormatting]
 [-RegularExpressions::RequireLineBoundaryMatching]
