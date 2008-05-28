@@ -91,7 +91,7 @@ SKIP: {
 	$dbh->commit();
 	$dbh->trace(0);
 	seek $fh,0,0;
-	{ local $/; $info = <$fh>; }
+	{ local $/; ($info = <$fh>) =~ s/\r//go; }
 	$expected = qq{begin;\n\n$SQL;\n\ncommit;\n\n};
 	is($info, $expected, $t);
 
@@ -103,7 +103,7 @@ SKIP: {
 	$dbh->commit();
 	$dbh->trace(0);
 	seek $fh,0,0;
-	{ local $/; $info = <$fh>; }
+	{ local $/; ($info = <$fh>) =~ s/\r//go; }
 	$expected = q{PQexec
 PQresultStatus
 PQresultErrorField
@@ -130,7 +130,7 @@ PQclear
 	$dbh->commit();
 	$dbh->trace(0);
 	seek $fh,0,0;
-	{ local $/; $info = <$fh>; }
+	{ local $/; ($info = <$fh>) =~ s/\r//go; }
 	$expected = q{Begin pg_quickexec (query: SELECT 'dbdpg_flag_testing' async: 0 async_status: 0)
 Begin _result (sql: begin)
 Begin _sqlstate
@@ -151,7 +151,7 @@ Begin _sqlstate
 	$dbh->commit();
 	$dbh->trace(0);
 	seek $fh,0,0;
-	{ local $/; $info = <$fh>; }
+	{ local $/; ($info = <$fh>) =~ s/\r//go; }
 	$expected = q{dbdpg: Begin pg_quickexec (query: SELECT 'dbdpg_flag_testing' async: 0 async_status: 0)
 dbdpg: Begin _result (sql: begin)
 dbdpg: Begin _sqlstate
@@ -172,7 +172,7 @@ dbdpg: Begin _sqlstate
 	$dbh->commit();
 	$dbh->trace(0);
 	seek $fh,0,0;
-	{ local $/; $info = <$fh>; }
+	{ local $/; ($info = <$fh>) =~ s/\r//go; }
 	$expected = q{End _sqlstate (imp_dbh->sqlstate: 00000)
 End _sqlstate (status: 1)
 End _result
@@ -211,7 +211,7 @@ End pg_db_rollback_commit (result: 1)
 	$dbh->disconnect();
 	DBI->trace(0);
 	seek $fh,0,0;
-	{ local $/; $info = <$fh>; }
+	{ local $/; ($info = <$fh>) =~ s/\r//go; }
 	$expected = q{Login connection string: 
 Connection complete
 Disconnection complete
@@ -227,7 +227,7 @@ Disconnection complete
 	$dbh->disconnect();
 	DBI->trace(0);
 	seek $fh,0,0;
-	{ local $/; $info = <$fh>; }
+	{ local $/; ($info = <$fh>) =~ s/\r//go; }
 	$expected = q{Login connection string: 
 Connection complete
 Disconnection complete
@@ -247,7 +247,7 @@ Disconnection complete
 	$dbh->trace(0);
 	$dbh->rollback();
 	seek $fh,0,0;
-	{ local $/; $info = <$fh>; }
+	{ local $/; ($info = <$fh>) =~ s/\r//go; }
 	$expected = q{Login connection string: 
 Connection complete
 dbdpg: Begin pg_quickexec (query: SELECT 'dbdpg_flag_testing' async: 0 async_status: 0)
