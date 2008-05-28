@@ -488,8 +488,6 @@ use 5.006001;
 			pg_enum_values       23
 			/);
 
-		my $oldconstraint_sth;
-
 		for my $row (@$data) {
 			my $typoid = pop @$row;
 			my $typtype = pop @$row;
