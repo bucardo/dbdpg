@@ -267,6 +267,8 @@ SPLINTFLAGS =            \
   -predboolint           \
   -nullpass              \
   +charint               \
+  +boolint               \
+  +allglobals            \
 
 SPLINTFLAGS_TEST = 
 
