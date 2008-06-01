@@ -73,8 +73,8 @@ use 5.006001;
 	bootstrap DBD::Pg $VERSION;
 
 	$err = 0;       # holds error code for DBI::err
-	$errstr = "";   # holds error string for DBI::errstr
-	$sqlstate = ""; # holds five character SQLSTATE code
+	$errstr = '';   # holds error string for DBI::errstr
+	$sqlstate = ''; # holds five character SQLSTATE code
 	$drh = undef;   # holds driver handle once initialized
 
 	## These two methods are here to allow calling before connect()
@@ -107,7 +107,7 @@ use 5.006001;
 		return $drh if defined $drh;
 		my($class, $attr) = @_;
 
-		$class .= "::dr";
+		$class .= '::dr';
 
 		$drh = DBI::_new_drh($class, {
 			'Name'        => 'Pg',
@@ -119,28 +119,28 @@ use 5.006001;
 		});
 
 
-		DBD::Pg::db->install_method("pg_cancel");
-		DBD::Pg::db->install_method("pg_endcopy");
-		DBD::Pg::db->install_method("pg_getline");
-		DBD::Pg::db->install_method("pg_getcopydata");
-		DBD::Pg::db->install_method("pg_getcopydata_async");
-		DBD::Pg::db->install_method("pg_notifies");
-		DBD::Pg::db->install_method("pg_putcopydata");
-		DBD::Pg::db->install_method("pg_putcopyend");
-		DBD::Pg::db->install_method("pg_ping");
-		DBD::Pg::db->install_method("pg_putline");
-		DBD::Pg::db->install_method("pg_ready");
-		DBD::Pg::db->install_method("pg_release");
-		DBD::Pg::db->install_method("pg_result");
-		DBD::Pg::db->install_method("pg_rollback_to");
-		DBD::Pg::db->install_method("pg_savepoint");
-		DBD::Pg::db->install_method("pg_server_trace");
-		DBD::Pg::db->install_method("pg_server_untrace");
-		DBD::Pg::db->install_method("pg_type_info");
+		DBD::Pg::db->install_method('pg_cancel');
+		DBD::Pg::db->install_method('pg_endcopy');
+		DBD::Pg::db->install_method('pg_getline');
+		DBD::Pg::db->install_method('pg_getcopydata');
+		DBD::Pg::db->install_method('pg_getcopydata_async');
+		DBD::Pg::db->install_method('pg_notifies');
+		DBD::Pg::db->install_method('pg_putcopydata');
+		DBD::Pg::db->install_method('pg_putcopyend');
+		DBD::Pg::db->install_method('pg_ping');
+		DBD::Pg::db->install_method('pg_putline');
+		DBD::Pg::db->install_method('pg_ready');
+		DBD::Pg::db->install_method('pg_release');
+		DBD::Pg::db->install_method('pg_result');
+		DBD::Pg::db->install_method('pg_rollback_to');
+		DBD::Pg::db->install_method('pg_savepoint');
+		DBD::Pg::db->install_method('pg_server_trace');
+		DBD::Pg::db->install_method('pg_server_untrace');
+		DBD::Pg::db->install_method('pg_type_info');
 
-		DBD::Pg::st->install_method("pg_cancel");
-		DBD::Pg::st->install_method("pg_result");
-		DBD::Pg::st->install_method("pg_ready");
+		DBD::Pg::st->install_method('pg_cancel');
+		DBD::Pg::st->install_method('pg_result');
+		DBD::Pg::st->install_method('pg_ready');
 
 		return $drh;
 
@@ -172,7 +172,7 @@ use 5.006001;
 		}
 		my $dbh = DBD::Pg::dr::connect($drh, $connstring) or return undef;
 		$dbh->{AutoCommit}=1;
-		my $SQL = "SELECT pg_catalog.quote_ident(datname) FROM pg_catalog.pg_database ORDER BY 1";
+		my $SQL = 'SELECT pg_catalog.quote_ident(datname) FROM pg_catalog.pg_database ORDER BY 1';
 		my $sth = $dbh->prepare($SQL);
 		$sth->execute() or die $DBI::errstr;
 		my @sources = map { "dbi:Pg:dbname=$_->[0]" } @{$sth->fetchall_arrayref()};
@@ -196,8 +196,8 @@ use 5.006001;
 			$name = $1;
 		}
 
- 		$user = defined($user) ? $user : defined $ENV{DBI_USER} ? $ENV{DBI_USER} : "";
-		$pass = defined($pass) ? $pass : defined $ENV{DBI_PASS} ? $ENV{DBI_PASS} : "";
+ 		$user = defined($user) ? $user : defined $ENV{DBI_USER} ? $ENV{DBI_USER} : '';
+		$pass = defined($pass) ? $pass : defined $ENV{DBI_PASS} ? $ENV{DBI_PASS} : '';
 
 		my ($dbh) = DBI::_new_dbh($drh, {
 			'Name'         => $dbname,
@@ -270,7 +270,7 @@ use 5.006001;
 				$attr = {sequence => $attr};
 			}
 			elsif (ref $attr ne 'HASH') {
-				$dbh->set_err(1, "last_insert_id must be passed a hashref as the final argument");
+				$dbh->set_err(1, 'last_insert_id must be passed a hashref as the final argument');
 				return undef;
 			}
 			## Named sequence overrides any table or schema settings
@@ -288,7 +288,7 @@ use 5.006001;
 		elsif (! defined $sequence) {
 			## At this point, we must have a valid table name
 			if (! length $table) {
-				$dbh->set_err(1, "last_insert_id needs at least a sequence or table name");
+				$dbh->set_err(1, 'last_insert_id needs at least a sequence or table name');
 				return undef;
 			}
 			my @args = ($table);
@@ -301,7 +301,7 @@ use 5.006001;
 			}
 			$SQL = "SELECT c.oid FROM pg_catalog.pg_class c $schemajoin\n WHERE relname = ?$schemawhere";
 			if (! length $schema) {
-				$SQL .= " AND pg_catalog.pg_table_is_visible(c.oid)";
+				$SQL .= ' AND pg_catalog.pg_table_is_visible(c.oid)';
 			}
 			$sth = $dbh->prepare_cached($SQL);
 			$count = $sth->execute(@args);
@@ -321,7 +321,7 @@ use 5.006001;
 				"WHERE i.indrelid = $oid AND d.adrelid=a.attrelid AND d.adnum=a.attnum\n".
 				"  AND a.attrelid = $oid AND i.indisunique IS TRUE\n".
 				"  AND a.atthasdef IS TRUE AND i.indkey[0]=a.attnum\n".
-				" AND d.adsrc ~ '^nextval'";
+				q{ AND d.adsrc ~ '^nextval'};
 			$sth = $dbh->prepare($SQL);
 			$count = $sth->execute();
 			if (!defined $count or $count eq '0E0') {
@@ -354,7 +354,7 @@ use 5.006001;
 			$dbh->{private_dbdpg}{$cachename} = $sequence;
 		}
 
-		$sth = $dbh->prepare_cached("SELECT currval(?)");
+		$sth = $dbh->prepare_cached('SELECT currval(?)');
 		$count = $sth->execute($sequence);
 		return undef if ! defined $count;
 		return $sth->fetchall_arrayref()->[0][0];
@@ -395,23 +395,23 @@ use 5.006001;
 		my @search;
 		## If the schema or table has an underscore or a %, use a LIKE comparison
 		if (defined $schema and length $schema) {
-			push @search, "n.nspname " . ($schema =~ /[_%]/ ? "LIKE " : "= ") .
+			push @search, 'n.nspname ' . ($schema =~ /[_%]/ ? 'LIKE ' : '= ') .
 				$dbh->quote($schema);
 		}
 		if (defined $table and length $table) {
-			push @search, "c.relname " . ($table =~ /[_%]/ ? "LIKE " : "= ") .
+			push @search, 'c.relname ' . ($table =~ /[_%]/ ? 'LIKE ' : '= ') .
 				$dbh->quote($table);
 		}
 		if (defined $column and length $column) {
-			push @search, "a.attname " . ($column =~ /[_%]/ ? "LIKE " : "= ") .
+			push @search, 'a.attname ' . ($column =~ /[_%]/ ? 'LIKE ' : '= ') .
 				$dbh->quote($column);
 		}
 
-		my $whereclause = join "\n\t\t\t\tAND ", "", @search;
+		my $whereclause = join "\n\t\t\t\tAND ", '', @search;
 
-		my $schemajoin = "JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)";
+		my $schemajoin = 'JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)';
 
-		my $remarks = "pg_catalog.col_description(a.attrelid, a.attnum)";
+		my $remarks = 'pg_catalog.col_description(a.attrelid, a.attnum)';
 
 		my $col_info_sql = qq!
 			SELECT
@@ -502,8 +502,8 @@ use 5.006001;
 			$row->[$col_map{DATA_TYPE}] = DBD::Pg::db::pg_type_info($dbh,$row->[$col_map{DATA_TYPE}]);
 
 			# Add pg_constraint
-			my $SQL = "SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND ".
-				"conrelid = $aid AND conkey = '{$attnum}'";
+			my $SQL = q{SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND }.
+				qq{conrelid = $aid AND conkey = '{$attnum}'};
 			my $info = $dbh->selectall_arrayref($SQL);
 			if (@$info) {
 				$row->[19] = $info->[0][0];
@@ -513,8 +513,7 @@ use 5.006001;
 			}
 
 			if ( $typtype eq 'e' ) {
-				my $SQL = "SELECT enumlabel FROM pg_catalog.pg_enum "
-					."WHERE enumtypid = $typoid ORDER BY oid";
+				my $SQL = 'SELECT enumlabel FROM pg_catalog.pg_enum WHERE enumtypid = $typoid ORDER BY oid';
 				$row->[23] = $dbh->selectcol_arrayref($SQL);
 			}
 			else {
@@ -535,7 +534,7 @@ use 5.006001;
 
 	sub _prepare_from_data {
 		my ($statement, $data, $names, %attr) = @_;
-		my $sponge = DBI->connect("dbi:Sponge:","","",{ RaiseError => 1 });
+		my $sponge = DBI->connect('dbi:Sponge:', '', '', { RaiseError => 1 });
 		my $sth = $sponge->prepare($statement, { rows=>$data, NAME=>$names, %attr });
 		return $sth;
 	}
@@ -683,7 +682,7 @@ use 5.006001;
 		## Catalog is ignored, but table is mandatory
 		return undef unless defined $table and length $table;
 
-		my $whereclause = "AND c.relname = " . $dbh->quote($table);
+		my $whereclause = 'AND c.relname = ' . $dbh->quote($table);
 
 		if (defined $schema and length $schema) {
 			$whereclause .= "\n\t\t\tAND n.nspname = " . $dbh->quote($schema);
@@ -835,9 +834,9 @@ use 5.006001;
 		for ([$ptable, $pschema, 'P'], [$ftable, $fschema, 'F']) {
 			if (length $_->[0]) {
 				my $SQL = "SELECT c.oid AS schema FROM pg_catalog.pg_class c, pg_catalog.pg_namespace n\n".
-					"WHERE c.relnamespace = n.oid AND c.relname = " . $dbh->quote($_->[0]);
+					'WHERE c.relnamespace = n.oid AND c.relname = ' . $dbh->quote($_->[0]);
 				if (length $_->[1]) {
-					$SQL .= " AND n.nspname = " . $dbh->quote($_->[1]);
+					$SQL .= ' AND n.nspname = ' . $dbh->quote($_->[1]);
 				}
 				my $info = $dbh->selectall_arrayref($SQL);
 				return undef if ! @$info;
@@ -847,14 +846,14 @@ use 5.006001;
 
 		## We now need information about each constraint we care about.
 		## Foreign table: only 'f' / Primary table: only 'p' or 'u'
-		my $WHERE = $odbc ? "((contype = 'p'" : "((contype IN ('p','u')";
+		my $WHERE = $odbc ? q{((contype = 'p'} : q{((contype IN ('p','u')};
 		if (length $ptable) {
 			$WHERE .= " AND conrelid=$oid{'P'}::oid";
 		}
 		else {
 			$WHERE .= " AND conrelid IN (SELECT DISTINCT confrelid FROM pg_catalog.pg_constraint WHERE conrelid=$oid{'F'}::oid)";
 			if (length $pschema) {
-				$WHERE .= " AND n2.nspname = " . $dbh->quote($pschema);
+				$WHERE .= ' AND n2.nspname = ' . $dbh->quote($pschema);
 			}
 		}
 
@@ -868,10 +867,10 @@ use 5.006001;
 		else {
 			$WHERE .= " AND confrelid = $oid{'P'}::oid";
 			if (length $fschema) {
-				$WHERE .= " AND n2.nspname = " . $dbh->quote($fschema);
+				$WHERE .= ' AND n2.nspname = ' . $dbh->quote($fschema);
 			}
 		}
-		$WHERE .= "))";
+		$WHERE .= '))';
 
 		## Grab everything except specific column names:
 		my $fk_sql = qq{
@@ -973,7 +972,7 @@ use 5.006001;
 			}
 			else {
 				## Mark this as an index so we can fudge things later on
-				$multi = "index";
+				$multi = 'index';
 				## Grab the first one found, modify later on as needed
 				$u = ((values %{$ukey{$t->{'confrelid'}}})[0]||[])->[0];
 				## Bail in case there was no match
@@ -1110,19 +1109,19 @@ use 5.006001;
 
 			## If the schema or table has an underscore or a %, use a LIKE comparison
 			if (defined $schema and length $schema) {
-					push @search, "n.nspname " . ($schema =~ /[_%]/ ? "LIKE " : "= ") . $dbh->quote($schema);
+					push @search, 'n.nspname ' . ($schema =~ /[_%]/ ? 'LIKE ' : '= ') . $dbh->quote($schema);
 			}
 			if (defined $table and length $table) {
-					push @search, "c.relname " . ($table =~ /[_%]/ ? "LIKE " : "= ") . $dbh->quote($table);
+					push @search, 'c.relname ' . ($table =~ /[_%]/ ? 'LIKE ' : '= ') . $dbh->quote($table);
 			}
 			## All we can see is "table" or "view". Default is both
-			my $typesearch = "IN ('r','v')";
+			my $typesearch = q{IN ('r','v')};
 			if (defined $type and length $type) {
 				if ($type =~ /\btable\b/i and $type !~ /\bview\b/i) {
-					$typesearch = "= 'r'";
+					$typesearch = q{= 'r'};
 				}
 				elsif ($type =~ /\bview\b/i and $type !~ /\btable\b/i) {
-					$typesearch = "= 'v'";
+					$typesearch = q{= 'v'};
 				}
 			}
 			push @search, "c.relkind $typesearch";
@@ -1163,7 +1162,7 @@ use 5.006001;
 			my $attr = $args[4];
 			my $sth = $dbh->table_info(@args) or return;
 			my $tables = $sth->fetchall_arrayref() or return;
-			my @tables = map { (! (ref $attr eq "HASH" and $attr->{pg_noprefix})) ?
+			my @tables = map { (! (ref $attr eq 'HASH' and $attr->{pg_noprefix})) ?
 						"$_->[1].$_->[2]" : $_->[2] } @$tables;
 			return @tables;
 	}
@@ -1270,49 +1269,49 @@ use 5.006001;
 			 $names,
 # name     sql_type          size   pfx/sfx crt   n/c/s    +-/P/I   local       min max  sub rdx itvl
 
-['unknown',  SQL_UNKNOWN_TYPE,  0,    $UN,$UN, $UN,  1,0,0, $UN,0,0, 'UNKNOWN',   $UN,$UN,
+['unknown',  SQL_UNKNOWN_TYPE,  0,    $UN,$UN,   $UN,  1,0,0, $UN,0,0, 'UNKNOWN',   $UN,$UN,
              SQL_UNKNOWN_TYPE,                                                             $UN, $UN, $UN ],
-['bytea',    SQL_VARBINARY,     $GIG, "'","'", $UN,  1,0,3, $UN,0,0, 'BYTEA',     $UN,$UN,
+['bytea',    SQL_VARBINARY,     $GIG, q{'},q{'}, $UN,  1,0,3, $UN,0,0, 'BYTEA',     $UN,$UN,
              SQL_VARBINARY,                                                                $UN, $UN, $UN ],
-['bpchar',   SQL_CHAR,          $GIG, "'","'", $LEN, 1,1,3, $UN,0,0, 'CHARACTER', $UN,$UN,
+['bpchar',   SQL_CHAR,          $GIG, q{'},q{'}, $LEN, 1,1,3, $UN,0,0, 'CHARACTER', $UN,$UN,
              SQL_CHAR,                                                                     $UN, $UN, $UN ],
-['numeric',  SQL_DECIMAL,       1000, $UN,$UN, $PS,  1,0,2, 0,0,0, '  FLOAT',     0,1000,
+['numeric',  SQL_DECIMAL,       1000, $UN,$UN,   $PS,  1,0,2, 0,0,0, '  FLOAT',     0,1000,
              SQL_DECIMAL,                                                                  $UN, $UN, $UN ],
-['numeric',  SQL_NUMERIC,       1000, $UN,$UN, $PS,  1,0,2, 0,0,0,   'FLOAT',     0,1000,
+['numeric',  SQL_NUMERIC,       1000, $UN,$UN,   $PS,  1,0,2, 0,0,0,   'FLOAT',     0,1000,
              SQL_NUMERIC,                                                                  $UN, $UN, $UN ],
-['int4',     SQL_INTEGER,       10,   $UN,$UN, $UN,  1,0,2, 0,0,0,   'INTEGER',   0,0,
+['int4',     SQL_INTEGER,       10,   $UN,$UN,   $UN,  1,0,2, 0,0,0,   'INTEGER',   0,0,
              SQL_INTEGER,                                                                  $UN, $UN, $UN ],
-['int2',     SQL_SMALLINT,      5,    $UN,$UN, $UN,  1,0,2, 0,0,0,   'SMALLINT',  0,0,
+['int2',     SQL_SMALLINT,      5,    $UN,$UN,   $UN,  1,0,2, 0,0,0,   'SMALLINT',  0,0,
              SQL_SMALLINT,                                                                 $UN, $UN, $UN ],
-['float4',   SQL_FLOAT,         6,    $UN,$UN, $PS,  1,0,2, 0,0,0,   'FLOAT',     0,6,
+['float4',   SQL_FLOAT,         6,    $UN,$UN,   $PS,  1,0,2, 0,0,0,   'FLOAT',     0,6,
              SQL_FLOAT,                                                                    $UN, $UN, $UN ],
-['float8',   SQL_REAL,          15,   $UN,$UN, $PS,  1,0,2, 0,0,0,   'REAL',      0,15,
+['float8',   SQL_REAL,          15,   $UN,$UN,   $PS,  1,0,2, 0,0,0,   'REAL',      0,15,
              SQL_REAL,                                                                     $UN, $UN, $UN ],
-['int8',     SQL_DOUBLE,        20,   $UN,$UN, $UN,  1,0,2, 0,0,0,   'LONGINT',   0,0,
+['int8',     SQL_DOUBLE,        20,   $UN,$UN,   $UN,  1,0,2, 0,0,0,   'LONGINT',   0,0,
              SQL_DOUBLE,                                                                   $UN, $UN, $UN ],
-['date',     SQL_DATE,          10,   "'","'", $UN,  1,0,2, $UN,0,0, 'DATE',      0,0,
+['date',     SQL_DATE,          10,   q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'DATE',      0,0,
              SQL_DATE,                                                                     $UN, $UN, $UN ],
-['tinterval',SQL_TIME,          18,   "'","'", $UN,  1,0,2, $UN,0,0, 'TINTERVAL', 0,6,
+['tinterval',SQL_TIME,          18,   q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'TINTERVAL', 0,6,
              SQL_TIME,                                                                     $UN, $UN, $UN ],
-['timestamp',SQL_TIMESTAMP,     29,   "'","'", $UN,  1,0,2, $UN,0,0, 'TIMESTAMP', 0,6,
+['timestamp',SQL_TIMESTAMP,     29,   q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'TIMESTAMP', 0,6,
              SQL_TIMESTAMP,                                                                $UN, $UN, $UN ],
-['text',     SQL_VARCHAR,       $GIG, "'","'", $LEN, 1,1,3, $UN,0,0, 'TEXT',      $UN,$UN,
+['text',     SQL_VARCHAR,       $GIG, q{'},q{'}, $LEN, 1,1,3, $UN,0,0, 'TEXT',      $UN,$UN,
              SQL_VARCHAR,                                                                  $UN, $UN, $UN ],
-['bool',     SQL_BOOLEAN,       1,    "'","'", $UN,  1,0,2, $UN,0,0, 'BOOLEAN',   $UN,$UN,
+['bool',     SQL_BOOLEAN,       1,    q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'BOOLEAN',   $UN,$UN,
              SQL_BOOLEAN,                                                                  $UN, $UN, $UN ],
-['array',    SQL_ARRAY,         1,    "'","'", $UN,  1,0,2, $UN,0,0, 'ARRAY',     $UN,$UN,
+['array',    SQL_ARRAY,         1,    q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'ARRAY',     $UN,$UN,
              SQL_ARRAY,                                                                    $UN, $UN, $UN ],
-['date',     SQL_TYPE_DATE,     10,   "'","'", $UN,  1,0,2, $UN,0,0, 'DATE',      0,0,
+['date',     SQL_TYPE_DATE,     10,   q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'DATE',      0,0,
              SQL_TYPE_DATE,                                                                $UN, $UN, $UN ],
-['time',     SQL_TYPE_TIME,     18,   "'","'", $UN,  1,0,2, $UN,0,0, 'TIME',      0,6,
+['time',     SQL_TYPE_TIME,     18,   q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'TIME',      0,6,
              SQL_TYPE_TIME,                                                                $UN, $UN, $UN ],
-['timestamp',SQL_TYPE_TIMESTAMP,29,   "'","'", $UN,  1,0,2, $UN,0,0, 'TIMESTAMP', 0,6,
+['timestamp',SQL_TYPE_TIMESTAMP,29,   q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'TIMESTAMP', 0,6,
              SQL_TYPE_TIMESTAMP,                                                           $UN, $UN, $UN ],
 ['timetz',   SQL_TYPE_TIME_WITH_TIMEZONE,
-                                29,   "'","'", $UN,  1,0,2, $UN,0,0, 'TIMETZ',    0,6,
+                                29,   q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'TIMETZ',    0,6,
              SQL_TYPE_TIME_WITH_TIMEZONE,                                                  $UN, $UN, $UN ],
 ['timestamptz',SQL_TYPE_TIMESTAMP_WITH_TIMEZONE,
-                                29,   "'","'", $UN,  1,0,2, $UN,0,0, 'TIMESTAMPTZ',0,6,
+                                29,   q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'TIMESTAMPTZ',0,6,
              SQL_TYPE_TIMESTAMP_WITH_TIMEZONE,                                             $UN, $UN, $UN ],
 		#
 		# intentionally omitted: char, all geometric types, internal types
@@ -1323,7 +1322,7 @@ use 5.006001;
 
 	# Characters that need to be escaped by quote().
 	my %esc = (
-		"'"  => '\\047', # '\\' . sprintf("%03o", ord("'")), # ISO SQL 2
+		q{'}  => '\\047', # '\\' . sprintf("%03o", ord("'")), # ISO SQL 2
 		'\\' => '\\134', # '\\' . sprintf("%03o", ord("\\")),
 	);
 
@@ -1342,182 +1341,182 @@ use 5.006001;
 
 ## Driver information:
 
-     116 => ["SQL_ACTIVE_ENVIRONMENTS",             0                         ],
-   10021 => ["SQL_ASYNC_MODE",                      0                         ],
-     120 => ["SQL_BATCH_ROW_COUNT",                 2                         ],
-     121 => ["SQL_BATCH_SUPPORT",                   3                         ], ## ??
-       2 => ["SQL_DATA_SOURCE_NAME",                "dbi:Pg:$dbh->{Name}"     ],
-       3 => ["SQL_DRIVER_HDBC",                     0                         ], ## ??
-     135 => ["SQL_DRIVER_HDESC",                    0                         ],
-       4 => ["SQL_DRIVER_HENV",                     0                         ],
-      76 => ["SQL_DRIVER_HLIB",                     0                         ],
-       5 => ["SQL_DRIVER_HSTMT",                    0                         ],
-       6 => ["SQL_DRIVER_NAME",                     'DBD/Pg.pm'               ],
-      77 => ["SQL_DRIVER_ODBC_VERSION",             '03.00'                   ], ## ??
-       7 => ["SQL_DRIVER_VER",                      'DBDVERSION'              ],
-     144 => ["SQL_DYNAMIC_CURSOR_ATTRIBUTES1",      0                         ], ## ?? 519
-     145 => ["SQL_DYNAMIC_CURSOR_ATTRIBUTES2",      0                         ], ## ?? 5209
-      84 => ["SQL_FILE_USAGE",                      0                         ],
-     146 => ["SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1", 519                       ], ## ??
-     147 => ["SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2", 5209                      ], ## ??
-      81 => ["SQL_GETDATA_EXTENSIONS",              15                        ],
-     149 => ["SQL_INFO_SCHEMA_VIEWS",               3932149                   ], # not: assert, charset, collat, trans
-     150 => ["SQL_KEYSET_CURSOR_ATTRIBUTES1",       0                         ],
-     151 => ["SQL_KEYSET_CURSOR_ATTRIBUTES2",       0                         ],
-   10022 => ["SQL_MAX_ASYNC_CONCURRENT_STATEMENTS", 0                         ],
-       0 => ["SQL_MAX_DRIVER_CONNECTIONS",          'MAXCONNECTIONS'          ],
-     152 => ["SQL_ODBC_INTERFACE_CONFORMANCE",      1                         ], ## ??
-      10 => ["SQL_ODBC_VER",                        '03.00.0000'              ], ## ??
-     153 => ["SQL_PARAM_ARRAY_ROW_COUNTS",          2                         ],
-     154 => ["SQL_PARAM_ARRAY_SELECTS",             3                         ],
-      11 => ["SQL_ROW_UPDATES",                     'N'                       ],
-      14 => ["SQL_SEARCH_PATTERN_ESCAPE",           '\\'                      ],
-      13 => ["SQL_SERVER_NAME",                     'CURRENTDB'               ],
-     166 => ["SQL_STANDARD_CLI_CONFORMANCE",        2                         ], ## ??
-     167 => ["SQL_STATIC_CURSOR_ATTRIBUTES1",       519                       ], ## ??
-     168 => ["SQL_STATIC_CURSOR_ATTRIBUTES2",       5209                      ], ## ??
+     116 => ['SQL_ACTIVE_ENVIRONMENTS',             0                         ],
+   10021 => ['SQL_ASYNC_MODE',                      0                         ],
+     120 => ['SQL_BATCH_ROW_COUNT',                 2                         ],
+     121 => ['SQL_BATCH_SUPPORT',                   3                         ], ## ??
+       2 => ['SQL_DATA_SOURCE_NAME',                "dbi:Pg:$dbh->{Name}"     ],
+       3 => ['SQL_DRIVER_HDBC',                     0                         ], ## ??
+     135 => ['SQL_DRIVER_HDESC',                    0                         ],
+       4 => ['SQL_DRIVER_HENV',                     0                         ],
+      76 => ['SQL_DRIVER_HLIB',                     0                         ],
+       5 => ['SQL_DRIVER_HSTMT',                    0                         ],
+       6 => ['SQL_DRIVER_NAME',                     'DBD/Pg.pm'               ],
+      77 => ['SQL_DRIVER_ODBC_VERSION',             '03.00'                   ], ## ??
+       7 => ['SQL_DRIVER_VER',                      'DBDVERSION'              ],
+     144 => ['SQL_DYNAMIC_CURSOR_ATTRIBUTES1',      0                         ], ## ?? 519
+     145 => ['SQL_DYNAMIC_CURSOR_ATTRIBUTES2',      0                         ], ## ?? 5209
+      84 => ['SQL_FILE_USAGE',                      0                         ],
+     146 => ['SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1', 519                       ], ## ??
+     147 => ['SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2', 5209                      ], ## ??
+      81 => ['SQL_GETDATA_EXTENSIONS',              15                        ],
+     149 => ['SQL_INFO_SCHEMA_VIEWS',               3932149                   ], # not: assert, charset, collat, trans
+     150 => ['SQL_KEYSET_CURSOR_ATTRIBUTES1',       0                         ],
+     151 => ['SQL_KEYSET_CURSOR_ATTRIBUTES2',       0                         ],
+   10022 => ['SQL_MAX_ASYNC_CONCURRENT_STATEMENTS', 0                         ],
+       0 => ['SQL_MAX_DRIVER_CONNECTIONS',          'MAXCONNECTIONS'          ],
+     152 => ['SQL_ODBC_INTERFACE_CONFORMANCE',      1                         ], ## ??
+      10 => ['SQL_ODBC_VER',                        '03.00.0000'              ], ## ??
+     153 => ['SQL_PARAM_ARRAY_ROW_COUNTS',          2                         ],
+     154 => ['SQL_PARAM_ARRAY_SELECTS',             3                         ],
+      11 => ['SQL_ROW_UPDATES',                     'N'                       ],
+      14 => ['SQL_SEARCH_PATTERN_ESCAPE',           '\\'                      ],
+      13 => ['SQL_SERVER_NAME',                     'CURRENTDB'               ],
+     166 => ['SQL_STANDARD_CLI_CONFORMANCE',        2                         ], ## ??
+     167 => ['SQL_STATIC_CURSOR_ATTRIBUTES1',       519                       ], ## ??
+     168 => ['SQL_STATIC_CURSOR_ATTRIBUTES2',       5209                      ], ## ??
 
 ## DBMS Information
 
-      16 => ["SQL_DATABASE_NAME",                   'CURRENTDB'               ],
-      17 => ["SQL_DBMS_NAME",                       'PostgreSQL'              ],
-      18 => ["SQL_DBMS_VERSION",                    'ODBCVERSION'             ],
+      16 => ['SQL_DATABASE_NAME',                   'CURRENTDB'               ],
+      17 => ['SQL_DBMS_NAME',                       'PostgreSQL'              ],
+      18 => ['SQL_DBMS_VERSION',                    'ODBCVERSION'             ],
 
 ## Data source information
 
-      20 => ["SQL_ACCESSIBLE_PROCEDURES",           "Y"                       ],
-      19 => ["SQL_ACCESSIBLE_TABLES",               "Y"                       ],
-      82 => ["SQL_BOOKMARK_PERSISTENCE",            0                         ],
-      42 => ["SQL_CATALOG_TERM",                    ''                        ],
-   10004 => ["SQL_COLLATION_SEQ",                   'ENCODING'                ], ## ??
-      22 => ["SQL_CONCAT_NULL_BEHAVIOR",            0                         ],
-      23 => ["SQL_CURSOR_COMMIT_BEHAVIOR",          1                         ],
-      24 => ["SQL_CURSOR_ROLLBACK_BEHAVIOR",        1                         ],
-   10001 => ["SQL_CURSOR_SENSITIVITY",              1                         ],
-      25 => ["SQL_DATA_SOURCE_READ_ONLY",           "N"                       ],
-      26 => ["SQL_DEFAULT_TXN_ISOLATION",           8                         ],
-   10002 => ["SQL_DESCRIBE_PARAMETER",              "Y"                       ],
-      36 => ["SQL_MULT_RESULT_SETS",                "Y"                       ],
-      37 => ["SQL_MULTIPLE_ACTIVE_TXN",             "Y"                       ],
-     111 => ["SQL_NEED_LONG_DATA_LEN",              "N"                       ],
-      85 => ["SQL_NULL_COLLATION",                  0                         ],
-      40 => ["SQL_PROCEDURE_TERM",                  "function"                ], ## for now
-      39 => ["SQL_SCHEMA_TERM",                     "schema"                  ],
-      44 => ["SQL_SCROLL_OPTIONS",                  8                         ], ## ??
-      45 => ["SQL_TABLE_TERM",                      "table"                   ],
-      46 => ["SQL_TXN_CAPABLE",                     2                         ],
-      72 => ["SQL_TXN_ISOLATION_OPTION",            15                        ],
-      47 => ["SQL_USER_NAME",                       $dbh->{CURRENT_USER}      ],
+      20 => ['SQL_ACCESSIBLE_PROCEDURES',           'Y'                       ],
+      19 => ['SQL_ACCESSIBLE_TABLES',               'Y'                       ],
+      82 => ['SQL_BOOKMARK_PERSISTENCE',            0                         ],
+      42 => ['SQL_CATALOG_TERM',                    ''                        ],
+   10004 => ['SQL_COLLATION_SEQ',                   'ENCODING'                ], ## ??
+      22 => ['SQL_CONCAT_NULL_BEHAVIOR',            0                         ],
+      23 => ['SQL_CURSOR_COMMIT_BEHAVIOR',          1                         ],
+      24 => ['SQL_CURSOR_ROLLBACK_BEHAVIOR',        1                         ],
+   10001 => ['SQL_CURSOR_SENSITIVITY',              1                         ],
+      25 => ['SQL_DATA_SOURCE_READ_ONLY',           'N'                       ],
+      26 => ['SQL_DEFAULT_TXN_ISOLATION',           8                         ],
+   10002 => ['SQL_DESCRIBE_PARAMETER',              'Y'                       ],
+      36 => ['SQL_MULT_RESULT_SETS',                'Y'                       ],
+      37 => ['SQL_MULTIPLE_ACTIVE_TXN',             'Y'                       ],
+     111 => ['SQL_NEED_LONG_DATA_LEN',              'N'                       ],
+      85 => ['SQL_NULL_COLLATION',                  0                         ],
+      40 => ['SQL_PROCEDURE_TERM',                  'function'                ], ## for now
+      39 => ['SQL_SCHEMA_TERM',                     'schema'                  ],
+      44 => ['SQL_SCROLL_OPTIONS',                  8                         ], ## ??
+      45 => ['SQL_TABLE_TERM',                      'table'                   ],
+      46 => ['SQL_TXN_CAPABLE',                     2                         ],
+      72 => ['SQL_TXN_ISOLATION_OPTION',            15                        ],
+      47 => ['SQL_USER_NAME',                       $dbh->{CURRENT_USER}      ],
 
 ## Supported SQL
 
-     169  => ["SQL_AGGREGATE_FUNCTIONS",            127                       ],
-     117  => ["SQL_ALTER_DOMAIN",                   31                        ],
-      86  => ["SQL_ALTER_TABLE",                    32639                     ], ## no collate
-     114  => ["SQL_CATALOG_LOCATION",               0                         ],
-   10003  => ["SQL_CATALOG_NAME",                   "N"                       ],
-      41  => ["SQL_CATALOG_NAME_SEPARATOR",         ""                        ],
-      92  => ["SQL_CATALOG_USAGE",                  0                         ],
-      87  => ["SQL_COLUMN_ALIAS",                   "Y"                       ],
-      74  => ["SQL_CORRELATION_NAME",               2                         ],
-     127  => ["SQL_CREATE_ASSERTION",               0                         ],
-     128  => ["SQL_CREATE_CHARACTER_SET",           0                         ],
-     129  => ["SQL_CREATE_COLLATION",               0                         ],
-     130  => ["SQL_CREATE_DOMAIN",                  23                        ],
-     131  => ["SQL_CREATE_SCHEMA",                  3                         ],
-     132  => ["SQL_CREATE_TABLE",                   13845                     ],
-     133  => ["SQL_CREATE_TRANSLATION",             0                         ],
-     134  => ["SQL_CREATE_VIEW",                    9                         ],
-     119  => ["SQL_DATETIME_LITERALS",              65535                     ],
-     170  => ["SQL_DDL_INDEX",                      3                         ],
-     136  => ["SQL_DROP_ASSERTION",                 0                         ],
-     137  => ["SQL_DROP_CHARACTER_SET",             0                         ],
-     138  => ["SQL_DROP_COLLATION",                 0                         ],
-     139  => ["SQL_DROP_DOMAIN",                    7                         ],
-     140  => ["SQL_DROP_SCHEMA",                    7                         ],
-     141  => ["SQL_DROP_TABLE",                     7                         ],
-     142  => ["SQL_DROP_TRANSLATION",               0                         ],
-     143  => ["SQL_DROP_VIEW",                      7                         ],
-      27  => ["SQL_EXPRESSIONS_IN_ORDERBY",         "Y"                       ],
-      88  => ["SQL_GROUP_BY",                       2                         ],
-      28  => ["SQL_IDENTIFIER_CASE",                2                         ], ## kinda
-      29  => ["SQL_IDENTIFIER_QUOTE_CHAR",          '"'                       ],
-     148  => ["SQL_INDEX_KEYWORDS",                 0                         ],
-     172  => ["SQL_INSERT_STATEMENT",               7                         ],
-      73  => ["SQL_INTEGERITY",                     "Y"                       ], ## e.g. ON DELETE CASCADE?
-      89  => ["SQL_KEYWORDS",                       'KEYWORDS'                ],
-     113  => ["SQL_LIKE_ESCAPE_CLAUSE",             "Y"                       ],
-      75  => ["SQL_NON_NULLABLE_COLUMNS",           1                         ],
-     115  => ["SQL_OJ_CAPABILITIES",                127                       ],
-      90  => ["SQL_ORDER_BY_COLUMNS_IN_SELECT",     "N"                       ],
-      38  => ["SQL_OUTER_JOINS",                    "Y"                       ],
-      21  => ["SQL_PROCEDURES",                     "Y"                       ],
-      93  => ["SQL_QUOTED_IDENTIFIER_CASE",         3                         ],
-      91  => ["SQL_SCHEMA_USAGE",                   31                        ],
-      94  => ["SQL_SPECIAL_CHARACTERS",             '$'                       ],
-     118  => ["SQL_SQL_CONFORMANCE",                4                         ], ## ??
-      95  => ["SQL_SUBQUERIES",                     31                        ],
-      96  => ["SQL_UNION",                          3                         ],
+     169  => ['SQL_AGGREGATE_FUNCTIONS',            127                       ],
+     117  => ['SQL_ALTER_DOMAIN',                   31                        ],
+      86  => ['SQL_ALTER_TABLE',                    32639                     ], ## no collate
+     114  => ['SQL_CATALOG_LOCATION',               0                         ],
+   10003  => ['SQL_CATALOG_NAME',                   'N'                       ],
+      41  => ['SQL_CATALOG_NAME_SEPARATOR',         ''                        ],
+      92  => ['SQL_CATALOG_USAGE',                  0                         ],
+      87  => ['SQL_COLUMN_ALIAS',                   'Y'                       ],
+      74  => ['SQL_CORRELATION_NAME',               2                         ],
+     127  => ['SQL_CREATE_ASSERTION',               0                         ],
+     128  => ['SQL_CREATE_CHARACTER_SET',           0                         ],
+     129  => ['SQL_CREATE_COLLATION',               0                         ],
+     130  => ['SQL_CREATE_DOMAIN',                  23                        ],
+     131  => ['SQL_CREATE_SCHEMA',                  3                         ],
+     132  => ['SQL_CREATE_TABLE',                   13845                     ],
+     133  => ['SQL_CREATE_TRANSLATION',             0                         ],
+     134  => ['SQL_CREATE_VIEW',                    9                         ],
+     119  => ['SQL_DATETIME_LITERALS',              65535                     ],
+     170  => ['SQL_DDL_INDEX',                      3                         ],
+     136  => ['SQL_DROP_ASSERTION',                 0                         ],
+     137  => ['SQL_DROP_CHARACTER_SET',             0                         ],
+     138  => ['SQL_DROP_COLLATION',                 0                         ],
+     139  => ['SQL_DROP_DOMAIN',                    7                         ],
+     140  => ['SQL_DROP_SCHEMA',                    7                         ],
+     141  => ['SQL_DROP_TABLE',                     7                         ],
+     142  => ['SQL_DROP_TRANSLATION',               0                         ],
+     143  => ['SQL_DROP_VIEW',                      7                         ],
+      27  => ['SQL_EXPRESSIONS_IN_ORDERBY',         'Y'                       ],
+      88  => ['SQL_GROUP_BY',                       2                         ],
+      28  => ['SQL_IDENTIFIER_CASE',                2                         ], ## kinda
+      29  => ['SQL_IDENTIFIER_QUOTE_CHAR',          q{'}                      ],
+     148  => ['SQL_INDEX_KEYWORDS',                 0                         ],
+     172  => ['SQL_INSERT_STATEMENT',               7                         ],
+      73  => ['SQL_INTEGERITY',                     'Y'                       ], ## e.g. ON DELETE CASCADE?
+      89  => ['SQL_KEYWORDS',                       'KEYWORDS'                ],
+     113  => ['SQL_LIKE_ESCAPE_CLAUSE',             'Y'                       ],
+      75  => ['SQL_NON_NULLABLE_COLUMNS',           1                         ],
+     115  => ['SQL_OJ_CAPABILITIES',                127                       ],
+      90  => ['SQL_ORDER_BY_COLUMNS_IN_SELECT',     'N'                       ],
+      38  => ['SQL_OUTER_JOINS',                    'Y'                       ],
+      21  => ['SQL_PROCEDURES',                     'Y'                       ],
+      93  => ['SQL_QUOTED_IDENTIFIER_CASE',         3                         ],
+      91  => ['SQL_SCHEMA_USAGE',                   31                        ],
+      94  => ['SQL_SPECIAL_CHARACTERS',             '$'                       ],
+     118  => ['SQL_SQL_CONFORMANCE',                4                         ], ## ??
+      95  => ['SQL_SUBQUERIES',                     31                        ],
+      96  => ['SQL_UNION',                          3                         ],
 
 ## SQL limits
 
-     112  => ["SQL_MAX_BINARY_LITERAL_LEN",         0                         ],
-      34  => ["SQL_MAX_CATALOG_NAME_LEN",           0                         ],
-     108  => ["SQL_MAX_CHAR_LITERAL_LEN",           0                         ],
-      30  => ["SQL_MAX_COLUMN_NAME_LEN",            'NAMEDATALEN'             ],
-      97  => ["SQL_MAX_COLUMNS_IN_GROUP_BY",        0                         ],
-      98  => ["SQL_MAX_COLUMNS_IN_INDEX",           0                         ],
-      99  => ["SQL_MAX_COLUMNS_IN_ORDER_BY",        0                         ],
-     100  => ["SQL_MAX_COLUMNS_IN_SELECT",          0                         ],
-     101  => ["SQL_MAX_COLUMNS_IN_TABLE",           1600                      ], ## depends on column types
-      31  => ["SQL_MAX_CURSOR_NAME_LEN",            'NAMEDATALEN'             ],
-   10005  => ["SQL_MAX_IDENTIFIER_LEN",             'NAMEDATALEN'             ],
-     102  => ["SQL_MAX_INDEX_SIZE",                 0                         ],
-     102  => ["SQL_MAX_PROCEDURE_NAME_LEN",         'NAMEDATALEN'             ],
-     104  => ["SQL_MAX_ROW_SIZE",                   0                         ], ## actually 1.6 TB, but too big to represent here
-     103  => ["SQL_MAX_ROW_SIZE_INCLUDES_LONG",     "Y"                       ],
-      32  => ["SQL_MAX_SCHEMA_NAME_LEN",            'NAMEDATALEN'             ],
-     105  => ["SQL_MAX_STATEMENT_LEN",              0                         ],
-      35  => ["SQL_MAX_TABLE_NAME_LEN",             'NAMEDATALEN'             ],
-     106  => ["SQL_MAX_TABLES_IN_SELECT",           0                         ],
-     107  => ["SQL_MAX_USER_NAME_LEN",              'NAMEDATALEN'             ],
+     112  => ['SQL_MAX_BINARY_LITERAL_LEN',         0                         ],
+      34  => ['SQL_MAX_CATALOG_NAME_LEN',           0                         ],
+     108  => ['SQL_MAX_CHAR_LITERAL_LEN',           0                         ],
+      30  => ['SQL_MAX_COLUMN_NAME_LEN',            'NAMEDATALEN'             ],
+      97  => ['SQL_MAX_COLUMNS_IN_GROUP_BY',        0                         ],
+      98  => ['SQL_MAX_COLUMNS_IN_INDEX',           0                         ],
+      99  => ['SQL_MAX_COLUMNS_IN_ORDER_BY',        0                         ],
+     100  => ['SQL_MAX_COLUMNS_IN_SELECT',          0                         ],
+     101  => ['SQL_MAX_COLUMNS_IN_TABLE',           1600                      ], ## depends on column types
+      31  => ['SQL_MAX_CURSOR_NAME_LEN',            'NAMEDATALEN'             ],
+   10005  => ['SQL_MAX_IDENTIFIER_LEN',             'NAMEDATALEN'             ],
+     102  => ['SQL_MAX_INDEX_SIZE',                 0                         ],
+     102  => ['SQL_MAX_PROCEDURE_NAME_LEN',         'NAMEDATALEN'             ],
+     104  => ['SQL_MAX_ROW_SIZE',                   0                         ], ## actually 1.6 TB, but too big to represent here
+     103  => ['SQL_MAX_ROW_SIZE_INCLUDES_LONG',     'Y'                       ],
+      32  => ['SQL_MAX_SCHEMA_NAME_LEN',            'NAMEDATALEN'             ],
+     105  => ['SQL_MAX_STATEMENT_LEN',              0                         ],
+      35  => ['SQL_MAX_TABLE_NAME_LEN',             'NAMEDATALEN'             ],
+     106  => ['SQL_MAX_TABLES_IN_SELECT',           0                         ],
+     107  => ['SQL_MAX_USER_NAME_LEN',              'NAMEDATALEN'             ],
 
 ## Scalar function information
 
-      48  => ["SQL_CONVERT_FUNCTIONS",              2                         ], ## ??
-      49  => ["SQL_NUMERIC_FUNCTIONS",              16777215                  ], ## ?? all but some naming clashes: rand(om), trunc(ate), log10=ln, etc.
-      50  => ["SQL_STRING_FUNCTIONS",               16280984                  ], ## ??
-      51  => ["SQL_SYSTEM_FUNCTIONS",               0                         ], ## ??
-     109  => ["SQL_TIMEDATE_ADD_INTERVALS",         0                         ], ## ?? no explicit timestampadd?
-     110  => ["SQL_TIMEDATE_DIFF_INTERVALS",        0                         ], ## ??
-      52  => ["SQL_TIMEDATE_FUNCTIONS",             1966083                   ],
+      48  => ['SQL_CONVERT_FUNCTIONS',              2                         ], ## ??
+      49  => ['SQL_NUMERIC_FUNCTIONS',              16777215                  ], ## ?? all but some naming clashes: rand(om), trunc(ate), log10=ln, etc.
+      50  => ['SQL_STRING_FUNCTIONS',               16280984                  ], ## ??
+      51  => ['SQL_SYSTEM_FUNCTIONS',               0                         ], ## ??
+     109  => ['SQL_TIMEDATE_ADD_INTERVALS',         0                         ], ## ?? no explicit timestampadd?
+     110  => ['SQL_TIMEDATE_DIFF_INTERVALS',        0                         ], ## ??
+      52  => ['SQL_TIMEDATE_FUNCTIONS',             1966083                   ],
 
 ## Conversion information - all but BIT, LONGVARBINARY, and LONGVARCHAR
 
-      53  => ["SQL_CONVERT_BIGINT",                 1830399                    ],
-      54  => ["SQL_CONVERT_BINARY",                 1830399                    ],
-      55  => ["SQL_CONVERT_BIT",                    0                          ],
-      56  => ["SQL_CONVERT_CHAR",                   1830399                    ],
-      57  => ["SQL_CONVERT_DATE",                   1830399                    ],
-      58  => ["SQL_CONVERT_DECIMAL",                1830399                    ],
-      59  => ["SQL_CONVERT_DOUBLE",                 1830399                    ],
-      60  => ["SQL_CONVERT_FLOAT",                  1830399                    ],
-      61  => ["SQL_CONVERT_INTEGER",                1830399                    ],
-     123  => ["SQL_CONVERT_INTERVAL_DAY_TIME",      1830399                    ],
-     124  => ["SQL_CONVERT_INTERVAL_YEAR_MONTH",    1830399                    ],
-      71  => ["SQL_CONVERT_LONGVARBINARY",          0                          ],
-      62  => ["SQL_CONVERT_LONGVARCHAR",            0                          ],
-      63  => ["SQL_CONVERT_NUMERIC",                1830399                    ],
-      64  => ["SQL_CONVERT_REAL",                   1830399                    ],
-      65  => ["SQL_CONVERT_SMALLINT",               1830399                    ],
-      66  => ["SQL_CONVERT_TIME",                   1830399                    ],
-      67  => ["SQL_CONVERT_TIMESTAMP",              1830399                    ],
-      68  => ["SQL_CONVERT_TINYINT",                1830399                    ],
-      69  => ["SQL_CONVERT_VARBINARY",              0                          ],
-      70  => ["SQL_CONVERT_VARCHAR",                1830399                    ],
-     122  => ["SQL_CONVERT_WCHAR",                  0                          ],
-     125  => ["SQL_CONVERT_WLONGVARCHAR",           0                          ],
-     126  => ["SQL_CONVERT_WVARCHAR",               0                          ],
+      53  => ['SQL_CONVERT_BIGINT',                 1830399                    ],
+      54  => ['SQL_CONVERT_BINARY',                 1830399                    ],
+      55  => ['SQL_CONVERT_BIT',                    0                          ],
+      56  => ['SQL_CONVERT_CHAR',                   1830399                    ],
+      57  => ['SQL_CONVERT_DATE',                   1830399                    ],
+      58  => ['SQL_CONVERT_DECIMAL',                1830399                    ],
+      59  => ['SQL_CONVERT_DOUBLE',                 1830399                    ],
+      60  => ['SQL_CONVERT_FLOAT',                  1830399                    ],
+      61  => ['SQL_CONVERT_INTEGER',                1830399                    ],
+     123  => ['SQL_CONVERT_INTERVAL_DAY_TIME',      1830399                    ],
+     124  => ['SQL_CONVERT_INTERVAL_YEAR_MONTH',    1830399                    ],
+      71  => ['SQL_CONVERT_LONGVARBINARY',          0                          ],
+      62  => ['SQL_CONVERT_LONGVARCHAR',            0                          ],
+      63  => ['SQL_CONVERT_NUMERIC',                1830399                    ],
+      64  => ['SQL_CONVERT_REAL',                   1830399                    ],
+      65  => ['SQL_CONVERT_SMALLINT',               1830399                    ],
+      66  => ['SQL_CONVERT_TIME',                   1830399                    ],
+      67  => ['SQL_CONVERT_TIMESTAMP',              1830399                    ],
+      68  => ['SQL_CONVERT_TINYINT',                1830399                    ],
+      69  => ['SQL_CONVERT_VARBINARY',              0                          ],
+      70  => ['SQL_CONVERT_VARCHAR',                1830399                    ],
+     122  => ['SQL_CONVERT_WCHAR',                  0                          ],
+     125  => ['SQL_CONVERT_WLONGVARCHAR',           0                          ],
+     126  => ['SQL_CONVERT_WVARCHAR',               0                          ],
 
 		); ## end of %type
 
@@ -1533,31 +1532,31 @@ use 5.006001;
 		my $ans = $t{$type};
 
 		if ($ans eq 'NAMEDATALEN') {
-			return $dbh->selectall_arrayref("show max_identifier_length")->[0][0];
+			return $dbh->selectall_arrayref('SHOW max_identifier_length')->[0][0];
 		}
 		elsif ($ans eq 'ODBCVERSION') {
 			my $version = $dbh->{private_dbdpg}{version};
-			return "00.00.0000" unless $version =~ /^(\d\d?)(\d\d)(\d\d)$/o;
-			return sprintf "%02d.%02d.%.2d00", $1,$2,$3;
+			return '00.00.0000' unless $version =~ /^(\d\d?)(\d\d)(\d\d)$/o;
+			return sprintf '%02d.%02d.%.2d00', $1,$2,$3;
 		}
 		elsif ($ans eq 'DBDVERSION') {
 			my $simpleversion = $DBD::Pg::VERSION;
 			$simpleversion =~ s/_/./g;
-			return sprintf "%02d.%02d.%1d%1d%1d%1d", split (/\./, "$simpleversion.0.0.0.0.0.0");
+			return sprintf '%02d.%02d.%1d%1d%1d%1d', split (/\./, "$simpleversion.0.0.0.0.0.0");
 		}
 		 elsif ($ans eq 'MAXCONNECTIONS') {
-			 return $dbh->selectall_arrayref("show max_connections")->[0][0];
+			 return $dbh->selectall_arrayref('SHOW max_connections')->[0][0];
 		 }
 		 elsif ($ans eq 'ENCODING') {
-			 return $dbh->selectall_arrayref("show server_encoding")->[0][0];
+			 return $dbh->selectall_arrayref('SHOW server_encoding')->[0][0];
 		 }
 		 elsif ($ans eq 'KEYWORDS') {
 			## http://www.postgresql.org/docs/current/static/sql-keywords-appendix.html
 			## Basically, we want ones that are 'reserved' for PostgreSQL but not 'reserved' in SQL:2003
-			return join "," => (qw(ANALYSE ANALYZE ASC DEFERRABLE DESC DO FREEZE ILIKE INITIALLY ISNULL LIMIT NOTNULL OFF OFFSET PLACING RETURNING VERBOSE));
+			return join ',' => (qw(ANALYSE ANALYZE ASC DEFERRABLE DESC DO FREEZE ILIKE INITIALLY ISNULL LIMIT NOTNULL OFF OFFSET PLACING RETURNING VERBOSE));
 		 }
 		 elsif ($ans eq 'CURRENTDB') {
-			 return $dbh->selectall_arrayref("select pg_catalog.current_database()")->[0][0];
+			 return $dbh->selectall_arrayref('SELECT pg_catalog.current_database()')->[0][0];
 		 }
 
 		 return $ans;
@@ -1610,7 +1609,7 @@ use 5.006001;
 		return $sth->set_err(1, "Value for parameter $p_id must be a scalar or an arrayref, not a ".ref($value_array))
 			if defined $value_array and ref $value_array and ref $value_array ne 'ARRAY';
 
-		return $sth->set_err(1, "Can't use named placeholders for non-driver supported bind_param_array")
+		return $sth->set_err(1, q{Can't use named placeholders for non-driver supported bind_param_array})
 			unless DBI::looks_like_number($p_id); # because we rely on execute(@ary) here
 
 		# get/create arrayref to hold params
@@ -1623,7 +1622,7 @@ use 5.006001;
 				my $v = $$hash_of_arrays{$_};
 				next unless ref $v eq 'ARRAY';
 				return $sth->set_err
-					(1,"Arrayref for parameter $p_id has ".@$value_array." elements"
+					(1,"Arrayref for parameter $p_id has ".@$value_array.' elements'
 					 ." but parameter $_ has ".@$v)
 					if @$value_array != @$v;
 			}
@@ -1667,7 +1666,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
   use DBI;
 
-  $dbh = DBI->connect("dbi:Pg:dbname=$dbname", "", "", {AutoCommit => 0});
+  $dbh = DBI->connect("dbi:Pg:dbname=$dbname", '', '', {AutoCommit => 0});
   # The AutoCommit attribute should always be explicitly set
 
   # For some advanced uses you may need PostgreSQL type values:
@@ -1701,7 +1700,7 @@ consult the L<DBI|DBI> documentation first!
 To connect to a database with a minimum of parameters, use the following
 syntax:
 
-  $dbh = DBI->connect("dbi:Pg:dbname=$dbname", "", "");
+  $dbh = DBI->connect("dbi:Pg:dbname=$dbname", '', '');
 
 This connects to the database named in the $dbname variable on the default port (usually 5432) 
 without any user authentication.
@@ -1742,11 +1741,11 @@ or the environment variable C<PGSERVICE>. Note that when connecting this way,
 only the minimum parameters should be used. For example, to connect to a 
 service named "zephyr", you could use:
 
-  $dbh = DBI->connect("dbi:Pg:service=zephyr", "", "");
+  $dbh = DBI->connect("dbi:Pg:service=zephyr", '', '');
 
 You could also set C<$ENV{PGSERVICE}> to "zephyr" and connect like this:
 
-  $dbh = DBI->connect("dbi:Pg:", "", "");
+  $dbh = DBI->connect("dbi:Pg:", '', '');
 
 The format of the pg_service.conf file is simply a bracketed service 
 name, followed by one parameter per line in the format name=value.
