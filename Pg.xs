@@ -290,7 +290,7 @@ void do(dbh, statement, attr=Nullsv, ...)
 		if (attr && SvROK(attr) && SvTYPE(SvRV(attr)) == SVt_PVHV) {
 			SV **svp;
 			if ((svp = hv_fetch((HV*)SvRV(attr),"pg_async", 8, 0)) != NULL) {
-			   asyncflag = SvIV(*svp);
+			   asyncflag = (int)SvIV(*svp);
 			}
 		}
 		if (items < 4) { /* No bind arguments */

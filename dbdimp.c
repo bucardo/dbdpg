@@ -152,12 +152,6 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 		strcat(conn_str, "'");
 	}
 
-	/* Close any old connection and free memory, just in case */
-	if (imp_dbh->conn) {
-		TRACE_PQFINISH;
-		PQfinish(imp_dbh->conn);
-	}
-	
 	/* Remove any stored savepoint information */
 	if (imp_dbh->savepoints) {
 		av_undef(imp_dbh->savepoints);
@@ -165,6 +159,12 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	}
 	imp_dbh->savepoints = newAV(); /* freed in dbd_db_destroy */
 
+	/* Close any old connection and free memory, just in case */
+	if (imp_dbh->conn) {
+		TRACE_PQFINISH;
+		PQfinish(imp_dbh->conn);
+	}
+	
 	/* Attempt the connection to the database */
 	if (TLOGIN) TRC(DBILOGFP, "%sLogin connection string: (%s)\n", THEADER, conn_str);
 	TRACE_PQCONNECTDB;
@@ -1194,7 +1194,7 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 	case 8: /* pg_async */
 
 		if (strEQ("pg_async", key)) {
-			imp_sth->async_flag = SvIV(valuesv);
+			imp_sth->async_flag = (int)SvIV(valuesv);
 			retval = 1;
 		}
 		break;
@@ -1366,7 +1366,7 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 	/* Parse and set any attributes passed in */
 	if (attribs) {
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_server_prepare", 17, 0)) != NULL) {
-			int newval = SvIV(*svp);
+			int newval = (int)SvIV(*svp);
 			/* Default to "2" if an invalid value is passed in */
 			imp_sth->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
 		}
@@ -1379,7 +1379,7 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 			imp_sth->dollaronly = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
 		}
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_async", 8, 0)) != NULL) {
-		  imp_sth->async_flag = SvIV(*svp);
+			imp_sth->async_flag = (int)SvIV(*svp);
 		}
 	}
 
@@ -2202,7 +2202,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 	/* Check for a pg_type argument (sql_type already handled) */
 	if (attribs) {
 		if((svp = hv_fetch((HV*)SvRV(attribs),"pg_type", 7, 0)) != NULL)
-			pg_type = SvIV(*svp);
+			pg_type = (int)SvIV(*svp);
 	}
 	
 	if (sql_type && pg_type)
@@ -2354,10 +2354,10 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 			done = 1;
 	}
 
-	inner_arrays = array_depth ? 1+av_len(lastarr) : 0;
+	inner_arrays = array_depth ? 1+(int)av_len(lastarr) : 0;
 
 	/* How many items are in each inner array? */
-	array_items = array_depth ? (1+av_len((AV*)SvRV(*av_fetch(lastarr,0,0)))) : 1+av_len(lastarr);
+	array_items = array_depth ? (1+(int)av_len((AV*)SvRV(*av_fetch(lastarr,0,0)))) : 1+(int)av_len(lastarr);
 
 	for (xy=1; xy < array_depth; xy++) {
 		sv_catpv(value, "{");
@@ -3203,7 +3203,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 	av = DBIS->get_fbav(imp_sth);
 	num_fields = AvFILL(av)+1;
 	
-	chopblanks = DBIc_has(imp_sth, DBIcf_ChopBlanks);
+	chopblanks = (int)DBIc_has(imp_sth, DBIcf_ChopBlanks);
 
 	/* Set up the type_info array if we have not seen it yet */
 	if (NULL == imp_sth->type_info) {
