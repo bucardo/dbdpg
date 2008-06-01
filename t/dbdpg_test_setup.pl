@@ -94,40 +94,48 @@ sub connect_database {
 
 		## If this was created by us, try and restart it
 		if (16 == $helpconnect) {
-			warn "Restarting test database $testdsn at $testdir\n";
 
-			my $COM = qq{$pg_ctl -l $testdir/dbdpg_test.logfile -D $testdir start};
-			if ($su) {
-				$COM = qq{su -m $su -c "$COM"};
+			## Bypass if the testdir has been removed
+			if (! -e $testdir) {
+				warn "Test directory $testdir has been removed, will recreate from scratch\n";
 			}
-			$info = '';
-			eval { $info = qx{$COM}; };
-			if ($@ or $info !~ /\w/) {
-				$@ = "Could not startup new database ($@) ($info)";
-				return $helpconnect, $@, undef;
-			}
-			## Wait for it to startup and verify the connection
-			sleep 1;
-			my $loop = 1;
-		  STARTUP: {
-				eval {
-					$dbh = DBI->connect($testdsn, $testuser, '',
-										{RaiseError => 1, PrintError => 0, AutoCommit => 1});
-				};
-				if ($@ =~ /starting up/ or $@ =~ /PGSQL\.\d+/) {
-					if ($loop++ < 20) {
-						sleep 1;
-						redo STARTUP;
+			else {
+				warn "Restarting test database $testdsn at $testdir\n";
+
+				my $COM = qq{$pg_ctl -l $testdir/dbdpg_test.logfile -D $testdir start};
+				if ($su) {
+					$COM = qq{su -m $su -c "$COM"};
+				}
+				$info = '';
+				eval { $info = qx{$COM}; };
+				if ($@ or $info !~ /\w/) {
+					$@ = "Could not startup new database ($@) ($info)";
+					return $helpconnect, $@, undef;
+				}
+				## Wait for it to startup and verify the connection
+				sleep 1;
+				my $loop = 1;
+			  STARTUP: {
+					eval {
+						$dbh = DBI->connect($testdsn, $testuser, '',
+											{RaiseError => 1, PrintError => 0, AutoCommit => 1});
+					};
+					if ($@ =~ /starting up/ or $@ =~ /PGSQL\.\d+/) {
+						if ($loop++ < 20) {
+							sleep 1;
+							redo STARTUP;
+						}
 					}
 				}
-			}
 
-			if ($@) {
-				return $helpconnect, $@, $dbh;
-			}
+				if ($@) {
+					return $helpconnect, $@, $dbh;
+				}
 
-			## We've got a good connection, so do final tweaks and return
-			goto GOTDBH;
+				## We've got a good connection, so do final tweaks and return
+				goto GOTDBH;
+
+			} ## end testdir exists
 
 		} ## end error and we created this database
 
