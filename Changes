@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.8.0 Released June 1, 2008
+2.8.0 Released June 1, 2008 (subversion r11366)
 
 	- Added in payload strings for LISTEN/NOTIFY in 8.4 
 		via $dbh->pg_notifies() [GSM]
