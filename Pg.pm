@@ -1,4 +1,4 @@
-# -*-cperl-*-
+#  -*-cperl-*-
 #  $Id$
 #
 #  Copyright (c) 2002-2008 Greg Sabino Mullane and others: see the Changes file
@@ -513,7 +513,7 @@ use 5.006001;
 			}
 
 			if ( $typtype eq 'e' ) {
-				my $SQL = 'SELECT enumlabel FROM pg_catalog.pg_enum WHERE enumtypid = $typoid ORDER BY oid';
+				my $SQL = "SELECT enumlabel FROM pg_catalog.pg_enum WHERE enumtypid = $typoid ORDER BY oid";
 				$row->[23] = $dbh->selectcol_arrayref($SQL);
 			}
 			else {
@@ -1341,94 +1341,95 @@ use 5.006001;
 
 ## Driver information:
 
-     116 => ['SQL_ACTIVE_ENVIRONMENTS',             0                         ],
-   10021 => ['SQL_ASYNC_MODE',                      0                         ],
-     120 => ['SQL_BATCH_ROW_COUNT',                 2                         ],
-     121 => ['SQL_BATCH_SUPPORT',                   3                         ], ## ??
+     116 => ['SQL_ACTIVE_ENVIRONMENTS',             0                         ], ## unlimited
+   10021 => ['SQL_ASYNC_MODE',                      2                         ], ## SQL_AM_STATEMENT
+     120 => ['SQL_BATCH_ROW_COUNT',                 2                         ], ## SQL_BRC_EXPLICIT
+     121 => ['SQL_BATCH_SUPPORT',                   3                         ], ## 12 SELECT_PROC + ROW_COUNT_PROC
        2 => ['SQL_DATA_SOURCE_NAME',                "dbi:Pg:$dbh->{Name}"     ],
-       3 => ['SQL_DRIVER_HDBC',                     0                         ], ## ??
-     135 => ['SQL_DRIVER_HDESC',                    0                         ],
-       4 => ['SQL_DRIVER_HENV',                     0                         ],
-      76 => ['SQL_DRIVER_HLIB',                     0                         ],
-       5 => ['SQL_DRIVER_HSTMT',                    0                         ],
-       6 => ['SQL_DRIVER_NAME',                     'DBD/Pg.pm'               ],
-      77 => ['SQL_DRIVER_ODBC_VERSION',             '03.00'                   ], ## ??
-       7 => ['SQL_DRIVER_VER',                      'DBDVERSION'              ],
-     144 => ['SQL_DYNAMIC_CURSOR_ATTRIBUTES1',      0                         ], ## ?? 519
-     145 => ['SQL_DYNAMIC_CURSOR_ATTRIBUTES2',      0                         ], ## ?? 5209
-      84 => ['SQL_FILE_USAGE',                      0                         ],
-     146 => ['SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1', 519                       ], ## ??
-     147 => ['SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2', 5209                      ], ## ??
-      81 => ['SQL_GETDATA_EXTENSIONS',              15                        ],
-     149 => ['SQL_INFO_SCHEMA_VIEWS',               3932149                   ], # not: assert, charset, collat, trans
-     150 => ['SQL_KEYSET_CURSOR_ATTRIBUTES1',       0                         ],
-     151 => ['SQL_KEYSET_CURSOR_ATTRIBUTES2',       0                         ],
-   10022 => ['SQL_MAX_ASYNC_CONCURRENT_STATEMENTS', 0                         ],
-       0 => ['SQL_MAX_DRIVER_CONNECTIONS',          'MAXCONNECTIONS'          ],
-     152 => ['SQL_ODBC_INTERFACE_CONFORMANCE',      1                         ], ## ??
-      10 => ['SQL_ODBC_VER',                        '03.00.0000'              ], ## ??
-     153 => ['SQL_PARAM_ARRAY_ROW_COUNTS',          2                         ],
-     154 => ['SQL_PARAM_ARRAY_SELECTS',             3                         ],
+       3 => ['SQL_DRIVER_HDBC',                     0                         ], ## not applicable
+     135 => ['SQL_DRIVER_HDESC',                    0                         ], ## not applicable
+       4 => ['SQL_DRIVER_HENV',                     0                         ], ## not applicable
+      76 => ['SQL_DRIVER_HLIB',                     0                         ], ## not applicable
+       5 => ['SQL_DRIVER_HSTMT',                    0                         ], ## not applicable
+	   ## Not clear what should go here. Some things suggest 'Pg', others 'Pg.pm'. We'll use DBD::Pg for now
+       6 => ['SQL_DRIVER_NAME',                     'DBD::Pg'                 ],
+      77 => ['SQL_DRIVER_ODBC_VERSION',             '03.00'                   ],
+       7 => ['SQL_DRIVER_VER',                      'DBDVERSION'              ], ## magic word
+     144 => ['SQL_DYNAMIC_CURSOR_ATTRIBUTES1',      0                         ], ## we can FETCH, but not via methods
+     145 => ['SQL_DYNAMIC_CURSOR_ATTRIBUTES2',      0                         ], ## same as above
+      84 => ['SQL_FILE_USAGE',                      0                         ], ## SQL_FILE_NOT_SUPPORTED (this is good)
+     146 => ['SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1', 519                       ], ## not clear what this refers to in DBD context
+     147 => ['SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2', 5209                      ], ## see above
+      81 => ['SQL_GETDATA_EXTENSIONS',              15                        ], ## 1+2+4+8
+     149 => ['SQL_INFO_SCHEMA_VIEWS',               3932149                   ], ## not: assert, charset, collat, trans
+     150 => ['SQL_KEYSET_CURSOR_ATTRIBUTES1',       0                         ], ## applies to us?
+     151 => ['SQL_KEYSET_CURSOR_ATTRIBUTES2',       0                         ], ## see above
+   10022 => ['SQL_MAX_ASYNC_CONCURRENT_STATEMENTS', 0                         ], ## unlimited, probably
+       0 => ['SQL_MAX_DRIVER_CONNECTIONS',          'MAXCONNECTIONS'          ], ## magic word
+     152 => ['SQL_ODBC_INTERFACE_CONFORMANCE',      1                         ], ## SQL_OIC_LEVEL_1
+      10 => ['SQL_ODBC_VER',                        '03.00.0000'              ],
+     153 => ['SQL_PARAM_ARRAY_ROW_COUNTS',          2                         ], ## correct?
+     154 => ['SQL_PARAM_ARRAY_SELECTS',             3                         ], ## PAS_NO_SELECT
       11 => ['SQL_ROW_UPDATES',                     'N'                       ],
       14 => ['SQL_SEARCH_PATTERN_ESCAPE',           '\\'                      ],
-      13 => ['SQL_SERVER_NAME',                     'CURRENTDB'               ],
+      13 => ['SQL_SERVER_NAME',                     'CURRENTDB'               ], ## magic word
      166 => ['SQL_STANDARD_CLI_CONFORMANCE',        2                         ], ## ??
      167 => ['SQL_STATIC_CURSOR_ATTRIBUTES1',       519                       ], ## ??
      168 => ['SQL_STATIC_CURSOR_ATTRIBUTES2',       5209                      ], ## ??
 
 ## DBMS Information
 
-      16 => ['SQL_DATABASE_NAME',                   'CURRENTDB'               ],
+      16 => ['SQL_DATABASE_NAME',                   'CURRENTDB'               ], ## magic word
       17 => ['SQL_DBMS_NAME',                       'PostgreSQL'              ],
-      18 => ['SQL_DBMS_VERSION',                    'ODBCVERSION'             ],
+      18 => ['SQL_DBMS_VERSION',                    'ODBCVERSION'             ], ## magic word
 
 ## Data source information
 
-      20 => ['SQL_ACCESSIBLE_PROCEDURES',           'Y'                       ],
-      19 => ['SQL_ACCESSIBLE_TABLES',               'Y'                       ],
+      20 => ['SQL_ACCESSIBLE_PROCEDURES',           'Y'                       ], ## is this really true?
+      19 => ['SQL_ACCESSIBLE_TABLES',               'Y'                       ], ## is this really true?
       82 => ['SQL_BOOKMARK_PERSISTENCE',            0                         ],
-      42 => ['SQL_CATALOG_TERM',                    ''                        ],
-   10004 => ['SQL_COLLATION_SEQ',                   'ENCODING'                ], ## ??
-      22 => ['SQL_CONCAT_NULL_BEHAVIOR',            0                         ],
-      23 => ['SQL_CURSOR_COMMIT_BEHAVIOR',          1                         ],
-      24 => ['SQL_CURSOR_ROLLBACK_BEHAVIOR',        1                         ],
-   10001 => ['SQL_CURSOR_SENSITIVITY',              1                         ],
-      25 => ['SQL_DATA_SOURCE_READ_ONLY',           'N'                       ],
-      26 => ['SQL_DEFAULT_TXN_ISOLATION',           8                         ],
+      42 => ['SQL_CATALOG_TERM',                    ''                        ], ## empty = catalogs are not supported
+   10004 => ['SQL_COLLATION_SEQ',                   'ENCODING'                ], ## magic word
+      22 => ['SQL_CONCAT_NULL_BEHAVIOR',            0                         ], ## SQL_CB_NULL
+      23 => ['SQL_CURSOR_COMMIT_BEHAVIOR',          1                         ], ## SQL_CB_CLOSE
+      24 => ['SQL_CURSOR_ROLLBACK_BEHAVIOR',        1                         ], ## SQL_CB_CLOSE
+   10001 => ['SQL_CURSOR_SENSITIVITY',              1                         ], ## SQL_INSENSITIVE
+      25 => ['SQL_DATA_SOURCE_READ_ONLY',           'READONLY'                ], ## magic word
+      26 => ['SQL_DEFAULT_TXN_ISOLATION',           'DEFAULTTXN'              ], ## magic word (2 or 8)
    10002 => ['SQL_DESCRIBE_PARAMETER',              'Y'                       ],
       36 => ['SQL_MULT_RESULT_SETS',                'Y'                       ],
       37 => ['SQL_MULTIPLE_ACTIVE_TXN',             'Y'                       ],
      111 => ['SQL_NEED_LONG_DATA_LEN',              'N'                       ],
-      85 => ['SQL_NULL_COLLATION',                  0                         ],
+      85 => ['SQL_NULL_COLLATION',                  0                         ], ## SQL_NC_HIGH
       40 => ['SQL_PROCEDURE_TERM',                  'function'                ], ## for now
       39 => ['SQL_SCHEMA_TERM',                     'schema'                  ],
-      44 => ['SQL_SCROLL_OPTIONS',                  8                         ], ## ??
+      44 => ['SQL_SCROLL_OPTIONS',                  8                         ], ## not really for DBD?
       45 => ['SQL_TABLE_TERM',                      'table'                   ],
-      46 => ['SQL_TXN_CAPABLE',                     2                         ],
-      72 => ['SQL_TXN_ISOLATION_OPTION',            15                        ],
+      46 => ['SQL_TXN_CAPABLE',                     2                         ], ## SQL_TC_ALL
+      72 => ['SQL_TXN_ISOLATION_OPTION',            10                        ], ## 2+8
       47 => ['SQL_USER_NAME',                       $dbh->{CURRENT_USER}      ],
 
 ## Supported SQL
 
-     169  => ['SQL_AGGREGATE_FUNCTIONS',            127                       ],
-     117  => ['SQL_ALTER_DOMAIN',                   31                        ],
+     169  => ['SQL_AGGREGATE_FUNCTIONS',            127                       ], ## all of 'em
+     117  => ['SQL_ALTER_DOMAIN',                   31                        ], ## all but deferred
       86  => ['SQL_ALTER_TABLE',                    32639                     ], ## no collate
      114  => ['SQL_CATALOG_LOCATION',               0                         ],
    10003  => ['SQL_CATALOG_NAME',                   'N'                       ],
       41  => ['SQL_CATALOG_NAME_SEPARATOR',         ''                        ],
       92  => ['SQL_CATALOG_USAGE',                  0                         ],
       87  => ['SQL_COLUMN_ALIAS',                   'Y'                       ],
-      74  => ['SQL_CORRELATION_NAME',               2                         ],
+      74  => ['SQL_CORRELATION_NAME',               2                         ], ## SQL_CN_ANY
      127  => ['SQL_CREATE_ASSERTION',               0                         ],
      128  => ['SQL_CREATE_CHARACTER_SET',           0                         ],
      129  => ['SQL_CREATE_COLLATION',               0                         ],
-     130  => ['SQL_CREATE_DOMAIN',                  23                        ],
-     131  => ['SQL_CREATE_SCHEMA',                  3                         ],
-     132  => ['SQL_CREATE_TABLE',                   13845                     ],
+     130  => ['SQL_CREATE_DOMAIN',                  23                        ], ## no collation, no defer
+     131  => ['SQL_CREATE_SCHEMA',                  3                         ], ## 1+2 schema + authorize
+     132  => ['SQL_CREATE_TABLE',                   13845                     ], ## no collation
      133  => ['SQL_CREATE_TRANSLATION',             0                         ],
-     134  => ['SQL_CREATE_VIEW',                    9                         ],
-     119  => ['SQL_DATETIME_LITERALS',              65535                     ],
-     170  => ['SQL_DDL_INDEX',                      3                         ],
+     134  => ['SQL_CREATE_VIEW',                    9                         ], ## local + create?
+     119  => ['SQL_DATETIME_LITERALS',              65535                     ], ## all?
+     170  => ['SQL_DDL_INDEX',                      3                         ], ## create + drop
      136  => ['SQL_DROP_ASSERTION',                 0                         ],
      137  => ['SQL_DROP_CHARACTER_SET',             0                         ],
      138  => ['SQL_DROP_COLLATION',                 0                         ],
@@ -1438,52 +1439,52 @@ use 5.006001;
      142  => ['SQL_DROP_TRANSLATION',               0                         ],
      143  => ['SQL_DROP_VIEW',                      7                         ],
       27  => ['SQL_EXPRESSIONS_IN_ORDERBY',         'Y'                       ],
-      88  => ['SQL_GROUP_BY',                       2                         ],
-      28  => ['SQL_IDENTIFIER_CASE',                2                         ], ## kinda
-      29  => ['SQL_IDENTIFIER_QUOTE_CHAR',          q{'}                      ],
-     148  => ['SQL_INDEX_KEYWORDS',                 0                         ],
-     172  => ['SQL_INSERT_STATEMENT',               7                         ],
+      88  => ['SQL_GROUP_BY',                       2                         ], ## GROUP_BY_CONTAINS_SELECT
+      28  => ['SQL_IDENTIFIER_CASE',                2                         ], ## SQL_IC_LOWER
+      29  => ['SQL_IDENTIFIER_QUOTE_CHAR',          q{"}                      ],
+     148  => ['SQL_INDEX_KEYWORDS',                 0                         ], ## not needed for Pg
+     172  => ['SQL_INSERT_STATEMENT',               7                         ], ## 1+2+4 = all
       73  => ['SQL_INTEGERITY',                     'Y'                       ], ## e.g. ON DELETE CASCADE?
-      89  => ['SQL_KEYWORDS',                       'KEYWORDS'                ],
+      89  => ['SQL_KEYWORDS',                       'KEYWORDS'                ], ## magic word
      113  => ['SQL_LIKE_ESCAPE_CLAUSE',             'Y'                       ],
-      75  => ['SQL_NON_NULLABLE_COLUMNS',           1                         ],
-     115  => ['SQL_OJ_CAPABILITIES',                127                       ],
+      75  => ['SQL_NON_NULLABLE_COLUMNS',           1                         ], ## NNC_NOT_NULL
+     115  => ['SQL_OJ_CAPABILITIES',                127                       ], ## all
       90  => ['SQL_ORDER_BY_COLUMNS_IN_SELECT',     'N'                       ],
       38  => ['SQL_OUTER_JOINS',                    'Y'                       ],
       21  => ['SQL_PROCEDURES',                     'Y'                       ],
-      93  => ['SQL_QUOTED_IDENTIFIER_CASE',         3                         ],
-      91  => ['SQL_SCHEMA_USAGE',                   31                        ],
-      94  => ['SQL_SPECIAL_CHARACTERS',             '$'                       ],
-     118  => ['SQL_SQL_CONFORMANCE',                4                         ], ## ??
-      95  => ['SQL_SUBQUERIES',                     31                        ],
-      96  => ['SQL_UNION',                          3                         ],
+      93  => ['SQL_QUOTED_IDENTIFIER_CASE',         3                         ], ## SQL_IC_SENSITIVE
+      91  => ['SQL_SCHEMA_USAGE',                   31                        ], ## all
+      94  => ['SQL_SPECIAL_CHARACTERS',             '$'                       ], ## there are actually many more...
+     118  => ['SQL_SQL_CONFORMANCE',                4                         ], ## SQL92_INTERMEDIATE ??
+      95  => ['SQL_SUBQUERIES',                     31                        ], ## all
+      96  => ['SQL_UNION',                          3                         ], ## 1+2 = all
 
 ## SQL limits
 
      112  => ['SQL_MAX_BINARY_LITERAL_LEN',         0                         ],
       34  => ['SQL_MAX_CATALOG_NAME_LEN',           0                         ],
      108  => ['SQL_MAX_CHAR_LITERAL_LEN',           0                         ],
-      30  => ['SQL_MAX_COLUMN_NAME_LEN',            'NAMEDATALEN'             ],
+      30  => ['SQL_MAX_COLUMN_NAME_LEN',            'NAMEDATALEN'             ], ## magic word
       97  => ['SQL_MAX_COLUMNS_IN_GROUP_BY',        0                         ],
       98  => ['SQL_MAX_COLUMNS_IN_INDEX',           0                         ],
       99  => ['SQL_MAX_COLUMNS_IN_ORDER_BY',        0                         ],
      100  => ['SQL_MAX_COLUMNS_IN_SELECT',          0                         ],
-     101  => ['SQL_MAX_COLUMNS_IN_TABLE',           1600                      ], ## depends on column types
-      31  => ['SQL_MAX_CURSOR_NAME_LEN',            'NAMEDATALEN'             ],
-   10005  => ['SQL_MAX_IDENTIFIER_LEN',             'NAMEDATALEN'             ],
+     101  => ['SQL_MAX_COLUMNS_IN_TABLE',           250                       ], ## 250-1600 (depends on column types)
+      31  => ['SQL_MAX_CURSOR_NAME_LEN',            'NAMEDATALEN'             ], ## magic word
+   10005  => ['SQL_MAX_IDENTIFIER_LEN',             'NAMEDATALEN'             ], ## magic word
      102  => ['SQL_MAX_INDEX_SIZE',                 0                         ],
-     102  => ['SQL_MAX_PROCEDURE_NAME_LEN',         'NAMEDATALEN'             ],
+     102  => ['SQL_MAX_PROCEDURE_NAME_LEN',         'NAMEDATALEN'             ], ## magic word
      104  => ['SQL_MAX_ROW_SIZE',                   0                         ], ## actually 1.6 TB, but too big to represent here
      103  => ['SQL_MAX_ROW_SIZE_INCLUDES_LONG',     'Y'                       ],
-      32  => ['SQL_MAX_SCHEMA_NAME_LEN',            'NAMEDATALEN'             ],
+      32  => ['SQL_MAX_SCHEMA_NAME_LEN',            'NAMEDATALEN'             ], ## magic word
      105  => ['SQL_MAX_STATEMENT_LEN',              0                         ],
-      35  => ['SQL_MAX_TABLE_NAME_LEN',             'NAMEDATALEN'             ],
+      35  => ['SQL_MAX_TABLE_NAME_LEN',             'NAMEDATALEN'             ], ## magic word
      106  => ['SQL_MAX_TABLES_IN_SELECT',           0                         ],
-     107  => ['SQL_MAX_USER_NAME_LEN',              'NAMEDATALEN'             ],
+     107  => ['SQL_MAX_USER_NAME_LEN',              'NAMEDATALEN'             ], ## magic word
 
 ## Scalar function information
 
-      48  => ['SQL_CONVERT_FUNCTIONS',              2                         ], ## ??
+      48  => ['SQL_CONVERT_FUNCTIONS',              2                         ], ## CVT_CAST only?
       49  => ['SQL_NUMERIC_FUNCTIONS',              16777215                  ], ## ?? all but some naming clashes: rand(om), trunc(ate), log10=ln, etc.
       50  => ['SQL_STRING_FUNCTIONS',               16280984                  ], ## ??
       51  => ['SQL_SYSTEM_FUNCTIONS',               0                         ], ## ??
@@ -1553,10 +1554,21 @@ use 5.006001;
 		 elsif ($ans eq 'KEYWORDS') {
 			## http://www.postgresql.org/docs/current/static/sql-keywords-appendix.html
 			## Basically, we want ones that are 'reserved' for PostgreSQL but not 'reserved' in SQL:2003
+			## 
 			return join ',' => (qw(ANALYSE ANALYZE ASC DEFERRABLE DESC DO FREEZE ILIKE INITIALLY ISNULL LIMIT NOTNULL OFF OFFSET PLACING RETURNING VERBOSE));
 		 }
 		 elsif ($ans eq 'CURRENTDB') {
 			 return $dbh->selectall_arrayref('SELECT pg_catalog.current_database()')->[0][0];
+		 }
+		 elsif ($ans eq 'READONLY') {
+			 my $SQL = q{SELECT CASE WHEN setting = 'on' THEN 'Y' ELSE 'N' END FROM pg_settings WHERE name = 'transaction_read_only'};
+			 my $info = $dbh->selectall_arrayref($SQL);
+			 return defined $info->[0] ? $info->[0][0] : 'N';
+		 }
+		 elsif ($ans eq 'DEFAULTTXN') {
+			 my $SQL = q{SELECT CASE WHEN setting = 'read committed' THEN 2 ELSE 8 END FROM pg_settings WHERE name = 'default_transaction_isolation'};
+			 my $info = $dbh->selectall_arrayref($SQL);
+			 return defined $info->[0] ? $info->[0][0] : 2;
 		 }
 
 		 return $ans;
