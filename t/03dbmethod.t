@@ -384,11 +384,11 @@ my $maxcon = $dbh->get_info(0);
 like( $maxcon, qr{^\d+$}, q{DB handle method "get_info" returns a number for SQL_MAX_DRIVER_CONNECTIONS});
 
 $t=q{DB handle method "get_info" returns correct string for SQL_DATA_SOURCE_READ_ONLY when "on"};
-$dbh->do("SET transaction_read_only = 'on'");
+$dbh->do(q{SET transaction_read_only = 'on'});
 is($dbh->get_info(25), 'Y', $t);
 
 $t=q{DB handle method "get_info" returns correct string for SQL_DATA_SOURCE_READ_ONLY when "off"};
-$dbh->do("SET transaction_read_only = 'off'");
+$dbh->do(q{SET transaction_read_only = 'off'});
 is($dbh->get_info(25), 'N', $t);
 
 #
