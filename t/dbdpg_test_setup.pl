@@ -255,7 +255,7 @@ sub connect_database {
 			## Start with whoever owns this file, unless it's us
 			my @userlist = (qw/postgres postgresql pgsql/);
 			my $username = getpwuid ((stat($0))[4]);
-			unshift @userlist, $username if $username ne getpwent;
+			unshift @userlist, $username if defined $username and $username ne getpwent;
 			my %doneuser;
 			for my $user (@userlist) {
 				next if $doneuser{$user}++;
