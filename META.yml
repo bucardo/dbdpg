@@ -1,43 +1,46 @@
 --- #YAML:1.0
-name                  : DBD-Pg
-version               : 2.8.0
-abstract              : DBI PostgreSQL interface
+name                        : DBD-Pg
+version                     : 2.8.0
+abstract                    : DBI PostgreSQL interface
 author:              
   - Greg Sabino Mullane <greg@turnstep.com>
 
-license               : perl
-distribution_type     : module
-dynamic_config        : 1
+license                     : perl
+distribution_type           : module
+dynamic_config              : 1
 
 requires:
-  DBI                 : 1.52
-  perl                : 5.006001
-  version             : 0
+  DBI                       : 1.52
+  perl                      : 5.006001
+  version                   : 0
 recommends:
-  Encode              : 0
-  File::Temp          : 0
-  Module::Signature   : 0.50
-  Perl::Critic        : 0
-  Time::HiRes         : 0
-  Test::Pod           : 0.95
-  Test::Pod::Coverage : 0
-  Test::Warn          : 0.08
-  Test::YAML::Meta    : 0.03
+  Encode                    : 0
+  File::Temp                : 0
+  File::Comments::Plugin::C : 0
+  Module::Signature         : 0.50
+  Perl::Critic              : 0
+  Pod::Spell                : 0
+  Time::HiRes               : 0
+  Test::Pod                 : 0.95
+  Test::Pod::Coverage       : 0
+  Test::Warn                : 0.08
+  Test::YAML::Meta          : 0.03
+  Text::Spellchecker        : 0
 build_requires:
-  DBI                 : 1.52
-  Test::More          : 0.61
-  version             : 0
+  DBI                       : 1.52
+  Test::More                : 0.61
+  version                   : 0
 configure_requires:
-  DBI                 : 1.52
-  version             : 0
+  DBI                       : 1.52
+  version                   : 0
 
 provides:
   DBD::Pg:
-    file              : Pg.pm
-    version           : 2.8.0
+    file                    : Pg.pm
+    version                 : 2.8.0
   Bundle::DBD::Pg:
-    file              : lib/Bundle/DBD/Pg.pm
-    version           : 2.8.0
+    file                    : lib/Bundle/DBD/Pg.pm
+    version                 : 2.8.0
 
 keywords:
   - Postgres
@@ -46,14 +49,14 @@ keywords:
   - libpq
 
 resources:
-  homepage            : http://search.cpan.org/dist/DBD-Pg/
-  license             : http://dev.perl.org/licenses/
-  bugtracker          : http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
-  MailingList         : http://www.nntp.perl.org/group/perl.dbd.pg/
-  Repository          : http://svn.perl.org/modules/DBD-Pg/trunk/
+  homepage                  : http://search.cpan.org/dist/DBD-Pg/
+  license                   : http://dev.perl.org/licenses/
+  bugtracker                : http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
+  MailingList               : http://www.nntp.perl.org/group/perl.dbd.pg/
+  Repository                : http://svn.perl.org/modules/DBD-Pg/trunk/
 
 meta-spec:
-  version             : 1.3
-  url                 : http://module-build.sourceforge.net/META-spec-v1.3.html
+  version                   : 1.3
+  url                       : http://module-build.sourceforge.net/META-spec-v1.3.html
 
-generated_by          : emacs
+generated_by                : emacs
