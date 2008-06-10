@@ -22,7 +22,6 @@ SKIP: {
 	cleanup_database($dbh);
 }
 
-shutdown_test_database();
-
 $dbh->disconnect() if defined $dbh and ref $dbh;
 
+shutdown_test_database();
