@@ -105,8 +105,14 @@ sub connect_database {
 			}
 			else {
 				warn "Restarting test database $testdsn at $testdir\n";
-
-				my $COM = qq{$pg_ctl -l $testdir/dbdpg_test.logfile -D $testdir start};
+				my $option = '';
+				if ($^O !~ /Win32/) {
+					if (! -e "$test_database_dir/data/socket") {
+						mkdir "$test_database_dir/data/socket";
+					}
+					$option = q{-o '-k socket'};
+				}
+				my $COM = qq{$pg_ctl $option -l $testdir/dbdpg_test.logfile -D $testdir start};
 				if ($su) {
 					$COM = qq{su -m $su -c "$COM"};
 				}
