@@ -98,6 +98,10 @@ END {
 	my $pv = sprintf('%vd', $^V);
 	my $schema = 'dbd_pg_testschema';
 	my $dsn = exists $ENV{DBI_DSN} ? $ENV{DBI_DSN} : '?';
+
+	## Don't show current dir to the world via CPAN::Reporter results
+	$dsn =~ s{host=/.*(dbdpg_test_database/data/socket)}{host=<pwd>/$1};
+
 	my $ver = defined $DBD::Pg::VERSION ? $DBD::Pg::VERSION : '?';
 	my $user = exists $ENV{DBI_USER} ? $ENV{DBI_USER} : '<not set>';
 	my $offset = 27;

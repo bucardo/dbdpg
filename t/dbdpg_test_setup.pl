@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use DBI;
+use Cwd;
 select(($|=1,select(STDERR),$|=1)[1]);
 
 my @schemas =
@@ -346,7 +347,14 @@ sub connect_database {
 		}
 		else {
 			$info = '';
-			my $COM = qq{$pg_ctl -l $test_database_dir/data/dbdpg_test.logfile -D $test_database_dir/data start};
+			my $option = '';
+			if ($^O !~ /Win32/) {
+				if (! -e "$test_database_dir/data/socket") {
+					mkdir "$test_database_dir/data/socket";
+				}
+				$option = "-o '-k socket'";
+			}
+			my $COM = qq{$pg_ctl $option -l $test_database_dir/dbdpg_test.logfile -D $test_database_dir/data start};
 			if ($su) {
 				$COM = qq{su -m $su -c "$COM"};
 			}
@@ -364,6 +372,11 @@ sub connect_database {
 		$testdsn = "dbi:Pg:dbname=postgres;port=$testport";
 		if ($^O =~ /Win32/) {
 			$testdsn .= ';host=localhost';
+		}
+		else {
+			my $dir = getcwd;
+			my $socketdir = "$dir/$test_database_dir/data/socket";
+			$testdsn .= ";host=$socketdir";
 		}
 		my $loop = 1;
 	  STARTUP: {

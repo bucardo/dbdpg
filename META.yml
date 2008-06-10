@@ -14,6 +14,7 @@ requires:
   perl                      : 5.006001
   version                   : 0
 recommends:
+  Cwd                       : 0
   Encode                    : 0
   File::Temp                : 0
   File::Comments::Plugin::C : 0
