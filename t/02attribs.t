@@ -324,8 +324,8 @@ like( $result, qr/^\d+$/, q{DB handle attribute "pg_pid" returns a value});
 
 SKIP: {
 
-	if ($pgversion < 80100) {
-		skip 'Cannot test standard_conforming_strings on pre 8.1 servers', 3;
+	if ($pgversion < 80200) {
+		skip 'Cannot test standard_conforming_strings on pre 8.2 servers', 3;
 	}
 
 	$t=q{DB handle attribute "pg_standard_conforming_strings" returns a valid value};

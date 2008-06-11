@@ -2976,7 +2976,8 @@ backend server process handling the connection.
 =item B<pg_standard_conforming_strings> (boolean, read-only)
 
 DBD::Pg specific attribute.  Returns if the server is currently using 
-standard conforming strings or not.
+standard conforming strings or not. Only available if the target 
+server is version 8.2 or better.
 
 =item B<pg_async_status> (integer, read-only)
 
