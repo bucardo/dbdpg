@@ -104,26 +104,32 @@ sub connect_database {
 				warn "Test directory $testdir has been removed, will recreate from scratch\n";
 			}
 			else {
-				warn "Restarting test database $testdsn at $testdir\n";
-				my $option = '';
-				if ($^O !~ /Win32/) {
-					if (! -e "$test_database_dir/data/socket") {
-						mkdir "$test_database_dir/data/socket";
+				if (-e "$test_database_dir/data/postmaster.pid") {
+					## Assume it's up, and move on
+				}
+				else {
+
+					warn "Restarting test database $testdsn at $testdir\n";
+					my $option = '';
+					if ($^O !~ /Win32/) {
+						if (! -e "$test_database_dir/data/socket") {
+							mkdir "$test_database_dir/data/socket";
+						}
+						$option = q{-o '-k socket'};
 					}
-					$option = q{-o '-k socket'};
+					my $COM = qq{$pg_ctl $option -l $testdir/dbdpg_test.logfile -D $testdir start};
+					if ($su) {
+						$COM = qq{su -m $su -c "$COM"};
+					}
+					$info = '';
+					eval { $info = qx{$COM}; };
+					if ($@ or $info !~ /\w/) {
+						$@ = "Could not startup new database ($@) ($info)";
+						return $helpconnect, $@, undef;
+					}
+					## Wait for it to startup and verify the connection
+					sleep 1;
 				}
-				my $COM = qq{$pg_ctl $option -l $testdir/dbdpg_test.logfile -D $testdir start};
-				if ($su) {
-					$COM = qq{su -m $su -c "$COM"};
-				}
-				$info = '';
-				eval { $info = qx{$COM}; };
-				if ($@ or $info !~ /\w/) {
-					$@ = "Could not startup new database ($@) ($info)";
-					return $helpconnect, $@, undef;
-				}
-				## Wait for it to startup and verify the connection
-				sleep 1;
 				my $loop = 1;
 			  STARTUP: {
 					eval {
