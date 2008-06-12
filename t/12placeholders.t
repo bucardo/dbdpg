@@ -131,8 +131,9 @@ if ($old_encoding ne 'UTF8') {
 	$dbh->do(q{SET NAMES 'UTF8'});
 }
 
-my $SQL = 'SHOW backslash_quote';
-my $backslash = $dbh->selectall_arrayref($SQL)->[0][0];
+my $SQL = q{SELECT setting FROM pg_settings WHERE name = 'backslash_quote'};
+$count = $dbh->selectall_arrayref($SQL)->[0];
+my $backslash = defined $count ? $count->[0] : 0;
 
 $t=q{Prepare with backslashes inside quotes works};
 my $scs = $dbh->{pg_standard_conforming_strings};
