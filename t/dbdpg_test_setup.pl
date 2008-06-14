@@ -223,11 +223,19 @@ sub connect_database {
 		}
 		$info = '';
 		eval {
-			$info = qx{$initdb --help 2>&1};
+			$info = qx{initdb --help 2>&1};
 		};
 		last GETHANDLE if $@;
 		if (!defined $info or $info !~ /\@postgresql\.org/) {
-			$@ = defined $info ? "Bad initdb output: $info" : 'Bad initdb output';
+			if (defined $info) {
+				$@ = "Bad initdb output: $info";
+			}
+			else {
+				my $msg = "Failed to run initdb.";
+				exists $ENV{PGINITDB} and $msg .= " ENV was: $ENV{PGINITDB}";
+				$msg .= " Final call was: $initdb";
+				$@ = $msg;
+			}
 			last GETHANDLE;
 		}
 
