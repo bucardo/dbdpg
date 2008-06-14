@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.8.1 Released June 11, 2008
+2.8.1 Released June 11, 2008 (subversion r11417)
 
 	- Force testing to use a custom socket dir, to avoid 
 		permission problems. Thanks to Frank Wiegand for 
