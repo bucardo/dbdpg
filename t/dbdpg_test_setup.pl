@@ -64,14 +64,14 @@ sub connect_database {
 	## We'll try various ways to get to a database to test with
 
 	## First, check to see if we've been here before and left directions
-	my ($testdsn,$testuser,$helpconnect,$su,$testdir,$pg_ctl) = get_test_settings();
+	my ($testdsn,$testuser,$helpconnect,$su,$testdir,$pg_ctl,$error) = get_test_settings();
 
 	## For debugging purposes, we'll be storing this in README.testdatabase as well
 	my $initdb = 'default';
 
 	## Did we fail last time? Fail this time too, but quicker!
 	if ($testdsn =~ /FAIL!/) {
-		return $helpconnect, 'Previous failure', undef;
+		return $helpconnect, "Previous failure ($error)", undef;
 	}
 
 	## Got a working DSN? Give it an attempt
@@ -421,6 +421,7 @@ sub connect_database {
 	## At this point, we've got a connection, or have failed
 	## Either way, we record for future runs
 
+	my $connerror = $@;
 	if (open $fh, '>', $helpfile) {
 		print $fh "## This is a temporary file created for testing DBD::Pg\n";
 		print $fh '## Created: ' . scalar localtime() . "\n";
@@ -428,9 +429,9 @@ sub connect_database {
 		print $fh "## Helpconnect: $helpconnect\n";
 		print $fh "## pg_ctl: $pg_ctl\n";
 		print $fh "## initdb: $initdb\n";
-		if ($@) {
+		if ($connerror) {
 			print $fh "## DSN: FAIL!\n";
-			print $fh "## ERROR: $@\n";
+			print $fh "## ERROR: $connerror\n";
 		}
 		else {
 			print $fh "## DSN: $testdsn\n";
@@ -441,7 +442,7 @@ sub connect_database {
 		close $fh or die qq{Could not close "$helpfile": $!\n};
 	}
 
-	$@ and return $helpconnect, $@, undef;
+	$connerror and return $helpconnect, $connerror, undef;
 
   GOTDBH:
 	## This allows things like data_sources() to work if we did an initdb
@@ -509,7 +510,7 @@ sub get_test_settings {
 	if (exists $ENV{PGINITDB} and -e $ENV{PGINITDB}) {
 		($pg_ctl = $ENV{PGINITDB}) =~ s/initdb/pg_ctl/;
 	}
-	my ($testdsn, $testuser, $testdir) = ('','','');
+	my ($testdsn, $testuser, $testdir, $error) = ('','','','?');
 	my ($helpconnect, $su) = (0,'');
 	if (-e $helpfile) {
 		open $fh, '<', $helpfile or die qq{Could not open "$helpfile": $!\n};
@@ -520,11 +521,12 @@ sub get_test_settings {
 			/Testowner: (\w+)/   and $su = $1;
 			/Testdir: (.+)/      and $testdir = $1;
 			/pg_ctl: (.+)/       and $pg_ctl = $1;
+			/ERROR: (.+)/        and $error = $1;
 		}
 		close $fh or die qq{Could not close "$helpfile": $!\n};
 	}
 
-	return $testdsn, $testuser, $helpconnect, $su, $testdir, $pg_ctl;
+	return $testdsn, $testuser, $helpconnect, $su, $testdir, $pg_ctl, $error;
 }
 
 
