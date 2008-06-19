@@ -262,7 +262,7 @@ sub connect_database {
 		last GETHANDLE if $@;
 
 		## initdb and pg_ctl cannot be run as root, so let's handle that
-		if ($info =~ /run as root/) {
+		if ($info =~ /run as root/ or $info =~ /unprivilegierte/) {
 			if (! -e $test_database_dir) {
 				mkdir $test_database_dir;
 			}
