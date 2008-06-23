@@ -3,6 +3,7 @@ Possible items to do, in no particular order
 Feature requests can be entered at 
 http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
 
+- Make docs easier to read on their own without lots of DBI cross referencing.
 - Use WITH HOLD for cursor work
 - Devise a way to automatically create ppm for Windows builds
 - I8n docs and error messages
