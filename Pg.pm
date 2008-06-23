@@ -17,7 +17,7 @@ use 5.006001;
 {
 	package DBD::Pg;
 
-	use version; our $VERSION = qv('2.8.1');
+	use version; our $VERSION = qv('2.8.2');
 
 	use DBI ();
 	use DynaLoader ();

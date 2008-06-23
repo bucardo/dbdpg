@@ -234,6 +234,11 @@ eval {
 };
 is( $@, q{}, $t);
 
+## Begin custom type testing
+
+
+
+
 $dbh->rollback();
 
 cleanup_database($dbh,'test');

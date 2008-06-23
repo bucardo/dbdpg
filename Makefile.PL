@@ -7,7 +7,7 @@ use warnings;
 use 5.006001;
 
 ## No version.pm for this one, as the prereqs are not loaded yet.
-my $VERSION = '2.8.1';
+my $VERSION = '2.8.2';
 
 my $lib;
 BEGIN {
@@ -290,6 +290,7 @@ MAKE_SPLINT
 my $output = WriteMakefile(%opts);
 
 if (!exists $output->{EXTRALIBS} or
+
 	($output->{EXTRALIBS} !~ /\-lpq/ and $output->{EXTRALIBS} !~ /libpq/)) {
 
 	my $makefile = exists $output->{MAKEFILE}
