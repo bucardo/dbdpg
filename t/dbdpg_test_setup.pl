@@ -231,7 +231,7 @@ sub connect_database {
 				$@ = "Bad initdb output: $info";
 			}
 			else {
-				my $msg = "Failed to run initdb.";
+				my $msg = 'Failed to run initdb.';
 				exists $ENV{PGINITDB} and $msg .= " ENV was: $ENV{PGINITDB}";
 				$msg .= " Final call was: $initdb";
 				$@ = $msg;
