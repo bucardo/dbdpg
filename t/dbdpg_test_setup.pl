@@ -223,7 +223,7 @@ sub connect_database {
 		}
 		$info = '';
 		eval {
-			$info = qx{initdb --help 2>&1};
+			$info = qx{$initdb --help 2>&1};
 		};
 		last GETHANDLE if $@;
 		if (!defined $info or ($info !~ /\@postgresql\.org/ and $info !~ /run as root/)) {
