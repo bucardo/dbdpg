@@ -213,6 +213,7 @@ sub connect_database {
 			return $helpconnect, '', undef;
 		}
 
+	  INITDB:
 		my ($info,$testport);
 		$helpconnect = 16;
 
@@ -460,6 +461,10 @@ sub connect_database {
 		eval {
 			$dbh->do("CREATE SCHEMA $S");
 		};
+		if ($@ =~ /Permission denied/ and $helpconnect != 16) {
+			## Okay, this ain't gonna work, let's try initdb
+			goto INITDB;
+		}
 		$@ and return $helpconnect, $@, undef;
 		$dbh->do("SET search_path TO $S");
 		$dbh->do('CREATE SEQUENCE dbd_pg_testsequence');
