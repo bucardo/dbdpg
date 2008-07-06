@@ -7,7 +7,7 @@ use warnings;
 use 5.006001;
 
 ## No version.pm for this one, as the prereqs are not loaded yet.
-my $VERSION = '2.8.2';
+my $VERSION = '2.8.3';
 
 my $lib;
 BEGIN {
