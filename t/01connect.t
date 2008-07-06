@@ -14,7 +14,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 ## Define this here in case we get to the END block before a connection is made.
 BEGIN {
-	use vars qw/$pgversion $pglibversion $pgvstring $pgdefport $helpconnect $dbh $connerror %set/;
+	use vars qw/$t $pgversion $pglibversion $pgvstring $pgdefport $helpconnect $dbh $connerror %set/;
 	($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
 }
 
@@ -24,8 +24,6 @@ if (! defined $dbh or $connerror) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 plan tests => 13;
-
-my ($t);
 
 pass('Established a connection to the database');
 
@@ -54,21 +52,21 @@ my $dbh2 = connect_database();
 pass('Connected with second database handle');
 
 my $sth = $dbh->prepare('SELECT 123');
-ok ( $dbh->disconnect(), 'Disconnect with first database handle');
-ok ( $dbh2->disconnect(), 'Disconnect with second database handle');
-ok ( $dbh2->disconnect(), 'Disconnect again with second database handle');
+ok ($dbh->disconnect(), 'Disconnect with first database handle');
+ok ($dbh2->disconnect(), 'Disconnect with second database handle');
+ok ($dbh2->disconnect(), 'Disconnect again with second database handle');
 
 eval {
  $sth->execute();
 };
-ok( $@, 'Execute fails on a disconnected statement');
+ok ($@, 'Execute fails on a disconnected statement');
 
 # Try out various connection options
 $ENV{DBI_DSN} ||= '';
 SKIP: {
 	my $alias = qr{(database|db|dbname)};
 	if ($ENV{DBI_DSN} !~ /$alias\s*=\s*\S+/) {
-		skip 'DBI_DSN contains no database option, so skipping connection tests', 5;
+		skip ('DBI_DSN contains no database option, so skipping connection tests', 5);
 	}
 
 	$t=q{Connect with invalid option fails};
@@ -80,18 +78,18 @@ SKIP: {
 		$t=qq{Connect using string '$opt' works};
 		$dbh and $dbh->disconnect();
 		(undef,$err,$dbh) = connect_database({dbreplace => $opt});
-		is($err, '', $t);
+		is ($err, '', $t);
 	}
 
 	if ($ENV{DBI_DSN} =~ /$alias\s*=\s*\"/) {
-		skip 'DBI_DSN already contains quoted database, no need for explicit test', 1;
+		skip ('DBI_DSN already contains quoted database, no need for explicit test', 1);
 	}
 	$t=q{Connect using a quoted database argument};
 	eval {
 		$dbh and $dbh->disconnect();
 		(undef,$err,$dbh) = connect_database({dbquotes => 1});
 	};
-	is($@, q{}, $t);
+	is ($@, q{}, $t);
 }
 
 END {

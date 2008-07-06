@@ -9,9 +9,8 @@ use Test::More tests => 3;
 select(($|=1,select(STDERR),$|=1)[1]);
 
 BEGIN {
-	use_ok('DBI') or BAIL_OUT 'Cannot continue without DBI';
-	use_ok('DBD::Pg') or BAIL_OUT 'Cannot continue without DBD::Pg';
+	use_ok ('DBI') or BAIL_OUT 'Cannot continue without DBI';
+	use_ok ('DBD::Pg') or BAIL_OUT 'Cannot continue without DBD::Pg';
 }
 use DBD::Pg;
-like( $DBD::Pg::VERSION, qr/^v?\d+\.\d+\.\d+(?:_\d+)?$/, qq{Found DBD::Pg::VERSION as "$DBD::Pg::VERSION"});
-
+like ($DBD::Pg::VERSION, qr/^v?\d+\.\d+\.\d+(?:_\d+)?$/, qq{Found DBD::Pg::VERSION as "$DBD::Pg::VERSION"});

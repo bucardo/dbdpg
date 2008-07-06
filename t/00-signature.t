@@ -14,21 +14,21 @@ plan tests => 1;
 
 SKIP: {
 	if (!eval { require Module::Signature; 1 }) {
-		skip 'Must have Module::Signature to test SIGNATURE file', 1;
+		skip ('Must have Module::Signature to test SIGNATURE file', 1);
 	}
 	elsif ( !-e 'SIGNATURE' ) {
-		fail 'SIGNATURE file was not found';
+		fail ('SIGNATURE file was not found');
 	}
 	elsif ( ! -s 'SIGNATURE') {
-		fail 'SIGNATURE file was empty';
+		fail ('SIGNATURE file was empty');
 	}
 	else {
 		my $ret = Module::Signature::verify();
 		if ($ret eq Module::Signature::SIGNATURE_OK()) {
-			pass 'Valid SIGNATURE file';
+			pass ('Valid SIGNATURE file');
 		}
 		else {
-			fail 'Invalid SIGNATURE file';
+			fail ('Invalid SIGNATURE file');
 		}
 	}
 }
