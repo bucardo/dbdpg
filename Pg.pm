@@ -1684,7 +1684,13 @@ DBD::Pg - PostgreSQL database driver for the DBI module
   # For some advanced uses you may need PostgreSQL type values:
   use DBD::Pg qw(:pg_types);
 
-  # See the DBI module documentation for full details
+  # For asynchronous calls, import the async constants:
+  use DBD::Pg qw(:async);
+
+  $dbh->do('INSERT INTO mytable(a) VALUES (1)');
+
+  $sth = $dbh->prepare('INSERT INTO mytable(a) VALUES (?)');
+  $sth->execute();
 
 =head1 VERSION
 
@@ -1709,22 +1715,25 @@ consult the L<DBI|DBI> documentation first!
 
 =item B<connect>
 
-To connect to a database with a minimum of parameters, use the following
-syntax:
+This method creates a database handle by connecting to a database, and is the DBI 
+equivalent of the "new" method. To connect to a Postgres database with a minimum of parameters, 
+use the following syntax:
 
-  $dbh = DBI->connect("dbi:Pg:dbname=$dbname", '', '');
+  $dbh = DBI->connect("dbi:Pg:dbname=$dbname", '', '', {AutoCommit => 0});
 
 This connects to the database named in the $dbname variable on the default port (usually 5432) 
 without any user authentication.
 
 The following connect statement shows almost all possible parameters:
 
-  $dbh = DBI->connect("dbi:Pg:dbname=$dbname;host=$host;port=$port;" .
-                      "options=$options", "$username", "$password",
-                      {AutoCommit => 0});
+  $dbh = DBI->connect("dbi:Pg:dbname=$dbname;host=$host;port=$port;options=$options",
+                      "$username",
+                      "$password",
+                      {AutoCommit => 0, RaiseError => 1, PrintError => 0}
+                     );
 
-If a parameter is not given, the PostgreSQL server will first look for 
-specific environment variables, and then use hard-coded defaults:
+If a parameter is not given, the connect() method will first look for 
+specific environment variables, and then fall back to hard-coded defaults:
 
   parameter  environment variable  hard coded default
   --------------------------------------------------
@@ -1738,12 +1747,11 @@ specific environment variables, and then use hard-coded defaults:
   service    PGSERVICE             (none)
   sslmode    PGSSLMODE             (none)
 
-* May also use the word C<db> or C<database>
+* May also use the aliases C<db> or C<database>
 
-For authentication with username and password, appropriate entries have to be
-made in the F<pg_hba.conf> file. If the username and password entries passed 
-via connect() are undefined (as opposed to being empty), DBI will use the 
-environment variables C<DBI_USER> and C<DBI_PASS> if they exists.
+If the username and password values passed via connect() are undefined (as opposed 
+to merely being empty strings), DBI will use the environment variables C<DBI_USER> 
+and C<DBI_PASS> if they exist.
 
 You can also connect by using a service connection file, which is named 
 "pg_service.conf." The location of this file can be controlled by 
@@ -1806,7 +1814,7 @@ Implemented by DBI, no driver-specific impact.
 
   @data_sources = DBI->data_sources('Pg');
 
-This driver supports this method. Unless the environment variable C<DBI_DSN> is set, 
+Returns a list of available databases. Unless the environment variable C<DBI_DSN> is set, 
 a connection will be attempted to the database C<template1>. The normal connection 
 environment variables also apply, such as C<PGHOST>, C<PGPORT>, C<DBI_USER>, 
 C<DBI_PASS>, and C<PGSERVICE>.
@@ -1831,13 +1839,13 @@ common variable used in this documentation is $rv, which stands for "return valu
 
   $rv = $h->err;
 
-Supported by this driver as proposed by DBI. For the connect method it returns
-C<PQstatus>, which is a number used by libpq. A value of 0 indicates no error 
-(CONNECTION_OK), while any other number indicates a failed connection. The only 
-number commonly seen is 1 (CONNECTION_BAD). See the libpq documentation for the 
+Returns the error code from the last method called. For the connect method it returns
+C<PQstatus>, which is a number used by libpq (the Postgres connection library). A value of 0 
+indicates no error (CONNECTION_OK), while any other number indicates a failed connection. The 
+only number commonly seen is 1 (CONNECTION_BAD). See the libpq documentation for the 
 complete list of return codes.
 
-In all other non-connect cases it returns the C<PQresultStatus> of the current
+In all other non-connect methods $h->err returns the C<PQresultStatus> of the current
 handle. This is a number used by libpq and is one of:
 
   0  Empty query string
@@ -1853,20 +1861,19 @@ handle. This is a number used by libpq and is one of:
 
   $str = $h->errstr;
 
-Supported by this driver as proposed by DBI. It returns the last error that was 
-reported by Postgres. This message is affected by the L</pg_error_level> setting.
+Returns the last error that was reported by Postgres. This message is affected 
+by the L</pg_error_level> setting.
 
 =item B<state>
 
   $str = $h->state;
 
-Supported by this driver. Returns a five-character "SQLSTATE" code.
-Success is indicated by a C<00000> code, which gets mapped to an 
-empty string by DBI. A code of C<S8006> indicates a connection failure, 
+Returns a five-character "SQLSTATE" code. Success is indicated by a C<00000> code, which 
+gets mapped to an empty string by DBI. A code of C<S8006> indicates a connection failure, 
 usually because the connection to the PostgreSQL server has been lost.
 
 While this method can be called as either $sth->state or $dbh->state, it 
-is usually clearer to always use the $dbh method.
+is usually clearer to always use $dbh->state.
 
 The list of codes used by PostgreSQL can be found at:
 L<http://www.postgresql.org/docs/current/static/errcodes-appendix.html>
