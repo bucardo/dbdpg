@@ -10,7 +10,7 @@ use Test::More;
 use Data::Dumper;
 select(($|=1,select(STDERR),$|=1)[1]);
 
-my @testfiles;
+my (@testfiles,%fileslurp,$t);
 
 if (!$ENV{TEST_CRITIC}) {
 	plan skip_all => 'Set the environment variable TEST_CRITIC to enable this test';
@@ -24,10 +24,38 @@ elsif ($Perl::Critic::VERSION < 0.23) {
 else {
 	opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
 	@testfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
-	closedir $dir;
-	plan tests => 5+@testfiles;
+	closedir $dir or die qq{Could not closedir "$dir": $!\n};
+
+	my $testmore = 0;
+	for my $file (@testfiles) {
+		open my $fh, '<', $file or die qq{Could not open "$file": $!\n};
+		my $line;
+		while (defined($line = <$fh>)) {
+			last if $line =~ /__DATA__/; ## perlcritic.t
+			for my $func (qw/ok isnt pass fail cmp cmp_ok is_deeply unlike like/) { ## no skip
+				next if $line !~ /\b$func\b/;
+				next if $line =~ /$func \w/; ## e.g. 'skip these tests'
+				next if $line =~ /[\$\%]$func/; ## e.g. $ok %ok
+				$fileslurp{$file}{$.}{$func} = $line;
+				$testmore++;
+			}
+		}
+		close $fh or die qq{Could not close "$file": $!\n};
+	}
+	plan tests => 5+ @testfiles + $testmore;
 }
-ok(@testfiles, ' Found files in test directory');
+ok (@testfiles, 'Found files in test directory');
+
+## Make sure all Test::More function calls are standardized
+for my $file (sort keys %fileslurp) {
+	for my $linenum (sort {$a <=> $b} keys %{$fileslurp{$file}}) {
+		for my $func (sort keys %{$fileslurp{$file}{$linenum}}) {
+			$t=qq{Test::More method "$func" is in standard format inside $file at line $linenum};
+			## Must be at start of line (optional whitepace), a space, a paren, and something interesting
+			like ($fileslurp{$file}{$linenum}{$func}, qr{^\s*$func \(['\S]}, $t);
+		}
+	}
+}
 
 ## Check some non-test files
 my $critic = Perl::Critic->new(-severity => 1);
@@ -35,7 +63,7 @@ my $critic = Perl::Critic->new(-severity => 1);
 for my $filename (qw{Pg.pm Makefile.PL lib/Bundle/DBD/Pg.pm }) {
 
 	if ($ENV{TEST_CRITIC_SKIPNONTEST}) {
-		pass qq{Skipping non-test file "$filename"};
+		pass (qq{Skipping non-test file "$filename"});
 		next;
 	}
 
@@ -79,10 +107,10 @@ for my $filename (qw{Pg.pm Makefile.PL lib/Bundle/DBD/Pg.pm }) {
 		diag "Source: $source\n\n";
 	}
 	if ($vios) {
-		fail qq{ Failed Perl::Critic tests for file "$filename": $vios};
+		fail (qq{ Failed Perl::Critic tests for file "$filename": $vios});
 	}
 	else {
-		pass qq{ File "$filename" passed all Perl::Critic tests};
+		pass (qq{ File "$filename" passed all Perl::Critic tests});
 	}
 
 }
@@ -154,12 +182,12 @@ for my $filename (sort @testfiles) {
 	}
 	my $SPACE = ++$count < 7 ? ' ' : '';
 	if ($vios) {
-		fail qq{${SPACE}Failed Perl::Critic tests for file "$filename": $vios};
+		fail (qq{${SPACE}Failed Perl::Critic tests for file "$filename": $vios});
 	}
 	else {
-		pass qq{${SPACE}File "$filename" passed all Perl::Critic tests};
+		pass (qq{${SPACE}File "$filename" passed all Perl::Critic tests});
 	}
 }
 
-pass('Finished Perl::Critic testing');
+pass ('Finished Perl::Critic testing');
 
