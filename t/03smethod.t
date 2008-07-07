@@ -21,7 +21,7 @@ if (! defined $dbh) {
 }
 plan tests => 96;
 
-isnt( $dbh, undef, 'Connect to database for statement handle method testing');
+isnt ($dbh, undef, 'Connect to database for statement handle method testing');
 
 my $pglibversion = $dbh->{pg_lib_version};
 
@@ -33,74 +33,94 @@ my ($SQL, $sth, $sth2, $result, @result, $expected, $warning, $rows, $t);
 
 $t=q{Calling prepare() with no arguments gives an error};
 eval{ $sth = $dbh->prepare(); };
-like( $@, qr{\+ 0}, $t);
+like ($@, qr{\+ 0}, $t);
 
 $t=q{Calling prepare() with an undefined value returns undef};
 $sth = $dbh->prepare(undef);
-is( $sth, undef, $t);
+is ($sth, undef, $t);
 
+$t='Prepare/execute with no flags works';
 $SQL = 'SELECT id FROM dbd_pg_test WHERE id = ?';
 $sth = $dbh->prepare($SQL);
 $sth->execute(1);
-ok( $sth->execute, 'Prepare/execute with no flags works');
+ok ($sth->execute, $t);
+
+$t='Prepare/execute with pg_server_prepare off at database handle works';
 $dbh->{pg_server_prepare} = 0;
 $sth = $dbh->prepare($SQL);
 $sth->execute(1);
-ok( $sth->execute, 'Prepare/execute with pg_server_prepare off at database handle works');
+ok ($sth->execute, $t);
+
 ## 7.4 does not have a full SSP implementation, so we simply skip these tests.
 if ($pglibversion < 80000) {
  SKIP: {
-		skip 'Not testing pg_server_prepare on 7.4-compiled servers', 2;
+		skip ('Not testing pg_server_prepare on 7.4-compiled servers', 2);
 	}
 }
 else {
+	$t='Prepare/execute with pg_server_prepare on at database handle works';
 	$dbh->{pg_server_prepare} = 1;
 	$sth = $dbh->prepare($SQL);
 	$sth->execute(1);
-	ok( $sth->execute, 'Prepare/execute with pg_server_prepare on at database handle works');
+	ok ($sth->execute, $t);
 }
 
 ## We must send a hashref as the final arg
+$t='Prepare failes when sent a non-hashref';
 eval {
 	$sth = $dbh->prepare('SELECT 123', ['I am not a hashref!']);
 };
-like( $@, qr{not a hash}, 'Prepare failes when sent a non-hashref');
+like ($@, qr{not a hash}, $t);
 
 
 # Make sure that undefs are converted to NULL.
+$t='Prepare/execute with undef converted to NULL';
 $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, pdate) VALUES (?,?)');
-ok( $sth->execute(401, undef), 'Prepare/execute with undef converted to NULL');
+ok ($sth->execute(401, undef), $t);
+
+$t='Prepare/execute with pg_server_prepare off at statement handle works';
 $sth = $dbh->prepare($SQL, {pg_server_prepare => 0});
 $sth->execute(1);
-ok( $sth->execute, 'Prepare/execute with pg_server_prepare off at statement handle works');
+ok ($sth->execute, $t);
+
 if ($pglibversion >= 80000) {
+	$t='Prepare/execute with pg_server_prepare on at statement handle works';
 	$sth = $dbh->prepare($SQL, {pg_server_prepare => 1});
 	$sth->execute(1);
-	ok( $sth->execute, 'Prepare/execute with pg_server_prepare on at statement handle works');
+	ok ($sth->execute, $t);
 }
+
+$t='Prepare/execute with pg_prepare_now on at database handle works';
 $dbh->{pg_prepare_now} = 1;
 $sth = $dbh->prepare($SQL);
 $sth->execute(1);
-ok( $sth->execute, 'Prepare/execute with pg_prepare_now on at database handle works');
+ok ($sth->execute, $t);
+
+$t='Prepare/execute with pg_prepare_now off at database handle works';
 $dbh->{pg_prepare_now} = 0;
 $sth = $dbh->prepare($SQL);
 $sth->execute(1);
-ok( $sth->execute, 'Prepare/execute with pg_prepare_now off at database handle works');
+ok ($sth->execute, $t);
+
+$t='Prepare/execute with pg_prepare_now off at statement handle works';
 $sth = $dbh->prepare($SQL, {pg_prepare_now => 0});
 $sth->execute(1);
-ok( $sth->execute, 'Prepare/execute with pg_prepare_now off at statement handle works');
+ok ($sth->execute, $t);
+
+$t='Prepare/execute with pg_prepare_now on at statement handle works';
 $sth = $dbh->prepare($SQL, {pg_prepare_now => 1});
 $sth->execute(1);
-ok( $sth->execute, 'Prepare/execute with pg_prepare_now on at statement handle works');
+ok ($sth->execute, $t);
 
 # Test using our own prepared statements
+$t='Prepare/execute works with pg_prepare_name';
 my $pgversion = $dbh->{pg_server_version};
 my $myname = 'dbdpg_test_1';
 $dbh->do("PREPARE $myname(int) AS SELECT COUNT(*) FROM pg_class WHERE reltuples > \$1", {pg_direct=> 1});
 $sth = $dbh->prepare('SELECT ?');
 $sth->bind_param(1, 1, SQL_INTEGER);
 $sth->{pg_prepare_name} = $myname;
-ok( $sth->execute(1), 'Prepare/execute works with pg_prepare_name');
+ok ($sth->execute(1), $t);
 $dbh->do("DEALLOCATE $myname");
 
 
@@ -108,10 +128,13 @@ $dbh->do("DEALLOCATE $myname");
 # Test of the "bind_param" statement handle method
 #
 
+$t='Statement handle method "bind_param" works when binding an int column with an int';
 $SQL = 'SELECT id FROM dbd_pg_test WHERE id = ?';
 $sth = $dbh->prepare($SQL);
-ok( $sth->bind_param(1, 1), 'Statement handle method "bind_param" works when binding an int column with an int');
-ok( $sth->bind_param(1, 'foo'), 'Statement handle method "bind_param" works when rebinding an int column with a string');
+ok ($sth->bind_param(1, 1), $t);
+
+$t='Statement handle method "bind_param" works when rebinding an int column with a string';
+ok ($sth->bind_param(1, 'foo'), $t);
 
 # Check if the server is sending us warning messages
 # We assume that older servers are okay
@@ -124,36 +147,33 @@ $client_level = $sth2->fetchall_arrayref()->[0][0];
 # Test of the "bind_param_inout" statement handle method
 #
 
-$t = q{Values do not change if bind_param_inout is not called};
-
+$t='Invalid placeholder fails for bind_param_inout';
 my $var = 123;
 $sth = $dbh->prepare('SELECT 1+?::int');
-
-$t = q{Invalid placeholder fails for bind_param_inout};
 eval { $sth->bind_param_inout(0, \$var, 0); };
-like( $@, qr{Cannot bind}, $t);
+like ($@, qr{Cannot bind}, $t);
 
 eval { $sth->bind_param_inout(3, \$var, 0); };
-like( $@, qr{Cannot bind}, $t);
+like ($@, qr{Cannot bind}, $t);
 
 $t = q{Calling bind_param_inout with a non-scalar reference fails};
 eval { $sth->bind_param_inout(1, 'noway', 0); };
-like( $@, qr{needs a reference}, $t);
+like ($@, qr{needs a reference}, $t);
 
 eval { $sth->bind_param_inout(1, $t, 0); };
-like( $@, qr{needs a reference}, $t);
+like ($@, qr{needs a reference}, $t);
 
 eval { $sth->bind_param_inout(1, [123], 0); };
-like( $@, qr{needs a reference}, $t);
+like ($@, qr{needs a reference}, $t);
 
 
 $t = q{Calling bind_param_inout changes an integer value};
 eval { $sth->bind_param_inout(1, \$var, 0); };
-is( $@, q{}, $t);
+is ($@, q{}, $t);
 $var = 999;
 $sth->execute();
 $sth->fetch;
-is( $var, 1000, $t);
+is ($var, 1000, $t);
 
 $t = q{Calling bind_param_inout changes a string value};
 $sth = $dbh->prepare(q{SELECT 'X'||?::text});
@@ -161,7 +181,7 @@ $sth->bind_param_inout(1, \$var, 0);
 $var = 'abc';
 $sth->execute();
 $sth->fetch;
-is( $var, 'Xabc', $t);
+is ($var, 'Xabc', $t);
 
 $t = q{Calling bind_param_inout changes a string to a float};
 $sth = $dbh->prepare('SELECT ?::float');
@@ -169,7 +189,7 @@ $sth->bind_param_inout(1, \$var, 0);
 $var = '1e+6';
 $sth->execute();
 $sth->fetch;
-is( $var, '1000000', $t);
+is ($var, '1000000', $t);
 
 $t = q{Calling bind_param_inout works for second placeholder};
 $sth = $dbh->prepare('SELECT ?::float, 1+?::int');
@@ -177,7 +197,7 @@ $sth->bind_param_inout(2, \$var, 0);
 $var = 111;
 $sth->execute(222,333);
 $sth->fetch;
-is( $var, 112, $t);
+is ($var, 112, $t);
 
 $t = q{Calling bind_param_inout changes two variables at once};
 my $var2 = 234;
@@ -187,8 +207,8 @@ $sth->bind_param_inout(2, \$var2, 0);
 $var = 444; $var2 = 555;
 $sth->execute();
 $sth->fetch;
-is( $var, 445, $t);
-is( $var2, 556, $t);
+is ($var, 445, $t);
+is ($var2, 556, $t);
 
 #
 # Test of the "bind_param_array" statement handle method
@@ -197,40 +217,48 @@ is( $var2, 556, $t);
 $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, val) VALUES (?,?)');
 # Try with 1, 2, and 3 values. All should succeed
 
+$t='Statement handle method "bind_param_array" works binding three values to the first placeholder';
 eval {
 	$sth->bind_param_array(1, [ 30, 31, 32 ], SQL_INTEGER);
 };
-is( $@, q{}, 'Statement handle method "bind_param_array" works binding three values to the first placeholder');
+is ($@, q{}, $t);
 
+$t='Statement handle method "bind_param_array" works binding one scalar value to the second placeholder';
 eval {
 	$sth->bind_param_array(2, 'Mulberry');
 };
-is( $@, q{}, 'Statement handle method "bind_param_array" works binding one scalar value to the second placeholder');
+is ($@, q{}, $t);
 
+$t='Statement handle method "bind_param_array" works binding three values to the second placeholder';
 eval {
 	$sth->bind_param_array(2, [ 'Mango', 'Strawberry', 'Gooseberry' ]);
 };
-is( $@, q{}, 'Statement handle method "bind_param_array" works binding three values to the second placeholder');
+is ($@, q{}, $t);
 
+$t='Statement handle method "bind_param_array" fails when binding one value to the first placeholder';
 eval {
 	$sth->bind_param_array(1, [ 30 ]);
 };
-isnt( $@, q{}, 'Statement handle method "bind_param_array" fails when binding one value to the first placeholder');
+isnt ($@, q{}, $t);
 
+$t='Statement handle method "bind_param_array" fails when binding two values to the second placeholder';
 eval {
 	$sth->bind_param_array(2, [ 'Plantain', 'Apple' ]);
 };
-isnt( $@, q{}, 'Statement handle method "bind_param_array" fails when binding two values to the second placeholder');
+isnt ($@, q{}, $t);
 
 #
 # Test of the "execute_array" statement handle method
 #
 
+$t='Statement method handle "execute_array" works';
 $dbh->{RaiseError}=1;
 my @tuple_status;
 $rows = $sth->execute_array( { ArrayTupleStatus => \@tuple_status });
-is_deeply( \@tuple_status, [1,1,1], 'Statement method handle "execute_array" works');
-is( $rows, 3, 'Statement method handle "execute_array" returns correct number of rows');
+is_deeply (\@tuple_status, [1,1,1], $t);
+
+$t='Statement method handle "execute_array" returns correct number of rows';
+is ($rows, 3, $t);
 
 # Test the ArrayTupleFetch attribute
 $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, val) VALUES (?,?)');
@@ -249,11 +277,13 @@ sub getval {
 	return $insertvals[$counter++];
 }
 
+$t='Statement method handle "execute_array" works with ArrayTupleFetch';
 undef @tuple_status;
 $rows = $sth->execute_array( { ArrayTupleStatus => \@tuple_status, ArrayTupleFetch => \&getval });
-is_deeply( \@tuple_status, [1,1,1,1], 'Statement method handle "execute_array" works with ArrayTupleFetch');
+is_deeply (\@tuple_status, [1,1,1,1], $t);
 
-is( $rows, 4, 'Statement method handle "execute_array" returns correct number of rows with ArrayTupleFetch');
+$t='Statement method handle "execute_array" returns correct number of rows with ArrayTupleFetch';
+is ($rows, 4, $t);
 
 #
 # Test of the "execute_for_fetch" statement handle method
@@ -267,194 +297,243 @@ my $fetch_tuple_sub = sub { $sth->fetchrow_arrayref() };
 undef @tuple_status;
 $rows = $sth2->execute_for_fetch($fetch_tuple_sub, \@tuple_status);
 
-is_deeply( \@tuple_status, [map{1}(1..$goodrows)], 'Statement handle method "execute_for_fetch" works');
 
-is( $rows, $goodrows, 'Statement handle method "execute_for_fetch" returns correct number of rows');
+$t='Statement handle method "execute_for_fetch" works';
+is_deeply (\@tuple_status, [map{1}(1..$goodrows)], $t);
+
+$t='Statement handle method "execute_for_fetch" returns correct number of rows';
+is ($rows, $goodrows, $t);
 
 #
 # Test of the "fetchrow_arrayref" statement handle method
 #
 
+$t='Statement handle method "fetchrow_arrayref" returns first row correctly';
 $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id = 34');
 $sth->execute();
 $result = $sth->fetchrow_arrayref();
-is_deeply( $result, [34, 'Huckleberry'], 'Statement handle method "fetchrow_arrayref" returns first row correctly');
+is_deeply ($result, [34, 'Huckleberry'], $t);
+
+$t='Statement handle method "fetchrow_arrayref" returns undef when done';
 $result = $sth->fetchrow_arrayref();
-is_deeply( $result, undef, 'Statement handle method "fetchrow_arrayref" returns undef when done');
+is_deeply ($result, undef, $t);
 
 # Test of the "fetch" alias
+$t='Statement handle method alias "fetch" returns first row correctly';
 $sth->execute();
 $result = $sth->fetch();
 $expected = [34, 'Huckleberry'];
-is_deeply( $result, $expected, 'Statement handle method alias "fetch" returns first row correctly');
+is_deeply ($result, $expected, $t);
+
+$t='Statement handle method alias "fetch" returns undef when done';
 $result = $sth->fetch();
-is_deeply( $result, undef, 'Statement handle method alias "fetch" returns undef when done');
+is_deeply ($result, undef, $t);
 
 #
 # Test of the "fetchrow_array" statement handle method
 #
 
+$t='Statement handle method "fetchrow_array" returns first row correctly';
 $sth->execute();
 @result = $sth->fetchrow_array();
-is_deeply( \@result, $expected, 'Statement handle method "fetchrow_array" returns first row correctly');
+is_deeply (\@result, $expected, $t);
+
+$t='Statement handle method "fetchrow_array" returns an empty list when done';
 @result = $sth->fetchrow_array();
-is_deeply( \@result, [], 'Statement handle method "fetchrow_array" returns an empty list when done');
+is_deeply (\@result, [], $t);
 
 #
 # Test of the "fetchrow_hashref" statement handle method
 #
 
+$t='Statement handle method "fetchrow_hashref" works with a slice argument';
 $sth->execute();
 $result = $sth->fetchrow_hashref();
 $expected = {id => 34, val => 'Huckleberry'};
-is_deeply( $result, $expected, 'Statement handle method "fetchrow_hashref" works with a slice argument');
+is_deeply ($result, $expected, $t);
+
+$t='Statement handle method "fetchrow_hashref" returns undef when done';
 $result = $sth->fetchrow_hashref();
-is_deeply( $result, undef, 'Statement handle method "fetchrow_hashref" returns undef when done');
+is_deeply ($result, undef, $t);
 
 #
 # Test of the "fetchall_arrayref" statement handle method
 #
 
+$t='Statement handle method "fetchall_arrayref" returns first row correctly';
 $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (35,36) ORDER BY id ASC');
 $sth->execute();
 $result = $sth->fetchall_arrayref();
 $expected = [[35,'Guava'],[36,'Lemon']];
-is_deeply( $result, $expected, 'Statement handle method "fetchall_arrayref" returns first row correctly');
+is_deeply ($result, $expected, $t);
 
 # Test of the 'slice' argument
 
+$t='Statement handle method "fetchall_arrayref" works with an arrayref slice';
 $sth->execute();
 $result = $sth->fetchall_arrayref([1]);
 $expected = [['Guava'],['Lemon']];
-is_deeply( $result, $expected, 'Statement handle method "fetchall_arrayref" works with an arrayref slice');
+is_deeply ($result, $expected, $t);
 
+$t='Statement handle method "fetchall_arrayref" works with a hashref slice';
 $sth->execute();
 $result = $sth->fetchall_arrayref({id => 1});
 $expected = [{id => 35},{id => 36}];
-is_deeply( $result, $expected, 'Statement handle method "fetchall_arrayref" works with a hashref slice');
+is_deeply ($result, $expected, $t);
 
 # My personal favorite way of grabbing data
+$t='Statement handle method "fetchall_arrayref" works with an empty hashref slice';
 $sth->execute();
 $result = $sth->fetchall_arrayref({});
 $expected = [{id => 35, val => 'Guava'},{id => 36, val => 'Lemon'}];
-is_deeply( $result, $expected, 'Statement handle method "fetchall_arrayref" works with an empty hashref slice');
+is_deeply ($result, $expected, $t);
 
 
 SKIP: {
 	if ($DBI::VERSION >= 1.603) {
-		skip 'fetchall_arrayref max rows broken in DBI 1.603', 2;
+		skip ('fetchall_arrayref max rows broken in DBI 1.603', 2);
 	}
 
 	# Test of the 'maxrows' argument
+	$t=q{Statement handle method "fetchall_arrayref" works with a 'maxrows' argument};
 	$sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id >= 33 ORDER BY id ASC LIMIT 10');
 	$sth->execute();
 	$result = $sth->fetchall_arrayref(undef,2);
 	$expected = [[33,'Peach'],[34,'Huckleberry']];
-	is_deeply( $result, $expected, q{Statement handle method "fetchall_arrayref" works with a 'maxrows' argument});
+	is_deeply ($result, $expected, $t);
+
+	$t=q{Statement handle method "fetchall_arrayref" works with an arrayref slice and a 'maxrows' argument};
 	$result = $sth->fetchall_arrayref([1],2);
 	$expected = [['Guava'],['Lemon']];
-	is_deeply( $result, $expected, q{Statement handle method "fetchall_arrayref" works with an arrayref slice and a 'maxrows' argument});
 	$sth->finish();
+	is_deeply ($result, $expected, $t);
 }
 
 #
 # Test of the "fetchall_hashref" statement handle method
 #
 
+$t='Statement handle method "fetchall_hashref" gives an error when called with no arguments';
 $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (33,34)');
 $sth->execute();
 eval {
 	$sth->fetchall_hashref();
 };
-isnt( $@, q{}, 'Statement handle method "fetchall_hashref" gives an error when called with no arguments');
+isnt ($@, q{}, $t);
 
+$t='Statement handle method "fetchall_hashref" works with a named key field';
 $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (33,34)');
 $sth->execute();
 $result = $sth->fetchall_hashref('id');
 $expected = {33=>{id => 33, val => 'Peach'},34=>{id => 34, val => 'Huckleberry'}};
-is_deeply( $result, $expected, q{Statement handle method "fetchall_hashref" works with a named key field});
+is_deeply ($result, $expected, $t);
+
+$t='Statement handle method "fetchall_hashref" returns an empty hash when no rows returned';
 $sth->execute();
 $result = $sth->fetchall_hashref(1);
-is_deeply( $result, $expected, q{Statement handle method "fetchall_hashref" works with a numeric key field});
+is_deeply ($result, $expected, q{Statement handle method "fetchall_hashref" works with a numeric key field});
 $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id < 1');
 $sth->execute();
 $result = $sth->fetchall_hashref(1);
-is_deeply( $result, {}, q{Statement handle method "fetchall_hashref" returns an empty hash when no rows returned});
+is_deeply ($result, {}, $t);
 
 #
 # Test of the "rows" statement handle method
 #
 
+$t='Statement handle method "rows" returns -1 before an execute';
 $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (33,34)');
 $rows = $sth->rows();
-is( $rows, -1, 'Statement handle method "rows" returns -1 before an execute');
+is ($rows, -1, $t);
+
+$t='Statement handle method "rows" returns correct number of rows';
 $sth->execute();
 $rows = $sth->rows();
-is( $rows, 2, 'Statement handle method "rows" returns correct number of rows');
 $sth->finish();
+is ($rows, 2, $t);
 
 #
 # Test of the "bind_col" statement handle method
 #
 
+$t='Statement handle method "bind_col" returns the correct value';
 $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (33,34)');
 $sth->execute();
 my $bindme;
 $result = $sth->bind_col(2, \$bindme);
-is( $result, 1, 'Statement handle method "bind_col" returns the correct value');
+is ($result, 1, $t);
+
+$t='Statement handle method "bind_col" correctly binds parameters';
 $sth->fetch();
-is( $bindme, 'Peach', 'Statement handle method "bind_col" correctly binds parameters');
+is ($bindme, 'Peach', $t);
 
 $dbh->do(q{UPDATE dbd_pg_test SET testarray = '{2,3,55}' WHERE id = 33});
 
-$t=q{Statement handle method 'bind_col' works with arrays};
+$t='Statement handle method "bind_col" returns the correct value';
 my $bindarray;
 $sth = $dbh->prepare('SELECT id, testarray FROM dbd_pg_test WHERE id = 33');
 $sth->execute();
 $result = $sth->bind_col(1, \$bindme);
-is( $result, 1, 'Statement handle method "bind_col" returns the correct value');
+is ($result, 1, $t);
+
+$t='Statement handle method "bind_col" returns the correct value';
 $result = $sth->bind_col(2, \$bindarray);
-is( $result, 1, 'Statement handle method "bind_col" returns the correct value');
+is ($result, 1, $t);
+
+$t='Statement handle method "bind_col" correctly binds parameters';
 $sth->fetch();
-is( $bindme, '33', 'Statement handle method "bind_col" correctly binds parameters');
-is_deeply( $bindarray, [2,3,55], 'Statement handle method "bind_col" correctly binds arrayref');
+is ($bindme, '33', $t);
+
+$t='Statement handle method "bind_col" correctly binds arrayref';
+is_deeply ($bindarray, [2,3,55], $t);
 
 
 #
 # Test of the "bind_columns" statement handle method
 #
 
+$t='Statement handle method "bind_columns" fails when called with wrong number of arguments';
 $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (33,34) ORDER BY id');
 $sth->execute();
 my $bindme2;
 eval {
 	$sth->bind_columns(1);
 };
-isnt( $@, q{}, 'Statement handle method "bind_columns" fails when called with wrong number of arguments');
+isnt ($@, q{}, $t);
+
+$t='Statement handle method "bind_columns" returns the correct value';
 $result = $sth->bind_columns(\$bindme, \$bindme2);
-is( $result, 1, 'Statement handle method "bind_columns" returns the correct value');
+is ($result, 1, $t);
+
+$t='Statement handle method "bind_columns" correctly binds parameters';
 $sth->fetch();
 $expected = [33, 'Peach'];
 my $got = [$bindme, $bindme2];
-is_deeply( $got, $expected, 'Statement handle method "bind_columns" correctly binds parameters');
 $sth->finish();
+is_deeply ($got, $expected, $t);
 
 #
 # Test of the statement handle method "state"
 #
 
+$t='Statement handle method "state" returns an empty string on success';
 $result = $sth->state();
-is( $result, q{}, q{Statement handle method "state" returns an empty string on success});
+is ($result, q{}, $t);
 
+$t='Statement handle method "state" returns a five-character code on error';
 eval {
 	$sth = $dbh->prepare('SELECT dbdpg_throws_an_error');
 	$sth->execute();
 };
 $result = $sth->state();
-like( $result, qr/^[A-Z0-9]{5}$/, q{Statement handle method "state" returns a five-character code on error});
+like ($result, qr/^[A-Z0-9]{5}$/, $t);
+
+$t='Statement and database handle method "state" return same code';
 my $result2 = $dbh->state();
-is( $result, $result2, q{Statement and database handle method "state" return same code});
-is( $result, '42703', q{Statement handle method "state" returns expected code});
+is ($result, $result2, $t);
+
+$t='Statement handle method "state" returns expected code';
+is ($result, '42703', $t);
 
 #
 # Test of the statement handle method "private_attribute_info"
@@ -462,19 +541,22 @@ is( $result, '42703', q{Statement handle method "state" returns expected code});
 
 SKIP: {
 	if ($DBI::VERSION < 1.54) {
-		skip 'DBI must be at least version 1.54 to test private_attribute_info', 2;
+		skip ('DBI must be at least version 1.54 to test private_attribute_info', 2);
 	}
 
 
+	$t='Statement handle method "private_attribute_info" returns at least one record';
 	$sth = $dbh->prepare('SELECT 123');
 	my $private = $sth->private_attribute_info();
 	my ($valid,$invalid) = (0,0);
 	for my $name (keys %$private) {
 		$name =~ /^pg_\w+/ ? $valid++ : $invalid++;
 	}
-	cmp_ok($valid, '>=', 1, q{Statement handle method "private_attribute_info" returns at least one record});
-	is( $invalid, 0, q{Statement handle method "private_attribute_info" returns only internal names});
+	cmp_ok ($valid, '>=', 1, $t);
+
+	$t='Statement handle method "private_attribute_info" returns only internal names';
 	$sth->finish();
+	is ($invalid, 0, $t);
 }
 
 
@@ -485,27 +567,27 @@ SKIP: {
 $dbh->rollback();
 $t=q{Statement handle attribute pg_numbound returns 0 if no placeholders};
 $sth = $dbh->prepare('SELECT 123');
-is($sth->{pg_numbound}, 0, $t);
+is ($sth->{pg_numbound}, 0, $t);
 
 $sth->execute();
-is($sth->{pg_numbound}, 0, $t);
+is ($sth->{pg_numbound}, 0, $t);
 
 $t=q{Statement handle attribute pg_numbound returns 0 if no placeholders bound yet};
 $sth = $dbh->prepare('SELECT 123 WHERE 1 > ? AND 2 > ?');
-is($sth->{pg_numbound}, 0, $t);
+is ($sth->{pg_numbound}, 0, $t);
 
 $t=q{Statement handle attribute pg_numbound returns 1 if one placeholder bound};
 $sth->bind_param(1, 123);
-is($sth->{pg_numbound}, 1, $t);
+is ($sth->{pg_numbound}, 1, $t);
 
 $t=q{Statement handle attribute pg_numbound returns 2 if two placeholders bound};
 $sth->bind_param(2, 345);
-is($sth->{pg_numbound}, 2, $t);
+is ($sth->{pg_numbound}, 2, $t);
 
 $t=q{Statement handle attribute pg_numbound returns 1 if one placeholders bound as NULL};
 $sth = $dbh->prepare('SELECT 123 WHERE 1 > ? AND 2 > ?');
 $sth->bind_param(1, undef);
-is($sth->{pg_numbound}, 1, $t);
+is ($sth->{pg_numbound}, 1, $t);
 
 #
 # Test of the statement handle method "pg_bound"
@@ -513,22 +595,22 @@ is($sth->{pg_numbound}, 1, $t);
 
 $t=q{Statement handle attribute pg_bound returns an empty hash if no placeholders};
 $sth = $dbh->prepare('SELECT 123');
-is_deeply($sth->{pg_bound}, {}, $t);
+is_deeply ($sth->{pg_bound}, {}, $t);
 
 $sth->execute();
-is_deeply($sth->{pg_bound}, {}, $t);
+is_deeply ($sth->{pg_bound}, {}, $t);
 
 $t=q{Statement handle attribute pg_bound returns correct value if no placeholders bound yet};
 $sth = $dbh->prepare('SELECT 123 WHERE 1 > ? AND 2 > ?');
-is_deeply($sth->{pg_bound}, {1=>0, 2=>0}, $t);
+is_deeply ($sth->{pg_bound}, {1=>0, 2=>0}, $t);
 
 $t=q{Statement handle attribute pg_bound returns correct value if one placeholder bound};
 $sth->bind_param(2, 123);
-is_deeply($sth->{pg_bound}, {1=>0, 2=>1}, $t);
+is_deeply ($sth->{pg_bound}, {1=>0, 2=>1}, $t);
 
 $t=q{Statement handle attribute pg_bound returns correct value if two placeholders bound};
 $sth->bind_param(1, 123);
-is_deeply($sth->{pg_bound}, {1=>1, 2=>1}, $t);
+is_deeply ($sth->{pg_bound}, {1=>1, 2=>1}, $t);
 
 #
 # Test of the statement handle method "pg_numbound"
@@ -537,7 +619,7 @@ is_deeply($sth->{pg_bound}, {1=>1, 2=>1}, $t);
 $t=q{Statement handle attribute pg_numbound returns 1 if one placeholders bound as NULL};
 $sth = $dbh->prepare('SELECT 123 WHERE 1 > ? AND 2 > ?');
 $sth->bind_param(1, undef);
-is_deeply($sth->{pg_bound}, {1=>1, 2=>0}, $t);
+is_deeply ($sth->{pg_bound}, {1=>1, 2=>0}, $t);
 
 
 #
@@ -546,28 +628,28 @@ is_deeply($sth->{pg_bound}, {1=>1, 2=>0}, $t);
 
 $t=q{Statement handle attribute pg_current_row returns zero until first row fetched};
 $sth = $dbh->prepare('SELECT 1 FROM pg_class LIMIT 5');
-is($sth->{pg_current_row}, 0, $t);
+is ($sth->{pg_current_row}, 0, $t);
 
 $t=q{Statement handle attribute pg_current_row returns zero until first row fetched};
 $sth->execute();
-is($sth->{pg_current_row}, 0, $t);
+is ($sth->{pg_current_row}, 0, $t);
 
 $t=q{Statement handle attribute pg_current_row returns 1 after a fetch};
 $sth->fetch();
-is($sth->{pg_current_row}, 1, $t);
+is ($sth->{pg_current_row}, 1, $t);
 
 $t=q{Statement handle attribute pg_current_row returns correct value while fetching};
 my $x = 2;
 while (defined $sth->fetch()) {
-	is($sth->{pg_current_row}, $x++, $t);
+	is ($sth->{pg_current_row}, $x++, $t);
 }
 $t=q{Statement handle attribute pg_current_row returns 0 when done fetching};
-is($sth->{pg_current_row}, 0, $t);
+is ($sth->{pg_current_row}, 0, $t);
 
 $t=q{Statement handle attribute pg_current_row returns 0 after fetchall_arrayref};
 $sth->execute();
 $sth->fetchall_arrayref();
-is($sth->{pg_current_row}, 0, $t);
+is ($sth->{pg_current_row}, 0, $t);
 
 cleanup_database($dbh,'test');
 $dbh->rollback();
