@@ -16,14 +16,14 @@ eval {
 };
 if ($@) {
 	SKIP: {
-		skip 'Skipping Test::YAML::Meta tests: module not found', 2;
+		skip ('Skipping Test::YAML::Meta tests: module not found', 2);
 	}
 }
 elsif ($Test::YAML::Meta::VERSION < $V) {
 	SKIP: {
-		skip "Skipping Test::YAML::Meta tests: need version $V, but only have $Test::YAML::Meta::VERSION", 2;
+		skip ("Skipping Test::YAML::Meta tests: need version $V, but only have $Test::YAML::Meta::VERSION", 2);
 	}
 }
 else {
-	meta_spec_ok('META.yml', 1.3);
+	meta_spec_ok ('META.yml', 1.3);
 }

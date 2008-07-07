@@ -25,19 +25,19 @@ if (! defined $dbh or $connerror) {
 }
 plan tests => 13;
 
-pass('Established a connection to the database');
+pass ('Established a connection to the database');
 
 $pgversion    = $dbh->{pg_server_version};
 $pglibversion = $dbh->{pg_lib_version};
 $pgdefport    = $dbh->{pg_default_port};
 $pgvstring    = $dbh->selectall_arrayref('SELECT VERSION()')->[0][0];
 
-ok( $dbh->disconnect(), 'Disconnect from the database');
+ok ($dbh->disconnect(), 'Disconnect from the database');
 
 # Connect two times. From this point onward, do a simpler connection check
 $dbh = connect_database();
 
-pass('Connected with first database handle');
+pass ('Connected with first database handle');
 
 ## Grab some important values used for debugging
 my @vals = qw/array_nulls backslash_quote server_encoding client_encoding standard_conforming_strings/;
@@ -49,7 +49,7 @@ for (@{$dbh->selectall_arrayref($SQL)}) {
 
 my $dbh2 = connect_database();
 
-pass('Connected with second database handle');
+pass ('Connected with second database handle');
 
 my $sth = $dbh->prepare('SELECT 123');
 ok ($dbh->disconnect(), 'Disconnect with first database handle');

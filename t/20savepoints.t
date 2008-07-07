@@ -17,12 +17,14 @@ if (!defined $dbh) {
 }
 plan tests => 3;
 
-isnt( $dbh, undef, 'Connect to database for savepoint testing');
+isnt ($dbh, undef, 'Connect to database for savepoint testing');
 
 my $pgversion = $dbh->{pg_server_version};
 
+my $t;
+
 SKIP: {
-	skip 'Cannot test savepoints on pre-8.0 servers', 2 if $pgversion < 80000;
+	skip ('Cannot test savepoints on pre-8.0 servers', 2) if $pgversion < 80000;
 
 	my $str = 'Savepoint Test';
 	my $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id,pname) VALUES (?,?)');
@@ -42,8 +44,9 @@ SKIP: {
 
 	$dbh->commit;
 
+	$t='Only row 500 and 502 should be committed';
 	my $ids = $dbh->selectcol_arrayref('SELECT id FROM dbd_pg_test WHERE pname = ?',undef,$str);
-	ok( eq_set($ids, [500, 502]), 'Only row 500 and 502 should be committed');
+	ok (eq_set($ids, [500, 502]), $t);
 
 	## Create 503, then release the savepoint
 	$dbh->pg_savepoint('dbd_pg_test_savepoint');
@@ -54,8 +57,9 @@ SKIP: {
 	$sth->execute(504,$str);
 	$dbh->commit;
 
+	$t='Implicit rollback on deallocate should rollback to last savepoint';
 	$ids = $dbh->selectcol_arrayref('SELECT id FROM dbd_pg_test WHERE pname = ?',undef,$str);
-	ok( eq_set($ids, [500, 502, 503, 504]), 'Implicit rollback on deallocate should rollback to last savepoint');
+	ok (eq_set($ids, [500, 502, 503, 504]), $t);
 }
 
 $dbh->do('DELETE FROM dbd_pg_test');

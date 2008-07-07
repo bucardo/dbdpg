@@ -14,10 +14,10 @@ my $dbh = connect_database({nosetup => 1, nocreate => 1});
 
 SKIP: {
 	if (! defined $dbh) {
-		skip 'Connection to database failed, cannot cleanup', 1;
+		skip ('Connection to database failed, cannot cleanup', 1);
 	}
 
-	isnt( $dbh, undef, 'Connect to database for cleanup');
+	isnt ($dbh, undef, 'Connect to database for cleanup');
 
 	cleanup_database($dbh);
 }

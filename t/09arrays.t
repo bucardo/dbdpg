@@ -19,17 +19,15 @@ if (! defined $dbh) {
 }
 plan tests => 245;
 
-isnt( $dbh, undef, 'Connect to database for array testing');
+isnt ($dbh, undef, 'Connect to database for array testing');
 
-my ($sth,$result);
+my ($sth,$result,$t);
 
 my $pgversion = $dbh->{pg_server_version};
 
 if ($pgversion >= 80100) {
   $dbh->do('SET escape_string_warning = false');
 }
-
-
 
 my $SQL = q{DELETE FROM dbd_pg_test WHERE pname = 'Array Testing'};
 my $cleararray = $dbh->prepare($SQL);
@@ -191,39 +189,43 @@ for my $test (split /\n\n/ => $array_tests) {
 		my $ver = $1;
 		if ($pgversion < $ver) {
 		  SKIP: {
-				skip 'Cannot test NULL arrays unless version 8.2 or better', 4;
+				skip ('Cannot test NULL arrays unless version 8.2 or better', 4);
 			}
 			next;
 		}
 	}
 
+	$t="Correct array inserted: $msg : $input";
 	$cleararray->execute();
 	eval {
 		$addarray->execute(eval $input);
 	};
 	if ($expected =~ /error:\s+(.+)/i) {
-		like( $@, qr{$1}, "Array failed : $msg : $input");
-		like( $@, qr{$1}, "Array failed : $msg : $input");
+		like ($@, qr{$1}, "Array failed : $msg : $input");
+		like ($@, qr{$1}, "Array failed : $msg : $input");
 	}
 	else {
-		is( $@, q{}, "Array worked : $msg : $input");
+		is ($@, q{}, "Array worked : $msg : $input");
 		$getarray->execute();
 		$result = $getarray->fetchall_arrayref()->[0][0];
-		is( $result, $expected, "Correct array inserted: $msg : $input");
+		is ($result, $expected, $t);
 	}
 
+	$t="Array quote worked : $msg : $input";
 	eval {
 		$result = $dbh->quote(eval $input );
 	};
 	if ($qexpected =~ /error:\s+(.+)/i) {
 		my $errmsg = $1;
 		$errmsg =~ s/bind/quote/;
-		like( $@, qr{$errmsg}, "Array quote failed : $msg : $input");
-		like( $@, qr{$errmsg}, "Array quote failed : $msg : $input");
+		like ($@, qr{$errmsg}, "Array quote failed : $msg : $input");
+		like ($@, qr{$errmsg}, "Array quote failed : $msg : $input");
 	}
 	else {
-		is( $@, q{}, "Array quote worked : $msg : $input");
-		is( $result, $qexpected, "Correct array quote: $msg : $input");
+		is ($@, q{}, $t);
+
+		$t="Correct array quote: $msg : $input";
+		is ($result, $qexpected, $t);
 	}
 
 }
@@ -244,22 +246,25 @@ for my $test (split /\n\n/ => $array_tests) {
 		my $ver = $1;
 		if ($pgversion < $ver) {
 		  SKIP: {
-				skip 'Cannot test NULL arrays unless version 8.2 or better', 2;
+				skip ('Cannot test NULL arrays unless version 8.2 or better', 2);
 			}
 			next;
 		}
 	}
 
+	$t="Array worked : $msg : $input";
 	$cleararray->execute();
 	eval {
 		$addarray->execute(eval $input);
 	};
 	if ($expected =~ /error:\s+(.+)/i) {
-		like( $@, qr{$1}, "Array failed : $msg : $input");
-		like( $@, qr{$1}, "Array failed : $msg : $input");
+		like ($@, qr{$1}, "Array failed : $msg : $input");
+		like ($@, qr{$1}, "Array failed : $msg : $input");
 	}
 	else {
-		is( $@, q{}, "Array worked : $msg : $input");
+		is ($@, q{}, $t);
+
+		$t="Correct array inserted: $msg : $input";
 		$getarray->execute();
 		$result = $getarray->fetchall_arrayref()->[0][0];
 		$qexpected =~ s/{}/{''}/;
@@ -272,7 +277,7 @@ for my $test (split /\n\n/ => $array_tests) {
 			$qexpected =~ s/]"/}"/;
 		}
 		$expected = eval $qexpected;
-		is_deeply( $result, $expected, "Correct array inserted: $msg : $input");
+		is_deeply ($result, $expected, $t);
 	}
 
 	if ($msg =~ /STOP/) {
@@ -433,7 +438,7 @@ for my $test (split /\n\n/ => $array_tests_out) {
 		my $ver = $1;
 		if ($pgversion < $ver) {
 		  SKIP: {
-				skip 'Cannot test NULL arrays unless version 8.2 or better', 1;
+				skip ('Cannot test NULL arrays unless version 8.2 or better', 1);
 			}
 			next;
 		}
@@ -441,24 +446,25 @@ for my $test (split /\n\n/ => $array_tests_out) {
 	if ($pgversion < 80200) {
 		if ($input =~ /SKIP/ or $test =~ /Fake NULL|boolean/) {
 		  SKIP: {
-				skip 'Cannot test some array items on pre-8.2 servers', 1;
+				skip ('Cannot test some array items on pre-8.2 servers', 1);
 			}
 			next;
 		}
 	}
 
+	$t="Array test $msg : $input";
 	$SQL = qq{SELECT ARRAY[$input]};
 	my $result = '';
 	eval {
 		$result = $dbh->selectall_arrayref($SQL)->[0][0];
 	};
 	if ($result =~ /error:\s+(.+)/i) {
-		like( $@, qr{$1}, "Array failed : $msg : $input");
+		like ($@, qr{$1}, "Array failed : $msg : $input");
 	}
 	else {
 		$expected = eval $expected;
 		## is_deeply does not handle type differences
-		is( (Dumper $result), (Dumper $expected), "Array test $msg : $input");
+		is ( (Dumper $result), (Dumper $expected), $t);
 	}
 }
 
@@ -466,18 +472,26 @@ for my $test (split /\n\n/ => $array_tests_out) {
 
 SKIP: {
 	eval { require Encode; };
-	skip 'Encode module is needed for unicode tests', 14 if $@;
+	skip ('Encode module is needed for unicode tests', 14) if $@;
 
+	$t='String should be UTF-8';
 	local $dbh->{pg_enable_utf8} = 1;
 	my $utf8_str = chr(0x100).'dam'; # LATIN CAPITAL LETTER A WITH MACRON
-    ok( Encode::is_utf8( $utf8_str ), 'String should be UTF-8');
+    ok (Encode::is_utf8( $utf8_str ), $t);
 
+	$t='quote() handles utf8';
 	my $quoted = $dbh->quote($utf8_str);
-	is( $quoted, qq{'$utf8_str'}, 'quote() handles utf8' );
-    ok( Encode::is_utf8( $quoted ), 'Quoted string should be UTF-8');
+	is ($quoted, qq{'$utf8_str'}, $t);
+
+	$t='Quoted string should be UTF-8';
+    ok (Encode::is_utf8( $quoted ), $t);
+
+	$t='quote() handles utf8 inside array';
 	$quoted = $dbh->quote([$utf8_str, $utf8_str]);
-	is( $quoted, qq!{"$utf8_str","$utf8_str"}!, 'quote() handles utf8 inside array' );
-    ok( Encode::is_utf8( $quoted ), 'Quoted array of strings should be UTF-8');
+	is ($quoted, qq!{"$utf8_str","$utf8_str"}!, $t);
+
+	$t='Quoted array of strings should be UTF-8';
+    ok (Encode::is_utf8( $quoted ), $t);
 
 	## Workaround for client encodings such as SJIS
 	my $old_encoding = $dbh->selectall_arrayref('SHOW client_encoding')->[0][0];
@@ -485,41 +499,52 @@ SKIP: {
 		$dbh->do(q{SET NAMES 'UTF8'});
 	}
 
+	$t='Inserting utf-8 into an array via quoted do() works';
 	$dbh->do('DELETE FROM dbd_pg_test');
 	$SQL = qq{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, '$quoted', 'one')};
 	eval {
 		$dbh->do($SQL);
 	};
-	is( $@, q{}, 'Inserting utf-8 into an array via quoted do() works');
+	is ($@, q{}, $t);
 
+	$t='Retreiving an array containing utf-8 works';
 	$SQL = q{SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1};
 	$sth = $dbh->prepare($SQL);
 	$sth->execute();
 	$result = $sth->fetchall_arrayref()->[0];
-	my $t = q{Retreiving an array containing utf-8 works};
 	my $expected = [1,[$utf8_str,$utf8_str],'one'];
-	is_deeply( $result, $expected, $t);
-    ok( Encode::is_utf8( $result->[1][0] ), 'Selected string should be UTF-8');
-    ok( Encode::is_utf8( $result->[1][1] ), 'Selected string should be UTF-8');
+	is_deeply ($result, $expected, $t);
 
+	$t='Selected string should be UTF-8';
+    ok (Encode::is_utf8( $result->[1][0] ), $t);
+
+	$t='Selected string should be UTF-8';
+    ok (Encode::is_utf8( $result->[1][1] ), $t);
+
+	$t='Inserting utf-8 into an array via prepare and arrayref works';
 	$dbh->do('DELETE FROM dbd_pg_test');
 	$SQL = q{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (?, ?, 'one')};
 	$sth = $dbh->prepare($SQL);
 	eval {
 		$sth->execute(1,['Bob',$utf8_str]);
 	};
-	is( $@, q{}, 'Inserting utf-8 into an array via prepare and arrayref works');
+	is ($@, q{}, $t);
 
+	$t='Retreiving an array containing utf-8 works';
 	$SQL = q{SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1};
 	$sth = $dbh->prepare($SQL);
 	$sth->execute();
 	$result = $sth->fetchall_arrayref()->[0];
-	$t = q{Retreiving an array containing utf-8 works};
 	$expected = [1,['Bob',$utf8_str],'one'];
-	is_deeply( $result, $expected, $t);
-    ok( !Encode::is_utf8( $result->[1][0] ), 'Selected ASCII string should not be UTF-8');
-    ok( Encode::is_utf8( $result->[1][1] ), 'Selected string should be UTF-8');
+	is_deeply ($result, $expected, $t);
 
+	$t='Selected ASCII string should not be UTF-8';
+    ok (!Encode::is_utf8( $result->[1][0] ), $t);
+
+	$t='Selected string should be UTF-8';
+    ok (Encode::is_utf8( $result->[1][1] ), $t);
+
+	$t='Non utf-8 inside an array is not return as utf-8';
 	$dbh->do('DELETE FROM dbd_pg_test');
 	$SQL = q{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, '{"noutfhere"}', 'one')};
 	$dbh->do($SQL);
@@ -527,7 +552,7 @@ SKIP: {
 	$sth = $dbh->prepare($SQL);
 	$sth->execute();
 	$result = $sth->fetchall_arrayref()->[0][0];
-	ok( !Encode::is_utf8($result), 'Non utf-8 inside an array is not return as utf-8');
+	ok (!Encode::is_utf8($result), $t);
 	$sth->finish();
 }
 

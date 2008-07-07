@@ -247,7 +247,7 @@ eval {
 is ($@, q{}, $t);
 
 $t='DB handle attribute "PrintWarn" shows warnings when on';
-like($warning, qr{dbd_pg_test_temp}, $t);
+like ($warning, qr{dbd_pg_test_temp}, $t);
 
 
 $t='DB handle attribute "PrintWarn" works when on';
@@ -665,22 +665,22 @@ is ($attrib, 1, $t);
 $t='Statement handle attribute "Active" is false before SELECT';
 $sth = $dbh->prepare('SELECT 123 UNION SELECT 456');
 $attrib = $sth->{Active};
-is($attrib, '', $t);
+is ($attrib, '', $t);
 
 $t='Statement handle attribute "Active" is true after SELECT';
 $sth->execute();
 $attrib = $sth->{Active};
-is($attrib, 1, $t);
+is ($attrib, 1, $t);
 
 $t='Statement handle attribute "Active" is true when rows remaining';
 my $row = $sth->fetchrow_arrayref();
 $attrib = $sth->{Active};
-is($attrib, 1, $t);
+is ($attrib, 1, $t);
 
 $t='Statement handle attribute "Active" is false after finish called';
 $sth->finish();
 $attrib = $sth->{Active};
-is($attrib, '', $t);
+is ($attrib, '', $t);
 
 #
 # Test of the handle attribute "Kids"
@@ -723,7 +723,7 @@ is ($attrib, 0, $t);
 
 $t='Database handle attribute "CachedKids" is set properly';
 $attrib = $dbh->{CachedKids};
-is(keys %$attrib, 2, $t);
+is (keys %$attrib, 2, $t);
 
 #
 # Test of the handle attribute "CompatMode"
@@ -771,7 +771,7 @@ else {
 		$dbh->{PrintError} = 1;
 		$sth = $dbh->prepare($SQL);
 		$sth->execute();
-		isnt( $warning, undef, $t);
+		isnt ($warning, undef, $t);
 
 		$t='No warning thrown when database handle attribute "PrintError" is off';
 		undef $warning;
@@ -801,7 +801,7 @@ if ($client_level ne 'error') {
 		$sth = $dbh->prepare($SQL);
 		$sth->execute();
 	};
-	isnt( $@, q{}, $t);
+	isnt ($@, q{}, $t);
 }
 
 
@@ -829,7 +829,7 @@ if ($client_level ne 'error') {
 		$sth = $dbh->prepare($SQL);
 		$sth->execute();
 	};
-	like($@, qr/^Slonik/, $t);
+	like ($@, qr/^Slonik/, $t);
 	$dbh->{HandleError}= undef;
 	$dbh->rollback();
 }
@@ -845,7 +845,7 @@ if ($client_level ne 'error') {
 
 $t='Database handle attribute "TraceLevel" returns a number';
 $attrib = $dbh->{TraceLevel};
-like($attrib, qr/^\d$/, $t);
+like ($attrib, qr/^\d$/, $t);
 
 #
 # Test of the handle attribute FetchHashKeyName
@@ -1028,7 +1028,7 @@ SKIP: {
 
 		if ($destroy) {
 			$t=qq{Ping works after the child has exited ("InactiveDestroy" = $destroy)};
-			ok ( $dbh->ping(), $t);
+			ok ($dbh->ping(), $t);
 
 			$t='Successful ping returns a SQLSTATE code of 00000 (empty string)';
 			my $state = $dbh->state();

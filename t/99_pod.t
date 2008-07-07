@@ -18,10 +18,10 @@ eval {
 
 SKIP: {
 	if ($@ or $Test::Pod::VERSION < $PODVERSION) {
-		skip "Test::Pod $PODVERSION is required", 2;
+		skip ("Test::Pod $PODVERSION is required", 2);
 	}
-	pod_file_ok('Pg.pm');
-	pod_file_ok('lib/Bundle/DBD/Pg.pm');
+	pod_file_ok ('Pg.pm');
+	pod_file_ok ('lib/Bundle/DBD/Pg.pm');
 }
 
 ## We won't require everyone to have this, so silently move on if not found
@@ -33,7 +33,7 @@ eval {
 SKIP: {
 
 	if ($@ or $Test::Pod::Coverage::VERSION < $PODCOVERVERSION) {
-		skip "Test::Pod::Coverage $PODCOVERVERSION is required", 1;
+		skip ("Test::Pod::Coverage $PODCOVERVERSION is required", 1);
 	}
 
 	my $trusted_names  =
@@ -177,5 +177,7 @@ SKIP: {
 		 qr{PG_XMLARRAY},
 
 		];
-	pod_coverage_ok('DBD::Pg', {trustme => $trusted_names}, 'DBD::Pg pod coverage okay');
+
+	my $t='DBD::Pg pod coverage okay';
+	pod_coverage_ok ('DBD::Pg', {trustme => $trusted_names}, $t);
 }

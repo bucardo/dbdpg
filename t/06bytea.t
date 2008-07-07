@@ -18,37 +18,44 @@ if (! defined $dbh) {
 }
 plan tests => 7;
 
-isnt( $dbh, undef, 'Connect to database for bytea testing');
+isnt ($dbh, undef, 'Connect to database for bytea testing');
 
 my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 if ($pgversion >= 80100) {
   $dbh->do('SET escape_string_warning = false');
 }
 
-my $sth;
+my ($sth, $t);
 
 $sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytetest) VALUES (?,?)});
 
+$t='bytea insert test with string containing null and backslashes';
 $sth->bind_param(2, undef, { pg_type => PG_BYTEA });
-ok( $sth->execute(400, 'aa\\bb\\cc\\\0dd\\'), 'bytea insert test with string containing null and backslashes');
-ok( $sth->execute(401, '\''), 'bytea insert test with string containing a single quote');
-ok( $sth->execute(402, '\''), 'bytea (second) insert test with string containing a single quote');
+ok ($sth->execute(400, 'aa\\bb\\cc\\\0dd\\'), $t);
 
+$t='bytea insert test with string containing a single quote';
+ok ($sth->execute(401, '\''), $t);
+
+$t='bytea (second) insert test with string containing a single quote';
+ok ($sth->execute(402, '\''), $t);
+
+$t='Received correct text from BYTEA column with backslashes';
 $sth = $dbh->prepare(q{SELECT bytetest FROM dbd_pg_test WHERE id=?});
-
 $sth->execute(400);
 my $byte = $sth->fetchall_arrayref()->[0][0];
-is( $byte, 'aa\bb\cc\\\0dd\\', 'Received correct text from BYTEA column with backslashes');
+is ($byte, 'aa\bb\cc\\\0dd\\', $t);
 
+$t='Received correct text from BYTEA column with quote';
 $sth->execute(402);
 $byte = $sth->fetchall_arrayref()->[0][0];
-is( $byte, '\'', 'Received correct text from BYTEA column with quote');
+is ($byte, '\'', $t);
 
+$t='quote properly handles bytea strings';
 my $string = "abc\123\\def\0ghi";
 my $result = $dbh->quote($string, { pg_type => PG_BYTEA });
 my $E = $pgversion >= 80100 ? q{E} : q{};
 my $expected = qq{${E}'abc\123\\\\\\\\def\\\\000ghi'};
-is( $result, $expected, 'quote properly handles bytea strings.');
+is ($result, $expected, $t);
 
 $sth->finish();
 

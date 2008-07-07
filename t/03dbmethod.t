@@ -161,8 +161,8 @@ $dbh->do("SET search_path = $schema,$schema2,public");
 eval {
 	$result = $dbh->last_insert_id(undef,undef,$table2,undef,{pg_cache=>0});
 };
-is($@, q{}, $t);
-is($result, 100, $t);
+is ($@, q{}, $t);
+is ($result, 100, $t);
 
 $t='search_path respected when using last_insert_id with no cache (second table)';
 $dbh->commit();
@@ -170,8 +170,8 @@ $dbh->do("SET search_path = $schema2,$schema,public");
 eval {
 	$result = $dbh->last_insert_id(undef,undef,$table2,undef,{pg_cache=>0});
 };
-is($@, q{}, $t);
-is($result, 200, $t);
+is ($@, q{}, $t);
+is ($result, 200, $t);
 
 $t='Setting cache on (explicit) returns last result, even if search_path changes';
 $dbh->do("SET search_path = $schema,$schema2,public");
@@ -440,11 +440,11 @@ like ($maxcon, qr{^\d+$}, $t);
 
 $t='DB handle method "get_info" returns correct string for SQL_DATA_SOURCE_READ_ONLY when "on"';
 $dbh->do(q{SET transaction_read_only = 'on'});
-is($dbh->get_info(25), 'Y', $t);
+is ($dbh->get_info(25), 'Y', $t);
 
 $t='DB handle method "get_info" returns correct string for SQL_DATA_SOURCE_READ_ONLY when "off"';
 $dbh->do(q{SET transaction_read_only = 'off'});
-is($dbh->get_info(25), 'N', $t);
+is ($dbh->get_info(25), 'N', $t);
 
 #
 # Test of the "table_info" database handle method

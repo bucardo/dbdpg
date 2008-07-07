@@ -47,7 +47,7 @@ sub spellcheck {
 	}
 	my $count = keys %badword;
 	if (! $count) {
-		pass("Spell check passed for $desc");
+		pass ("Spell check passed for $desc");
 		return;
 	}
 	fail ("Spell check failed for $desc. Bad words: $count");
@@ -61,7 +61,7 @@ sub spellcheck {
 ## First, the plain ol' textfiles
 for my $file (qw/README Changes TODO README.dev README.win32/) {
 	if (!open $fh, '<', $file) {
-		fail(qq{Could not find the file "$file"!});
+		fail (qq{Could not find the file "$file"!});
 	}
 	else {
 		{ local $/; $_ = <$fh>; }
@@ -77,29 +77,29 @@ for my $file (qw/README Changes TODO README.dev README.win32/) {
 		elsif ($file eq 'README.dev') {
 			s/^\t\$.+//gsm;
 		}
-		spellcheck($file => $_, $file);
+		spellcheck ($file => $_, $file);
 	}
 }
 
 ## Now the embedded POD
 SKIP: {
 	if (!eval { require Pod::Spell; 1 }) {
-		skip 'Need Pod::Spell to test the spelling of embedded POD', 2;
+		skip ('Need Pod::Spell to test the spelling of embedded POD', 2);
 	}
 
 	for my $file (qw{Pg.pm lib/Bundle/DBD/Pg.pm}) {
 		if (! -e $file) {
-			fail(qq{Could not find the file "$file"!});
+			fail (qq{Could not find the file "$file"!});
 		}
 		my $string = qx{podspell $file};
-		spellcheck("POD from $file" => $string, $file);
+		spellcheck ("POD from $file" => $string, $file);
 	}
 }
 
 ## Now the comments
 SKIP: {
 	if (!eval { require File::Comments; 1 }) {
-		skip 'Need File::Comments to test the spelling inside comments', 2;
+		skip ('Need File::Comments to test the spelling inside comments', 2);
 	}
     {
 		## For XS files...
@@ -130,16 +130,16 @@ SKIP: {
         dbdimp.c dbdimp.h types.c quote.c quote.h Pg.h types.h}) {
 		## Tests as well?
 		if (! -e $file) {
-			fail(qq{Could not find the file "$file"!});
+			fail (qq{Could not find the file "$file"!});
 		}
 		my $string = $fc->comments($file);
 		if (! $string) {
-			fail(qq{Could not get comments from file $file});
+			fail (qq{Could not get comments from file $file});
 			next;
 		}
 		$string = join "\n" => @$string;
 		$string =~ s/=head1.+//sm;
-		spellcheck("comments from $file" => $string, $file);
+		spellcheck ("comments from $file" => $string, $file);
 	}
 
 

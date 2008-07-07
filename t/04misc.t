@@ -19,58 +19,62 @@ if (! defined $dbh) {
 }
 plan tests => 54;
 
-isnt( $dbh, undef, 'Connect to database for miscellaneous tests');
+isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
 my $t = q{Method 'server_trace_flag' is available without a database handle};
 my $num;
 eval {
 	$num = DBD::Pg->parse_trace_flag('NONE');
 };
-is( $@, q{}, $t);
+is ($@, q{}, $t);
 
-$t = q{Method 'server_trace_flag' returns undef on bogus argument};
-is( $num, undef, $t);
+$t='Method "server_trace_flag" returns undef on bogus argument';
+is ($num, undef, $t);
 
-$t = q{Method 'server_trace_flag' returns 0x00000100 for DBI value 'SQL'};
+$t=q{Method "server_trace_flag" returns 0x00000100 for DBI value 'SQL'};
 $num = DBD::Pg->parse_trace_flag('SQL');
-is( $num, 0x00000100, $t);
+is ($num, 0x00000100, $t);
 
-$t = q{Method 'server_trace_flag' returns 0x01000000 for DBD::Pg flag 'pglibpq'};
+$t=q{Method "server_trace_flag" returns 0x01000000 for DBD::Pg flag 'pglibpq'};
 $num = DBD::Pg->parse_trace_flag('pglibpq');
-is( $num, 0x01000000, $t);
+is ($num, 0x01000000, $t);
 
-$t = q{Database handle method 'server_trace_flag' returns undef on bogus argument};
+$t=q{Database handle method "server_trace_flag" returns undef on bogus argument};
 $num = $dbh->parse_trace_flag('NONE');
-is( $num, undef, $t);
+is ($num, undef, $t);
 
-$t = q{Database handle method 'server_trace_flag' returns 0x00000100 for DBI value 'SQL'};
+$t=q{Database handle method "server_trace_flag" returns 0x00000100 for DBI value 'SQL'};
 $num = $dbh->parse_trace_flag('SQL');
-is( $num, 0x00000100, $t);
+is ($num, 0x00000100, $t);
 
-$t = q{Database handle method 'server_trace_flags' returns 0x01000100 for 'SQL|pglibpq'};
+$t=q{Database handle method 'server_trace_flags' returns 0x01000100 for 'SQL|pglibpq'};
 $num = $dbh->parse_trace_flags('SQL|pglibpq');
-is( $num, 0x01000100, $t);
+is ($num, 0x01000100, $t);
 
-$t = q{Database handle method 'server_trace_flags' returns 0x03000100 for 'SQL|pglibpq|pgstart'};
+$t=q{Database handle method 'server_trace_flags' returns 0x03000100 for 'SQL|pglibpq|pgstart'};
 $num = $dbh->parse_trace_flags('SQL|pglibpq|pgstart');
-is( $num, 0x03000100, $t);
+is ($num, 0x03000100, $t);
 
 my $flagexp = 24;
 my $sth = $dbh->prepare('SELECT 1');
 for my $flag (qw/pglibpq pgstart pgend pgprefix pglogin pgquote/) {
+
 	my $hex = 2**$flagexp++;
-	$t = qq{Database handle method 'server_trace_flag' returns $hex for flag $flag};
+	$t = qq{Database handle method "server_trace_flag" returns $hex for flag $flag};
 	$num = $dbh->parse_trace_flag($flag);
-	is( $num, $hex, $t);
+	is ($num, $hex, $t);
+
 	$t = qq{Database handle method 'server_trace_flags' returns $hex for flag $flag};
 	$num = $dbh->parse_trace_flags($flag);
-	is( $num, $hex, $t);
-	$t = qq{Statement handle method 'server_trace_flag' returns $hex for flag $flag};
+	is ($num, $hex, $t);
+
+	$t = qq{Statement handle method "server_trace_flag" returns $hex for flag $flag};
 	$num = $sth->parse_trace_flag($flag);
-	is( $num, $hex, $t);
+	is ($num, $hex, $t);
+
 	$t = qq{Statement handle method 'server_trace_flags' returns $hex for flag $flag};
 	$num = $sth->parse_trace_flag($flag);
-	is( $num, $hex, $t);
+	is ($num, $hex, $t);
 }
 
 SKIP: {
@@ -78,7 +82,7 @@ SKIP: {
 	eval {
 		require File::Temp;
 	};
-	$@ and skip q{Must have File::Temp to complete trace flag testing}, 9;
+	$@ and skip ('Must have File::Temp to complete trace flag testing', 9);
 
 	my ($fh,$filename) = File::Temp::tempfile('dbdpg_test_XXXXXX', SUFFIX => 'tst', UNLINK => 1);
 	my ($flag, $info, $expected, $SQL);
@@ -93,7 +97,7 @@ SKIP: {
 	seek $fh,0,0;
 	{ local $/; ($info = <$fh>) =~ s/\r//go; }
 	$expected = qq{begin;\n\n$SQL;\n\ncommit;\n\n};
-	is($info, $expected, $t);
+	is ($info, $expected, $t);
 
 	$t=q{Trace flag 'pglibpq' works as expected};
 	seek $fh, 0, 0;
@@ -120,7 +124,7 @@ PQresultStatus
 PQresultErrorField
 PQclear
 };
-	is($info, $expected, $t);
+	is ($info, $expected, $t);
 
 	$t=q{Trace flag 'pgstart' works as expected};
 	seek $fh, 0, 0;
@@ -141,7 +145,7 @@ Begin PGTransactionStatusType
 Begin _result (sql: commit)
 Begin _sqlstate
 };
-	is($info, $expected, $t);
+	is ($info, $expected, $t);
 
 	$t=q{Trace flag 'pgprefix' works as expected};
 	seek $fh, 0, 0;
@@ -162,7 +166,7 @@ dbdpg: Begin PGTransactionStatusType
 dbdpg: Begin _result (sql: commit)
 dbdpg: Begin _sqlstate
 };
-	is($info, $expected, $t);
+	is ($info, $expected, $t);
 
 	$t=q{Trace flag 'pgend' works as expected};
 	seek $fh, 0, 0;
@@ -184,7 +188,7 @@ End _sqlstate (status: 1)
 End _result
 End pg_db_rollback_commit (result: 1)
 };
-	is($info, $expected, $t);
+	is ($info, $expected, $t);
 
 	$t=q{Trace flag 'pglogin' returns undef if no activity};
 	seek $fh, 0, 0;
@@ -196,7 +200,7 @@ End pg_db_rollback_commit (result: 1)
 	seek $fh,0,0;
 	{ local $/; $info = <$fh>; }
 	$expected = undef;
-	is($info, $expected, $t);
+	is ($info, $expected, $t);
 
 	$t=q{Trace flag 'pglogin' works as expected with DBD::Pg->parse_trace_flag()};
 	$dbh->disconnect();
@@ -217,7 +221,7 @@ Connection complete
 Disconnection complete
 };
 	$info =~ s/(Login connection string: ).+/$1/g;
-	is($info, "$expected$expected", $t);
+	is ($info, "$expected$expected", $t);
 
 	$t=q{Trace flag 'pglogin' works as expected with DBD::Pg->parse_trace_flag()};
 	seek $fh, 0, 0;
@@ -233,7 +237,7 @@ Connection complete
 Disconnection complete
 };
 	$info =~ s/(Login connection string: ).+/$1/g;
-	is($info, "$expected", $t);
+	is ($info, "$expected", $t);
 
 	$t=q{Trace flag 'pgprefix' and 'pgstart' appended to 'pglogin' work as expected};
 	seek $fh, 0, 0;
@@ -254,7 +258,7 @@ dbdpg: Begin pg_quickexec (query: SELECT 'dbdpg_flag_testing' async: 0 async_sta
 dbdpg: Begin _sqlstate
 };
 	$info =~ s/(Login connection string: ).+/$1/g;
-	is($info, "$expected", $t);
+	is ($info, "$expected", $t);
 
 } ## end trace flag testing using File::Temp
 
@@ -262,71 +266,72 @@ dbdpg: Begin _sqlstate
 # Test of the "data_sources" method
 #
 
+$t='The "data_sources" method did not throw an exception';
 my @result;
 eval {
 	@result = DBI->data_sources('Pg');
 };
-is( $@, q{}, 'The data_sources() method did not throw an exception');
+is ($@, q{}, $t);
 
+$t='The "data_sources" method returns a template1 listing';
 if (! defined $result[0]) {
-	fail 'The data_sources() method returned an empty list';
+	fail ('The data_sources() method returned an empty list');
 }
 else {
-	is( grep (/^dbi:Pg:dbname=template1$/, @result), '1', 'The data_sources() method returns a template1 listing');
+	is (grep (/^dbi:Pg:dbname=template1$/, @result), '1', $t);
 }
 
-$t=q{The data_sources() returns undef when fed a bogus second argument};
+$t='The "data_sources" method returns undef when fed a bogus second argument';
 @result = DBI->data_sources('Pg','foobar');
-is_deeply( @result, undef, $t);
+is_deeply (@result, undef, $t);
 
+$t='The "data_sources" method returns information when fed a valid port as the second arg';
 my $port = $dbh->{pg_port};
-
-$t=q{The data_sources() returns information when fed a valid port as the second arg};
 @result = DBI->data_sources('Pg',"port=$port");
-isnt( $result[0], undef, $t);
+isnt ($result[0], undef, $t);
 
 #
 # Test the use of $DBDPG_DEFAULT
 #
 
+$t=qq{Using \$DBDPG_DEFAULT ($DBDPG_DEFAULT) works};
 $sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id, pname) VALUES (?,?)});
 eval {
 $sth->execute(600,$DBDPG_DEFAULT);
 };
 $sth->execute(602,123);
-is( $@, q{}, qq{Using \$DBDPG_DEFAULT ($DBDPG_DEFAULT) works});
+is ($@, q{}, $t);
 
 #
 # Test transaction status changes
 #
 
+$t='Raw ROLLBACK via do() resets the transaction status correctly';
 $dbh->{AutoCommit} = 1;
 $dbh->begin_work();
 $dbh->do('SELECT 123');
-
-$t = q{Raw ROLLBACK via do() resets the transaction status correctly};
 eval { $dbh->do('ROLLBACK'); };
-is( $@, q{}, $t);
+is ($@, q{}, $t);
 eval { $dbh->begin_work(); };
-is( $@, q{}, $t);
+is ($@, q{}, $t);
 
-$t = q{Using dbh->commit() resets the transaction status correctly};
+$t='Using dbh->commit() resets the transaction status correctly';
 eval { $dbh->commit(); };
-is( $@, q{}, $t);
+is ($@, q{}, $t);
 eval { $dbh->begin_work(); };
-is( $@, q{}, $t);
+is ($@, q{}, $t);
 
-$t = q{Raw COMMIT via do() resets the transaction status correctly};
+$t='Raw COMMIT via do() resets the transaction status correctly';
 eval { $dbh->do('COMMIT'); };
-is( $@, q{}, $t);
+is ($@, q{}, $t);
 eval { $dbh->begin_work(); };
-is( $@, q{}, $t);
+is ($@, q{}, $t);
 
-$t = q{Calling COMMIT via prepare/execute resets the transaction status correctly};
+$t='Calling COMMIT via prepare/execute resets the transaction status correctly';
 $sth = $dbh->prepare('COMMIT');
 $sth->execute();
 eval { $dbh->begin_work(); };
-is( $@, q{}, $t);
+is ($@, q{}, $t);
 
 cleanup_database($dbh,'test');
 $dbh->disconnect();
