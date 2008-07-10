@@ -17,7 +17,7 @@ use 5.006001;
 {
 	package DBD::Pg;
 
-	use version; our $VERSION = qv('2.8.3');
+	use version; our $VERSION = qv('2.8.4');
 
 	use DBI ();
 	use DynaLoader ();
@@ -1694,7 +1694,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 2.8.3 of the DBD::Pg module
+This documents version 2.8.4 of the DBD::Pg module
 
 =head1 DESCRIPTION
 
@@ -1909,8 +1909,9 @@ flags that DBD::Pg uses, see L</param_trace_flag>.
   $h->trace_msg($message_text);
   $h->trace_msg($message_text, $min_level);
 
-Implemented by DBI, no driver-specific impact. Writes a message to the current trace output. 
-With a second argument, only writes the message if the minimum level is currently set.
+Writes a message to the current trace output (as set by the L</trace> method). If a second argument 
+is given, the message is only written if the current tracing level is equal to or greater than 
+the min_level.
 
 =item B<parse_trace_flag> and B<parse_trace_flags>
 
@@ -1922,7 +1923,7 @@ With a second argument, only writes the message if the minimum level is currentl
 
 The parse_trace_flags method is used to convert one or more named 
 flags to a number which can passed to the L<trace()> method.
-DBD::Pg currently supports the only DBI-specific flag, C<SQL>, 
+DBD::Pg currently supports the DBI-specific flag, C<SQL>, 
 as well as the ones listed below.
 
 Flags can be combined by using the parse_trace_flags method, 
@@ -1943,7 +1944,7 @@ DBD::Pg supports the following trace flags:
 Output all SQL statements. Note that the output provided will not 
 necessarily be in a form suitable to passing directly to Postgres, 
 as server-side prepared statements are used extensively by DBD::Pg.
-For maximum portability of output (but with a potential small performance 
+For maximum portability of output (but with a potential performance 
 hit), use $dbh->{pg_server_prepare} = 0;
 
 =item pglibpq
@@ -1961,13 +1962,13 @@ information is also output if the trace level is set to 4 or greater.
 
 =item pgend
 
-Outputs a simple message at the very end of each function. This is also output if the 
-trace level is set to 4 or greater.
+Outputs a simple message at the very end of each internal DBD::Pg function. This is also 
+output if the trace level is set to 4 or greater.
 
 =item pgprefix
 
 Forces each line of trace output to begin with the string "dbdpg: ". This helps to 
-differentiate it from the DBI tracing output.
+differentiate it from the normal DBI trace output.
 
 =item pglogin
 
@@ -2097,8 +2098,8 @@ Deprecated, use C<< $dbh->{pg_socket} >> instead.
   $hashref = $dbh->private_attribute_info();
   $hashref = $sth->private_attribute_info();
 
-Supported by this driver as proposed by DBI.
-
+Returns a hash of all private attributes used by DBD::Pg, for either 
+a database or a statement handle. Currently, all the hash values are undef.
 
 =back
 
@@ -2106,48 +2107,60 @@ Supported by this driver as proposed by DBI.
 
 =over 4
 
+=item B<InactiveDestroy> (boolean)
+
+If set to true, then the disconnect() method will not be automatically called when 
+the database handle goes out of scope. This is required if you are forking, and even 
+then you must tread carefully and ensure that either the parent or the child handles 
+all database calls from that point forwards, so that messages from the Postgres backend 
+are only handled by one of the processes. If you don't set things up properly, you 
+will see messages such as "server closed the connection unexpectedly". A better solution 
+is usually to rewrite your application not to use forking. See the section on 
+L</Asynchronous Queries> for a way to have your script continue to work while the database 
+is working.
+
 =item B<Warn> (boolean, inherited)
 
-Implemented by DBI, no driver-specific impact.
+Enables warnings. This is on by default, and should only be turned off in a local block for a short a time 
+as is absolutely needed.
 
 =item B<Active> (boolean, read-only)
 
-Supported by this driver as proposed by DBI. A database handle is active while
-it is connected and statement handle is active until it is finished.
-
-=item B<Executed> (boolean, read-only)
-
-Implemented by DBI, no driver-specific impact.
+Indicates if a handle is active or not. For database handles, this indicates if the database has 
+been disconnected or not. For statement handles, it indicates if all the data has been fetched yet 
+or not. Use of this attribute is not encouraged.
 
 =item B<Kids> (integer, read-only)
 
-Implemented by DBI, no driver-specific impact.
+Returns the number of child processes created for each handle type. For a driver handle, indicates the number 
+of database handles created. For a database handle, indicates the number of statement handles created. For 
+statement handles, it always returns zero, because statement handles do not create kids.
 
 =item B<ActiveKids> (integer, read-only)
 
-Implemented by DBI, no driver-specific impact.
+Same as L</Kids>, but only returns those that are L</Active>.
 
 =item B<CachedKids> (hash ref)
 
 Implemented by DBI, no driver-specific impact.
 
-=item B<Type> (scalar)
+=item B<Executed> (boolean, read-only)
 
 Implemented by DBI, no driver-specific impact.
+
+=item B<Type> (scalar)
+
+Returns 'dr' for a driver handle, 'db' for a database handle, and 'st' for a statement handle. 
+Should be rarely needed.
+
+=item B<TraceLevel> (integer, inherited)
+
+Sets the trace level, similar to the L</trace> method. See the sections on 
+L</trace> and L</parse_trace_flag> for more details.
 
 =item B<ChildHandles> (array ref)
 
 Implemented by DBI, no driver-specific impact.
-
-=item B<CompatMode> (boolean, inherited)
-
-Not used by this driver.
-
-=item B<InactiveDestroy> (boolean)
-
-Implemented by DBI, no driver-specific impact. If set to true, then 
-the disconnect() method will not be automatically called when the 
-database handle goes out of scope (e.g. when exiting after a fork).
 
 =item B<PrintWarn> (boolean, inherited)
 
@@ -2177,10 +2190,6 @@ Implemented by DBI, no driver-specific impact.
 
 Implemented by DBI, no driver-specific impact.
 
-=item B<TraceLevel> (integer, inherited)
-
-Implemented by DBI, no driver-specific impact.
-
 =item B<FetchHashKeyName> (string, inherited)
 
 Implemented by DBI, no driver-specific impact.
@@ -2189,14 +2198,6 @@ Implemented by DBI, no driver-specific impact.
 
 Supported by this driver as proposed by DBI. This method is similar to the
 SQL function C<RTRIM>.
-
-=item B<LongReadLen> (integer, inherited)
-
-Not used by this driver.
-
-=item B<LongTruncOk> (boolean, inherited)
-
-Not used by this driver.
 
 =item B<Taint> (boolean, inherited)
 
@@ -2213,6 +2214,18 @@ Implemented by DBI, no driver-specific impact.
 =item B<Profile> (inherited)
 
 Implemented by DBI, no driver-specific impact.
+
+=item B<LongReadLen> (integer, inherited)
+
+Not used by this driver.
+
+=item B<LongTruncOk> (boolean, inherited)
+
+Not used by this driver.
+
+=item B<CompatMode> (boolean, inherited)
+
+Not used by this driver.
 
 =back
 

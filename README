@@ -6,7 +6,7 @@ DBD::Pg  --  the DBI PostgreSQL interface for Perl
 DESCRIPTION:
 ------------
 
-This is version 2.8.3 of DBD::Pg.  The web site for this interface, and 
+This is version 2.8.4 of DBD::Pg.  The web site for this interface, and 
 the latest version, can be found at:
 
 	http://search.cpan.org/dist/DBD-Pg/
