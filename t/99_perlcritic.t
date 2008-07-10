@@ -4,6 +4,7 @@
 ## This is highly customized, so take with a grain of salt
 ## Requires TEST_CRITIC to be set
 
+use 5.006;
 use strict;
 use warnings;
 use Test::More;

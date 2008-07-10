@@ -2,6 +2,7 @@
 
 ## Test that our SIGNATURE file is valid - requires TEST_SIGNATURE env
 
+use 5.006;
 use strict;
 use warnings;
 use Test::More;

@@ -10,6 +10,7 @@
 ## "pg_savepoint", "pg_release", "pg_rollback_to" (see 20savepoints.t)
 ## "pg_putline", "pg_getline", "pg_endcopy" (see 07copy.t)
 
+use 5.006;
 use strict;
 use warnings;
 use Data::Dumper;
@@ -1346,7 +1347,7 @@ is_deeply ($info, [$notify_name, $pid, ''], $t);
 $t='DB handle method "pg_notifies" returns the correct values';
 $dbh->do("NOTIFY $notify_name");
 $dbh->commit();
-$info = $dbh->pg_notifies;;
+$info = $dbh->pg_notifies;
 is_deeply ($info, [$notify_name, $pid, ''], $t);
 
 #

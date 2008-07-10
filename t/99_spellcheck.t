@@ -3,6 +3,7 @@
 ## Spellcheck as much as we can
 ## Requires TEST_SPELL to be set
 
+use 5.006;
 use strict;
 use warnings;
 use Test::More;

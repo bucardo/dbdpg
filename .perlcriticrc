@@ -23,6 +23,7 @@ stop_words = ActiveKids AutoCommit boolean Bunce CachedKids ChildHandles ChopBla
 [-Documentation::RequirePODUseEncodingUTF8]
 [-Editor::RequireEmacsFileVariables]
 [-ErrorHandling::RequireCarping]
+[-ErrorHandling::RequireCheckingReturnValueOfEval]
 [-InputOutput::ProhibitBacktickOperators]
 [-InputOutput::ProhibitOneArgSelect]
 [-InputOutput::RequireCheckedSyscalls]

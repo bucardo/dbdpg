@@ -2,6 +2,7 @@
 
 ## Test asynchronous queries
 
+use 5.006;
 use strict;
 use warnings;
 use Test::More;
@@ -271,7 +272,7 @@ SKIP: {
 
 	$sth->finish();
 
-}; ## end of pg_sleep skip
+} ## end of pg_sleep skip
 
 
 $t=q{Method execute() works when prepare has PG_ASYNC flag};

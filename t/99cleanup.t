@@ -3,6 +3,7 @@
 ## Cleanup all database objects we may have created
 ## Shutdown the test database if we created one
 
+use 5.006;
 use strict;
 use warnings;
 use Test::More tests => 1;

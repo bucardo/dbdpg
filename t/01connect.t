@@ -3,6 +3,7 @@
 ## Make sure we can connect and disconnect cleanly
 ## All tests are stopped if we cannot make the first connect
 
+use 5.006;
 use strict;
 use warnings;
 use DBI;

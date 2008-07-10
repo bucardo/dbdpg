@@ -2,6 +2,7 @@
 
 ## Test the COPY functionality
 
+use 5.006;
 use strict;
 use warnings;
 use Data::Dumper;
@@ -336,7 +337,7 @@ SKIP: {
 		$dbh->pg_getcopydata($newvar);
 	};
 	is ($@, q{}, $t);
-};
+}
 
 #
 # Make sure rollback and commit reset our internal copystate tracking

@@ -6,6 +6,7 @@
 ## "finish"
 ## "dump_results"
 
+use 5.006;
 use strict;
 use warnings;
 use Test::More;

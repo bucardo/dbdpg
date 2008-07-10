@@ -6,6 +6,7 @@ use warnings;
 use Data::Dumper;
 use DBI;
 use Cwd;
+use 5.006;
 select(($|=1,select(STDERR),$|=1)[1]);
 
 my @schemas =
@@ -85,12 +86,11 @@ sub connect_database {
 			$testdsn =~ s/$alias\s*=(\w+)/'db="'.lc $2.'"'/e;
 		}
 
-		eval {
+		goto GOTDBH if eval {
 			$dbh = DBI->connect($testdsn, $testuser, '',
 								{RaiseError => 1, PrintError => 0, AutoCommit => 1});
+			1;
 		};
-
-		goto GOTDBH unless $@;
 
 		if ($@ =~ /invalid connection option/) {
 			return $helpconnect, $@, undef;

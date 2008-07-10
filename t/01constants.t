@@ -1,5 +1,6 @@
 #!perl
 
+use 5.006;
 use strict;
 ## We cannot 'use warnings' here as PG_TSQUERY and others trip it up
 ## no critic (RequireUseWarnings)

@@ -2,6 +2,7 @@
 
 ## Test all handle attributes: database, statement, and generic ("any")
 
+use 5.006;
 use strict;
 use warnings;
 use Test::More;
