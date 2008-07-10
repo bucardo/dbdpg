@@ -229,7 +229,12 @@ sub connect_database {
 		last GETHANDLE if $@;
 		if (!defined $info or ($info !~ /\@postgresql\.org/ and $info !~ /run as root/)) {
 			if (defined $info) {
-				$@ = "Bad initdb output: $info";
+				if ($info !~ /\w/) {
+					$@ = 'initdb not found: cannot run full tests without a Postgres database';
+				}
+				else {
+					$@ = "Bad initdb output: $info";
+				}
 			}
 			else {
 				my $msg = 'Failed to run initdb.';
