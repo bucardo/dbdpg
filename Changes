@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.8.4 Released July 10, 2008
+2.8.4 Released July 10, 2008 (subversion r11520)
 
 	- Minor Perl::Critic test adjustments.
 	- Documentation enhancements.
