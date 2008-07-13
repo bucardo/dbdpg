@@ -2146,7 +2146,10 @@ Implemented by DBI, no driver-specific impact.
 
 =item B<Executed> (boolean, read-only)
 
-Implemented by DBI, no driver-specific impact.
+Indicates if a handle has been executed. For database handles, this value is true after the C<do()> method has been called, or 
+when one of the child statement handles has issued an execute(). Issuing a C<commit> or C<rollback> always resets the 
+attribute to false for database handles. For statement handles, any call to C<execute()> or it variants will flip the value to 
+true for the lifetime of the statement handle.
 
 =item B<Type> (scalar)
 
@@ -2168,11 +2171,15 @@ Implemented by DBI, no driver-specific impact.
 
 =item B<PrintError> (boolean, inherited)
 
-Implemented by DBI, no driver-specific impact.
+Forces database errors to also generate warnings, which can then be filtered with methods such as 
+locally redefining $SIG{__WARN__} or using modules such as CGI::Carp. This attribute is on 
+by default.
 
 =item B<RaiseError> (boolean, inherited)
 
-Implemented by DBI, no driver-specific impact.
+Forces errors to always raise an exception. Although it defaults to off, it is recommended that this 
+be turned on, as the alternative is to check the return value of every method (prepare, execute, fetch, etc.) 
+to check for any problems. See the DBI docs for more information.
 
 =item B<HandleError> (boolean, inherited)
 
@@ -2642,9 +2649,9 @@ server version 8.4 or higher.
 
   $rc = $dbh->ping;
 
-This driver supports the C<ping> method, which can be used to check the validity
-of a database handle. The value returned is either 0, indicating that the 
-connection is no longer valid, or a positive integer, indicating the following:
+This C<ping> method is used to check the validity of a database handle. The value returned is 
+either 0, indicating that the connection is no longer valid, or a positive integer, indicating 
+the following:
 
   Value    Meaning
   --------------------------------------------------
