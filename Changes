@@ -1,5 +1,12 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.8.5
+
+	- Fix an obscure bug in which a coredump occurs if client_min_messages 
+	  	is set to DEBUG3 or greater, and we then exit without disconnecting 
+		while AutoCommit is off. The new behavior is to simply not attempt to 
+		output the debugging information about the final 'rollback'. [GSM]
+
 2.8.4 Released July 10, 2008 (subversion r11520)
 
 	- Minor Perl::Critic test adjustments.

@@ -276,6 +276,22 @@ static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
 static void pg_warn (void * arg, const char * message)
 {
 	dTHX;
+
+	/* This fun little bit is to prevent a core dump when the following occurs:
+	   client_min_messages is set to DEBUG3 or greater, and we exit without a disconnect.
+	   DBI issues a 'rollback' in this case, which causes some debugging messages 
+	   to be emitted from the server (such as "StartTransactionCommand"). However, we can't do 
+	   the D_imp_dbh call anymore, because the underlying dbh has lost some of its magic.
+	   Unfortunately, DBI then coredumps in dbhh_getcom2. Hence, we make sure that the 
+	   object passed in is still 'valid', in that a certain level has a ROK flag.
+	   If it's not, we just return without issuing any warning, as we can't check things 
+	   like DBIc_WARN. There may be a better way of handling all this, and we may want to 
+	   default to always warn() - input welcome.
+	*/
+	if (!SvROK(SvMAGIC(SvRV(newRV((SV*)arg)))->mg_obj)) {
+		return;
+	}
+
 	D_imp_dbh( sv_2mortal(newRV((SV*)arg)) );
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_warn (message: %s DBIc_WARN: %d PrintWarn: %d)\n",
