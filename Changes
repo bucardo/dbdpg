@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.8.5
+2.8.5 Released July 13, 2008
 
 	- Fix an obscure bug in which a coredump occurs if client_min_messages 
 	  	is set to DEBUG3 or greater, and we then exit without disconnecting 
