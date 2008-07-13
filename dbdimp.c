@@ -282,7 +282,7 @@ static void pg_warn (void * arg, const char * message)
 	   DBI issues a 'rollback' in this case, which causes some debugging messages 
 	   to be emitted from the server (such as "StartTransactionCommand"). However, we can't do 
 	   the D_imp_dbh call anymore, because the underlying dbh has lost some of its magic.
-	   Unfortunately, DBI then coredumps in dbhh_getcom2. Hence, we make sure that the 
+	   Unfortunately, DBI then coredumps in dbh_getcom2. Hence, we make sure that the 
 	   object passed in is still 'valid', in that a certain level has a ROK flag.
 	   If it's not, we just return without issuing any warning, as we can't check things 
 	   like DBIc_WARN. There may be a better way of handling all this, and we may want to 

@@ -6,6 +6,7 @@
 	  	is set to DEBUG3 or greater, and we then exit without disconnecting 
 		while AutoCommit is off. The new behavior is to simply not attempt to 
 		output the debugging information about the final 'rollback'. [GSM]
+	- More documentation improvements.
 
 2.8.4 Released July 10, 2008 (subversion r11520)
 

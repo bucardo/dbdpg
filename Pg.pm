@@ -17,7 +17,7 @@ use 5.006001;
 {
 	package DBD::Pg;
 
-	use version; our $VERSION = qv('2.8.4');
+	use version; our $VERSION = qv('2.8.5');
 
 	use DBI ();
 	use DynaLoader ();
@@ -1694,7 +1694,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 2.8.4 of the DBD::Pg module
+This documents version 2.8.5 of the DBD::Pg module
 
 =head1 DESCRIPTION
 
@@ -2121,8 +2121,8 @@ is working.
 
 =item B<Warn> (boolean, inherited)
 
-Enables warnings. This is on by default, and should only be turned off in a local block for a short a time 
-as is absolutely needed.
+Enables warnings. This is on by default, and should only be turned off in a local block 
+for a short a time only when absolutely needed.
 
 =item B<Active> (boolean, read-only)
 
@@ -2556,28 +2556,57 @@ If you did not want to worry about the sequence name:
 
 =item B<commit>
 
-  $rc  = $dbh->commit;
+  $rc = $dbh->commit;
 
-Supported by this driver as proposed by DBI. See also the notes about
-B<Transactions> elsewhere in this document.
+Issues a COMMIT to the server, indicating that the current transaction is finished and that 
+all changes made will be visible to other processes. If AutoCommit is enabled, then 
+a warning is given and no COMMIT is issued. Returns true on success, false on error.
+See also the the section on L</Transactions>.
 
 =item B<rollback>
 
-  $rc  = $dbh->rollback;
+  $rc = $dbh->rollback;
 
-Supported by this driver as proposed by DBI. See also the notes about
-B<Transactions> elsewhere in this document.
+Issues a ROLLBACK to the server, which discards any changes made in the current transaction. If AutoCommit 
+is enabled, then a warning is given and no ROLLBACK is issued. Returns true on success, and 
+false on error. See also the the section on L</Transactions>.
 
 =item B<begin_work>
 
-Supported by this driver as proposed by DBI. Note that this will not 
-issue a "begin" until immediately before the next given command.
+This method turns on transactions until the next call to C<commit> or C<rollback>, if AutoCommit is 
+currently enabled. If it is not enabled, calling begin_work will issue an error. Note that the 
+transaction will not actually begin until the first statement after begin_work is called.
+Example:
+
+  $dbh->{AutoCommit} = 1;
+  $dbh->do("INSERT INTO foo VALUES (123)"); ## Changes committed immediately
+  $dbh->begin_work();
+  ## Not in a transaction yet, but AutoCommit is set to 0
+
+  $dbh->do("INSERT INTO foo VALUES (345)");
+  ## DBD::PG actually issues two statements here:
+  ## BEGIN;
+  ## INSERT INTO foo VALUES (345)
+  ## We are now in a transaction
+
+  $dbh->commit();
+  ## AutoCommit is now set to 1 again
 
 =item B<disconnect>
 
   $rc  = $dbh->disconnect;
 
-Supported by this driver as proposed by DBI.
+Disconnects from the Postgres database. Any uncommitted changes will be rolled back upon disconnection. It's 
+good policy to always explicitly call commit or rollback at some point before disconnecting, rather than 
+relying on the default rollback behavior.
+
+This method may give warnings about "disconnect invalidates X active statement handle(s)". This means that 
+you called $sth->execute() but did not finish fetching all the rows from them. To avoid seeing this 
+warning, either fetch all the rows or call $sth->finish() for each executed statement handle.
+
+If the script exits before disconnect is called (or, more precisely, if the database handle is no longer 
+referenced by anything), then the database handle' DESTROY method will call the rollback() and disconnect() 
+methods automatically. It is best to explicitly disconnect rather than rely on this behavior.
 
 =item pg_notifies
 
@@ -2840,7 +2869,20 @@ type is officially deprecated. Use C<PG_BYTEA> with C<bind_param()> instead:
 
 =item B<quote_identifier>
 
-Implemented by DBI, no driver-specific impact.
+  $string = $dbh->quote_identifier( $name );
+  $string = $dbh->quote_identifier( $catalog, $schema, $table);
+
+Returns a quoted version of the supplied string, which is commonly a schema, 
+table, or column name. The three argument form will return the schema and 
+the table together, separated by a dot (the $catalog argument is ignored).
+Examples:
+
+  print $dbh->quote_identifier('grapefruit'); ## Prints: "grapefruit"
+
+  print $dbh->quote_identifier('juicy fruit'); ## Prints: "juicy fruit"
+
+  print $dbh->quote_identifier(undef, 'public', 'pg_proc');
+  ## Prints: "public"."pg_proc"
 
 =item B<pg_server_trace>
 
@@ -3286,9 +3328,6 @@ the DATABASE package. Here the field parameter has been used to handle this
 object identifier. The offset and len parameters may be set to zero, in which
 case the driver fetches the whole blob at once.
 
-Starting with PostgreSQL 6.5, every access to a blob has to be put into a
-transaction. This holds even for a read-only access.
-
 See also the PostgreSQL-specific functions concerning blobs, which are
 available via the C<func> interface.
 
@@ -3340,14 +3379,15 @@ Supported by this driver as proposed by DBI
 
 =item B<PRECISION>  (arrayref, read-only)
 
-Supported by this driver. C<NUMERIC> types will return the precision. Types of
-C<CHAR> and C<VARCHAR> will return their size (number of characters). Other
-types will return the number of I<bytes>.
+Returns a reference to an array of integer values of each column. 
+C<NUMERIC> types will return the precision. Types of C<CHAR> and C<VARCHAR> 
+will return their size (number of characters). Other types will return the number 
+of I<bytes>.
 
 =item B<SCALE>  (arrayref, read-only)
 
-Supported by this driver as proposed by DBI. The only type
-that will return a value currently is C<NUMERIC>.
+Returns a reference to an array of integer values of each column. 
+The only type that will return a value currently is C<NUMERIC>.
 
 =item B<NULLABLE>  (arrayref, read-only)
 
@@ -3802,9 +3842,8 @@ success. This method will fail if called when not in a COPY IN or COPY OUT state
 =head2 Large Objects
 
 This driver supports all largeobject functions provided by libpq via the
-C<func> method. Please note that, starting with PostgreSQL 6.5, any access to
-a large object -- even read-only large objects -- must be put into a
-transaction!
+C<func> method. Please note that access to a large object, even read-only 
+large objects, must be put into a transaction.
 
 =head2 Cursors
 
@@ -3903,4 +3942,3 @@ the Perl README file.
 See also B<DBI/ACKNOWLEDGMENTS>.
 
 =cut
-
