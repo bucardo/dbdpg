@@ -608,6 +608,7 @@ ABCD
 AvARRAY
 BegunWork
 COPYing
+DBIc
 Deallocate
 Deallocation
 ExecStatusType
@@ -615,12 +616,15 @@ INV
 NULLs
 Oid
 PGRES
+ROK
+StartTransactionCommand
 backend's
 backslashed
 boolean
 cancelling
 copypv
 copystate
+coredumps
 currph
 currpos
 dashdash
@@ -632,6 +636,7 @@ destringify
 dollarquote
 dollarstring
 firstword
+getcom
 inerror
 login
 mortalize
