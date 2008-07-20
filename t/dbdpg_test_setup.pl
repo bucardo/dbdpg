@@ -311,6 +311,10 @@ sub connect_database {
 				$@ = "Failed to run initdb as user $su: $@";
 				last GETHANDLE;
 			}
+			if (! -e "$test_database_dir/data") {
+				$@ = 'Could not create a test database';
+				last GETHANDLE;
+			}
 			## At this point, both $su and $testuser are set
 		}
 
