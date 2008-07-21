@@ -275,7 +275,6 @@ sub connect_database {
 		warn "Please wait, creating new database for testing\n";
 		$info = '';
 		eval {
-			warn "RUNNING: $initdb --locale=C -E UTF8 -D $testdir/data \n";
 			$info = qx{$initdb --locale=C -E UTF8 -D $testdir/data 2>&1};
 		};
 		last GETHANDLE if $@; ## Fail - initdb bad
