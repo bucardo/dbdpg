@@ -3475,7 +3475,9 @@ have not yet been bound will return undef as the value.
 
 =item B<Statement>  (string, read-only)
 
-Supported by this driver as proposed by DBI.
+Returns the statement string passed to the most recent "prepare" method called in this database handle, even if that method
+failed. This is especially useful where "RaiseError" is enabled and the exception handler checks $@ and sees that a ’prepare’
+method call failed.
 
 =item B<RowCache>  (integer, read-only)
 
