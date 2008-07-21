@@ -1,5 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.8.6 Released July 20, 2008
+
+	- More testing improvements to increase odds of all tests being
+		run, especialy when testing as root. [GSM]
+
 2.8.5 Released July 13, 2008 (subversion r11529)
 
 	- Fix an obscure bug in which a coredump occurs if client_min_messages 
