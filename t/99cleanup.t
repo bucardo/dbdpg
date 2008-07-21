@@ -2,6 +2,7 @@
 
 ## Cleanup all database objects we may have created
 ## Shutdown the test database if we created one
+## Remove the entire directory if it was created as a tempdir
 
 use 5.006;
 use strict;
@@ -11,7 +12,7 @@ use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
-my $dbh = connect_database({nosetup => 1, nocreate => 1});
+my $dbh = connect_database({nosetup => 1, nocreate => 1, norestart => 1});
 
 SKIP: {
 	if (! defined $dbh) {
