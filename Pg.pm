@@ -2753,12 +2753,17 @@ These fields are currently always returned with NULL (C<undef>) values:
 
 Also, six additional non-standard fields are returned:
 
-  pg_type - data type with additional info i.e. "character varying(20)"
-  pg_constraint - holds column constraint definition
-  pg_schema - the unquoted name of the schema
-  pg_table - the unquoted name of the table
-  pg_column - the unquoted name of the column
-  pg_enum_values - an array reference of allowed values for an enum column
+B<pg_type>: data type with additional info i.e. "character varying(20)"
+
+B<pg_constraint>: holds column constraint definition
+
+B<pg_schema>: the unquoted name of the schema
+
+B<pg_table>: the unquoted name of the table
+
+B<pg_column>: the unquoted name of the column
+
+B<pg_enum_values>: an array reference of allowed values for an enum column
 
 Note that the TABLE_SCHEM, TABLE_NAME, and COLUMN_NAME fields all return 
 output wrapped in quote_ident(). If you need the unquoted version, use 
@@ -2779,11 +2784,15 @@ tablespaces. See the C<table_info> entry for more information.
 
 The five additional custom fields returned are:
 
-  pg_tablespace_name - Name of the tablespace, if any
-  pg_tablespace_location - Location of the tablespace
-  pg_schema - the unquoted name of the schema
-  pg_table - the unquoted name of the table
-  pg_column - the unquoted name of the column
+B<pg_tablespace_name>: name of the tablespace, if any
+
+B<pg_tablespace_location>: location of the tablespace
+
+B<pg_schema>: the unquoted name of the schema
+
+B<pg_table>: the unquoted name of the table
+
+B<pg_column>: the unquoted name of the column
 
 In addition to the standard format of returning one row for each column
 found for the primary key, you can pass the C<pg_onerow> attribute to force
@@ -3459,7 +3468,7 @@ document.
 
 =item C<Database>  (dbh, read-only)
 
-Implemented by DBI, no driver-specific impact.
+Returns the database handle this statement handle was created from.
 
 =item C<ParamValues>  (hash ref, read-only)
 
