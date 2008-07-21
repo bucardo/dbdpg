@@ -69,6 +69,11 @@ sub connect_database {
 		return $helpconnect, "Previous failure ($error)", undef;
 	}
 
+	## We may want to force an initdb call
+	if (!$helpconnect and $ENV{DBDPG_TESTINITDB}) {
+		goto INITDB;
+	}
+
 	## Got a working DSN? Give it an attempt
 	if ($testdsn and $testuser) {
 
@@ -167,7 +172,7 @@ sub connect_database {
 
 	} ## end got testdsn and testuser
 
-	## No previous info (or failed attempt), so try to conenct and possible create out own cluster
+	## No previous info (or failed attempt), so try to connect and possible create our own cluster
 
 	$testdsn ||= $ENV{DBI_DSN};
 	$testuser ||= $ENV{DBI_USER};
@@ -685,6 +690,7 @@ sub shutdown_test_database {
 	}
 
 	## Remove the test directory entirely
+	return if $ENV{DBDPG_TESTINITDB};
 	return if ! eval { require File::Path; 1; };
 	warn "Removing test database directory\n";
 	File::Path::rmtree($testdir);

@@ -137,7 +137,7 @@ sub new {
     my @paths = $self->search_bin_dirs;
     my @exes = $self->search_exe_names;
 
-    if (my $cfg = $u->first_cat_exe(\@exes, @paths)) {
+    if (my $cfg = $u->first_cat_exe(\@exes, @paths) and !$ENV{DBDPG_TESTINITDB}) {
         # We found it. Confirm.
         $self->{pg_config} = $self->confirm( key      => 'pg_config',
                                              prompt   => "Path to pg_config?",
