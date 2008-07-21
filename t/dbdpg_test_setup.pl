@@ -563,6 +563,7 @@ sub find_tempdir {
 		mkdir $tempdir or return '';
 		return $tempdir;
 	}
+	return '';
 
 } ## end of find_tempdir
 
@@ -601,7 +602,8 @@ sub get_test_settings {
 	}
 
 	return $testdsn, $testuser, $helpconnect, $su, $uid, $testdir, $pg_ctl, $initdb, $error;
-}
+
+} ## end of get_test_settings
 
 
 sub schema_exists {
@@ -613,7 +615,7 @@ sub schema_exists {
 	$sth->finish();
 	return $count < 1 ? 0 : 1;
 
-}
+} ## end of schema_exists
 
 
 sub relation_exists {
@@ -626,7 +628,8 @@ sub relation_exists {
 	$sth->finish();
 	return $count < 1 ? 0 : 1;
 
-}
+} ## end of relation_exists
+
 
 sub cleanup_database {
 
@@ -661,7 +664,8 @@ sub cleanup_database {
 
 	return;
 
-}
+} ## end of cleanup_database
+
 
 sub shutdown_test_database {
 
@@ -684,7 +688,8 @@ sub shutdown_test_database {
 	return if ! eval { require File::Path; 1; };
 	warn "Removing test database directory\n";
 	File::Path::rmtree($testdir);
+	return;
 
-}
+} ## end of shutdown_test_database
 
 1;
