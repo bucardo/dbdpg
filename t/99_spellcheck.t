@@ -459,6 +459,7 @@ tablespaces
 TaintIn
 TaintOut
 TCP
+tempdir
 testdatabase
 testname
 tf

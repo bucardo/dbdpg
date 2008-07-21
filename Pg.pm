@@ -2514,10 +2514,10 @@ function.
 
 Attempts to return the id of the last value to be inserted into a table.
 You can either provide a sequence name (preferred) or provide a table
-name with optional schema. The $catalog and $field arguments are always ignored.
-The current value of the sequence is returned by a call to the
-C<CURRVAL()> PostgreSQL function. This will fail if the sequence has not yet
-been used in the current database connection.
+name with optional schema, and DBD::Pg will attempt to find the sequence itself. 
+The $catalog and $field arguments are always ignored. The current value of the 
+sequence is returned by a call to the C<CURRVAL()> PostgreSQL function. This will 
+fail if the sequence has not yet been used in the current database connection.
 
 If you do not know the name of the sequence, you can provide a table name and
 DBD::Pg will attempt to return the correct value. To do this, there must be at
@@ -2532,7 +2532,9 @@ attribute.
 Please keep in mind that this method is far from foolproof, so make your
 script use it properly. Specifically, make sure that it is called
 immediately after the insert, and that the insert does not add a value
-to the column that is using the sequence as a default value.
+to the column that is using the sequence as a default value. However, because 
+we are using sequences, you can be sure that the value you got back has not 
+been used by any other process.
 
 Some examples:
 
@@ -2692,26 +2694,57 @@ recommended by DBI.
 
   $sth = $dbh->table_info( $catalog, $schema, $table, $type );
 
-Supported by this driver as proposed by DBI. This method returns all tables
-and views visible to the current user. The $catalog argument is currently
-unused. The schema and table arguments will do a C<LIKE> search if a percent
-sign (C<%>) or an underscore (C<_>) is detected in the argument. The $type
-argument accepts a value of either "TABLE" or "VIEW" (using both is the
-default action).
+Returns all tables and views visible to the current user. The $catalog argument is currently 
+unused. The schema and table arguments will do a C<LIKE> search if a percent sign (C<%>) or an 
+underscore (C<_>) is detected in the argument. The $type argument accepts a value of either 
+"TABLE" or "VIEW" (using both is the default action). Note that a statement handle is returned, 
+and not a direct list of tables. See the examples below for ways to handle this.
 
-The TABLE_CAT field will always return NULL (C<undef>).
+The following fields are returned:
+
+B<TABLE_CAT>: Always NULL, as Postgres does not have the concept of catalogs.
+
+B<TABLE_SCHEM>: The name of the schema that the table or view is in.
+
+B<TABLE_NAME>: The name of the table or view.
+
+B<TABLE_TYPE>: The type of object returned. Will be one of "TABLE", "VIEW", 
+or "SYSTEM TABLE".
+
+The TABLE_SCHEM and TABLE_NAME will be quoted via C<quote_ident()>.
+
+Two additional fields specific to DBD::Pg are returned:
+
+B<pg_schema>: the unquoted name of the schema
+
+B<pg_table>: the unquoted name of the table
 
 If your database supports tablespaces (version 8.0 or greater), two additional
-columns are returned, "pg_tablespace_name" and "pg_tablespace_location",
-that contain the name and location of the tablespace associated with
-this table. Tables that have not been assigned to a particular tablespace
-will return NULL (C<undef>) for both of these columns.
+DBD::Pg specific fields are returned:
 
-Three additional fields are returned:
+B<pg_tablespace_name>: the name of the tablespace the table is in
 
-  pg_schema - the unquoted name of the schema
-  pg_table - the unquoted name of the table
-  pg_column - the unquoted name of the column
+B<pg_tablespace_location>: the location of the tablespace the table is in
+
+Tables that have not been assigned to a particular tablespace (or views) 
+will return NULL (C<undef>) for both of the above field.
+
+Rows are returned alphabetically, with all tables first, and then all views.
+
+Examples of use:
+
+  ## Display all tables and views in the public schema:
+  $sth = $dbh->table_info('', 'public', undef, undef);
+  for my $rel ({@$sth->fetchall_arrayref({})}) {
+    print "$rel->{TABLE_TYPE} name is $rel->{TABLE_NAME}\n";
+  }
+
+
+  # Display the schema of all tables named 'foo':
+  $sth = $dbh->table_info('', undef, 'foo', 'TABLE');
+  for my $rel (@{$sth->fetchall_arrayref({})}) {
+    print "Table name is $rel->{TABLE_SCHEM}.$rel->{TABLE_NAME}\n";
+  }
 
 =item B<column_info>
 
