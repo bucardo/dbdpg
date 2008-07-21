@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.8.6 Released July 20, 2008
+2.8.6 Released July 21, 2008
 
 	- More testing improvements to increase odds of all tests being
 		run, especially when testing as root. [GSM]
