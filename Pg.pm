@@ -1792,6 +1792,16 @@ whether to use SSL to connect to the database:
 
 =back
 
+You can also connect using sockets in a specific directory. This 
+may be needed if the server you are connecting to has a different 
+default socket directory from the one used to compile DBD::Pg. 
+Use the complete path to the socket directory as the name of the 
+host, like this:
+
+  $dbh = DBI->connect('dbi:Pg:dbname=foo;host=/var/tmp/socket',
+    $username, $password,
+    {AutoCommit => 0, RaiseError => 1});
+
 =item B<connect_cached>
 
 Implemented by DBI, no driver-specific impact.
