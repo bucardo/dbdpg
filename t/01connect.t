@@ -139,7 +139,7 @@ END {
 	}
 
 	if (defined $connerror and length $connerror) {
-		$connerror =~ s/.+?failed: //;
+		$connerror =~ s/.+?failed: ([^\n]+).*/$1/s;
 		$connerror =~ s{\n at t/dbdpg.*}{}m;
 		if ($connerror =~ /create semaphores/) {
 			$connerror =~ s/.*(FATAL.*?)HINT.*/$1/sm;

@@ -585,9 +585,13 @@ sub get_test_settings {
 	}
 	my ($testdsn, $testuser, $testdir, $error) = ('','','','?');
 	my ($helpconnect, $su, $uid, $initdb) = (0,'','','default');
+	my $inerror = 0;
 	if (-e $helpfile) {
 		open $fh, '<', $helpfile or die qq{Could not open "$helpfile": $!\n};
 		while (<$fh>) {
+			if ($inerror) {
+				$error .= "\n$_";
+			}
 			/DSN: (.+)/           and $testdsn = $1;
 			/User: (\w+)/         and $testuser = $1;
 			/Helpconnect: (\d+)/  and $helpconnect = $1;
@@ -596,7 +600,7 @@ sub get_test_settings {
 			/Testdir: (.+)/       and $testdir = $1;
 			/pg_ctl: (.+)/        and $pg_ctl = $1;
 			/initdb: (.+)/        and $initdb = $1;
-			/ERROR: (.+)/         and $error = $1;
+			/ERROR: (.+)/         and $error = $1 and $inerror = 1;
 		}
 		close $fh or die qq{Could not close "$helpfile": $!\n};
 	}
