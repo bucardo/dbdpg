@@ -3476,17 +3476,17 @@ Supported by this driver as proposed by DBI.
 Not supported by this driver. See the note about B<Cursors> elsewhere in this
 document.
 
-=item C<Database>  (dbh, read-only)
+=item B<Database>  (dbh, read-only)
 
 Returns the database handle this statement handle was created from.
 
-=item C<ParamValues>  (hash ref, read-only)
+=item B<ParamValues>  (hash ref, read-only)
 
 Supported by this driver as proposed by DBI. If called before C<execute>, the
 literal values passed in are returned. If called after C<execute>, then
 the quoted versions of the values are shown.
 
-=item C<ParamTypes>  (hash ref, read-only)
+=item B<ParamTypes>  (hash ref, read-only)
 
 Returns a hash of all current placeholders. The keys are the names of the placeholders, 
 and the values are the types that have been bound to each one. Placeholders that 
