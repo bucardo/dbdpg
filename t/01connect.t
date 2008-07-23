@@ -79,6 +79,7 @@ SKIP: {
 		$t=qq{Connect using string '$opt' works};
 		$dbh and $dbh->disconnect();
 		(undef,$err,$dbh) = connect_database({dbreplace => $opt});
+		$err =~ s/(Previous failure).*/$1/;
 		is ($err, '', $t);
 	}
 
