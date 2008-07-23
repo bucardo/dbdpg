@@ -108,10 +108,10 @@ for my $filename (qw{Pg.pm Makefile.PL lib/Bundle/DBD/Pg.pm }) {
 		diag "Source: $source\n\n";
 	}
 	if ($vios) {
-		fail (qq{ Failed Perl::Critic tests for file "$filename": $vios});
+		fail (qq{Failed Perl::Critic tests for file "$filename": $vios});
 	}
 	else {
-		pass (qq{ File "$filename" passed all Perl::Critic tests});
+		pass (qq{File "$filename" passed all Perl::Critic tests});
 	}
 
 }
@@ -181,12 +181,11 @@ for my $filename (sort @testfiles) {
 		diag "Policy: $policy\n";
 		diag "Source: $source\n\n";
 	}
-	my $SPACE = ++$count < 7 ? ' ' : '';
 	if ($vios) {
-		fail (qq{${SPACE}Failed Perl::Critic tests for file "$filename": $vios});
+		fail (qq{Failed Perl::Critic tests for file "$filename": $vios});
 	}
 	else {
-		pass (qq{${SPACE}File "$filename" passed all Perl::Critic tests});
+		pass (qq{File "$filename" passed all Perl::Critic tests});
 	}
 }
 
