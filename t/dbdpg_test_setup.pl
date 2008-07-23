@@ -312,46 +312,39 @@ sub connect_database {
 			unshift @userlist, $username if defined $username and $username ne getpwent;
 
 			my %doneuser;
-			for my $user (@userlist) {
-				next if $doneuser{$user}++;
-				$uid = (getpwnam $user)[2];
+			for $testuser (@userlist) {
+				next if $doneuser{$testuser}++;
+				$uid = (getpwnam $testuser)[2];
 				next if !defined $uid;
 
 				next unless chown $uid, -1, $testdir;
 				next unless chown $uid, -1, $readme;
-				$su = $user;
+				$su = $testuser;
 				$founduser++;
 				$info = '';
 				my $olddir = getcwd;
 				eval {
 					chdir $testdir;
-					$info = qx{su -m $user -c "$initdb --locale=C -E UTF8 -D $testdir/data 2>&1"};
+					$info = qx{su -m $testuser -c "$initdb --locale=C -E UTF8 -D $testdir/data 2>&1"};
 				};
 				my $err = $@;
 				chdir $olddir;
-				if (!$err and $info =~ /owned by user "$user"/) {
-					$testuser = $user;
-					last;
-				}
+				last if !$err;
 			}
 			if (!$founduser) {
 				$@ = 'Unable to find a user to run initdb as';
-				last GETHANDLE;
-			}
-			if (!$testuser) {
-				$@ = "Failed to run initdb as user $su: $@";
-				last GETHANDLE;
+				last GETHANDLE; ## Fail - no user
 			}
 			if (! -e "$testdir/data") {
 				$@ = 'Could not create a test database via initdb';
-				last GETHANDLE;
+				last GETHANDLE; ## Fail - no datadir created
 			}
 			## At this point, both $su and $testuser are set
 		}
 
 		if ($info =~ /FATAL/) {
 			$@ = "initdb gave a FATAL error: $info";
-			last GETHANDLE;
+			last GETHANDLE; ## Fail - FATAL
 		}
 
 		if ($info =~ /but is not empty/) {
@@ -359,7 +352,7 @@ sub connect_database {
 		}
 		elsif ($info !~ /pg_ctl/) {
 			$@ = "initdb did not give a pg_ctl string: $info";
-			last GETHANDLE;
+			last GETHANDLE; ## Fail - bad output
 		}
 
 		## Which user do we connect as?
@@ -389,7 +382,7 @@ sub connect_database {
 			}
 			if ($testport >= $maxport) {
 				$@ = "No free ports found for testing: tried 5440 to $maxport\n";
-				last GETHANDLE;
+				last GETHANDLE; ## Fail - no free ports
 			}
 		}
 		$@ = '';
@@ -398,7 +391,7 @@ sub connect_database {
 		my $cfh;
 		if (! open $cfh, '>>', $conf) {
 			$@ = qq{Could not open "$conf": $!};
-			last GETHANDLE;
+			last GETHANDLE; ## Fail - no conf file
 		}
 		print $cfh "\n\n## DBD::Pg testing parameters\nport=$testport\nmax_connections=4\n";
 		print $cfh "listen_addresses='localhost'\n" if $^O =~ /Win32/;
@@ -437,7 +430,7 @@ sub connect_database {
 			$su and chdir $olddir;
 			if ($err or $info !~ /\w/) {
 				$@ = "Could not startup new database ($COM) ($err) ($info)";
-				last GETHANDLE;
+				last GETHANDLE; ## Fail - startup failed
 			}
 			sleep 1;
 		}
@@ -462,7 +455,7 @@ sub connect_database {
 					redo STARTUP;
 				}
 			}
-			last GETHANDLE;
+			last GETHANDLE; ## Made it!
 		}
 
 	} ## end of GETHANDLE
