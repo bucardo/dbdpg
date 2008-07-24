@@ -70,7 +70,7 @@ typedef struct ph_st ph_t;
 
 /* Define sth implementor data structure */
 struct imp_sth_st {
-	dbih_stc_t com;         /* MUST be first element in structure */
+	dbih_stc_t com;          /* MUST be first element in structure */
 
 	int    server_prepare;   /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
 	int    placeholder_type; /* which style is being used 1=? 2=$1 3=:foo */
@@ -84,6 +84,10 @@ struct imp_sth_st {
 
 	STRLEN totalsize;        /* total string length of the statement (with no placeholders)*/
 
+	const char ** PQvals;    /* List of values to pass to PQ* */
+	int         * PQlens;    /* List of lengths to pass to PQ* */
+	int         * PQfmts;    /* List of formats to pass to PQ* */
+	Oid         * PQoids;    /* List of types to pass to PQ* */
 	char   *prepare_name;    /* name of the prepared query; NULL if not prepared */
 	char   *firstword;       /* first word of the statement */
 
