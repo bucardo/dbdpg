@@ -599,6 +599,8 @@ qw
 ## Pg.pm:
 lseg
 afterwards
+PGSYSCONFDIR
+PGSERVICE
 
 ## Pg.xs:
 PQexec
