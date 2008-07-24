@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.8.7
+2.8.7 Released July 24, 2008
 
 	- Modify test scripts to work better on FreeBSD boxes.
 	- Much documentation improvement and POD tweaking.
