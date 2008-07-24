@@ -170,12 +170,14 @@ use 5.006001;
 		if (length $attr) {
 			$connstring .= ";$attr";
 		}
+
 		my $dbh = DBD::Pg::dr::connect($drh, $connstring) or return undef;
 		$dbh->{AutoCommit}=1;
 		my $SQL = 'SELECT pg_catalog.quote_ident(datname) FROM pg_catalog.pg_database ORDER BY 1';
 		my $sth = $dbh->prepare($SQL);
 		$sth->execute() or die $DBI::errstr;
-		my @sources = map { "dbi:Pg:dbname=$_->[0]" } @{$sth->fetchall_arrayref()};
+		$attr and $attr = ";$attr";
+		my @sources = map { "dbi:Pg:dbname=$_->[0]$attr" } @{$sth->fetchall_arrayref()};
 		$dbh->disconnect;
 		return @sources;
 	}
@@ -1823,16 +1825,22 @@ Implemented by DBI, no driver-specific impact.
 =item B<data_sources>
 
   @data_sources = DBI->data_sources('Pg');
+  @data_sources = $dbh->data_sources();
 
 Returns a list of available databases. Unless the environment variable C<DBI_DSN> is set, 
 a connection will be attempted to the database C<template1>. The normal connection 
 environment variables also apply, such as C<PGHOST>, C<PGPORT>, C<DBI_USER>, 
 C<DBI_PASS>, and C<PGSERVICE>.
 
-You can also pass in options to add to the connection string as the second argument 
-to the C<data_sources> method. For example, to specify an alternate port and host:
+You can also pass in options to add to the connection string For example, to specify 
+an alternate port and host:
 
   @data_sources = DBI->data_sources('Pg', 'port=5824;host=example.com');
+
+  or:
+
+  @data_sources = $dbh->data_sources('port=5824;host=example.com');
+
 
 =back
 
@@ -2492,16 +2500,18 @@ the prepare to happen immediately via the C<pg_prepare_now> attribute.
 
 =item B<do>
 
-  $rv  = $dbh->do($statement, \%attr, @bind_values);
+  $rv = $dbh->do($statement);
+  $rv = $dbh->do($statement, \%attr);
+  $rv = $dbh->do($statement, \%attr, @bind_values);
 
 Prepare and execute a single statement. Returns the number of rows affected if the 
 query was successful, returns undef if an error occurred, and returns -1 if the 
 number of rows is unknown or not available. Note that this method will return '0E0' instead
-of 0 for 'no rows were affected', in order to always return a true value if no error.
+of 0 for 'no rows were affected', in order to always return a true value if no error occurred.
 
-If neither attr nor bind_values is given, the query will be sent directly
-to the server without the overhead of creating a statement handle and
-running prepare and execute.
+If neither C<\%attr> nor C<@bind_values> is given, the query will be sent directly
+to the server without the overhead of internally creating a statement handle and
+running prepare and execute, for a measurable speed increase.
 
 Note that an empty statement (a string with no length) will not be passed to
 the server; if you want a simple test, use "SELECT 123" or the ping()
@@ -2509,15 +2519,15 @@ function.
 
 =item B<last_insert_id>
 
-  $rv = $dbh->last_insert_id($catalog, $schema, $table, $field);
-  $rv = $dbh->last_insert_id($catalog, $schema, $table, $field, \%attr);
+  $rv = $dbh->last_insert_id(undef, $schema, $table, undef);
+  $rv = $dbh->last_insert_id(undef, $schema, $table, undef, {sequence => $seqname});
 
 Attempts to return the id of the last value to be inserted into a table.
 You can either provide a sequence name (preferred) or provide a table
 name with optional schema, and DBD::Pg will attempt to find the sequence itself. 
-The $catalog and $field arguments are always ignored. The current value of the 
-sequence is returned by a call to the C<CURRVAL()> PostgreSQL function. This will 
-fail if the sequence has not yet been used in the current database connection.
+The current value of the sequence is returned by a call to the C<CURRVAL()> 
+PostgreSQL function. This will fail if the sequence has not yet been used in the 
+current database connection.
 
 If you do not know the name of the sequence, you can provide a table name and
 DBD::Pg will attempt to return the correct value. To do this, there must be at
@@ -2565,7 +2575,7 @@ If you did not want to worry about the sequence name:
 
 =item B<commit>
 
-  $rc = $dbh->commit;
+  $rv = $dbh->commit;
 
 Issues a COMMIT to the server, indicating that the current transaction is finished and that 
 all changes made will be visible to other processes. If AutoCommit is enabled, then 
@@ -2574,7 +2584,7 @@ See also the the section on L</Transactions>.
 
 =item B<rollback>
 
-  $rc = $dbh->rollback;
+  $rv = $dbh->rollback;
 
 Issues a ROLLBACK to the server, which discards any changes made in the current transaction. If AutoCommit 
 is enabled, then a warning is given and no ROLLBACK is issued. Returns true on success, and 
@@ -2649,7 +2659,7 @@ server version 8.4 or higher.
 
 =item B<ping>
 
-  $rc = $dbh->ping;
+  $rv = $dbh->ping;
 
 This C<ping> method is used to check the validity of a database handle. The value returned is 
 either 0, indicating that the connection is no longer valid, or a positive integer, indicating 
@@ -2667,7 +2677,7 @@ C<pg_ping> method.
 
 =item B<pg_ping>
 
-  $rc = $dbh->pg_ping;
+  $rv = $dbh->pg_ping;
 
 This is a DBD::Pg-specific extension to the C<ping> command. This will check the 
 validity of a database handle in exactly the same way as C<ping>, but instead of 
@@ -2823,7 +2833,11 @@ involved:
 
 =item B<primary_key>
 
-Supported by this driver as proposed by DBI.
+  @key_column_names = $dbh->primary_key(undef, $schema, $table);
+
+Simple interface to the L</primary_key_info> method. Returns a list of the column names that 
+comprise the primary key of the specified table. The list is in primary key column sequence 
+order. If there is no primary key then an empty list is returned.
 
 =item B<foreign_key_info>
 
@@ -2837,6 +2851,17 @@ used. Two additional fields, "UK_DATA_TYPE" and "FK_DATA_TYPE", are returned
 to show the data type for the unique and foreign key columns. Foreign
 keys that have no named constraint (where the referenced column only has
 an unique index) will return C<undef> for the "UK_NAME" field.
+
+=item B<statistics_info>
+
+  $sth = $dbh->statistics_info( undef, $schema, $table, $unique_only, $quick );
+
+Returns a statement handle that can be fetched from to give statistics information 
+on a specific table and its indexes. The c<$table> argument is mandatory. The 
+C<$schema> argument is optional but recommended. The C<$unique_only> argument, if true, 
+causes only information about unique indexes to be returned. The C<$quick> argument is 
+not used by DBD::Pg. For information on the rows returned, please see the DBI 
+documentation.
 
 =item B<tables>
 
@@ -2987,6 +3012,13 @@ the L</fetchrow_arrayref> method.
 Exactly the same as L</selectrow_array>, except that it returns a reference to an hash, by internal use of 
 the L</fetchrow_hashref> method.
 
+=item B<clone>
+
+  $other_dbh = $dbh->clone();
+
+Creates a copy of the database handle by connecting with the same parameters as the original 
+handle, then trying to merge the attributes. See the DBI documentation for complete usage.
+
 =back
 
 =head2 Database Handle Attributes
@@ -3008,24 +3040,13 @@ elsewhere in this document.
 DBD::Pg specific attribute. If true, boolean values will be returned
 as the characters 't' and 'f' instead of '1' and '0'.
 
-=item B<Driver>  (handle)
-
-Implemented by DBI, no driver-specific impact.
-
 =item B<Name>  (string, read-only)
 
-The default DBI method is overridden by a driver specific method that returns
-only the database name. Anything else from the connection string is stripped
-off. Note that, in contrast to the DBI specs, the DBD::Pg implementation for
-this method is read-only.
-
-=item B<RowCacheSize>  (integer)
-
-Implemented by DBI, not used by this driver.
+Returns the name of the current database.
 
 =item B<Username>  (string, read-only)
 
-Supported by this driver as proposed by DBI.
+Returns the name of the user connected to the database.
 
 =item B<pg_enable_utf8> (boolean)
 
@@ -3035,14 +3056,6 @@ the C<utf8> flag, see L<Encode|Encode>. This attribute is only relevant under
 perl 5.8 and later.
 
 B<NB>: This attribute is experimental and may be subject to change.
-
-=item B<pg_INV_READ> (integer, read-only)
-
-Constant to be used for the mode in C<lo_creat> and C<lo_open>.
-
-=item B<pg_INV_WRITE> (integer, read-only)
-
-Constant to be used for the mode in C<lo_creat> and C<lo_open>.
 
 =item B<pg_errorlevel> (integer)
 
@@ -3119,19 +3132,6 @@ the connection socket to the server.
 DBD::Pg specific attribute. Returns the process id (PID) of the
 backend server process handling the connection.
 
-=item B<pg_standard_conforming_strings> (boolean, read-only)
-
-DBD::Pg specific attribute.  Returns if the server is currently using 
-standard conforming strings or not. Only available if the target 
-server is version 8.2 or better.
-
-=item B<pg_async_status> (integer, read-only)
-
-DBD::Pg specific attribute. Returns the current status of an asynchronous 
-command. 0 indicates no asynchronous command is in progress, 1 indicates that 
-an asynchronous command has started and -1 indicated that an asynchronous command 
-has been cancelled.
-
 =item B<pg_prepare_now> (boolean)
 
 DBD::Pg specific attribute. Default is off. If true, then the C<prepare()> method will 
@@ -3154,6 +3154,38 @@ marks, such as geometric operators.
 DBD::Pg specific attribute. Defaults to false. If false, arrays returned from the server will 
 not be changed into a Perl arrayref, but remain as a string.
 
+=item B<pg_async_status> (integer, read-only)
+
+DBD::Pg specific attribute. Returns the current status of an asynchronous 
+command. 0 indicates no asynchronous command is in progress, 1 indicates that 
+an asynchronous command has started and -1 indicated that an asynchronous command 
+has been cancelled.
+
+=item B<pg_standard_conforming_strings> (boolean, read-only)
+
+DBD::Pg specific attribute.  Returns true if the server is currently using 
+standard conforming strings. Only available if the target 
+server is version 8.2 or better.
+
+=item B<pg_INV_READ> (integer, read-only)
+
+Constant to be used for the mode in C<lo_creat> and C<lo_open>.
+
+=item B<pg_INV_WRITE> (integer, read-only)
+
+Constant to be used for the mode in C<lo_creat> and C<lo_open>.
+
+=item B<Driver>  (handle)
+
+Holds the handle of the parent driver. The only recommended use for this is to find the name 
+of the driver using:
+
+  $dbh->{Driver}->{Name}
+
+=item B<RowCacheSize>  (integer)
+
+Not used for DBD::Pg
+
 =back
 
 =head1 DBI STATEMENT HANDLE OBJECTS
@@ -3164,6 +3196,8 @@ not be changed into a Perl arrayref, but remain as a string.
 
 =item B<bind_param>
 
+  $rv = $sth->bind_param($param_num, $bind_value);
+  $rv = $sth->bind_param($param_num, $bind_value, $bind_type);
   $rv = $sth->bind_param($param_num, $bind_value, \%attr);
 
 Allows the user to bind a value and/or a data type to a placeholder. This is
@@ -3291,7 +3325,13 @@ and the time the query is executed. Thus, the above execute is the same as:
 
 =item B<bind_param_array>
 
-Supported by this driver as proposed by DBI.
+
+  $rv = $sth->bind_param_array($param_num, $array_ref_or_value)
+  $rv = $sth->bind_param_array($param_num, $array_ref_or_value, $bind_type)
+  $rv = $sth->bind_param_array($param_num, $array_ref_or_value, \%attr)
+
+Binds an array of values to a placeholder, so that each is used in turn by a call 
+to the L<execute_array> method.
 
 =item B<execute>
 
@@ -3328,66 +3368,138 @@ an C<UPDATE>, C<DELETE>, or C<INSERT>. For example:
 
 =item B<execute_array>
 
-Supported by this driver as proposed by DBI.
+  $tuples = $sth->execute_array() or die $sth->errstr;
+  $tuples = $sth->execute_array(\%attr) or die $sth->errstr;
+  $tuples = $sth->execute_array(\%attr, @bind_values) or die $sth->errstr;
+
+  ($tuples, $rows) = $sth->execute_array(\%attr) or die $sth->errstr;
+  ($tuples, $rows) = $sth->execute_array(\%attr, @bind_values) or die $sth->errstr;
+
+Execute a prepared statement once for each item in a passed-in hashref, or items that 
+were previously bound via the L</bind_param_array> method. See the DBI documentation 
+for more details.
 
 =item B<execute_for_fetch>
 
-Supported by this driver as proposed by DBI.
+  $tuples = $sth->execute_for_fetch($fetch_tuple_sub);
+  $tuples = $sth->execute_for_fetch($fetch_tuple_sub, \@tuple_status);
+
+  ($tuples, $rows) = $sth->execute_for_fetch($fetch_tuple_sub);
+  ($tuples, $rows) = $sth->execute_for_fetch($fetch_tuple_sub, \@tuple_status);
+
+Used internally by the L</execute_array> method, and rarely used directly. See the 
+DBI documentation for more details.
 
 =item B<fetchrow_arrayref>
 
   $ary_ref = $sth->fetchrow_arrayref;
 
-Supported by this driver as proposed by DBI.
+Fetches the next row of data from the statement handle, and returns a reference to an array 
+holding the column values. Any columns that are NULL are returned as undef within the array.
+
+If there are no more rows or if an error occurs, the this method return undef. You should 
+check $sth->err afterwards (or use the L</RaiseError> attribute) to discover if the undef returned 
+was due to an error.
+
+Note that the same array reference is returned for each fetch, so don't store the reference and 
+then use it after a later fetch. Also, the elements of the array are also reused for each row, 
+so take care if you want to take a reference to an element. See also L</bind_columns>.
 
 =item B<fetchrow_array>
 
   @ary = $sth->fetchrow_array;
 
-Supported by this driver as proposed by DBI.
+Similar to the L</fetchrow_arryref> method, but returns a list of column information rather than 
+a reference to a list. Do not use this in a scalar context.
 
 =item B<fetchrow_hashref>
 
   $hash_ref = $sth->fetchrow_hashref;
+  $hash_ref = $sth->fetchrow_hashref($name);
 
-Supported by this driver as proposed by DBI.
+Fetches the next row of data and returns a hashref containing the name of the columns as the keys 
+and the data itself as the values. Any NULL value is returned as as undef value.
+
+If there are no more rows or if an error occurs, the this method return undef. You should 
+check $sth->err afterwards (or use the L</RaiseError> attribute) to discover if the undef returned 
+was due to an error.
+
+The optional C<$name> argument should be either C<NAME>, C<NAME_lc> or C<NAME_uc>, and indicates 
+what sort of transformation to make to the keys in the hash.
 
 =item B<fetchall_arrayref>
 
-  $tbl_ary_ref = $sth->fetchall_arrayref;
+  $tbl_ary_ref = $sth->fetchall_arrayref();
+  $tbl_ary_ref = $sth->fetchall_arrayref( $slice );
+  $tbl_ary_ref = $sth->fetchall_arrayref( $slice, $max_rows  );
 
-Implemented by DBI, no driver-specific impact.
+Returns a reference to an array of arrays that contains all the remaining rows to be fetched from the 
+statement handle. If there are no more rows, an empty arrayref will be returned. If an error occurs, 
+the data read in so far will be returned. Because of this, you should always check C<$sth->err> after 
+calling this method, unless L</RaiseError> has been enabled.
+
+If $slice is an array reference, fetchall_arrayref uses the L<fetchrow_arrayref> method to fetch each 
+row as an array ref. If the $slice array is not empty then it is used as a slice to select individual 
+columns by perl array index number (starting at 0, unlike column and parameter numbers which start at 1).
+
+With no parameters, or if $slice is undefined, fetchall_arrayref acts as if passed an empty array ref.
+
+If $slice is a hash reference, fetchall_arrayref uses L</fetchrow_hashref> to fetch each row as a hash reference.
+
+See the DBI documentation for a complete discussion.
+
+=item B<fetchall_arrayref>
+
+  $hash_ref = $sth->fetchall_hashref($key_field);
+
+Returns a hashref containing all rows to be fetched from the statement handle. See the DBI documentation for 
+a full discussion.
 
 =item B<finish>
 
-  $rc = $sth->finish;
+  $rv = $sth->finish;
 
-Supported by this driver as proposed by DBI.
+Indicates to DBI that you are finished with the statement handle and are not going to use it again. Only needed 
+when you have not fetched all the possible rows.
 
 =item B<rows>
 
   $rv = $sth->rows;
 
-Supported by this driver as proposed by DBI. In contrast to many other drivers
-the number of rows is available immediately after executing the statement.
+Returns the number of rows returned by the last query. In contrast to many other drivers, 
+the number of rows is available immediately after calling C<$sth->execute>. Note that 
+the L</execute> method itself returns the number of rows itself, which means that this 
+method is rarely needed.
 
 =item B<bind_col>
 
-  $rc = $sth->bind_col($column_number, \$var_to_bind, \%attr);
+  $rc = $sth->bind_col($column_number, \$var_to_bind);
+  $rc = $sth->bind_col($column_number, \$var_to_bind, \%attr );
+  $rc = $sth->bind_col($column_number, \$var_to_bind, $bind_type );
 
-Supported by this driver as proposed by DBI.
+Binds a Perl variable and/or some attributes to an output column of a SELECT statement. 
+Column numbers count up from 1. You do not need to bind output columns in order to fetch data.
+
+See the DBI documentation for a discussion of the optional parameters C<\%attr> and C<$bind_type>
 
 =item B<bind_columns>
 
-  $rc = $sth->bind_columns(\%attr, @list_of_refs_to_vars_to_bind);
+  $rv = $sth->bind_columns(@list_of_refs_to_vars_to_bind);
 
-Supported by this driver as proposed by DBI.
+Calls the L</bind_col> method for each column in the SELECT statement, using the supplied list.
 
 =item B<dump_results>
 
   $rows = $sth->dump_results($maxlen, $lsep, $fsep, $fh);
 
-Implemented by DBI, no driver-specific impact.
+Fetches all the rows from the statement handle, calls C<DBI::neat_list> for each row, and 
+prints the results to C<$fh> (which defaults to STDOUT). Rows are separated by C<$lsep> (which defaults 
+to a newline). Columns are separated by C<$fsep> (which defaults to a comma). The C<$maxlen> controls 
+how wide the output can be, and defaults to 35.
+
+This method is designed as a handy utility for prototyping and testing queries. Since it uses 
+"neat_list" to format and edit the string for reading by humans, it is not recommended 
+for data transfer applications.
 
 =item B<blob_read>
 
@@ -3576,6 +3688,10 @@ marks, such as geometric operators.
 
 DBD::Pg specific attribute. Indicates the current behavior for asynchronous queries. See the section 
 on L</Asynchronous Constants> for more information.
+
+=item B<RowsInCache>
+
+Not used by DBD::Pg
 
 =back
 
