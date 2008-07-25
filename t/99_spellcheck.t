@@ -489,7 +489,6 @@ UTC
 utf
 UTF
 Util
-valgind
 valgrind
 varchar
 VARCHAR

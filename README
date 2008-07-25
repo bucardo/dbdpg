@@ -6,8 +6,8 @@ DBD::Pg  --  the DBI PostgreSQL interface for Perl
 DESCRIPTION:
 ------------
 
-This is version 2.8.8 of DBD::Pg.  The web site for this interface, and 
-the latest version, can be found at:
+This is version 2.8.8 of DBD::Pg, the Perl interface to Postgres using DBI. 
+The web site for this interface, and the latest version, can be found at:
 
 	http://search.cpan.org/dist/DBD-Pg/
 
@@ -30,6 +30,7 @@ IF YOU HAVE PROBLEMS OR COMMENTS:
 ---------------------------------
 
 Please send any problems and comments to 
+
 <dbd-pg@perl.org>
 
 Please include what OS you are using, and the version of Perl, 
@@ -50,7 +51,6 @@ http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
 and selecting the "Report a new bug" link. Please check that the bug 
 has not already been reported first.
 
-
 REQUIREMENTS:
 -------------
 
@@ -59,12 +59,12 @@ REQUIREMENTS:
 	build, test, and install PostgreSQL     (at least 7.4)
 	build, test, and install Test::Simple   (at least 0.47)
 
-You must also have the pg_config executable installed (to check, type 
-"which pg_config" on unix-like systems). If pg_config is not available, 
-then you need to install the development package for PostgreSQL. For example 
-on Debian: apt-get install postgresql-dev; on RedHat: yum install postgresql-devel. 
-This development package is needed even if you already have PostgreSQL up 
-and running since DBD::Pg uses it for its installation.
+DBD::Pg needs to know where to find the libpq libraries: this is usually done 
+by checking the output of the pg_config executable. If pg_config is not available, 
+then you may need to install the development package for PostgreSQL. To do this 
+on Debian and ubuntu, use: apt-get install postgresql-dev; on RedHat and CentOS, 
+use: yum install postgresql-devel. Note that the development libraries are needed 
+even if you already have PostgreSQL up and running.
 
 INSTALLATION:
 -------------
@@ -89,13 +89,13 @@ The usual steps to install DBD::Pg:
 	3.   make test
 	4.   make install
 
-Do steps 1 to 3 as a normal user, not as root!
+Do steps 1 to 2 as a normal user, not as root!
 
 If the script cannot find the pg_config information itself, it will 
 ask you for the path to it. Enter the complete path to the pg_config 
 file here, including the name of the file itself.
 
-TESTING:
+yTESTING:
 --------
 
 The tests rely on being able to connect to a valid Postgres database. 
@@ -128,10 +128,6 @@ result in extremely verbose output.
 When reporting test failures, please use TEST_VERBOSE=1, but do *not* 
 set DBD_TRACE unless requested, and send only the relevant sections.
 
-If the first connection fails and DBI_DSN is not set, the tests may 
-attempt to connect as the user 'postgres' to the database 'postgres'. 
-See the t/dbdpg_test_setup.pl for the exact process.
-
 Please consider installing CPAN::Reporter so that your tests are 
 automatically gathered and reported, which helps the development 
 of DBD::Pg.
@@ -163,7 +159,7 @@ and features), do this at the top of your scripts:
 $dbh->{pg_server_prepare} = 0;
 
 This can also be set for individual queries at the statement handle level: see 
-the documentation for more details.
+the documentation section on "Placeholders" for more details.
 
 * PostgreSQL library issues:
 
