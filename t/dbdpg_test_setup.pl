@@ -300,7 +300,7 @@ sub connect_database {
 			if (open $fh, '>', $readme) {
 				print $fh "This is a test directory for DBD::Pg and may be removed\n";
 				print $fh "You may want to ensure the postmaster has been stopped first.\n";
-				print $fh "Check the port in the postgresql.conf file\n";
+				print $fh "Check the data/postmaster.pid file\n";
 				close $fh or die qq{Could not close "$readme": $!\n};
 			}
 
@@ -312,7 +312,8 @@ sub connect_database {
 			unshift @userlist, $username if defined $username and $username ne getpwent;
 
 			my %doneuser;
-			for $testuser (@userlist) {
+			for (@userlist) {
+				$testuser = $_;
 				next if $doneuser{$testuser}++;
 				$uid = (getpwnam $testuser)[2];
 				next if !defined $uid;

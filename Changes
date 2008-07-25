@@ -4,6 +4,7 @@
 
 	- Move PQexec structures to statement handle, to prevent 
 		excessive malloc and free within execute function. [GSM]
+	- More testing tweaks.
 
 2.8.7 Released July 24, 2008 (subversion r11582)
 
