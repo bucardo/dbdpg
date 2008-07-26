@@ -2128,6 +2128,11 @@ Forces database errors to also generate warnings, which can then be filtered wit
 locally redefining I<$SIG{__WARN__}> or using modules such as C<CGI::Carp>. This attribute is on 
 by default.
 
+=head3 B<ShowErrorStatement> (boolean, inherited)
+
+Appends information about the current statement to error messages. If placeholder information 
+is available, adds that as well. Defaults to false.
+
 =head3 B<Warn> (boolean, inherited)
 
 Enables warnings. This is on by default, and should only be turned off in a local block 
@@ -2189,10 +2194,6 @@ Implemented by DBI, no driver-specific impact.
 Implemented by DBI, no driver-specific impact.
 
 =head3 B<ErrCount> (unsigned integer)
-
-Implemented by DBI, no driver-specific impact.
-
-=head3 B<ShowErrorStatement> (boolean, inherited)
 
 Implemented by DBI, no driver-specific impact.
 

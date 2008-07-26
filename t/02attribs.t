@@ -5,6 +5,7 @@
 use 5.006;
 use strict;
 use warnings;
+use Data::Dumper;
 use Test::More;
 use DBI     ':sql_types';
 use DBD::Pg ':pg_types';
@@ -17,7 +18,7 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 135;
+plan tests => 164;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -45,7 +46,6 @@ d pg_INV_WRITE
 d pg_protocol
 d pg_errorlevel
 d pg_bool_tf
-d pg_enable_utf8
 d pg_db
 d pg_user
 d pg_pass
@@ -54,6 +54,9 @@ d pg_default_port
 d pg_options
 d pg_socket
 d pg_pid
+d pg_standard_conforming strings
+d pg_enable_utf8
+d Warn
 
 d pg_prepare_now - tested in 03smethod.t
 d pg_server_prepare - tested in 03smethod.t
@@ -68,17 +71,25 @@ s Database
 s ParamValues
 s ParamTypes
 s RowsInCache
+s pg_size
+s pg_type
+s pg_oid_status
+s pg_cmd_status
 
-a Warn (inheritance test also)
 a Active
+a Executed
 a Kids
 a ActiveKids
 a CachedKids
+a Type
+a ChildHandles
 a CompatMode
 a PrintError
 a RaiseError
 a HandleError
-a ShowErrorStatement (unsupported)
+a HandleSetErr
+a ErrCount
+a ShowErrorStatement
 a TraceLevel
 a FetchHashKeyName
 a ChopBlanks
@@ -97,7 +108,6 @@ my ($attrib,$SQL,$sth,$warning,$result,$expected,$t);
 
 # Get the DSN and user from the test file, if it exists
 my ($testdsn, $testuser) = get_test_settings();
-
 
 
 #
@@ -608,7 +618,7 @@ $expected = [qw(4 -1 -1 8 -1 8 1)];
 is_deeply ($result, $expected, $t);
 
 #
-# Test of the statement handle attribute "pg_size"
+# Test of the statement handle attribute "pg_type"
 #
 
 $t='Statement handle attribute "pg_type" works';
@@ -684,17 +694,68 @@ $attrib = $sth->{Active};
 is ($attrib, '', $t);
 
 #
+# Test of the handle attribute "Executed"
+#
+
+my $dbh3 = connect_database({quickreturn => 1});
+$dbh3->{AutoCommit} = 0;
+
+$t='Database handle attribute "Executed" begins false';
+is ($dbh3->{Executed}, '', $t);
+
+$t='Database handle attribute "Executed" stays false after prepare()';
+$sth = $dbh3->prepare('SELECT 12345');
+is ($dbh3->{Executed}, '', $t);
+
+$t='Statement handle attribute "Executed" begins false';
+is ($sth->{Executed}, '', $t);
+
+$t='Statement handle attribute "Executed" is true after execute()';
+$sth->execute();
+is ($sth->{Executed}, 1, $t);
+
+$t='Database handle attribute "Executed" is true after execute()';
+is ($dbh3->{Executed}, 1, $t);
+
+$t='Statement handle attribute "Executed" is true after finish()';
+$sth->finish();
+is ($sth->{Executed}, 1, $t);
+
+$t='Database handle attribute "Executed" is true after finish()';
+is ($dbh3->{Executed}, 1, $t);
+
+$t='Database handle attribute "Executed" is false after commit()';
+$dbh3->commit();
+is ($dbh3->{Executed}, '', $t);
+
+$t='Statement handle attribute "Executed" is true after commit()';
+is ($sth->{Executed}, 1, $t);
+
+$t='Database handle attribute "Executed" is true after do()';
+$dbh3->do('SELECT 1234');
+is ($dbh3->{Executed}, 1, $t);
+
+$t='Database handle attribute "Executed" is false after rollback()';
+$dbh3->commit();
+is ($dbh3->{Executed}, '', $t);
+
+$t='Statement handle attribute "Executed" is true after rollback()';
+is ($sth->{Executed}, 1, $t);
+
+$dbh3->disconnect();
+
+#
 # Test of the handle attribute "Kids"
 #
 
 $t='Database handle attribute "Kids" is set properly';
 $attrib = $dbh->{Kids};
-is ($attrib, 3, $t);
+is ($attrib, 2, $t);
 
 $t='Database handle attribute "Kids" works';
 my $sth2 = $dbh->prepare('SELECT 234');
 $attrib = $dbh->{Kids};
-is ($attrib, 4, $t);
+is ($attrib, 3, $t);
 
 $t='Statement handle attribute "Kids" is zero';
 $attrib = $sth2->{Kids};
@@ -727,6 +788,50 @@ $attrib = $dbh->{CachedKids};
 is (keys %$attrib, 2, $t);
 
 #
+# Test of the handle attribute "Type"
+#
+
+$t='Database handle attribute "Type" is set properly';
+$attrib = $dbh->{Type};
+is ($attrib, 'db', $t);
+
+$t='Statement handle attribute "Type" is set properly';
+$sth = $dbh->prepare('SELECT 1');
+$attrib = $sth->{Type};
+is ($attrib, 'st', $t);
+
+#
+# Test of the handle attribute "ChildHandles"
+# Need a separate connection to keep the output size down
+#
+
+my $dbh4 = connect_database({quickreturn => 1});
+
+$t='Database handle attribute "ChildHandles" is an empty list on startup';
+$attrib = $dbh4->{ChildHandles};
+is_deeply ($attrib, [], $t);
+
+$t='Statement handle attribute "ChildHandles" is an empty list on creation';
+{
+	my $sth4 = $dbh4->prepare('SELECT 1');
+	$attrib = $sth4->{ChildHandles};
+	is_deeply ($attrib, [], $t);
+
+	$t='Database handle attribute "ChildHandles" contains newly created statement handle';
+	$attrib = $dbh4->{ChildHandles};
+	is_deeply ($attrib, [$sth4], $t);
+
+	$sth4->finish();
+
+} ## sth4 now out of scope
+
+$t='Database handle attribute "ChildHandles" has undef for destroyed statement handle';
+$attrib = $dbh4->{ChildHandles};
+is_deeply ($attrib, [undef], $t);
+
+$dbh4->disconnect();
+
+#
 # Test of the handle attribute "CompatMode"
 #
 
@@ -750,6 +855,7 @@ $sth = $dbh->prepare('SHOW client_min_messages');
 $sth->execute();
 $client_level = $sth->fetchall_arrayref()->[0][0];
 
+$SQL = 'Testing the DBD::Pg modules error handling -?-';
 if ($client_level eq 'error') {
  SKIP: {
 		skip (q{Cannot test "PrintError" attribute because client_min_messages is set to 'error'}, 2);
@@ -760,9 +866,11 @@ if ($client_level eq 'error') {
  SKIP: {
 		skip (q{Cannot test "HandleError" attribute because client_min_messages is set to 'error'}, 2);
 	}
+ SKIP: {
+		skip (q{Cannot test "HandleSetErr" attribute because client_min_messages is set to 'error'}, 4);
+	}
 }
 else {
-	$SQL = 'Testing the DBD::Pg modules error handling -?-';
 	{
 		$warning = '';
 		local $SIG{__WARN__} = sub { $warning = shift; };
@@ -835,10 +943,87 @@ if ($client_level ne 'error') {
 	$dbh->rollback();
 }
 
+#
+# Test of the handle attribute HandleSetErr
+#
+
+$t='Database handle attribute "HandleSetErr" is set properly';
+$attrib = $dbh->{HandleSetErr};
+ok (!$attrib, $t);
+
+if ($client_level ne 'error') {
+
+	$t='Database handle attribute "HandleSetErr" works as expected';
+	undef $warning;
+	$dbh->{HandleSetErr} = sub {
+		my ($h,$err,$errstr,$state,$method) = @_;
+		$_[1] = 42;
+		$_[2] = 'ERRSTR';
+		$_[3] = '33133';
+		return;
+	};
+	eval {$sth = $dbh->last_insert_id('cat', 'schema', 'table', 'col', ['notahashref']); };
+	## Changing the state does not work yet.
+	like($@, qr{ERRSTR}, $t);
+	is ($dbh->errstr, "ERRSTR", $t);
+	is ($dbh->err, "42", $t);
+	$dbh->{HandleSetErr} = 0;
+	$dbh->rollback();
+
+}
+
 
 #
-# Not supported yet: ShowErrorStatement
+# Test of the handle attribute "ErrCount"
 #
+
+$t='Database handle attribute "ErrCount" starts out at 0';
+$dbh4 = connect_database({quickreturn => 1});
+is ($dbh4->{ErrCount}, 0, $t);
+
+$t='Database handle attribute "ErrCount" is incremented with set_err()';
+eval {$sth = $dbh4->last_insert_id('cat', 'schema', 'table', 'col', ['notahashref']); };
+is ($dbh4->{ErrCount}, 1, $t);
+
+$dbh4->disconnect();
+
+#
+# Test of the handle attribute "ShowErrorStatement"
+#
+
+$t='Database handle attribute "ShowErrorStatemnt" starts out false';
+is ($dbh->{ShowErrorStatement}, '', $t);
+$SQL = 'Testing the ShowErrorStatement attribute';
+eval {
+	$sth = $dbh->prepare($SQL);
+	$sth->execute();
+};
+$t='Database handle attribute "ShowErrorStatement" has no effect if not set';
+unlike ($@, qr{for Statement "Testing}, $t);
+$dbh->{ShowErrorStatement} = 1;
+eval {
+	$sth = $dbh->prepare($SQL);
+	$sth->execute();
+};
+$t='Database handle attribute "ShowErrorStatement" adds statement to errors';
+like ($@, qr{for Statement "Testing}, $t);
+
+$SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class WHERE relname = ? AND reltuples = ?};
+eval {
+	$sth = $dbh->prepare($SQL);
+	$sth->execute(123);
+};
+$t='Database handle attribute "ShowErrorStatement" adds statement and placeholders to errors';
+like ($@, qr{with ParamValues}, $t);
+
+$SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class WHERE relname = ? AND reltuples = ?};
+eval {
+	$sth = $dbh->prepare($SQL);
+	$sth->execute(123,456);
+};
+$t='Database handle attribute "ShowErrorStatement" adds statement and placeholders to errors';
+like ($@, qr{with ParamValues: 1='123', 2='456'}, $t);
+$dbh->rollback();
 
 #
 # Test of the handle attribute TraceLevel

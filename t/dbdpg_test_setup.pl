@@ -493,6 +493,10 @@ sub connect_database {
 	$ENV{DBI_DSN} = $testdsn;
 	$ENV{DBI_USER} = $testuser;
 
+	if ($arg->{quickreturn}) {
+		return $helpconnect, '', $dbh;
+	}
+
 	if ($arg->{nosetup}) {
 		return $helpconnect, '', $dbh unless schema_exists($dbh, $S);
 		$dbh->do("SET search_path TO $S");
