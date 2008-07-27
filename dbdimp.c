@@ -222,6 +222,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	imp_dbh->done_begin      = DBDPG_FALSE;
 	imp_dbh->dollaronly      = DBDPG_FALSE;
 	imp_dbh->expand_array    = DBDPG_TRUE;
+	imp_dbh->txn_read_only   = DBDPG_FALSE;
 	imp_dbh->pid_number      = getpid();
 	imp_dbh->prepare_number  = 1;
 	imp_dbh->copystate       = 0;
@@ -771,9 +772,20 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 	unsigned int newval = SvTRUE(valuesv);
 	int          retval = 0;
 
-	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_STORE (key: %s newval: %d)\n", THEADER, key, newval);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_STORE (key: %s newval: %d kl:%d)\n", THEADER, key, newval);
 	
 	switch (kl) {
+
+	case 8: /* ReadOnly */
+
+		if (strEQ("ReadOnly", key)) {
+			if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+				warn("Setting ReadOnly in AutoCommit mode has no effect");
+			}
+			imp_dbh->txn_read_only = newval ? DBDPG_TRUE : DBDPG_FALSE;
+			retval = 1;
+		}
+		break;
 
 	case 10: /* AutoCommit  pg_bool_tf */
 
@@ -2624,7 +2636,22 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 			return -2;
 		}
 		imp_dbh->done_begin = DBDPG_TRUE;
+		/* If read-only mode, make it so */
+		if (imp_dbh->txn_read_only) {
+			status = _result(aTHX_ imp_dbh, "set transaction read only");
+			if (PGRES_COMMAND_OK != status) {
+				TRACE_PQERRORMESSAGE;
+				pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
+				if (TEND) TRC(DBILOGFP, "%sEnd pg_quickexec (error: set transaction read only failed)\n", THEADER);
+				return -2;
+			}
+		}
 	}
+
+	/*
+	  We want txn mode if AutoCommit
+	 */
+
 
 	/* Asynchronous commands get kicked off and return undef */
 	if (asyncflag & PG_ASYNC) {
@@ -2788,6 +2815,16 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			return -2;
 		}
 		imp_dbh->done_begin = DBDPG_TRUE;
+		/* If read-only mode, make it so */
+		if (imp_dbh->txn_read_only) {
+			status = _result(aTHX_ imp_dbh, "set transaction read only");
+			if (PGRES_COMMAND_OK != status) {
+				TRACE_PQERRORMESSAGE;
+				pg_error(aTHX_ sth, status, PQerrorMessage(imp_dbh->conn));
+				if (TEND) TRC(DBILOGFP, "%sEnd pg_quickexec (error: set transaction read only failed)\n", THEADER);
+				return -2;
+			}
+		}
 	}
 
 	/* clear old result (if any) */

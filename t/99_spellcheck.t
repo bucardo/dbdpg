@@ -405,6 +405,7 @@ qw
 RaiseError
 RDBMS
 README
+ReadOnly
 realclean
 RedHat
 relcheck
@@ -554,6 +555,13 @@ struct
 
 
 ## README.dev:
+DProf
+NYTProf
+dprofpp
+nytprofhtml
+profiler
+spellcheck
+testfile
 leaktester
 mak
 mathinline
@@ -562,11 +570,13 @@ nServer
 
 ## README:
 BOOTCHECK
+CentOS
 DynaLoader
 Eisentraut
 Gcc
 Landgren
 Lauterbach
+Ubuntu
 cabrion
 conf
 danla

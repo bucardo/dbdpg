@@ -24,6 +24,7 @@ struct imp_dbh_st {
 	bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */
 	bool    dollaronly;        /* only consider $1, $2 ... as valid placeholders */
 	bool    expand_array;      /* transform arrays from the db into Perl arrays? Default is 1 */
+	bool    txn_read_only;     /* are we in read-only mode? Set with $dbh->{ReadOnly} */
 
 	int     pg_protocol;       /* value of PQprotocolVersion, usually 3 (could also be 0) */
 	int     pg_server_version; /* server version e.g. 80100 */

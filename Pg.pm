@@ -17,7 +17,7 @@ use 5.006001;
 {
 	package DBD::Pg;
 
-	use version; our $VERSION = qv('2.8.8');
+	use version; our $VERSION = qv('2.9.0');
 
 	use DBI ();
 	use DynaLoader ();
@@ -1696,7 +1696,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 2.8.8 of the DBD::Pg module
+This documents version 2.9.0 of the DBD::Pg module
 
 =head1 DESCRIPTION
 
@@ -1831,7 +1831,7 @@ an alternate port and host:
   @data_sources = $dbh->data_sources('port=5824;host=example.com');
 
 
-=head1 METHODS COMMON TO ALL HANDLES
+=head2 Methods Common To All Handles
 
 For all of the methods below, B<$h> can be either a database handle (B<$dbh>) 
 or a statement handle (B<$sth>). Note that I<$dbh> and I<$sth> can be replaced with 
@@ -3007,6 +3007,14 @@ elsewhere in this document.
 
 DBD::Pg specific attribute. If true, boolean values will be returned
 as the characters 't' and 'f' instead of '1' and '0'.
+
+=head3 B<ReadOnly> (boolean)
+
+$dbh->{ReadOnly} = 1;
+
+Specifies if the current database connection should be in read-only mode or not. 
+In this mode, changes that change the database are not allowed and will throw 
+an error. Note: this method will B<not> work if L</AutoCommit> is true.
 
 =head3 B<Name> (string, read-only)
 
