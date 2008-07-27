@@ -18,7 +18,7 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 171;
+plan tests => 172;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -1164,49 +1164,59 @@ is ($attrib, 1, $t);
 # Test of the database handle attribute "ReadOnly"
 #
 
-$t='Database handle attribute "ReadOnly" starts out unefined';
-$dbh->commit();
-$dbh4 = connect_database();
-$dbh4->trace(0);
-is ($dbh4->{ReadOnly}, undef, $t);
+SKIP: {
+	if ($DBI::VERSION < 1.55) {
+		skip ('DBI must be at least version 1.55 to test DB attribute "ReadOnly"', 8);
+	}
 
-$t='Database handle attribute "ReadOnly" sets transactions to readonly mode';
-$dbh4->{ReadOnly} = 1;
+	$t='Database handle attribute "ReadOnly" starts out undefined';
+	$dbh->commit();
+	$dbh4 = connect_database();
+	$dbh4->trace(0);
+	is ($dbh4->{ReadOnly}, undef, $t);
 
-$t='Database handle attribute "ReadOnly" allows SELECT queries to work when on';
-$result = $dbh4->selectall_arrayref('SELECT 12345')->[0][0];
-is ($result, 12345, $t);
+	$t='Database handle attribute "ReadOnly" allows SELECT queries to work when on';
+	$dbh4->{ReadOnly} = 1;
+	$result = $dbh4->selectall_arrayref('SELECT 12345')->[0][0];
+	is ($result, 12345, $t);
 
-$t='Database handle attribute "ReadOnly" prevents INSERT queries from working when on';
-$SQL = 'INSERT INTO dbd_pg_test (id) VALUES (50)';
-eval { $dbh4->do($SQL); };
-like ($@, qr{transaction is read-only}, $t);
-$dbh4->rollback();
+	$t='Database handle attribute "ReadOnly" prevents INSERT queries from working when on';
+	$SQL = 'INSERT INTO dbd_pg_test (id) VALUES (50)';
+	eval { $dbh4->do($SQL); };
+	like ($@, qr{transaction is read-only}, $t);
+	$dbh4->rollback();
 
-$sth = $dbh4->prepare($SQL);
-eval { $sth->execute(); };
-like ($@, qr{transaction is read-only}, $t);
-$dbh4->rollback();
+	$sth = $dbh4->prepare($SQL);
+	eval { $sth->execute(); };
+	like ($@, qr{transaction is read-only}, $t);
+	$dbh4->rollback();
 
-$t='Database handle attribute "ReadOnly" allows INSERT queries when switched off';
-$dbh4->{ReadOnly} = 0;
-eval { $dbh4->do($SQL); };
-is ($@, q{}, $t);
-$dbh4->rollback();
+	$t='Database handle attribute "ReadOnly" allows INSERT queries when switched off';
+	$dbh4->{ReadOnly} = 0;
+	eval { $dbh4->do($SQL); };
+	is ($@, q{}, $t);
+	$dbh4->rollback();
 
-$dbh4->{ReadOnly} = 1;
-$dbh4->{AutoCommit} = 1;
-$t='Database handle attribute "ReadOnly" has no effect if AutoCommit is on';
-eval { $dbh4->do($SQL); };
-is ($@, q{}, $t);
+	$t='Database handle attribute "ReadOnly" allows INSERT queries when switched off';
+	$dbh4->{ReadOnly} = 0;
+	eval { $dbh4->do($SQL); };
+	is ($@, q{}, $t);
+	$dbh4->rollback();
 
-my $delete = 'DELETE FROM dbd_pg_test WHERE id = 50';
-$dbh4->do($delete);
-$sth = $dbh4->prepare($SQL);
-eval { $sth->execute(); };
-is ($@, q{}, $t);
+	$dbh4->{ReadOnly} = 1;
+	$dbh4->{AutoCommit} = 1;
+	$t='Database handle attribute "ReadOnly" has no effect if AutoCommit is on';
+	eval { $dbh4->do($SQL); };
+	is ($@, q{}, $t);
 
-$dbh4->disconnect();
+	my $delete = 'DELETE FROM dbd_pg_test WHERE id = 50';
+	$dbh4->do($delete);
+	$sth = $dbh4->prepare($SQL);
+	eval { $sth->execute(); };
+	is ($@, q{}, $t);
+
+	$dbh4->disconnect();
+}
 
 #
 # Test of the database handle attribute InactiveDestroy
