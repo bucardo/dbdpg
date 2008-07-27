@@ -3014,7 +3014,17 @@ $dbh->{ReadOnly} = 1;
 
 Specifies if the current database connection should be in read-only mode or not. 
 In this mode, changes that change the database are not allowed and will throw 
-an error. Note: this method will B<not> work if L</AutoCommit> is true.
+an error. Note: this method will B<not> work if L</AutoCommit> is true. The 
+read-only effect is accomplished by sending a SET TRANSACTION READ ONLY after 
+every begin. For more details, please see:
+
+http://www.postgresql.org/docs/current/interactive/sql-set-transaction.html
+
+Please not that this method is not foolproof: there are still ways to update the 
+database. Consider this a safety net to catch applications that should not be 
+issuing commands such as INSERT, UPDATE, or DELETE.
+
+This method requires DBI version 1.55 or better.
 
 =head3 B<Name> (string, read-only)
 
