@@ -371,6 +371,8 @@ php
 pid
 PID
 PlanetPostgresql
+Postgres
+POSTGRES
 postgres
 postgresql
 PostgreSQL
