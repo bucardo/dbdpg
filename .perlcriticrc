@@ -15,6 +15,7 @@ stop_words = ActiveKids AutoCommit boolean Bunce CachedKids ChildHandles ChopBla
 [-ClassHierarchies::ProhibitExplicitISA]
 [-CodeLayout::ProhibitParensWithBuiltins]
 [-CodeLayout::RequireTidyCode]
+[-CodeLayout::RequireASCII]
 [-CodeLayout::RequireUseUTF8]
 [-ControlStructures::ProhibitCascadingIfElse]
 [-ControlStructures::ProhibitCStyleForLoops]
