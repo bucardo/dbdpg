@@ -9,6 +9,7 @@
 		excessive malloc and free within execute function. [GSM]
 	- Add more attribute tests, improve testing system.
 	- Many documentation improvements.
+	- Win32 build improvements [T.J. Ferraro]
 
 2.8.7 Released July 24, 2008 (subversion r11582)
 
