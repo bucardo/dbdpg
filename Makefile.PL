@@ -210,7 +210,7 @@ if ($os eq 'hpux') {
 elsif ($os =~ /Win32/) {
 	my $msdir = $POSTGRES_LIB;
 	$msdir =~ s{"$}{/ms"};
-	$opts{LIBS}[0] .= " -L$msdir";
+	$opts{LIBS}[0] .= " -L$msdir -lsecur32";
 }
 
 if ($Config{dlsrc} =~ /dl_none/) {
