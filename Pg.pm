@@ -1277,7 +1277,7 @@ use 5.006001;
              SQL_VARBINARY,                                                                $UN, $UN, $UN ],
 ['bpchar',   SQL_CHAR,          $GIG, q{'},q{'}, $LEN, 1,1,3, $UN,0,0, 'CHARACTER', $UN,$UN,
              SQL_CHAR,                                                                     $UN, $UN, $UN ],
-['numeric',  SQL_DECIMAL,       1000, $UN,$UN,   $PS,  1,0,2, 0,0,0, '  FLOAT',     0,1000,
+['numeric',  SQL_DECIMAL,       1000, $UN,$UN,   $PS,  1,0,2, 0,0,0,   'FLOAT',     0,1000,
              SQL_DECIMAL,                                                                  $UN, $UN, $UN ],
 ['numeric',  SQL_NUMERIC,       1000, $UN,$UN,   $PS,  1,0,2, 0,0,0,   'FLOAT',     0,1000,
              SQL_NUMERIC,                                                                  $UN, $UN, $UN ],
@@ -3024,7 +3024,7 @@ Please not that this method is not foolproof: there are still ways to update the
 database. Consider this a safety net to catch applications that should not be 
 issuing commands such as INSERT, UPDATE, or DELETE.
 
-This method requires DBI version 1.55 or better.
+This method method requires DBI version 1.55 or better.
 
 =head3 B<Name> (string, read-only)
 
@@ -3512,39 +3512,45 @@ L<http://www.postgresql.org/docs/current/static/largeobjects.html>.
 
 =head3 B<NUM_OF_FIELDS> (integer, read-only)
 
-Implemented by DBI, no driver-specific impact.
+Returns the number of columns returned by the current statement. This value will be undef until execute is called. 
+A number will only be returned for SELECT statements, SHOW statements (which always return C<1>), and for INSERT, 
+UPDATE, and DELETE statements which contain a RETURNING clause.
 
 =head3 B<NUM_OF_PARAMS> (integer, read-only)
 
-Implemented by DBI, no driver-specific impact.
+Returns the number of placeholders in the current statement.
 
 =head3 B<NAME> (arrayref, read-only)
 
-Supported by this driver as proposed by DBI.
+Returns an arrayref of column names for the current statement. This will return undef until execute is called. This 
+method will only work for SELECT statements, SHOW statements, and for INSERT, UPDATE, and DELETE statements 
+which contain a RETURNING clause.
 
 =head3 B<NAME_lc> (arrayref, read-only)
 
-Implemented by DBI, no driver-specific impact.
+The same as the C<NAME> attribute, except that all column names are forced to lower case.
 
 =head3 B<NAME_uc>  (arrayref, read-only)
 
-Implemented by DBI, no driver-specific impact.
+The same as the C<NAME> attribute, except that all column names are forced to upper case.
 
 =head3 B<NAME_hash> (hashref, read-only)
 
-Implemented by DBI, no driver-specific impact.
+Similar to the C<NAME> attribute, but returns a hashref of column names instead of an arrayref. The names of the columns 
+are the keys of the hash, and the values represent the order in which the columns are returned, starting at 0.
 
 =head3 B<NAME_lc_hash> (hashref, read-only)
 
-Implemented by DBI, no driver-specific impact.
+The same as the C<NAME_hash> attribute, except that all column names are forced to lower case.
 
 =head3 B<NAME_uc_hash> (hashref, read-only)
 
-Implemented by DBI, no driver-specific impact.
+The same as the C<NAME_hash> attribute, except that all column names are forced to lower case.
 
 =head3 B<TYPE> (arrayref, read-only)
 
-Supported by this driver as proposed by DBI
+Returns an arrayref indicating the data type for each column in the statement. This information is not available before 
+execute is called.
 
 =head3 B<PRECISION> (arrayref, read-only)
 
