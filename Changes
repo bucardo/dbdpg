@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.9.0
+2.9.0 Released August 3, 2008
 
 	- Add support for database handle attribute "ReadOnly". This allows 
 		use of $dbh->{ReadOnly} = 1 to enforce read only mode at 
