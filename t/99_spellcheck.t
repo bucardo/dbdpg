@@ -331,6 +331,7 @@ noprefix
 noreturn
 nosetup
 notused
+nullable
 NULLABLE
 num
 numbound
