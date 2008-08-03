@@ -554,7 +554,7 @@ yml
 
 ## TODO:
 struct
-
+hashrefs
 
 ## README.dev:
 DProf
@@ -629,6 +629,7 @@ ExecStatusType
 INV
 NULLs
 Oid
+PQoids
 PGRES
 ROK
 StartTransactionCommand
@@ -687,6 +688,7 @@ versa
 xPID
 
 ## dbdimp.h:
+PQ
 SSP
 funcs
 implementor

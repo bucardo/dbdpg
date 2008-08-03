@@ -3512,9 +3512,10 @@ L<http://www.postgresql.org/docs/current/static/largeobjects.html>.
 
 =head3 B<NUM_OF_FIELDS> (integer, read-only)
 
-Returns the number of columns returned by the current statement. This value will be undef until execute is called. 
-A number will only be returned for SELECT statements, SHOW statements (which always return C<1>), and for INSERT, 
+Returns the number of columns returned by the current statement. A number will only be returned for 
+SELECT statements, for SHOW statements (which always return C<1>), and for INSERT, 
 UPDATE, and DELETE statements which contain a RETURNING clause.
+This method returns undef if called before C<execute()>.
 
 =head3 B<NUM_OF_PARAMS> (integer, read-only)
 
@@ -3522,9 +3523,10 @@ Returns the number of placeholders in the current statement.
 
 =head3 B<NAME> (arrayref, read-only)
 
-Returns an arrayref of column names for the current statement. This will return undef until execute is called. This 
-method will only work for SELECT statements, SHOW statements, and for INSERT, UPDATE, and DELETE statements 
-which contain a RETURNING clause.
+Returns an arrayref of column names for the current statement. This 
+method will only work for SELECT statements, for SHOW statements, and for 
+INSERT, UPDATE, and DELETE statements which contain a RETURNING clause.
+This method returns undef if called before C<execute()>.
 
 =head3 B<NAME_lc> (arrayref, read-only)
 
@@ -3538,6 +3540,7 @@ The same as the C<NAME> attribute, except that all column names are forced to up
 
 Similar to the C<NAME> attribute, but returns a hashref of column names instead of an arrayref. The names of the columns 
 are the keys of the hash, and the values represent the order in which the columns are returned, starting at 0.
+This method returns undef if called before C<execute()>.
 
 =head3 B<NAME_lc_hash> (hashref, read-only)
 
@@ -3549,24 +3552,28 @@ The same as the C<NAME_hash> attribute, except that all column names are forced 
 
 =head3 B<TYPE> (arrayref, read-only)
 
-Returns an arrayref indicating the data type for each column in the statement. This information is not available before 
-execute is called.
+Returns an arrayref indicating the data type for each column in the statement. 
+This method returns undef if called before C<execute()>.
 
 =head3 B<PRECISION> (arrayref, read-only)
 
-Returns a reference to an array of integer values of each column. 
-C<NUMERIC> types will return the precision. Types of C<CHAR> and C<VARCHAR> 
-will return their size (number of characters). Other types will return the number 
-of I<bytes>.
+Returns an arrayref of integer values for each column returned by the statement. 
+The number indicates the precision for C<NUMERIC> columns, the size in number of 
+characters for C<CHAR> and C<VARCHAR> columns, and for all other types of columns 
+it returns the number of I<bytes>.
+This method returns undef if called before C<execute()>.
 
 =head3 B<SCALE> (arrayref, read-only)
 
-Returns a reference to an array of integer values of each column. 
-The only type that will return a value currently is C<NUMERIC>.
+Returns an arrayref of integer values for each column returned by the statement. The number 
+indicates the scale of the that column. The only type that will return a value is C<NUMERIC>.
+This method returns undef if called before C<execute()>.
 
 =head3 B<NULLABLE> (arrayref, read-only)
 
-Supported by this driver as proposed by DBI.
+Returns an arrayref of integer values for each column returned by the statement. The number 
+indicates if the column is nullable or not. 0 = not nullable, 1 = nullable, 2 = unknown. 
+This method returns undef if called before C<execute()>.
 
 =head3 B<CursorName> (string, read-only)
 

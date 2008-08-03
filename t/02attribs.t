@@ -18,7 +18,7 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 172;
+plan tests => 250;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -461,88 +461,343 @@ ok (! $dbh->{Warn}, $t);
 
 #
 # Test of the the following statement handle attributes:
-# NUM_OF_FIELDS, NUM_OF_PARAMS
+# NUM_OF_PARAMS, NUM_OF_FIELDS
 # NAME, NAME_lc, NAME_uc, NAME_hash, NAME_lc_hash, NAME_uc_hash
 # TYPE, PRECISION, SCALE, NULLABLE
 #
 
-$t='Statement handle attribute "NUM_OF_FIELDS" works correctly for SELECT';
+## First, all pre-execute checks:
+
+$t='Statement handle attribute "NUM_OF_PARAMS" works correctly before execute with no placeholders';
+$sth = $dbh->prepare('SELECT 123');
+is ($sth->{'NUM_OF_PARAMS'}, 0, $t);
+
+$t='Statement handle attribute "NUM_OF_PARAMS" works correctly before execute with three placeholders';
+$sth = $dbh->prepare('SELECT 123 FROM pg_class WHERE relname=? AND reltuples=? and relpages=?');
+is ($sth->{'NUM_OF_PARAMS'}, 3, $t);
+
+$t='Statement handle attribute "NUM_OF_PARAMS" works correctly before execute with one placeholder';
 $sth = $dbh->prepare('SELECT 123 AS "Sheep", CAST(id AS float) FROM dbd_pg_test WHERE id=?');
+is ($sth->{'NUM_OF_PARAMS'}, 1, $t);
+
+$t='Statement handle attribute "NUM_OF_FIELDS" returns undef before execute';
+is ($sth->{'NUM_OF_FIELDS'}, undef, $t);
+
+$t='Statement handle attribute "NAME" returns undef before execute';
+is ($sth->{'NAME'}, undef, $t);
+
+$t='Statement handle attribute "NAME_lc" returns undef before execute';
+is ($sth->{'NAME_lc'}, undef, $t);
+
+$t='Statement handle attribute "NAME_uc" returns undef before execute';
+is ($sth->{'NAME_uc'}, undef, $t);
+
+$t='Statement handle attribute "NAME_hash" returns undef before execute';
+is ($sth->{'NAME_hash'}, undef, $t);
+
+$t='Statement handle attribute "NAME_lc_hash" returns undef before execute';
+is ($sth->{'NAME_lc_hash'}, undef, $t);
+
+$t='Statement handle attribute "NAME_uc_hash" returns undef before execute';
+is ($sth->{'NAME_uc_hash'}, undef, $t);
+
+$t='Statement handle attribute "TYPE" returns undef before execute';
+is ($sth->{'TYPE'}, undef, $t);
+
+$t='Statement handle attribute "PRECISION" returns undef before execute';
+is ($sth->{'PRECISION'}, undef, $t);
+
+$t='Statement handle attribute "SCALE" returns undef before execute';
+is ($sth->{'SCALE'}, undef, $t);
+
+$t='Statement handle attribute "NULLABLE" returns undef before execute';
+is ($sth->{'NULLABLE'}, undef, $t);
+
+## Now, some post-execute checks:
+
+$t='Statement handle attribute "NUM_OF_PARAMS" works correctly after execute';
 $sth->execute(12);
-$attrib = $sth->{'NUM_OF_FIELDS'};
-is ($attrib, '2', $t);
+is ($sth->{'NUM_OF_PARAMS'}, 1, $t);
 
-$t='Statement handle attribute "NUM_OF_PARAMS" works correctly with one placeholder';
-$attrib = $sth->{'NUM_OF_PARAMS'};
-is ($attrib, '1', $t);
+$t='Statement handle attribute "NUM_OF_FIELDS" works correctly for SELECT statements';
+is ($sth->{'NUM_OF_FIELDS'}, 2, $t);
 
-$t='Statement handle attribute "NAME" works correctly';
-$attrib = $sth->{NAME};
+$t='Statement handle attribute "NAME" works correctly for SELECT statements';
 my $colnames = ['Sheep', 'id'];
-is_deeply ($attrib, $colnames, $t);
+is_deeply ($sth->{'NAME'}, $colnames, $t);
 
-$t='Statement handle attribute "NAME_lc" works correctly';
-$attrib = $sth->{NAME_lc};
+$t='Statement handle attribute "NAME_lc" works correctly for SELECT statements';
 $colnames = ['sheep', 'id'];
-is_deeply ($attrib, $colnames, $t);
+is_deeply ($sth->{'NAME_lc'}, $colnames, $t);
 
-$t='Statement handle attribute "NAME_uc" works correctly';
-$attrib = $sth->{NAME_uc};
+$t='Statement handle attribute "NAME_uc" works correctly for SELECT statements';
 $colnames = ['SHEEP', 'ID'];
-is_deeply ($attrib, $colnames, $t);
+is_deeply ($sth->{'NAME_uc'}, $colnames, $t);
 
-$t='Statement handle attribute "NAME_hash" works correctly';
-$attrib = $sth->{'NAME_hash'};
+$t='Statement handle attribute "NAME_hash" works correctly for SELECT statements';
 $colnames = {'Sheep' => 0, id => 1};
-is_deeply ($attrib, $colnames, $t);
+is_deeply ($sth->{'NAME_hash'}, $colnames, $t);
 
-$t='Statement handle attribute "NAME_lc_hash" works correctly';
-$attrib = $sth->{'NAME_lc_hash'};
-$colnames = {sheep => 0, id => 1};
-is_deeply ($attrib, $colnames, $t);
+$t='Statement handle attribute "NAME_lc_hash" works correctly for SELECT statements';
+$colnames = {'sheep' => 0, id => 1};
+is_deeply ($sth->{'NAME_lc_hash'}, $colnames, $t);
 
-$t='Statement handle attribute "NAME_uc_hash" works correctly';
-$attrib = $sth->{NAME_uc_hash};
-$colnames = {SHEEP => 0, ID => 1};
-is_deeply ($attrib, $colnames, $t);
+$t='Statement handle attribute "NAME_uc_hash" works correctly for SELECT statements';
+$colnames = {'SHEEP' => 0, ID => 1};
+is_deeply ($sth->{'NAME_uc_hash'}, $colnames, $t);
 
-$t='Statement handle attribute "TYPE" works correctly';
-$attrib = $sth->{TYPE};
+$t='Statement handle attribute "TYPE" works correctly for SELECT statements';
 $colnames = [4, 6];
-is_deeply ($attrib, $colnames, $t);
+is_deeply ($sth->{'TYPE'}, $colnames, $t);
 
 $t='Statement handle attribute "PRECISION" works correctly';
-$attrib = $sth->{PRECISION};
 $colnames = [4, 8];
-is_deeply ($attrib, $colnames, $t);
+is_deeply ($sth->{'PRECISION'}, $colnames, $t);
 
 $t='Statement handle attribute "SCALE" works correctly';
-$attrib = $sth->{SCALE};
 $colnames = [undef,undef];
-is_deeply ($attrib, $colnames, $t);
+is_deeply ($sth->{'SCALE'}, $colnames, $t);
 
 $t='Statement handle attribute "NULLABLE" works correctly';
-$attrib = $sth->{NULLABLE};
 $colnames = [2,2];
-$sth->finish();
-is_deeply ($attrib, $colnames, $t);
+is_deeply ($sth->{NULLABLE}, $colnames, $t);
 
-$t='Statement handle attribute "NUM_OF_FIELDS" works correctly for DELETE';
-$sth = $dbh->prepare('DELETE FROM dbd_pg_test WHERE id=0');
+## Post-finish tasks:
+
+$sth->finish();
+
+$t='Statement handle attribute "NUM_OF_PARAMS" works correctly after finish';
+is ($sth->{'NUM_OF_PARAMS'}, 1, $t);
+
+$t='Statement handle attribute "NUM_OF_FIELDS" works correctly after finish';
+is ($sth->{'NUM_OF_FIELDS'}, 2, $t);
+
+$t='Statement handle attribute "NAME" returns undef after finish';
+is_deeply ($sth->{'NAME'}, undef, $t);
+
+$t='Statement handle attribute "NAME_lc" returns values after finish';
+$colnames = ['sheep', 'id'];
+is_deeply ($sth->{'NAME_lc'}, $colnames, $t);
+
+$t='Statement handle attribute "NAME_uc" returns values after finish';
+$colnames = ['SHEEP', 'ID'];
+is_deeply ($sth->{'NAME_uc'}, $colnames, $t);
+
+$t='Statement handle attribute "NAME_hash" works correctly after finish';
+$colnames = {'Sheep' => 0, id => 1};
+is_deeply ($sth->{'NAME_hash'}, $colnames, $t);
+
+$t='Statement handle attribute "NAME_lc_hash" works correctly after finish';
+$colnames = {'sheep' => 0, id => 1};
+is_deeply ($sth->{'NAME_lc_hash'}, $colnames, $t);
+
+$t='Statement handle attribute "NAME_uc_hash" works correctly after finish';
+$colnames = {'SHEEP' => 0, ID => 1};
+is_deeply ($sth->{'NAME_uc_hash'}, $colnames, $t);
+
+$t='Statement handle attribute "TYPE" returns undef after finish';
+is_deeply ($sth->{'TYPE'}, undef, $t);
+
+$t='Statement handle attribute "PRECISION" works correctly after finish';
+is_deeply ($sth->{'PRECISION'}, undef, $t);
+
+$t='Statement handle attribute "SCALE" works correctly after finish';
+is_deeply ($sth->{'SCALE'}, undef, $t);
+
+$t='Statement handle attribute "NULLABLE" works correctly after finish';
+is_deeply ($sth->{NULLABLE}, undef, $t);
+
+## Test UPDATE queries
+
+$t='Statement handle attribute "NUM_OF_FIELDS" returns undef for updates';
+$sth = $dbh->prepare('UPDATE dbd_pg_test SET id = 99 WHERE id = ?');
+$sth->execute(1);
+is_deeply ($sth->{'NUM_OF_FIELDS'}, undef, $t);
+
+$t='Statement handle attribute "NAME" returns empty arrayref for updates';
+is_deeply ($sth->{'NAME'}, [], $t);
+
+$t='Statement handle attribute "NAME_lc" returns empty arrayref for updates';
+is_deeply ($sth->{'NAME_lc'}, [], $t);
+
+$t='Statement handle attribute "NAME_uc" returns empty arrayref for updates';
+is_deeply ($sth->{'NAME_uc'}, [], $t);
+
+$t='Statement handle attribute "NAME_hash" returns empty hashref for updates';
+is_deeply ($sth->{'NAME_hash'}, {}, $t);
+
+$t='Statement handle attribute "NAME_uc_hash" returns empty hashref for updates';
+is_deeply ($sth->{'NAME_lc_hash'}, {}, $t);
+
+$t='Statement handle attribute "NAME_uc_hash" returns empty hashref for updates';
+is_deeply ($sth->{'NAME_uc_hash'}, {}, $t);
+
+$t='Statement handle attribute "TYPE" returns empty arrayref for updates';
+is_deeply ($sth->{'TYPE'}, [], $t);
+
+$t='Statement handle attribute "PRECISION" returns empty arrayref for updates';
+is_deeply ($sth->{'PRECISION'}, [], $t);
+
+$t='Statement handle attribute "SCALE" returns empty arrayref for updates';
+is_deeply ($sth->{'SCALE'}, [], $t);
+
+$t='Statement handle attribute "NULLABLE" returns empty arrayref for updates';
+is_deeply ($sth->{'NULLABLE'}, [], $t);
+
+$dbh->do('UPDATE dbd_pg_test SET id = 1 WHERE id = 99');
+
+## Test UPDATE,INSERT, and DELETE with RETURNING
+
+SKIP: {
+
+	if ($pgversion < 80200) {
+		skip ('Cannot test RETURNING clause on pre 8.2 servers', 33);
+	}
+
+	$t='Statement handle attribute "NUM_OF_FIELDS" returns correct value for RETURNING updates';
+	$sth = $dbh->prepare('UPDATE dbd_pg_test SET id = 99 WHERE id = ? RETURNING id, expo, "CaseTest"');
+	$sth->execute(1);
+	is_deeply ($sth->{'NUM_OF_FIELDS'}, 3, $t);
+
+	$t='Statement handle attribute "NAME" returns correct info for RETURNING updates';
+	is_deeply ($sth->{'NAME'}, ['id','expo','CaseTest'], $t);
+
+	$t='Statement handle attribute "NAME_lc" returns correct info for RETURNING updates';
+	is_deeply ($sth->{'NAME_lc'}, ['id','expo','casetest'], $t);
+
+	$t='Statement handle attribute "NAME_uc" returns correct info for RETURNING updates';
+	is_deeply ($sth->{'NAME_uc'}, ['ID','EXPO','CASETEST'], $t);
+
+	$t='Statement handle attribute "NAME_hash" returns correct info for RETURNING updates';
+	is_deeply ($sth->{'NAME_hash'}, {id=>0, expo=>1, CaseTest=>2}, $t);
+
+	$t='Statement handle attribute "NAME_lc_hash" returns correct info for RETURNING updates';
+	is_deeply ($sth->{'NAME_lc_hash'}, {id=>0, expo=>1, casetest=>2}, $t);
+
+	$t='Statement handle attribute "NAME_uc_hash" returns correct info for RETURNING updates';
+	is_deeply ($sth->{'NAME_uc_hash'}, {ID=>0, EXPO=>1, CASETEST=>2}, $t);
+
+	$t='Statement handle attribute "TYPE" returns correct info for RETURNING updates';
+	is_deeply ($sth->{'TYPE'}, [4,3,16], $t);
+
+	$t='Statement handle attribute "PRECISION" returns correct info for RETURNING updates';
+	is_deeply ($sth->{'PRECISION'}, [4,6,1], $t);
+
+	$t='Statement handle attribute "SCALE" returns correct info for RETURNING updates';
+	is_deeply ($sth->{'SCALE'}, [undef,2,undef], $t);
+
+	$t='Statement handle attribute "NULLABLE" returns empty arrayref for updates';
+	is_deeply ($sth->{'NULLABLE'}, [0,1,1], $t);
+
+	$dbh->do('UPDATE dbd_pg_test SET id = 1 WHERE id = 99');
+
+	$t='Statement handle attribute "NUM_OF_FIELDS" returns correct value for RETURNING inserts';
+	$sth = $dbh->prepare('INSERT INTO dbd_pg_test(id) VALUES(?) RETURNING id, lii, expo, "CaseTest"');
+	$sth->execute(88);
+	is_deeply ($sth->{'NUM_OF_FIELDS'}, 4, $t);
+
+	$t='Statement handle attribute "NAME" returns correct info for RETURNING inserts';
+	is_deeply ($sth->{'NAME'}, ['id','lii','expo','CaseTest'], $t);
+
+	$t='Statement handle attribute "NAME_lc" returns correct info for RETURNING inserts';
+	is_deeply ($sth->{'NAME_lc'}, ['id','lii','expo','casetest'], $t);
+
+	$t='Statement handle attribute "NAME_uc" returns correct info for RETURNING inserts';
+	is_deeply ($sth->{'NAME_uc'}, ['ID','LII','EXPO','CASETEST'], $t);
+
+	$t='Statement handle attribute "NAME_hash" returns correct info for RETURNING inserts';
+	is_deeply ($sth->{'NAME_hash'}, {id=>0, lii=>1, expo=>2, CaseTest=>3}, $t);
+
+	$t='Statement handle attribute "NAME_lc_hash" returns correct info for RETURNING inserts';
+	is_deeply ($sth->{'NAME_lc_hash'}, {id=>0, lii=>1, expo=>2, casetest=>3}, $t);
+
+	$t='Statement handle attribute "NAME_uc_hash" returns correct info for RETURNING inserts';
+	is_deeply ($sth->{'NAME_uc_hash'}, {ID=>0, LII=>1, EXPO=>2, CASETEST=>3}, $t);
+
+	$t='Statement handle attribute "TYPE" returns correct info for RETURNING inserts';
+	is_deeply ($sth->{'TYPE'}, [4,4,3,16], $t);
+
+	$t='Statement handle attribute "PRECISION" returns correct info for RETURNING inserts';
+	is_deeply ($sth->{'PRECISION'}, [4,4,6,1], $t);
+
+	$t='Statement handle attribute "SCALE" returns correct info for RETURNING inserts';
+	is_deeply ($sth->{'SCALE'}, [undef,undef,2,undef], $t);
+
+	$t='Statement handle attribute "NULLABLE" returns empty arrayref for inserts';
+	is_deeply ($sth->{'NULLABLE'}, [0,0,1,1], $t);
+
+	$t='Statement handle attribute "NUM_OF_FIELDS" returns correct value for RETURNING updates';
+	$sth = $dbh->prepare('DELETE FROM dbd_pg_test WHERE id = 88 RETURNING id, lii, expo, "CaseTest"');
+	$sth->execute();
+	is_deeply ($sth->{'NUM_OF_FIELDS'}, 4, $t);
+
+	$t='Statement handle attribute "NAME" returns correct info for RETURNING deletes';
+	is_deeply ($sth->{'NAME'}, ['id','lii','expo','CaseTest'], $t);
+
+	$t='Statement handle attribute "NAME_lc" returns correct info for RETURNING deletes';
+	is_deeply ($sth->{'NAME_lc'}, ['id','lii','expo','casetest'], $t);
+
+	$t='Statement handle attribute "NAME_uc" returns correct info for RETURNING deletes';
+	is_deeply ($sth->{'NAME_uc'}, ['ID','LII','EXPO','CASETEST'], $t);
+
+	$t='Statement handle attribute "NAME_hash" returns correct info for RETURNING deletes';
+	is_deeply ($sth->{'NAME_hash'}, {id=>0, lii=>1, expo=>2, CaseTest=>3}, $t);
+
+	$t='Statement handle attribute "NAME_lc_hash" returns correct info for RETURNING deletes';
+	is_deeply ($sth->{'NAME_lc_hash'}, {id=>0, lii=>1, expo=>2, casetest=>3}, $t);
+
+	$t='Statement handle attribute "NAME_uc_hash" returns correct info for RETURNING deletes';
+	is_deeply ($sth->{'NAME_uc_hash'}, {ID=>0, LII=>1, EXPO=>2, CASETEST=>3}, $t);
+
+	$t='Statement handle attribute "TYPE" returns correct info for RETURNING deletes';
+	is_deeply ($sth->{'TYPE'}, [4,4,3,16], $t);
+
+	$t='Statement handle attribute "PRECISION" returns correct info for RETURNING deletes';
+	is_deeply ($sth->{'PRECISION'}, [4,4,6,1], $t);
+
+	$t='Statement handle attribute "SCALE" returns correct info for RETURNING deletes';
+	is_deeply ($sth->{'SCALE'}, [undef,undef,2,undef], $t);
+
+	$t='Statement handle attribute "NULLABLE" returns empty arrayref for deletes';
+	is_deeply ($sth->{'NULLABLE'}, [0,0,1,1], $t);
+
+}
+
+$t='Statement handle attribute "NUM_OF_FIELDS" returns correct value for SHOW commands';
+$sth = $dbh->prepare('SHOW random_page_cost');
 $sth->execute();
-$attrib = $sth->{'NUM_OF_FIELDS'};
-$expected = undef;
-is ($attrib, $expected, $t);
+is_deeply ($sth->{'NUM_OF_FIELDS'}, 1, $t);
 
-$t='Statement handle attribute "NUM_OF_PARAMS" works correctly with no placeholder';
-$attrib = $sth->{'NUM_OF_PARAMS'};
-is ($attrib, '0', $t);
+$t='Statement handle attribute "NAME" returns correct info for SHOW commands';
+is_deeply ($sth->{'NAME'}, ['random_page_cost'], $t);
 
-$t='Statement handle attribute "NAME" works correctly for DELETE';
-$attrib = $sth->{NAME};
-$colnames = [];
-$sth->finish();
-is_deeply ($attrib, $colnames, $t);
+$t='Statement handle attribute "NAME_lc" returns correct info for SHOW commands';
+is_deeply ($sth->{'NAME_lc'}, ['random_page_cost'], $t);
+
+$t='Statement handle attribute "NAME_uc" returns correct info for SHOW commands';
+is_deeply ($sth->{'NAME_uc'}, ['RANDOM_PAGE_COST'], $t);
+
+$t='Statement handle attribute "NAME_hash" returns correct info for SHOW commands';
+is_deeply ($sth->{'NAME_hash'}, {random_page_cost=>0}, $t);
+
+$t='Statement handle attribute "NAME_lc_hash" returns correct info for SHOW commands';
+is_deeply ($sth->{'NAME_lc_hash'}, {random_page_cost=>0}, $t);
+
+$t='Statement handle attribute "NAME_uc_hash" returns correct info for SHOW commands';
+is_deeply ($sth->{'NAME_uc_hash'}, {RANDOM_PAGE_COST=>0}, $t);
+
+$t='Statement handle attribute "TYPE" returns correct info for SHOW commands';
+is_deeply ($sth->{'TYPE'}, [-1], $t);
+
+$t='Statement handle attribute "PRECISION" returns correct info for SHOW commands';
+is_deeply ($sth->{'PRECISION'}, [undef], $t);
+
+$t='Statement handle attribute "SCALE" returns correct info for SHOW commands';
+is_deeply ($sth->{'SCALE'}, [undef], $t);
+
+$t='Statement handle attribute "NULLABLE" returns "unknown" (2) for SHOW commands';
+is_deeply ($sth->{'NULLABLE'}, [2], $t);
+
 
 #
 # Test of the statement handle attribute "CursorName"
