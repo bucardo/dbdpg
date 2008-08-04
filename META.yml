@@ -26,7 +26,7 @@ recommends:
   Test::Pod::Coverage       : 0
   Test::Warn                : 0.08
   Test::YAML::Meta          : 0.03
-  Text::Spellchecker        : 0
+  Text::SpellChecker        : 0
 build_requires:
   DBI                       : 1.52
   Test::More                : 0.61
