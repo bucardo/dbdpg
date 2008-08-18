@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 245;
+plan tests => 242;
 
 isnt ($dbh, undef, 'Connect to database for array testing');
 
@@ -36,15 +36,17 @@ my $cleararray = $dbh->prepare($SQL);
 $SQL = q{INSERT INTO dbd_pg_test(id,pname,testarray) VALUES (99,'Array Testing',?)};
 my $addarray = $dbh->prepare($SQL);
 
+$SQL = q{INSERT INTO dbd_pg_test(id,pname,testarray2) VALUES (99,'Array Testing',?)};
+my $addarray_int = $dbh->prepare($SQL);
+
 $SQL = q{SELECT testarray FROM dbd_pg_test WHERE pname= 'Array Testing'};
 my $getarray = $dbh->prepare($SQL);
 
-my $array_tests =
-q![]
-{}
-Empty array
+$SQL = q{SELECT testarray2 FROM dbd_pg_test WHERE pname= 'Array Testing'};
+my $getarray_int = $dbh->prepare($SQL);
 
-['']
+my $array_tests =
+q!['']
 {""}
 Empty array
 
@@ -291,7 +293,29 @@ for my $test (split /\n\n/ => $array_tests) {
 
 }
 
+
+## Test of no-item and empty string arrays
+
+$t=q{String array with no items returns undef};
 $cleararray->execute();
+$addarray->execute('{}');
+$getarray->execute();
+$result = $getarray->fetchall_arrayref();
+is_deeply ($result, [[[undef]]], $t);
+
+$t=q{String array with empty string returns empty string};
+$cleararray->execute();
+$addarray->execute('{""}');
+$getarray->execute();
+$result = $getarray->fetchall_arrayref();
+is_deeply ($result, [[['']]], $t);
+
+$t=q{Integer array with no items returns undef};
+$cleararray->execute();
+$addarray_int->execute('{}');
+$getarray_int->execute();
+$result = $getarray_int->fetchall_arrayref();
+is_deeply ($result, [[[undef]]], $t);
 
 ## Pure string to array conversion testing
 
