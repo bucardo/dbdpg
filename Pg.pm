@@ -2120,7 +2120,7 @@ is processing a request.
 
 Forces errors to always raise an exception. Although it defaults to off, it is recommended that this 
 be turned on, as the alternative is to check the return value of every method (prepare, execute, fetch, etc.) 
-to check for any problems. See the DBI docs for more information.
+manually, which is easy to forget to do.
 
 =head3 B<PrintError> (boolean, inherited)
 
@@ -2144,11 +2144,6 @@ Indicates if a handle has been executed. For database handles, this value is tru
 when one of the child statement handles has issued an L</execute>. Issuing a L</commit> or L</rollback> always resets the 
 attribute to false for database handles. For statement handles, any call to L</execute> or its variants will flip the value to 
 true for the lifetime of the statement handle.
-
-=head3 B<Type> (scalar)
-
-Returns C<dr> for a driver handle, C<db> for a database handle, and C<st> for a statement handle. 
-Should be rarely needed.
 
 =head3 B<TraceLevel> (integer, inherited)
 
@@ -2203,7 +2198,7 @@ Implemented by DBI, no driver-specific impact.
 
 =head3 B<ChopBlanks> (boolean, inherited)
 
-Supported by this driver as proposed by DBI. This method is similar to the
+Supported by DBD::Pg as proposed by DBI. This method is similar to the
 SQL function C<RTRIM>.
 
 =head3 B<Taint> (boolean, inherited)
@@ -2222,17 +2217,22 @@ Implemented by DBI, no driver-specific impact.
 
 Implemented by DBI, no driver-specific impact.
 
+=head3 B<Type> (scalar)
+
+Returns C<dr> for a driver handle, C<db> for a database handle, and C<st> for a statement handle. 
+Should be rarely needed.
+
 =head3 B<LongReadLen> (integer, inherited)
 
-Not used by this driver.
+Not used by DBD::Pg
 
 =head3 B<LongTruncOk> (boolean, inherited)
 
-Not used by this driver.
+Not used by DBD::Pg
 
 =head3 B<CompatMode> (boolean, inherited)
 
-Not used by this driver.
+Not used by DBD::Pg
 
 =head1 DBI DATABASE HANDLE OBJECTS
 
@@ -2887,7 +2887,8 @@ according to the following table:
 
   @type_info = $dbh->type_info($data_type);
 
-Implemented by DBI, no driver-specific impact.
+Returns a list of hash references holding information about one or more variants of $data_type. 
+See the DBI documentation for more details.
 
 =head3 B<quote>
 
@@ -2995,7 +2996,7 @@ handle, then trying to merge the attributes. See the DBI documentation for compl
 
 =head3 B<AutoCommit> (boolean)
 
-Supported by this driver as proposed by DBI. According to the classification of
+Supported by DBD::Pg as proposed by DBI. According to the classification of
 DBI, PostgreSQL is a database in which a transaction must be explicitly
 started. Without starting a transaction, every change to the database becomes
 immediately permanent. The default of AutoCommit is on, but this may change
@@ -3449,7 +3450,7 @@ when you have not fetched all the possible rows.
 
   $rv = $sth->rows;
 
-Returns the number of rows returned by the last query. In contrast to many other drivers, 
+Returns the number of rows returned by the last query. In contrast to many other DBD modules, 
 the number of rows is available immediately after calling C<$sth-E<gt>execute>. Note that 
 the L</execute> method itself returns the number of rows itself, which means that this 
 method is rarely needed.
@@ -3488,7 +3489,7 @@ for data transfer applications.
 
   $blob = $sth->blob_read($id, $offset, $len);
 
-Supported by this driver as proposed by DBI. Implemented by DBI but not
+Supported by DBD::Pg. This method is implemented by DBI but not
 currently documented by DBI, so this method might change.
 
 This method seems to be heavily influenced by the current implementation of
@@ -3499,7 +3500,7 @@ independent of any table by using so-called object identifiers. This explains
 why the C<blob_read> method is blessed into the STATEMENT package and not part of
 the DATABASE package. Here the field parameter has been used to handle this
 object identifier. The offset and len parameters may be set to zero, in which
-case the driver fetches the whole blob at once.
+case the whole blob is fetched at once.
 
 See also the PostgreSQL-specific functions concerning blobs, which are
 available via the C<func> interface.
@@ -4025,7 +4026,7 @@ success. This method will fail if called when not in a COPY IN or COPY OUT state
 
 =head2 Large Objects
 
-This driver supports all largeobject functions provided by libpq via the
+DBD::Pg supports all largeobject functions provided by libpq via the
 C<func> method. Please note that access to a large object, even read-only 
 large objects, must be put into a transaction.
 
