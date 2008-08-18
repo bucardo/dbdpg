@@ -2,8 +2,9 @@
 
 2.9.1 Released August 17, 2008
 
-	  - Return undef when mapping Postgres array to Perl array and 
-	  	the array is empty '{}'. (CPAN bug #38552) [GSM]
+	- Return undef when mapping Postgres array to Perl array and 
+		the array is empty '{}'. (CPAN bug #38552) [GSM]
+	- Minor documentation improvements. [GSM]
 
 2.9.0 Released August 3, 2008 (subversion r11624)
 
@@ -18,8 +19,8 @@
 
 2.8.7 Released July 24, 2008 (subversion r11582)
 
-	- Modify test scripts to work better on FreeBSD boxes.
-	- Much documentation improvement and POD tweaking.
+	- Modify test scripts to work better on FreeBSD boxes. [GSM]
+	- Much documentation improvement and POD tweaking. [GSM]
 
 2.8.6 Released July 21, 2008 (subversion r11558)
 
@@ -32,21 +33,21 @@
 	  	is set to DEBUG3 or greater, and we then exit without disconnecting 
 		while AutoCommit is off. The new behavior is to simply not attempt to 
 		output the debugging information about the final 'rollback'. [GSM]
-	- More documentation improvements.
+	- More documentation improvements. [GSM]
 
 2.8.4 Released July 10, 2008 (subversion r11520)
 
-	- Minor Perl::Critic test adjustments.
-	- Documentation enhancements.
-	- Yet more minor testing tweaks.
+	- Minor Perl::Critic test adjustments. [GSM]
+	- Documentation enhancements. [GSM]
+	- Yet more minor testing tweaks. [GSM]
 
 2.8.3 Released July 6, 2008 (subversion r11495)
 
-	- Minor testing functionality tweaks, lots of test cleanups, minor doc enhancements.
+	- Minor testing functionality tweaks, lots of test cleanups, minor doc enhancements. [GSM]
 
 2.8.2 Released June 29, 2008 (subversion r11466)
 
-	- Minor testing tweaks, doc fixes.
+	- Minor testing tweaks, doc fixes. [GSM]
 
 2.8.1 Released June 11, 2008 (subversion r11417)
 
@@ -83,7 +84,7 @@
 
 2.6.6 Released May 7, 2008 (subversion r11214)
 
-	- Fix minor problem in t/99_spellcheck.t
+	- Fix minor problem in t/99_spellcheck.t [GSM]
 
 2.6.5 Released May 7, 2008 (subversion r11209)
 
@@ -92,11 +93,11 @@
 
 2.6.4 Released May 2, 2008 (subversion r11186)
 
-	- More tweaks to the test suite.
+	- More tweaks to the test suite. [GSM]
 
 2.6.3 Released May 1, 2008 (subversion r11169)
 
-	- Minor tweaks to the test suite.
+	- Minor tweaks to the test suite. [GSM]
 
 2.6.2 Released April 30, 2008 (subversion r11161)
 
@@ -128,7 +129,7 @@
 
 	- Add pg_enum_values to $dbh->column_info()
 		[Dave Rolsky] (CPAN ticket #34351)
-	- Minor test fixes.
+	- Minor test fixes. [GSM]
 
 2.4.0 Released March 21, 2008 (subversion r10974)
 
@@ -142,26 +143,22 @@
 
 2.2.2 Released March 3, 2008 (subversion r10873)
 
-	- Remove non-working tracing from types.c and quote.c
+	- Remove non-working tracing from types.c and quote.c [GSM]
 
-	- Add parse_trace_flag as statement handle method.
+	- Add parse_trace_flag as statement handle method. [GSM]
 
 2.2.1 Released March 1, 2008 (subversion r10865)
 
-	- Fix memory leaks in dbdimp.c (CPAN bug #33743)
-		[Alexey Tourbin]
-	- Fix strlen problems in dbdimp.c (CPAN bug #33737)
-		[Alexey Tourbin]
-	- Fix char count in Renew() (CPAN bug #33738)
-		[Alexey Tourbin]
-	- Change local trace_flags to lowercase.
+	- Fix memory leaks in dbdimp.c (CPAN bug #33743) [Alexey Tourbin]
+	- Fix strlen problems in dbdimp.c (CPAN bug #33737) [Alexey Tourbin]
+	- Fix char count in Renew() (CPAN bug #33738) [Alexey Tourbin]
+	- Change local trace_flags to lowercase. [GSM]
 
 2.2.0 Released February 27, 2008 (subversion r10849)
 
 	- Introduce enhanced trace flags. See the documentation 
 		 on parse_trace_flags() for details. [GSM]
-	- Remove version.pm dependency from Makefile.PL
-		(CPAN bug #33429)
+	- Remove version.pm dependency from Makefile.PL (CPAN bug #33429)
 
 2.1.3 Released February 20, 2008 (subversion r10813)
 
@@ -171,24 +168,23 @@
 
 	- Do not build if environment variables POSTGRES_HOME, POSTGRES_LIB, 
 		or POSTGRES_INCLUDE are set but not valid.
-	- Fix dependency requirements, especially version.pm
+	- Fix dependency requirements, especially version.pm [GSM]
 
 2.1.1 Released February 19, 2008 (subversion r10798)
 
-	- Better URLs to cpan.org resources.
+	- Better URLs to cpan.org resources. [GSM]
 
 2.1.0 Released February 18, 2008 (subversion r10793)
 
 	- Use version.pm (CPAN bug #33206) [GSM]
-	- Add PERL_NO_GET_CONTEXT #define to improve performance on threaded Perls
-	- Raise the minimum DBI version to 1.52.
+	- Add PERL_NO_GET_CONTEXT #define to improve performance on threaded Perls [GSM]
+	- Raise the minimum DBI version to 1.52. [GSM]
 	- Allow arrayrefs into bind_col (CPAN bug #33193) [GSM]
 	- Remove '//' style comments to make strict ANSI compilers happy.
 		[Trevor Inman] (CPAN bug #33089)
-	- Force client encoding of UTF8 for some tests.
-	- Make 03dbmethod.t pass minor test for version 8.1.9
-		(CPAN bug #33282)
-	- Add a local copy of dbivport.h
+	- Force client encoding of UTF8 for some tests. [GSM]
+	- Make 03dbmethod.t pass minor test for version 8.1.9 (CPAN bug #33282) [GSM]
+	- Add a local copy of dbivport.h [GSM]
 
 2.0.0 Released February 10, 2008 (subversion r10715)
 
@@ -210,8 +206,8 @@ Major changes:
 		things such as 'PREPARE TRANSACTION' to work properly.
 		(CPAN bug #32423) [GSM]
 	- Overhauled the data type system. [GSM]
-	- Switch from cvs to subversion. Switch from gborg to perl.org.
-	- Change versioning system to three numbered system.
+	- Switch from cvs to subversion. Switch from gborg to perl.org. [GSM]
+	- Change versioning system to three numbered system. [GSM]
 
 Bug fixes:
 
@@ -220,8 +216,7 @@ Bug fixes:
 		placeholders, i.e. the geometric operator '?#' (CPAN bug #24124) [GSM]
 	- Fix memory leak in bytea quoting. (CPAN bug #21392). Fix memory leak 
 		in pg_notifies. [Stephen Marshall smarshall@wsi.com]
-	- Fix memory leak when using savepoints. (CPAN bug #29791)
-		[airwave@cpan.org]
+	- Fix memory leak when using savepoints. (CPAN bug #29791) [airwave@cpan.org]
 	- Use adbin, not adsrc, when figuring out the sequence name for the 
 		last_insert_id() method. This allows the function to work properly 
 		if the sequence name is changed. Note that {pg_cache=>0} should be 
