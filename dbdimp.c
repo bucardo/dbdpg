@@ -2531,8 +2531,10 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 
 		if ('}' == *input || (coltype->array_delimeter == *input && '}' != *(input-1))) {
 			string[section_size] = '\0';
-			if ((0 == section_size && !seen_quotes) || 
-				((4 == section_size && 0 == strncmp(string, "NULL", 4) && '"' != *(input-1)))) {
+			if (0 == section_size && !seen_quotes) {
+				/* Just an empty array */
+			}
+			else if (4 == section_size && 0 == strncmp(string, "NULL", 4) && '"' != *(input-1)) {
 				av_push(currentav, &PL_sv_undef);
 			}
 			else {

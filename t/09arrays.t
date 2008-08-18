@@ -296,12 +296,12 @@ for my $test (split /\n\n/ => $array_tests) {
 
 ## Test of no-item and empty string arrays
 
-$t=q{String array with no items returns undef};
+$t=q{String array with no items returns empty array};
 $cleararray->execute();
 $addarray->execute('{}');
 $getarray->execute();
 $result = $getarray->fetchall_arrayref();
-is_deeply ($result, [[[undef]]], $t);
+is_deeply ($result, [[[]]], $t);
 
 $t=q{String array with empty string returns empty string};
 $cleararray->execute();
@@ -310,12 +310,12 @@ $getarray->execute();
 $result = $getarray->fetchall_arrayref();
 is_deeply ($result, [[['']]], $t);
 
-$t=q{Integer array with no items returns undef};
+$t=q{Integer array with no items returns empty array};
 $cleararray->execute();
 $addarray_int->execute('{}');
 $getarray_int->execute();
 $result = $getarray_int->fetchall_arrayref();
-is_deeply ($result, [[[undef]]], $t);
+is_deeply ($result, [[[]]], $t);
 
 ## Pure string to array conversion testing
 

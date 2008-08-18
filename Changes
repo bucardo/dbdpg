@@ -1,6 +1,11 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.9.1 Released August 17, 2008
+2.9.2 Released August 18, 2008
+
+	- Empty Postgres arrays should return empty Perl arrays, not undef.
+		(CPAN bug #38552) [David E. Wheeler]
+
+2.9.1 Released August 17, 2008 (subversion r11660)
 
 	- Return undef when mapping Postgres array to Perl array and 
 		the array is empty '{}'. (CPAN bug #38552) [GSM]
