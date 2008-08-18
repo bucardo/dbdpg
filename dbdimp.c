@@ -2471,6 +2471,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 	char*  string;
 	STRLEN section_size = 0;
 	bool   in_quote = 0;
+	bool   seen_quotes = 0;
 	int    opening_braces = 0;
 	int    closing_braces = 0;
 
@@ -2522,7 +2523,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 		else if ('}' == *input) {
 		}
 		else if ('"' == *input) {
-			in_quote = (bool)1;
+			in_quote = seen_quotes = (bool)1;
 		}
 		else {
 			string[section_size++] = *input;
@@ -2530,7 +2531,8 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 
 		if ('}' == *input || (coltype->array_delimeter == *input && '}' != *(input-1))) {
 			string[section_size] = '\0';
-			if (4 == section_size && 0 == strncmp(string, "NULL", 4) && '"' != *(input-1)) {
+			if ((0 == section_size && !seen_quotes) || 
+				((4 == section_size && 0 == strncmp(string, "NULL", 4) && '"' != *(input-1)))) {
 				av_push(currentav, &PL_sv_undef);
 			}
 			else {

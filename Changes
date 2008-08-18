@@ -1,5 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.9.1 Released August 17, 2008
+
+	  - Return undef when mapping Postgres array to Perl array and 
+	  	the array is empty '{}'. (CPAN bug #38552) [GSM]
+
 2.9.0 Released August 3, 2008 (subversion r11624)
 
 	- Add support for database handle attribute "ReadOnly". This allows 
