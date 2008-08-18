@@ -3489,7 +3489,7 @@ for data transfer applications.
   $blob = $sth->blob_read($id, $offset, $len);
 
 Supported by this driver as proposed by DBI. Implemented by DBI but not
-documented, so this method might change.
+currently documented by DBI, so this method might change.
 
 This method seems to be heavily influenced by the current implementation of
 blobs in Oracle. Nevertheless we try to be as compatible as possible. Whereas
@@ -3575,26 +3575,26 @@ Returns an arrayref of integer values for each column returned by the statement.
 indicates if the column is nullable or not. 0 = not nullable, 1 = nullable, 2 = unknown. 
 This method returns undef if called before C<execute()>.
 
-=head3 B<CursorName> (string, read-only)
-
-Not supported by this driver. See the note about L</Cursors> elsewhere in this
-document.
-
 =head3 B<Database> (dbh, read-only)
 
 Returns the database handle this statement handle was created from.
 
 =head3 B<ParamValues> (hash ref, read-only)
 
-Supported by this driver as proposed by DBI. If called before L</execute>, the
-literal values passed in are returned. If called after L</execute>, then
-the quoted versions of the values are shown.
+Returns a reference to a hash containing the values currently bound to placeholders. If the "named parameters" 
+type of placeholders are being used (such as ":foo"), then the keys of the hash will be the names of the 
+placeholders (without the colon). If the "dollar sign numbers" type of placeholders are being used, the keys of the hash will 
+be the numbers, without the dollar signs. If the "question mark" type is used, integer numbers will be returned, 
+starting at one and increasing for every placeholder.
+
+If this method is called before L</execute>, the literal values passed in are returned. If called after 
+L</execute>, then the quoted versions of the values are returned.
 
 =head3 B<ParamTypes> (hash ref, read-only)
 
-Returns a hash of all current placeholders. The keys are the names of the placeholders, 
-and the values are the types that have been bound to each one. Placeholders that 
-have not yet been bound will return undef as the value.
+Returns a reference to a hash containing the type names currently bound to placeholders. The keys 
+are the same as returned by the ParamValues method. Placeholders that have not yet been bound will return 
+undef as the value.
 
 =head3 B<Statement> (string, read-only)
 
@@ -3684,6 +3684,10 @@ Not used by DBD::Pg
 =head3 B<RowCache> (integer, read-only)
 
 Not used by DBD::Pg
+
+=head3 B<CursorName> (string, read-only)
+
+Not used by DBD::Pg. See the note about L</Cursors> elsewhere in this document.
 
 =head1 FURTHER INFORMATION
 

@@ -796,6 +796,7 @@ NUM
 PARAMS
 encodings
 lc
+msg
 uc
 unicode
 
