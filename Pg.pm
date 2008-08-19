@@ -80,7 +80,7 @@ use 5.006001;
 	## These two methods are here to allow calling before connect()
 	sub parse_trace_flag {
 		my ($class, $flag) = @_;
-		return 0x7FFFFF00 if $flag eq 'DBD';
+		return (0x7FFFFF00 - 0x08000000) if $flag eq 'DBD'; ## all but the prefix
 		return 0x01000000 if $flag eq 'pglibpq';
 		return 0x02000000 if $flag eq 'pgstart';
 		return 0x04000000 if $flag eq 'pgend';
@@ -185,7 +185,7 @@ use 5.006001;
 
 
 	sub connect { ## no critic (ProhibitBuiltinHomonyms)
-		my ($drh, $dbname, $user, $pass)= @_;
+		my ($drh, $dbname, $user, $pass, $attr) = @_;
 
 		## Allow "db" and "database" as synonyms for "dbname"
 		$dbname =~ s/\b(?:db|database)\s*=/dbname=/;
@@ -213,6 +213,12 @@ use 5.006001;
 
 		my $version = $dbh->{pg_server_version};
 		$dbh->{private_dbdpg}{version} = $version;
+
+		if ($attr) {
+			if ($attr->{dbd_verbose}) {
+				$dbh->trace('DBD');
+			}
+		}
 
 		return $dbh;
 	}
@@ -1805,6 +1811,11 @@ host, like this:
     $username,
     $password,
     {AutoCommit => 0, RaiseError => 1});
+
+The attribute hash can also contain a key named C<dbd_verbose>, which 
+simply calls C<$dbh->trace('DBD')> after the handle is created. This attribute 
+is not recommended, as it is clearer to simply explicitly call C<trace> explicitly 
+in your script.
 
 =head3 B<connect_cached>
 

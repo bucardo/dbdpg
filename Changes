@@ -2,7 +2,9 @@
 
 2.10.0
 
-	- Add the 'DBD' trace setting to output only non-DBI trace messages. [GSM]
+	- Add the 'DBD' trace setting to output only non-DBI trace messages, 
+		and allow 'dbd_verbose' as a connection attribute for the same 
+		effect. [GSM]
 
 2.9.2 Released August 18, 2008 (subversion r11664)
 
