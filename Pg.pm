@@ -80,6 +80,7 @@ use 5.006001;
 	## These two methods are here to allow calling before connect()
 	sub parse_trace_flag {
 		my ($class, $flag) = @_;
+		return 0x7FFFFF00 if $flag eq 'DBD';
 		return 0x01000000 if $flag eq 'pglibpq';
 		return 0x02000000 if $flag eq 'pgstart';
 		return 0x04000000 if $flag eq 'pgend';
@@ -1921,6 +1922,10 @@ the C<$min_level>.
   $h->trace($h->parse_trace_flags('SQL|pglibpq'));
   $h->trace($h->parse_trace_flags('1|pgstart'));
 
+  ## Simpler:
+  $h->trace('SQL|pglibpq');
+  $h->trace('1|pgstart');
+
   my $value = DBD::Pg->parse_trace_flag('pglibpq');
   DBI->trace($value);
 
@@ -1949,6 +1954,11 @@ necessarily be in a form suitable to passing directly to Postgres,
 as server-side prepared statements are used extensively by DBD::Pg.
 For maximum portability of output (but with a potential performance 
 hit), use with C<$dbh->{pg_server_prepare} = 0>
+
+=item DBD
+
+Turns on all non-DBI flags, in other words, only the ones that are specific 
+to DBD::Pg (all those below which start with the letters 'pg').
 
 =item pglibpq
 
