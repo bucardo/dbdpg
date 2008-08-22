@@ -268,10 +268,10 @@ sub connect_database {
 		}
 		$info = '';
 		eval {
-			$info = qx{$pg_ctl --help};
+			$info = qx{$pg_ctl --help 2>&1};
 		};
 		last GETHANDLE if $@; ## Fail - pg_ctl bad
-		if (!defined $info or $info !~ /\@postgresql\.org/) {
+		if (!defined $info or ($info !~ /\@postgresql\.org/ and $info !~ /run as root/)) {
 			$@ = defined $initdb ? "Bad pg_ctl output: $info" : 'Bad pg_ctl output';
 			last GETHANDLE; ## Fail - pg_ctl bad
 		}
