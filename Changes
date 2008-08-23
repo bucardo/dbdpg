@@ -6,6 +6,8 @@
 		and allow 'dbd_verbose' as a connection attribute for the same 
 		effect. [GSM]
 	- Fix a minor problem with testing against 7.4 databases [GSM]
+	- Allow multi-statement do() calls with parameters to work if pg_server_prepare
+		is set to 0 (CPAN bug #38623) [GSM]
 
 2.9.2 Released August 18, 2008 (subversion r11664)
 
