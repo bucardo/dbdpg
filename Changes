@@ -283,7 +283,7 @@ Documentation fixes:
 		(CPAN bug #31545) [GSM]
 	- Fix META.yml file. (CPAN bug #25759) [GSM]
 
-1.49 May 7, 2006
+1.49 May 7, 2006 (subversion r7814)
 	- Thanks to Backcountry.com for sponsoring work on this release. [GSM]
 	- Add the statement handle attribute ParamTypes, and fix an error 
 		in ParamValues. ParamTypes requires DBI 1.49 or better. [GSM]
@@ -297,7 +297,7 @@ Documentation fixes:
 		LINE, LSEG, BOX, PATH, POLYGON, and CIRCLE. Also added the 
 		TID type. [GSM]
 
-1.48 April 5, 2006
+1.48 April 5, 2006 (subversion r7781)
 	- Bump minimum DBI version to 1.45 (CPAN bug #18260) (plus problems 
 		in versions 1.42 and 1.44) [GSM]
 	- Fix typo in Pg.pm code (CPAN bug #18537) [marc@sssonline.com]
@@ -307,20 +307,20 @@ Documentation fixes:
 	- Add documentation about connection service files (pg_service.conf). 
 		[David Fetter]
 
-1.47 March 20, 2006
+1.47 March 20, 2006 (subversion r7748)
 	- Fix problem with selecting arrays. (CPAN bugs #18128 and 
 		#18177) [GSM]
 	- Fix problem with dollar-sign placeholders. [GSM]
 
-1.46 March 16, 2006
+1.46 March 16, 2006 (subversion r7739)
 	- Fix problem with dollar-sign placeholders. (husseinp@gmail.com)
 		(CPAN bug #18209) [GSM]
 
-1.45 February 27, 2006
+1.45 February 27, 2006 (subversion r7733)
 	- Fix bug preventing bytea values over 20 characters from showing.
 		Spotted by Igor Shevchenko. [GSM]
 
-1.44 February 21, 2006
+1.44 February 21, 2006 (subversion r7727)
 	- Make sure pg_warn does not warn if the database attribute
 		PrintWarn is off. (Tyler MacDonald tyler@yi.org) [GSM]
 	- Add SIGNATURE file for Module::Signature verification. [GSM]
