@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.10.0
+2.10.0 Released August 26, 2008
 
 	- Add the 'DBD' trace setting to output only non-DBI trace messages, 
 		and allow 'dbd_verbose' as a connection attribute for the same 
