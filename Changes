@@ -371,19 +371,18 @@ Documentation fixes:
 	- Fix strncpy bug in quote.c [Jun Kuriyama] (CPAN bug #14897)
 	- Fix error in is_high_bit_set() [Alexey Tourbin] (CPAN bug #13406)
 
-1.43 June 23, 2005
+1.43 June 23, 2005 (subversion r7586)
 	- Added README.dev file. [GSM]
 	- Fix statement-name related core dump. [GSM]
 	- Ensure state() returns an empty string, not 00000 on success.
 		(CPAN bug #13237) [michael.bell@web.de of OpenCA] [GSM]
 	- Fix rare core dump when $sth still in scope after disconnect [GSM]
 	- Enhancements to README.win32 [fenlisesi@gmail.com]
-	- Fix incorrect sprintf calls (CPAN bug #12204)
-		[Jakub Jelinek]
+	- Fix incorrect sprintf calls (CPAN bug #12204) [Jakub Jelinek]
 	- Fix get_info(18) ("ODBCVERSION") (CPAN bug #12968)
 		[thanks to szinger@lanl.gov] [GSM]
 
-1.42 May 21, 2005
+1.42 May 21, 2005 (subversion r7545)
 	- Fix minor issues with copying and bytea quoting on older 
 		servers. Fix some other memory leaks. [GSM]
 	- Fix backslash parsing in statements (CPAN bug #12870)
@@ -406,7 +405,7 @@ Documentation fixes:
 	- Change VARCHAROID to UNKNOWNOID, suggested by users on mailing 
 		list [GSM]
 
-1.41 April 6, 2005
+1.41 April 6, 2005 (subversion r7485)
 	- Make sure tests remove all temporary tables.
 		[Frank Bax] [GSM]
 	- Preserve sqlstate if rolling back on deallocate, fix 
@@ -424,7 +423,7 @@ Documentation fixes:
 	- Add $dbh methods pg_savepoint(), pg_rollback_to(), and pg_release()
 		[Stephen Clouse] [GSM]
 
-1.40 Tue Feb 22 06:06:45 UTC 2005
+1.40 Tue Feb 22 06:06:45 UTC 2005 (subversion r7424)
 	- Raise required DBI version to 1.38
 	- Execute returns 0 (0E0) not -1 for successful DDL commands.
 		[Robert Treat] [GSM]
@@ -453,7 +452,7 @@ Documentation fixes:
 	- Added the pg_protocol database handle attribute [GSM]
 	- Changed "noprefix" to pg_noprefix
 
-1.32 Wed Feb 25 18:24:18 UTC 2004
+1.32 Wed Feb 25 18:24:18 UTC 2004 (subversion r7234)
 	- Bug fix for memory allocation problems on win systems
 		[Rafael Kitover <caelum@debian.org>]
 	- Rewrote the foreign_key_info() method to handle 
@@ -499,7 +498,7 @@ Documentation fixes:
 	- Changed get_info(29) to return (") instead of (\")
 		(CPAN bug #4829) [GSM]
 
-1.31 Mon Nov 17 21:21:21 UTC 2003
+1.31 Mon Nov 17 21:21:21 UTC 2003 (subversion r7157)
 	- $dbh->{TYPE} now returns SQL_TYPE_TIMESTAMP instead of 1114 for 
 		timestamp columns. (In 1.31_x {x| x<8} $sth->{TYPE} returned 0
 		but reported by ["Hirche, Joachim" <Joachim.Hirche@cimconcepts.com>]).
@@ -546,7 +545,7 @@ Documentation fixes:
 	- make test is now more intelligent and will bail out early if
 		db connection fails. [GSM]
 
-1.22 Wed Mar 26 22:33:44 EST 2003
+1.22 Wed Mar 26 22:33:44 EST 2003 (subversion r6993)
 	- Win32 compile fix for snprintf [Joe Spears]
 	- Fix memory allocation problem in bytea escaping [Barrie Slaymaker]
 	- Add utf8 support [Dominic Mitchell <dom@semantico.com>]
@@ -558,7 +557,7 @@ Documentation fixes:
 	- Added support for schemas [GSM]
 	- Fix binary to a bytea field conversion [Chris Dunlop <chris@onthe.net.au>]
 
-1.21 Sun Jan 12 21:00:44 EST 2003
+1.21 Sun Jan 12 21:00:44 EST 2003 (subversion r6960)
 	- System tables no longer returned by tables(). [Dave Rolsky]
 	- Fix table_attributes to handle removal of pg_relcheck in 7.3,
 		from Ian Barwick <barwick@gmx.net>
@@ -568,7 +567,7 @@ Documentation fixes:
 	- New pg_bool_tf database handle that when set to true booleans are
 		returned as 't'/'f' rather than 1/0.
 
-1.20 Wed Nov 27 16:19:26 2002
+1.20 Wed Nov 27 16:19:26 2002 (subversion r6949)
 	- Maintenance transferred to GBorg,
 		http://gborg.postgresql.org/project/dbdpg/projdisplay.php. Incremented
 		version number to reflect new management. [Bruce Momjian]
