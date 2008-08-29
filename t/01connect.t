@@ -115,7 +115,7 @@ END {
 			$extra .= sprintf "\n%-*s $ENV{$name}", $offset, $name;
 		}
 	}
-	for my $name (qw/DBI_DRIVER DBI_AUTOPROXY/) {
+	for my $name (qw/DBI_DRIVER DBI_AUTOPROXY LANG/) {
 		if (exists $ENV{$name} and defined $ENV{$name}) {
 			$extra .= sprintf "\n%-*s $ENV{$name}", $offset, $name;
 		}
