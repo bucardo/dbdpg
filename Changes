@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.10.1
+
+	- Minor testing fix.
+
 2.10.0 Released August 26, 2008 (subversion r11678)
 
 	- Add the 'DBD' trace setting to output only non-DBI trace messages, 
@@ -431,8 +435,7 @@ Documentation fixes:
 	- Added explicit support for types SQL_BOOLEAN, DATE, TIME, 
 		TIMESTAMP, and TIMESTAMPTZ. Return correct values for 
 		DATEOID and TIMEOID. [GSM]
-	- Added tablespace support for table_info and primary_key_info.
-		[GSM]
+	- Added tablespace support for table_info and primary_key_info. [GSM]
 	- Added new attributes to $dbh: pg_db, pg_user, pg_pass,
 		pg_host, pg_port, pg_options, pg_socket, pg_pid [GSM]
 	- Minor fixes in quote.c, dbdimp.c, and types.h
@@ -446,10 +449,8 @@ Documentation fixes:
 	- dbdimp.c cleanups: better error messages, ensure commit
 		is only called once after a transaction fails.
 		[Alexey Slynko]
-	- primary_key() returns empty list not undef if no match.
-		[Julian Mehnle]
-	- Added the pg_protocol database handle attribute
-		[GSM]
+	- primary_key() returns empty list not undef if no match. [Julian Mehnle]
+	- Added the pg_protocol database handle attribute [GSM]
 	- Changed "noprefix" to pg_noprefix
 
 1.32 Wed Feb 25 18:24:18 UTC 2004
