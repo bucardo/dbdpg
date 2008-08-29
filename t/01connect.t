@@ -72,7 +72,7 @@ SKIP: {
 
 	$t=q{Connect with invalid option fails};
 	my $err;
-	(undef,$err,$dbh) = connect_database({ dbreplace => 'dbbarf' });
+	(undef,$err,$dbh) = connect_database({ dbreplace => 'dbbarf', nocreate => 1 });
 	like ($err, qr{DBI connect.+failed:}, $t);
 
 	for my $opt (qw/db dbname database/) {
