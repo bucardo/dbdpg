@@ -47,6 +47,56 @@ else {
 }
 ok (@testfiles, 'Found files in test directory');
 
+## Make sure the README.dev mentions all files used, and jives with the MANIFEST
+my $file = 'README.dev';
+open my $fh, '<', $file or die qq{Could not open "$file": $!\n};
+my $point = 1;
+my %devfile;
+while (<$fh>) {
+	chomp;
+	if (1 == $point) {
+		next unless /File List/;
+		$point = 2;
+		next;
+	}
+	last if /= Compiling/;
+	print "Checking $_\n";
+	if (m{^([\w\./-]+) \- }) {
+		$devfile{$1} = $.;
+		next;
+	}
+	if (m{^(t/.+)}) {
+		$devfile{$1} = $.;
+	}
+}
+close $fh or die qq{Could not close "$file": $!\n};
+
+$file = 'MANIFEST';
+my %manfile;
+open $fh, '<', $file or die qq{Could not open "$file": $!\n};
+while (<$fh>) {
+	next unless /^(\S.+)/;
+	$manfile{$1} = $.;
+}
+close $fh or die qq{Could not close "$file": $!\n};
+
+## Everything in MANIFEST should also be in README.dev
+for my $file (sort keys %manfile) {
+	if (!exists $devfile{$file}) {
+		fail qq{File "$file" is in MANIFEST but not in README.dev\n};
+	}
+}
+## Everything in README.dev should also be in MANIFEST, except derived files
+my %derived = map { $_, 1 } qw/Makefile Pg.c README.testdatabase dbdpg_test_database/;
+for my $file (sort keys %devfile) {
+	if (!exists $manfile{$file} and !exists $derived{$file}) {
+		fail qq{File "$file" is in README.dev but not in MANIFEST\n};
+	}
+	if (exists $manfile{$file} and exists $derived{$file}) {
+		fail qq{File "$file" is derived and should not be in MANIFEST\n};
+	}
+}
+
 ## Make sure all Test::More function calls are standardized
 for my $file (sort keys %fileslurp) {
 	for my $linenum (sort {$a <=> $b} keys %{$fileslurp{$file}}) {
