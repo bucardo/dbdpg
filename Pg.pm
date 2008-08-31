@@ -3048,17 +3048,21 @@ issuing commands such as INSERT, UPDATE, or DELETE.
 
 This method method requires DBI version 1.55 or better.
 
-=head3 B<Name> (string, read-only)
+=head3 B<pg_server_prepare> (integer)
 
-Returns the name of the current database.
+DBD::Pg specific attribute. Indicates if DBD::Pg should attempt to use server-side 
+prepared statements. The default value, 1, indicates that prepared statements should 
+be used whenever possible. See the section on the L</prepare> method for more information.
 
-=head3 B<Username> (string, read-only)
+=head3 B<pg_placeholder_dollaronly> (boolean)
 
-Returns the name of the user connected to the database.
+DBD::Pg specific attribute. Defaults to false. When true, question marks inside of statements 
+are not treated as L</placeholders>. Useful for statements that contain unquoted question 
+marks, such as geometric operators.
 
 =head3 B<pg_enable_utf8> (boolean)
 
-DBD::Pg specific attribute. If true, then the C<utf8> flag will be turned
+DBD::Pg specific attribute. If true, then the C<utf8> flag will be turned on
 for returned character data (if the data is valid UTF-8). For details about
 the C<utf8> flag, see the C<Encode> module. This attribute is only relevant under
 perl 5.8 and later.
@@ -3074,12 +3078,6 @@ and will usually fit on a single line. A value of 1 ("DEFAULT") will also
 show any detail, hint, or context fields. A value of 2 ("VERBOSE") will
 show all available information.
 
-=head3 B<pg_protocol> (integer, read-only)
-
-DBD::Pg specific attribute. Returns the version of the PostgreSQL server.
-If DBD::Pg is unable to figure out the version, it will return a "0". Otherwise,
-a "3" is returned.
-
 =head3 B<pg_lib_version> (integer, read-only)
 
 DBD::Pg specific attribute. Indicates which version of PostgreSQL that 
@@ -3093,6 +3091,14 @@ DBD::Pg specific attribute. Indicates which version of PostgreSQL that
 the current database handle is connected to. Returns a number with major, 
 minor, and revision together; version 8.0.1 would be C<80001>.
 
+=head3 B<Name> (string, read-only)
+
+Returns the name of the current database.
+
+=head3 B<Username> (string, read-only)
+
+Returns the name of the user connected to the database.
+
 =head3 B<pg_db> (string, read-only)
 
 DBD::Pg specific attribute. Returns the name of the current database.
@@ -3101,11 +3107,6 @@ DBD::Pg specific attribute. Returns the name of the current database.
 
 DBD::Pg specific attribute. Returns the name of the user that
 connected to the server.
-
-=head3 B<pg_pass> (string, read-only)
-
-DBD::Pg specific attribute. Returns the password used to connect
-to the server.
 
 =head3 B<pg_host> (string, read-only)
 
@@ -3118,20 +3119,25 @@ string.
 DBD::Pg specific attribute. Returns the port of the connection to
 the server.
 
-=head3 B<pg_default_port> (integer, read-only)
+=head3 B<pg_socket> (integer, read-only)
 
-DBD::Pg specific attribute. Returns the default port used if none is
-specifically given.
+DBD::Pg specific attribute. Returns the file description number of
+the connection socket to the server.
+
+=head3 B<pg_pass> (string, read-only)
+
+DBD::Pg specific attribute. Returns the password used to connect
+to the server.
 
 =head3 B<pg_options> (string, read-only)
 
 DBD::Pg specific attribute. Returns the command-line options passed
 to the server. May be an empty string.
 
-=head3 B<pg_socket> (integer, read-only)
+=head3 B<pg_default_port> (integer, read-only)
 
-DBD::Pg specific attribute. Returns the file description number of
-the connection socket to the server.
+DBD::Pg specific attribute. Returns the default port used if none is
+specifically given.
 
 =head3 B<pg_pid> (integer, read-only)
 
@@ -3142,18 +3148,6 @@ backend server process handling the connection.
 
 DBD::Pg specific attribute. Default is off. If true, then the L</prepare> method will 
 immediately prepare commands, rather than waiting until the first execute.
-
-=head3 B<pg_server_prepare> (integer)
-
-DBD::Pg specific attribute. Indicates if DBD::Pg should attempt to use server-side 
-prepared statements. The default value, 1, indicates that prepared statements should 
-be used whenever possible. See the section on the L</prepare> method for more information.
-
-=head3 B<pg_placeholder_dollaronly> (boolean)
-
-DBD::Pg specific attribute. Defaults to false. When true, question marks inside of statements 
-are not treated as L</placeholders>. Useful for statements that contain unquoted question 
-marks, such as geometric operators.
 
 =head3 B<pg_expand_array> (boolean, read-only)
 
@@ -3187,6 +3181,12 @@ Holds the handle of the parent driver. The only recommended use for this is to f
 of the driver using:
 
   $dbh->{Driver}->{Name}
+
+=head3 B<pg_protocol> (integer, read-only)
+
+DBD::Pg specific attribute. Returns the version of the PostgreSQL server.
+If DBD::Pg is unable to figure out the version, it will return a "0". Otherwise,
+a "3" is returned.
 
 =head3 B<RowCacheSize> (integer)
 
