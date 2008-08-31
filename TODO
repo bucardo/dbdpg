@@ -17,4 +17,4 @@ http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
 - Handle and/or better tests for different encoding, especially those not 
    supported as a server encoding (e.g. BIG5)
 - Support passing hashrefs in and out for custom types.
-- Support a flag for behinf-the-scenes CURSOR to emulate partial fetches.
+- Support a flag for behind-the-scenes CURSOR to emulate partial fetches.
