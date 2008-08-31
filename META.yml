@@ -1,4 +1,4 @@
---- #YAML:1.0
+--- #YAML:1.1
 name                        : DBD-Pg
 version                     : 2.10.1
 abstract                    : DBI PostgreSQL interface
@@ -12,6 +12,13 @@ dynamic_config              : 1
 requires:
   DBI                       : 1.52
   perl                      : 5.006001
+  version                   : 0
+build_requires:
+  DBI                       : 1.52
+  Test::More                : 0.61
+  version                   : 0
+configure_requires:
+  DBI                       : 1.52
   version                   : 0
 recommends:
   Cwd                       : 0
@@ -27,13 +34,6 @@ recommends:
   Test::Warn                : 0.08
   Test::YAML::Meta          : 0.03
   Text::SpellChecker        : 0
-build_requires:
-  DBI                       : 1.52
-  Test::More                : 0.61
-  version                   : 0
-configure_requires:
-  DBI                       : 1.52
-  version                   : 0
 
 provides:
   DBD::Pg:
@@ -48,6 +48,7 @@ keywords:
   - PostgreSQL
   - DBI
   - libpq
+  - dbdpg
 
 resources:
   homepage                  : http://search.cpan.org/dist/DBD-Pg/
@@ -57,7 +58,7 @@ resources:
   Repository                : http://svn.perl.org/modules/DBD-Pg/trunk/
 
 meta-spec:
-  version                   : 1.3
-  url                       : http://module-build.sourceforge.net/META-spec-v1.3.html
+  version                   : 1.4
+  url                       : http://module-build.sourceforge.net/META-spec-v1.4.html
 
 generated_by                : emacs
