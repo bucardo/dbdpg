@@ -26,5 +26,5 @@ elsif ($Test::YAML::Meta::VERSION < $V) {
 	}
 }
 else {
-	meta_spec_ok ('META.yml', 1.3);
+	meta_spec_ok ('META.yml', 1.4);
 }
