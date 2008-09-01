@@ -1,10 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.10.3 Released August 31, 2008
+2.10.3 Released August 31, 2008 (subversion r11706)
 
 	- Previous version had wrong SIGNATURE file
 
-2.10.2 Released August 31, 2008
+2.10.2 Released August 31, 2008 (subversion r11704)
 
 	- Fix minor problem in t/99_yaml.t
 
