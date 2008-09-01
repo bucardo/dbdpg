@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.10.2 Released August 31, 2008
+
+	- Fix minor problem in t/99_yaml.t
+
 2.10.1 Released August 31, 2008 (subversion r11697)
 
 	- Minor testing fix.
