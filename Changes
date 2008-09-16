@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.10.5 Released September 16, 2008
+
+	- Fix SIGNATURE file
+
 2.10.4 Released September 16, 2008
 
 	- Force use of math library when compiling. Per report 
