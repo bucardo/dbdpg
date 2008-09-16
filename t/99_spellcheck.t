@@ -556,6 +556,7 @@ yml
 ## TODO:
 struct
 hashrefs
+unicode
 
 ## README.dev:
 DProf
