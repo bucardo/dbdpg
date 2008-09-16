@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.10.4
+2.10.4 Released September 16, 2008
 
 	- Force use of math library when compiling. Per report 
 		of AIX problems by Rainer Tammer.
