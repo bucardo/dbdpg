@@ -4,7 +4,7 @@
 
 	- Fix SIGNATURE file
 
-2.10.4 Released September 16, 2008
+2.10.4 Released September 16, 2008 (subversion r11797)
 
 	- Force use of math library when compiling. Per report 
 		of AIX problems by Rainer Tammer.
