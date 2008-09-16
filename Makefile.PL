@@ -7,7 +7,7 @@ use warnings;
 use 5.006001;
 
 ## No version.pm for this one, as the prereqs are not loaded yet.
-my $VERSION = '2.10.3';
+my $VERSION = '2.10.4';
 
 my $lib;
 BEGIN {
@@ -184,7 +184,7 @@ my %opts =
 	 VERSION_FROM   => 'Pg.pm',
 	 INC            => "-I$POSTGRES_INCLUDE -I$dbi_arch_dir",
 	 OBJECT         => "Pg\$(OBJ_EXT) dbdimp\$(OBJ_EXT) quote\$(OBJ_EXT) types\$(OBJ_EXT)",
-	 LIBS           => ["-L$POSTGRES_LIB -lpq"],
+	 LIBS           => ["-L$POSTGRES_LIB -lpq -lm"],
 	 AUTHOR         => 'Greg Sabino Mullane',
 	 ABSTRACT       => 'PostgreSQL database driver for the DBI module',
 	 PREREQ_PM      => {

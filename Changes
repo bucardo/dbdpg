@@ -1,5 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.10.4
+
+	- Force use of math library when compiling. Per report 
+		of AIX problems by Rainer Tammer.
+
 2.10.3 Released August 31, 2008 (subversion r11706)
 
 	- Previous version had wrong SIGNATURE file
