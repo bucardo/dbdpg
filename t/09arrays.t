@@ -499,6 +499,10 @@ SKIP: {
 	eval { require Encode; };
 	skip ('Encode module is needed for unicode tests', 14) if $@;
 
+	my $server_encoding = $dbh->selectall_arrayref('SHOW server_encoding')->[0][0];
+	skip ('Cannot test unicode with a LATIN1 database', 14)
+		if $server_encoding eq 'LATIN1';
+
 	$t='String should be UTF-8';
 	local $dbh->{pg_enable_utf8} = 1;
 	my $utf8_str = chr(0x100).'dam'; # LATIN CAPITAL LETTER A WITH MACRON
