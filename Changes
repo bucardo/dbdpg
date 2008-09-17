@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.10.6
+
+	- Skip unicode tests if server is set to 'LATIN1'
+
 2.10.5 Released September 16, 2008 (subversion r11800)
 
 	- Fix SIGNATURE file
