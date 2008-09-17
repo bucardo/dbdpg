@@ -2243,15 +2243,15 @@ Implemented by DBI, no driver-specific impact.
 Returns C<dr> for a driver handle, C<db> for a database handle, and C<st> for a statement handle. 
 Should be rarely needed.
 
-=head3 B<LongReadLen> (integer, inherited)
+=head3 B<LongReadLen>
 
 Not used by DBD::Pg
 
-=head3 B<LongTruncOk> (boolean, inherited)
+=head3 B<LongTruncOk>
 
 Not used by DBD::Pg
 
-=head3 B<CompatMode> (boolean, inherited)
+=head3 B<CompatMode>
 
 Not used by DBD::Pg
 
@@ -2420,7 +2420,7 @@ You can force DBD::Pg to send your query directly to the server by adding
 the L</pg_direct> attribute to your prepare call. This is not recommended,
 but is added just in case you need it.
 
-=head3 B<Placeholders>
+=head4 B<Placeholders>
 
 There are three types of placeholders that can be used in DBD::Pg. The first is
 the "question mark" type, in which each placeholder is represented by a single
@@ -2622,6 +2622,47 @@ warning, either fetch all the rows or call C<$sth-E<gt>finish()> for each execut
 If the script exits before disconnect is called (or, more precisely, if the database handle is no longer 
 referenced by anything), then the database handle's DESTROY method will call the rollback() and disconnect() 
 methods automatically. It is best to explicitly disconnect rather than rely on this behavior.
+
+=head3 B<quote>
+
+  $rv = $dbh->quote($value, $data_type);
+
+This module implements its own C<quote> method. For simple string types, both backslashes 
+and single quotes are doubled. You may also quote arrayrefs and receive a string 
+suitable for passing into Postgres array columns.
+
+If the value contains backslashes, and the server is version 8.1 or higher, 
+then the escaped string syntax will be used (which places a capital E before 
+the first single quote). This syntax is always used when quoting bytea values 
+on servers 8.1 and higher.
+
+The C<data_type> argument is optional and should be one of the type constants 
+exported by DBD::Pg (such as PG_BYTEA). In addition to string, bytea, char, bool, 
+and other standard types, the following geometric types are supported: point, line, 
+lseg, box, path, polygon, and circle (PG_POINT, PG_LINE, PG_LSEG, PG_BOX, 
+PG_POLYGON, and PG_CIRCLE respectively).
+
+B<NOTE:> The undocumented (and invalid) support for the C<SQL_BINARY> data
+type is officially deprecated. Use C<PG_BYTEA> with C<bind_param()> instead:
+
+  $rv = $sth->bind_param($param_num, $bind_value,
+                         { pg_type => PG_BYTEA });
+
+=head3 B<quote_identifier>
+
+  $string = $dbh->quote_identifier( $name );
+  $string = $dbh->quote_identifier( undef, $schema, $table);
+
+Returns a quoted version of the supplied string, which is commonly a schema, 
+table, or column name. The three argument form will return the schema and 
+the table together, separated by a dot. Examples:
+
+  print $dbh->quote_identifier('grapefruit'); ## Prints: "grapefruit"
+
+  print $dbh->quote_identifier('juicy fruit'); ## Prints: "juicy fruit"
+
+  print $dbh->quote_identifier(undef, 'public', 'pg_proc');
+  ## Prints: "public"."pg_proc"
 
 =head3 B<pg_notifies>
 
@@ -2911,47 +2952,6 @@ according to the following table:
 Returns a list of hash references holding information about one or more variants of $data_type. 
 See the DBI documentation for more details.
 
-=head3 B<quote>
-
-  $rv = $dbh->quote($value, $data_type);
-
-This module implements its own C<quote> method. For simple string types, both backslashes 
-and single quotes are doubled. You may also quote arrayrefs and receive a string 
-suitable for passing into Postgres array columns.
-
-If the value contains backslashes, and the server is version 8.1 or higher, 
-then the escaped string syntax will be used (which places a capital E before 
-the first single quote). This syntax is always used when quoting bytea values 
-on servers 8.1 and higher.
-
-The C<data_type> argument is optional and should be one of the type constants 
-exported by DBD::Pg (such as PG_BYTEA). In addition to string, bytea, char, bool, 
-and other standard types, the following geometric types are supported: point, line, 
-lseg, box, path, polygon, and circle (PG_POINT, PG_LINE, PG_LSEG, PG_BOX, 
-PG_POLYGON, and PG_CIRCLE respectively).
-
-B<NOTE:> The undocumented (and invalid) support for the C<SQL_BINARY> data
-type is officially deprecated. Use C<PG_BYTEA> with C<bind_param()> instead:
-
-  $rv = $sth->bind_param($param_num, $bind_value,
-                         { pg_type => PG_BYTEA });
-
-=head3 B<quote_identifier>
-
-  $string = $dbh->quote_identifier( $name );
-  $string = $dbh->quote_identifier( undef, $schema, $table);
-
-Returns a quoted version of the supplied string, which is commonly a schema, 
-table, or column name. The three argument form will return the schema and 
-the table together, separated by a dot. Examples:
-
-  print $dbh->quote_identifier('grapefruit'); ## Prints: "grapefruit"
-
-  print $dbh->quote_identifier('juicy fruit'); ## Prints: "juicy fruit"
-
-  print $dbh->quote_identifier(undef, 'public', 'pg_proc');
-  ## Prints: "public"."pg_proc"
-
 =head3 B<pg_server_trace>
 
   $dbh->pg_server_trace($filehandle);
@@ -3149,7 +3149,7 @@ backend server process handling the connection.
 DBD::Pg specific attribute. Default is off. If true, then the L</prepare> method will 
 immediately prepare commands, rather than waiting until the first execute.
 
-=head3 B<pg_expand_array> (boolean, read-only)
+=head3 B<pg_expand_array> (boolean)
 
 DBD::Pg specific attribute. Defaults to false. If false, arrays returned from the server will 
 not be changed into a Perl arrayref, but remain as a string.
@@ -3175,7 +3175,7 @@ Constant to be used for the mode in L</lo_creat> and L</lo_open>.
 
 Constant to be used for the mode in L</lo_creat> and L</lo_open>.
 
-=head3 B<Driver> (handle)
+=head3 B<Driver> (handle, read-only)
 
 Holds the handle of the parent driver. The only recommended use for this is to find the name 
 of the driver using:
@@ -3188,9 +3188,9 @@ DBD::Pg specific attribute. Returns the version of the PostgreSQL server.
 If DBD::Pg is unable to figure out the version, it will return a "0". Otherwise,
 a "3" is returned.
 
-=head3 B<RowCacheSize> (integer)
+=head3 B<RowCacheSize>
 
-Not used for DBD::Pg
+Not used by DBD::Pg
 
 =head1 DBI STATEMENT HANDLE OBJECTS
 
@@ -3703,11 +3703,11 @@ on L</Asynchronous Constants> for more information.
 
 Not used by DBD::Pg
 
-=head3 B<RowCache> (integer, read-only)
+=head3 B<RowCache>
 
 Not used by DBD::Pg
 
-=head3 B<CursorName> (string, read-only)
+=head3 B<CursorName>
 
 Not used by DBD::Pg. See the note about L</Cursors> elsewhere in this document.
 
