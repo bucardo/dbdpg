@@ -483,6 +483,7 @@ txn
 typename
 uid
 undef
+unicode
 unix
 UNKNOWNOID
 userid
@@ -556,7 +557,6 @@ yml
 ## TODO:
 struct
 hashrefs
-unicode
 
 ## README.dev:
 DProf
@@ -799,7 +799,6 @@ encodings
 lc
 msg
 uc
-unicode
 
 ## t/03smethod.t:
 ArrayTupleFetch
