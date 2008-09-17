@@ -411,6 +411,11 @@ if ($old_encoding ne 'UTF8') {
 SKIP: {
 	eval { require Encode; };
 	skip ('Encode module is needed for unicode tests', 5) if $@;
+
+	my $server_encoding = $dbh->selectall_arrayref('SHOW server_encoding')->[0][0];
+	skip ('Cannot test unicode with a LATIN1 database', 5)
+		if $server_encoding eq 'LATIN1';
+
 	my $SQL = 'SELECT id, pname FROM dbd_pg_test WHERE id = ?';
 	my $sth = $dbh->prepare($SQL);
 	$sth->execute(1);
