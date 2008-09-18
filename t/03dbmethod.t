@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 224;
+plan tests => 479;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -633,6 +633,8 @@ is_deeply (\@result, $expected, $t);
 # Test of the "statistics_info" database handle method
 #
 
+SKIP: {
+
 $dbh->{private_dbdpg}{version} >= 80000
 	or skip ('Server must be version 8.0 or higher to test database handle method "statistics_info"', 10);
 
@@ -745,7 +747,7 @@ $dbh->do("DROP TABLE $table3");
 $dbh->do("DROP TABLE $table2");
 $dbh->do("DROP TABLE $table1");
 
-## end of statistics_info tests
+} ## end of statistics_info tests
 
 
 #
@@ -1114,6 +1116,31 @@ my $foo;
 }
 $t='DB handle method "quote" works with a supplied data type argument';
 is ($dbh->quote(1, 4), 1, $t);
+
+## Test bytea quoting
+my $scs = $dbh->{pg_standard_conforming_strings};
+for my $byteval (1 .. 255) {
+	my $byte = chr($byteval);
+	$result = $dbh->quote($byte, { pg_type => PG_BYTEA });
+	if ($byteval < 32 or $byteval >= 127) {
+		$expected = $scs
+			? sprintf qq{E'\\\\%03o'}, $byteval
+				: sprintf qq{'\\\\%03o'}, $byteval;
+	}
+	else {
+		$expected = $scs
+			? sprintf qq{E'%s'}, $byte
+				: sprintf qq{'%s'}, $byte;
+	}
+	if ($byte eq '\\') {
+		$expected =~ s{\\}{\\\\\\\\};
+	}
+	elsif ($byte eq q{'}) {
+		$expected = $scs ? q{E''''} : q{''''};
+	}
+	$t = qq{Byte value $byteval quotes to $expected};
+	is ($result, $expected, $t);
+}
 
 ## Various backslash tests
 $t='DB handle method "quote" works properly with backslashes';
