@@ -623,7 +623,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 	SV *   retsv = Nullsv;
 	
 	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_FETCH (key: %s)\n", THEADER, dbh ? key : key);
-	
+
 	switch (kl) {
 
 	case 5: /* pg_db */
@@ -743,8 +743,9 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 	case 30: /* pg_standard_conforming_strings */
 
 		if (strEQ("pg_standard_conforming_strings", key)) {
-			TRACE_PQPARAMETERSTATUS;
-			retsv = newSVpv(PQparameterStatus(imp_dbh->conn,"standard_conforming_strings"),0);
+			if (NULL != PQparameterStatus(imp_dbh->conn, "standard_conforming_strings")) {
+				retsv = newSVpv(PQparameterStatus(imp_dbh->conn,"standard_conforming_strings"),0);
+			}
 		}
 		break;
 
