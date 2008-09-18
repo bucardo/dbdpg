@@ -205,7 +205,7 @@ char * quote_bytea(char *string, STRLEN len, STRLEN *retlen, int estring)
 			*result++ = '\\';
 		}
 		else if (*string < 0x20 || *string > 0x7e) {
-			(void) snprintf((char *)result, 6, "\\\\%03o", *string++);
+			(void) snprintf((char *)result, 6, "\\\\%03o", (unsigned char)*string++);
 			result += 5;
 		}
 		else {
