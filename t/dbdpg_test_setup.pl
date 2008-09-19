@@ -82,7 +82,7 @@ sub connect_database {
 			$testdsn =~ s/$alias\s*=/$arg->{dbreplace}=/;
 		}
 		if ($arg->{dbquotes}) {
-			$testdsn =~ s/$alias\s*=(\w+)/'db="'.lc $2.'"'/e;
+			$testdsn =~ s/$alias\s*=([\-\w]+)/'db="'.lc $2.'"'/e;
 		}
 
 		goto GOTDBH if eval {

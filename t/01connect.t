@@ -89,7 +89,7 @@ SKIP: {
 	$t=q{Connect using a quoted database argument};
 	eval {
 		$dbh and $dbh->disconnect();
-		(undef,$err,$dbh) = connect_database({dbquotes => 1});
+		(undef,$err,$dbh) = connect_database({dbquotes => 1, nocreate => 1});
 	};
 	is ($@, q{}, $t);
 }
