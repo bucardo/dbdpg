@@ -1,5 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.10.7
+
+	- Fix test issue when dbname contains dashes.
+		[Rainer Tammer]
+
 2.10.6 Released September 19, 2008 (subversion r11830)
 
 	- Correctly quote all bytea characters. (CPAN bug #39390) [Rod Taylor]
