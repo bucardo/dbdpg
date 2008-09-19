@@ -1124,13 +1124,13 @@ for my $byteval (1 .. 255) {
 	$result = $dbh->quote($byte, { pg_type => PG_BYTEA });
 	if ($byteval < 32 or $byteval >= 127) {
 		$expected = $scs
-			? sprintf qq{E'\\\\%03o'}, $byteval
-				: sprintf qq{'\\\\%03o'}, $byteval;
+			? sprintf q{E'\\\\%03o'}, $byteval
+				: sprintf q{'\\\\%03o'}, $byteval;
 	}
 	else {
 		$expected = $scs
-			? sprintf qq{E'%s'}, $byte
-				: sprintf qq{'%s'}, $byte;
+			? sprintf q{E'%s'}, $byte
+				: sprintf q{'%s'}, $byte;
 	}
 	if ($byte eq '\\') {
 		$expected =~ s{\\}{\\\\\\\\};
