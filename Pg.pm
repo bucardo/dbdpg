@@ -17,7 +17,7 @@ use 5.006001;
 {
 	package DBD::Pg;
 
-	use version; our $VERSION = qv('2.10.6');
+	use version; our $VERSION = qv('2.10.7');
 
 	use DBI ();
 	use DynaLoader ();
@@ -1703,7 +1703,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 2.10.6 of the DBD::Pg module
+This documents version 2.10.7 of the DBD::Pg module
 
 =head1 DESCRIPTION
 
@@ -2402,10 +2402,10 @@ the L</pg_prepare_name> attribute. The statement handle can be created with a du
 statement, as it will not be executed. However, it should have the same
 number of placeholders as your prepared statement. Example:
 
-  $dbh->do("PREPARE mystat AS SELECT COUNT(*) FROM pg_class WHERE reltuples < ?");
-  $sth = $dbh->prepare("SELECT ?");
+  $dbh->do('PREPARE mystat AS SELECT COUNT(*) FROM pg_class WHERE reltuples < ?');
+  $sth = $dbh->prepare('SELECT ?');
   $sth->bind_param(1, 1, SQL_INTEGER);
-  $sth->{pg_prepare_name} = "mystat";
+  $sth->{pg_prepare_name} = 'mystat';
   $sth->execute(123);
 
 The above will run the equivalent of this query on the backend:
@@ -2544,11 +2544,11 @@ been used by any other process.
 
 Some examples:
 
-  $dbh->do("CREATE SEQUENCE lii_seq START 1");
-  $dbh->do("CREATE TABLE lii (
+  $dbh->do('CREATE SEQUENCE lii_seq START 1');
+  $dbh->do(q{CREATE TABLE lii (
     foobar INTEGER NOT NULL UNIQUE DEFAULT nextval('lii_seq'),
-    baz VARCHAR)");
-  $SQL = "INSERT INTO lii(baz) VALUES (?)";
+    baz VARCHAR)});
+  $SQL = 'INSERT INTO lii(baz) VALUES (?)';
   $sth = $dbh->prepare($SQL);
   for (qw(uno dos tres cuatro)) {
     $sth->execute($_);
@@ -2558,10 +2558,10 @@ Some examples:
 
 If you did not want to worry about the sequence name:
 
-  $dbh->do("CREATE TABLE lii2 (
+  $dbh->do('CREATE TABLE lii2 (
     foobar SERIAL UNIQUE,
-    baz VARCHAR)");
-  $SQL = "INSERT INTO lii2(baz) VALUES (?)";
+    baz VARCHAR)');
+  $SQL = 'INSERT INTO lii2(baz) VALUES (?)';
   $sth = $dbh->prepare($SQL);
   for (qw(uno dos tres cuatro)) {
     $sth->execute($_);
@@ -2594,7 +2594,7 @@ transaction will not actually begin until the first statement after begin_work i
 Example:
 
   $dbh->{AutoCommit} = 1;
-  $dbh->do("INSERT INTO foo VALUES (123)"); ## Changes committed immediately
+  $dbh->do('INSERT INTO foo VALUES (123)'); ## Changes committed immediately
   $dbh->begin_work();
   ## Not in a transaction yet, but AutoCommit is set to 0
 
