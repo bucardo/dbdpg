@@ -21,7 +21,7 @@ static sql_type_info_t pg_types[] = {
  {PG_ACLITEMARRAY      ,"_aclitem"         ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
  {PG_BITARRAY          ,"_bit"             ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
  {PG_BOOLARRAY         ,"_bool"            ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
- {PG_BOXARRAY          ,"_box"             ,';',"array_out"       ,quote_string,dequote_string,{0},1,0},
+ {PG_BOXARRAY          ,"_box"             ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
  {PG_BPCHARARRAY       ,"_bpchar"          ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
  {PG_BYTEAARRAY        ,"_bytea"           ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
  {PG_CHARARRAY         ,"_char"            ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
@@ -376,7 +376,7 @@ my $thisname = 0;
 while(<$fh>) {
 	s/FLOAT8PASSBYVAL/t/;
 	s/FLOAT4PASSBYVAL/t/;
-	if (/^DATA\(insert OID\s+=\s+(\d+)\s+\(\s+(\S+)\s+\S+ \S+\s+\S+\s+[t|f]\s+. ([tf]) \\(\d+) (\d+)\s+(\d+) (\d+) (\S+) (\S+) (\S+) (\S+)/o) {
+	if (/^DATA\(insert OID\s+=\s+(\d+)\s+\(\s+(\S+)\s+\S+ \S+\s+\S+\s+[t|f]\s+. . [tf] ([tf]) \\(\d+) (\d+)\s+(\d+) (\d+) (\S+) (\S+) (\S+) (\S+)/o) {
 		my ($oid,$name,$typedef,$delim,$typrelid,$typelem,$typarray,$tin,$tout,$bin,$bout) =
 			($1,$2,$3,chr(oct($4)),$5,$6,$7,$8,$9,$10,$11);
 		die "Duplicated OID $oid!: $_\n" if exists $pgtype{$oid};
