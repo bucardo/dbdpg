@@ -4,6 +4,8 @@
 
 	- Fix test issue when dbname contains dashes.
 		[Rainer Tammer]
+	- Revert META.yml to 1.0, until such time as tools 
+		can handle 1.1 (CPAN bug #39461) [Taro Nishino]
 
 2.10.6 Released September 19, 2008 (subversion r11830)
 
