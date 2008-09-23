@@ -21,7 +21,7 @@ static sql_type_info_t pg_types[] = {
  {PG_ACLITEMARRAY      ,"_aclitem"         ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
  {PG_BITARRAY          ,"_bit"             ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
  {PG_BOOLARRAY         ,"_bool"            ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
- {PG_BOXARRAY          ,"_box"             ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
+ {PG_BOXARRAY          ,"_box"             ,';',"array_out"       ,quote_string,dequote_string,{0},1,0},
  {PG_BPCHARARRAY       ,"_bpchar"          ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
  {PG_BYTEAARRAY        ,"_bytea"           ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
  {PG_CHARARRAY         ,"_char"            ,',',"array_out"       ,quote_string,dequote_string,{0},1,0},
