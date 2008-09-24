@@ -2038,11 +2038,9 @@ reference to an array of hashes, each of which contains the following keys:
   $lobjId = $dbh->func($mode, 'lo_creat');
 
 Creates a new large object and returns the object-id. C<$mode> is a bitmask
-describing different attributes of the new object. Use the following
-constants:
-
-  $dbh->{pg_INV_WRITE}
-  $dbh->{pg_INV_READ}
+describing read and write access to the new object. This setting is ignored
+since Postgres version 8.1. For backwards compatibility, however, you should 
+set a valid mode anyway (see L</lo_open> for a list of valid modes).
 
 Upon failure it returns C<undef>.
 
@@ -2051,8 +2049,23 @@ Upon failure it returns C<undef>.
   $lobj_fd = $dbh->func($lobjId, $mode, 'lo_open');
 
 Opens an existing large object and returns an object-descriptor for use in
-subsequent C<lo_*> calls. For the mode bits see L</lo_creat>. Returns C<undef>
-upon failure. Note that 0 is a perfectly correct (and common) object descriptor!
+subsequent C<lo_*> calls. C<$mode> is a bitmask describing read and write
+access to the opened object. It may be one of: 
+
+  $dbh->{pg_INV_READ}
+  $dbh->{pg_INV_WRITE}
+  $dbh->{pg_INV_READ} | $dbh->{pg_INV_WRITE}
+
+C<pg_INV_WRITE> and C<pg_INV_WRITE | pg_INV_READ> modes are identical; in
+both modes, the large object can be read from or written to.
+Reading from the object will provide the object as written in other committed
+transactions, along with any writes performed by the current transaction.
+Objects opened with C<pg_INV_READ> cannot be written to. Reading from this
+object will provide the stored data at the time of the transaction snapshot
+which was active when C<lo_write> was called.
+
+Returns C<undef> upon failure. Note that 0 is a perfectly correct (and common)
+object descriptor!
 
 =item lo_write
 
