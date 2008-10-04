@@ -4040,16 +4040,16 @@ the COPY statement. Returns a 1 on successful input. Examples:
 
   ## Simple example:
   $dbh->do("COPY mytable FROM STDIN");
-  $dbh->pg_putcopydata("123\tPepperoni\t3");
-  $dbh->pg_putcopydata("314\tMushroom\t8");
-  $dbh->pg_putcopydata("6\tAnchovies\t100");
+  $dbh->pg_putcopydata("123\tPepperoni\t3\n");
+  $dbh->pg_putcopydata("314\tMushroom\t8\n");
+  $dbh->pg_putcopydata("6\tAnchovies\t100\n");
   $dbh->pg_putcopyend();
 
   ## This example uses explicit columns and a custom delimiter
   $dbh->do("COPY mytable(flavor, slices) FROM STDIN WITH DELIMITER '~'");
-  $dbh->pg_putcopydata("Pepperoni~123");
-  $dbh->pg_putcopydata("Mushroom~314");
-  $dbh->pg_putcopydata("Anchovies~6");
+  $dbh->pg_putcopydata("Pepperoni~123\n");
+  $dbh->pg_putcopydata("Mushroom~314\n");
+  $dbh->pg_putcopydata("Anchovies~6\n");
   $dbh->pg_putcopyend();
 
 =head3 B<pg_putcopyend>
