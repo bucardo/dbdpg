@@ -3991,7 +3991,7 @@ For example:
 
   $dbh->do("COPY foobar FROM STDIN");
 
-This would tell the server to enter a COPY OUT state. It is now ready to 
+This would tell the server to enter a COPY IN state. It is now ready to 
 receive information via the L</pg_putcopydata> method. The complete syntax of the 
 COPY command is more complex and not documented here: the canonical 
 PostgreSQL documentation for COPY can be found at:
