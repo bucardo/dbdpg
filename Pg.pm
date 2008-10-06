@@ -4013,14 +4013,14 @@ mode by calling "COPY tablename TO STDOUT". Data is always returned
 one data row at a time. The first argument to pg_getcopydata 
 is the variable into which the data will be stored (this variable should not 
 be undefined, or it may throw a warning, although it may be a reference). This 
-argument returns a number greater than 1 indicating the new size of the variable, 
+method returns a number greater than 1 indicating the new size of the variable, 
 or a -1 when the COPY has finished. Once a -1 has been returned, no other action is 
 necessary, as COPY mode will have already terminated. Example:
 
   $dbh->do("COPY mytable TO STDOUT");
   my @data;
   my $x=0;
-  1 while $dbh->pg_getcopydata($data[$x++]) > 0;
+  1 while $dbh->pg_getcopydata($data[$x++]) >= 0;
 
 There is also a variation of this method called B<pg_getcopydata_async>, which, 
 as the name suggests, returns immediately. The only difference from the original 

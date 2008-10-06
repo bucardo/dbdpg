@@ -2684,6 +2684,7 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 
 	imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
 
+	if (TRACE4) TRC(DBILOGFP, "%sGot a status of %d\n", THEADER, status);
 	switch (status) {
 	case PGRES_TUPLES_OK:
 		TRACE_PQNTUPLES;
@@ -3696,7 +3697,7 @@ pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 
 	/* We must be in COPY OUT state */
 	if (PGRES_COPY_OUT != imp_dbh->copystate)
-		croak("pg_getcopydata can only be called directly after issuing a COPY command\n");
+		croak("pg_getcopydata can only be called directly after issuing a COPY FROM command\n");
 
 	tempbuf = NULL;
 
@@ -3755,7 +3756,7 @@ pg_db_putcopydata (SV * dbh, SV * dataline)
 
 	/* We must be in COPY IN state */
 	if (PGRES_COPY_IN != imp_dbh->copystate)
-		croak("pg_putcopydata can only be called directly after issuing a COPY command\n");
+		croak("pg_putcopydata can only be called directly after issuing a COPY TO command\n");
 
 	TRACE_PQPUTCOPYDATA;
 	copystatus = PQputCopyData
