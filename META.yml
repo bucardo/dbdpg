@@ -24,6 +24,7 @@ recommends:
   Cwd                       : 0
   Encode                    : 0
   File::Temp                : 0
+  File::Comments            : 0
   File::Comments::Plugin::C : 0
   Module::Signature         : 0.50
   Perl::Critic              : 0
