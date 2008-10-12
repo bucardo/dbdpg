@@ -226,6 +226,22 @@ if ($Config{dlsrc} =~ /dl_none/) {
 	}
 }
 
+sub constants {
+	my $self = shift;
+
+	my $old_constants = $self->SUPER::constants();
+	my $new_constants = '';
+	for my $line (split /\n/ => $old_constants) {
+		if ($line =~ /^INC = .*strawberry.*/ ) {
+			print qq(Strawberry Perl found; adjusting the INC variable;\n);
+			$line . ' -I ' . DBI::DBD::dbd_dbi_arch_dir();
+			print qq(INC is now $line\n);
+		}
+		$new_constants .= "$line\n";
+	}
+	return $new_constants;
+}
+
 sub MY::postamble { ## no critic ProhibitQualifiedSubDeclarations
 	no strict 'subs'; ## no critic ProhibitNoStrict
 	my $string = DBI::DBD->dbd_postamble();

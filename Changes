@@ -1,5 +1,11 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.10.8
+
+	- Adjustment of Makefile.PL to fix problem with Strawberry Perl.
+		Thanks to Martin Evan (martin.evans@easysoft.com) and Brian 
+		(elspicyjack@gmail.com) on the dbi-users list.
+
 2.10.7 Released September 22, 2008 (subversion r11869)
 
 	- Fix test issue when dbname contains dashes.
