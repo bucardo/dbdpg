@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.11.0 Released October, 2008
+2.11.0 Released October 13, 2008
 
 	- $sth->{ParamTypes} now returns a hashref per the DBI docs. [GSM]
 	- Adjustment of Makefile.PL to fix problem with Strawberry Perl.
@@ -86,7 +86,7 @@
 2.8.5 Released July 13, 2008 (subversion r11529)
 
 	- Fix an obscure bug in which a coredump occurs if client_min_messages 
-	  	is set to DEBUG3 or greater, and we then exit without disconnecting 
+		is set to DEBUG3 or greater, and we then exit without disconnecting 
 		while AutoCommit is off. The new behavior is to simply not attempt to 
 		output the debugging information about the final 'rollback'. [GSM]
 	- More documentation improvements. [GSM]
