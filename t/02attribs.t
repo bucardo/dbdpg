@@ -18,7 +18,7 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 245;
+plan tests => 248;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -846,19 +846,46 @@ is_deeply ($attrib, $expected, $t);
 # Test of the statement handle attribute "ParamTypes"
 #
 
+
 $t='Statement handle attribute "ParamTypes" works before execute';
 $sth = $dbh->prepare('SELECT id FROM dbd_pg_test WHERE id=? AND val=? AND lii=?');
 $sth->bind_param(1, 1, SQL_INTEGER);
 $sth->bind_param(2, 'TMW', SQL_VARCHAR);
 $attrib = $sth->{ParamTypes};
-$expected = {1 => 'int4', 2 => 'varchar', 3 => undef};
+$expected = {1 => {pg_type => 23}, 2 => {pg_type => 1043}, 3 => undef};
 is_deeply ($attrib, $expected, $t);
 
+$t='Statement handle attributes "ParamValues" and "ParamTypes" can be pased back to bind_param';
+eval {
+	my $vals = $sth->{ParamValues};
+	my $types = $sth->{ParamTypes};
+    $sth->bind_param($_, $vals->{$_}, $types->{$_} )
+        for keys %$types;
+};
+is( $@, q{}, $t);
+
+$t='Statement handle attribute "ParamTypes" works before execute with named placeholders';
+$sth = $dbh->prepare('SELECT id FROM dbd_pg_test WHERE id=:foobar AND val=:foobar2 AND lii=:foobar3');
+$sth->bind_param(':foobar', 1, SQL_INTEGER);
+$sth->bind_param(':foobar2', 'TMW', SQL_VARCHAR);
+$attrib = $sth->{ParamTypes};
+$expected = {':foobar' => {pg_type => 23}, ':foobar2' => {pg_type => 1043}, ':foobar3' => undef};
+is_deeply ($attrib, $expected, $t);
+
+$t='Statement handle attributes "ParamValues" and "ParamTypes" can be passed back to bind_param';
+eval {
+	my $vals = $sth->{ParamValues};
+	my $types = $sth->{ParamTypes};
+    $sth->bind_param($_, $vals->{$_}, $types->{$_} )
+        for keys %$types;
+};
+is( $@, q{}, $t);
+
 $t='Statement handle attribute "ParamTypes" works after execute';
-$sth->bind_param(3, 3, {pg_type => PG_INT4});
+$sth->bind_param(':foobar3', 3, {pg_type => PG_INT4});
 $sth->execute();
 $attrib = $sth->{ParamTypes};
-$expected->{3} = 'int4';
+$expected->{':foobar3'} = {pg_type => 23};
 is_deeply ($attrib, $expected, $t);
 
 #

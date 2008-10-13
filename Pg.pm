@@ -3237,7 +3237,7 @@ modify your "use DBI" statement at the top of your script as follows:
   use DBI qw(:sql_types);
 
 This will import some constants into your script. You can plug those
-directly into the C<bind_param> call. Some common ones that you will
+directly into the L</bind_param> call. Some common ones that you will
 encounter are:
 
   SQL_INTEGER
@@ -3247,7 +3247,7 @@ To use PostgreSQL data types, import the list of values like this:
   use DBD::Pg qw(:pg_types);
 
 You can then set the data types by setting the value of the C<pg_type>
-key in the hash passed to C<bind_param>. 
+key in the hash passed to L</bind_param>.
 The current list of Postgres data types exported is:
 
  PG_ABSTIME PG_ABSTIMEARRAY PG_ACLITEM PG_ACLITEMARRAY PG_ANY PG_ANYARRAY
@@ -3628,8 +3628,10 @@ L</execute>, then the quoted versions of the values are returned.
 =head3 B<ParamTypes> (hash ref, read-only)
 
 Returns a reference to a hash containing the type names currently bound to placeholders. The keys 
-are the same as returned by the ParamValues method. Placeholders that have not yet been bound will return 
-undef as the value.
+are the same as returned by the ParamValues method. The values are hashrefs containing a single key value 
+pair, in which the key is always 'pg_type' and the value is the internal number corresponding to the 
+type originally passed in. (Placeholders that have not yet been bound will return undef as the value). This 
+allows the output of ParamTypes to be passed back to the L</bind_param> method.
 
 =head3 B<Statement> (string, read-only)
 

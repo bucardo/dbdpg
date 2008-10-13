@@ -1,7 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.10.8
+2.11.0 Released October, 2008
 
+	- $sth->{ParamTypes} now returns a hashref per the DBI docs. [GSM]
 	- Adjustment of Makefile.PL to fix problem with Strawberry Perl.
 		Thanks to Martin Evan (martin.evans@easysoft.com) and Brian 
 		(elspicyjack@gmail.com) on the dbi-users list.

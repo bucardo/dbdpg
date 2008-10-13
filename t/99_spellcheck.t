@@ -612,6 +612,7 @@ qw
 ## Pg.pm:
 lseg
 afterwards
+hashrefs
 PGSYSCONFDIR
 PGSERVICE
 
@@ -704,6 +705,7 @@ compat
 ## types.c:
 ASYNC
 Autogenerate
+basename
 BIGINT
 BOOLOID
 DESCR
