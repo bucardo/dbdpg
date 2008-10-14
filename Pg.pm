@@ -3629,9 +3629,10 @@ L</execute>, then the quoted versions of the values are returned.
 
 Returns a reference to a hash containing the type names currently bound to placeholders. The keys 
 are the same as returned by the ParamValues method. The values are hashrefs containing a single key value 
-pair, in which the key is always 'pg_type' and the value is the internal number corresponding to the 
-type originally passed in. (Placeholders that have not yet been bound will return undef as the value). This 
-allows the output of ParamTypes to be passed back to the L</bind_param> method.
+pair, in which the key is either 'TYPE' if the type has a generic SQL equivalent, and 'pg_type' if the type can 
+only be expressed by a Postgres type. The value is the internal number corresponding to the type originally 
+passed in. (Placeholders that have not yet been bound will return undef as the value). This allows the output of 
+ParamTypes to be passed back to the L</bind_param> method.
 
 =head3 B<Statement> (string, read-only)
 

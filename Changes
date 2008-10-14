@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.11.1 Released October 14, 2008
+
+	- $sth->{ParamTypes} returns 'TYPE' when possible.
+
 2.11.0 Released October 13, 2008 (subversion r11976)
 
 	- $sth->{ParamTypes} now returns a hashref per the DBI docs. [GSM]

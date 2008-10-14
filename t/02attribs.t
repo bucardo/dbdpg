@@ -18,7 +18,7 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 248;
+plan tests => 249;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -852,7 +852,7 @@ $sth = $dbh->prepare('SELECT id FROM dbd_pg_test WHERE id=? AND val=? AND lii=?'
 $sth->bind_param(1, 1, SQL_INTEGER);
 $sth->bind_param(2, 'TMW', SQL_VARCHAR);
 $attrib = $sth->{ParamTypes};
-$expected = {1 => {pg_type => 23}, 2 => {pg_type => 1043}, 3 => undef};
+$expected = {1 => {TYPE => SQL_INTEGER}, 2 => {TYPE => SQL_VARCHAR}, 3 => undef};
 is_deeply ($attrib, $expected, $t);
 
 $t='Statement handle attributes "ParamValues" and "ParamTypes" can be pased back to bind_param';
@@ -866,10 +866,10 @@ is( $@, q{}, $t);
 
 $t='Statement handle attribute "ParamTypes" works before execute with named placeholders';
 $sth = $dbh->prepare('SELECT id FROM dbd_pg_test WHERE id=:foobar AND val=:foobar2 AND lii=:foobar3');
-$sth->bind_param(':foobar', 1, SQL_INTEGER);
-$sth->bind_param(':foobar2', 'TMW', SQL_VARCHAR);
+$sth->bind_param(':foobar', 1, {pg_type => PG_INT4});
+$sth->bind_param(':foobar2', 'TMW', {pg_type => PG_TEXT});
 $attrib = $sth->{ParamTypes};
-$expected = {':foobar' => {pg_type => 23}, ':foobar2' => {pg_type => 1043}, ':foobar3' => undef};
+$expected = {':foobar' => {TYPE => SQL_INTEGER}, ':foobar2' => {TYPE => SQL_LONGVARCHAR}, ':foobar3' => undef};
 is_deeply ($attrib, $expected, $t);
 
 $t='Statement handle attributes "ParamValues" and "ParamTypes" can be passed back to bind_param';
@@ -882,10 +882,16 @@ eval {
 is( $@, q{}, $t);
 
 $t='Statement handle attribute "ParamTypes" works after execute';
-$sth->bind_param(':foobar3', 3, {pg_type => PG_INT4});
+$sth->bind_param(':foobar3', 3, {pg_type => PG_INT2});
 $sth->execute();
 $attrib = $sth->{ParamTypes};
-$expected->{':foobar3'} = {pg_type => 23};
+$expected->{':foobar3'} = {TYPE => SQL_SMALLINT};
+is_deeply ($attrib, $expected, $t);
+
+$t='Statement handle attribute "ParamTypes" returns correct values';
+$sth->bind_param(':foobar2', 3, {pg_type => PG_CIRCLE});
+$attrib = $sth->{ParamTypes}{':foobar2'};
+$expected = {pg_type => PG_CIRCLE};
 is_deeply ($attrib, $expected, $t);
 
 #
