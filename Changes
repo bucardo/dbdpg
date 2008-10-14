@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.11.0 Released October 13, 2008
+2.11.0 Released October 13, 2008 (subversion r11976)
 
 	- $sth->{ParamTypes} now returns a hashref per the DBI docs. [GSM]
 	- Adjustment of Makefile.PL to fix problem with Strawberry Perl.
