@@ -15,7 +15,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 27;
+plan tests => 28;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -151,6 +151,13 @@ eval {
   $dbh->do(q{SELECT ?::text}, undef, 'public');
 };
 is ($@, q{}, $t);
+
+$t='Calling do() with invalid crowded placeholders fails cleanly';
+$dbh->commit();
+eval {
+  $dbh->do(q{SELECT ??}, undef, 'public', 'error');
+};
+like ($@, qr{ERROR}, $t);
 
 $t='Prepare/execute with non-DML placeholder works';
 $dbh->commit();
