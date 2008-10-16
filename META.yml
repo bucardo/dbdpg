@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name                        : DBD-Pg
-version                     : 2.11.1
+version                     : 2.11.2
 abstract                    : DBI PostgreSQL interface
 author:              
   - Greg Sabino Mullane <greg@turnstep.com>
@@ -39,10 +39,10 @@ recommends:
 provides:
   DBD::Pg:
     file                    : Pg.pm
-    version                 : 2.11.1
+    version                 : 2.11.2
   Bundle::DBD::Pg:
     file                    : lib/Bundle/DBD/Pg.pm
-    version                 : 2.11.1
+    version                 : 2.11.2
 
 keywords:
   - Postgres
