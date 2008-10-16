@@ -1,7 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 
-2.11.2 Released October 15, 2008
+2.11.2 Released October 15, 2008 (subversion r11983)
 
 	- Fix core dump when invalid placeholders used. (CPAN bug #40075) [GSM]
 
