@@ -3466,7 +3466,7 @@ If C<$slice> is a hash reference, fetchall_arrayref uses L</fetchrow_hashref> to
 
 See the DBI documentation for a complete discussion.
 
-=head3 B<fetchall_arrayref>
+=head3 B<fetchall_hashref>
 
   $hash_ref = $sth->fetchall_hashref( $key_field );
 
