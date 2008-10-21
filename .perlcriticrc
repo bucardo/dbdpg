@@ -41,6 +41,7 @@ stop_words = ActiveKids AutoCommit boolean Bunce CachedKids ChildHandles ChopBla
 [-Modules::RequireEndWithOne]
 [-References::ProhibitDoubleSigils]
 [-RegularExpressions::ProhibitCaptureWithoutTest]
+[-RegularExpressions::RequireDotMatchAnything]
 [-RegularExpressions::ProhibitEnumeratedClasses]
 [-RegularExpressions::ProhibitEscapedMetacharacters]
 [-RegularExpressions::ProhibitFixedStringMatches]
