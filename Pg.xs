@@ -332,7 +332,7 @@ getfd(dbh)
 	CODE:
 		int ret;
 		D_imp_dbh(dbh);
-		ret = pg_db_getfd(dbh, imp_dbh);
+		ret = pg_db_getfd(imp_dbh);
 		ST(0) = sv_2mortal( newSViv( ret ) );
 
 

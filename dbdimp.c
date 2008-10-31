@@ -1299,7 +1299,7 @@ int dbd_discon_all (SV * drh, imp_drh_t * imp_drh)
 
 /* Deprecated in favor of $dbh->{pg_socket} */
 /* ================================================================== */
-int pg_db_getfd (SV * dbh, imp_dbh_t * imp_dbh)
+int pg_db_getfd (imp_dbh_t * imp_dbh)
 {
 	dTHX;
 

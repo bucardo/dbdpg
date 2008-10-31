@@ -183,7 +183,7 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
 
 /* Custom PG functions, in order they appear in dbdimp.c */
 
-int pg_db_getfd (SV *dbh, imp_dbh_t * imp_dbh);
+int pg_db_getfd (imp_dbh_t * imp_dbh);
 
 SV * pg_db_pg_notifies (SV *dbh, imp_dbh_t *imp_dbh);
 
