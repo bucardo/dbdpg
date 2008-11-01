@@ -2077,7 +2077,7 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 		if (imp_sth->numbound!=0) {
 			params = imp_sth->numphs;
 			if (NULL == imp_sth->PQoids) {
-				Newz(0, imp_sth->PQoids, imp_sth->numphs, Oid);
+				Newz(0, imp_sth->PQoids, (unsigned int)imp_sth->numphs, Oid);
 			}
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 				imp_sth->PQoids[x++] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
@@ -2898,7 +2898,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	else { /* We are using a server that can handle PQexecParams/PQexecPrepared */
 		/* Put all values into an array to pass to PQexecPrepared */
 		if (NULL == imp_sth->PQvals) {
-			Newz(0, imp_sth->PQvals, imp_sth->numphs, const char *); /* freed in dbd_st_destroy */
+			Newz(0, imp_sth->PQvals, (unsigned int)imp_sth->numphs, const char *); /* freed in dbd_st_destroy */
 		}
 		for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 			imp_sth->PQvals[x++] = currph->value;
@@ -2908,8 +2908,8 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
 		if (imp_sth->has_binary) {
 			if (NULL == imp_sth->PQlens) {
-				Newz(0, imp_sth->PQlens, imp_sth->numphs, int); /* freed in dbd_st_destroy */
-				Newz(0, imp_sth->PQfmts, imp_sth->numphs, int); /* freed below */
+				Newz(0, imp_sth->PQlens, (unsigned int)imp_sth->numphs, int); /* freed in dbd_st_destroy */
+				Newz(0, imp_sth->PQfmts, (unsigned int)imp_sth->numphs, int); /* freed below */
 			}
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
 				if (PG_BYTEA==currph->bind_type->type_id) {
@@ -3046,7 +3046,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			
 			/* Populate PQoids */
 			if (NULL == imp_sth->PQoids) {
-				Newz(0, imp_sth->PQoids, imp_sth->numphs, Oid);
+				Newz(0, imp_sth->PQoids, (unsigned int)imp_sth->numphs, Oid);
 			}
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 				imp_sth->PQoids[x++] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
@@ -3274,7 +3274,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 
 	/* Set up the type_info array if we have not seen it yet */
 	if (NULL == imp_sth->type_info) {
-		Newz(0, imp_sth->type_info, num_fields, sql_type_info_t*); /* freed in dbd_st_destroy */
+		Newz(0, imp_sth->type_info, (unsigned int)num_fields, sql_type_info_t*); /* freed in dbd_st_destroy */
 		for (i = 0; i < num_fields; ++i) {
 			TRACE_PQFTYPE;
 			imp_sth->type_info[i] = pg_type_data((int)PQftype(imp_sth->result, i));
