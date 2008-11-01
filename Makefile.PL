@@ -174,8 +174,14 @@ if ($ENV{DBDPG_GCCDEBUG}) {
 	$comp_opts .= ' -Wextra -Wdeclaration-after-statement -Wendif-labels -Wpointer-arith';
 	$comp_opts .= ' -Wbad-function-cast -Wcast-qual -Wcast-align -Wsign-compare -Waggregate-return';
 	$comp_opts .= ' -Wmissing-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wpacked -Winline -Winvalid-pch';
-	$comp_opts .= ' -Wdisabled-optimization'; ## Not terribly useful
-	$comp_opts .= ' -Wnested-externs'; ## Does not like Perl__notused (from DBIXS;)
+	$comp_opts .= ' -Wdisabled-optimization';
+	$comp_opts .= ' -Wnested-externs';
+    $comp_opts .= " -Wstrict-prototypes"; ## Still hits a couple places in types.h
+	$comp_opts .= " -Wswitch-default";
+	$comp_opts .= " -Wsystem-headers";
+	$comp_opts .= " -Wmissing-noreturn";
+	$comp_opts .= " -Wfloat-equal"; ## Does not like SvTRUE() calls
+	$comp_opts .= " -Wpadded"; ## Use when adding/changing our structs
 }
 
 my %opts =
