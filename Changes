@@ -1,5 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+	- Fix small POD error (CPAN bug #40209)
+	- Tweak Perl::Critic policy list (CPAN bug #40130)
 
 2.11.2 Released October 15, 2008 (subversion r11983)
 
