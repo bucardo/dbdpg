@@ -229,23 +229,21 @@ $comp_opts .= " -Wall"; ## all of above, but we enumerate anyway
 $comp_opts .= " -Wextra -Wdeclaration-after-statement -Wendif-labels -Wpointer-arith";
 $comp_opts .= " -Wbad-function-cast -Wcast-qual -Wcast-align -Wconversion -Wsign-compare -Waggregate-return";
 $comp_opts .= " -Wmissing-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wpacked -Winline -Winvalid-pch";
-$comp_opts .= " -Wdisabled-optimization"; ## Not terribly useful
-$comp_opts .= " -Wnested-externs"; ## Does not like Perl__notused (from DBIXS;)
-
-## These options produce a few hits, but are still pretty useful:
-$comp_opts .= " -Wswitch-default"; ## Complains on any Newz declaration
-$comp_opts .= " -Wfloat-equal"; ## Some perl stuff we cannot catch from Pg.h -> DBIXS.h -> perl.h -> math.h -> bits/mathinline.h
-$comp_opts .= " -Wstrict-prototypes"; ## Still hits a couple places in types.h that need fixing (then move to above)
-$comp_opts .= " -Wmissing-noreturn"; ## Raises a few warnings for <=7.4 libraries, as we croak on purpose for some
+$comp_opts .= " -Wdisabled-optimization";
+$comp_opts .= " -Wnested-externs";
+$comp_opts .= " -Wstrict-prototypes"; ## Still hits a couple places in types.h
+$comp_opts .= " -Wswitch-default";
+$comp_opts .= " -Wsystem-headers";
+$comp_opts .= " -Wmissing-noreturn";
+$comp_opts .= " -Wfloat-equal"; ## Does not like SvTRUE() calls
+$comp_opts .= " -Wpadded"; ## Use when adding/changing our structs
 
 ## These options tend to produce lots of hits outside of our code, but may still be useful:
-$comp_opts .= " -Wsystem-headers"; ## when used with -Wconversion, creates a lot of hits 
 $comp_opts .= " -pedantic"; ## Useful, but very verbose
-$comp_opts .= " -Wundef"; ## Filter: grep warning wfile | grep -v unions | grep -v CORE | grep -v Pg.c | grep -v auto
+$comp_opts .= " -Wundef"; ## Complains of XSubPPtmpAAAA in Pg.c being defined/undefined but then checked raw
 $comp_opts .= " -Wshadow"; ## lots of bogus hits - not very useful Filter: grep warning wfile | grep -v "/usr"
 $comp_opts .= " -Wwrite-strings";
-$comp_opts .= " -Wpadded"; ## Use when adding/changing our structs
-$comp_opts .= " -Wredundant-decls";
+$comp_opts .= " -Wredundant-decls"; ## Lots of warnings from Perl itself
 
 ## These options are probably not very useful:
 $comp_opts .= " -Wtraditional"; ## Lots and lots of junk
