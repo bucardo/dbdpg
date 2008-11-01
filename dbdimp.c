@@ -69,7 +69,7 @@ static void pg_error(pTHX_ SV *h, int error_num, const char *error_msg);
 static void pg_warn (void * arg, const char * message);
 static ExecStatusType _result(pTHX_ imp_dbh_t *imp_dbh, const char *sql);
 static ExecStatusType _sqlstate(pTHX_ imp_dbh_t *imp_dbh, PGresult *result);
-static int pg_db_rollback_commit (pTHX_ SV *dbh, imp_dbh_t *imp_dbh, char * action);
+static int pg_db_rollback_commit (pTHX_ SV *dbh, imp_dbh_t *imp_dbh, int action);
 static void pg_st_split_statement (pTHX_ imp_sth_t *imp_sth, int version, char *statement);
 static int pg_st_prepare_statement (pTHX_ SV *sth, imp_sth_t *imp_sth);
 static int is_high_bit_set(pTHX_ const unsigned char *val, STRLEN size);
@@ -454,14 +454,14 @@ static PGTransactionStatusType pg_db_txn_status (pTHX_ imp_dbh_t * imp_dbh)
 /* rollback and commit share so much code they get one function: */
 
 /* ================================================================== */
-static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, char * action)
+static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int action)
 {
 	PGTransactionStatusType tstatus;
 	ExecStatusType          status;
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_rollback_commit (action: %s AutoCommit: %d BegunWork: %d)\n",
 					THEADER,
-					action,
+					action ? "commit" : "rollback",
 					DBIc_is(imp_dbh, DBIcf_AutoCommit) ? 1 : 0,
 					DBIc_is(imp_dbh, DBIcf_BegunWork) ? 1 : 0);
 	
@@ -475,7 +475,7 @@ static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, char * ac
 	   ask it for the status directly and double-check things */
 
 	tstatus = pg_db_txn_status(aTHX_ imp_dbh);
-	if (TRACE4) TRC(DBILOGFP, "%sdbd_db_%s txn_status is %d\n", THEADER, action, tstatus);
+	if (TRACE4) TRC(DBILOGFP, "%sdbd_db_%s txn_status is %d\n", THEADER, action ? "commit" : "rollback", tstatus);
 
 	if (PQTRANS_IDLE == tstatus) { /* Not in a transaction */
 		if (imp_dbh->done_begin) {
@@ -513,7 +513,7 @@ static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, char * ac
 		return 1;
 	}
 
-	status = _result(aTHX_ imp_dbh, action);
+	status = _result(aTHX_ imp_dbh, action ? "commit" : "rollback");
 		
 	/* Set this early, for scripts that continue despite the error below */
 	imp_dbh->done_begin = DBDPG_FALSE;
@@ -539,7 +539,7 @@ int dbd_db_commit (SV * dbh, imp_dbh_t * imp_dbh)
 {
 	dTHX;
 	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_commit\n", THEADER);
-	return pg_db_rollback_commit(aTHX_ dbh, imp_dbh, "commit");
+	return pg_db_rollback_commit(aTHX_ dbh, imp_dbh, 1);
 }
 
 /* ================================================================== */
@@ -547,7 +547,7 @@ int dbd_db_rollback (SV * dbh, imp_dbh_t * imp_dbh)
 {
 	dTHX;
 	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_rollback\n", THEADER);
-	return pg_db_rollback_commit(aTHX_ dbh, imp_dbh, "rollback");
+	return pg_db_rollback_commit(aTHX_ dbh, imp_dbh, 0);
 }
 
 
