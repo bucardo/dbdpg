@@ -3637,7 +3637,7 @@ ParamTypes to be passed back to the L</bind_param> method.
 =head3 B<Statement> (string, read-only)
 
 Returns the statement string passed to the most recent "prepare" method called in this database handle, even if that method
-failed. This is especially useful where "RaiseError" is enabled and the exception handler checks $@ and sees that a ’prepare’
+failed. This is especially useful where "RaiseError" is enabled and the exception handler checks $@ and sees that a C<prepare>
 method call failed.
 
 =head3 B<pg_current_row> (integer, read-only)
