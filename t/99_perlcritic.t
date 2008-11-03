@@ -23,6 +23,7 @@ elsif ($Perl::Critic::VERSION < 0.23) {
 	plan skip_all => 'Perl::Critic must be version 0.23 or higher';
 }
 else {
+	$ENV{LANG} = 'C';
 	opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
 	@testfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
 	closedir $dir or die qq{Could not closedir "$dir": $!\n};

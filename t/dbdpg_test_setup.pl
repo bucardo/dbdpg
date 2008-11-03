@@ -497,6 +497,8 @@ sub connect_database {
 		return $helpconnect, '', $dbh;
 	}
 
+	$dbh->do(q{SET LC_MESSAGES = 'C'});
+
 	if ($arg->{nosetup}) {
 		return $helpconnect, '', $dbh unless schema_exists($dbh, $S);
 		$dbh->do("SET search_path TO $S");
