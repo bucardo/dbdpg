@@ -571,6 +571,8 @@ mak
 mathinline
 nCompiled
 nServer
+SvTRUE
+XSubPPtmpAAAA
 
 ## README:
 BOOTCHECK
