@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.11.3 Released November 3, 2008
+2.11.3 Released November 3, 2008 (subversion r12031)
 
 	- Force LC_MESSAGES to 'C' inside tests (CPAN bug #40604)
 	- Minor compiler tweaks.
