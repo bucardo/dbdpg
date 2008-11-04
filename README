@@ -78,9 +78,9 @@ PostgreSQL library and include directories.  However, if you want to
 control it yourself, define the environment variables POSTGRES_INCLUDE 
 and POSTGRES_LIB, or define just POSTGRES_HOME. Note that if you have 
 compiled PostgreSQL with SSL support, you must define the POSTGRES_LIB
-environment variable and add "-lssl" to it, like this:
+environment variable and add "-lssl" and "-lcrypto" to it, like this:
 
-	export POSTGRES_LIB="/usr/local/pgsql/lib -lssl"
+	export POSTGRES_LIB="/usr/local/pgsql/lib -lssl -lcrypto"
 
 The usual steps to install DBD::Pg:
 
