@@ -239,6 +239,7 @@ sub connect_database {
 		}
 
 		## Make sure initdb exists and is working properly
+		$ENV{LANG} = 'C';
 		$info = '';
 		eval {
 			$info = qx{$initdb --help 2>&1};
