@@ -1,5 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.11.4 Released November 12, 2008
+
+	- Don't set LC_MESSAGES unless superuser in tests. Remove all 
+		language-specific string checking for tests. (CPAN bug #40604)
+
 2.11.3 Released November 3, 2008 (subversion r12031)
 
 	- Force LC_MESSAGES to 'C' inside tests (CPAN bug #40604)
