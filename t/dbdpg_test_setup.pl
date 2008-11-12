@@ -498,7 +498,11 @@ sub connect_database {
 		return $helpconnect, '', $dbh;
 	}
 
-	$dbh->do(q{SET LC_MESSAGES = 'C'});
+	my $SQL = 'SELECT usesuper FROM pg_user WHERE usename = current_user';
+	my $bga = $dbh->selectall_arrayref($SQL)->[0][0];
+	if ($bga) {
+		$dbh->do(q{SET LC_MESSAGES = 'C'});
+	}
 
 	if ($arg->{nosetup}) {
 		return $helpconnect, '', $dbh unless schema_exists($dbh, $S);
