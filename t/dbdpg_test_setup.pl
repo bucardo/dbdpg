@@ -451,7 +451,9 @@ sub connect_database {
 				$dbh = DBI->connect($testdsn, $testuser, '',
 									{RaiseError => 1, PrintError => 0, AutoCommit => 1});
 			};
-			if ($@ =~ /starting up/ or $@ =~ /PGSQL\.$testport/) {
+			## Regardless of the error, try again.
+			## We used to check the message, but LANG problems may complicate that.
+			if ($@) {
 				if ($loop++ < 5) {
 					sleep 1;
 					redo STARTUP;

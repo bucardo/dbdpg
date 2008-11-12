@@ -71,7 +71,7 @@ $t='DB handle method "last_insert_id" fails when given a non-existent sequence';
 eval {
 	$dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistentsequence_test'});
 };
-like ($@, qr{ERROR}, $t);
+is ($dbh->state, '42P01', $t);
 
 $t='DB handle method "last_insert_id" fails when given a non-existent table';
 $dbh->rollback();

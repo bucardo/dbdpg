@@ -1480,12 +1480,12 @@ SKIP: {
 	$t='Database handle attribute "ReadOnly" prevents INSERT queries from working when on';
 	$SQL = 'INSERT INTO dbd_pg_test (id) VALUES (50)';
 	eval { $dbh4->do($SQL); };
-	like ($@, qr{transaction is read-only}, $t);
+	is($dbh4->state, '25006', $t);
 	$dbh4->rollback();
 
 	$sth = $dbh4->prepare($SQL);
 	eval { $sth->execute(); };
-	like ($@, qr{transaction is read-only}, $t);
+	is($dbh4->state, '25006', $t);
 	$dbh4->rollback();
 
 	$t='Database handle attribute "ReadOnly" allows INSERT queries when switched off';

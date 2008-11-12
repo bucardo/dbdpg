@@ -157,7 +157,7 @@ $dbh->commit();
 eval {
   $dbh->do(q{SELECT ??}, undef, 'public', 'error');
 };
-like ($@, qr{ERROR}, $t);
+is($dbh->state, '42601', $t);
 
 $t='Prepare/execute with non-DML placeholder works';
 $dbh->commit();
