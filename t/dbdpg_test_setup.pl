@@ -396,7 +396,7 @@ sub connect_database {
 			last GETHANDLE; ## Fail - no conf file
 		}
 		print $cfh "\n\n## DBD::Pg testing parameters\nport=$testport\nmax_connections=4\n";
-		print $cfh "listen_addresses='localhost'\n" if $^O =~ /Win32/;
+		print $cfh "listen_addresses='127.0.0.1'\n" if $^O =~ /Win32/;
 		print $cfh "\n";
 		close $cfh or die qq{Could not close "$conf": $!\n};
 
