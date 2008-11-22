@@ -2100,6 +2100,8 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 	Safefree(statement);
 	if (PGRES_COMMAND_OK != status) {
 		TRACE_PQERRORMESSAGE;
+		Safefree(imp_sth->prepare_name);
+		imp_sth->prepare_name = NULL;
 		pg_error(aTHX_ sth, status, PQerrorMessage(imp_dbh->conn));
 		if (TEND) TRC(DBILOGFP, "%sEnd pg_st_prepare_statement (error)\n", THEADER);
 		return -2;

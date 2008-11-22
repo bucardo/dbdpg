@@ -1,5 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.11.5
+
+	- Clear prepared_statement name on failure to prepare: prevents 
+		the wrong error when using prepare_cached. [GSM]
+
 2.11.4 Released November 12, 2008
 
 	- Don't set LC_MESSAGES unless superuser in tests. Remove all 
