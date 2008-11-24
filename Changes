@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.11.5
+2.11.5 Released November 24, 2008
 
 	- Clear prepared_statement name on failure to prepare: prevents 
 		the wrong error when using prepare_cached. [GSM]
