@@ -1,5 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.11.6
+
+	- Only set UTF8 flag on array items after UTF8 test. (CPAN bug #41253)
+      [Armando Santos]
+
 2.11.5 Released November 24, 2008 (subversion r12102)
 
 	- Clear prepared_statement name on failure to prepare: prevents 

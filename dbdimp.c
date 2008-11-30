@@ -2211,7 +2211,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 			quotedval = pg_stringify_array(newvalue,",",imp_dbh->pg_server_version);
 			currph->valuelen = sv_len(quotedval);
 			Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
-			currph->value = SvPVutf8_nolen(quotedval);
+			currph->value = SvUTF8(quotedval) ? SvPVutf8_nolen(quotedval) : SvPV_nolen(quotedval);
 			currph->bind_type = pg_type_data(PG_CSTRINGARRAY);
 			is_array = DBDPG_TRUE;
 		}
