@@ -20,3 +20,4 @@ http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
 - Support a flag for behind-the-scenes CURSOR to emulate partial fetches.
 - Handle unicode conversion better and perhaps eliminate the need for 
   the pg_enable_utf8 attribute.
+- Fix this: http://nntp.x.perl.org/group/perl.cpan.testers/2698430
