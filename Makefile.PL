@@ -77,14 +77,19 @@ my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $p);
 my ($major_ver, $minor_ver, $patch, $conf, $bindir) = map {$pg->$_}
 	qw/major_version minor_version patch_version configure bin_dir/;
 my $initdb = '';
-if (-d $bindir) {
+if (defined $bindir and -d $bindir) {
 	my $testinitdb = "$bindir${sep}initdb";
 	if (-e $testinitdb) {
 		$initdb = $testinitdb;
 	}
 }
-my $serverversion = sprintf '%d%.02d%.02d', $major_ver, $minor_ver, $patch;
-my $defaultport = $conf =~ /with-pgport=(\d+)/ ? $1 : 5432;
+my $serverversion = 0;
+my $defaultport = 0;
+
+if (defined $major_ver) {
+	$serverversion = sprintf '%d%.02d%.02d', $major_ver, $minor_ver, $patch;
+	$defaultport = $conf =~ /with-pgport=(\d+)/ ? $1 : 5432;
+}
 
 if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
     $POSTGRES_INCLUDE = $pg->inc_dir;
