@@ -15,7 +15,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 28;
+plan tests => 45;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -232,10 +232,74 @@ eval {
 };
 is ($@, q{}, $t);
 
+$t='Prepare works with placeholders after double slashes';
+eval {
+	$dbh->do(q{CREATE OPERATOR // ( PROCEDURE=bit, LEFTARG=int, RIGHTARG=int )});
+	$sth = $dbh->prepare(q{SELECT ? // ?});
+	$sth->execute(1,2);
+	$sth->finish();
+};
+is ($@, q{}, $t);
+
+$t='Dollar quotes starting with a number are not treated as valid identifiers';
+eval {
+	$sth = $dbh->prepare(q{SELECT $123$  $123$});
+	$sth->execute(1);
+	$sth->finish();
+};
+like ($@, qr{Invalid placeholders}, $t);
+
+$t='Dollar quotes with invalid characters are not parsed as identifiers';
+for my $char (qw!+ / : @ [ `!) {
+	eval {
+		$sth = $dbh->prepare(qq{SELECT \$abc${char}\$ 123 \$abc${char}\$});
+		$sth->execute();
+		$sth->finish();
+	};
+	like ($@, qr{syntax error}, $t);
+}
+
+$t='Dollar quotes with valid characters are parsed as identifiers';
+$dbh->rollback();
+for my $char (qw{0 9 A Z a z}) {
+	eval {
+		$sth = $dbh->prepare(qq{SELECT \$abc${char}\$ 123 \$abc${char}\$});
+		$sth->execute();
+		$sth->finish();
+	};
+	is ($@, q{}, $t);
+}
+
+$t='Backslash quoting inside double quotes is parsed correctly';
+eval {
+	$sth = $dbh->prepare(q{SELECT * FROM "\" WHERE a=?});
+	$sth->execute(1);
+	$sth->finish();
+};
+like ($@, qr{relation ".*" does not exist}, $t);
+$dbh->rollback();
+
+$t='Backslash quoting inside single quotes is parsed correctly with standard_conforming_strings off';
+eval {
+	$dbh->do(q{SET standard_conforming_strings = 'off'});
+	$sth = $dbh->prepare(q{SELECT '\', ?});
+	$sth->execute();
+	$sth->finish();
+};
+like ($@, qr{unterminated quoted string}, $t);
+$dbh->rollback();
+
+$t='Backslash quoting inside single quotes is parsed correctly with standard_conforming_strings on';
+eval {
+	$dbh->do(q{SET standard_conforming_strings = 'on'});
+	$sth = $dbh->prepare(q{SELECT '\', ?::int});
+	$sth->execute(1);
+	$sth->finish();
+};
+is ($@, q{}, $t);
+
+
 ## Begin custom type testing
-
-
-
 
 $dbh->rollback();
 

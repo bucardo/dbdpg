@@ -1500,6 +1500,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 	/* Builds the "segment" and "placeholder" structures for a statement handle */
 
+	D_imp_dbh_from_sth;
+
 	STRLEN currpos; /* Where we currently are in the statement string */
 
 	STRLEN sectionstart, sectionstop; /* Borders of current section */
@@ -1523,6 +1525,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 	bool inside_dollar; /* Inside a dollar quoted value */
 
 	char * dollarstring = NULL; /* Dynamic string between $$ in dollar quoting */
+
+	char standard_conforming_strings = 1; /* Status 0=on 1=unknown -1=off */
 
 	STRLEN xlen; /* Because "x" is too hard to search for */
 
@@ -1602,15 +1606,24 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		if ('\'' == ch || '"' == ch) {
 			quote = ch;
 			backslashes = 0;
+			if ('\'' == ch && 1 == standard_conforming_strings) {
+				const char * scs = PQparameterStatus(imp_dbh->conn,"standard_conforming_strings");
+				standard_conforming_strings = (NULL==scs ? 1 : strncmp(scs,"on",2));
+			}
+
 			/* Go until ending quote character (unescaped) or end of string */
 			while (quote && ++currpos && (ch = *statement++)) {
 				/* 1.1 : single quotes have no meaning in double-quoted sections and vice-versa */
 				/* 1.2 : backslashed quotes do not end the section */
-				if (ch == quote && (0==(backslashes&1))) {
+				/* 1.2.1 : backslashes have no meaning in double quoted sections */
+				/* 1.2.2 : if standard_confirming_strings is set, ignore backslashes in single quotes */
+				if (ch == quote && (quote == '"' || 0==(backslashes&1))) {
 					quote = 0;
 				}
-				else if ('\\' == ch) 
-					backslashes++;
+				else if ('\\' == ch) {
+					if (quote == '"' || standard_conforming_strings)
+						backslashes++;
+				}
 				else
 					backslashes = 0;
 			}
@@ -1627,14 +1640,13 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 		/* 2: A comment block: */
 		if (('-' == ch && '-' == *statement) ||
-			('/' == ch && '/' == *statement) ||
 			('/' == ch && '*' == *statement)
 			) {
 			quote = *statement;
 			/* Go until end of comment (may be newline) or end of the string */
 			while (quote && ++currpos && (ch = *statement++)) {
-				/* 2.1: dashdash and slashslash only terminate at newline */
-				if (('-' == quote || '/' == quote) && '\n' == ch) {
+				/* 2.1: dashdash only terminates at newline */
+				if ('-' == quote && '\n' == ch) {
 					quote=0;
 				}
 				/* 2.2: slashstar ends with a matching starslash */
@@ -1655,8 +1667,16 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		} /* end comment section */
 
 		/* 3: advanced dollar quoting - only if the backend is version 8 or higher */
-		if (version >= 80000 && '$' == ch && (*statement == '$' || *statement >= 'A')) {
-			/* Unlike PG, we allow a little more latitude in legal characters - anything >= 65 can be used */
+		if (version >= 80000 && '$' == ch && 
+			(*statement == '$' 
+			 || *statement == '_'
+			 || (*statement >= 'A' && *statement <= 'Z') 
+			 || (*statement >= 'a' && *statement <= 'z'))) {
+			/* "SQL identifiers must begin with a letter (a-z, but also letters with diacritical marks and non-Latin letters) 
+                or an underscore (_). Subsequent characters in an identifier or key word can be letters, underscores, 
+                digits (0-9), or dollar signs ($)
+			*/
+			/* Postgres technically allows \200-\377 as well, but we don't */
 			sectionsize = 0; /* How far from the first dollar sign are we? */
 			found = 0; /* Have we found the end of the dollarquote? */
 
@@ -1664,12 +1684,17 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 			while ((ch = *statement++)) {
 
 				sectionsize++;
-				/* If we hit an invalid character, bail out */
-				if (ch <= 32 || (ch >= '0' && ch <= '9')) {
-					break;
-				}
 				if ('$' == ch) {
 					found = DBDPG_TRUE;
+					break;
+				}
+
+				/* If we hit an invalid character, bail out */
+				if (ch <= 47 
+					|| (ch >= 58 && ch <= 64)
+					|| (ch >= 91 && ch <= 94)
+					|| ch == 96
+					|| (ch >= 123)) {
 					break;
 				}
 			} /* end first scan */

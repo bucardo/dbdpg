@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.11.7
+
+  - Fix placeholder parsing logic (CPAN bug #41582)
+
 2.11.6 Released November 30, 2008 (subversion r12126)
 
   - Only set UTF8 flag on array items after UTF8 test. (CPAN bug #41253)
