@@ -279,25 +279,27 @@ eval {
 like ($@, qr{relation ".*" does not exist}, $t);
 $dbh->rollback();
 
-$t='Backslash quoting inside single quotes is parsed correctly with standard_conforming_strings off';
-eval {
-	$dbh->do(q{SET standard_conforming_strings = 'off'});
-	$sth = $dbh->prepare(q{SELECT '\', ?});
-	$sth->execute();
-	$sth->finish();
-};
-like ($@, qr{unterminated quoted string}, $t);
-$dbh->rollback();
+SKIP: {
+	skip 'Setting standard_conforming_strings not available', 2 if ! defined $scs;
+	$t='Backslash quoting inside single quotes is parsed correctly with standard_conforming_strings off';
+	eval {
+		$dbh->do(q{SET standard_conforming_strings = 'off'});
+		$sth = $dbh->prepare(q{SELECT '\', ?});
+		$sth->execute();
+		$sth->finish();
+	};
+	like ($@, qr{unterminated quoted string}, $t);
+	$dbh->rollback();
 
-$t='Backslash quoting inside single quotes is parsed correctly with standard_conforming_strings on';
-eval {
-	$dbh->do(q{SET standard_conforming_strings = 'on'});
-	$sth = $dbh->prepare(q{SELECT '\', ?::int});
-	$sth->execute(1);
-	$sth->finish();
-};
-is ($@, q{}, $t);
-
+	$t='Backslash quoting inside single quotes is parsed correctly with standard_conforming_strings on';
+	eval {
+		$dbh->do(q{SET standard_conforming_strings = 'on'});
+		$sth = $dbh->prepare(q{SELECT '\', ?::int});
+		$sth->execute(1);
+		$sth->finish();
+	};
+	is ($@, q{}, $t);
+}
 
 ## Begin custom type testing
 
