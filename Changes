@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.11.8 
+
+  - Fix minor bug in t/12placeholders.t test (CPAN bug #41723)
+
 2.11.7 Released December 13, 2008 (subversion r12158)
 
   - Fix placeholder parsing logic (CPAN bug #41582)
