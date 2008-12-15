@@ -82,6 +82,7 @@ $t=q{Database attribute "async_status" returns 1 after async query};
 $res = $dbh->{pg_async_status};
 is ($res, +1, $t);
 
+sleep 1;
 $t=q{Cancelling an async do() query works };
 eval {
 	$res = $dbh->pg_cancel();
