@@ -271,6 +271,8 @@ for my $char (qw{0 9 A Z a z}) {
 }
 
 $t='Backslash quoting inside double quotes is parsed correctly';
+$dbh->do(q{SET backslash_quote = 'on'});
+$dbh->commit();
 eval {
 	$sth = $dbh->prepare(q{SELECT * FROM "\" WHERE a=?});
 	$sth->execute(1);
