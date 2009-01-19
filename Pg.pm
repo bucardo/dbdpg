@@ -2795,7 +2795,7 @@ Examples of use:
 
   ## Display all tables and views in the public schema:
   $sth = $dbh->table_info('', 'public', undef, undef);
-  for my $rel ({@$sth->fetchall_arrayref({})}) {
+  for my $rel (@{$sth->fetchall_arrayref({})}) {
     print "$rel->{TABLE_TYPE} name is $rel->{TABLE_NAME}\n";
   }
 
