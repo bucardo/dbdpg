@@ -26,6 +26,22 @@ For information about PostgreSQL, visit:
 For information on what has changed for each version, see the Changes files.
 
 
+REQUIREMENTS:
+-------------
+
+	build, test, and install Perl 5         (at least 5.6.1)
+	build, test, and install the DBI module (at least 1.52)
+	build, test, and install PostgreSQL     (at least 7.4)
+	build, test, and install Test::Simple   (at least 0.47)
+
+DBD::Pg needs to know where to find the libpq libraries: this is usually done 
+by checking the output of the pg_config executable. If pg_config is not available, 
+then you may need to install the development package for PostgreSQL. To do this 
+on Debian and Ubuntu, use: apt-get install postgresql-dev; on RedHat and CentOS, 
+use: yum install postgresql-devel. Note that the development libraries are needed 
+even if you already have PostgreSQL up and running.
+
+
 IF YOU HAVE PROBLEMS OR COMMENTS:
 ---------------------------------
 
@@ -50,21 +66,6 @@ If you feel certain you have found a bug, you can file a bug report by visiting:
 http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
 and selecting the "Report a new bug" link. Please check that the bug 
 has not already been reported first.
-
-REQUIREMENTS:
--------------
-
-	build, test, and install Perl 5         (at least 5.6.1)
-	build, test, and install the DBI module (at least 1.52)
-	build, test, and install PostgreSQL     (at least 7.4)
-	build, test, and install Test::Simple   (at least 0.47)
-
-DBD::Pg needs to know where to find the libpq libraries: this is usually done 
-by checking the output of the pg_config executable. If pg_config is not available, 
-then you may need to install the development package for PostgreSQL. To do this 
-on Debian and Ubuntu, use: apt-get install postgresql-dev; on RedHat and CentOS, 
-use: yum install postgresql-devel. Note that the development libraries are needed 
-even if you already have PostgreSQL up and running.
 
 INSTALLATION:
 -------------
