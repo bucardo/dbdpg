@@ -161,6 +161,7 @@ $dbh->{pg_server_prepare} = 0;
 This can also be set for individual queries at the statement handle level: see 
 the documentation section on "Placeholders" for more details.
 
+
 * PostgreSQL library issues:
 
 DBD::Pg uses the libpq library that comes with Postgres. If the shared libpq 
@@ -188,6 +189,7 @@ when you call DBI->connect, then your libpq.so was probably not seen at
 build-time.  This should have caused 'make test' to fail; did you really
 run it and look at the output? 
 
+
 * Perl issues:
 
 Some Linux distributions have incomplete perl installations.  If you have
@@ -204,6 +206,39 @@ to the INSTALLVENDORBIN environment variable:
 
 make install_vendor INSTALLVENDORBIN=/tmp
 (thanks to Peter Eisentraut <peter_e at gmx.net>)
+
+
+* Strawberry Perl issues:
+
+One file change only needed to make in DBD::Pg source is:
+ 
+Makefile.PL -
+add 'use DBI::DBD;'.
+comment out "unlink $output->{MAKEFILE};" at line 247
+
+set required environment:
+
+set PATH=C:\PROGRA~1\PostgreSQL\8.3\bin;%PATH%
+set DBI_DSN=dbi:Pg:dbname=testdb
+set DBI_USER=username
+set DBI_PASS=password
+set POSTGRES_HOME=C:/PROGRA~1/PostgreSQL/8.3
+set POSTGRES_INCLUDE=C:/PROGRA~1/PostgreSQL/8.3/include
+set POSTGRES_LIB=C:/PROGRA~1/PostgreSQL/8.3/lib
+
+
+perl Makefile.PL
+
+Now here's the ugly bit: edited both EXTRALIBS and LDLOADLIBS in the resulting 
+Makefile to include
+C:\PROGRA~1\PostgreSQL\8.3\lib\libpq.lib
+
+then
+
+dmake
+dmake test
+
+all works fine.
 
 
 * SGI issues:
