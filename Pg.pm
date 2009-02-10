@@ -3164,7 +3164,7 @@ immediately prepare commands, rather than waiting until the first execute.
 
 =head3 B<pg_expand_array> (boolean)
 
-DBD::Pg specific attribute. Defaults to false. If false, arrays returned from the server will 
+DBD::Pg specific attribute. Defaults to true. If false, arrays returned from the server will 
 not be changed into a Perl arrayref, but remain as a string.
 
 =head3 B<pg_async_status> (integer, read-only)
