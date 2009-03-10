@@ -127,6 +127,7 @@ SKIP: {
 		 qr{PG_POLYGON},
 		 qr{PG_POLYGONARRAY},
 		 qr{PG_RECORD},
+		 qr{PG_RECORDARRAY},
 		 qr{PG_REFCURSOR},
 		 qr{PG_REFCURSORARRAY},
 		 qr{PG_REGCLASS},
