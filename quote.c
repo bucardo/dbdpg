@@ -2,7 +2,7 @@
 
    $Id$
 
-   Copyright (c) 2003-2008 Greg Sabino Mullane and others: see the Changes file
+   Copyright (c) 2003-2009 Greg Sabino Mullane and others: see the Changes file
 
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.

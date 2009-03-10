@@ -2,7 +2,7 @@
 
    $Id$
 
-   Copyright (c) 2003-2008 Greg Sabino Mullane and others: see the Changes file
+   Copyright (c) 2003-2009 Greg Sabino Mullane and others: see the Changes file
    
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.
@@ -602,7 +602,7 @@ print $newfh qq{$slashstar
 
    \$Id: types.c 11297 2008-05-20 21:52:34Z turnstep \$
 
-   Copyright (c) 2003-2008 Greg Sabino Mullane and others: see the Changes file
+   Copyright (c) 2003-2009 Greg Sabino Mullane and others: see the Changes file
    
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.
