@@ -123,8 +123,10 @@ sub connect_database {
 						my $sockdir = "$testdir/data/socket";
 						if (! -e $sockdir) {
 							mkdir $sockdir;
-							if (! chown $uid, -1, $sockdir) {
-								warn "chown of $sockdir failed!\n";
+							if ($uid) {
+								if (! chown $uid, -1, $sockdir) {
+									warn "chown of $sockdir failed!\n";
+								}
 							}
 						}
 						$option = q{-o '-k socket'};
