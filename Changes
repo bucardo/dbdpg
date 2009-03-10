@@ -1,8 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-??
+2.11.9
 
-  - Fixed minor bug in POD docs. [Tim Mattison]
+  - Do proper dequoting of boolean arrays [Armando Santos]
+  - Fix minor bug in POD docs. [Tim Mattison]
 
 2.11.8 Released December 28, 2008
 

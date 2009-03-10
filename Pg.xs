@@ -104,6 +104,7 @@ constant(name=Nullch)
 	PG_POLYGON            = 604
 	PG_POLYGONARRAY       = 1027
 	PG_RECORD             = 2249
+	PG_RECORDARRAY        = 2287
 	PG_REFCURSOR          = 1790
 	PG_REFCURSORARRAY     = 2201
 	PG_REGCLASS           = 2205

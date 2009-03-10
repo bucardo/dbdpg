@@ -91,6 +91,7 @@ is (PG_POINTARRAY           ,  1017, 'PG_POINTARRAY returns correct value');
 is (PG_POLYGON              ,   604, 'PG_POLYGON returns correct value');
 is (PG_POLYGONARRAY         ,  1027, 'PG_POLYGONARRAY returns correct value');
 is (PG_RECORD               ,  2249, 'PG_RECORD returns correct value');
+is (PG_RECORDARRAY          ,  2287, 'PG_RECORDARRAY returns correct value');
 is (PG_REFCURSOR            ,  1790, 'PG_REFCURSOR returns correct value');
 is (PG_REFCURSORARRAY       ,  2201, 'PG_REFCURSORARRAY returns correct value');
 is (PG_REGCLASS             ,  2205, 'PG_REGCLASS returns correct value');

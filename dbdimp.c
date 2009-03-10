@@ -2577,6 +2577,8 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 					av_push(currentav, newSViv(SvIV(newSVpvn(string,section_size))));
 				else if (2 == coltype->svtype)
 					av_push(currentav, newSVnv(SvNV(newSVpvn(string,section_size))));
+				else if (3 == coltype->svtype)
+					av_push(currentav, newSViv('t' == *string ? 1 : 0));
 				else {
 					SV *sv = newSVpvn(string, section_size);
 #ifdef is_utf8_string

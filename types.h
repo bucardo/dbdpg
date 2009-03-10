@@ -128,6 +128,7 @@ sql_type_info_t* sql_type_data(int);
 #define          PG_PATHARRAY  1019
 #define         PG_POINTARRAY  1017
 #define       PG_POLYGONARRAY  1027
+#define        PG_RECORDARRAY  2287
 #define     PG_REFCURSORARRAY  2201
 #define      PG_REGCLASSARRAY  2210
 #define     PG_REGCONFIGARRAY  3735

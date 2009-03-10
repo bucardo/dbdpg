@@ -536,6 +536,7 @@ CREATE TABLE dbd_pg_test (
   pdate      timestamp default now(),
   testarray  text[][],
   testarray2 int[],
+  testarray3 bool[],
   "CaseTest" boolean,
   expo       numeric(6,2),
   bytetest   bytea
