@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 248;
+plan tests => 250;
 
 isnt ($dbh, undef, 'Connect to database for array testing');
 
@@ -630,6 +630,18 @@ SKIP: {
 	ok (!Encode::is_utf8($result), $t);
 	$sth->finish();
 }
+
+
+## Quick test of empty arrays
+my $expected = $pgversion >= 80300 ? [[[]]] : [[undef]];
+
+$t=q{Empty int array is returned properly};
+$result = $dbh->selectall_arrayref(q{SELECT array(SELECT 12345::int WHERE 1=0)::int[]});
+is_deeply ($result, $expected, $t);
+
+$t=q{Empty text array is returned properly};
+$result = $dbh->selectall_arrayref(q{SELECT array(SELECT 'empty'::text WHERE 1=0)::text[]});
+is_deeply ($result, $expected, $t);
 
 cleanup_database($dbh,'test');
 $dbh->disconnect;
