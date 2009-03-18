@@ -2565,7 +2565,7 @@ Some examples:
   $sth = $dbh->prepare($SQL);
   for (qw(uno dos tres cuatro)) {
     $sth->execute($_);
-    my $newid = $dbh->last_insert_id(C<undef>,undef,undef,undef,{sequence=>'lii_seq'});
+    my $newid = $dbh->last_insert_id(undef,undef,undef,undef,{sequence=>'lii_seq'});
     print "Last insert id was $newid\n";
   }
 
