@@ -2625,7 +2625,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 	Safefree(string);
 
 	if (TEND) TRC(DBILOGFP, "%sEnd pg_destringify_array\n", THEADER);
-	return newRV((SV*)av);
+	return newRV_noinc((SV*)av);
 
 } /* end of pg_destringify_array */
 
