@@ -2,7 +2,10 @@
 
 2.11.9
 
-  - Do proper dequoting of boolean arrays [Armando Santos]
+  - Fix a memory leak when parsing returned arrays [reported by Bálint Szilakszi]
+    [GSM] (CPAN bug #44225)
+  - Do proper dequoting of boolean arrays [Armando Santos, GSM] (CPAN bug #43768)
+  - Fix minor bugs in POD docs. [Frank Wiegand] (CPAN bug #44242)
   - Fix minor bug in POD docs. [Tim Mattison]
 
 2.11.8 Released December 28, 2008
