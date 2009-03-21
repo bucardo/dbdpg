@@ -3070,7 +3070,7 @@ be used whenever possible. See the section on the L</prepare> method for more in
 =head3 B<pg_placeholder_dollaronly> (boolean)
 
 DBD::Pg specific attribute. Defaults to false. When true, question marks inside of statements 
-are not treated as L</placeholders>. Useful for statements that contain unquoted question 
+are not treated as L<placeholders|/Placeholders>. Useful for statements that contain unquoted question 
 marks, such as geometric operators.
 
 =head3 B<pg_enable_utf8> (boolean)
