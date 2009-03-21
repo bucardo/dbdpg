@@ -3976,7 +3976,7 @@ When fetching rows from a table that contains a column with an
 array type, the result will be passed back to your script as an arrayref.
 
 To turn off the automatic parsing of returned arrays into arrayrefs, 
-you can set the attribute L<pg_expand_array|/pg_expand_array__boolean__read_only_>, which is true by default.
+you can set the attribute L<pg_expand_array|/pg_expand_array_(boolean)>, which is true by default.
 
   $dbh->{pg_expand_array} = 0;
 
@@ -4103,7 +4103,7 @@ choice. DBD::Pg therefore translates the result for the C<BOOL> data type in a
 Perlish manner: 'f' becomes the number C<0> and 't' becomes the number C<1>. This way 
 the application does not have to check the database-specific returned values for 
 the data-type C<BOOL> because Perl treats C<0> as false and C<1> as true. You may 
-set the L<pg_bool_tf|/pg_bool_tf__boolean_> attribute to a true value to change the values back to 't' and
+set the L<pg_bool_tf|/pg_bool_tf_(boolean)> attribute to a true value to change the values back to 't' and
 'f' if you wish.
 
 Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
