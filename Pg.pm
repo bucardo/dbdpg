@@ -2042,7 +2042,7 @@ describing read and write access to the new object. This setting is ignored
 since Postgres version 8.1. For backwards compatibility, however, you should 
 set a valid mode anyway (see L</lo_open> for a list of valid modes).
 
-Upon failure it returns C<undef>.
+Upon failure it returns C<undef>. This function cannot be used if AutoCommit is enabled.
 
 =item lo_open
 
@@ -2065,21 +2065,21 @@ object will provide the stored data at the time of the transaction snapshot
 which was active when C<lo_write> was called.
 
 Returns C<undef> upon failure. Note that 0 is a perfectly correct (and common)
-object descriptor!
+object descriptor! This function cannot be used if AutoCommit is enabled.
 
 =item lo_write
 
   $nbytes = $dbh->func($lobj_fd, $buffer, $len, 'lo_write');
 
 Writes C<$len> bytes of c<$buffer> into the large object C<$lobj_fd>. Returns the number
-of bytes written and C<undef> upon failure.
+of bytes written and C<undef> upon failure. This function cannot be used if AutoCommit is enabled.
 
 =item lo_read
 
   $nbytes = $dbh->func($lobj_fd, $buffer, $len, 'lo_read');
 
 Reads C<$len> bytes into c<$buffer> from large object C<$lobj_fd>. Returns the number of
-bytes read and C<undef> upon failure.
+bytes read and C<undef> upon failure. This function cannot be used if AutoCommit is enabled.
 
 =item lo_lseek
 
@@ -2087,25 +2087,28 @@ bytes read and C<undef> upon failure.
 
 Changes the current read or write location on the large object
 C<$obj_id>. Currently C<$whence> can only be 0 (which is L_SET). Returns the current
-location and C<undef> upon failure.
+location and C<undef> upon failure. This function cannot be used if AutoCommit is enabled.
 
 =item lo_tell
 
   $loc = $dbh->func($lobj_fd, 'lo_tell');
 
 Returns the current read or write location on the large object C<$lobj_fd> and C<undef> upon failure.
+This function cannot be used if AutoCommit is enabled.
 
 =item lo_close
 
   $lobj_fd = $dbh->func($lobj_fd, 'lo_close');
 
 Closes an existing large object. Returns true upon success and false upon failure.
+This function cannot be used if AutoCommit is enabled.
 
 =item lo_unlink
 
   $ret = $dbh->func($lobjId, 'lo_unlink');
 
 Deletes an existing large object. Returns true upon success and false upon failure.
+This function cannot be used if AutoCommit is enabled.
 
 =item lo_import
 

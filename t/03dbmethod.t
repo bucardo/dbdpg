@@ -5,8 +5,6 @@
 ## "data_sources" (see 04misc.t)
 ## "disconnect" (see 01connect.t)
 ## "take_imp_data"
-## "lo_import"
-## "lo_export"
 ## "pg_savepoint", "pg_release", "pg_rollback_to" (see 20savepoints.t)
 ## "pg_putline", "pg_getline", "pg_endcopy" (see 07copy.t)
 
@@ -26,7 +24,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 479;
+plan tests => 507;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -1297,27 +1295,33 @@ is_deeply (\%missing, {}, $t);
 
 $t='DB handle method "lo_creat" returns a valid descriptor for reading';
 $dbh->{AutoCommit}=1; $dbh->{AutoCommit}=0; ## Catch error where not in begin
+
 my ($R,$W) = ($dbh->{pg_INV_READ}, $dbh->{pg_INV_WRITE});
 my $RW = $R|$W;
 my $object = $dbh->func($R, 'lo_creat');
 like ($object, qr/^\d+$/o, $t);
+isnt ($object, 0, $t);
 
 $t='DB handle method "lo_creat" returns a valid descriptor for writing';
 $object = $dbh->func($W, 'lo_creat');
 like ($object, qr/^\d+$/o, $t);
+isnt ($object, 0, $t);
 
 $t='DB handle method "lo_open" returns a valid descriptor for writing';
 my $handle = $dbh->func($object, $W, 'lo_open');
 like ($handle, qr/^\d+$/o, $t);
+isnt ($object, -1, $t);
 
 $t='DB handle method "lo_lseek" works when writing';
 $result = $dbh->func($handle, 0, 0, 'lo_lseek');
 is ($result, 0, $t);
+isnt ($object, -1, $t);
 
 $t='DB handle method "lo_write" works';
 my $buf = 'tangelo mulberry passionfruit raspberry plantain' x 500;
 $result = $dbh->func($handle, $buf, length($buf), 'lo_write');
 is ($result, length($buf), $t);
+cmp_ok ($object, '>', 0, $t);
 
 $t='DB handle method "lo_close" works after write';
 $result = $dbh->func($handle, 'lo_close');
@@ -1327,6 +1331,7 @@ ok ($result, $t);
 $t='DB handle method "lo_open" returns a valid descriptor for reading';
 $handle = $dbh->func($object, $R, 'lo_open');
 like ($handle, qr/^\d+$/o, $t);
+cmp_ok ($handle, 'eq', 0, $t);
 
 $t='DB handle method "lo_lseek" works when reading';
 $result = $dbh->func($handle, 11, 0, 'lo_lseek');
@@ -1350,7 +1355,140 @@ ok ($result, $t);
 
 $t='DB handle method "lo_unlink" works';
 $result = $dbh->func($object, 'lo_unlink');
-ok ($result, $t);
+is ($result, 1, $t);
+
+$t='DB handle method "lo_unlink" fails when called second time';
+$result = $dbh->func($object, 'lo_unlink');
+ok (!$result, $t);
+$dbh->rollback();
+
+SKIP: {
+
+	eval {
+		require File::Temp;
+	};
+	$@ and skip ('Must have File::Temp to test lo_import and lo_export', 8);
+
+	$t='DB handle method "lo_import" works';
+	my ($fh,$filename) = File::Temp::tmpnam();
+	print $fh "abc\ndef";
+	close $fh or warn 'Failed to close temporary file';
+	my $handle = $dbh->func($filename, 'lo_import');
+	my $objid = $handle;
+	ok ($handle, $t);
+
+	$t='DB handle method "lo_import" inserts correct data';
+	$SQL = "SELECT data FROM pg_largeobject where loid = $handle";
+	$info = $dbh->selectall_arrayref($SQL)->[0][0];
+	is_deeply($info, "abc\ndef", $t);
+
+	$t='DB handle method "lo_open" works after "lo_insert"';
+	$handle = $dbh->func($handle, $R, 'lo_open');
+	like ($handle, qr/^\d+$/o, $t);
+
+	$t='DB handle method "lo_read" returns correct data after "lo_import"';
+	my $data = '';
+	$result = $dbh->func($handle, $data, 100, 'lo_read');
+	is ($result, 7, $t);
+	is ($data, "abc\ndef", $t);
+
+	$t='DB handle method "lo_export" works';
+	($fh,$filename) = File::Temp::tmpnam();
+	$result = $dbh->func($objid, $filename, 'lo_export');
+	ok(-e $filename, $t);
+	seek($fh,0,1);
+	seek($fh,0,0);
+	$result = read $fh, $data, 10;
+	is ($result, 7, $t);
+	is ($data, "abc\ndef", $t);
+	close $fh or warn 'Could not close tempfile';
+}
+
+## Same tests, but with AutoCommit on
+$dbh->{AutoCommit}=1;
+
+$t='DB handle method "lo_creat" fails when AutoCommit on';
+eval {
+	$dbh->func($W, 'lo_creat');
+};
+like($@, qr{lo_creat when AutoCommit is on}, $t);
+
+$t='DB handle method "lo_open" fails with AutoCommit on';
+eval {
+	$dbh->func($object, $W, 'lo_open');
+};
+like($@, qr{lo_open when AutoCommit is on}, $t);
+
+$t='DB handle method "lo_read" fails with AutoCommit on';
+eval {
+	$dbh->func($object, $data, 0, 'lo_read');
+};
+like($@, qr{lo_read when AutoCommit is on}, $t);
+
+$t='DB handle method "lo_lseek" fails with AutoCommit on';
+eval {
+	$dbh->func($handle, 0, 0, 'lo_lseek');
+};
+like($@, qr{lo_lseek when AutoCommit is on}, $t);
+
+$t='DB handle method "lo_write" fails with AutoCommit on';
+$buf = 'tangelo mulberry passionfruit raspberry plantain' x 500;
+eval {
+	$dbh->func($handle, $buf, length($buf), 'lo_write');
+};
+like($@, qr{lo_write when AutoCommit is on}, $t);
+
+$t='DB handle method "lo_close" fails with AutoCommit on';
+eval {
+	$dbh->func($handle, 'lo_close');
+};
+like($@, qr{lo_close when AutoCommit is on}, $t);
+
+$t='DB handle method "lo_tell" fails with AutoCommit on';
+eval {
+	$dbh->func($handle, 'lo_tell');
+};
+like($@, qr{lo_tell when AutoCommit is on}, $t);
+
+$t='DB handle method "lo_unlink" fails with AutoCommit on';
+eval {
+	$dbh->func($object, 'lo_unlink');
+};
+like($@, qr{lo_unlink when AutoCommit is on}, $t);
+
+
+SKIP: {
+
+	eval {
+		require File::Temp;
+	};
+	$@ and skip ('Must have File::Temp to test lo_import and lo_export', 2);
+
+	$t='DB handle method "lo_import" works (AutoCommit on)';
+	my ($fh,$filename) = File::Temp::tmpnam();
+	print $fh "abc\ndef";
+	close $fh or warn 'Failed to close temporary file';
+	my $handle = $dbh->func($filename, 'lo_import');
+	my $objid = $handle;
+	ok ($handle, $t);
+
+	$t='DB handle method "lo_import" inserts correct data (AutoCommit on)';
+	$SQL = "SELECT data FROM pg_largeobject where loid = $handle";
+	$info = $dbh->selectall_arrayref($SQL)->[0][0];
+	is_deeply($info, "abc\ndef", $t);
+
+	$t='DB handle method "lo_export" works (AutoCommit on)';
+	($fh,$filename) = File::Temp::tmpnam();
+	$result = $dbh->func($objid, $filename, 'lo_export');
+	ok(-e $filename, $t);
+	seek($fh,0,1);
+	seek($fh,0,0);
+	$result = read $fh, $data, 10;
+	is ($result, 7, $t);
+	is ($data, "abc\ndef", $t);
+	close $fh or warn 'Could not close tempfile';
+}
+$dbh->{AutoCommit} = 0;
 
 #
 # Test of the "pg_notifies" database handle method

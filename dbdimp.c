@@ -4088,7 +4088,7 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 
 
 /* ================================================================== */
-/* Used to ensure we are in a txn, e.g. the lo_ functions below */
+/* For lo_* functions. Used to ensure we are in a transaction */
 static int pg_db_start_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh)
 {
 	int status = -1;
@@ -4096,7 +4096,7 @@ static int pg_db_start_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh)
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_start_txn\n", THEADER);
 
 	/* If not autocommit, start a new transaction */
-	if (!imp_dbh->done_begin && !DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+	if (!imp_dbh->done_begin) {
 		status = _result(aTHX_ imp_dbh, "begin");
 		if (PGRES_COMMAND_OK != status) {
 			TRACE_PQERRORMESSAGE;
@@ -4107,37 +4107,79 @@ static int pg_db_start_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh)
 		imp_dbh->done_begin = DBDPG_TRUE;
 	}
 	if (TEND) TRC(DBILOGFP, "%sEnd pg_db_start_txn\n", THEADER);
+
 	return 1;
+
 } /* end of pg_db_start_txn */
 
+
+/* ================================================================== */
+/* For lo_import and lo_export functions. Used to commit or rollback a 
+   transaction, if AutoCommit is on. */
+static int pg_db_end_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int commit)
+{
+	int status = -1;
+
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_end_txn with %s\n",
+					THEADER, commit ? "commit" : "rollback");
+
+	/* If not autocommit, start a new transaction */
+	status = _result(aTHX_ imp_dbh, commit ? "commit" : "rollback");
+	if (PGRES_COMMAND_OK != status) {
+		TRACE_PQERRORMESSAGE;
+		pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
+		if (TEND) TRC(DBILOGFP, "%sEnd pg_db_end_txn (error: status not OK for %s)\n",
+					  THEADER, commit ? "commit" : "rollback");
+		return 0;
+	}
+
+	imp_dbh->done_begin = DBDPG_FALSE;
+
+	if (TEND) TRC(DBILOGFP, "%sEnd pg_db_end_txn\n", THEADER);
+	return 1;
+
+} /* end of pg_db_end_txn */
 
 /* Large object functions */
 
 /* ================================================================== */
 unsigned int pg_db_lo_creat (SV * dbh, int mode)
 {
+
 	dTHX;
 	D_imp_dbh(dbh);
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_pg_lo_creat (mode: %d)\n", THEADER, mode);
 
-	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
+	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		croak("Cannot call lo_creat when AutoCommit is on");
+	}
+
+	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh)) {
 		return 0; /* No other option, because lo_creat returns an Oid */
+	}
 
 	if (TLIBPQ) {
 		TRC(DBILOGFP, "%slo_creat\n", THEADER);
 	}
+
 	return lo_creat(imp_dbh->conn, mode); /* 0 on error */
+
 }
 
 /* ================================================================== */
 int pg_db_lo_open (SV * dbh, unsigned int lobjId, int mode)
 {
+
 	dTHX;
 	D_imp_dbh(dbh);
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_pg_lo_open (mode: %d objectid: %d)\n",
 					THEADER, mode, lobjId);
+
+	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		croak("Cannot call lo_open when AutoCommit is on");
+	}
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
 		return -2;
@@ -4145,122 +4187,190 @@ int pg_db_lo_open (SV * dbh, unsigned int lobjId, int mode)
 	if (TLIBPQ) {
 		TRC(DBILOGFP, "%slo_open\n", THEADER);
 	}
+
 	return lo_open(imp_dbh->conn, lobjId, mode); /* -1 on error */
+
 }
 
 /* ================================================================== */
 int pg_db_lo_close (SV * dbh, int fd)
 {
+
 	dTHX;
 	D_imp_dbh(dbh);
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_close (fd: %d)\n", THEADER, fd);
 
+	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		croak("Cannot call lo_close when AutoCommit is on");
+	}
+
+	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
+		return -1;
+
 	if (TLIBPQ) {
 		TRC(DBILOGFP, "%slo_close\n", THEADER);
 	}
+
 	return lo_close(imp_dbh->conn, fd); /* <0 on error, 0 if ok */
+
 }
 
 /* ================================================================== */
 int pg_db_lo_read (SV * dbh, int fd, char * buf, size_t len)
 {
+
 	dTHX;
 	D_imp_dbh(dbh);
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_read (fd: %d length: %d)\n",
 					THEADER, fd, len);
 
+	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		croak("Cannot call lo_read when AutoCommit is on");
+	}
+
+	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
+		return -1;
+
 	if (TLIBPQ) {
 		TRC(DBILOGFP, "%slo_read\n", THEADER);
 	}
+
 	return lo_read(imp_dbh->conn, fd, buf, len); /* bytes read, <0 on error */
+
 }
 
 /* ================================================================== */
 int pg_db_lo_write (SV * dbh, int fd, char * buf, size_t len)
 {
+
 	dTHX;
 	D_imp_dbh(dbh);
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_write (fd: %d length: %d)\n",
 					THEADER, fd, len);
 
+	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		croak("Cannot call lo_write when AutoCommit is on");
+	}
+
+	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
+		return -1;
+
 	if (TLIBPQ) {
 		TRC(DBILOGFP, "%slo_write\n", THEADER);
 	}
+
 	return lo_write(imp_dbh->conn, fd, buf, len); /* bytes written, <0 on error */
+
 }
 
 /* ================================================================== */
 int pg_db_lo_lseek (SV * dbh, int fd, int offset, int whence)
 {
+
 	dTHX;
 	D_imp_dbh(dbh);
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_lseek (fd: %d offset: %d whence: %d)\n",
 					THEADER, fd, offset, whence);
 
+	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		croak("Cannot call lo_lseek when AutoCommit is on");
+	}
+
+	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
+		return -1;
+
 	if (TLIBPQ) {
 		TRC(DBILOGFP, "%slo_lseek\n", THEADER);
 	}
+
 	return lo_lseek(imp_dbh->conn, fd, offset, whence); /* new position, -1 on error */
+
 }
 
 /* ================================================================== */
 int pg_db_lo_tell (SV * dbh, int fd)
 {
+
 	dTHX;
 	D_imp_dbh(dbh);
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_tell (fd: %d)\n", THEADER, fd);
 
+	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		croak("Cannot call lo_tell when AutoCommit is on");
+	}
+
+	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
+		return -1;
+
 	if (TLIBPQ) {
 		TRC(DBILOGFP, "%slo_tell\n", THEADER);
 	}
+
 	return lo_tell(imp_dbh->conn, fd); /* current position, <0 on error */
+
 }
 
 /* ================================================================== */
 int pg_db_lo_unlink (SV * dbh, unsigned int lobjId)
 {
+
 	dTHX;
 	D_imp_dbh(dbh);
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_unlink (objectid: %d)\n", THEADER, lobjId);
 
+	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		croak("Cannot call lo_unlink when AutoCommit is on");
+	}
+
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
-		return -2;
+		return -1;
 
 	if (TLIBPQ) {
 		TRC(DBILOGFP, "%slo_unlink\n", THEADER);
 	}
+
 	return lo_unlink(imp_dbh->conn, lobjId); /* 1 on success, -1 on failure */
+
 }
 
 /* ================================================================== */
 unsigned int pg_db_lo_import (SV * dbh, char * filename)
 {
+
+	Oid loid;
 	dTHX;
 	D_imp_dbh(dbh);
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_import (filename: %s)\n", THEADER, filename);
 
-	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh)) {
-		if (TRACE7) TRC(DBILOGFP, "%sCannot pg_db_log_import unless in a transaction\n",
-						THEADER);
+	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
 		return 0; /* No other option, because lo_import returns an Oid */
-	}
 
 	if (TLIBPQ) {
 		TRC(DBILOGFP, "%slo_import\n", THEADER);
 	}
-	return lo_import(imp_dbh->conn, filename); /* 0 on error */
+	loid = lo_import(imp_dbh->conn, filename); /* 0 on error */
+
+	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		if (!pg_db_end_txn(aTHX_ dbh, imp_dbh, 0==loid ? 0 : 1))
+			return 0;
+	}
+
+	return loid;
+
 }
 
 /* ================================================================== */
 int pg_db_lo_export (SV * dbh, unsigned int lobjId, char * filename)
 {
+
+	Oid loid;
 	dTHX;
 	D_imp_dbh(dbh);
 
@@ -4273,7 +4383,13 @@ int pg_db_lo_export (SV * dbh, unsigned int lobjId, char * filename)
 	if (TLIBPQ) {
 		TRC(DBILOGFP, "%slo_export\n", THEADER);
 	}
-	return lo_export(imp_dbh->conn, lobjId, filename); /* 1 on success, -1 on failure */
+	loid = lo_export(imp_dbh->conn, lobjId, filename); /* 1 on success, -1 on failure */
+	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		if (!pg_db_end_txn(aTHX_ dbh, imp_dbh, -1==loid ? 0 : 1))
+			return -1;
+	}
+
+	return loid;
 }
 
 

@@ -2,7 +2,10 @@
 
 2.11.9
 
-  - Fix a memory leak when parsing returned arrays [reported by Bálint Szilakszi]
+  - Throw an exception for large_object functions called when AutoCommit is on, 
+    but allow lo_import and lo_export to work. Reported by Kynn Jones.
+    [GSM] (CPAN bug #44461)
+  - Fix a memory leak when parsing returned arrays. Reported by Bálint Szilakszi.
     [GSM] (CPAN bug #44225)
   - Do proper dequoting of boolean arrays [Armando Santos, GSM] (CPAN bug #43768)
   - Fix minor bugs in POD docs. [Frank Wiegand] (CPAN bug #44242)
