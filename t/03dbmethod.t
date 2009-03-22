@@ -1380,7 +1380,7 @@ SKIP: {
 	$t='DB handle method "lo_import" inserts correct data';
 	$SQL = "SELECT data FROM pg_largeobject where loid = $handle";
 	$info = $dbh->selectall_arrayref($SQL)->[0][0];
-	is_deeply($info, "abc\ndef", $t);
+	is_deeply ($info, "abc\ndef", $t);
 
 	$t='DB handle method "lo_open" works after "lo_insert"';
 	$handle = $dbh->func($handle, $R, 'lo_open');
@@ -1395,7 +1395,7 @@ SKIP: {
 	$t='DB handle method "lo_export" works';
 	($fh,$filename) = File::Temp::tmpnam();
 	$result = $dbh->func($objid, $filename, 'lo_export');
-	ok(-e $filename, $t);
+	ok (-e $filename, $t);
 	seek($fh,0,1);
 	seek($fh,0,0);
 	$result = read $fh, $data, 10;
@@ -1411,50 +1411,50 @@ $t='DB handle method "lo_creat" fails when AutoCommit on';
 eval {
 	$dbh->func($W, 'lo_creat');
 };
-like($@, qr{lo_creat when AutoCommit is on}, $t);
+like ($@, qr{lo_creat when AutoCommit is on}, $t);
 
 $t='DB handle method "lo_open" fails with AutoCommit on';
 eval {
 	$dbh->func($object, $W, 'lo_open');
 };
-like($@, qr{lo_open when AutoCommit is on}, $t);
+like ($@, qr{lo_open when AutoCommit is on}, $t);
 
 $t='DB handle method "lo_read" fails with AutoCommit on';
 eval {
 	$dbh->func($object, $data, 0, 'lo_read');
 };
-like($@, qr{lo_read when AutoCommit is on}, $t);
+like ($@, qr{lo_read when AutoCommit is on}, $t);
 
 $t='DB handle method "lo_lseek" fails with AutoCommit on';
 eval {
 	$dbh->func($handle, 0, 0, 'lo_lseek');
 };
-like($@, qr{lo_lseek when AutoCommit is on}, $t);
+like ($@, qr{lo_lseek when AutoCommit is on}, $t);
 
 $t='DB handle method "lo_write" fails with AutoCommit on';
 $buf = 'tangelo mulberry passionfruit raspberry plantain' x 500;
 eval {
 	$dbh->func($handle, $buf, length($buf), 'lo_write');
 };
-like($@, qr{lo_write when AutoCommit is on}, $t);
+like ($@, qr{lo_write when AutoCommit is on}, $t);
 
 $t='DB handle method "lo_close" fails with AutoCommit on';
 eval {
 	$dbh->func($handle, 'lo_close');
 };
-like($@, qr{lo_close when AutoCommit is on}, $t);
+like ($@, qr{lo_close when AutoCommit is on}, $t);
 
 $t='DB handle method "lo_tell" fails with AutoCommit on';
 eval {
 	$dbh->func($handle, 'lo_tell');
 };
-like($@, qr{lo_tell when AutoCommit is on}, $t);
+like ($@, qr{lo_tell when AutoCommit is on}, $t);
 
 $t='DB handle method "lo_unlink" fails with AutoCommit on';
 eval {
 	$dbh->func($object, 'lo_unlink');
 };
-like($@, qr{lo_unlink when AutoCommit is on}, $t);
+like ($@, qr{lo_unlink when AutoCommit is on}, $t);
 
 
 SKIP: {
@@ -1475,12 +1475,12 @@ SKIP: {
 	$t='DB handle method "lo_import" inserts correct data (AutoCommit on)';
 	$SQL = "SELECT data FROM pg_largeobject where loid = $handle";
 	$info = $dbh->selectall_arrayref($SQL)->[0][0];
-	is_deeply($info, "abc\ndef", $t);
+	is_deeply ($info, "abc\ndef", $t);
 
 	$t='DB handle method "lo_export" works (AutoCommit on)';
 	($fh,$filename) = File::Temp::tmpnam();
 	$result = $dbh->func($objid, $filename, 'lo_export');
-	ok(-e $filename, $t);
+	ok (-e $filename, $t);
 	seek($fh,0,1);
 	seek($fh,0,0);
 	$result = read $fh, $data, 10;

@@ -576,40 +576,48 @@ XSubPPtmpAAAA
 
 ## README:
 BOOTCHECK
-CentOS
-DynaLoader
-Eisentraut
-Gcc
-Landgren
-Lauterbach
-Ubuntu
 cabrion
+CentOS
 conf
 danla
 david
+dmake
 drnoble
+DynaLoader
+Eisentraut
 engsci
+EXTRALIBS
 fe
 freenode
+Gcc
 gmx
 hdf
 irc
 jmore
 landgren
+Landgren
+Lauterbach
+LDLOADLIBS
+MAKEFILE
 pc
+PROGRA
 sandia
 sco
 sl
 sv
+testdb
 turnstep
+Ubuntu
 
 ## Changes:
+boolean
 destringifying
 spellcheck
 gborg
 n's
 Pg's
 qw
+Szilakszi
 
 ## Pg.pm:
 lseg
@@ -759,6 +767,7 @@ timestamptz
 tswitch
 typarray
 typedef
+typefile
 typelem
 typrelid
 uc
@@ -831,11 +840,13 @@ VC
 Vc
 cd
 exe
+frs
 gz
 libpg
 mak
 mkdir
 myperl
+pgfoundry
 nmake
 rc
 src
