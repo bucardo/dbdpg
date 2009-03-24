@@ -143,6 +143,17 @@ use 5.006001;
 		DBD::Pg::st->install_method('pg_result');
 		DBD::Pg::st->install_method('pg_ready');
 
+		DBD::Pg::db->install_method('pg_lo_creat');
+		DBD::Pg::db->install_method('pg_lo_open');
+		DBD::Pg::db->install_method('pg_lo_write');
+		DBD::Pg::db->install_method('pg_lo_read');
+		DBD::Pg::db->install_method('pg_lo_lseek');
+		DBD::Pg::db->install_method('pg_lo_tell');
+		DBD::Pg::db->install_method('pg_lo_close');
+		DBD::Pg::db->install_method('pg_lo_unlink');
+		DBD::Pg::db->install_method('pg_lo_import');
+		DBD::Pg::db->install_method('pg_lo_export');
+
 		return $drh;
 
 	} ## end of driver
@@ -2033,20 +2044,20 @@ reference to an array of hashes, each of which contains the following keys:
   PRIMARY_KEY flag is_primary_key
   REMARKS     attribute description
 
-=item lo_creat
+=item pg_lo_creat
 
-  $lobjId = $dbh->func($mode, 'lo_creat');
+  $lobjId = $dbh->pg_lo_creat($mode);
 
 Creates a new large object and returns the object-id. C<$mode> is a bitmask
 describing read and write access to the new object. This setting is ignored
 since Postgres version 8.1. For backwards compatibility, however, you should 
-set a valid mode anyway (see L</lo_open> for a list of valid modes).
+set a valid mode anyway (see L</pg_lo_open> for a list of valid modes).
 
 Upon failure it returns C<undef>. This function cannot be used if AutoCommit is enabled.
 
 =item lo_open
 
-  $lobj_fd = $dbh->func($lobjId, $mode, 'lo_open');
+  $lobj_fd = $dbh->pg_lo_open($lobjId, $mode);
 
 Opens an existing large object and returns an object-descriptor for use in
 subsequent C<lo_*> calls. C<$mode> is a bitmask describing read and write
@@ -2069,21 +2080,21 @@ object descriptor! This function cannot be used if AutoCommit is enabled.
 
 =item lo_write
 
-  $nbytes = $dbh->func($lobj_fd, $buffer, $len, 'lo_write');
+  $nbytes = $dbh->pg_lo_write($lobj_fd, $buffer, $len);
 
 Writes C<$len> bytes of c<$buffer> into the large object C<$lobj_fd>. Returns the number
 of bytes written and C<undef> upon failure. This function cannot be used if AutoCommit is enabled.
 
 =item lo_read
 
-  $nbytes = $dbh->func($lobj_fd, $buffer, $len, 'lo_read');
+  $nbytes = $dbh->pg_lo_read($lobj_fd, $buffer, $len);
 
 Reads C<$len> bytes into c<$buffer> from large object C<$lobj_fd>. Returns the number of
 bytes read and C<undef> upon failure. This function cannot be used if AutoCommit is enabled.
 
 =item lo_lseek
 
-  $loc = $dbh->func($lobj_fd, $offset, $whence, 'lo_lseek');
+  $loc = $dbh->pg_lo_lseek($lobj_fd, $offset, $whence);
 
 Changes the current read or write location on the large object
 C<$obj_id>. Currently C<$whence> can only be 0 (which is L_SET). Returns the current
@@ -2091,35 +2102,36 @@ location and C<undef> upon failure. This function cannot be used if AutoCommit i
 
 =item lo_tell
 
-  $loc = $dbh->func($lobj_fd, 'lo_tell');
+  $loc = $dbh->pg_lo_tell($lobj_fd);
 
 Returns the current read or write location on the large object C<$lobj_fd> and C<undef> upon failure.
 This function cannot be used if AutoCommit is enabled.
 
 =item lo_close
 
-  $lobj_fd = $dbh->func($lobj_fd, 'lo_close');
+  $lobj_fd = $dbh->pg_lo_close($lobj_fd);
 
 Closes an existing large object. Returns true upon success and false upon failure.
 This function cannot be used if AutoCommit is enabled.
 
 =item lo_unlink
 
-  $ret = $dbh->func($lobjId, 'lo_unlink');
+  $ret = $dbh->pg_lo_unlink($lobjId);
 
 Deletes an existing large object. Returns true upon success and false upon failure.
 This function cannot be used if AutoCommit is enabled.
 
 =item lo_import
 
-  $lobjId = $dbh->func($filename, 'lo_import');
+
+  $lobjId = $dbh->pg_lo_import($filename);
 
 Imports a Unix file as a large object and returns the object id of the new
 object or C<undef> upon failure.
 
 =item lo_export
 
-  $ret = $dbh->func($lobjId, $filename, 'lo_export');
+  $ret = $dbh->pg_lo_export($lobjId, $filename);
 
 Exports a large object into a Unix file. Returns false upon failure, true otherwise.
 

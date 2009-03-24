@@ -384,6 +384,110 @@ pg_release(dbh,name)
 			warn("release ineffective with AutoCommit enabled");
 		ST(0) = (pg_db_release(dbh, imp_dbh, name)!=0) ? &sv_yes : &sv_no;
 
+void
+pg_lo_creat(dbh, mode)
+	SV * dbh
+	int mode
+	CODE:
+		const unsigned int ret = pg_db_lo_creat(dbh, mode);
+		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &sv_undef;
+
+void
+pg_lo_open(dbh, lobjId, mode)
+	SV * dbh
+	unsigned int lobjId
+	int mode
+	CODE:
+		const int ret = pg_db_lo_open(dbh, lobjId, mode);
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+
+
+void
+pg_lo_write(dbh, fd, buf, len)
+	SV * dbh
+	int fd
+	char * buf
+	size_t len
+	CODE:
+		const int ret = pg_db_lo_write(dbh, fd, buf, len);
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+
+
+void
+pg_lo_read(dbh, fd, buf, len)
+	SV * dbh
+	int fd
+	char * buf
+	size_t len
+	PREINIT:
+		SV * const bufsv = SvROK(ST(2)) ? SvRV(ST(2)) : ST(2);
+		int ret;
+	CODE:
+		sv_setpvn(bufsv,"",0); /* Make sure we can grow it safely */
+		buf = SvGROW(bufsv, len + 1);
+		ret = pg_db_lo_read(dbh, fd, buf, len);
+		if (ret > 0) {
+			SvCUR_set(bufsv, ret);
+			*SvEND(bufsv) = '\0';
+			sv_setpvn(ST(2), buf, (unsigned)ret);
+			SvSETMAGIC(ST(2));
+		}
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+
+
+void
+pg_lo_lseek(dbh, fd, offset, whence)
+	SV * dbh
+	int fd
+	int offset
+	int whence
+	CODE:
+		const int ret = pg_db_lo_lseek(dbh, fd, offset, whence);
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+
+
+void
+pg_lo_tell(dbh, fd)
+	SV * dbh
+	int fd
+	CODE:
+		const int ret = pg_db_lo_tell(dbh, fd);
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+
+
+void
+pg_lo_close(dbh, fd)
+	SV * dbh
+	int fd
+	CODE:
+		ST(0) = (pg_db_lo_close(dbh, fd) >= 0) ? &sv_yes : &sv_no;
+
+
+void
+pg_lo_unlink(dbh, lobjId)
+	SV * dbh
+	unsigned int lobjId
+	CODE:
+		ST(0) = (pg_db_lo_unlink(dbh, lobjId) >= 1) ? &sv_yes : &sv_no;
+
+
+void
+pg_lo_import(dbh, filename)
+	SV * dbh
+	char * filename
+	CODE:
+		const unsigned int ret = pg_db_lo_import(dbh, filename);
+		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &sv_undef;
+
+
+void
+pg_lo_export(dbh, lobjId, filename)
+	SV * dbh
+	unsigned int lobjId
+	char * filename
+	CODE:
+		ST(0) = (pg_db_lo_export(dbh, lobjId, filename) >= 1) ? &sv_yes : &sv_no;
+
 
 void
 lo_creat(dbh, mode)
@@ -392,7 +496,6 @@ lo_creat(dbh, mode)
 	CODE:
 		const unsigned int ret = pg_db_lo_creat(dbh, mode);
 		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &sv_undef;
-
 
 void
 lo_open(dbh, lobjId, mode)
@@ -405,11 +508,14 @@ lo_open(dbh, lobjId, mode)
 
 
 void
-lo_close(dbh, fd)
+lo_write(dbh, fd, buf, len)
 	SV * dbh
 	int fd
+	char * buf
+	size_t len
 	CODE:
-		ST(0) = (pg_db_lo_close(dbh, fd) >= 0) ? &sv_yes : &sv_no;
+		const int ret = pg_db_lo_write(dbh, fd, buf, len);
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
 
 
 void
@@ -435,17 +541,6 @@ lo_read(dbh, fd, buf, len)
 
 
 void
-lo_write(dbh, fd, buf, len)
-	SV * dbh
-	int fd
-	char * buf
-	size_t len
-	CODE:
-		const int ret = pg_db_lo_write(dbh, fd, buf, len);
-		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
-
-
-void
 lo_lseek(dbh, fd, offset, whence)
 	SV * dbh
 	int fd
@@ -463,6 +558,14 @@ lo_tell(dbh, fd)
 	CODE:
 		const int ret = pg_db_lo_tell(dbh, fd);
 		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+
+
+void
+lo_close(dbh, fd)
+	SV * dbh
+	int fd
+	CODE:
+		ST(0) = (pg_db_lo_close(dbh, fd) >= 0) ? &sv_yes : &sv_no;
 
 
 void
@@ -650,6 +753,7 @@ pg_cancel(dbh)
 	ST(0) = pg_db_cancel(dbh, imp_dbh) ? &sv_yes : &sv_no;
 
 #endif
+
 
 # -- end of DBD::Pg::db
 

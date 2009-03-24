@@ -4115,7 +4115,7 @@ static int pg_db_start_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh)
 
 /* ================================================================== */
 /* For lo_import and lo_export functions. Used to commit or rollback a 
-   transaction, if AutoCommit is on. */
+   transaction, but only if AutoCommit is on. */
 static int pg_db_end_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int commit)
 {
 	int status = -1;
@@ -4123,8 +4123,8 @@ static int pg_db_end_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int commit)
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_end_txn with %s\n",
 					THEADER, commit ? "commit" : "rollback");
 
-	/* If not autocommit, start a new transaction */
 	status = _result(aTHX_ imp_dbh, commit ? "commit" : "rollback");
+	imp_dbh->done_begin = DBDPG_FALSE;
 	if (PGRES_COMMAND_OK != status) {
 		TRACE_PQERRORMESSAGE;
 		pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
@@ -4133,9 +4133,8 @@ static int pg_db_end_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int commit)
 		return 0;
 	}
 
-	imp_dbh->done_begin = DBDPG_FALSE;
-
 	if (TEND) TRC(DBILOGFP, "%sEnd pg_db_end_txn\n", THEADER);
+
 	return 1;
 
 } /* end of pg_db_end_txn */
@@ -4152,7 +4151,7 @@ unsigned int pg_db_lo_creat (SV * dbh, int mode)
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_pg_lo_creat (mode: %d)\n", THEADER, mode);
 
 	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-		croak("Cannot call lo_creat when AutoCommit is on");
+		croak("Cannot call pg_lo_creat when AutoCommit is on");
 	}
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh)) {
@@ -4178,7 +4177,7 @@ int pg_db_lo_open (SV * dbh, unsigned int lobjId, int mode)
 					THEADER, mode, lobjId);
 
 	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-		croak("Cannot call lo_open when AutoCommit is on");
+		croak("Cannot call pg_lo_open when AutoCommit is on");
 	}
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
@@ -4202,7 +4201,7 @@ int pg_db_lo_close (SV * dbh, int fd)
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_close (fd: %d)\n", THEADER, fd);
 
 	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-		croak("Cannot call lo_close when AutoCommit is on");
+		croak("Cannot call pg_lo_close when AutoCommit is on");
 	}
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
@@ -4227,7 +4226,7 @@ int pg_db_lo_read (SV * dbh, int fd, char * buf, size_t len)
 					THEADER, fd, len);
 
 	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-		croak("Cannot call lo_read when AutoCommit is on");
+		croak("Cannot call pg_lo_read when AutoCommit is on");
 	}
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
@@ -4252,7 +4251,7 @@ int pg_db_lo_write (SV * dbh, int fd, char * buf, size_t len)
 					THEADER, fd, len);
 
 	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-		croak("Cannot call lo_write when AutoCommit is on");
+		croak("Cannot call pg_lo_write when AutoCommit is on");
 	}
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
@@ -4277,7 +4276,7 @@ int pg_db_lo_lseek (SV * dbh, int fd, int offset, int whence)
 					THEADER, fd, offset, whence);
 
 	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-		croak("Cannot call lo_lseek when AutoCommit is on");
+		croak("Cannot call pg_lo_lseek when AutoCommit is on");
 	}
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
@@ -4301,7 +4300,7 @@ int pg_db_lo_tell (SV * dbh, int fd)
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_tell (fd: %d)\n", THEADER, fd);
 
 	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-		croak("Cannot call lo_tell when AutoCommit is on");
+		croak("Cannot call pg_lo_tell when AutoCommit is on");
 	}
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
@@ -4325,7 +4324,7 @@ int pg_db_lo_unlink (SV * dbh, unsigned int lobjId)
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_unlink (objectid: %d)\n", THEADER, lobjId);
 
 	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-		croak("Cannot call lo_unlink when AutoCommit is on");
+		croak("Cannot call pg_lo_unlink when AutoCommit is on");
 	}
 
 	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
