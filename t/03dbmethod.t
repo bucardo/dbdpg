@@ -1387,6 +1387,7 @@ SKIP: {
 	my $handle = $dbh->pg_lo_import($filename);
 	my $objid = $handle;
 	ok ($handle, $t);
+	unlink $filename;
 
 	$t='DB handle method "pg_lo_import" inserts correct data';
 	$SQL = "SELECT data FROM pg_largeobject where loid = $handle";
@@ -1413,6 +1414,7 @@ SKIP: {
 	is ($result, 7, $t);
 	is ($data, "abc\ndef", $t);
 	close $fh or warn 'Could not close tempfile';
+	unlink $filename;
 }
 
 ## Same pg_lo_* tests, but with AutoCommit on
@@ -1546,6 +1548,7 @@ SKIP: {
 	$info = $sth->fetchall_arrayref()->[0][0];
 	is_deeply ($info, "abc\ndef", $t);
 
+	unlink $filename;
 	$dbh->{AutoCommit} = 1;
 
 	my $objid = $handle;
@@ -1559,6 +1562,7 @@ SKIP: {
 	is ($result, 7, $t);
 	is ($data, "abc\ndef", $t);
 	close $fh or warn 'Could not close tempfile';
+	unlink $filename;
 }
 $dbh->{AutoCommit} = 0;
 
