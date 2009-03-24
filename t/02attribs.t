@@ -251,6 +251,7 @@ is ($value, 1, $t);
 
 local $SIG{__WARN__} = sub { $warning = shift; };
 
+$dbh->do(q{SET client_min_messages = 'NOTICE'});
 $t='DB handle attribute "PrintWarn" works when on';
 $warning = q{};
 eval {

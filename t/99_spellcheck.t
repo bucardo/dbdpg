@@ -796,6 +796,7 @@ pktable
 selectall
 selectcol
 selectrow
+untrace
 
 ## t/01constants.t:
 RequireUseWarnings

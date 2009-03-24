@@ -270,15 +270,20 @@ for my $char (qw{0 9 A Z a z}) {
 	is ($@, q{}, $t);
 }
 
-$t='Backslash quoting inside double quotes is parsed correctly';
-$dbh->do(q{SET backslash_quote = 'on'});
-$dbh->commit();
-eval {
-	$sth = $dbh->prepare(q{SELECT * FROM "\" WHERE a=?});
-	$sth->execute(1);
-	$sth->finish();
-};
-like ($@, qr{relation ".*" does not exist}, $t);
+SKIP: {
+	skip 'Cannot run backslash_quote tet on Postgres < 8.2', 1 if $pgversion < 80200;
+
+	$t='Backslash quoting inside double quotes is parsed correctly';
+	$dbh->do(q{SET backslash_quote = 'on'});
+	$dbh->commit();
+	eval {
+		$sth = $dbh->prepare(q{SELECT * FROM "\" WHERE a=?});
+		$sth->execute(1);
+		$sth->finish();
+	};
+	like ($@, qr{relation ".*" does not exist}, $t);
+}
+
 $dbh->rollback();
 
 SKIP: {
