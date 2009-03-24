@@ -1484,7 +1484,7 @@ SKIP: {
 	ok ($handle, $t);
 
 	$t='DB handle method "pg_lo_import" inserts correct data (AutoCommit on, begin_work not called)';
-	$SQL = "SELECT data FROM pg_largeobject where loid = ?";
+	$SQL = 'SELECT data FROM pg_largeobject where loid = ?';
 	$sth = $dbh->prepare($SQL);
 	$sth->execute($handle);
 	$info = $sth->fetchall_arrayref()->[0][0];
