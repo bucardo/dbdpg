@@ -2157,13 +2157,14 @@ a database or a statement handle. Currently, all the hash values are undef.
 
 If set to true, then the L</disconnect> method will not be automatically called when 
 the database handle goes out of scope. This is required if you are forking, and even 
-then you must tread carefully and ensure that either the parent or the child handles 
-all database calls from that point forwards, so that messages from the Postgres backend 
-are only handled by one of the processes. If you don't set things up properly, you 
-will see messages such as "I<server closed the connection unexpectedly>". A better solution 
-is usually to rewrite your application not to use forking. See the section on 
-L</Asynchronous Queries> for a way to have your script continue to work while the database 
-is processing a request.
+then you must tread carefully and ensure that either the parent or the child (but not 
+both!) handles all database calls from that point forwards, so that messages from the 
+Postgres backend are only handled by one of the processes. If you don't set things up 
+properly, you will see messages such as "I<server closed the connection unexpectedly>", 
+and "I<message type 0x32 arrived from server while idle>". The best solution is to either 
+have the child process reconnect to the database with a fresh database handle, or to 
+rewrite your application not to use use forking. See the section on L</Asynchronous Queries> 
+for a way to have your script continue to work while the database is processing a request.
 
 =head3 B<RaiseError> (boolean, inherited)
 
