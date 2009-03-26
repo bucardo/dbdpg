@@ -433,6 +433,10 @@ use 5.006001;
 
 		my $remarks = 'pg_catalog.col_description(a.attrelid, a.attnum)';
 
+		my $column_def = $dbh->{private_dbdpg}{version} >= 80000
+			? 'pg_catalog.pg_get_expr(af.adbin, af.adrelid)'
+			: 'af.adsrc';
+
 		my $col_info_sql = qq!
 			SELECT
 				NULL::text AS "TABLE_CAT"
@@ -447,7 +451,7 @@ use 5.006001;
 				, NULL::text AS "NUM_PREC_RADIX"
 				, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
 				, $remarks AS "REMARKS"
-				, af.adsrc AS "COLUMN_DEF"
+				, $column_def AS "COLUMN_DEF"
 				, NULL::text AS "SQL_DATA_TYPE"
 				, NULL::text AS "SQL_DATETIME_SUB"
 				, NULL::text AS "CHAR_OCTET_LENGTH"

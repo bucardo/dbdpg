@@ -11,6 +11,7 @@
   - Fix a memory leak when parsing returned arrays. Reported by Bálint Szilakszi.
     [GSM] (CPAN bug #44225)
   - Do proper dequoting of boolean arrays [Armando Santos, GSM] (CPAN bug #43768)
+  - Use pg_get_expr in column_info when available [Adam Sjøgren]
   - Fix minor bugs in POD docs. [Frank Wiegand] (CPAN bug #44242)
   - Fix minor bug in POD docs. [Tim Mattison]
 
