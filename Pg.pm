@@ -2059,6 +2059,8 @@ set a valid mode anyway (see L</pg_lo_open> for a list of valid modes).
 
 Upon failure it returns C<undef>. This function cannot be used if AutoCommit is enabled.
 
+The old way of calling large objects functions is deprecated: $dbh->func(.., 'lo_);
+
 =item lo_open
 
   $lobj_fd = $dbh->pg_lo_open($lobjId, $mode);
