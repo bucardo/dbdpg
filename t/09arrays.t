@@ -525,7 +525,7 @@ for my $test (split /\n\n/ => $array_tests_out) {
 
 	$t="Array test $msg : $input";
 	$SQL = qq{SELECT ARRAY[$input]};
-	my $result = '';
+	$result = '';
 	eval {
 		$result = $dbh->selectall_arrayref($SQL)->[0][0];
 	};

@@ -61,7 +61,6 @@ while (<$fh>) {
 		next;
 	}
 	last if /= Compiling/;
-	print "Checking $_\n";
 	if (m{^([\w\./-]+) \- }) {
 		$devfile{$1} = $.;
 		next;

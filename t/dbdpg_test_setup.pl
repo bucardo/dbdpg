@@ -231,7 +231,7 @@ sub connect_database {
 		}
 
 	  INITDB:
-		my ($info,$testport);
+		my $testport;
 		$helpconnect = 16;
 
 		## Use the initdb found by App::Info
@@ -326,7 +326,7 @@ sub connect_database {
 				$su = $testuser;
 				$founduser++;
 				$info = '';
-				my $olddir = getcwd;
+				$olddir = getcwd;
 				eval {
 					chdir $testdir;
 					$info = qx{su -m $testuser -c "$initdb --locale=C -E UTF8 -D $testdir/data 2>&1"};
@@ -422,7 +422,7 @@ sub connect_database {
 				$option = q{-o '-k socket'};
 			}
 			my $COM = qq{$pg_ctl $option -l $testdir/dbdpg_test.logfile -D $testdir/data start};
-			my $olddir = getcwd;
+		    $olddir = getcwd;
 			if ($su) {
 				chdir $testdir;
 				$COM = qq{su -m $su -c "$COM"};
@@ -527,7 +527,7 @@ sub connect_database {
 		$dbh->do("SET search_path TO $S");
 		$dbh->do('CREATE SEQUENCE dbd_pg_testsequence');
 		# If you add columns to this, please do not use reserved words!
-		my $SQL = q{
+		$SQL = q{
 CREATE TABLE dbd_pg_test (
   id         integer not null primary key,
   lii        integer unique not null default nextval('dbd_pg_testsequence'),

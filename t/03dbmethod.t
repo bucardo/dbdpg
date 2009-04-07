@@ -719,8 +719,6 @@ $stats = $sth->fetchall_arrayref;
 is_deeply ($stats, $correct_stats->{three_uo}, $t);
 
 {
-	my $stats;
-
 	$t="Correct stats output for $table1";
 	$sth = $dbh->statistics_info(undef,undef,$table1,undef,undef);
 	$stats = $sth->fetchall_arrayref;
@@ -1384,7 +1382,7 @@ SKIP: {
 	my ($fh,$filename) = File::Temp::tmpnam();
 	print $fh "abc\ndef";
 	close $fh or warn 'Failed to close temporary file';
-	my $handle = $dbh->pg_lo_import($filename);
+	$handle = $dbh->pg_lo_import($filename);
 	my $objid = $handle;
 	ok ($handle, $t);
 	unlink $filename;
@@ -1399,7 +1397,7 @@ SKIP: {
 	like ($handle, qr/^\d+$/o, $t);
 
 	$t='DB handle method "pg_lo_read" returns correct data after "pg_lo_import"';
-	my $data = '';
+	$data = '';
 	$result = $dbh->pg_lo_read($handle, $data, 100);
 	is ($result, 7, $t);
 	is ($data, "abc\ndef", $t);
@@ -1482,7 +1480,7 @@ SKIP: {
 	my ($fh,$filename) = File::Temp::tmpnam();
 	print $fh "abc\ndef";
 	close $fh or warn 'Failed to close temporary file';
-	my $handle = $dbh->pg_lo_import($filename);
+	$handle = $dbh->pg_lo_import($filename);
 	ok ($handle, $t);
 
 	$t='DB handle method "pg_lo_import" inserts correct data (AutoCommit on, begin_work not called)';
