@@ -1,6 +1,12 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.12.0
+2.12.1
+
+  - Fix minor Perl::Critic nags (CPAN bug #44704) (Debian #bug 521969) [GSM]
+  - Ensure we always set sqlstate inside of pg_st_prepare_statement
+    (CPAN bug #44732) [rweikusat@mssgmbh.com]
+
+2.12.0 Released March 28, 2009
 
   - Change large object interface from lo_* to pg_lo_* and make them accessible 
     via direct $dbh calls (e.g. $dbh->pg_lo_import instead of $dbh->func(..,'pg_lo_import').
