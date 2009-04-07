@@ -2113,9 +2113,8 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 
 		TRACE_PQPREPARE;
 		result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids);
+		status = _sqlstate(aTHX_ imp_dbh, result);
 		if (result) {
-			TRACE_PQRESULTSTATUS;
-			status = PQresultStatus(result);
 			TRACE_PQCLEAR;
 			PQclear(result);
 		}
