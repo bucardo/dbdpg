@@ -377,6 +377,10 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
 			strncpy(imp_dbh->sqlstate, "01000", 6); /* WARNING */
 			break;
 		case PGRES_FATAL_ERROR:
+			if (!result) { /* libpq returned null - some sort of connection problem */
+				strncpy(imp_dbh->sqlstate, "08000", 6); /* CONNECTION EXCEPTION */
+				break;
+			}
 		default:
 			strncpy(imp_dbh->sqlstate, "22000", 6); /* DATA EXCEPTION */
 			break;
