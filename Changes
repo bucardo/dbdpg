@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.12.1
+2.13.0
 
   - Ensure we always set sqlstate inside of pg_st_prepare_statement
     (CPAN bug #44732) [rweikusat@mssgmbh.com]
