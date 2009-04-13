@@ -8,6 +8,7 @@
     instead of the more generic 02000 ( "DATA EXCEPTION" ) (CPAN bug #44744)
     [rweikusat@mssgmbh.com]
   - Fix minor Perl::Critic nags (CPAN bug #44704) (Debian #bug 521969) [GSM]
+  - Clarify change of $dbh->{Name} behavior (CPAN bug 44985) [GSM]
 
 2.12.0 Released March 28, 2009
 

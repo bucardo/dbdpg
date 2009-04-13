@@ -3128,7 +3128,10 @@ minor, and revision together; version 8.0.1 would be C<80001>.
 
 =head3 B<Name> (string, read-only)
 
-Returns the name of the current database.
+Returns the name of the current database. This is the same as the DSN, without the 
+"dbi:Pg:" part. Before version 2.0.0, this only returned the bare database name 
+(e.g. 'foo'). From version 2.0.0 onwards, it returns the more correct 
+output (e.g. 'dbname=foo')
 
 =head3 B<Username> (string, read-only)
 
