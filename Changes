@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.13.0
+2.13.0 Released April 13, 2009
 
   - Ensure we always set sqlstate inside of pg_st_prepare_statement
     (CPAN bug #44732) [rweikusat@mssgmbh.com]
@@ -10,7 +10,7 @@
   - Fix minor Perl::Critic nags (CPAN bug #44704) (Debian #bug 521969) [GSM]
   - Clarify change of $dbh->{Name} behavior (CPAN bug 44985) [GSM]
 
-2.12.0 Released March 28, 2009
+2.12.0 Released March 28, 2009 (subversion r12627)
 
   - Change large object interface from lo_* to pg_lo_* and make them accessible 
     via direct $dbh calls (e.g. $dbh->pg_lo_import instead of $dbh->func(..,'pg_lo_import').
@@ -25,7 +25,7 @@
   - Fix minor bugs in POD docs. [Frank Wiegand] (CPAN bug #44242)
   - Fix minor bug in POD docs. [Tim Mattison]
 
-2.11.8 Released December 28, 2008
+2.11.8 Released December 28, 2008 (subversion r12161)
 
   - Fix minor bug in t/12placeholders.t test (CPAN bug #41723)
 
