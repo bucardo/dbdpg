@@ -1586,9 +1586,9 @@ SKIP: {
 			$t=qq{Ping fails after the child has exited ("InactiveDestroy" = $destroy)};
 			is ( $dbh->ping(), 0, $t);
 
-			$t='Failed ping returns a SQLSTATE code of 22000';
+			$t='Failed ping returns a SQLSTATE code of 08000';
 			my $state = $dbh->state();
-			is ($state, '22000', $t);
+			is ($state, '08000', $t);
 
 			$t=qq{pg_ping gives an error code of -2 after the child has exited ("InactiveDestroy" = $destroy)};
 			is ( $dbh->pg_ping(), -2,$t);
