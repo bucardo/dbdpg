@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.13.1
+
+  - Fix leak in pg_warn (CPAN bug #45163) [rweikusat@mssgmbh.com]
+
 2.13.0 Released April 13, 2009
 
   - Ensure we always set sqlstate inside of pg_st_prepare_statement

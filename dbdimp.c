@@ -277,6 +277,9 @@ static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
 static void pg_warn (void * arg, const char * message)
 {
 	dTHX;
+	SV *tmp;
+
+	tmp = sv_2mortal(newRV((SV *)arg));
 
 	/* This fun little bit is to prevent a core dump when the following occurs:
 	   client_min_messages is set to DEBUG3 or greater, and we exit without a disconnect.
@@ -289,11 +292,11 @@ static void pg_warn (void * arg, const char * message)
 	   like DBIc_WARN. There may be a better way of handling all this, and we may want to 
 	   default to always warn() - input welcome.
 	*/
-	if (!SvROK(SvMAGIC(SvRV(newRV((SV*)arg)))->mg_obj)) {
+	if (!SvROK(SvMAGIC(SvRV(tmp))->mg_obj)) {
 		return;
 	}
 	else {
-		D_imp_dbh( sv_2mortal(newRV((SV*)arg)) );
+		D_imp_dbh(tmp);
 
 		if (TSTART) TRC(DBILOGFP, "%sBegin pg_warn (message: %s DBIc_WARN: %d PrintWarn: %d)\n",
 						THEADER,
