@@ -7,6 +7,7 @@ use strict;
 use warnings;
 use Test::More;
 use lib 't','.';
+use DBI qw/:sql_types/;
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
@@ -307,6 +308,38 @@ SKIP: {
 	};
 	is ($@, q{}, $t);
 }
+
+my $val;
+$val = $dbh->quote('123', SQL_INTEGER);
+is ($val,123, 'GO?');
+
+eval {
+	$val = $dbh->quote('123abc', SQL_INTEGER);
+};
+like ($@, qr{Invalid integer}, 'Invalid integer fails to pass through');
+
+
+$val = $dbh->quote('123', SQL_INTEGER);
+is ($val,123, 'GO?');
+
+eval {
+	$val = $dbh->quote('123abc', SQL_FLOAT);
+};
+like ($@, qr{Invalid integer}, 'Invalid integer fails to pass through');
+
+exit;
+
+$dbh->rollback();
+## Test placeholerds plus binding
+$t='Bound placeholders enforce data types when not using server side prepares';
+$dbh->trace(0);
+$dbh->{pg_server_prepare} = 0;
+$sth = $dbh->prepare("SELECT (1+?+?)::integer");
+$sth->bind_param(1, 1, SQL_INTEGER);
+eval {
+	$sth->execute('10foo',20);
+};
+like ($@, qr{Invalid integer}, 'Invalid integer test 2');
 
 ## Begin custom type testing
 

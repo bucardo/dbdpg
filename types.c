@@ -94,14 +94,14 @@ static sql_type_info_t pg_types[] = {
  {PG_CIRCLE            ,"circle"           ,1,',',"circle_out"      ,quote_circle,dequote_string,{0},0},
  {PG_CSTRING           ,"cstring"          ,1,',',"cstring_out"     ,quote_string,dequote_string,{0},0},
  {PG_DATE              ,"date"             ,1,',',"date_out"        ,quote_string,dequote_string,{SQL_TYPE_DATE},0},
- {PG_FLOAT4            ,"float4"           ,1,',',"float4out"       ,null_quote  ,null_dequote  ,{0},2},
- {PG_FLOAT8            ,"float8"           ,1,',',"float8out"       ,null_quote  ,null_dequote  ,{SQL_FLOAT},2},
+ {PG_FLOAT4            ,"float4"           ,1,',',"float4out"       ,quote_float ,null_dequote  ,{0},2},
+ {PG_FLOAT8            ,"float8"           ,1,',',"float8out"       ,quote_float ,null_dequote  ,{SQL_FLOAT},2},
  {PG_GTSVECTOR         ,"gtsvector"        ,1,',',"gtsvectorout"    ,quote_string,dequote_string,{0},0},
  {PG_INET              ,"inet"             ,1,',',"inet_out"        ,quote_string,dequote_string,{0},0},
- {PG_INT2              ,"int2"             ,1,',',"int2out"         ,null_quote  ,null_dequote  ,{SQL_SMALLINT},1},
+ {PG_INT2              ,"int2"             ,1,',',"int2out"         ,quote_int   ,null_dequote  ,{SQL_SMALLINT},1},
  {PG_INT2VECTOR        ,"int2vector"       ,1,',',"int2vectorout"   ,quote_string,dequote_string,{0},0},
- {PG_INT4              ,"int4"             ,1,',',"int4out"         ,null_quote  ,null_dequote  ,{SQL_INTEGER},1},
- {PG_INT8              ,"int8"             ,1,',',"int8out"         ,null_quote  ,null_dequote  ,{SQL_BIGINT},0},
+ {PG_INT4              ,"int4"             ,1,',',"int4out"         ,quote_int   ,null_dequote  ,{SQL_INTEGER},1},
+ {PG_INT8              ,"int8"             ,1,',',"int8out"         ,quote_int   ,null_dequote  ,{SQL_BIGINT},0},
  {PG_INTERNAL          ,"internal"         ,1,',',"internal_out"    ,quote_string,dequote_string,{0},0},
  {PG_INTERVAL          ,"interval"         ,1,',',"interval_out"    ,quote_string,dequote_string,{0},0},
  {PG_LANGUAGE_HANDLER  ,"language_handler" ,1,',',"language_handler_out",quote_string,dequote_string,{0},0},
@@ -109,9 +109,9 @@ static sql_type_info_t pg_types[] = {
  {PG_LSEG              ,"lseg"             ,1,',',"lseg_out"        ,quote_geom  ,dequote_string,{0},0},
  {PG_MACADDR           ,"macaddr"          ,1,',',"macaddr_out"     ,quote_string,dequote_string,{0},0},
  {PG_MONEY             ,"money"            ,1,',',"cash_out"        ,quote_string,dequote_string,{0},0},
- {PG_NAME              ,"name"             ,1,',',"nameout"         ,null_quote  ,null_dequote  ,{SQL_VARCHAR},0},
- {PG_NUMERIC           ,"numeric"          ,1,',',"numeric_out"     ,null_quote  ,null_dequote  ,{SQL_DECIMAL},2},
- {PG_OID               ,"oid"              ,1,',',"oidout"          ,null_quote  ,null_dequote  ,{0},1},
+ {PG_NAME              ,"name"             ,1,',',"nameout"         ,quote_name  ,null_dequote  ,{SQL_VARCHAR},0},
+ {PG_NUMERIC           ,"numeric"          ,1,',',"numeric_out"     ,quote_float ,null_dequote  ,{SQL_DECIMAL},2},
+ {PG_OID               ,"oid"              ,1,',',"oidout"          ,quote_int   ,null_dequote  ,{0},1},
  {PG_OIDVECTOR         ,"oidvector"        ,1,',',"oidvectorout"    ,quote_string,dequote_string,{0},0},
  {PG_OPAQUE            ,"opaque"           ,1,',',"opaque_out"      ,quote_string,dequote_string,{0},0},
  {PG_PATH              ,"path"             ,1,',',"path_out"        ,quote_path  ,dequote_string,{0},0},
@@ -303,16 +303,16 @@ static sql_type_info_t sql_types[] = {
  {SQL_VARBINARY,"SQL_VARBINARY",1,',', "none", quote_bytea, dequote_bytea, {PG_BYTEA}, 0},
  {SQL_CHAR,"SQL_CHAR",1,',', "none", quote_string, dequote_char, {PG_CHAR}, 0},
  {SQL_TYPE_DATE,"SQL_TYPE_DATE",1,',', "none", quote_string, dequote_string, {PG_DATE}, 0},
- {SQL_FLOAT,"SQL_FLOAT",1,',', "none", null_quote, null_dequote, {PG_FLOAT8}, 2},
- {SQL_DOUBLE,"SQL_DOUBLE",1,',', "none", null_quote, null_dequote, {PG_FLOAT8}, 2},
- {SQL_NUMERIC,"SQL_NUMERIC",1,',', "none", null_quote, null_dequote, {PG_FLOAT8}, 2},
- {SQL_REAL,"SQL_REAL",1,',', "none", null_quote, null_dequote, {PG_FLOAT8}, 2},
- {SQL_SMALLINT,"SQL_SMALLINT",1,',', "none", null_quote, null_dequote, {PG_INT2}, 1},
- {SQL_TINYINT,"SQL_TINYINT",1,',', "none", null_quote, null_dequote, {PG_INT2}, 1},
- {SQL_INTEGER,"SQL_INTEGER",1,',', "none", null_quote, null_dequote, {PG_INT4}, 1},
- {SQL_BIGINT,"SQL_BIGINT",1,',', "none", null_quote, null_dequote, {PG_INT8}, 0},
- {SQL_VARCHAR,"SQL_VARCHAR",1,',', "none", null_quote, null_dequote, {PG_NAME}, 0},
- {SQL_DECIMAL,"SQL_DECIMAL",1,',', "none", null_quote, null_dequote, {PG_NUMERIC}, 2},
+ {SQL_FLOAT,"SQL_FLOAT",1,',', "none", quote_float, null_dequote, {PG_FLOAT8}, 2},
+ {SQL_DOUBLE,"SQL_DOUBLE",1,',', "none", quote_float, null_dequote, {PG_FLOAT8}, 2},
+ {SQL_NUMERIC,"SQL_NUMERIC",1,',', "none", quote_float, null_dequote, {PG_FLOAT8}, 2},
+ {SQL_REAL,"SQL_REAL",1,',', "none", quote_float, null_dequote, {PG_FLOAT8}, 2},
+ {SQL_SMALLINT,"SQL_SMALLINT",1,',', "none", quote_int, null_dequote, {PG_INT2}, 1},
+ {SQL_TINYINT,"SQL_TINYINT",1,',', "none", quote_int, null_dequote, {PG_INT2}, 1},
+ {SQL_INTEGER,"SQL_INTEGER",1,',', "none", quote_int, null_dequote, {PG_INT4}, 1},
+ {SQL_BIGINT,"SQL_BIGINT",1,',', "none", quote_int, null_dequote, {PG_INT8}, 0},
+ {SQL_VARCHAR,"SQL_VARCHAR",1,',', "none", quote_name, null_dequote, {PG_NAME}, 0},
+ {SQL_DECIMAL,"SQL_DECIMAL",1,',', "none", quote_float, null_dequote, {PG_NUMERIC}, 2},
  {SQL_LONGVARCHAR,"SQL_LONGVARCHAR",1,',', "none", quote_string, dequote_string, {PG_TEXT}, 0},
  {SQL_TYPE_TIME,"SQL_TYPE_TIME",1,',', "none", quote_string, dequote_string, {PG_TIME}, 0},
  {SQL_TIMESTAMP,"SQL_TIMESTAMP",1,',', "none", quote_string, dequote_string, {PG_TIMESTAMP}, 0},
@@ -722,14 +722,14 @@ bpchar   quote_string  dequote_char    SQL_CHAR                  1  0
 cid      quote_string  dequote_string  0                         0  0
 
 ## Things that get no quoting at all (e.g. numbers)
-int2     null_quote    null_dequote    SQL_SMALLINT|SQL_TINYINT  1  1
-int4     null_quote    null_dequote    SQL_INTEGER               1  1
-int8     null_quote    null_dequote    SQL_BIGINT                1  0
-float4   null_quote    null_dequote    0                         1  2
-float8   null_quote    null_dequote    SQL_FLOAT|SQL_DOUBLE|SQL_NUMERIC|SQL_REAL 1  2
-numeric  null_quote    null_dequote    SQL_DECIMAL               1  2
-oid      null_quote    null_dequote    0                         0  1
-name     null_quote    null_dequote    SQL_VARCHAR               0  0 ## XXX Wrong
+int2     quote_int     null_dequote    SQL_SMALLINT|SQL_TINYINT  1  1
+int4     quote_int     null_dequote    SQL_INTEGER               1  1
+int8     quote_int     null_dequote    SQL_BIGINT                1  0
+float4   quote_float   null_dequote    0                         1  2
+float8   quote_float   null_dequote    SQL_FLOAT|SQL_DOUBLE|SQL_NUMERIC|SQL_REAL 1  2
+numeric  quote_float   null_dequote    SQL_DECIMAL               1  2
+oid      quote_int     null_dequote    0                         0  1
+name     quote_name    null_dequote    SQL_VARCHAR               0  0 ## XXX Wrong
 
 ## Boolean
 bool     quote_bool    dequote_bool    SQL_BOOLEAN               1  3

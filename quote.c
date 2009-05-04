@@ -260,29 +260,75 @@ char * quote_bool(const char *value, STRLEN len, STRLEN *retlen, int estring)
 	return result;
 }
 
-
-
-char * quote_integer(const char *value, STRLEN len, STRLEN *retlen, int estring) 
+char * quote_int(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
-	char *result;
-	STRLEN max_len=6;
-        const int intval = *((const int*)value);
-	len = 0;
+	char * result;
 
-	New(0, result, max_len, char);
-	
-	if (0 == intval)
-		strncpy(result,"FALSE\0",6);
-	else if (1 == intval)
-		strncpy(result,"TRUE\0",5);
-	
-	*retlen = strlen(result);
-	assert(*retlen+1 <= max_len);
+	New(0, result, len+1, char);
+	strcpy(result,string);
+	*retlen = len;
+
+	while (len > 0 && *string != '\0') {
+		len--;
+		if (isdigit(*string) || ' ' == *string || '+' == *string || '-' == *string) {
+			*string++;
+			continue;			
+		}
+		croak("Invalid integer");
+	}
 
 	return result;
 }
 
+
+char * quote_float(const char *string, STRLEN len, STRLEN *retlen, int estring)
+{
+	dTHX;
+	char * result;
+	double val;
+
+	/*
+	  We do minimal checking here, and let Postgres do the heavy lifting 
+	  Out job is to simply filter out bad characters
+	*/
+
+	while (*string != '\0' && isspace((unsigned char) *string))
+		*string++;
+
+	errno = 0;
+	val = strtod(string, &result);
+
+	if (result == string || errno != 0) {
+		/* Allow exactly three strings, otherwise bail */
+		if (0 != strncasecmp(string, "NaN", 3)
+			&& 0 != strncasecmp(string, "Infinity", 8)
+			&& 0 != strncasecmp(string, "-Infinity", 9)
+			) {
+			croak("Invalid number");
+		}
+	}
+
+	New(0, result, len+1, char);
+	strcpy(result,string);
+	*retlen = len;
+
+	return result;
+}
+
+char * quote_name(const char *string, STRLEN len, STRLEN *retlen, int estring)
+{
+	dTHX;
+	char * result;
+
+	croak ("Not handled yet");
+
+	New(0, result, len+1, char);
+	strcpy(result,string);
+	*retlen = len;
+
+	return result;
+}
 
 
 void dequote_char(const char *string, STRLEN *retlen, int estring)
