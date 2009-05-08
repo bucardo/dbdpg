@@ -91,36 +91,39 @@ if (defined $major_ver) {
 	$defaultport = $conf =~ /with-pgport=(\d+)/ ? $1 : 5432;
 }
 
-if ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and !$ENV{POSTGRES_HOME}) {
-    $POSTGRES_INCLUDE = $pg->inc_dir;
-    $POSTGRES_LIB     = $pg->lib_dir;
-} elsif ((!$ENV{POSTGRES_INCLUDE} or !$ENV{POSTGRES_LIB}) and $ENV{POSTGRES_HOME}) {
-    $POSTGRES_INCLUDE = "$ENV{POSTGRES_HOME}/include";
-    $POSTGRES_LIB     = "$ENV{POSTGRES_HOME}/lib";
-} else {
-    $POSTGRES_INCLUDE = "$ENV{POSTGRES_INCLUDE}";
-    $POSTGRES_LIB     = "$ENV{POSTGRES_LIB}";
-}
+# We set POSTGRES_INCLUDE and POSTGRES_LIB from the first found of:
+# 1. environment variable
+# 2. App::Info::RDBMS::PostgreSQL information
+# 3. subdirectory of $ENV{POSTGRES_HOME}
+
+$POSTGRES_INCLUDE = $ENV{POSTGRES_INCLUDE} || $pg->inc_dir || "$ENV{POSTGRES_HOME}/include";
+
+$POSTGRES_LIB = $ENV{POSTGRES_LIB} || $pg->lib_dir || "$ENV{POSTGRES_HOME}/lib";
 
 my $os = $^O;
 print "PostgreSQL version: $serverversion (default port: $defaultport)\n";
 my $showhome = $ENV{POSTGRES_HOME} || '(not set)';
 print "POSTGRES_HOME: $showhome\n";
-my $showinc = $ENV{POSTGRES_INCLUDE} || '(not set)';
+my $showinc = $POSTGRES_INCLUDE || '(not set)';
 print "POSTGRES_INCLUDE: $showinc\n";
-my $showlib = $ENV{POSTGRES_LIB} || '(not set)';
+my $showlib = $POSTGRES_LIB || '(not set)';
 print "POSTGRES_LIB: $showlib\n";
 print "OS: $os\n";
 
-my $baddir;
-for my $d (qw/HOME INCLUDE/) {
-	next if ! exists $ENV{"POSTGRES_$d"} or ! length $ENV{"POSTGRES_$d"};
-	if (! -d $ENV{"POSTGRES_$d"}) {
-		printf "The environment variable %s points to a non-existent directory: %s\n",
-			"POSTGRES_$d", $ENV{"POSTGRES_$d"};
-		$baddir++;
-	}
+my $baddir = 0;
+sub does_path_exist {
+	my ($path_name, $path) = @_;
+
+	return if ! defined $path or ! length $path or -d $path;
+	printf "The value of %s points to a non-existent directory: %s\n",
+		$path_name, $path;
+	$baddir++;
 }
+
+does_path_exist('POSTGRES_HOME', $ENV{POSTGRES_HOME});
+does_path_exist('POSTGRES_LIB',  $POSTGRES_LIB);
+does_path_exist('POSTGRES_INCLUDE',  $POSTGRES_INCLUDE);
+
 if ($baddir) {
 	print "Cannot build unless the directories exist, exiting.\n";
 	exit 0;
