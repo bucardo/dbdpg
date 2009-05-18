@@ -546,8 +546,8 @@ SKIP: {
 	skip ('Encode module is needed for unicode tests', 14) if $@;
 
 	my $server_encoding = $dbh->selectall_arrayref('SHOW server_encoding')->[0][0];
-	skip ('Cannot test unicode with a LATIN1 database', 14)
-		if $server_encoding eq 'LATIN1';
+	skip ('Cannot reliably test unicode without a UTF8 database', 14)
+		if $server_encoding ne 'UTF8';
 
 	$t='String should be UTF-8';
 	local $dbh->{pg_enable_utf8} = 1;
