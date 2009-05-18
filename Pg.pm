@@ -834,6 +834,10 @@ use 5.006001;
 
 		## PK: catalog, schema, table, FK: catalog, schema, table, attr
 
+		my $oldname = $dbh->{FetchHashKeyName};
+
+		local $dbh->{FetchHashKeyName} = 'NAME_lc';
+
 		## Each of these may be undef or empty
 		my $pschema = $_[1] || '';
 		my $ptable = $_[2] || '';
@@ -1060,6 +1064,20 @@ use 5.006001;
 			KEY_SEQ UPDATE_RULE DELETE_RULE FK_NAME PK_NAME
 			DEFERABILITY UNIQUE_OR_PRIMARY PK_DATA_TYPE FKDATA_TYPE
 		));
+
+		if ($oldname eq 'NAME_lc') {
+			if ($odbc) {
+				for my $col (@ODBC_cols) {
+					$col = lc $col;
+				}
+			}
+			else {
+				for my $col (@CLI_cols) {
+					$col = lc $col;
+				}
+			}
+		}
+
 		return _prepare_from_data('foreign_key_info', $fkinfo, $odbc ? \@ODBC_cols : \@CLI_cols);
 
 	}

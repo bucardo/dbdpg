@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.13.2
+
+  - Make foreign_key_info() respect FetchHashKeyName (CPAN bug #46103) [GSM]
+
 2.13.1 Released April 23, 2009 (subversion r12713)
 
   - Fix leak in pg_warn (CPAN bug #45163) [rweikusat@mssgmbh.com]

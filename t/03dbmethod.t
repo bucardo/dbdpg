@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 521;
+plan tests => 524;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -1019,6 +1019,28 @@ my @fk6 = @$fk5; my $fk6 = \@fk6; $fk6->[3] = 'a'; $fk6->[7] = 'f3'; $fk6->[8] =
 my @fk7 = @$fk5; my $fk7 = \@fk7; $fk7->[3] = 'b'; $fk7->[7] = 'f2'; $fk7->[8] = 2;
 $expected = [$fk3,$fk1,$fk2,$fk5,$fk6,$fk7];
 is_deeply ($result, $expected, $t);
+
+$t='DB handle method "foreign_key_info" works with FetchHashKeyName NAME_lc';
+$dbh->{FetchHashKeyName} = 'NAME_lc';
+$sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,$table2);
+$sth->execute();
+$result = $sth->fetchrow_hashref();
+$sth->finish();
+ok (exists $result->{'fk_table_name'}, $t);
+
+$t='DB handle method "foreign_key_info" works with FetchHashKeyName NAME_uc';
+$dbh->{FetchHashKeyName} = 'NAME_uc';
+$sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,$table2);
+$sth->execute();
+$result = $sth->fetchrow_hashref();
+ok (exists $result->{'FK_TABLE_NAME'}, $t);
+
+$t='DB handle method "foreign_key_info" works with FetchHashKeyName NAME';
+$dbh->{FetchHashKeyName} = 'NAME';
+$sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,$table2);
+$sth->execute();
+$result = $sth->fetchrow_hashref();
+ok (exists $result->{'FK_TABLE_NAME'}, $t);
 
 # Clean everything up
 {
