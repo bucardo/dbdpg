@@ -210,36 +210,38 @@ make install_vendor INSTALLVENDORBIN=/tmp
 
 * Strawberry Perl issues:
 
-One file change only needed to make in DBD::Pg source is:
- 
-Makefile.PL -
-add 'use DBI::DBD;'.
-comment out "unlink $output->{MAKEFILE};" at line 247
+You'll need to create a .a library from the .dll before 
+running the Makefile.PL, by running pexports and dlltool
+as shown below, within the C:\Program Files\PostgreSQL\8.3\bin
+directory:
 
-set required environment:
+  pexports libpq.dll > libpq.def
+  dlltool -dllname libpq.dll --def libpq.def --output-lib ..\lib\libpq.a
 
-set PATH=C:\PROGRA~1\PostgreSQL\8.3\bin;%PATH%
-set DBI_DSN=dbi:Pg:dbname=testdb
-set DBI_USER=username
-set DBI_PASS=password
-set POSTGRES_HOME=C:/PROGRA~1/PostgreSQL/8.3
-set POSTGRES_INCLUDE=C:/PROGRA~1/PostgreSQL/8.3/include
-set POSTGRES_LIB=C:/PROGRA~1/PostgreSQL/8.3/lib
+Then you'll need to set the required environment:
 
+  set PATH=C:\PROGRA~1\PostgreSQL\8.3\bin;%PATH%
+  set DBI_DSN=dbi:Pg:dbname=testdb
+  set DBI_USER=*PostgreSQL username*
+  set DBI_PASS=*PostgreSQL password*
+  set POSTGRES_HOME=C:/PROGRA~1/PostgreSQL/8.3
+  set POSTGRES_INCLUDE=C:/PROGRA~1/PostgreSQL/8.3/include
+  set POSTGRES_LIB=C:/PROGRA~1/PostgreSQL/8.3/lib
 
-perl Makefile.PL
+Note that the username and password are the ones for PostgreSQL, NOT the 
+ones for the Windows account that the PostgreSQL installer creates to run 
+the service safely.
+  
+(You may wish to set these variables on the system level, by going to
+Control Panel > System > Advanced tab > Environment Variables button and
+adding the environment variables there.)
+  
+Now the Makefile.PL can be ran:
 
-Now here's the ugly bit: edited both EXTRALIBS and LDLOADLIBS in the resulting 
-Makefile to include
-C:\PROGRA~1\PostgreSQL\8.3\lib\libpq.lib
-
-then
-
-dmake
-dmake test
-
-all works fine.
-
+  perl Makefile.PL
+  dmake
+  dmake test
+  dmake install
 
 * SGI issues:
 

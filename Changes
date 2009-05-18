@@ -3,6 +3,8 @@
 2.13.2
 
   - Make foreign_key_info() respect FetchHashKeyName (CPAN bug #46103) [GSM]
+  - Fix problem with foreign_key_info() and NAME_uc (CPAN bug #46109) [GSM]
+  - Improve Win32 README notes [Curtis Jewell]
 
 2.13.1 Released April 23, 2009 (subversion r12713)
 
