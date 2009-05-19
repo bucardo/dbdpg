@@ -286,24 +286,26 @@ char * quote_float(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
 	char * result;
-	double val;
+	char * endpoint;
+	float val;
 
 	/*
-	  We do minimal checking here, and let Postgres do the heavy lifting 
-	  Out job is to simply filter out bad characters
+	  We let strtof do the heavy lifting here, despite it having some 
+	  issues according to the PG source
 	*/
 
-	while (*string != '\0' && isspace((unsigned char) *string))
-		*string++;
+	/* Empty string is always an error. Here for dumb compilers. */
+	if (len<1)
+		croak("Invalid number");
 
 	errno = 0;
-	val = strtod(string, &result);
+	val = strtof(string, &endpoint);
 
-	if (result == string || errno != 0) {
-		/* Allow exactly three strings, otherwise bail */
-		if (0 != strncasecmp(string, "NaN", 3)
-			&& 0 != strncasecmp(string, "Infinity", 8)
-			&& 0 != strncasecmp(string, "-Infinity", 9)
+	if (0!=*endpoint || errno != 0) {
+		/* Just in case the compiler used has a crappy strtof */
+		if (0 != strncasecmp(string, "NaN", 4)
+			&& 0 != strncasecmp(string, "Infinity", 9)
+			&& 0 != strncasecmp(string, "-Infinity", 10)
 			) {
 			croak("Invalid number");
 		}
@@ -320,16 +322,66 @@ char * quote_name(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
 	char * result;
+	const char *ptr;
+	int nquotes = 0;
+	int x;
+	bool safe;
 
-	croak ("Not handled yet");
+	/* We throw double quotes around the whole thing, if:
+	   1. It starts with anything other than [a-z_]
+	   OR
+	   2. It has characters other than [a-z_0-9]
+	   OR
+	   3. It is a reserved word (e.g. `user`)
+	*/
 
-	New(0, result, len+1, char);
-	strcpy(result,string);
-	*retlen = len;
+	/* 1. It starts with anything other than [a-z_] */
+	safe = ((string[0] >= 'a' && string[0] <= 'z') || '_' == string[0]);
+
+	/* 2. It has characters other than [a-z_0-9] (also count number of quotes) */	
+	for (ptr = string; *ptr; ptr++) {
+
+		char ch = *ptr;
+
+		if (
+			(ch < 'a' && ch > 'z')
+			&& 
+			(ch < '0' && ch > '9')
+			&&
+			ch != '_') {
+			safe = DBDPG_FALSE;
+			if (ch == '"')
+				nquotes++;
+		}
+	}
+
+	/* 3. Is it a reserved word (e.g. `user`) */
+	if (safe) {
+		if (! is_keyword(string)) {
+			New(0, result, len+1, char);
+			strcpy(result,string);
+			*retlen = len;
+			return result;
+		}
+	}
+
+	/* Need room for the string, the outer quotes, any inner quotes (which get doubled) and \0 */
+	*retlen = len + 2 + nquotes;
+	New(0, result, *retlen + 1, char);
+
+	x=0;
+	result[x++] = '"';
+	for (ptr = string; *ptr; ptr++) {
+		char ch = *ptr;
+		result[x++] = ch;
+		if (ch == '"')
+			result[x++] = '"';
+	}
+	result[x++] = '"';
+	result[x] = '\0';
 
 	return result;
 }
-
 
 void dequote_char(const char *string, STRLEN *retlen, int estring)
 {
@@ -419,7 +471,6 @@ void dequote_bool(char *string, STRLEN *retlen, int estring)
 }
 
 
-
 void null_dequote(const char *string, STRLEN *retlen, int estring)
 {
 	dTHX;
@@ -427,4 +478,499 @@ void null_dequote(const char *string, STRLEN *retlen, int estring)
 
 }
 
+bool is_keyword(const char *string)
+{
+
+	int max_keyword_length = 17;
+	STRLEN len;
+	int i;
+	char word[64];
+
+	len = strlen(string);
+	if (len > max_keyword_length || len > 64) {
+		return DBDPG_FALSE;
+	}
+
+	/* Because of locale issues, we manually downcase A-Z only */
+	for (i = 0; i < len; i++) {
+		char ch = string[i];
+		if (ch >= 'A' && ch <= 'Z')
+			ch += 'a' - 'A';
+		word[i] = ch;
+	}
+	word[len] = '\0';
+
+	/* Check for each reserved word */
+    if (0==strcmp(word, "abort")) return DBDPG_TRUE;
+    if (0==strcmp(word, "absolute")) return DBDPG_TRUE;
+    if (0==strcmp(word, "access")) return DBDPG_TRUE;
+    if (0==strcmp(word, "action")) return DBDPG_TRUE;
+    if (0==strcmp(word, "add")) return DBDPG_TRUE;
+    if (0==strcmp(word, "admin")) return DBDPG_TRUE;
+    if (0==strcmp(word, "after")) return DBDPG_TRUE;
+    if (0==strcmp(word, "aggregate")) return DBDPG_TRUE;
+    if (0==strcmp(word, "all")) return DBDPG_TRUE;
+    if (0==strcmp(word, "also")) return DBDPG_TRUE;
+    if (0==strcmp(word, "alter")) return DBDPG_TRUE;
+    if (0==strcmp(word, "always")) return DBDPG_TRUE;
+    if (0==strcmp(word, "analyse")) return DBDPG_TRUE;
+    if (0==strcmp(word, "analyze")) return DBDPG_TRUE;
+    if (0==strcmp(word, "and")) return DBDPG_TRUE;
+    if (0==strcmp(word, "any")) return DBDPG_TRUE;
+    if (0==strcmp(word, "array")) return DBDPG_TRUE;
+    if (0==strcmp(word, "as")) return DBDPG_TRUE;
+    if (0==strcmp(word, "asc")) return DBDPG_TRUE;
+    if (0==strcmp(word, "assertion")) return DBDPG_TRUE;
+    if (0==strcmp(word, "assignment")) return DBDPG_TRUE;
+    if (0==strcmp(word, "asymmetric")) return DBDPG_TRUE;
+    if (0==strcmp(word, "at")) return DBDPG_TRUE;
+    if (0==strcmp(word, "authorization")) return DBDPG_TRUE;
+    if (0==strcmp(word, "backward")) return DBDPG_TRUE;
+    if (0==strcmp(word, "before")) return DBDPG_TRUE;
+    if (0==strcmp(word, "begin")) return DBDPG_TRUE;
+    if (0==strcmp(word, "between")) return DBDPG_TRUE;
+    if (0==strcmp(word, "bigint")) return DBDPG_TRUE;
+    if (0==strcmp(word, "binary")) return DBDPG_TRUE;
+    if (0==strcmp(word, "bit")) return DBDPG_TRUE;
+    if (0==strcmp(word, "boolean")) return DBDPG_TRUE;
+    if (0==strcmp(word, "both")) return DBDPG_TRUE;
+    if (0==strcmp(word, "by")) return DBDPG_TRUE;
+    if (0==strcmp(word, "cache")) return DBDPG_TRUE;
+    if (0==strcmp(word, "called")) return DBDPG_TRUE;
+    if (0==strcmp(word, "cascade")) return DBDPG_TRUE;
+    if (0==strcmp(word, "cascaded")) return DBDPG_TRUE;
+    if (0==strcmp(word, "case")) return DBDPG_TRUE;
+    if (0==strcmp(word, "cast")) return DBDPG_TRUE;
+    if (0==strcmp(word, "catalog")) return DBDPG_TRUE;
+    if (0==strcmp(word, "chain")) return DBDPG_TRUE;
+    if (0==strcmp(word, "char")) return DBDPG_TRUE;
+    if (0==strcmp(word, "character")) return DBDPG_TRUE;
+    if (0==strcmp(word, "characteristics")) return DBDPG_TRUE;
+    if (0==strcmp(word, "check")) return DBDPG_TRUE;
+    if (0==strcmp(word, "checkpoint")) return DBDPG_TRUE;
+    if (0==strcmp(word, "class")) return DBDPG_TRUE;
+    if (0==strcmp(word, "close")) return DBDPG_TRUE;
+    if (0==strcmp(word, "cluster")) return DBDPG_TRUE;
+    if (0==strcmp(word, "coalesce")) return DBDPG_TRUE;
+    if (0==strcmp(word, "collate")) return DBDPG_TRUE;
+    if (0==strcmp(word, "column")) return DBDPG_TRUE;
+    if (0==strcmp(word, "comment")) return DBDPG_TRUE;
+    if (0==strcmp(word, "commit")) return DBDPG_TRUE;
+    if (0==strcmp(word, "committed")) return DBDPG_TRUE;
+    if (0==strcmp(word, "concurrently")) return DBDPG_TRUE;
+    if (0==strcmp(word, "configuration")) return DBDPG_TRUE;
+    if (0==strcmp(word, "connection")) return DBDPG_TRUE;
+    if (0==strcmp(word, "constraint")) return DBDPG_TRUE;
+    if (0==strcmp(word, "constraints")) return DBDPG_TRUE;
+    if (0==strcmp(word, "content")) return DBDPG_TRUE;
+    if (0==strcmp(word, "continue")) return DBDPG_TRUE;
+    if (0==strcmp(word, "conversion")) return DBDPG_TRUE;
+    if (0==strcmp(word, "copy")) return DBDPG_TRUE;
+    if (0==strcmp(word, "cost")) return DBDPG_TRUE;
+    if (0==strcmp(word, "create")) return DBDPG_TRUE;
+    if (0==strcmp(word, "createdb")) return DBDPG_TRUE;
+    if (0==strcmp(word, "createrole")) return DBDPG_TRUE;
+    if (0==strcmp(word, "createuser")) return DBDPG_TRUE;
+    if (0==strcmp(word, "cross")) return DBDPG_TRUE;
+    if (0==strcmp(word, "csv")) return DBDPG_TRUE;
+    if (0==strcmp(word, "current")) return DBDPG_TRUE;
+    if (0==strcmp(word, "current_catalog")) return DBDPG_TRUE;
+    if (0==strcmp(word, "current_date")) return DBDPG_TRUE;
+    if (0==strcmp(word, "current_role")) return DBDPG_TRUE;
+    if (0==strcmp(word, "current_schema")) return DBDPG_TRUE;
+    if (0==strcmp(word, "current_time")) return DBDPG_TRUE;
+    if (0==strcmp(word, "current_timestamp")) return DBDPG_TRUE;
+    if (0==strcmp(word, "current_user")) return DBDPG_TRUE;
+    if (0==strcmp(word, "cursor")) return DBDPG_TRUE;
+    if (0==strcmp(word, "cycle")) return DBDPG_TRUE;
+    if (0==strcmp(word, "data")) return DBDPG_TRUE;
+    if (0==strcmp(word, "database")) return DBDPG_TRUE;
+    if (0==strcmp(word, "day")) return DBDPG_TRUE;
+    if (0==strcmp(word, "deallocate")) return DBDPG_TRUE;
+    if (0==strcmp(word, "dec")) return DBDPG_TRUE;
+    if (0==strcmp(word, "decimal")) return DBDPG_TRUE;
+    if (0==strcmp(word, "declare")) return DBDPG_TRUE;
+    if (0==strcmp(word, "default")) return DBDPG_TRUE;
+    if (0==strcmp(word, "defaults")) return DBDPG_TRUE;
+    if (0==strcmp(word, "deferrable")) return DBDPG_TRUE;
+    if (0==strcmp(word, "deferred")) return DBDPG_TRUE;
+    if (0==strcmp(word, "definer")) return DBDPG_TRUE;
+    if (0==strcmp(word, "delete")) return DBDPG_TRUE;
+    if (0==strcmp(word, "delimiter")) return DBDPG_TRUE;
+    if (0==strcmp(word, "delimiters")) return DBDPG_TRUE;
+    if (0==strcmp(word, "desc")) return DBDPG_TRUE;
+    if (0==strcmp(word, "dictionary")) return DBDPG_TRUE;
+    if (0==strcmp(word, "disable")) return DBDPG_TRUE;
+    if (0==strcmp(word, "discard")) return DBDPG_TRUE;
+    if (0==strcmp(word, "distinct")) return DBDPG_TRUE;
+    if (0==strcmp(word, "do")) return DBDPG_TRUE;
+    if (0==strcmp(word, "document")) return DBDPG_TRUE;
+    if (0==strcmp(word, "domain")) return DBDPG_TRUE;
+    if (0==strcmp(word, "double")) return DBDPG_TRUE;
+    if (0==strcmp(word, "drop")) return DBDPG_TRUE;
+    if (0==strcmp(word, "each")) return DBDPG_TRUE;
+    if (0==strcmp(word, "else")) return DBDPG_TRUE;
+    if (0==strcmp(word, "enable")) return DBDPG_TRUE;
+    if (0==strcmp(word, "encoding")) return DBDPG_TRUE;
+    if (0==strcmp(word, "encrypted")) return DBDPG_TRUE;
+    if (0==strcmp(word, "end")) return DBDPG_TRUE;
+    if (0==strcmp(word, "enum")) return DBDPG_TRUE;
+    if (0==strcmp(word, "escape")) return DBDPG_TRUE;
+    if (0==strcmp(word, "except")) return DBDPG_TRUE;
+    if (0==strcmp(word, "excluding")) return DBDPG_TRUE;
+    if (0==strcmp(word, "exclusive")) return DBDPG_TRUE;
+    if (0==strcmp(word, "execute")) return DBDPG_TRUE;
+    if (0==strcmp(word, "exists")) return DBDPG_TRUE;
+    if (0==strcmp(word, "explain")) return DBDPG_TRUE;
+    if (0==strcmp(word, "external")) return DBDPG_TRUE;
+    if (0==strcmp(word, "extract")) return DBDPG_TRUE;
+    if (0==strcmp(word, "false")) return DBDPG_TRUE;
+    if (0==strcmp(word, "family")) return DBDPG_TRUE;
+    if (0==strcmp(word, "fetch")) return DBDPG_TRUE;
+    if (0==strcmp(word, "first")) return DBDPG_TRUE;
+    if (0==strcmp(word, "float")) return DBDPG_TRUE;
+    if (0==strcmp(word, "following")) return DBDPG_TRUE;
+    if (0==strcmp(word, "for")) return DBDPG_TRUE;
+    if (0==strcmp(word, "force")) return DBDPG_TRUE;
+    if (0==strcmp(word, "foreign")) return DBDPG_TRUE;
+    if (0==strcmp(word, "forward")) return DBDPG_TRUE;
+    if (0==strcmp(word, "freeze")) return DBDPG_TRUE;
+    if (0==strcmp(word, "from")) return DBDPG_TRUE;
+    if (0==strcmp(word, "full")) return DBDPG_TRUE;
+    if (0==strcmp(word, "function")) return DBDPG_TRUE;
+    if (0==strcmp(word, "global")) return DBDPG_TRUE;
+    if (0==strcmp(word, "grant")) return DBDPG_TRUE;
+    if (0==strcmp(word, "granted")) return DBDPG_TRUE;
+    if (0==strcmp(word, "greatest")) return DBDPG_TRUE;
+    if (0==strcmp(word, "group")) return DBDPG_TRUE;
+    if (0==strcmp(word, "handler")) return DBDPG_TRUE;
+    if (0==strcmp(word, "having")) return DBDPG_TRUE;
+    if (0==strcmp(word, "header")) return DBDPG_TRUE;
+    if (0==strcmp(word, "hold")) return DBDPG_TRUE;
+    if (0==strcmp(word, "hour")) return DBDPG_TRUE;
+    if (0==strcmp(word, "identity")) return DBDPG_TRUE;
+    if (0==strcmp(word, "if")) return DBDPG_TRUE;
+    if (0==strcmp(word, "ilike")) return DBDPG_TRUE;
+    if (0==strcmp(word, "immediate")) return DBDPG_TRUE;
+    if (0==strcmp(word, "immutable")) return DBDPG_TRUE;
+    if (0==strcmp(word, "implicit")) return DBDPG_TRUE;
+    if (0==strcmp(word, "in")) return DBDPG_TRUE;
+    if (0==strcmp(word, "including")) return DBDPG_TRUE;
+    if (0==strcmp(word, "increment")) return DBDPG_TRUE;
+    if (0==strcmp(word, "index")) return DBDPG_TRUE;
+    if (0==strcmp(word, "indexes")) return DBDPG_TRUE;
+    if (0==strcmp(word, "inherit")) return DBDPG_TRUE;
+    if (0==strcmp(word, "inherits")) return DBDPG_TRUE;
+    if (0==strcmp(word, "initially")) return DBDPG_TRUE;
+    if (0==strcmp(word, "inner")) return DBDPG_TRUE;
+    if (0==strcmp(word, "inout")) return DBDPG_TRUE;
+    if (0==strcmp(word, "input")) return DBDPG_TRUE;
+    if (0==strcmp(word, "insensitive")) return DBDPG_TRUE;
+    if (0==strcmp(word, "insert")) return DBDPG_TRUE;
+    if (0==strcmp(word, "instead")) return DBDPG_TRUE;
+    if (0==strcmp(word, "int")) return DBDPG_TRUE;
+    if (0==strcmp(word, "integer")) return DBDPG_TRUE;
+    if (0==strcmp(word, "intersect")) return DBDPG_TRUE;
+    if (0==strcmp(word, "interval")) return DBDPG_TRUE;
+    if (0==strcmp(word, "into")) return DBDPG_TRUE;
+    if (0==strcmp(word, "invoker")) return DBDPG_TRUE;
+    if (0==strcmp(word, "is")) return DBDPG_TRUE;
+    if (0==strcmp(word, "isnull")) return DBDPG_TRUE;
+    if (0==strcmp(word, "isolation")) return DBDPG_TRUE;
+    if (0==strcmp(word, "join")) return DBDPG_TRUE;
+    if (0==strcmp(word, "key")) return DBDPG_TRUE;
+    if (0==strcmp(word, "lancompiler")) return DBDPG_TRUE;
+    if (0==strcmp(word, "language")) return DBDPG_TRUE;
+    if (0==strcmp(word, "large")) return DBDPG_TRUE;
+    if (0==strcmp(word, "last")) return DBDPG_TRUE;
+    if (0==strcmp(word, "lc_collate")) return DBDPG_TRUE;
+    if (0==strcmp(word, "lc_ctype")) return DBDPG_TRUE;
+    if (0==strcmp(word, "leading")) return DBDPG_TRUE;
+    if (0==strcmp(word, "least")) return DBDPG_TRUE;
+    if (0==strcmp(word, "left")) return DBDPG_TRUE;
+    if (0==strcmp(word, "level")) return DBDPG_TRUE;
+    if (0==strcmp(word, "like")) return DBDPG_TRUE;
+    if (0==strcmp(word, "limit")) return DBDPG_TRUE;
+    if (0==strcmp(word, "listen")) return DBDPG_TRUE;
+    if (0==strcmp(word, "load")) return DBDPG_TRUE;
+    if (0==strcmp(word, "local")) return DBDPG_TRUE;
+    if (0==strcmp(word, "localtime")) return DBDPG_TRUE;
+    if (0==strcmp(word, "localtimestamp")) return DBDPG_TRUE;
+    if (0==strcmp(word, "location")) return DBDPG_TRUE;
+    if (0==strcmp(word, "lock")) return DBDPG_TRUE;
+    if (0==strcmp(word, "login")) return DBDPG_TRUE;
+    if (0==strcmp(word, "mapping")) return DBDPG_TRUE;
+    if (0==strcmp(word, "match")) return DBDPG_TRUE;
+    if (0==strcmp(word, "maxvalue")) return DBDPG_TRUE;
+    if (0==strcmp(word, "minute")) return DBDPG_TRUE;
+    if (0==strcmp(word, "minvalue")) return DBDPG_TRUE;
+    if (0==strcmp(word, "mode")) return DBDPG_TRUE;
+    if (0==strcmp(word, "month")) return DBDPG_TRUE;
+    if (0==strcmp(word, "move")) return DBDPG_TRUE;
+    if (0==strcmp(word, "name")) return DBDPG_TRUE;
+    if (0==strcmp(word, "names")) return DBDPG_TRUE;
+    if (0==strcmp(word, "national")) return DBDPG_TRUE;
+    if (0==strcmp(word, "natural")) return DBDPG_TRUE;
+    if (0==strcmp(word, "nchar")) return DBDPG_TRUE;
+    if (0==strcmp(word, "new")) return DBDPG_TRUE;
+    if (0==strcmp(word, "next")) return DBDPG_TRUE;
+    if (0==strcmp(word, "no")) return DBDPG_TRUE;
+    if (0==strcmp(word, "nocreatedb")) return DBDPG_TRUE;
+    if (0==strcmp(word, "nocreaterole")) return DBDPG_TRUE;
+    if (0==strcmp(word, "nocreateuser")) return DBDPG_TRUE;
+    if (0==strcmp(word, "noinherit")) return DBDPG_TRUE;
+    if (0==strcmp(word, "nologin")) return DBDPG_TRUE;
+    if (0==strcmp(word, "none")) return DBDPG_TRUE;
+    if (0==strcmp(word, "nosuperuser")) return DBDPG_TRUE;
+    if (0==strcmp(word, "not")) return DBDPG_TRUE;
+    if (0==strcmp(word, "nothing")) return DBDPG_TRUE;
+    if (0==strcmp(word, "notify")) return DBDPG_TRUE;
+    if (0==strcmp(word, "notnull")) return DBDPG_TRUE;
+    if (0==strcmp(word, "nowait")) return DBDPG_TRUE;
+    if (0==strcmp(word, "null")) return DBDPG_TRUE;
+    if (0==strcmp(word, "nullif")) return DBDPG_TRUE;
+    if (0==strcmp(word, "nulls")) return DBDPG_TRUE;
+    if (0==strcmp(word, "numeric")) return DBDPG_TRUE;
+    if (0==strcmp(word, "object")) return DBDPG_TRUE;
+    if (0==strcmp(word, "of")) return DBDPG_TRUE;
+    if (0==strcmp(word, "off")) return DBDPG_TRUE;
+    if (0==strcmp(word, "offset")) return DBDPG_TRUE;
+    if (0==strcmp(word, "oids")) return DBDPG_TRUE;
+    if (0==strcmp(word, "old")) return DBDPG_TRUE;
+    if (0==strcmp(word, "on")) return DBDPG_TRUE;
+    if (0==strcmp(word, "only")) return DBDPG_TRUE;
+    if (0==strcmp(word, "operator")) return DBDPG_TRUE;
+    if (0==strcmp(word, "option")) return DBDPG_TRUE;
+    if (0==strcmp(word, "options")) return DBDPG_TRUE;
+    if (0==strcmp(word, "or")) return DBDPG_TRUE;
+    if (0==strcmp(word, "order")) return DBDPG_TRUE;
+    if (0==strcmp(word, "out")) return DBDPG_TRUE;
+    if (0==strcmp(word, "outer")) return DBDPG_TRUE;
+    if (0==strcmp(word, "over")) return DBDPG_TRUE;
+    if (0==strcmp(word, "overlaps")) return DBDPG_TRUE;
+    if (0==strcmp(word, "overlay")) return DBDPG_TRUE;
+    if (0==strcmp(word, "owned")) return DBDPG_TRUE;
+    if (0==strcmp(word, "owner")) return DBDPG_TRUE;
+    if (0==strcmp(word, "parser")) return DBDPG_TRUE;
+    if (0==strcmp(word, "partial")) return DBDPG_TRUE;
+    if (0==strcmp(word, "partition")) return DBDPG_TRUE;
+    if (0==strcmp(word, "password")) return DBDPG_TRUE;
+    if (0==strcmp(word, "placing")) return DBDPG_TRUE;
+    if (0==strcmp(word, "plans")) return DBDPG_TRUE;
+    if (0==strcmp(word, "position")) return DBDPG_TRUE;
+    if (0==strcmp(word, "preceding")) return DBDPG_TRUE;
+    if (0==strcmp(word, "precision")) return DBDPG_TRUE;
+    if (0==strcmp(word, "prepare")) return DBDPG_TRUE;
+    if (0==strcmp(word, "prepared")) return DBDPG_TRUE;
+    if (0==strcmp(word, "preserve")) return DBDPG_TRUE;
+    if (0==strcmp(word, "primary")) return DBDPG_TRUE;
+    if (0==strcmp(word, "prior")) return DBDPG_TRUE;
+    if (0==strcmp(word, "privileges")) return DBDPG_TRUE;
+    if (0==strcmp(word, "procedural")) return DBDPG_TRUE;
+    if (0==strcmp(word, "procedure")) return DBDPG_TRUE;
+    if (0==strcmp(word, "quote")) return DBDPG_TRUE;
+    if (0==strcmp(word, "range")) return DBDPG_TRUE;
+    if (0==strcmp(word, "read")) return DBDPG_TRUE;
+    if (0==strcmp(word, "real")) return DBDPG_TRUE;
+    if (0==strcmp(word, "reassign")) return DBDPG_TRUE;
+    if (0==strcmp(word, "recheck")) return DBDPG_TRUE;
+    if (0==strcmp(word, "recursive")) return DBDPG_TRUE;
+    if (0==strcmp(word, "references")) return DBDPG_TRUE;
+    if (0==strcmp(word, "reindex")) return DBDPG_TRUE;
+    if (0==strcmp(word, "relative")) return DBDPG_TRUE;
+    if (0==strcmp(word, "release")) return DBDPG_TRUE;
+    if (0==strcmp(word, "rename")) return DBDPG_TRUE;
+    if (0==strcmp(word, "repeatable")) return DBDPG_TRUE;
+    if (0==strcmp(word, "replace")) return DBDPG_TRUE;
+    if (0==strcmp(word, "replica")) return DBDPG_TRUE;
+    if (0==strcmp(word, "reset")) return DBDPG_TRUE;
+    if (0==strcmp(word, "restart")) return DBDPG_TRUE;
+    if (0==strcmp(word, "restrict")) return DBDPG_TRUE;
+    if (0==strcmp(word, "returning")) return DBDPG_TRUE;
+    if (0==strcmp(word, "returns")) return DBDPG_TRUE;
+    if (0==strcmp(word, "revoke")) return DBDPG_TRUE;
+    if (0==strcmp(word, "right")) return DBDPG_TRUE;
+    if (0==strcmp(word, "role")) return DBDPG_TRUE;
+    if (0==strcmp(word, "rollback")) return DBDPG_TRUE;
+    if (0==strcmp(word, "row")) return DBDPG_TRUE;
+    if (0==strcmp(word, "rows")) return DBDPG_TRUE;
+    if (0==strcmp(word, "rule")) return DBDPG_TRUE;
+    if (0==strcmp(word, "savepoint")) return DBDPG_TRUE;
+    if (0==strcmp(word, "schema")) return DBDPG_TRUE;
+    if (0==strcmp(word, "scroll")) return DBDPG_TRUE;
+    if (0==strcmp(word, "search")) return DBDPG_TRUE;
+    if (0==strcmp(word, "second")) return DBDPG_TRUE;
+    if (0==strcmp(word, "security")) return DBDPG_TRUE;
+    if (0==strcmp(word, "select")) return DBDPG_TRUE;
+    if (0==strcmp(word, "sequence")) return DBDPG_TRUE;
+    if (0==strcmp(word, "serializable")) return DBDPG_TRUE;
+    if (0==strcmp(word, "server")) return DBDPG_TRUE;
+    if (0==strcmp(word, "session")) return DBDPG_TRUE;
+    if (0==strcmp(word, "session_user")) return DBDPG_TRUE;
+    if (0==strcmp(word, "set")) return DBDPG_TRUE;
+    if (0==strcmp(word, "setof")) return DBDPG_TRUE;
+    if (0==strcmp(word, "share")) return DBDPG_TRUE;
+    if (0==strcmp(word, "show")) return DBDPG_TRUE;
+    if (0==strcmp(word, "similar")) return DBDPG_TRUE;
+    if (0==strcmp(word, "simple")) return DBDPG_TRUE;
+    if (0==strcmp(word, "smallint")) return DBDPG_TRUE;
+    if (0==strcmp(word, "some")) return DBDPG_TRUE;
+    if (0==strcmp(word, "stable")) return DBDPG_TRUE;
+    if (0==strcmp(word, "standalone")) return DBDPG_TRUE;
+    if (0==strcmp(word, "start")) return DBDPG_TRUE;
+    if (0==strcmp(word, "statement")) return DBDPG_TRUE;
+    if (0==strcmp(word, "statistics")) return DBDPG_TRUE;
+    if (0==strcmp(word, "stdin")) return DBDPG_TRUE;
+    if (0==strcmp(word, "stdout")) return DBDPG_TRUE;
+    if (0==strcmp(word, "storage")) return DBDPG_TRUE;
+    if (0==strcmp(word, "strict")) return DBDPG_TRUE;
+    if (0==strcmp(word, "strip")) return DBDPG_TRUE;
+    if (0==strcmp(word, "substring")) return DBDPG_TRUE;
+    if (0==strcmp(word, "superuser")) return DBDPG_TRUE;
+    if (0==strcmp(word, "symmetric")) return DBDPG_TRUE;
+    if (0==strcmp(word, "sysid")) return DBDPG_TRUE;
+    if (0==strcmp(word, "system")) return DBDPG_TRUE;
+    if (0==strcmp(word, "table")) return DBDPG_TRUE;
+    if (0==strcmp(word, "tablespace")) return DBDPG_TRUE;
+    if (0==strcmp(word, "temp")) return DBDPG_TRUE;
+    if (0==strcmp(word, "template")) return DBDPG_TRUE;
+    if (0==strcmp(word, "temporary")) return DBDPG_TRUE;
+    if (0==strcmp(word, "text")) return DBDPG_TRUE;
+    if (0==strcmp(word, "then")) return DBDPG_TRUE;
+    if (0==strcmp(word, "time")) return DBDPG_TRUE;
+    if (0==strcmp(word, "timestamp")) return DBDPG_TRUE;
+    if (0==strcmp(word, "to")) return DBDPG_TRUE;
+    if (0==strcmp(word, "trailing")) return DBDPG_TRUE;
+    if (0==strcmp(word, "transaction")) return DBDPG_TRUE;
+    if (0==strcmp(word, "treat")) return DBDPG_TRUE;
+    if (0==strcmp(word, "trigger")) return DBDPG_TRUE;
+    if (0==strcmp(word, "trim")) return DBDPG_TRUE;
+    if (0==strcmp(word, "true")) return DBDPG_TRUE;
+    if (0==strcmp(word, "truncate")) return DBDPG_TRUE;
+    if (0==strcmp(word, "trusted")) return DBDPG_TRUE;
+    if (0==strcmp(word, "type")) return DBDPG_TRUE;
+    if (0==strcmp(word, "unbounded")) return DBDPG_TRUE;
+    if (0==strcmp(word, "uncommitted")) return DBDPG_TRUE;
+    if (0==strcmp(word, "unencrypted")) return DBDPG_TRUE;
+    if (0==strcmp(word, "union")) return DBDPG_TRUE;
+    if (0==strcmp(word, "unique")) return DBDPG_TRUE;
+    if (0==strcmp(word, "unknown")) return DBDPG_TRUE;
+    if (0==strcmp(word, "unlisten")) return DBDPG_TRUE;
+    if (0==strcmp(word, "until")) return DBDPG_TRUE;
+    if (0==strcmp(word, "update")) return DBDPG_TRUE;
+    if (0==strcmp(word, "user")) return DBDPG_TRUE;
+    if (0==strcmp(word, "using")) return DBDPG_TRUE;
+    if (0==strcmp(word, "vacuum")) return DBDPG_TRUE;
+    if (0==strcmp(word, "valid")) return DBDPG_TRUE;
+    if (0==strcmp(word, "validator")) return DBDPG_TRUE;
+    if (0==strcmp(word, "value")) return DBDPG_TRUE;
+    if (0==strcmp(word, "values")) return DBDPG_TRUE;
+    if (0==strcmp(word, "varchar")) return DBDPG_TRUE;
+    if (0==strcmp(word, "variadic")) return DBDPG_TRUE;
+    if (0==strcmp(word, "varying")) return DBDPG_TRUE;
+    if (0==strcmp(word, "verbose")) return DBDPG_TRUE;
+    if (0==strcmp(word, "version")) return DBDPG_TRUE;
+    if (0==strcmp(word, "view")) return DBDPG_TRUE;
+    if (0==strcmp(word, "volatile")) return DBDPG_TRUE;
+    if (0==strcmp(word, "when")) return DBDPG_TRUE;
+    if (0==strcmp(word, "where")) return DBDPG_TRUE;
+    if (0==strcmp(word, "whitespace")) return DBDPG_TRUE;
+    if (0==strcmp(word, "window")) return DBDPG_TRUE;
+    if (0==strcmp(word, "with")) return DBDPG_TRUE;
+    if (0==strcmp(word, "without")) return DBDPG_TRUE;
+    if (0==strcmp(word, "work")) return DBDPG_TRUE;
+    if (0==strcmp(word, "wrapper")) return DBDPG_TRUE;
+    if (0==strcmp(word, "write")) return DBDPG_TRUE;
+    if (0==strcmp(word, "xml")) return DBDPG_TRUE;
+    if (0==strcmp(word, "xmlattributes")) return DBDPG_TRUE;
+    if (0==strcmp(word, "xmlconcat")) return DBDPG_TRUE;
+    if (0==strcmp(word, "xmlelement")) return DBDPG_TRUE;
+    if (0==strcmp(word, "xmlforest")) return DBDPG_TRUE;
+    if (0==strcmp(word, "xmlparse")) return DBDPG_TRUE;
+    if (0==strcmp(word, "xmlpi")) return DBDPG_TRUE;
+    if (0==strcmp(word, "xmlroot")) return DBDPG_TRUE;
+    if (0==strcmp(word, "xmlserialize")) return DBDPG_TRUE;
+    if (0==strcmp(word, "year")) return DBDPG_TRUE;
+    if (0==strcmp(word, "yes")) return DBDPG_TRUE;
+    if (0==strcmp(word, "zone")) return DBDPG_TRUE;
+
+	/* We made it! */
+
+	return DBDPG_FALSE;
+
+}
+
 /* end of quote.c */
+
+/*
+#!perl
+
+## Autogenerate the list of reserved keywords
+
+## You should only run this if you are developing DBD::Pg and 
+## understand what this script does
+
+## Usage: perl -x $0 "path-to-pgsql-source"
+
+use strict;
+use warnings;
+
+my $arg = shift || die "Usage: $0 path-to-pgsql-source\n";
+
+-d $arg or die qq{Sorry, but "$arg" is not a directory!\n};
+
+my $file = "$arg/src/include/parser/kwlist.h";
+
+open my $fh, '<', $file or die qq{Could not open file "$file": $!\n};
+my @word;
+my $maxlen = 10;
+while (<$fh>) {
+  next unless /^PG_KEYWORD\("(.+?)"/;
+  ## We don't care what type of word it is - when in doubt, quote it!
+  my $word = $1;
+  push @word => $word;
+  $maxlen = length $word if length $word > $maxlen;
+}
+close $fh or die qq{Could not close "$file": $!\n};
+
+my $tempfile = 'quote.c.tmp';
+open my $fh2, '>', $tempfile or die qq{Could not open "$tempfile": $!\n};
+seek(DATA,0,0);
+my $gotlist = 0;
+while (<DATA>) {
+  s/(int max_keyword_length =) \d+/$1 $maxlen/;
+  if (!$gotlist) {
+    if (/Check for each reserved word/) {
+      $gotlist = 1;
+      print $fh2 $_;
+      for my $word (@word) {
+        print $fh2 qq{    if (0==strcmp(word, "$word")) return DBDPG_TRUE;\n};
+      }
+      print $fh2 "\n";
+      next;
+    }
+  }
+  elsif (1==$gotlist) {
+    if (/We made it/) {
+      $gotlist = 2;
+    }
+    else {
+      next;
+    }
+  }
+
+
+  print $fh2 $_;
+}
+
+close $fh2 or die qq{Could not close "$tempfile": $!\n};
+
+my $ofile = 'quote.c';
+system("mv $tempfile $ofile");
+print "Wrote $ofile\n";
+exit;
+
+__END__
+
+ */
+

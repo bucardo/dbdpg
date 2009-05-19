@@ -17,3 +17,4 @@ void dequote_bytea(char *string, STRLEN *retlen, int estring);
 void dequote_sql_binary(char *string, STRLEN *retlen, int estring);
 void dequote_bool(char *string, STRLEN *retlen, int estring);
 void null_dequote(const char *string, STRLEN *retlen, int estring);
+bool is_keyword(const char *string);

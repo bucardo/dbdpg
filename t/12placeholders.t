@@ -8,6 +8,7 @@ use warnings;
 use Test::More;
 use lib 't','.';
 use DBI qw/:sql_types/;
+use DBD::Pg qw/:pg_types/;
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
@@ -16,7 +17,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 45;
+plan tests => 129;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -309,28 +310,57 @@ SKIP: {
 	is ($@, q{}, $t);
 }
 
+
+$t='Valid integer works when quoting with SQL_INTEGER';
 my $val;
 $val = $dbh->quote('123', SQL_INTEGER);
-is ($val,123, 'GO?');
+is ($val, 123, $t);
 
+$t='Invalid integer fails to pass through when quoting with SQL_INTEGER';
+$val = -1;
 eval {
 	$val = $dbh->quote('123abc', SQL_INTEGER);
 };
-like ($@, qr{Invalid integer}, 'Invalid integer fails to pass through');
+like ($@, qr{Invalid integer}, $t);
+is($val, -1, $t);
 
+my $prefix = 'Valid float value works when quoting with SQL_FLOAT';
+for my $float ('123','0.00','0.234','23.31562', '1.23e04','6.54e+02','4e-3','NaN','Infinity','-infinity') {
+	$t = "$prefix (value=$float)";
+	$val = -1;
+	eval { $val = $dbh->quote($float, SQL_FLOAT); };
+	is ($@, q{}, $t);
+	is ($val, $float, $t);
 
-$val = $dbh->quote('123', SQL_INTEGER);
-is ($val,123, 'GO?');
+	next unless $float =~ /\w/;
 
-eval {
-	$val = $dbh->quote('123abc', SQL_FLOAT);
-};
-like ($@, qr{Invalid integer}, 'Invalid integer fails to pass through');
+	my $lcfloat = lc $float;
+	$t = "$prefix (value=$lcfloat)";
+	$val = -1;
+	eval { $val = $dbh->quote($lcfloat, SQL_FLOAT); };
+	is ($@, q{}, $t);
+	is ($val, $lcfloat, $t);
 
-exit;
+	my $ucfloat = uc $float;
+	$t = "$prefix (value=$ucfloat)";
+	$val = -1;
+	eval { $val = $dbh->quote($ucfloat, SQL_FLOAT); };
+	is ($@, q{}, $t);
+	is ($val, $ucfloat, $t);
+}
+
+my $prefix = 'Invalid float value fails when quoting with SQL_FLOAT';
+for my $float ('3abc','123abc','','123e+04e+34','NaNum','-infinitee') {
+	$t = "$prefix (value=$float)";
+	$val = -1;
+	eval { $val = $dbh->quote($float, SQL_FLOAT); };
+	like ($@, qr{Invalid number}, $t);
+	is ($val, -1, $t);
+}
 
 $dbh->rollback();
-## Test placeholerds plus binding
+
+## Test placeholders plus binding
 $t='Bound placeholders enforce data types when not using server side prepares';
 $dbh->trace(0);
 $dbh->{pg_server_prepare} = 0;
@@ -340,6 +370,23 @@ eval {
 	$sth->execute('10foo',20);
 };
 like ($@, qr{Invalid integer}, 'Invalid integer test 2');
+
+## Test quoting of the "name" type
+$prefix = q{The 'name' data type does correct quoting};
+
+for my $word (qw/User user USER trigger Trigger/) {
+	$t = qq{$prefix for the word "$word"};
+	my $got = $dbh->quote($word, { pg_type => PG_NAME });
+	$expected = qq{"$word"};
+	is($got, $expected, $t);
+}
+
+for my $word (qw/auser userz user-user/) {
+	$t = qq{$prefix for the word "$word"};
+	my $got = $dbh->quote($word, { pg_type => PG_NAME });
+	$expected = qq{$word};
+	is($got, $expected, $t);
+}
 
 ## Begin custom type testing
 

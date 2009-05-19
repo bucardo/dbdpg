@@ -721,7 +721,7 @@ char     quote_string  dequote_char    SQL_CHAR                  0  0
 bpchar   quote_string  dequote_char    SQL_CHAR                  1  0
 cid      quote_string  dequote_string  0                         0  0
 
-## Things that get no quoting at all (e.g. numbers)
+## Things that get special quoting
 int2     quote_int     null_dequote    SQL_SMALLINT|SQL_TINYINT  1  1
 int4     quote_int     null_dequote    SQL_INTEGER               1  1
 int8     quote_int     null_dequote    SQL_BIGINT                1  0
