@@ -1469,7 +1469,13 @@ SKIP: {
 
 	$t='Database handle attribute "ReadOnly" starts out undefined';
 	$dbh->commit();
-	$dbh4 = connect_database();
+
+	## This fails on some boxes, so we pull back all information to display why
+	my ($helpconnect, $connerror);
+	($helpconnect, $connerror, $dbh4) = connect_database();
+	if (! defined $dbh4) {
+		die "Database connection failed: helpconnect is $helpconnect, error is $connerror\n";
+	}
 	$dbh4->trace(0);
 	is ($dbh4->{ReadOnly}, undef, $t);
 
