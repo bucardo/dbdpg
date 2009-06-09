@@ -143,7 +143,7 @@ $t='Calling do() with non-DML placeholder works';
 $sth->finish();
 $dbh->commit();
 eval {
-  $dbh->do(q{SET search_path TO ?}, undef, 'public');
+  $dbh->do(q{SET search_path TO ?}, undef, 'pg_catalog');
 };
 is ($@, q{}, $t);
 
@@ -165,7 +165,7 @@ $t='Prepare/execute with non-DML placeholder works';
 $dbh->commit();
 eval {
   $sth = $dbh->prepare(q{SET search_path TO ?});
-  $sth->execute('public');
+  $sth->execute('pg_catalog');
 };
 is ($@, q{}, $t);
 

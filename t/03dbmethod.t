@@ -159,7 +159,7 @@ $t='search_path respected when using last_insert_id with no cache (first table)'
 $dbh->commit();
 $dbh->do("SELECT setval('$schema2.$sequence2',200)");
 $dbh->do("SELECT setval('$schema.$sequence4',100)");
-$dbh->do("SET search_path = $schema,$schema2,public");
+$dbh->do("SET search_path = $schema,$schema2");
 eval {
 	$result = $dbh->last_insert_id(undef,undef,$table2,undef,{pg_cache=>0});
 };
@@ -168,7 +168,7 @@ is ($result, 100, $t);
 
 $t='search_path respected when using last_insert_id with no cache (second table)';
 $dbh->commit();
-$dbh->do("SET search_path = $schema2,$schema,public");
+$dbh->do("SET search_path = $schema2,$schema");
 eval {
 	$result = $dbh->last_insert_id(undef,undef,$table2,undef,{pg_cache=>0});
 };
@@ -176,7 +176,7 @@ is ($@, q{}, $t);
 is ($result, 200, $t);
 
 $t='Setting cache on (explicit) returns last result, even if search_path changes';
-$dbh->do("SET search_path = $schema,$schema2,public");
+$dbh->do("SET search_path = $schema,$schema2");
 eval {
 	$result = $dbh->last_insert_id(undef,undef,$table2,undef,{pg_cache=>1});
 };
@@ -184,7 +184,7 @@ is ($@, q{}, $t);
 is ($result, 200, $t);
 
 $t='Setting cache on (implicit) returns last result, even if search_path changes';
-$dbh->do("SET search_path = $schema,$schema2,public");
+$dbh->do("SET search_path = $schema,$schema2");
 eval {
 	$result = $dbh->last_insert_id(undef,undef,$table2,undef);
 };
