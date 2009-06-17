@@ -349,7 +349,7 @@ for my $float ('123','0.00','0.234','23.31562', '1.23e04','6.54e+02','4e-3','NaN
 	is ($val, $ucfloat, $t);
 }
 
-my $prefix = 'Invalid float value fails when quoting with SQL_FLOAT';
+$prefix = 'Invalid float value fails when quoting with SQL_FLOAT';
 for my $float ('3abc','123abc','','123e+04e+34','NaNum','-infinitee') {
 	$t = "$prefix (value=$float)";
 	$val = -1;
