@@ -482,23 +482,23 @@ bool is_keyword(const char *string)
 {
 
 	int max_keyword_length = 17;
-	STRLEN len;
+	int keyword_len;
 	int i;
 	char word[64];
 
-	len = strlen(string);
-	if (len > max_keyword_length || len > 64) {
+	keyword_len = (int)strlen(string);
+	if (keyword_len > max_keyword_length || keyword_len > 64) {
 		return DBDPG_FALSE;
 	}
 
 	/* Because of locale issues, we manually downcase A-Z only */
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < keyword_len; i++) {
 		char ch = string[i];
 		if (ch >= 'A' && ch <= 'Z')
 			ch += 'a' - 'A';
 		word[i] = ch;
 	}
-	word[len] = '\0';
+	word[keyword_len] = '\0';
 
 	/* Check for each reserved word */
     if (0==strcmp(word, "abort")) return DBDPG_TRUE;

@@ -780,7 +780,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 	unsigned int newval = SvTRUE(valuesv);
 	int          retval = 0;
 
-	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_STORE (key: %s newval: %d kl:%d)\n", THEADER, key, newval);
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_STORE (key: %s newval: %d kl:%d)\n", THEADER, key, newval, kl);
 	
 	switch (kl) {
 
@@ -1572,7 +1572,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 			imp_sth->seg->segment = NULL;
 		}
 		if (TRACE6) TRC(DBILOGFP, "%sdirect split = (%s) length=(%d)\n",
-						THEADER, imp_sth->seg->segment, imp_sth->totalsize);
+						THEADER, imp_sth->seg->segment, (int)imp_sth->totalsize);
 		if (TEND) TRC(DBILOGFP, "%sEnd pg_st_split_statement (direct)\n", THEADER);
 		return;
 	}
@@ -1990,7 +1990,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		TRC(DBILOGFP, "%sPlaceholder number, fooname, id:\n", THEADER);
 		for (xlen=1,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,xlen++) {
 			TRC(DBILOGFP, "%s#%d FOONAME: (%s)\n",
-				THEADER, xlen, currph->fooname);
+				THEADER, (int)xlen, currph->fooname);
 		}
 	}
 
@@ -2363,7 +2363,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		TRC	(DBILOGFP,
 			 "%sPlaceholder (%s) bound as type (%s) (type_id=%d), length %d, value of (%s)\n",
 			 THEADER, name, currph->bind_type->type_name,
-			 currph->bind_type->type_id, currph->valuelen,
+			 currph->bind_type->type_id, (int)currph->valuelen,
 			 PG_BYTEA==currph->bind_type->type_id ? "(binary, not shown)" : value_string);
 
 	if (TEND) TRC(DBILOGFP, "%sEnd dbd_bind_ph\n", THEADER);
@@ -3008,7 +3008,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		
 		if (TRACE7) {
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-				TRC(DBILOGFP, "%sPQexecPrepared item #%d\n", THEADER, x);
+				TRC(DBILOGFP, "%sPQexecPrepared item #%d\n", THEADER, (int)x);
 				TRC(DBILOGFP, "%s-> Value: (%s)\n",
 					THEADER, (imp_sth->PQfmts && imp_sth->PQfmts[x]==1) ? "(binary, not shown)" 
 									: imp_sth->PQvals[x]);
@@ -3022,7 +3022,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		if (TSQL) {
 			TRC(DBILOGFP, "EXECUTE %s (\n", imp_sth->prepare_name);
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-				TRC(DBILOGFP, "$%d: %s\n", x+1, imp_sth->PQvals[x]);
+				TRC(DBILOGFP, "$%d: %s\n", (int)x+1, imp_sth->PQvals[x]);
 			}
 			TRC(DBILOGFP, ");\n\n");
 		}
@@ -3089,7 +3089,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		
 			if (TRACE7) {
 				for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-					TRC(DBILOGFP, "%sPQexecParams item #%d\n", THEADER, x);
+					TRC(DBILOGFP, "%sPQexecParams item #%d\n", THEADER, (int)x);
 					TRC(DBILOGFP, "%s-> Type: (%d)\n", THEADER, imp_sth->PQoids[x]);
 					TRC(DBILOGFP, "%s-> Value: (%s)\n", THEADER, imp_sth->PQvals[x]);
 					TRC(DBILOGFP, "%s-> Length: (%d)\n", THEADER, imp_sth->PQlens ? imp_sth->PQlens[x] : 0);
@@ -3100,7 +3100,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			if (TSQL) {
 				TRC(DBILOGFP, "EXECUTE %s (\n", statement);
 				for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-					TRC(DBILOGFP, "$%d: %s\n", x+1, imp_sth->PQvals[x]);
+					TRC(DBILOGFP, "$%d: %s\n", (int)x+1, imp_sth->PQvals[x]);
 				}
 				TRC(DBILOGFP, ");\n\n");
 			}
@@ -4229,7 +4229,7 @@ int pg_db_lo_read (SV * dbh, int fd, char * buf, size_t len)
 	D_imp_dbh(dbh);
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_read (fd: %d length: %d)\n",
-					THEADER, fd, len);
+					THEADER, fd, (int)len);
 
 	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
 		croak("Cannot call pg_lo_read when AutoCommit is on");
@@ -4254,7 +4254,7 @@ int pg_db_lo_write (SV * dbh, int fd, char * buf, size_t len)
 	D_imp_dbh(dbh);
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_write (fd: %d length: %d)\n",
-					THEADER, fd, len);
+					THEADER, fd, (int)len);
 
 	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
 		croak("Cannot call pg_lo_write when AutoCommit is on");
