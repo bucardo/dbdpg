@@ -1471,10 +1471,10 @@ SKIP: {
 	$dbh->commit();
 
 	## This fails on some boxes, so we pull back all information to display why
-	my ($helpconnect, $connerror);
-	($helpconnect, $connerror, $dbh4) = connect_database();
+	my ($helpconnect2, $connerror2);
+	($helpconnect2, $connerror2, $dbh4) = connect_database();
 	if (! defined $dbh4) {
-		die "Database connection failed: helpconnect is $helpconnect, error is $connerror\n";
+		die "Database connection failed: helpconnect is $helpconnect2, error is $connerror2\n";
 	}
 	$dbh4->trace(0);
 	is ($dbh4->{ReadOnly}, undef, $t);

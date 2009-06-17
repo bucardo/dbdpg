@@ -364,7 +364,7 @@ $dbh->rollback();
 $t='Bound placeholders enforce data types when not using server side prepares';
 $dbh->trace(0);
 $dbh->{pg_server_prepare} = 0;
-$sth = $dbh->prepare("SELECT (1+?+?)::integer");
+$sth = $dbh->prepare('SELECT (1+?+?)::integer');
 $sth->bind_param(1, 1, SQL_INTEGER);
 eval {
 	$sth->execute('10foo',20);

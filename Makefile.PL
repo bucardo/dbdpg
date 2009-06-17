@@ -118,6 +118,7 @@ sub does_path_exist {
 	printf "The value of %s points to a non-existent directory: %s\n",
 		$path_name, $path;
 	$baddir++;
+	return;
 }
 
 does_path_exist('POSTGRES_HOME', $ENV{POSTGRES_HOME});

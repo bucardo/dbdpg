@@ -581,6 +581,9 @@ CentOS
 conf
 danla
 david
+dll
+dllname
+dlltool
 dmake
 drnoble
 DynaLoader
@@ -600,6 +603,7 @@ Lauterbach
 LDLOADLIBS
 MAKEFILE
 pc
+pexports
 PROGRA
 sandia
 sco
@@ -619,6 +623,7 @@ n's
 Pg's
 qw
 Szilakszi
+uc
 
 ## Pg.pm:
 lseg
