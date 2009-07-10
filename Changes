@@ -5,6 +5,7 @@
   - Make foreign_key_info() respect FetchHashKeyName (CPAN bug #46103) [GSM]
   - Fix problem with foreign_key_info() and NAME_uc (CPAN bug #46109) [GSM]
   - Improve Win32 README notes [Curtis Jewell]
+  - Fix spelling error in type_info (CPAN bug #47786) [justin.d.hunter@gmail.com]
 
 2.13.1 Released April 23, 2009 (subversion r12713)
 

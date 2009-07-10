@@ -1486,7 +1486,7 @@ use 5.006001;
       29  => ['SQL_IDENTIFIER_QUOTE_CHAR',          q{"}                      ],
      148  => ['SQL_INDEX_KEYWORDS',                 0                         ], ## not needed for Pg
      172  => ['SQL_INSERT_STATEMENT',               7                         ], ## 1+2+4 = all
-      73  => ['SQL_INTEGERITY',                     'Y'                       ], ## e.g. ON DELETE CASCADE?
+      73  => ['SQL_INTEGRITY',                      'Y'                       ], ## e.g. ON DELETE CASCADE?
       89  => ['SQL_KEYWORDS',                       'KEYWORDS'                ], ## magic word
      113  => ['SQL_LIKE_ESCAPE_CLAUSE',             'Y'                       ],
       75  => ['SQL_NON_NULLABLE_COLUMNS',           1                         ], ## NNC_NOT_NULL
