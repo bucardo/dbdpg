@@ -2467,10 +2467,14 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 					SvUTF8_on(value);
 				string = SvPV(svitem, svlen);
 				while (svlen--) {
+					TRC(DBILOGFP, "%sATTEMPTING (%c)\n", THEADER, *string);
+
+					/* If an embedded quote, throw a backslash before it */
 					if ('\"' == *string)
 						sv_catpvn(value, "\\", 1);
+					/* If a backslash, double it up */
 					if ('\\' == *string) {
-						sv_catpvn(value, "\\\\", 2);
+						sv_catpvn(value, "\\\\\\", 3);
 					}
 					sv_catpvn(value, string, 1);
 					string++;
