@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.13.2
+2.14.0
 
   - Make foreign_key_info() respect FetchHashKeyName (CPAN bug #46103) [GSM]
   - Fix problem with foreign_key_info() and NAME_uc (CPAN bug #46109) [GSM]
