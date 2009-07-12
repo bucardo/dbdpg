@@ -3363,10 +3363,10 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 					case PG_OID:
 					case PG_INT4:
 					case PG_INT2:
-						sv_setiv(sv, atol(value));
+						sv_setiv(sv, atol((char *)value));
 						break;
 					case PG_INT8:
-						sv_setnv(sv, atoll(value));
+						sv_setnv(sv, atoll((char *)value));
 						break;
 					default:
 						sv_setpvn(sv, (char *)value, value_len);
