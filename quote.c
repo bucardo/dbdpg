@@ -229,8 +229,6 @@ char * quote_sql_binary(char *string, STRLEN len, STRLEN *retlen, int estring)
 	
 }
 
-
-
 char * quote_bool(const char *value, STRLEN len, STRLEN *retlen, int estring) 
 {
 	dTHX;
@@ -280,7 +278,6 @@ char * quote_int(const char *string, STRLEN len, STRLEN *retlen, int estring)
 
 	return result;
 }
-
 
 char * quote_float(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
