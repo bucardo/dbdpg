@@ -2,11 +2,14 @@
 
 2.14.0
 
+  - Make quoting of int, floats, and names much safer. (CPAN bug #41565) [GSM]
   - Return ints and bools-cast-to-number from the db as true Perlish numbers.
     (CPAN bug #47619) [GSM]
   - Fix backslash quoting of arrays (CPAN bug #46732) [GSM]
   - Fix problem with foreign_key_info() and NAME_uc (CPAN bug #46109) [GSM]
   - Make foreign_key_info() respect FetchHashKeyName (CPAN bug #46103) [GSM]
+  - Fix Makefile.PL to apply POSTGRES_INCLUDE in a saner way.
+    (CPAN bug #45769) [GAURAV@cpan.org]
   - Improve Win32 README notes [Curtis Jewell]
   - Fix spelling error in type_info (CPAN bug #47786) [justin.d.hunter@gmail.com]
 
