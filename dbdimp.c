@@ -2467,7 +2467,6 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 					SvUTF8_on(value);
 				string = SvPV(svitem, svlen);
 				while (svlen--) {
-					TRC(DBILOGFP, "%sATTEMPTING (%c)\n", THEADER, *string);
 
 					/* If an embedded quote, throw a backslash before it */
 					if ('\"' == *string)
