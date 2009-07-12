@@ -3350,13 +3350,32 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 			else {
 				if (type_info) {
 					type_info->dequote(value, &value_len); /* dequote in place */
-					if (PG_BOOL == type_info->type_id && imp_dbh->pg_bool_tf)
-						*value = ('1' == *value) ? 't' : 'f';
+					/* For certain types, we can cast to non-string Perlish values */
+					switch (type_info->type_id) {
+					case PG_BOOL:
+						if (imp_dbh->pg_bool_tf) {
+							*value = ('1' == *value) ? 't' : 'f';
+							sv_setpvn(sv, (char *)value, value_len);
+						}
+						else
+							sv_setiv(sv, '1' == *value ? 1 : 0);
+						break;
+					case PG_OID:
+					case PG_INT4:
+					case PG_INT2:
+						sv_setiv(sv, atol(value));
+						break;
+					case PG_INT8:
+						sv_setnv(sv, atoll(value));
+						break;
+					default:
+						sv_setpvn(sv, (char *)value, value_len);
+					}
 				}
-				else
+				else {
 					value_len = strlen((char *)value);
-			
-				sv_setpvn(sv, (char *)value, value_len);
+					sv_setpvn(sv, (char *)value, value_len);
+				}
 			
 				if (type_info && (PG_BPCHAR == type_info->type_id) && chopblanks) {
 					p = SvEND(sv);
