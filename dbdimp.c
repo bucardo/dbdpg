@@ -2527,6 +2527,14 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 	  the Postgres backend, and we rely on it to give us a sane and balanced structure
 	*/
 
+	/* The array may start with a non 1-based beginning. If so, we'll just eat the range */
+	if ('[' == *input) {
+		while (*input != '\0') {
+			if ('=' == *input++)
+				break;
+		}
+	}
+
 	/* Eat the opening brace and perform a sanity check */
 	if ('{' != *(input++))
 		croak("Tried to destringify a non-array!: %s", input);

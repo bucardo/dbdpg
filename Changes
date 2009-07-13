@@ -6,6 +6,8 @@
   - Return ints and bools-cast-to-number from the db as true Perlish numbers.
     (CPAN bug #47619) [GSM]
   - Fix backslash quoting of arrays (CPAN bug #46732) [GSM]
+  - Fix error when destringifying array starting with '[x:y]='. Per report from 
+    Jeff Trout [GSM]
   - Fix problem with foreign_key_info() and NAME_uc (CPAN bug #46109) [GSM]
   - Make foreign_key_info() respect FetchHashKeyName (CPAN bug #46103) [GSM]
   - Fix Makefile.PL to apply POSTGRES_INCLUDE in a saner way.
