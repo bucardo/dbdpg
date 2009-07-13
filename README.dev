@@ -360,7 +360,7 @@ Another handy tool is the module Devel::Cover. While not totally useful as it on
 direct perl modules, it is good at giving Pg.pm the once-over. To use, install it, then run:
 
 cover -delete
-HARNESS_PERL_SWITCHES=-Mdevel::Cover make test
+HARNESS_PERL_SWITCHES=-MDevel::Cover make test
 
 The tests will take much longer than usual. When done, run a simple
 
