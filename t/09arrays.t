@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 250;
+plan tests => 256;
 
 isnt ($dbh, undef, 'Connect to database for array testing');
 
@@ -50,6 +50,10 @@ my $getarray_int = $dbh->prepare($SQL);
 
 $SQL = q{SELECT testarray3 FROM dbd_pg_test WHERE pname= 'Array Testing'};
 my $getarray_bool = $dbh->prepare($SQL);
+
+## Input
+## Expected
+## Name of test
 
 my $array_tests =
 q!['']
@@ -160,13 +164,17 @@ Simple double quote
 {{"O\"RLY?"},{"'Ya' - \"really\""},{123}} quote: {{"O\"RLY?"},{"'Ya' - \"really\""},{"123"}}
 Many quotes
 
-["Test\\\\nRun"]
-{"Test\\\\nRun"} quote: {"Test\\\\\\nRun"}
-Simple backslash
+["Single\\\\Backslash"]
+{"Single\\\\\\\\Backslash"} quote: {"Single\\\\\\\\Backslash"}
+Single backslash testing
 
-[["Test\\\\nRun","Quite \"so\""],["back\\\\\\\\slashes are a \"pa\\\\in\"",123] ]
-{{"Test\\\\nRun","Quite \"so\""},{"back\\\\\\\\\\\\slashes are a \"pa\\\\in\"",123}} quote: {{"Test\\\\\\nRun","Quite \"so\""},{"back\\\\\\\\\\\\slashes are a \"pa\\\\\\in\"","123"}}
-Escape party
+["Double\\\\\\\\Backslash"]
+{"Double\\\\\\\\\\\\\\\\Backslash"} quote: {"Double\\\\\\\\\\\\\\\\Backslash"}
+Double backslash testing
+
+[["Test\\\nRun","Quite \"so\""],["back\\\\\\\\slashes are a \"pa\\\\in\"",123] ]
+{{"Test\\\\\\\\nRun","Quite \"so\""},{"back\\\\\\\\\\\\\\\\slashes are a \"pa\\\\\\\\in\"",123}} quote: {{"Test\\\\\\\nRun","Quite \"so\""},{"back\\\\\\\\\\\\\\\\slashes are a \"pa\\\\\\\\in\"","123"}}
+Escape party - backslash+newline, two + one
 
 [undef]
 {NULL}
@@ -279,9 +287,6 @@ for my $test (split /\n\n/ => $array_tests) {
 		$qexpected =~ s/{}/{''}/;
 		$qexpected =~ y/{}/[]/;
 		$qexpected =~ s/NULL/undef/g;
-		$qexpected =~ s/\\\\n/\\n/g;
-		$qexpected =~ s/\\\\"/\\"/g;
-		$qexpected =~ s/\\\\i/\\i/g;
 		if ($msg =~ /closing brace/) {
 			$qexpected =~ s/]"/}"/;
 		}
