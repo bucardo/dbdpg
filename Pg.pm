@@ -17,7 +17,7 @@ use 5.006001;
 {
 	package DBD::Pg;
 
-	use version; our $VERSION = qv('2.13.1');
+	use version; our $VERSION = qv('2.13.1_1');
 
 	use DBI ();
 	use DynaLoader ();
@@ -649,7 +649,10 @@ use 5.006001;
 		$sth->execute(@exe_args) or return undef;
 
 		STAT_ROW:
+		#use Data::Dumper;
+		#warn Dumper $stats_sql;
 		while (my $row = $sth->fetchrow_hashref) {
+			#warn Dumper $row;
 			next if $row->{indexprs}; # We can't return these accurately via this interface ...
 			next if $unique_only and !$row->{indisunique};
 
@@ -1736,7 +1739,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 2.13.1 of the DBD::Pg module
+This documents version 2.13.1_1 of the DBD::Pg module
 
 =head1 DESCRIPTION
 

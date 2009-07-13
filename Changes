@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.14.0
+2.13.1_1
 
   - Make quoting of int, floats, and names much safer. (CPAN bug #41565) [GSM]
   - Return ints and bools-cast-to-number from the db as true Perlish numbers.
