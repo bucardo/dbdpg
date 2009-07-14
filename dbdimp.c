@@ -15,6 +15,10 @@
 
 #include "Pg.h"
 
+#if defined (_WIN32) && !defined (atoll)
+#  define atoll(X) _atoi64(X)
+#endif
+
 #ifndef powf
 #define powf (float)pow
 #endif

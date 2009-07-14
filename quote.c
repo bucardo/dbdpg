@@ -11,6 +11,33 @@
 
 #include "Pg.h"
 
+#if defined (_WIN32) && !defined (strncasecmp)
+int
+strncasecmp(const char *s1, const char *s2, size_t n)
+{
+    while(n > 0
+          && toupper((unsigned char)*s1) == toupper((unsigned char)*s2))
+    {
+        if(*s1 == '\0')
+            return 0;
+        s1++;
+        s2++;
+        n--;
+    }
+    if(n == 0)
+        return 0;
+    return toupper((unsigned char)*s1) - toupper((unsigned char)*s2);
+}
+#endif
+
+#if defined (_WIN32) && !defined (strtof)
+float
+strtof(const char *nptr, char **endptr)
+{
+    return (float)strtod(nptr, endptr);
+}
+#endif
+
 /*
 The 'estring' indicates if the server is capable of using the E'' syntax
 In other words, is it 8.1 or better?
