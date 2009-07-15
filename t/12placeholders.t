@@ -354,7 +354,7 @@ for my $float ('3abc','123abc','','123e+04e+34','NaNum','-infinitee') {
 	$t = "$prefix (value=$float)";
 	$val = -1;
 	eval { $val = $dbh->quote($float, SQL_FLOAT); };
-	like ($@, qr{Invalid number}, $t);
+	like ($@, qr{Invalid number.*}, $t);
 	is ($val, -1, $t);
 }
 
