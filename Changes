@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.13.1_4
+2.13.1_5
 
   - Make quoting of int, floats, and names much safer. (CPAN bug #41565) [GSM]
   - Make quoting of geometric types respect all valid chars (CPAN bug #41565) [GSM]
