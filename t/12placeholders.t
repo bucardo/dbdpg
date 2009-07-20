@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 213;
+plan tests => 237;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -27,7 +27,7 @@ if ($pgversion >= 80100) {
   $dbh->do('SET escape_string_warning = false');
 }
 
-my ($sth, $result, $SQL, $qresult);
+my ($result, $SQL, $qresult);
 
 # Make sure that quoting works properly.
 $t='Quoting works properly';
@@ -129,7 +129,7 @@ if ($old_encoding ne 'UTF8') {
 }
 
 $t='Prepare with backslashes inside quotes works';
-my $SQL = q{SELECT setting FROM pg_settings WHERE name = 'backslash_quote'};
+$SQL = q{SELECT setting FROM pg_settings WHERE name = 'backslash_quote'};
 $count = $dbh->selectall_arrayref($SQL)->[0];
 my $backslash = defined $count ? $count->[0] : 0;
 my $scs = $dbh->{pg_standard_conforming_strings};
@@ -390,9 +390,59 @@ for my $word (qw/auser userz user-user/) {
 	is($got, $expected, $t);
 }
 
+## Test quoting of booleans
+
+my %booltest = (
+undef         => 'NULL',
+'t'           => 'TRUE',
+'T'           => 'TRUE',
+'true'        => 'TRUE',
+'TRUE'        => 'TRUE',
+1             => 'TRUE',
+01            => 'TRUE',
+'1'           => 'TRUE',
+'0E0'         => 'TRUE',
+'0e0'         => 'TRUE',
+'0 but true'  => 'TRUE',
+'0 BUT TRUE'  => 'TRUE',
+'f'           => 'FALSE',
+'F'           => 'FALSE',
+0             => 'FALSE',
+00            => 'FALSE',
+'0'           => 'FALSE',
+'false'       => 'FALSE',
+'FALSE'       => 'FALSE',
+12            => 'ERROR',
+'01'          => 'ERROR',
+'00'          => 'ERROR',
+' false'      => 'ERROR',
+' TRUE'       => 'ERROR',
+'FALSEY'      => 'ERROR',
+'trueish'     => 'ERROR',
+'0E0E0'       => 'ERROR', ## Jungle love...
+'0 but truez' => 'ERROR',
+);
+
+while (my ($name,$val) = each %booltest) {
+	$name = undef if $name eq 'undef';
+	$t = sprintf 'Boolean quoting of %s',
+		defined $name ? qq{"$name"} : 'undef';
+	eval { $result = $dbh->quote($name, {pg_type => PG_BOOL}); };
+	if ($@) {
+		if ($val eq 'ERROR' and $@ =~ /Invalid boolean/) {
+			pass $t;
+		}
+		else {
+			fail "Failure at $t: $@\n";
+		}
+		$dbh->rollback();
+	}
+	else {
+		is ($result, $val, $t);
+	}
+}
+
 ## Test quoting of geometric types
-
-
 
 my @geotypes = qw/point line lseg box path polygon circle/;
 

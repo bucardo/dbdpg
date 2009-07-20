@@ -269,33 +269,44 @@ char * quote_sql_binary(char *string, STRLEN len, STRLEN *retlen, int estring)
 	
 }
 
+/* Return TRUE, FALSE, or throws an error */
 char * quote_bool(const char *value, STRLEN len, STRLEN *retlen, int estring) 
 {
 	dTHX;
 	char *result;
-	long int int_value;
-	STRLEN	max_len=6;
 	
-	len = 0;
-	if (isDIGIT(*(const char*)value)) {
-		/* For now -- will go away when quote* take SVs */
-		int_value = atoi(value);
-	} else {
-		int_value = 42; /* Not true, not false. Just is */
-	}
-	New(0, result, max_len, char);
-	
-	if (0 == int_value)
-		strncpy(result,"FALSE\0",6);
-	else if (1 == int_value)
+	/* Things that are true: t, T, 1, true, TRUE, 0E0, 0 but true */
+	if (
+		(1 == len && (0 == strncasecmp(value, "t", 1) || '1' == *value))
+		||
+		(4 == len && 0 == strncasecmp(value, "true", 4))
+		||
+		(3 == len && 0 == strncasecmp(value, "0e0", 3))
+		||
+		(10 == len && 0 == strncasecmp(value, "0 but true", 10))
+		) {
+		New(0, result, 5, char);
 		strncpy(result,"TRUE\0",5);
-	else
-		croak("Error: Bool must be either 1 or 0");
-	
-	*retlen = strlen(result);
-	assert(*retlen+1 <= max_len);
+		*retlen = 4;
+		return result;
+	}
 
-	return result;
+	/* Things that are false: f, F, 0, false, FALSE, 0, zero-length string */
+	if (
+		(1 == len && (0 == strncasecmp(value, "f", 1) || '0' == *value))
+		||
+		(5 == len && 0 == strncasecmp(value, "false", 5))
+		||
+		(0 == len)
+		) {
+		New(0, result, 6, char);
+		strncpy(result,"FALSE\0",6);
+		*retlen = 5;
+		return result;
+	}
+
+	croak("Invalid boolean value");
+	
 }
 
 char * quote_int(const char *string, STRLEN len, STRLEN *retlen, int estring)
