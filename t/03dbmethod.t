@@ -1236,11 +1236,11 @@ is ($result, q{'[(1,2),(3,4)]'}, $t);
 
 $t='DB handle method "quote" fails with invalid PG_PATH string';
 eval { $result = $dbh->quote(q{<(1,2),(3,4)>}, { pg_type => PG_PATH }); };
-like ($@, qr{Invalid input for geometric path type}, $t);
+like ($@, qr{Invalid input for path type}, $t);
 
 $t='DB handle method "quote" fails with invalid PG_PATH string';
 eval { $result = $dbh->quote(q{<1,2,3,4>}, { pg_type => PG_PATH }); };
-like ($@, qr{Invalid input for geometric path type}, $t);
+like ($@, qr{Invalid input for path type}, $t);
 
 ## Polygons
 $t='DB handle method "quote" works with valid PG_POLYGON string';
@@ -1265,11 +1265,11 @@ is ($result, q{'<(1,2,3)>'}, $t);
 
 $t='DB handle method "quote" fails with invalid PG_CIRCLE string';
 eval { $result = $dbh->quote(q{[(1,2,3)]}, { pg_type => PG_CIRCLE }); };
-like ($@, qr{Invalid input for geometric circle type}, $t);
+like ($@, qr{Invalid input for circle type}, $t);
 
 $t='DB handle method "quote" fails with invalid PG_CIRCLE string';
 eval { $result = $dbh->quote(q{1,2,3,4,H}, { pg_type => PG_CIRCLE }); };
-like ($@, qr{Invalid input for geometric circle type}, $t);
+like ($@, qr{Invalid input for circle type}, $t);
 
 
 #
