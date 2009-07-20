@@ -3,6 +3,7 @@
 2.13.1_4
 
   - Make quoting of int, floats, and names much safer. (CPAN bug #41565) [GSM]
+  - Make quoting of geometric types respect all valid chars (CPAN bug #41565) [GSM]
   - Return ints and bools-cast-to-number from the db as true Perlish numbers.
     (CPAN bug #47619) [GSM]
   - Fix backslash quoting of arrays (CPAN bug #46732) [GSM]

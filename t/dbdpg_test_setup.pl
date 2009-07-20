@@ -25,6 +25,7 @@ my @tables =
 	 'dbd_pg_test2',
 	 'dbd_pg_test1',
 	 'dbd_pg_test',
+	 'dbd_pg_test_geom',
 	 );
 
 my @sequences =

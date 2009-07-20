@@ -100,17 +100,23 @@ char * quote_string(const char *string, STRLEN len, STRLEN *retlen, int estring)
 }
 
 
+/* Quote a geometric constant. */
+/* Note: we only verify correct characters here, not for 100% valid input */
+/* Covers: points, lines, lsegs, boxes, polygons */
 char * quote_geom(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
 	char * result;
-        const char *tmp;
+	const char *tmp;
 
 	len = 0; /* stops compiler warnings. Remove entirely someday */
 	tmp = string;
 	(*retlen) = 2;
+
 	while (*string != '\0') {
 		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
+			&& *string != '-' && *string != '+' && *string != '.'
+			&& *string != 'e' && *string != 'E'
 			&& *string != ',' && (*string < '0' || *string > '9'))
 			croak("Invalid input for geometric type");
 		(*retlen)++;
@@ -128,6 +134,7 @@ char * quote_geom(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	return result - (*retlen);
 }
 
+/* Same as quote_geom, but also allows square brackets */
 char * quote_path(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
@@ -138,9 +145,11 @@ char * quote_path(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	(*retlen) = 2;
 	while (*string != '\0') {
 		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
-			&& *string != ',' && *string != '[' && *string != ']'
-			&& (*string < '0' || *string > '9'))
-				croak("Invalid input for geometric path type");
+			&& *string != '-' && *string != '+' && *string != '.'
+			&& *string != 'e' && *string != 'E'
+			&& *string != '[' && *string != ']'
+			&& *string != ',' && (*string < '0' || *string > '9'))
+			croak("Invalid input for path type");
 		(*retlen)++;
 		string++;
 	}
@@ -156,6 +165,7 @@ char * quote_path(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	return result - (*retlen);
 }
 
+/* Same as quote_geom, but also allows less than / greater than signs */
 char * quote_circle(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
@@ -164,11 +174,14 @@ char * quote_circle(const char *string, STRLEN len, STRLEN *retlen, int estring)
 
 	len = 0; /* stops compiler warnings. Remove entirely someday */
 	(*retlen) = 2;
+
 	while (*string != '\0') {
 		if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
-			&& *string != ',' && *string != '<' && *string != '>'
-			&& (*string < '0' || *string > '9'))
-				croak("Invalid input for geometric circle type");
+			&& *string != '-' && *string != '+' && *string != '.'
+			&& *string != 'e' && *string != 'E'
+			&& *string != '<' && *string != '>'
+			&& *string != ',' && (*string < '0' || *string > '9'))
+			croak("Invalid input for circle type");
 		(*retlen)++;
 		string++;
 	}
