@@ -30,14 +30,6 @@ strncasecmp(const char *s1, const char *s2, size_t n)
 }
 #endif
 
-#if defined (_WIN32) && !defined (strtof)
-float
-strtof(const char *nptr, char **endptr)
-{
-    return (float)strtod(nptr, endptr);
-}
-#endif
-
 /*
 The 'estring' indicates if the server is capable of using the E'' syntax
 In other words, is it 8.1 or better?
@@ -334,34 +326,37 @@ char * quote_float(const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
 	char * result;
-	char * endpoint;
-	float val;
-
-	/*
-	  We let strtof do the heavy lifting here, despite it having some 
-	  issues according to the PG source
-	*/
 
 	/* Empty string is always an error. Here for dumb compilers. */
 	if (len<1)
-		croak("Invalid number");
+		croak("Invalid float");
 
-	errno = 0;
-	val = strtof(string, &endpoint);
+	result = string;
+	*retlen = len;
 
-	if (0!=*endpoint || errno != 0) {
-		/* Just in case the compiler used has a crappy strtof */
-		if (0 != strncasecmp(string, "NaN", 4)
-			&& 0 != strncasecmp(string, "Infinity", 9)
-			&& 0 != strncasecmp(string, "-Infinity", 10)
-			) {
-			croak("Invalid number");
+	/* Allow some standard strings in */
+	if (0 != strncasecmp(string, "NaN", 4)
+		&& 0 != strncasecmp(string, "Infinity", 9)
+		&& 0 != strncasecmp(string, "-Infinity", 10)) {
+		while (len > 0 && *string != '\0') {
+			len--;
+			if (isdigit(*string)
+				|| '.' == *string
+				|| ' ' == *string
+				|| '+' == *string
+				|| '-' == *string
+				|| 'e' == *string
+				|| 'E' == *string) {
+				*string++;
+				continue;			
+			}
+			croak("Invalid float");
 		}
 	}
 
-	New(0, result, len+1, char);
+	string = result;
+	New(0, result, 1+(*retlen), char);
 	strcpy(result,string);
-	*retlen = len;
 
 	return result;
 }
