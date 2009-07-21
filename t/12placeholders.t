@@ -545,7 +545,7 @@ for my $char (qw{0 9 A Z a z}) {
 }
 
 SKIP: {
-	skip 'Cannot run backslash_quote tet on Postgres < 8.2', 1 if $pgversion < 80200;
+	skip 'Cannot run backslash_quote test on Postgres < 8.2', 1 if $pgversion < 80200;
 
 	$t='Backslash quoting inside double quotes is parsed correctly';
 	$dbh->do(q{SET backslash_quote = 'on'});
