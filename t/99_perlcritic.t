@@ -80,7 +80,15 @@ while (<$fh>) {
 }
 close $fh or die qq{Could not close "$file": $!\n};
 
-## Everything in MANIFEST should also be in README.dev
+$file = 'MANIFEST.SKIP';
+open $fh, '<', $file or die qq{Could not open "$file": $!\n};
+while (<$fh>) {
+	next unless m{^(t/.*)};
+	$manfile{$1} = $.;
+}
+close $fh or die qq{Could not close "$file": $!\n};
+
+## Everything in MANIFEST[.SKIP] should also be in README.dev
 for my $file (sort keys %manfile) {
 	if (!exists $devfile{$file}) {
 		fail qq{File "$file" is in MANIFEST but not in README.dev\n};

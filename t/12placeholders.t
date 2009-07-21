@@ -145,8 +145,7 @@ like ($@, $expected, $t);
 
 my @geotypes = qw/point line lseg box path polygon circle/;
 
-$dbh->do("SET search_path TO DEFAULT");
-eval { $dbh->do("DROP TABLE dbd_pg_test_geom"); }; $dbh->commit();
+eval { $dbh->do('DROP TABLE dbd_pg_test_geom'); }; $dbh->commit();
 
 $SQL = 'CREATE TABLE dbd_pg_test_geom (';
 for my $type (@geotypes) {
@@ -369,7 +368,7 @@ for my $line (split /\n\n+/ => $testdata) {
 	eval { $qresult = $dbh->quote($input, {pg_type => $typemap{$type}}); };
 	if ($@) {
 		if ($quoted !~ /ERROR: (.+)/) {
-			fail "$t error: $@";
+			fail ("$t error: $@");
 		}
 		else {
 			like ($@, qr{$1}, $t);
@@ -383,11 +382,11 @@ for my $line (split /\n\n+/ => $testdata) {
 	eval { $dbh->do("EXECUTE geotest('$input')"); };
 	if ($@) {
 		if ($rows !~ /ERROR: (.+)/) {
-			fail "$t error: $@";
+			fail ("$t error: $@");
 		}
 		else {
 			## Do any error for now: i18n worries
-			pass $t;
+			pass ($t);
 		}
 	}
 	$dbh->commit();
@@ -395,20 +394,20 @@ for my $line (split /\n\n+/ => $testdata) {
 	eval { $sth->execute($input); };
 	if ($@) {
 		if ($rows !~ /ERROR: (.+)/) {
-			fail $t;
+			fail ($t);
 		}
 		else {
 			## Do any error for now: i18n worries
-			pass $t;
+			pass ($t);
 		}
 	}
 	$dbh->commit();
 
 	if ($rows !~ /ERROR/) {
 		$SQL = "SELECT x$type FROM dbd_pg_test_geom";
-		my $expected = [[$rows],[$rows]];
+		$expected = [[$rows],[$rows]];
 		$result = $dbh->selectall_arrayref($SQL);
-		is_deeply($result, $expected, $t);
+		is_deeply ($result, $expected, $t);
 	}
 }
 
@@ -566,6 +565,7 @@ SKIP: {
 	$t='Backslash quoting inside single quotes is parsed correctly with standard_conforming_strings off';
 	eval {
 		$dbh->do(q{SET standard_conforming_strings = 'off'});
+		local $dbh->{Warn} = '';
 		$sth = $dbh->prepare(q{SELECT '\', ?});
 		$sth->execute();
 		$sth->finish();
@@ -663,7 +663,7 @@ for my $word (qw/auser userz user-user/) {
 
 ## Test quoting of booleans
 
-my %booltest = (
+my %booltest = ( ## no critic (Lax::ProhibitLeadingZeros::ExceptChmod, ValuesAndExpressions::ProhibitLeadingZeros)
 undef         => 'NULL',
 't'           => 'TRUE',
 'T'           => 'TRUE',
@@ -694,22 +694,22 @@ undef         => 'NULL',
 '0 but truez' => 'ERROR',
 );
 
-while (my ($name,$val) = each %booltest) {
+while (my ($name,$res) = each %booltest) {
 	$name = undef if $name eq 'undef';
 	$t = sprintf 'Boolean quoting of %s',
 		defined $name ? qq{"$name"} : 'undef';
 	eval { $result = $dbh->quote($name, {pg_type => PG_BOOL}); };
 	if ($@) {
-		if ($val eq 'ERROR' and $@ =~ /Invalid boolean/) {
-			pass $t;
+		if ($res eq 'ERROR' and $@ =~ /Invalid boolean/) {
+			pass ($t);
 		}
 		else {
-			fail "Failure at $t: $@\n";
+			fail ("Failure at $t: $@");
 		}
 		$dbh->rollback();
 	}
 	else {
-		is ($result, $val, $t);
+		is ($result, $res, $t);
 	}
 }
 

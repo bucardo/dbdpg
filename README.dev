@@ -138,6 +138,8 @@ types.h - Header file for types.c
 t/dbdpg_test_setup.pl - Common connection, schema creation, and schema destruction subs.
   Goes through a lot of trouble to try and get a database to test with.
 
+t/00_release.t - Quick check that all version numbers match.
+
 t/00basic.t - Very basic test to see if DBI and DBD::Pg load properly. Requires Test::Warn 
   for the version warning test.
 
