@@ -569,6 +569,7 @@ testfile
 leaktester
 mak
 mathinline
+MDevel
 nCompiled
 nServer
 SvTRUE
@@ -617,13 +618,16 @@ Ubuntu
 boolean
 destringifying
 expr
-spellcheck
+ints
 gborg
 n's
+Perlish
 Pg's
 qw
+spellcheck
 Szilakszi
 uc
+VC
 
 ## Pg.pm:
 lseg
@@ -682,6 +686,7 @@ numrows
 ok
 p'ositive
 paramTypes
+Perlish
 ph
 preparable
 proven
@@ -714,9 +719,24 @@ implementor
 ph
 
 ## quote.c:
-estring
-SVs
+arg
+Autogenerate
 compat
+downcase
+elsif
+estring
+gotlist
+kwlist
+lsegs
+maxlen
+mv
+ofile
+qq
+src
+strcmp
+strtof
+SVs
+tempfile
 
 ## types.c:
 ASYNC
@@ -786,6 +806,7 @@ preprocessors
 
 ## Makefile.PL:
 prereqs
+subdirectory
 
 ## t/07copy.t:
 copystate
