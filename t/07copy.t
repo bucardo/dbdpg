@@ -171,23 +171,23 @@ ok ($@, $t);
 
 $dbh->do("DELETE FROM $table");
 
-$t='pg_putcopydata fails if not after a COPY TO statement';
+$t='pg_putcopydata fails if not after a COPY FROM statement';
 eval {
 	$dbh->pg_putcopydata("pizza\tpie");
 };
-like ($@, qr{COPY TO command}, $t);
+like ($@, qr{COPY FROM command}, $t);
 
 $t='pg_getcopydata fails if not after a COPY TO statement';
 eval {
 	$dbh->pg_getcopydata($data[0]);
 };
-like ($@, qr{COPY FROM command}, $t);
+like ($@, qr{COPY TO command}, $t);
 
 $t='pg_getcopydata_async fails if not after a COPY TO statement';
 eval {
 	$dbh->pg_getcopydata_async($data[0]);
 };
-like ($@, qr{COPY FROM command}, $t);
+like ($@, qr{COPY TO command}, $t);
 
 $t='pg_putcopyend warns but does not die if not after a COPY statement';
 eval { require Test::Warn; };
@@ -198,21 +198,21 @@ else {
 	Test::Warn::warning_like (sub { $dbh->pg_putcopyend(); }, qr/until a COPY/, $t);
 }
 
-$t='pg_getcopydata does not work if we are using COPY .. FROM';
+$t='pg_getcopydata does not work if we are using COPY .. TO';
 $dbh->rollback();
 $dbh->do("COPY $table FROM STDIN");
 eval {
 	$dbh->pg_getcopydata($data[0]);
 };
-like ($@, qr{COPY FROM command}, $t);
+like ($@, qr{COPY TO command}, $t);
 
-$t='pg_putcopydata does not work if we are using COPY .. TO';
+$t='pg_putcopydata does not work if we are using COPY .. FROM';
 $dbh->rollback();
 $dbh->do("COPY $table TO STDOUT");
 eval {
 	$dbh->pg_putcopydata("pizza\tpie");
 };
-like ($@, qr{COPY TO command}, $t);
+like ($@, qr{COPY FROM command}, $t);
 
 $t='pg_putcopydata works and returns a 1 on success';
 $dbh->rollback();
@@ -234,11 +234,11 @@ eval {
 };
 ok ($@, $t);
 
-$t='Calling pg_getcopydata gives an error when in the middle of COPY .. FROM';
+$t='Calling pg_getcopydata gives an error when in the middle of COPY .. TO';
 eval {
 	$dbh->pg_getcopydata($data[0]);
 };
-like ($@, qr{COPY FROM command}, $t);
+like ($@, qr{COPY TO command}, $t);
 
 $t='Calling do() gives an error when in the middle of COPY .. FROM';
 eval {
@@ -265,7 +265,7 @@ $dbh->commit();
 eval {
 	$result = $dbh->pg_putcopydata('root');
 };
-like ($@, qr{COPY TO command}, $t);
+like ($@, qr{COPY FROM command}, $t);
 
 $t='Normal queries work after pg_putcopyend is called';
 eval {
@@ -306,11 +306,11 @@ eval {
 };
 like ($@, qr{pg_getcopydata}, $t);
 
-$t='Calling pg_putcopydata gives an errors when in the middle of COPY .. TO';
+$t='Calling pg_putcopydata gives an errors when in the middle of COPY .. FROM';
 eval {
 	$dbh->pg_putcopydata('pie');
 };
-like ($@, qr{COPY TO command}, $t);
+like ($@, qr{COPY FROM command}, $t);
 
 $t='pg_getcopydata returns 0 when no more data';
 $dbh->pg_getcopydata(\$data[0]);
