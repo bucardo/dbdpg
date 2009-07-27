@@ -212,6 +212,7 @@ my %opts =
 	 NEEDS_LINKING  => 1,
 	 NO_META        => 1,
 	 clean          => { FILES => 'trace Pg.xsi README.testdatabase' },
+     realclean      => { FILES => 'dbdpg_test_database/' },
 );
 
 if ($os eq 'hpux') {
