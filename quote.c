@@ -313,7 +313,7 @@ char * quote_int(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	while (len > 0 && *string != '\0') {
 		len--;
 		if (isdigit(*string) || ' ' == *string || '+' == *string || '-' == *string) {
-			*string++;
+			string++;
 			continue;			
 		}
 		croak("Invalid integer");
@@ -347,7 +347,7 @@ char * quote_float(const char *string, STRLEN len, STRLEN *retlen, int estring)
 				|| '-' == *string
 				|| 'e' == *string
 				|| 'E' == *string) {
-				*string++;
+				string++;
 				continue;			
 			}
 			croak("Invalid float");
