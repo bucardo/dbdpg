@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.14.0 Released July 27, 2009
+2.14.0 Released July 27, 2009 (subversion r13130)
 
   - Make quoting of int, floats, and names much safer. (CPAN bug #41565) [GSM]
   - Make quoting of geometric types respect all valid chars (CPAN bug #41565) [GSM]
