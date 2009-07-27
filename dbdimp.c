@@ -388,6 +388,7 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
 				strncpy(imp_dbh->sqlstate, "08000", 6); /* CONNECTION EXCEPTION */
 				break;
 			}
+			/*@fallthrough@*/
 		default:
 			strncpy(imp_dbh->sqlstate, "22000", 6); /* DATA EXCEPTION */
 			break;
