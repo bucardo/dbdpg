@@ -279,12 +279,12 @@ The standard way to test is run "make test" which runs all the scripts in the
 minor or a temporary problem, please add it to the test suite. The more tests 
 we have, the better.
 
-Generally, we want to run make test on as wide a variety of configurations as 
+Generally, we want to run 'make test' on as wide a variety of configurations as 
 possible. If you have different platforms of course, you should test all of those. 
 Beyond that, you may find it helpful to set up some aliases to allow quick switching 
-of versions. You should generally test each minor version of PostgreSQL that DBD::Pg 
-currently supports. Keep in mind that there are two things to test for each version: 
-the server that we are compiling against (e.g. which libraries we are linking to) 
+of Postgres and DBI versions. You should generally test each major version of PostgreSQL 
+that DBD::Pg currently supports. Keep in mind that there are two things to test for each 
+version: the server that we are compiling against (e.g. which libraries we are linking to) 
 and the version we are connecting to. You should test all variations.
 
 One way is to keep multiple versions of PostgreSQL in standard directories, and use 
@@ -568,7 +568,8 @@ other sections referenced herein (indicated with **)
 * Make sure everything is up to date in subversion
 
 * Update the versions (see ** Version Numbers) in README, Pg.pm (2 places!), Makefile.PL, 
-  lib/Bundle/DBD/Pg.pm, META.yml (3 places!), and Changes.
+  lib/Bundle/DBD/Pg.pm, META.yml (3 places!), and Changes. Run the t/00_release.t file 
+  to double check you got everything.
 
 * If a final version, put the release date into the Changes file.
 
