@@ -1,7 +1,5 @@
 DBD::Pg  --  the DBI PostgreSQL interface for Perl
 
-# $Id$
-
 DESCRIPTION:
 ------------
 
