@@ -654,7 +654,7 @@ Short note of changes, link to CPAN directory.
 
 Checksums for the file.
 
-* Post to pgsql-announce if this is a major or important version.
+* Post to pgsql-announce@postgresql.org if this is a major or important version.
 
 * Post to the "PostgreSQL news"
 
