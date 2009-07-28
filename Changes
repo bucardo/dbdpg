@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.14.1 Released July 28, 2009
+2.14.1 Released July 28, 2009 (subversion r13140)
 
   - Remove invalid bigint assignment [Tim Bunce]
 
