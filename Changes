@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.14.1 Released July 28, 2009
+
+  - Remove invalid bigint assignment [Tim Bunce]
+
 2.14.0 Released July 27, 2009 (subversion r13130)
 
   - Make quoting of int, floats, and names much safer. (CPAN bug #41565) [GSM]
