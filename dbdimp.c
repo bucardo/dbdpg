@@ -1986,16 +1986,18 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 	if (TRACE7) {
 		TRC(DBILOGFP, "%sPlaceholder type: %d numsegs: %d numphs: %d\n",
 			THEADER, imp_sth->placeholder_type, imp_sth->numsegs, imp_sth->numphs);
-		TRC(DBILOGFP, "%sPlaceholder numbers, ph id, and segments:\n",
+		TRC(DBILOGFP, "%sPlaceholder numbers and segments:\n",
 			THEADER);
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 			TRC(DBILOGFP, "%sPH: (%d) SEG: (%s)\n",
 				THEADER, currseg->placeholder, currseg->segment);
 		}
-		TRC(DBILOGFP, "%sPlaceholder number, fooname, id:\n", THEADER);
-		for (xlen=1,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,xlen++) {
-			TRC(DBILOGFP, "%s#%d FOONAME: (%s)\n",
-				THEADER, (int)xlen, currph->fooname);
+		if (imp_sth->numphs) {
+			TRC(DBILOGFP, "%sPlaceholder number, fooname, id:\n", THEADER);
+			for (xlen=1,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,xlen++) {
+				TRC(DBILOGFP, "%s#%d FOONAME: (%s)\n",
+					THEADER, (int)xlen, currph->fooname);
+			}
 		}
 	}
 
@@ -2976,10 +2978,10 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	}
 	
 	/* We use the new server_side prepare style if:
-	   1. The statement is DML
+	   1. The statement is DML (DDL is not prepareable)
 	   2. The attribute "pg_direct" is false
 	   3. The attribute "pg_server_prepare" is not 0
-	   4. There is one or more placeholders (but "onetime" has not been set)
+	   4. The "onetime" attribute has not been set
 	   5. There are no DEFAULT or CURRENT values
 	   6a. The attribute "pg_server_prepare" is 1
 	   OR
@@ -3000,7 +3002,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		&& 0 != imp_sth->server_prepare
 		&& !imp_sth->has_default
 		&& !imp_sth->has_current
-		&& (1 <= imp_sth->numphs && !imp_sth->onetime)
+		&& !imp_sth->onetime
 		&& (1 == imp_sth->server_prepare
 			|| (imp_sth->numbound == imp_sth->numphs))
 		){
@@ -3033,8 +3035,8 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			}
 		}
 		
-		if (TRACE5) TRC(DBILOGFP, "%sRunning PQexecPrepared with (%s)\n",
-						THEADER, imp_sth->prepare_name);
+		if (TRACE5) TRC(DBILOGFP, "%sRunning PQexecPrepared with (%s) (%s)\n",
+						THEADER, imp_sth->prepare_name, imp_sth->PQvals);
 		if (TSQL) {
 			TRC(DBILOGFP, "EXECUTE %s (\n", imp_sth->prepare_name);
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
