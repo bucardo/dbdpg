@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.15.0
+
+  - Use PQexecPrepared even when no placeholders (CPAN bug #48155) [GSM]
+
 2.14.1 Released July 28, 2009 (subversion r13140)
 
   - Remove invalid bigint assignment [Tim Bunce]
