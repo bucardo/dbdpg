@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 256;
+plan tests => 257;
 
 isnt ($dbh, undef, 'Connect to database for array testing');
 
@@ -50,6 +50,17 @@ my $getarray_int = $dbh->prepare($SQL);
 
 $SQL = q{SELECT testarray3 FROM dbd_pg_test WHERE pname= 'Array Testing'};
 my $getarray_bool = $dbh->prepare($SQL);
+
+$t='Array quoting allows direct insertion into statements';
+$SQL = q{INSERT INTO dbd_pg_test (id,testarray2) VALUES };
+my $quoteid = $dbh->quote(123);
+my $quotearr = $dbh->quote([456]);
+$SQL .= qq{($quoteid, $quotearr)};
+eval {
+	$dbh->do($SQL);
+};
+is ($@, q{}, $t);
+$dbh->rollback();
 
 ## Input
 ## Expected
@@ -200,6 +211,9 @@ for my $test (split /\n\n/ => $array_tests) {
 	my $qexpected = $expected;
 	if ($expected =~ s/\s*quote:\s*(.+)//) {
 		$qexpected = $1;
+	}
+	if ($qexpected !~ /^ERROR/) {
+		$qexpected = qq{'$qexpected'};
 	}
 
 	if ($msg =~ s/NEED (\d+):\s*//) {
@@ -568,7 +582,7 @@ SKIP: {
 
 	$t='quote() handles utf8 inside array';
 	$quoted = $dbh->quote([$utf8_str, $utf8_str]);
-	is ($quoted, qq!{"$utf8_str","$utf8_str"}!, $t);
+	is ($quoted, qq!'{"$utf8_str","$utf8_str"}'!, $t);
 
 	$t='Quoted array of strings should be UTF-8';
     ok (Encode::is_utf8( $quoted ), $t);
@@ -581,7 +595,7 @@ SKIP: {
 
 	$t='Inserting utf-8 into an array via quoted do() works';
 	$dbh->do('DELETE FROM dbd_pg_test');
-	$SQL = qq{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, '$quoted', 'one')};
+	$SQL = qq{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, $quoted, 'one')};
 	eval {
 		$dbh->do($SQL);
 	};

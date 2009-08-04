@@ -2246,7 +2246,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		}
 		else if (SvTYPE(SvRV(newvalue)) == SVt_PVAV) {
 			SV * quotedval;
-			quotedval = pg_stringify_array(newvalue,",",imp_dbh->pg_server_version);
+			quotedval = pg_stringify_array(newvalue,",",imp_dbh->pg_server_version, 0);
 			currph->valuelen = sv_len(quotedval);
 			Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
 			currph->value = SvUTF8(quotedval) ? SvPVutf8_nolen(quotedval) : SvPV_nolen(quotedval);
@@ -2380,7 +2380,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 
 
 /* ================================================================== */
-SV * pg_stringify_array(SV *input, const char * array_delim, int server_version) {
+SV * pg_stringify_array(SV *input, const char * array_delim, int server_version, int extraquotes) {
 
 	dTHX;
 	AV * toparr;
@@ -2399,12 +2399,14 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_stringify_array\n", THEADER);
 
 	toparr = (AV *) SvRV(input);
-	value = newSVpv("{", 1);
+	value = extraquotes ? newSVpv("'{", 2) : newSVpv("{", 1);
 
 	/* Empty arrays are easy */
 	if (av_len(toparr) < 0) {
 		av_clear(toparr);
 		sv_catpv(value, "}");
+		if (extraquotes)
+			sv_catpv(value, "'");
 		if (TEND) TRC(DBILOGFP, "%sEnd pg_stringify_array (empty)\n", THEADER);
 		return value;
 	}
@@ -2506,6 +2508,8 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 	for (xy=0; xy<array_depth; xy++) {
 		sv_catpv(value, "}");
 	}
+	if (extraquotes)
+		sv_catpv(value, "'");
 
 	if (TEND) TRC(DBILOGFP, "%sEnd pg_stringify_array (string: %s)\n", THEADER, neatsvpv(value,0));
 	return value;

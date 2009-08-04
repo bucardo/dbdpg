@@ -205,7 +205,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 		else if (SvROK(to_quote_sv) && !SvAMAGIC(to_quote_sv)) {
 			if (SvTYPE(SvRV(to_quote_sv)) != SVt_PVAV)
 				croak("Cannot quote a reference");
-			RETVAL = pg_stringify_array(to_quote_sv, ",", imp_dbh->pg_server_version);
+			RETVAL = pg_stringify_array(to_quote_sv, ",", imp_dbh->pg_server_version, 1);
 		}
 		else {
 			sql_type_info_t *type_info;
