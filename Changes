@@ -3,6 +3,8 @@
 2.15.0
 
   - Use PQexecPrepared even when no placeholders (CPAN bug #48155) [GSM]
+  - Allow execute_array and bind_param_array to take oddly numbered items, 
+    such that DBI will make missing entries undef/null (CPAN bug #39829) [GSM]
 
 2.14.1 Released July 28, 2009 (subversion r13140)
 
