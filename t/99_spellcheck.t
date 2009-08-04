@@ -615,6 +615,7 @@ turnstep
 Ubuntu
 
 ## Changes:
+bigint
 boolean
 destringifying
 expr
@@ -673,6 +674,7 @@ dereference
 destringify
 dollarquote
 dollarstring
+fallthrough
 firstword
 getcom
 inerror

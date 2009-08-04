@@ -2978,7 +2978,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	}
 	
 	/* We use the new server_side prepare style if:
-	   1. The statement is DML (DDL is not prepareable)
+	   1. The statement is DML (DDL is not preparable)
 	   2. The attribute "pg_direct" is false
 	   3. The attribute "pg_server_prepare" is not 0
 	   4. The "onetime" attribute has not been set
