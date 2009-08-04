@@ -5,6 +5,8 @@
   - Use PQexecPrepared even when no placeholders (CPAN bug #48155) [GSM]
   - Allow execute_array and bind_param_array to take oddly numbered items, 
     such that DBI will make missing entries undef/null (CPAN bug #39829) [GSM]
+  - Put single quotes around array literals when quoting arrays via
+    the quote() method. Per report from David Garamond (CPAN bug #48420) [GSM]
 
 2.14.1 Released July 28, 2009 (subversion r13140)
 
