@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.14.1_1
+2.15.0 Released August 4, 2009
 
   - Use PQexecPrepared even when no placeholders (CPAN bug #48155) [GSM]
   - Allow execute_array and bind_param_array to take oddly numbered items, 
