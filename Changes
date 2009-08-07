@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.15.1 Released August 7, 2009
+
+  - Release to fix the SIGNATURE file. [GSM]
+
 2.15.0 Released August 4, 2009 (subversion r13164)
 
   - Use PQexecPrepared even when no placeholders (CPAN bug #48155) [GSM]

@@ -620,6 +620,7 @@ boolean
 destringifying
 expr
 ints
+Garamond
 gborg
 n's
 Perlish
