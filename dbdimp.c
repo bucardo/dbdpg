@@ -359,7 +359,7 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
 	  Because PQresultErrorField may not work completely when an error occurs, and 
 	  we are connecting over TCP/IP, only set it here if non-null, and fall through 
 	  to a better default value below.
-    */
+	*/
 	if (result) {
 		TRACE_PQRESULTERRORFIELD;
 		if (NULL != PQresultErrorField(result,PG_DIAG_SQLSTATE)) {
@@ -566,7 +566,7 @@ int dbd_db_rollback (SV * dbh, imp_dbh_t * imp_dbh)
 /* ================================================================== */
 int dbd_db_disconnect (SV * dbh, imp_dbh_t * imp_dbh)
 {
-   	dTHX;
+	dTHX;
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_disconnect\n", THEADER);
 
