@@ -3039,8 +3039,8 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			}
 		}
 		
-		if (TRACE5) TRC(DBILOGFP, "%sRunning PQexecPrepared with (%s) (%s)\n",
-						THEADER, imp_sth->prepare_name, (char *)imp_sth->PQvals);
+		if (TRACE5) TRC(DBILOGFP, "%sRunning PQexecPrepared with (%s)\n",
+						THEADER, imp_sth->prepare_name);
 		if (TSQL) {
 			TRC(DBILOGFP, "EXECUTE %s (\n", imp_sth->prepare_name);
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
