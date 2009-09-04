@@ -2,7 +2,6 @@
 
 ## Check our Pod, requires Test::Pod
 ## Also done if available: Test::Pod::Coverage
-## Requires TEST_AUTHOR env
 
 use 5.006;
 use strict;
@@ -10,8 +9,8 @@ use warnings;
 use Test::More;
 select(($|=1,select(STDERR),$|=1)[1]);
 
-if (!$ENV{TEST_AUTHOR}) {
-	plan skip_all => 'Set the environment variable TEST_AUTHOR to enable this test';
+if (! $ENV{RELEASE_TESTING}) {
+	plan (skip_all =>  'Test skipped unless environment variable RELEASE_TESTING is set');
 }
 
 plan tests => 3;

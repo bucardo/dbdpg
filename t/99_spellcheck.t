@@ -1,7 +1,6 @@
 #!perl
 
 ## Spellcheck as much as we can
-## Requires TEST_SPELL to be set
 
 use 5.006;
 use strict;
@@ -11,8 +10,8 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 my (@testfiles, $fh);
 
-if (!$ENV{TEST_SPELL}) {
-	plan skip_all => 'Set the environment variable TEST_SPELL to enable this test';
+if (! $ENV{RELEASE_TESTING}) {
+	plan (skip_all =>  'Test skipped unless environment variable RELEASE_TESTING is set');
 }
 elsif (!eval { require Text::SpellChecker; 1 }) {
 	plan skip_all => 'Could not find Text::SpellChecker';

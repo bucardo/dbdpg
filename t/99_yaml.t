@@ -8,6 +8,10 @@ use warnings;
 use Test::More;
 select(($|=1,select(STDERR),$|=1)[1]);
 
+if (! $ENV{RELEASE_TESTING}) {
+	plan (skip_all =>  'Test skipped unless environment variable RELEASE_TESTING is set');
+}
+
 plan tests => 2;
 
 my $V = 0.03;
