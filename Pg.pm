@@ -4194,10 +4194,12 @@ B<Mailing List>
 The current maintainers may be reached through the 'dbd-pg' mailing list:
 <dbd-pg@perl.org>
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
-The DBD::Pg module is free software. You may distribute under the terms of
-either the GNU General Public License or the Artistic License, as specified in
-the Perl README file.
+Copyright (C) 1994-2009, Greg Sabino Mullane
+
+This module (DBD::Pg) is free software; you can redistribute it and/or modify it 
+under the same terms as Perl 5.10.0. For more details, see the full text of the 
+licenses in the directory LICENSES.
 
 =cut

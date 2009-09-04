@@ -1,4 +1,7 @@
+DBD::Pg is Copyright (C) 1994-2009, Greg Sabino Mullane
+
 DBD::Pg  --  the DBI PostgreSQL interface for Perl
+
 
 DESCRIPTION:
 ------------
@@ -56,13 +59,15 @@ the tests.
 You can also try the #postgresql channel on irc.freenode.net, which 
 usually (but not always) has people who can help you with DBD::Pg.
 
-BUG REPORTS
+
+BUG REPORTS:
 -----------
 
 If you feel certain you have found a bug, you can file a bug report by visiting:
 http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
 and selecting the "Report a new bug" link. Please check that the bug 
 has not already been reported first.
+
 
 INSTALLATION:
 -------------
@@ -92,6 +97,7 @@ Do steps 1 to 2 as a normal user, not as root!
 If the script cannot find the pg_config information itself, it will 
 ask you for the path to it. Enter the complete path to the pg_config 
 file here, including the name of the file itself.
+
 
 TESTING:
 --------
@@ -129,6 +135,7 @@ set DBD_TRACE unless requested, and send only the relevant sections.
 Please consider installing CPAN::Reporter so that your tests are 
 automatically gathered and reported, which helps the development 
 of DBD::Pg.
+
 
 TROUBLESHOOTING:
 ----------------
@@ -241,6 +248,7 @@ Now the Makefile.PL can be ran:
   dmake test
   dmake install
 
+
 * SGI issues:
 
 If you get segmentation faults, make sure you are using the malloc
@@ -336,6 +344,7 @@ dbdimp.o -o blib/arch/auto/DBD/Pg/Pg.so -L/usr/local/pgsql/lib -lpq \
 Once this is done, 'make test' succeeds properly.
 (thanks to <jmore at remote-print.com>)
 
+
 COPYRIGHT:
 ----------
 
@@ -344,6 +353,10 @@ COPYRIGHT:
 	Portions Copyright (c) 1997-2001 Edmund Mergl
 	Portions Copyright (c) 1994-1997 Tim Bunce
 
-You may distribute under the terms of either the GNU General Public
-License or the Artistic License, as specified in the Perl README file.
+
+LICENSE INFORMATION:
+--------------------
+This module (DBD::Pg) is free software; you can redistribute it and/or modify it 
+under the same terms as Perl 5.10.0. For more details, see the full text of the 
+licenses in the directory LICENSES.
 

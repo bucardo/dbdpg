@@ -11,6 +11,8 @@ MANIFEST.SKIP
 README.win32
 README.dev
 win32.mak
+LICENSES/gpl-2.0.txt
+LICENSES/artistic.txt
 
 Pg.h
 Pg.xs
