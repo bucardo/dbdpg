@@ -11,7 +11,7 @@ http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
    take care of broken chopblanks and pg_bool_tf (pass the quote/dequote 
    options struct to function quote/dequote functions)
 - Allow user callbacks to quote user-defined types
-- Move to the Module::Build system
+- Revisit the use of version.pm
 - Test heavily with a thread-enabled Perl
 - Remove libpq dependency
 - Handle and/or better tests for different encoding, especially those not 
