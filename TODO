@@ -23,3 +23,4 @@ http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
 - Fix this: http://nntp.x.perl.org/group/perl.cpan.testers/2698430
 - Composite type support: http://www.postgresql.org/docs/current/interactive/rowtypes.html
 - Full support for execute_array, e.g. the return values
+- Fix array support: execute([1,2]) not working as expected, deep arrays not returned correctly.
