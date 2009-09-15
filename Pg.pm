@@ -2688,7 +2688,10 @@ The C<data_type> argument is optional and should be one of the type constants
 exported by DBD::Pg (such as PG_BYTEA). In addition to string, bytea, char, bool, 
 and other standard types, the following geometric types are supported: point, line, 
 lseg, box, path, polygon, and circle (PG_POINT, PG_LINE, PG_LSEG, PG_BOX, 
-PG_PATH, PG_POLYGON, and PG_CIRCLE respectively).
+PG_PATH, PG_POLYGON, and PG_CIRCLE respectively). To quote a Postgres-specific 
+data type, you must use a 'hashref' argument like so:
+
+  my $quotedval = $dbh->quote($value, { pg_type => PG_VARCHAR });
 
 B<NOTE:> The undocumented (and invalid) support for the C<SQL_BINARY> data
 type is officially deprecated. Use C<PG_BYTEA> with C<bind_param()> instead:
