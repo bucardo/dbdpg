@@ -283,7 +283,7 @@ static void pg_warn (void * arg, const char * message)
 	dTHX;
 	SV *tmp;
 
-	tmp = sv_2mortal(newRV((SV *)arg));
+	tmp = sv_2mortal(newRV_inc((SV *)arg));
 
 	/* This fun little bit is to prevent a core dump when the following occurs:
 	   client_min_messages is set to DEBUG3 or greater, and we exit without a disconnect.
@@ -768,7 +768,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 	if (!retsv)
 		return Nullsv;
 	
-	if (retsv == &sv_yes || retsv == &sv_no) {
+	if (retsv == &PL_sv_yes || retsv == &PL_sv_no) {
 		return retsv; /* no need to mortalize yes or no */
 	}
 	return sv_2mortal(retsv);
@@ -1040,7 +1040,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			AV *av = newAV();
 			char *fieldname;
 			SV * sv_fieldname;
-			retsv = newRV(sv_2mortal((SV*)av));
+			retsv = newRV_inc(sv_2mortal((SV*)av));
 			while(--fields >= 0) {
 				TRACE_PQFNAME;
 				fieldname = PQfname(imp_sth->result, fields);
@@ -1056,7 +1056,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			/* Need to convert the Pg type to ANSI/SQL type. */
 			sql_type_info_t * type_info;
 			AV *av = newAV();
-			retsv = newRV(sv_2mortal((SV*)av));
+			retsv = newRV_inc(sv_2mortal((SV*)av));
 			while(--fields >= 0) {
 				TRACE_PQFTYPE;
 				type_info = pg_type_data((int)PQftype(imp_sth->result, fields));
@@ -1070,7 +1070,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 		if (strEQ("SCALE", key)) {
 			AV *av = newAV();
 			Oid o;
-			retsv = newRV(sv_2mortal((SV*)av));
+			retsv = newRV_inc(sv_2mortal((SV*)av));
 			while(--fields >= 0) {
 				TRACE_PQFTYPE;
 				o = PQftype(imp_sth->result, fields);
@@ -1090,7 +1090,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 
 		if (strEQ("pg_size", key)) {
 			AV *av = newAV();
-			retsv = newRV(sv_2mortal((SV*)av));
+			retsv = newRV_inc(sv_2mortal((SV*)av));
 			while(--fields >= 0) {
 				TRACE_PQFSIZE;
 				(void)av_store(av, fields, newSViv(PQfsize(imp_sth->result, fields)));
@@ -1099,7 +1099,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 		else if (strEQ("pg_type", key)) {
 			sql_type_info_t * type_info;
 			AV *av = newAV();
-			retsv = newRV(sv_2mortal((SV*)av));
+			retsv = newRV_inc(sv_2mortal((SV*)av));
 			while(--fields >= 0) {			
 				TRACE_PQFTYPE;
 				type_info = pg_type_data((int)PQftype(imp_sth->result,fields));
@@ -1119,7 +1119,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			D_imp_dbh_from_sth;
 			int nullable; /* 0 = not nullable, 1 = nullable 2 = unknown */
 			int y;
-			retsv = newRV(sv_2mortal((SV*)av));
+			retsv = newRV_inc(sv_2mortal((SV*)av));
 
 			while(--fields >= 0) {
 				nullable=2;
@@ -1164,7 +1164,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			AV *av = newAV();
 			int sz = 0;
 			Oid o;
-			retsv = newRV(sv_2mortal((SV*)av));
+			retsv = newRV_inc(sv_2mortal((SV*)av));
 			while(--fields >= 0) {
 				TRACE_PQFTYPE;
 				o = PQftype(imp_sth->result, fields);
@@ -1360,7 +1360,7 @@ SV * pg_db_pg_notifies (SV * dbh, imp_dbh_t * imp_dbh)
 	TRACE_PQFREEMEM;
  	PQfreemem(notify);
 
-	retsv = newRV(sv_2mortal((SV*)ret));
+	retsv = newRV_inc(sv_2mortal((SV*)ret));
 
 	if (TEND) TRC(DBILOGFP, "%sEnd pg_db_pg_notifies\n", THEADER);
 	return sv_2mortal(retsv);
