@@ -1080,7 +1080,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 					(void)av_store(av, fields, newSViv(o % (o>>16)));
 				}
 				else {
-					(void)av_store(av, fields, &sv_undef);
+					(void)av_store(av, fields, &PL_sv_undef);
 				}
 			}
 		}
@@ -1185,7 +1185,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 					sz = PQfsize(imp_sth->result, fields);
 					break;
 				}
-				(void)av_store(av, fields, sz > 0 ? newSViv(sz) : &sv_undef);
+				(void)av_store(av, fields, sz > 0 ? newSViv(sz) : &PL_sv_undef);
 			}
 		}
 		break;
@@ -1193,13 +1193,13 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 	case 10: /* CursorName */
 
 		if (strEQ("CursorName", key))
-			retsv = &sv_undef;
+			retsv = &PL_sv_undef;
 		break;
 
 	case 11: /* RowsInCache */
 
 		if (strEQ("RowsInCache", key))
-			retsv = &sv_undef;
+			retsv = &PL_sv_undef;
 		break;
 
 	case 13: /* pg_oid_status  pg_cmd_status */
@@ -1298,7 +1298,7 @@ int dbd_discon_all (SV * drh, imp_drh_t * imp_drh)
 	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_discon_all\n", THEADER);
 
 	/* The disconnect_all concept is flawed and needs more work */
-	if (!PL_dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
+	if (!PL_dirty && !SvTRUE(get_sv("DBI::PERL_ENDING",0))) {
 		sv_setiv(DBIc_ERR(imp_drh), (IV)1);
 		sv_setpv(DBIc_ERRSTR(imp_drh), "disconnect_all not implemented");
 	}
@@ -1340,7 +1340,7 @@ SV * pg_db_pg_notifies (SV * dbh, imp_dbh_t * imp_dbh)
 		TRACE_PQERRORMESSAGE;
 		pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
 		if (TEND) TRC(DBILOGFP, "%sEnd pg_db_pg_notifies (error)\n", THEADER);
-		return &sv_undef;
+		return &PL_sv_undef;
 	}
 
 	TRACE_PQNOTIFIES;
@@ -1348,7 +1348,7 @@ SV * pg_db_pg_notifies (SV * dbh, imp_dbh_t * imp_dbh)
 
 	if (!notify) {
 		if (TEND) TRC(DBILOGFP, "%sEnd pg_db_pg_notifies (undef)\n", THEADER);
-		return &sv_undef; 
+		return &PL_sv_undef; 
 	}
 
 	ret=newAV();
@@ -2335,7 +2335,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 
 	/* convert to a string ASAP */
 	if (!SvPOK(newvalue) && SvOK(newvalue)) {
-		(void)sv_2pv(newvalue, &na);
+		(void)sv_2pv(newvalue, &PL_na);
 	}
 
 	/* upgrade to at least string */

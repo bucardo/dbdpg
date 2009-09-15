@@ -270,7 +270,7 @@ void state(dbh)
 	SV *dbh
 	CODE:
 	D_imp_dbh(dbh);
-	ST(0) = strEQ(imp_dbh->sqlstate,"00000") ? &sv_no : newSVpv(imp_dbh->sqlstate, 5);
+	ST(0) = strEQ(imp_dbh->sqlstate,"00000") ? &PL_sv_no : newSVpv(imp_dbh->sqlstate, 5);
 
 
 void do(dbh, statement, attr=Nullsv, ...)
@@ -341,7 +341,7 @@ void
 pg_endcopy(dbh)
 	SV * dbh
 	CODE:
-		ST(0) = (pg_db_endcopy(dbh)!=0) ? &sv_no : &sv_yes;
+		ST(0) = (pg_db_endcopy(dbh)!=0) ? &PL_sv_no : &PL_sv_yes;
 
 
 void
@@ -360,7 +360,7 @@ pg_savepoint(dbh,name)
 		D_imp_dbh(dbh);
 		if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
 			warn("savepoint ineffective with AutoCommit enabled");
-		ST(0) = (pg_db_savepoint(dbh, imp_dbh, name)!=0) ? &sv_yes : &sv_no;
+		ST(0) = (pg_db_savepoint(dbh, imp_dbh, name)!=0) ? &PL_sv_yes : &PL_sv_no;
 
 
 void
@@ -371,7 +371,7 @@ pg_rollback_to(dbh,name)
 		D_imp_dbh(dbh);
 		if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
 			warn("rollback_to ineffective with AutoCommit enabled");
-		ST(0) = (pg_db_rollback_to(dbh, imp_dbh, name)!=0) ? &sv_yes : &sv_no;
+		ST(0) = (pg_db_rollback_to(dbh, imp_dbh, name)!=0) ? &PL_sv_yes : &PL_sv_no;
 
 
 void
@@ -382,7 +382,7 @@ pg_release(dbh,name)
 		D_imp_dbh(dbh);
 		if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
 			warn("release ineffective with AutoCommit enabled");
-		ST(0) = (pg_db_release(dbh, imp_dbh, name)!=0) ? &sv_yes : &sv_no;
+		ST(0) = (pg_db_release(dbh, imp_dbh, name)!=0) ? &PL_sv_yes : &PL_sv_no;
 
 void
 pg_lo_creat(dbh, mode)
@@ -390,7 +390,7 @@ pg_lo_creat(dbh, mode)
 	int mode
 	CODE:
 		const unsigned int ret = pg_db_lo_creat(dbh, mode);
-		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &sv_undef;
+		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &PL_sv_undef;
 
 void
 pg_lo_open(dbh, lobjId, mode)
@@ -399,7 +399,7 @@ pg_lo_open(dbh, lobjId, mode)
 	int mode
 	CODE:
 		const int ret = pg_db_lo_open(dbh, lobjId, mode);
-		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
 
 void
@@ -410,7 +410,7 @@ pg_lo_write(dbh, fd, buf, len)
 	size_t len
 	CODE:
 		const int ret = pg_db_lo_write(dbh, fd, buf, len);
-		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
 
 void
@@ -432,7 +432,7 @@ pg_lo_read(dbh, fd, buf, len)
 			sv_setpvn(ST(2), buf, (unsigned)ret);
 			SvSETMAGIC(ST(2));
 		}
-		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
 
 void
@@ -443,7 +443,7 @@ pg_lo_lseek(dbh, fd, offset, whence)
 	int whence
 	CODE:
 		const int ret = pg_db_lo_lseek(dbh, fd, offset, whence);
-		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
 
 void
@@ -452,7 +452,7 @@ pg_lo_tell(dbh, fd)
 	int fd
 	CODE:
 		const int ret = pg_db_lo_tell(dbh, fd);
-		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
 
 void
@@ -460,7 +460,7 @@ pg_lo_close(dbh, fd)
 	SV * dbh
 	int fd
 	CODE:
-		ST(0) = (pg_db_lo_close(dbh, fd) >= 0) ? &sv_yes : &sv_no;
+		ST(0) = (pg_db_lo_close(dbh, fd) >= 0) ? &PL_sv_yes : &PL_sv_no;
 
 
 void
@@ -468,7 +468,7 @@ pg_lo_unlink(dbh, lobjId)
 	SV * dbh
 	unsigned int lobjId
 	CODE:
-		ST(0) = (pg_db_lo_unlink(dbh, lobjId) >= 1) ? &sv_yes : &sv_no;
+		ST(0) = (pg_db_lo_unlink(dbh, lobjId) >= 1) ? &PL_sv_yes : &PL_sv_no;
 
 
 void
@@ -477,7 +477,7 @@ pg_lo_import(dbh, filename)
 	char * filename
 	CODE:
 		const unsigned int ret = pg_db_lo_import(dbh, filename);
-		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &sv_undef;
+		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &PL_sv_undef;
 
 
 void
@@ -486,7 +486,7 @@ pg_lo_export(dbh, lobjId, filename)
 	unsigned int lobjId
 	char * filename
 	CODE:
-		ST(0) = (pg_db_lo_export(dbh, lobjId, filename) >= 1) ? &sv_yes : &sv_no;
+		ST(0) = (pg_db_lo_export(dbh, lobjId, filename) >= 1) ? &PL_sv_yes : &PL_sv_no;
 
 
 void
@@ -495,7 +495,7 @@ lo_creat(dbh, mode)
 	int mode
 	CODE:
 		const unsigned int ret = pg_db_lo_creat(dbh, mode);
-		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &sv_undef;
+		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &PL_sv_undef;
 
 void
 lo_open(dbh, lobjId, mode)
@@ -504,7 +504,7 @@ lo_open(dbh, lobjId, mode)
 	int mode
 	CODE:
 		const int ret = pg_db_lo_open(dbh, lobjId, mode);
-		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
 
 void
@@ -515,7 +515,7 @@ lo_write(dbh, fd, buf, len)
 	size_t len
 	CODE:
 		const int ret = pg_db_lo_write(dbh, fd, buf, len);
-		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
 
 void
@@ -537,7 +537,7 @@ lo_read(dbh, fd, buf, len)
 			sv_setpvn(ST(2), buf, (unsigned)ret);
 			SvSETMAGIC(ST(2));
 		}
-		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
 
 void
@@ -548,7 +548,7 @@ lo_lseek(dbh, fd, offset, whence)
 	int whence
 	CODE:
 		const int ret = pg_db_lo_lseek(dbh, fd, offset, whence);
-		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
 
 void
@@ -557,7 +557,7 @@ lo_tell(dbh, fd)
 	int fd
 	CODE:
 		const int ret = pg_db_lo_tell(dbh, fd);
-		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &sv_undef;
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
 
 void
@@ -565,7 +565,7 @@ lo_close(dbh, fd)
 	SV * dbh
 	int fd
 	CODE:
-		ST(0) = (pg_db_lo_close(dbh, fd) >= 0) ? &sv_yes : &sv_no;
+		ST(0) = (pg_db_lo_close(dbh, fd) >= 0) ? &PL_sv_yes : &PL_sv_no;
 
 
 void
@@ -573,7 +573,7 @@ lo_unlink(dbh, lobjId)
 	SV * dbh
 	unsigned int lobjId
 	CODE:
-		ST(0) = (pg_db_lo_unlink(dbh, lobjId) >= 1) ? &sv_yes : &sv_no;
+		ST(0) = (pg_db_lo_unlink(dbh, lobjId) >= 1) ? &PL_sv_yes : &PL_sv_no;
 
 
 void
@@ -582,7 +582,7 @@ lo_import(dbh, filename)
 	char * filename
 	CODE:
 		const unsigned int ret = pg_db_lo_import(dbh, filename);
-		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &sv_undef;
+		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &PL_sv_undef;
 
 
 void
@@ -591,7 +591,7 @@ lo_export(dbh, lobjId, filename)
 	unsigned int lobjId
 	char * filename
 	CODE:
-		ST(0) = (pg_db_lo_export(dbh, lobjId, filename) >= 1) ? &sv_yes : &sv_no;
+		ST(0) = (pg_db_lo_export(dbh, lobjId, filename) >= 1) ? &PL_sv_yes : &PL_sv_no;
 
 
 void
@@ -599,7 +599,7 @@ pg_putline(dbh, buf)
 	SV * dbh
 	char * buf
 	CODE:
-		ST(0) = (pg_db_putline(dbh, buf)!=0) ? &sv_no : &sv_yes;
+		ST(0) = (pg_db_putline(dbh, buf)!=0) ? &PL_sv_no : &PL_sv_yes;
 
 
 void
@@ -607,7 +607,7 @@ putline(dbh, buf)
 	SV * dbh
 	char * buf
 	CODE:
-		ST(0) = (pg_db_putline(dbh, buf)!=0) ? &sv_no : &sv_yes;
+		ST(0) = (pg_db_putline(dbh, buf)!=0) ? &PL_sv_no : &PL_sv_yes;
 
 
 void
@@ -628,7 +628,7 @@ pg_getline(dbh, buf, len)
 		ret = pg_db_getline(dbh, bufsv, (int)len);
 		sv_setpv((SV*)ST(1), buf);
 		SvSETMAGIC(ST(1));
-		ST(0) = (-1 != ret) ? &sv_yes : &sv_no;
+		ST(0) = (-1 != ret) ? &PL_sv_yes : &PL_sv_no;
 
 I32
 pg_getcopydata(dbh, dataline)
@@ -684,13 +684,13 @@ getline(dbh, buf, len)
 		ret = pg_db_getline(dbh, bufsv, (int)len);
 		sv_setpv((SV*)ST(1), buf);
 		SvSETMAGIC(ST(1));
-		ST(0) = (-1 != ret) ? &sv_yes : &sv_no;
+		ST(0) = (-1 != ret) ? &PL_sv_yes : &PL_sv_no;
 
 void
 endcopy(dbh)
 	SV * dbh
 	CODE:
-		ST(0) = (-1 != pg_db_endcopy(dbh)) ? &sv_yes : &sv_no;
+		ST(0) = (-1 != pg_db_endcopy(dbh)) ? &PL_sv_yes : &PL_sv_no;
 
 void
 pg_server_trace(dbh,fh)
@@ -750,7 +750,7 @@ pg_cancel(dbh)
 	SV *dbh
 	CODE:
 	D_imp_dbh(dbh);
-	ST(0) = pg_db_cancel(dbh, imp_dbh) ? &sv_yes : &sv_no;
+	ST(0) = pg_db_cancel(dbh, imp_dbh) ? &PL_sv_yes : &PL_sv_no;
 
 #endif
 
@@ -768,7 +768,7 @@ SV *sth;
 	CODE:
 		D_imp_sth(sth);
 		D_imp_dbh_from_sth;
-		ST(0) = strEQ(imp_dbh->sqlstate,"00000") ? &sv_no : newSVpv(imp_dbh->sqlstate, 5);
+		ST(0) = strEQ(imp_dbh->sqlstate,"00000") ? &PL_sv_no : newSVpv(imp_dbh->sqlstate, 5);
 
 void
 pg_ready(sth)
@@ -783,7 +783,7 @@ pg_cancel(sth)
 	SV *sth
 	CODE:
 	D_imp_sth(sth);
-	ST(0) = pg_db_cancel_sth(sth, imp_sth) ? &sv_yes : &sv_no;
+	ST(0) = pg_db_cancel_sth(sth, imp_sth) ? &PL_sv_yes : &PL_sv_no;
 
 #if PGLIBVERSION >= 80000
 
