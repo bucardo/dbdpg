@@ -554,13 +554,16 @@ YAML
 yml
 
 ## TODO:
-struct
 hashrefs
+rowtypes
+struct
 
 ## README.dev:
 DProf
+GPL
 NYTProf
 dprofpp
+gpl
 nytprofhtml
 profiler
 spellcheck
@@ -572,6 +575,7 @@ MDevel
 nCompiled
 nServer
 SvTRUE
+txt
 XSubPPtmpAAAA
 
 ## README:
