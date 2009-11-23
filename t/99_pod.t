@@ -13,7 +13,7 @@ if (! $ENV{RELEASE_TESTING}) {
 	plan (skip_all =>  'Test skipped unless environment variable RELEASE_TESTING is set');
 }
 
-plan tests => 3;
+plan tests => 10;
 
 my $PODVERSION = '0.95';
 eval {
@@ -25,8 +25,20 @@ SKIP: {
 	if ($@ or $Test::Pod::VERSION < $PODVERSION) {
 		skip ("Test::Pod $PODVERSION is required", 2);
 	}
-	pod_file_ok ('Pg.pm');
-	pod_file_ok ('lib/Bundle/DBD/Pg.pm');
+for my $filename (qw{
+Pg.pm
+lib/Bundle/DBD/Pg.pm
+t/lib/App/Info.pm
+t/lib/App/Info/RDBMS/PostgreSQL.pm
+t/lib/App/Info/Util.pm
+t/lib/App/Info/Request.pm
+t/lib/App/Info/Handler.pm
+t/lib/App/Info/Handler/Prompt.pm
+t/lib/App/Info/RDBMS.pm
+}
+) {
+	pod_file_ok($filename);
+}
 }
 
 ## We won't require everyone to have this, so silently move on if not found
