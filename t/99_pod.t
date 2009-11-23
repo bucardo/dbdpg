@@ -13,7 +13,7 @@ if (! $ENV{RELEASE_TESTING}) {
 	plan (skip_all =>  'Test skipped unless environment variable RELEASE_TESTING is set');
 }
 
-plan tests => 10;
+plan tests => 19;
 
 my $PODVERSION = '0.95';
 eval {
@@ -21,11 +21,7 @@ eval {
 	Test::Pod->import;
 };
 
-SKIP: {
-	if ($@ or $Test::Pod::VERSION < $PODVERSION) {
-		skip ("Test::Pod $PODVERSION is required", 2);
-	}
-for my $filename (qw{
+my @pm_files = qw{
 Pg.pm
 lib/Bundle/DBD/Pg.pm
 t/lib/App/Info.pm
@@ -35,10 +31,15 @@ t/lib/App/Info/Request.pm
 t/lib/App/Info/Handler.pm
 t/lib/App/Info/Handler/Prompt.pm
 t/lib/App/Info/RDBMS.pm
-}
-) {
-	pod_file_ok($filename);
-}
+};
+
+SKIP: {
+	if ($@ or $Test::Pod::VERSION < $PODVERSION) {
+		skip ("Test::Pod $PODVERSION is required", 2);
+	}
+	for my $filename (@pm_files) {
+		pod_file_ok($filename);
+	}
 }
 
 ## We won't require everyone to have this, so silently move on if not found
@@ -198,4 +199,30 @@ SKIP: {
 
 	my $t='DBD::Pg pod coverage okay';
 	pod_coverage_ok ('DBD::Pg', {trustme => $trusted_names}, $t);
+}
+
+## Now some things that are not covered by the above tests
+
+for my $filename (@pm_files) {
+	open my $fh, '<', $filename or die qq{Could not open "$filename": $!\n};
+	while (<$fh>) {
+		last if /^=/;
+	}
+	next if ! defined $_;
+	## Assume the rest is POD.
+	my $passed = 1;
+	while (<$fh>) {
+		if (/C<[^<].+[<>].+[^>]>\b/) {
+			$passed = 0;
+			diag "Failed POD escaping on line $. of $filename\n";
+			diag $_;
+		}
+	}
+	close $fh or warn qq{Could not close "$filename": $!\n};
+	if ($passed) {
+		pass "File $filename has no POD errors";
+	}
+	else {
+		fail "File $filename had at least one POD error";
+	}
 }
