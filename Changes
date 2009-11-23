@@ -1,5 +1,8 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+
+ - Fixed POD escapes (CPAN bug #51856) [FWIE@cpan.org]
+
 2.15.1 Released August 7, 2009
 
   - Release to fix the SIGNATURE file. [GSM]
