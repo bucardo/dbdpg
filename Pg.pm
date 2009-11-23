@@ -1841,7 +1841,7 @@ host, like this:
     {AutoCommit => 0, RaiseError => 1});
 
 The attribute hash can also contain a key named C<dbd_verbose>, which 
-simply calls C<$dbh->trace('DBD')> after the handle is created. This attribute 
+simply calls C<< $dbh->trace('DBD') >> after the handle is created. This attribute 
 is not recommended, as it is clearer to simply explicitly call C<trace> explicitly 
 in your script.
 
@@ -1888,7 +1888,7 @@ indicates no error (CONNECTION_OK), while any other number indicates a failed co
 only other number commonly seen is 1 (CONNECTION_BAD). See the libpq documentation for the 
 complete list of return codes.
 
-In all other non-connect methods C<$h->err> returns the C<PQresultStatus> of the current
+In all other non-connect methods C<< $h->err >> returns the C<PQresultStatus> of the current
 handle. This is a number used by libpq and is one of:
 
   0  Empty query string
@@ -1915,8 +1915,8 @@ Returns a five-character "SQLSTATE" code. Success is indicated by a C<00000> cod
 gets mapped to an empty string by DBI. A code of C<S8006> indicates a connection failure, 
 usually because the connection to the Postgres server has been lost.
 
-While this method can be called as either C<$sth->state> or C<$dbh->state>, it 
-is usually clearer to always use C<$dbh->state>.
+While this method can be called as either C<< $sth->state >> or C<< $dbh->state >>, it 
+is usually clearer to always use C<< $dbh->state >>.
 
 The list of codes used by PostgreSQL can be found at:
 L<http://www.postgresql.org/docs/current/static/errcodes-appendix.html>
@@ -1992,7 +1992,7 @@ Outputs all SQL statements. Note that the output provided will not
 necessarily be in a form suitable to passing directly to Postgres, 
 as server-side prepared statements are used extensively by DBD::Pg.
 For maximum portability of output (but with a potential performance 
-hit), use with C<$dbh->{pg_server_prepare} = 0>
+hit), use with C<< $dbh->{pg_server_prepare} = 0 >>.
 
 =item DBD
 
@@ -2580,7 +2580,7 @@ constraint, and which uses a sequence as a default value. If more than one colum
 meets these conditions, the primary key will be used. This involves some
 looking up of things in the system table, so DBD::Pg will cache the sequence
 name for subsequent calls. If you need to disable this caching for some reason,
-(such as the sequence name changing), you can control it by adding C<pg_cache => 0> 
+(such as the sequence name changing), you can control it by adding C<< pg_cache => 0 >>
 to the final (hashref) argument for last_insert_id.
 
 Please keep in mind that this method is far from foolproof, so make your
