@@ -1941,7 +1941,7 @@ Changes the trace settings on a database or statement handle.
 The optional second argument specifies a file to write the 
 trace information to. If no filename is given, the information 
 is written to F<STDERR>. Note that tracing can be set globally as 
-well by setting C<DBI-E<gt>trace>, or by using the environment 
+well by setting C<< DBI->trace >>, or by using the environment 
 variable I<DBI_TRACE>.
 
 The value is either a numeric level or a named flag. For the 
@@ -1979,8 +1979,8 @@ combines them.
 
 Sometimes you may wish to turn the tracing on before you connect 
 to the database. The second example above shows a way of doing this: 
-the call to C<DBD::Pg-E<gt>parse_trace_flags> provides a number than can 
-be fed to C<DBI-E<gt>trace> before you create a database handle.
+the call to C<< DBD::Pg->parse_trace_flags >> provides a number than can 
+be fed to C<< DBI->trace >> before you create a database handle.
 
 DBD::Pg supports the following trace flags:
 
@@ -2158,7 +2158,7 @@ Exports a large object into a Unix file. Returns false upon failure, true otherw
 
   $fd = $dbh->func('getfd');
 
-Deprecated, use L<$dbh-E<gt>{pg_socket}|/pg_socket> instead.
+Deprecated, use L<< $dbh->{pg_socket}|/pg_socket >> instead.
 
 =back
 
@@ -2664,8 +2664,8 @@ good policy to always explicitly call commit or rollback at some point before di
 relying on the default rollback behavior.
 
 This method may give warnings about "disconnect invalidates X active statement handle(s)". This means that 
-you called C<$sth-E<gt>execute()> but did not finish fetching all the rows from them. To avoid seeing this 
-warning, either fetch all the rows or call C<$sth-E<gt>finish()> for each executed statement handle.
+you called C<< $sth->execute() >> but did not finish fetching all the rows from them. To avoid seeing this 
+warning, either fetch all the rows or call C<< $sth->finish() >> for each executed statement handle.
 
 If the script exits before disconnect is called (or, more precisely, if the database handle is no longer 
 referenced by anything), then the database handle's DESTROY method will call the rollback() and disconnect() 
@@ -3457,7 +3457,7 @@ Fetches the next row of data from the statement handle, and returns a reference 
 holding the column values. Any columns that are NULL are returned as undef within the array.
 
 If there are no more rows or if an error occurs, the this method return undef. You should 
-check C<$sth-E<gt>err> afterwards (or use the L</RaiseError> attribute) to discover if the undef returned 
+check C<< $sth->err >> afterwards (or use the L</RaiseError> attribute) to discover if the undef returned 
 was due to an error.
 
 Note that the same array reference is returned for each fetch, so don't store the reference and 
@@ -3480,7 +3480,7 @@ Fetches the next row of data and returns a hashref containing the name of the co
 and the data itself as the values. Any NULL value is returned as as undef value.
 
 If there are no more rows or if an error occurs, the this method return undef. You should 
-check C<$sth-E<gt>err> afterwards (or use the L</RaiseError> attribute) to discover if the undef returned 
+check C<< $sth->err >> afterwards (or use the L</RaiseError> attribute) to discover if the undef returned 
 was due to an error.
 
 The optional C<$name> argument should be either C<NAME>, C<NAME_lc> or C<NAME_uc>, and indicates 
@@ -3494,7 +3494,7 @@ what sort of transformation to make to the keys in the hash.
 
 Returns a reference to an array of arrays that contains all the remaining rows to be fetched from the 
 statement handle. If there are no more rows, an empty arrayref will be returned. If an error occurs, 
-the data read in so far will be returned. Because of this, you should always check C<$sth-E<gt>err> after 
+the data read in so far will be returned. Because of this, you should always check C<< $sth->err >> after 
 calling this method, unless L</RaiseError> has been enabled.
 
 If C<$slice> is an array reference, fetchall_arrayref uses the L</fetchrow_arrayref> method to fetch each 
@@ -3526,7 +3526,7 @@ when you have not fetched all the possible rows.
   $rv = $sth->rows;
 
 Returns the number of rows returned by the last query. In contrast to many other DBD modules, 
-the number of rows is available immediately after calling C<$sth-E<gt>execute>. Note that 
+the number of rows is available immediately after calling C<< $sth->execute >>. Note that 
 the L</execute> method itself returns the number of rows itself, which means that this 
 method is rarely needed.
 
@@ -4025,7 +4025,7 @@ you can set the attribute L<pg_expand_array|/pg_expand_array_(boolean)>, which i
 =head2 COPY support
 
 DBD::Pg allows for quick (bulk) reading and storing of data by using 
-the B<COPY> command. The basic process is to use C<$dbh-E<gt>do> to issue a 
+the B<COPY> command. The basic process is to use C<< $dbh->do >> to issue a 
 COPY command, and then to either add rows using L</pg_putcopydata>, or to 
 read them by using L</pg_getcopydata>.
 
