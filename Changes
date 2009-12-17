@@ -1,6 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 
+ - Better SQLSTATE code on connection failure (CPAN bug #52863)
+   [Chris Travers with help from Andrew Gierth]
+
  - Fixed POD escapes (CPAN bug #51856) [FWIE@cpan.org]
 
 2.15.1 Released August 7, 2009

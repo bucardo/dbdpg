@@ -185,8 +185,8 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	connstatus = PQstatus(imp_dbh->conn);
 	if (CONNECTION_OK != connstatus) {
 		TRACE_PQERRORMESSAGE;
-		pg_error(aTHX_ dbh, connstatus, PQerrorMessage(imp_dbh->conn));
 		strncpy(imp_dbh->sqlstate, "08006", 6); /* "CONNECTION FAILURE" */
+		pg_error(aTHX_ dbh, connstatus, PQerrorMessage(imp_dbh->conn));
 		TRACE_PQFINISH;
 		PQfinish(imp_dbh->conn);
 		sv_free((SV *)imp_dbh->savepoints);
