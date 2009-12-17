@@ -211,6 +211,7 @@ my %opts =
 	 PERL_MALLOC_OK => 1,
 	 NEEDS_LINKING  => 1,
 	 NO_META        => 1,
+     NORECURS       => 1,
 	 clean          => { FILES => 'trace Pg.xsi README.testdatabase' },
      realclean      => { FILES => 'dbdpg_test_database/' },
 );
