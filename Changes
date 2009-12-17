@@ -1,5 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.16.0 Released December 17, 2009
+
  - Put in a test for high-bit characters in bytea handling.
    [Bryce Nesbitt] (see also CPAN bug #39390)
 
@@ -181,6 +183,11 @@
   - Add more attribute tests, improve testing system. [GSM]
   - Many documentation improvements. [GSM]
   - Win32 build improvements [T.J. Ferraro]
+
+2.8.8 Released December 17, 2009
+
+  - Security release to fix high bit character problem in bytea
+    (CPAN bug #51153) (Debian bug #554489)
 
 2.8.7 Released July 24, 2008 (subversion r11582)
 
