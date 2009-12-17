@@ -1,5 +1,7 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+ - Put in a test for high-bit characters in bytea handling.
+   [Bryce Nesbitt] (see also CPAN bug #39390)
 
  - Better SQLSTATE code on connection failure (CPAN bug #52863)
    [Chris Travers with help from Andrew Gierth]

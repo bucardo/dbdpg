@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 7;
+plan tests => 11;
 
 isnt ($dbh, undef, 'Connect to database for bytea testing');
 
@@ -40,6 +40,14 @@ ok ($sth->execute(401, '\''), $t);
 $t='bytea (second) insert test with string containing a single quote';
 ok ($sth->execute(402, '\''), $t);
 
+my ($binary_in, $binary_out);
+$t='store binary data in BYTEA column';
+for(my $i=0; $i<256; $i++) { $binary_out .= chr($i); }
+$sth->{pg_server_prepare} = 0;
+ok ($sth->execute(403, $binary_out), $t);
+$sth->{pg_server_prepare} = 1;
+ok ($sth->execute(404, $binary_out), $t);
+
 $t='Received correct text from BYTEA column with backslashes';
 $sth = $dbh->prepare(q{SELECT bytetest FROM dbd_pg_test WHERE id=?});
 $sth->execute(400);
@@ -50,6 +58,14 @@ $t='Received correct text from BYTEA column with quote';
 $sth->execute(402);
 $byte = $sth->fetchall_arrayref()->[0][0];
 is ($byte, '\'', $t);
+
+$t='Ensure proper handling of high bit characters';
+$sth->execute(403);
+($binary_in) = $sth->fetchrow_array();
+ok( $binary_in eq $binary_out, $t );
+$sth->execute(404);
+($binary_in) = $sth->fetchrow_array();
+ok( $binary_in eq $binary_out, $t );
 
 $t='quote properly handles bytea strings';
 my $string = "abc\123\\def\0ghi";
