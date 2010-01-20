@@ -1,11 +1,11 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.16.1 Released January 20, 2010
+2.16.1 Released January 20, 2010 (subversion r13756)
 
   - Output error messages in UTF-8 as needed. Reported by 
     Michael Hofmann. [GSM] (CPAN bug #53854)
 
-2.16.0 Released December 17, 2009
+2.16.0 Released December 17, 2009 (subversion r13672)
 
  - Put in a test for high-bit characters in bytea handling.
    [Bryce Nesbitt] (see also CPAN bug #39390)
