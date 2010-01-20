@@ -2,7 +2,7 @@
 
   $Id$
 
-  Copyright (c) 2002-2009 Greg Sabino Mullane and others: see the Changes file
+  Copyright (c) 2002-2010 Greg Sabino Mullane and others: see the Changes file
   Portions Copyright (c) 2002 Jeffrey W. Baker
   Portions Copyright (c) 1997-2000 Edmund Mergl
   Portions Copyright (c) 1994-1997 Tim Bunce
