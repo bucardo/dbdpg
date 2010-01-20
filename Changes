@@ -1,5 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.16.1
+
+  - Output error messages in UTF-8 as needed. Reported by 
+    Michael Hofmann. [GSM] (CPAN bug #53854)
+
 2.16.0 Released December 17, 2009
 
  - Put in a test for high-bit characters in bytea handling.
