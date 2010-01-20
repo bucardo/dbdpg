@@ -1,6 +1,6 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.16.1
+2.16.1 Released January 20, 2010
 
   - Output error messages in UTF-8 as needed. Reported by 
     Michael Hofmann. [GSM] (CPAN bug #53854)
