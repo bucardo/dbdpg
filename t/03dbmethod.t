@@ -694,6 +694,13 @@ one => [
 	],
 };
 
+## Make some per-version tweaks
+
+## 8.5 changed the way foreign key names are generated
+if ($pgversion >= 80500) {
+	$correct_stats->{two}[1][5] = $correct_stats->{two}[2][5] = 'dbd_pg_test2_b_c_key';
+}
+
 my $stats;
 
 $t="Correct stats output for $table1";
