@@ -220,9 +220,9 @@ for my $filename (@pm_files) {
 	}
 	close $fh or warn qq{Could not close "$filename": $!\n};
 	if ($passed) {
-		pass "File $filename has no POD errors";
+		pass ("File $filename has no POD errors");
 	}
 	else {
-		fail "File $filename had at least one POD error";
+		fail ("File $filename had at least one POD error");
 	}
 }

@@ -62,10 +62,10 @@ is ($byte, '\'', $t);
 $t='Ensure proper handling of high bit characters';
 $sth->execute(403);
 ($binary_in) = $sth->fetchrow_array();
-ok( $binary_in eq $binary_out, $t );
+ok ($binary_in eq $binary_out, $t);
 $sth->execute(404);
 ($binary_in) = $sth->fetchrow_array();
-ok( $binary_in eq $binary_out, $t );
+ok ($binary_in eq $binary_out, $t);
 
 $t='quote properly handles bytea strings';
 my $string = "abc\123\\def\0ghi";

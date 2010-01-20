@@ -625,6 +625,7 @@ expr
 ints
 Garamond
 gborg
+Hofmann
 n's
 Perlish
 Pg's
