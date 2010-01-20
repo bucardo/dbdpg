@@ -271,6 +271,10 @@ static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
 	sv_setpvn(DBIc_ERRSTR(imp_xxh), error_msg, error_len);
 	sv_setpv(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate);
 
+	/* Set as utf-8 */
+	if (imp_dbh->pg_enable_utf8)
+		SvUTF8_on(DBIc_ERRSTR(imp_xxh));
+
 	if (TEND) TRC(DBILOGFP, "%sEnd pg_error\n", THEADER);
 
 } /* end of pg_error */
