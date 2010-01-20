@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 524;
+plan tests => 529;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -1400,12 +1400,14 @@ $result = $dbh->pg_lo_unlink($object);
 ok (!$result, $t);
 $dbh->rollback();
 
+my $abctext = $pgversion >= 80500 ? 'x6162630a646566' : "abc\ndef";
+
 SKIP: {
 
 	eval {
 		require File::Temp;
 	};
-	$@ and skip ('Must have File::Temp to test pg_lo_import and pg_lo_export', 8);
+	$@ and skip ('Must have File::Temp to test pg_lo_import* and pg_lo_export', 8);
 
 	$t='DB handle method "pg_lo_import" works';
 	my ($fh,$filename) = File::Temp::tmpnam();
@@ -1414,12 +1416,46 @@ SKIP: {
 	$handle = $dbh->pg_lo_import($filename);
 	my $objid = $handle;
 	ok ($handle, $t);
-	unlink $filename;
 
 	$t='DB handle method "pg_lo_import" inserts correct data';
 	$SQL = "SELECT data FROM pg_largeobject where loid = $handle";
 	$info = $dbh->selectall_arrayref($SQL)->[0][0];
-	is_deeply ($info, "abc\ndef", $t);
+	is_deeply ($info, $abctext, $t);
+	$dbh->commit();
+
+  SKIP: {
+		if ($pglibversion < 80400) {
+			skip ('Cannot test pg_lo_import_with_oid unless compiled against 8.4 or better server', 5);
+		}
+
+		$t='DB handle method "pg_lo_import_with_oid" works with high number';
+		my $highnumber = 345167;
+		$dbh->pg_lo_unlink($highnumber);
+		$dbh->commit();
+		my $thandle = $dbh->pg_lo_import_with_oid($filename, $highnumber);
+		is ($thandle, $highnumber, $t);
+		ok ($thandle, $t);
+
+		$t='DB handle method "pg_lo_import_with_oid" inserts correct data';
+		$SQL = "SELECT data FROM pg_largeobject where loid = $thandle";
+		$info = $dbh->selectall_arrayref($SQL)->[0][0];
+		is_deeply ($info, $abctext, $t);
+
+		$t='DB handle method "pg_lo_import_with_oid" fails when given already used number';
+		eval {
+			$thandle = $dbh->pg_lo_import_with_oid($filename, $objid);
+		};
+		is ($thandle, undef, $t);
+		$dbh->rollback();
+
+		$t='DB handle method "pg_lo_import_with_oid" falls back to lo_import when number is 0';
+		eval {
+			$thandle = $dbh->pg_lo_import_with_oid($filename, 0);
+		};
+		ok ($thandle, $t);
+	}
+
+	unlink $filename;
 
 	$t='DB handle method "pg_lo_open" works after "pg_lo_insert"';
 	$handle = $dbh->pg_lo_open($handle, $R);
@@ -1517,7 +1553,7 @@ SKIP: {
 	$sth = $dbh->prepare($SQL);
 	$sth->execute($handle);
 	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, "abc\ndef", $t);
+	is_deeply ($info, $abctext, $t);
 
 	$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, no command)';
 	$dbh->begin_work();
@@ -1525,7 +1561,7 @@ SKIP: {
 	ok ($handle, $t);
 	$sth->execute($handle);
 	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, "abc\ndef", $t);
+	is_deeply ($info, $abctext, $t);
 	$dbh->rollback();
 
 	$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, no command, rollback)';
@@ -1544,7 +1580,7 @@ SKIP: {
 	ok ($handle, $t);
 	$sth->execute($handle);
 	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, "abc\ndef", $t);
+	is_deeply ($info, $abctext, $t);
 	$dbh->rollback();
 
 	$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, second command, rollback)';
@@ -1564,7 +1600,7 @@ SKIP: {
 	ok ($handle, $t);
 	$sth->execute($handle);
 	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, "abc\ndef", $t);
+	is_deeply ($info, $abctext, $t);
 
 	$t='DB handle method "pg_lo_import" works (AutoCommit not on, second command)';
 	$dbh->rollback();
@@ -1573,7 +1609,7 @@ SKIP: {
 	ok ($handle, $t);
 	$sth->execute($handle);
 	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, "abc\ndef", $t);
+	is_deeply ($info, $abctext, $t);
 
 	unlink $filename;
 	$dbh->{AutoCommit} = 1;

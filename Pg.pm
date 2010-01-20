@@ -152,6 +152,7 @@ use 5.006001;
 		DBD::Pg::db->install_method('pg_lo_close');
 		DBD::Pg::db->install_method('pg_lo_unlink');
 		DBD::Pg::db->install_method('pg_lo_import');
+		DBD::Pg::db->install_method('pg_lo_import_with_oid');
 		DBD::Pg::db->install_method('pg_lo_export');
 
 		return $drh;
@@ -2147,6 +2148,18 @@ This function cannot be used if AutoCommit is enabled.
 
 Imports a Unix file as a large object and returns the object id of the new
 object or C<undef> upon failure.
+
+=item lo_import_with_oid
+
+
+  $lobjId = $dbh->pg_lo_import($filename, $OID);
+
+Same as lo_import, but attempts to use the supplied OID as the 
+large object number. If this number is 0, it falls back to the 
+behavior of lo_import (which assigns the next available OID).
+
+This is only available when DBD::Pg is compiled against a Postgres 
+server version 8.4 or later.
 
 =item lo_export
 

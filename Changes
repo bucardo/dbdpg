@@ -1,5 +1,10 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.17.0
+
+  - Added support for new lo_import_with_oid function.
+    [GSM] (CPAN bug #53835)
+
 2.16.1 Released January 20, 2010 (subversion r13756)
 
   - Output error messages in UTF-8 as needed. Reported by 

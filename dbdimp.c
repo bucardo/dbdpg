@@ -4414,6 +4414,34 @@ unsigned int pg_db_lo_import (SV * dbh, char * filename)
 }
 
 /* ================================================================== */
+unsigned int pg_db_lo_import_with_oid (SV * dbh, char * filename, unsigned int lobjId)
+{
+
+	Oid loid;
+	dTHX;
+	D_imp_dbh(dbh);
+
+	if (TSTART) TRC(DBILOGFP, "%sBegin pg_db_lo_import_with_oid (filename: %s, oid: %d)\n",
+					THEADER, filename, lobjId);
+
+	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
+		return 0; /* No other option, because lo_import* returns an Oid */
+
+	if (TLIBPQ) {
+		TRC(DBILOGFP, "%slo_import_with_oid\n", THEADER);
+	}
+	loid = lo_import_with_oid(imp_dbh->conn, filename, lobjId); /* 0 on error */
+
+	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		if (!pg_db_end_txn(aTHX_ dbh, imp_dbh, 0==loid ? 0 : 1))
+			return 0;
+	}
+
+	return loid;
+
+}
+
+/* ================================================================== */
 int pg_db_lo_export (SV * dbh, unsigned int lobjId, char * filename)
 {
 

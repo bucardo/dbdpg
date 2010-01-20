@@ -231,6 +231,8 @@ int pg_db_lo_unlink (SV *dbh, unsigned int lobjId);
 
 unsigned int pg_db_lo_import (SV *dbh, char *filename);
 
+unsigned int pg_db_lo_import_with_oid (SV *dbh, char *filename, unsigned int lobjId);
+
 int pg_db_lo_export (SV *dbh, unsigned int lobjId, char *filename);
 
 int pg_db_result (SV *h, imp_dbh_t *imp_dbh);

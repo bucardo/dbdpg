@@ -481,6 +481,17 @@ pg_lo_import(dbh, filename)
 
 
 void
+pg_lo_import_with_oid(dbh, filename, lobjId)
+	SV * dbh
+	char * filename
+	unsigned int lobjId
+	CODE:
+		const unsigned int ret = (lobjId==0) ? pg_db_lo_import(dbh, filename)
+			: pg_db_lo_import_with_oid(dbh, filename, lobjId);
+		ST(0) = (ret > 0) ? sv_2mortal(newSVuv(ret)) : &PL_sv_undef;
+
+
+void
 pg_lo_export(dbh, lobjId, filename)
 	SV * dbh
 	unsigned int lobjId
