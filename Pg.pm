@@ -2756,7 +2756,7 @@ new notices will not be picked up while in the middle of a transaction. An examp
   }
 
 Payloads will always be an empty string unless you are connecting to a Postgres 
-server version 8.5 or higher.
+server version 9.0 or higher.
 
 =head3 B<ping>
 
