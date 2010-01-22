@@ -4119,7 +4119,7 @@ success. This method will fail if called when not in COPY IN mode.
 =head2 Large Objects
 
 DBD::Pg supports all largeobject functions provided by libpq via the
-C<func> method. Please note that access to a large object, even read-only 
+C<< $dbh->pg_lo* >> methods. Please note that access to a large object, even read-only 
 large objects, must be put into a transaction.
 
 =head2 Cursors
