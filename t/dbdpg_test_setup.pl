@@ -592,7 +592,7 @@ sub find_tempdir {
 
 sub get_test_settings {
 
-	## Returns test databae information from the testfile if it exists
+	## Returns test database information from the testfile if it exists
 	## Defaults to ENV variables or blank
 
 	## Find the best candidate for the pg_ctl program
@@ -610,7 +610,7 @@ sub get_test_settings {
 				$error .= "\n$_";
 			}
 			/DSN: (.+)/           and $testdsn = $1;
-			/User: (\w+)/         and $testuser = $1;
+			/User: (\S+)/         and $testuser = $1;
 			/Helpconnect: (\d+)/  and $helpconnect = $1;
 			/Testowner: (\w+)/    and $su = $1;
 			/Testowneruid: (\d+)/ and $uid = $1;
