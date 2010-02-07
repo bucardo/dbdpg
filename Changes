@@ -1,5 +1,9 @@
 ('GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.17.1
+
+  - Don't limit stored user name to \w in tests (CPAN bug #54372)
+
 2.17.0
 
   - Added support for new lo_import_with_oid function.
