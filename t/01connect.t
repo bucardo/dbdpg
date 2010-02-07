@@ -39,6 +39,9 @@ ok ($dbh->disconnect(), 'Disconnect from the database');
 $t=q{Second database connection attempt worked};
 (undef,$connerror,$dbh) = connect_database();
 is ($connerror, '', $t);
+if ($connerror ne '') {
+    BAIL_OUT 'Second connection to database failed, bailing out';
+}
 
 ## Grab some important values used for debugging
 my @vals = qw/array_nulls backslash_quote server_encoding client_encoding standard_conforming_strings/;
