@@ -23,7 +23,11 @@ isnt ($dbh, undef, 'Connect to database for bytea testing');
 
 my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 if ($pgversion >= 80100) {
-  $dbh->do('SET escape_string_warning = false');
+	$dbh->do('SET escape_string_warning = false');
+}
+
+if ($pgversion >= 90000) {
+	$dbh->do(q{SET bytea_output = 'escape'});
 }
 
 my ($sth, $t);
