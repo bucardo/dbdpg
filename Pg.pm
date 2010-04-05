@@ -3909,8 +3909,9 @@ currently running asynchronous query to complete. It has no effect if there is n
 
 This database-level method attempts to cancel any currently running asynchronous query. It returns true if 
 the cancel succeeded, and false otherwise. Note that a query that has finished before this method is executed 
-will also return false. B<WARNING>: a successful cancellation will leave the database in an unusable state, 
-so DBD::Pg will automatically clear out the error message and issue a ROLLBACK.
+will also return false. B<WARNING>: a successful cancellation may leave the database in an unusable state, 
+so you may need to ROLLBACK or ROLLBACK TO a savepoint. As of version 2.17.0 of DBD::Pg, rollbacks are 
+not done automatically.
 
   $result = $dbh->pg_cancel();
 

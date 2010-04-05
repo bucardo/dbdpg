@@ -4706,10 +4706,8 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 /*
 Attempt to cancel a running asynchronous query
 Returns true if the cancel succeeded, and false if it did not
-If it did successfully cancel the query, it will also do a rollback.
-Note that queries which have finished do not cause a rollback.
 In this case, pg_cancel will return false.
-NOTE: We only return true if we cancelled and rolled back!
+NOTE: We only return true if we cancelled
 */
 
 /* ================================================================== */
@@ -4769,11 +4767,9 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
 
 	status = _sqlstate(aTHX_ imp_dbh, result);
 
-	/* If we actually cancelled a running query, perform a rollback */
+	/* If we actually cancelled a running query, just return true - the caller must rollback if needed */
 	if (0 == strncmp(imp_dbh->sqlstate, "57014", 5)) {
-		if (TRACE3) { TRC(DBILOGFP, "%sRolling back after cancelled query\n", THEADER); }
-		dbd_db_rollback(h, imp_dbh);
-		if (TEND) TRC(DBILOGFP, "%sEnd pg_db_cancel (rollback)\n", THEADER);
+		if (TEND) TRC(DBILOGFP, "%sEnd pg_db_cancel\n", THEADER);
 		return DBDPG_TRUE;
 	}
 
