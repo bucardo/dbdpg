@@ -1,11 +1,12 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.17.0
+2.17.0 Released April 6, 2010
 
-  - Do not automatically ROLLBACK on a failed pg_cancel (CPAN bug #55188)
+  - Do not automatically ROLLBACK on a failed pg_cancel [GSM] (CPAN bug #55188)
   - Added support for new lo_import_with_oid function.
     [GSM] (CPAN bug #53835)
-  - Don't limit stored user name to \w in tests (CPAN bug #54372)
+  - Don't limit stored user name to \w in tests [GSM] (CPAN bug #54372)
+  - Allow tests to support versions back to Postgres 7.4 [GSM]
 
 2.16.1 Released January 20, 2010 (subversion r13756)
 
