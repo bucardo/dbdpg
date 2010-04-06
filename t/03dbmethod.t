@@ -1427,6 +1427,9 @@ SKIP: {
 		if ($pglibversion < 80400) {
 			skip ('Cannot test pg_lo_import_with_oid unless compiled against 8.4 or better server', 5);
 		}
+		if ($pgversion < 80000) {
+			skip ('Cannot test pg_lo_import_with_oid against old versions of Postgres', 5);
+		}
 
 		$t='DB handle method "pg_lo_import_with_oid" works with high number';
 		my $highnumber = 345167;

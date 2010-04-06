@@ -63,7 +63,8 @@ sub connect_database {
 	## We'll try various ways to get to a database to test with
 
 	## First, check to see if we've been here before and left directions
-	my ($testdsn,$testuser,$helpconnect,$su,$uid,$testdir,$pg_ctl,$initdb,$error) = get_test_settings();
+	my ($testdsn,$testuser,$helpconnect,$su,$uid,$testdir,$pg_ctl,$initdb,$error,$version)
+		= get_test_settings();
 
 	## Did we fail last time? Fail this time too, but quicker!
 	if ($testdsn =~ /FAIL!/) {
@@ -131,6 +132,9 @@ sub connect_database {
 							}
 						}
 						$option = q{-o '-k socket'};
+						if ($version < 8.0) {
+							$option = q{-o '-k dbdpg_test_database/data/socket'};
+						}
 					}
 					my $COM = qq{$pg_ctl $option -l $testdir/dbdpg_test.logfile -D $testdir/data start};
 					if ($su) {
@@ -245,10 +249,11 @@ sub connect_database {
 		$ENV{LANG} = 'C';
 		$info = '';
 		eval {
-			$info = qx{$initdb --help 2>&1};
+			$info = qx{$initdb --version 2>&1};
 		};
 		last GETHANDLE if $@; ## Fail - initdb bad
-		if (!defined $info or ($info !~ /\@postgresql\.org/ and $info !~ /run as root/)) {
+		$version = 0;
+		if (!defined $info or ($info !~ /(Postgres)/i and $info !~ /run as root/)) {
 			if (defined $info) {
 				if ($info !~ /\w/) {
 					$@ = 'initdb not found: cannot run full tests without a Postgres database';
@@ -264,6 +269,9 @@ sub connect_database {
 				$@ = $msg;
 			}
 			last GETHANDLE; ## Fail - initdb bad
+		}
+		elsif ($info =~ /(\d+\.\d+)\.\d+/) {
+			$version = $1;
 		}
 
 		## Make sure pg_ctl is available as well before we go further
@@ -401,8 +409,13 @@ sub connect_database {
 		print $cfh "\n\n## DBD::Pg testing parameters\n";
 		print $cfh "port=$testport\n";
 		print $cfh "max_connections=4\n";
-		print $cfh "log_statement = 'all'\n";
-		print $cfh "log_line_prefix = '%m [%p] '\n";
+		if ($version >= 8.0) {
+			print $cfh "log_statement = 'all'\n";
+			print $cfh "log_line_prefix = '%m [%p] '\n";
+		}
+		else {
+			print $cfh "silent_mode = true\n";
+		}
 		print $cfh "log_min_messages = 'DEBUG1'\n";
 		print $cfh "listen_addresses='127.0.0.1'\n" if $^O =~ /Win32/;
 		print $cfh "\n";
@@ -426,6 +439,9 @@ sub connect_database {
 					}
 				}
 				$option = q{-o '-k socket'};
+				if ($version < 8.0) {
+					$option = q{-o '-k dbdpg_test_database/data/socket'};
+				}
 			}
 			my $COM = qq{$pg_ctl $option -l $testdir/dbdpg_test.logfile -D $testdir/data start};
 		    $olddir = getcwd;
@@ -453,6 +469,7 @@ sub connect_database {
 		else {
 			$testdsn .= ";host=$testdir/data/socket";
 		}
+
 		my $loop = 1;
 	  STARTUP: {
 			eval {
@@ -461,7 +478,22 @@ sub connect_database {
 			};
 			## Regardless of the error, try again.
 			## We used to check the message, but LANG problems may complicate that.
+
 			if ($@) {
+				if ($@ =~ /database "postgres" does not exist/) {
+					## Old server, so let's create a postgres database manually
+					sleep 2;
+					(my $tempdsn = $testdsn) =~ s/postgres/template1/;
+					eval {
+						$dbh = DBI->connect($tempdsn, $testuser, '',
+											{RaiseError => 1, PrintError => 0, AutoCommit => 1});
+					};
+					$dbh->do('CREATE DATABASE postgres');
+					$dbh->disconnect();
+					if ($@) {
+						die "Could not connect: $@\n";
+					}
+				}
 				if ($loop++ < 5) {
 					sleep 1;
 					redo STARTUP;
@@ -483,6 +515,7 @@ sub connect_database {
 		print $fh "## Helpconnect: $helpconnect\n";
 		print $fh "## pg_ctl: $pg_ctl\n";
 		print $fh "## initdb: $initdb\n";
+		print $fh "## Version: $version\n";
 		if ($connerror) {
 			print $fh "## DSN: FAIL!\n";
 			print $fh "## ERROR: $connerror\n";
@@ -601,7 +634,7 @@ sub get_test_settings {
 		($pg_ctl = $ENV{PGINITDB}) =~ s/initdb/pg_ctl/;
 	}
 	my ($testdsn, $testuser, $testdir, $error) = ('','','','?');
-	my ($helpconnect, $su, $uid, $initdb) = (0,'','','default');
+	my ($helpconnect, $su, $uid, $initdb, $version) = (0,'','','default',0);
 	my $inerror = 0;
 	if (-e $helpfile) {
 		open $fh, '<', $helpfile or die qq{Could not open "$helpfile": $!\n};
@@ -618,6 +651,7 @@ sub get_test_settings {
 			/pg_ctl: (.+)/        and $pg_ctl = $1;
 			/initdb: (.+)/        and $initdb = $1;
 			/ERROR: (.+)/         and $error = $1 and $inerror = 1;
+			/Version: (.+)/       and $version = $1;
 		}
 		close $fh or die qq{Could not close "$helpfile": $!\n};
 	}
@@ -627,7 +661,7 @@ sub get_test_settings {
 		$testdir = "$dir/dbdpg_test_database";
 	}
 
-	return $testdsn, $testuser, $helpconnect, $su, $uid, $testdir, $pg_ctl, $initdb, $error;
+	return $testdsn, $testuser, $helpconnect, $su, $uid, $testdir, $pg_ctl, $initdb, $error, $version;
 
 } ## end of get_test_settings
 

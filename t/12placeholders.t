@@ -506,6 +506,9 @@ eval {
 };
 is ($@, q{}, $t);
 
+SKIP: {
+	skip 'Cannot run some quote tests on very old versions of Postgres', 14 if $pgversion < 80000;
+
 $t='Prepare works with placeholders after double slashes';
 eval {
 	$dbh->do(q{CREATE OPERATOR // ( PROCEDURE=bit, LEFTARG=int, RIGHTARG=int )});
@@ -542,6 +545,8 @@ for my $char (qw{0 9 A Z a z}) {
 		$sth->finish();
 	};
 	is ($@, q{}, $t);
+}
+
 }
 
 SKIP: {
