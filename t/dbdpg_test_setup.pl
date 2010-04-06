@@ -132,7 +132,7 @@ sub connect_database {
 							}
 						}
 						$option = q{-o '-k socket'};
-						if ($version < 8.0) {
+						if ($version <= 8.0) {
 							$option = q{-o '-k dbdpg_test_database/data/socket'};
 						}
 					}
@@ -270,8 +270,11 @@ sub connect_database {
 			}
 			last GETHANDLE; ## Fail - initdb bad
 		}
-		elsif ($info =~ /(\d+\.\d+)\.\d+/) {
+		elsif ($info =~ /(\d+\.\d+)/) {
 			$version = $1;
+		}
+		else {
+			die "No version from initdb?! ($info)\n";
 		}
 
 		## Make sure pg_ctl is available as well before we go further
@@ -416,6 +419,13 @@ sub connect_database {
 		else {
 			print $cfh "silent_mode = true\n";
 		}
+		if ($version == 8.1) {
+			print {$cfh} "redirect_stderr = on\n";
+		}
+
+		if ($version >= 8.3) {
+			print {$cfh} "logging_collector = on\n";
+		}
 		print $cfh "log_min_messages = 'DEBUG1'\n";
 		print $cfh "listen_addresses='127.0.0.1'\n" if $^O =~ /Win32/;
 		print $cfh "\n";
@@ -439,7 +449,7 @@ sub connect_database {
 					}
 				}
 				$option = q{-o '-k socket'};
-				if ($version < 8.0) {
+				if ($version <= 8.0) {
 					$option = q{-o '-k dbdpg_test_database/data/socket'};
 				}
 			}

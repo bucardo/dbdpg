@@ -1427,7 +1427,7 @@ SKIP: {
 		if ($pglibversion < 80400) {
 			skip ('Cannot test pg_lo_import_with_oid unless compiled against 8.4 or better server', 5);
 		}
-		if ($pgversion < 80000) {
+		if ($pgversion < 80100) {
 			skip ('Cannot test pg_lo_import_with_oid against old versions of Postgres', 5);
 		}
 
