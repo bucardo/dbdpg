@@ -1,5 +1,10 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.17.1
+
+  - Only use lo_import_with_oid if included Postgres is 84 or better
+    [GSM] (CPAN bug #56363)
+
 2.17.0 Released April 6, 2010 (subversion r13890)
 
   - Do not automatically ROLLBACK on a failed pg_cancel [GSM] (CPAN bug #55188)
