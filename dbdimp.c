@@ -56,6 +56,15 @@ void PQfreeCancel(PGcancel *cancel) {
 
 #endif
 
+#if PGLIBVERSION < 80400
+
+Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId);
+Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId) {
+	croak ("Cannot use lo_import_with_oid unless compiled against Postgres 8.4 or later");
+}
+
+#endif
+
 #ifndef PGErrorVerbosity
 typedef enum
 	{
