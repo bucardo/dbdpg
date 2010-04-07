@@ -2143,14 +2143,12 @@ This function cannot be used if AutoCommit is enabled.
 
 =item lo_import
 
-
   $lobjId = $dbh->pg_lo_import($filename);
 
 Imports a Unix file as a large object and returns the object id of the new
 object or C<undef> upon failure.
 
 =item lo_import_with_oid
-
 
   $lobjId = $dbh->pg_lo_import($filename, $OID);
 
