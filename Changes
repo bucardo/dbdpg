@@ -1,8 +1,8 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.17.1
+2.17.1 Released April 8, 2010
 
-  - Only use lo_import_with_oid if included Postgres is 84 or better
+  - Only use lo_import_with_oid if Postgres libraries are 8.4 or better
     [GSM] (CPAN bug #56363)
 
 2.17.0 Released April 6, 2010 (subversion r13890)
