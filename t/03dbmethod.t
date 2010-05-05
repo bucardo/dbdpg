@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! defined $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 529;
+plan tests => 531;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -610,11 +610,13 @@ for my $r (@$result) {
 is_deeply (\%missing, {}, $t);
 
 ## Check some of the returned fields:
-$result = $result->[0];
-is ($r->{TABLE_CAT},   undef,         'DB handle method "primary_key_info" returns proper TABLE_CAT');
-is ($r->{TABLE_NAME},  'dbd_pg_test', 'DB handle method "primary_key_info" returns proper TABLE_NAME');
-is ($r->{COLUMN_NAME}, 'id',          'DB handle method "primary_key_info" returns proper COLUMN_NAME');
-cmp_ok ($result->{KEY_SEQ}, '>=', 1,  'DB handle method "primary_key_info" returns proper KEY_SEQ');
+$r = $result->[0];
+is ($r->{TABLE_CAT},   undef,              'DB handle method "primary_key_info" returns proper TABLE_CAT');
+is ($r->{TABLE_NAME},  'dbd_pg_test',      'DB handle method "primary_key_info" returns proper TABLE_NAME');
+is ($r->{COLUMN_NAME}, 'id',               'DB handle method "primary_key_info" returns proper COLUMN_NAME');
+is ($r->{PK_NAME},     'dbd_pg_test_pkey', 'DB handle method "primary_key_info" returns proper PK_NAME');
+is ($r->{DATA_TYPE},   'int4',             'DB handle method "primary_key_info" returns proper DATA_TYPE');
+is ($r->{KEY_SEQ},     1,                  'DB handle method "primary_key_info" returns proper KEY_SEQ');
 
 #
 # Test of the "primary_key" database handle method
