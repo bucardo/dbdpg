@@ -43,6 +43,7 @@ my ($SQL, $sth, $result, @result, $expected, $warning, $rows, $t, $info);
 $dbh->do(q{}); ## This used to break, so we keep it as a test...
 $SQL = q{SELECT '2529DF6AB8F79407E94445B4BC9B906714964AC8' FROM dbd_pg_test WHERE id=?};
 $sth = $dbh->prepare($SQL);
+warn "RESULT is $result\n";
 $sth->finish();
 $sth = $dbh->prepare_cached($SQL);
 $sth->finish();
