@@ -322,7 +322,7 @@ char * quote_int(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	return result;
 }
 
-char * quote_float(const char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_float(char *string, STRLEN len, STRLEN *retlen, int estring)
 {
 	dTHX;
 	char * result;

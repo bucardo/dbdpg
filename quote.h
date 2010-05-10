@@ -6,7 +6,7 @@ char * quote_sql_binary(char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_bool(const char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_integer(const char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_int(const char *string, STRLEN len, STRLEN *retlen, int estring);
-char * quote_float(const char *string, STRLEN len, STRLEN *retlen, int estring);
+char * quote_float(char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_name(const char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_geom(const char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_path(const char *string, STRLEN len, STRLEN *retlen, int estring);
