@@ -132,7 +132,7 @@ use 5.006001;
 		DBD::Pg::db->install_method('pg_putline');
 		DBD::Pg::db->install_method('pg_ready');
 		DBD::Pg::db->install_method('pg_release');
-		DBD::Pg::db->install_method('pg_result');
+		DBD::Pg::db->install_method('pg_result'); ## NOT duplicated below!
 		DBD::Pg::db->install_method('pg_rollback_to');
 		DBD::Pg::db->install_method('pg_savepoint');
 		DBD::Pg::db->install_method('pg_server_trace');
