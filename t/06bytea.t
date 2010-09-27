@@ -35,6 +35,7 @@ my ($sth, $t);
 $sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytetest) VALUES (?,?)});
 
 $t='bytea insert test with string containing null and backslashes';
+$sth->bind_param(1, undef, { pg_type => PG_INT4 });
 $sth->bind_param(2, undef, { pg_type => PG_BYTEA });
 ok ($sth->execute(400, 'aa\\bb\\cc\\\0dd\\'), $t);
 
