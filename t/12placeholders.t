@@ -510,6 +510,7 @@ SKIP: {
 	skip 'Cannot run some quote tests on very old versions of Postgres', 14 if $pgversion < 80000;
 
 $t='Prepare works with placeholders after double slashes';
+## TODO: Fix with a perms check per bug 61534
 eval {
 	$dbh->do(q{CREATE OPERATOR // ( PROCEDURE=bit, LEFTARG=int, RIGHTARG=int )});
 	$sth = $dbh->prepare(q{SELECT ? // ?});
