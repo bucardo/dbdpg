@@ -184,7 +184,7 @@ use 5.006001;
 			$connstring .= ";$attr";
 		}
 
-		my $dbh = DBD::Pg::dr::connect($drh, $connstring) or return undef;
+		my $dbh = DBD::Pg::dr::connect($drh, $connstring) or return;
 		$dbh->{AutoCommit}=1;
 		my $SQL = 'SELECT pg_catalog.quote_ident(datname) FROM pg_catalog.pg_database ORDER BY 1';
 		my $sth = $dbh->prepare($SQL);
