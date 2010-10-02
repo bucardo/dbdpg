@@ -13,7 +13,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 my $dbh = connect_database();
 
-if (defined $dbh) {
+if ($dbh) {
 	plan tests => 55;
 }
 else {

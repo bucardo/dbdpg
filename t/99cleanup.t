@@ -15,7 +15,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database({nosetup => 1, nocreate => 1, norestart => 1});
 
 SKIP: {
-	if (! defined $dbh) {
+	if (! $dbh) {
 		skip ('Connection to database failed, cannot cleanup', 1);
 	}
 
