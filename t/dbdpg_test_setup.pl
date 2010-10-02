@@ -88,7 +88,7 @@ sub connect_database {
 		}
 
 		goto GOTDBH if eval {
-			$dbh = DBI->connect($testdsn, $testuser, '',
+			$dbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
 								{RaiseError => 1, PrintError => 0, AutoCommit => 1});
 			1;
 		};
