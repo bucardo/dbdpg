@@ -1402,8 +1402,6 @@ $result = $dbh->pg_lo_unlink($object);
 ok (!$result, $t);
 $dbh->rollback();
 
-my $abctext = $pgversion >= 80500 ? 'x6162630a646566' : "abc\ndef";
-
 SKIP: {
 
 	eval {
@@ -1422,7 +1420,7 @@ SKIP: {
 	$t='DB handle method "pg_lo_import" inserts correct data';
 	$SQL = "SELECT data FROM pg_largeobject where loid = $handle";
 	$info = $dbh->selectall_arrayref($SQL)->[0][0];
-	is_deeply ($info, $abctext, $t);
+	is_deeply ($info, "abc\ndef", $t);
 	$dbh->commit();
 
   SKIP: {
@@ -1444,7 +1442,7 @@ SKIP: {
 		$t='DB handle method "pg_lo_import_with_oid" inserts correct data';
 		$SQL = "SELECT data FROM pg_largeobject where loid = $thandle";
 		$info = $dbh->selectall_arrayref($SQL)->[0][0];
-		is_deeply ($info, $abctext, $t);
+		is_deeply ($info, "abc\ndef", $t);
 
 		$t='DB handle method "pg_lo_import_with_oid" fails when given already used number';
 		eval {
@@ -1558,7 +1556,7 @@ SKIP: {
 	$sth = $dbh->prepare($SQL);
 	$sth->execute($handle);
 	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, $abctext, $t);
+	is_deeply ($info, "abc\ndef", $t);
 
 	$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, no command)';
 	$dbh->begin_work();
@@ -1566,7 +1564,7 @@ SKIP: {
 	ok ($handle, $t);
 	$sth->execute($handle);
 	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, $abctext, $t);
+	is_deeply ($info, "abc\ndef", $t);
 	$dbh->rollback();
 
 	$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, no command, rollback)';
@@ -1585,7 +1583,7 @@ SKIP: {
 	ok ($handle, $t);
 	$sth->execute($handle);
 	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, $abctext, $t);
+	is_deeply ($info, "abc\ndef", $t);
 	$dbh->rollback();
 
 	$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, second command, rollback)';
@@ -1605,7 +1603,7 @@ SKIP: {
 	ok ($handle, $t);
 	$sth->execute($handle);
 	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, $abctext, $t);
+	is_deeply ($info, "abc\ndef", $t);
 
 	$t='DB handle method "pg_lo_import" works (AutoCommit not on, second command)';
 	$dbh->rollback();
@@ -1614,7 +1612,7 @@ SKIP: {
 	ok ($handle, $t);
 	$sth->execute($handle);
 	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, $abctext, $t);
+	is_deeply ($info, "abc\ndef", $t);
 
 	unlink $filename;
 	$dbh->{AutoCommit} = 1;
