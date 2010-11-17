@@ -284,7 +284,7 @@ else {
 
 $t='The "data_sources" method returns undef when fed a bogus second argument';
 @result = DBI->data_sources('Pg','foobar');
-is_deeply (@result, undef, $t);
+is (scalar @result, 0, $t);
 
 $t='The "data_sources" method returns information when fed a valid port as the second arg';
 my $port = $dbh->{pg_port};
