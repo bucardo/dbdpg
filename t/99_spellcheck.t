@@ -310,6 +310,7 @@ LongTruncOk
 lpq
 LSEG
 lssl
+machack
 Makefile
 MakeMaker
 malloc
