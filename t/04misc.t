@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 54;
+plan tests => 56;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -290,6 +290,29 @@ $t='The "data_sources" method returns information when fed a valid port as the s
 my $port = $dbh->{pg_port};
 @result = DBI->data_sources('Pg',"port=$port");
 isnt ($result[0], undef, $t);
+
+SKIP: {
+
+	$t=q{The "data_sources" method returns information when 'dbi:Pg' is uppercased};
+
+	if (! exists $ENV{DBI_DSN} or $ENV{DBI_DSN} !~ /pg/i) {
+		skip 'Cannot test data_sources() DBI_DSN munging unless DBI_DSN is set', 2;
+	}
+
+	my $orig = $ENV{DBI_DSN};
+	$ENV{DBI_DSN} =~ s/DBI:PG/DBI:PG/i;
+	@result = DBI->data_sources('Pg');
+	like ((join '' => @result), qr{template0}, $t);
+
+	$t=q{The "data_sources" method returns information when 'DBI:' is mixed case};
+
+	$ENV{DBI_DSN} =~ s/DBI:PG/dBi:pg/i;
+	@result = DBI->data_sources('Pg');
+	like ((join '' => @result), qr{template0}, $t);
+
+	$ENV{DBI_DSN} = $orig;
+
+}
 
 #
 # Test the use of $DBDPG_DEFAULT
