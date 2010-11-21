@@ -24,7 +24,7 @@ BEGIN {
 if (! defined $dbh or $connerror) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 13;
+plan tests => 15;
 
 pass ('Established a connection to the database');
 
@@ -85,6 +85,22 @@ SKIP: {
 		$err =~ s/(Previous failure).*/$1/;
 		is ($err, '', $t);
 	}
+
+	$t=q{Connect with forced uppercase 'DBI:' works};
+	my ($testdsn,$testuser,$helpconnect,$su,$uid,$testdir,$pg_ctl,$initdb,$error,$version)
+		= get_test_settings();
+	$testdsn =~ s/^dbi/DBI/i;
+	my $ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
+        {RaiseError => 1, PrintError => 0, AutoCommit => 0});
+	ok (ref $ldbh, $t);
+	$ldbh->disconnect();
+
+	$t=q{Connect with mixed case 'DbI:' works};
+	$testdsn =~ s/^dbi/DbI/i;
+	$ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
+        {RaiseError => 1, PrintError => 0, AutoCommit => 0});
+	ok (ref $ldbh, $t);
+	$ldbh->disconnect();
 
 	if ($ENV{DBI_DSN} =~ /$alias\s*=\s*\"/) {
 		skip ('DBI_DSN already contains quoted database, no need for explicit test', 1);
