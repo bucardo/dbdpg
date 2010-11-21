@@ -178,7 +178,7 @@ use 5.006001;
 		## Future: connect to "postgres" when the minimum version we support is 8.0
 		my $connstring = 'dbname=template1';
 		if ($ENV{DBI_DSN}) {
-			($connstring = $ENV{DBI_DSN}) =~ s/dbi:Pg://;
+			($connstring = $ENV{DBI_DSN}) =~ s/dbi:Pg://i;
 		}
 		if (length $attr) {
 			$connstring .= ";$attr";
