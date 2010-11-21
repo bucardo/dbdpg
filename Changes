@@ -6,6 +6,8 @@
     [Dagfinn Ilmari Mannsåker] (CPAN bug #60200).
   - Fix failing test in t/04misc.t on Perl 5.12. [Eric Simon]
   - Allow data_sources() to accept any case-variant of 'dbi:Pg' (CPAN bug #61574)
+  - Don't PQclear on execute() if there is an active async query
+    [rweikusat at mssgmbh.com] (CPAN bug #58376)
 
 2.17.1 Released April 8, 2010
 
