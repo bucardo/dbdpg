@@ -378,6 +378,7 @@ postgres
 postgresql
 PostgreSQL
 powf
+PQclear
 PQconnectdb
 PQconsumeInput
 PQexec
