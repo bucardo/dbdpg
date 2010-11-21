@@ -11,26 +11,26 @@ my $VERSION = '2.17.1';
 
 my $lib;
 BEGIN {
-	use vars qw/$sep/;
+    use vars qw/$sep/;
     my %sep = (
-			   MacOS   => ':',
+               MacOS   => ':',
                MSWin32 => '\\',
                os2     => '\\',
                VMS     => '\\',
                NetWare => '\\',
                dos     => '\\',
-			   );
+               );
     $sep = $sep{$^O} || '/';
     $lib = join $sep, 't', 'lib';
 }
 
 use lib $lib;
 if ($VERSION =~ /_/) {
-	print "WARNING! This is a test version ($VERSION) and should not be used in production!\n";
+    print "WARNING! This is a test version ($VERSION) and should not be used in production!\n";
 }
 
 if (grep { /help/ } @ARGV) {
-	print qq{
+    print qq{
 Usage: perl $0
 
 No other options are necessary, although you may need to
@@ -59,7 +59,7 @@ Do steps 1 to 3 as a normal user, not as root!
 If all else fails, email dbd-pg\@perl.org for help.
 
 };
-	exit 1;
+    exit 1;
 
 }
 
@@ -75,20 +75,20 @@ require App::Info::Handler::Prompt;
 my $p = App::Info::Handler::Prompt->new;
 my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $p);
 my ($major_ver, $minor_ver, $patch, $conf, $bindir) = map {$pg->$_}
-	qw/major_version minor_version patch_version configure bin_dir/;
+    qw/major_version minor_version patch_version configure bin_dir/;
 my $initdb = '';
 if (defined $bindir and -d $bindir) {
-	my $testinitdb = "$bindir${sep}initdb";
-	if (-e $testinitdb) {
-		$initdb = $testinitdb;
-	}
+    my $testinitdb = "$bindir${sep}initdb";
+    if (-e $testinitdb) {
+        $initdb = $testinitdb;
+    }
 }
 my $serverversion = 0;
 my $defaultport = 0;
 
 if (defined $major_ver) {
-	$serverversion = sprintf '%d%.02d%.02d', $major_ver, $minor_ver, $patch;
-	$defaultport = $conf =~ /with-pgport=(\d+)/ ? $1 : 5432;
+    $serverversion = sprintf '%d%.02d%.02d', $major_ver, $minor_ver, $patch;
+    $defaultport = $conf =~ /with-pgport=(\d+)/ ? $1 : 5432;
 }
 
 # We set POSTGRES_INCLUDE and POSTGRES_LIB from the first found of:
@@ -112,107 +112,107 @@ print "OS: $os\n";
 
 my $baddir = 0;
 sub does_path_exist {
-	my ($path_name, $path) = @_;
+    my ($path_name, $path) = @_;
 
-	return if ! defined $path or ! length $path or -d $path;
-	printf "The value of %s points to a non-existent directory: %s\n",
-		$path_name, $path;
-	$baddir++;
-	return;
+    return if ! defined $path or ! length $path or -d $path;
+    printf "The value of %s points to a non-existent directory: %s\n",
+        $path_name, $path;
+    $baddir++;
+    return;
 }
 
 does_path_exist('POSTGRES_HOME', $ENV{POSTGRES_HOME});
 does_path_exist('POSTGRES_INCLUDE',  $POSTGRES_INCLUDE);
 
 if ($baddir) {
-	print "Cannot build unless the directories exist, exiting.\n";
-	exit 0;
+    print "Cannot build unless the directories exist, exiting.\n";
+    exit 0;
 }
 
 if ($serverversion < 11) {
-	print "Could not determine the PostgreSQL library version.\n".
-		"Please ensure that a valid path is given to the 'pg_config' command,\n".
-			"either manually or by setting the environment variables\n".
-				"POSTGRES_DATA, POSTGRES_INCLUDE, and POSTGRES_LIB\n";
-	exit 0;
+    print "Could not determine the PostgreSQL library version.\n".
+    "Please ensure that a valid path is given to the 'pg_config' command,\n".
+    "either manually or by setting the environment variables\n".
+    "POSTGRES_DATA, POSTGRES_INCLUDE, and POSTGRES_LIB\n";
+    exit 0;
 }
 
 if ($os =~ /Win32/) {
-	for ($POSTGRES_INCLUDE, $POSTGRES_LIB) {
-		$_ = qq{"$_"} if index $_,'"';
-	}
+    for ($POSTGRES_INCLUDE, $POSTGRES_LIB) {
+        $_ = qq{"$_"} if index $_,'"';
+    }
 }
 
 ## Warn about older versions
 if ($serverversion < 70400) {
-	print "\n****************\n";
-	print "WARNING! DBD::Pg no longer supports versions less than 7.4.\n";
-	print "You must upgrade PostgreSQL to a newer version.\n";
-	print "****************\n\n";
-	exit 1;
+    print "\n****************\n";
+    print "WARNING! DBD::Pg no longer supports versions less than 7.4.\n";
+    print "You must upgrade PostgreSQL to a newer version.\n";
+    print "****************\n\n";
+    exit 1;
 }
 
 my $dbi_arch_dir;
 {
-	eval {
-		require DBI::DBD;
-	};
-	if ($@) {
-		print "Could not load DBI::DBD - is the DBI module installed?\n";
-		exit 0;
-	}
-	local *STDOUT; ## Prevent duplicate debug info as WriteMakefile also calls this
-	$dbi_arch_dir = DBI::DBD::dbd_dbi_arch_dir();
+    eval {
+        require DBI::DBD;
+    };
+    if ($@) {
+        print "Could not load DBI::DBD - is the DBI module installed?\n";
+        exit 0;
+    }
+    local *STDOUT; ## Prevent duplicate debug info as WriteMakefile also calls this
+    $dbi_arch_dir = DBI::DBD::dbd_dbi_arch_dir();
 }
 
 my $defines = " -DPGLIBVERSION=$serverversion -DPGDEFPORT=$defaultport";
 my $comp_opts = $Config{q{ccflags}} . $defines;
 
 if ($ENV{DBDPG_GCCDEBUG}) {
-	warn "Enabling many compiler options\n";
-	$comp_opts .= ' -Wchar-subscripts -Wcomment';
-	$comp_opts .= ' -Wformat=2'; ## does -Wformat,-Wformat-y2k,-Wformat-nonliteral,-Wformat-security
-	$comp_opts .= ' -Wnonnull';
-	$comp_opts .= ' -Wuninitialized -Winit-self'; ## latter requires the former
-	$comp_opts .= ' -Wimplicit'; ## does -Wimplicit-int and -Wimplicit-function-declaration
-	$comp_opts .= ' -Wmain -Wmissing-braces -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wswitch-enum -Wtrigraphs';
-	$comp_opts .= ' -Wunused'; ## contains -Wunused- function,label,parameter,variable,value
-	$comp_opts .= ' -Wunknown-pragmas -Wstrict-aliasing';
-	$comp_opts .= ' -Wall'; ## all of above, but we enumerate anyway
-	$comp_opts .= ' -Wextra -Wdeclaration-after-statement -Wendif-labels -Wpointer-arith';
-	$comp_opts .= ' -Wbad-function-cast -Wcast-qual -Wcast-align -Wsign-compare -Waggregate-return';
-	$comp_opts .= ' -Wmissing-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wpacked -Winline -Winvalid-pch';
-	$comp_opts .= ' -Wdisabled-optimization';
-	$comp_opts .= ' -Wnested-externs';
-	$comp_opts .= " -Wstrict-prototypes"; ## Still hits a couple places in types.h
-	$comp_opts .= " -Wswitch-default";
-	$comp_opts .= " -Wsystem-headers";
-	$comp_opts .= " -Wmissing-noreturn";
-	$comp_opts .= " -Wfloat-equal"; ## Does not like SvTRUE() calls
-	$comp_opts .= " -Wpadded"; ## Use when adding/changing our structs
+    warn "Enabling many compiler options\n";
+    $comp_opts .= ' -Wchar-subscripts -Wcomment';
+    $comp_opts .= ' -Wformat=2'; ## does -Wformat,-Wformat-y2k,-Wformat-nonliteral,-Wformat-security
+    $comp_opts .= ' -Wnonnull';
+    $comp_opts .= ' -Wuninitialized -Winit-self'; ## latter requires the former
+    $comp_opts .= ' -Wimplicit'; ## does -Wimplicit-int and -Wimplicit-function-declaration
+    $comp_opts .= ' -Wmain -Wmissing-braces -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wswitch-enum -Wtrigraphs';
+    $comp_opts .= ' -Wunused'; ## contains -Wunused- function,label,parameter,variable,value
+    $comp_opts .= ' -Wunknown-pragmas -Wstrict-aliasing';
+    $comp_opts .= ' -Wall'; ## all of above, but we enumerate anyway
+    $comp_opts .= ' -Wextra -Wdeclaration-after-statement -Wendif-labels -Wpointer-arith';
+    $comp_opts .= ' -Wbad-function-cast -Wcast-qual -Wcast-align -Wsign-compare -Waggregate-return';
+    $comp_opts .= ' -Wmissing-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wpacked -Winline -Winvalid-pch';
+    $comp_opts .= ' -Wdisabled-optimization';
+    $comp_opts .= ' -Wnested-externs';
+    $comp_opts .= " -Wstrict-prototypes"; ## Still hits a couple places in types.h
+    $comp_opts .= " -Wswitch-default";
+    $comp_opts .= " -Wsystem-headers";
+    $comp_opts .= " -Wmissing-noreturn";
+    $comp_opts .= " -Wfloat-equal"; ## Does not like SvTRUE() calls
+    $comp_opts .= " -Wpadded"; ## Use when adding/changing our structs
 }
 
 my %opts =
-	(
-	 NAME           => 'DBD::Pg',
-	 VERSION_FROM   => 'Pg.pm',
-	 INC            => "-I$POSTGRES_INCLUDE -I$dbi_arch_dir",
-	 OBJECT         => "Pg\$(OBJ_EXT) dbdimp\$(OBJ_EXT) quote\$(OBJ_EXT) types\$(OBJ_EXT)",
-	 LIBS           => ["-L$POSTGRES_LIB -lpq -lm"],
-	 AUTHOR         => 'Greg Sabino Mullane',
-	 ABSTRACT       => 'PostgreSQL database driver for the DBI module',
-	 PREREQ_PM      => {
-						'ExtUtils::MakeMaker' => '6.11',
-						'DBI'                 => '1.52',
-						'Test::More'          => '0.61',
-						'version'             => '0',
-					   },
-	 CCFLAGS        => $comp_opts,
-	 PERL_MALLOC_OK => 1,
-	 NEEDS_LINKING  => 1,
-	 NO_META        => 1,
+    (
+     NAME           => 'DBD::Pg',
+     VERSION_FROM   => 'Pg.pm',
+     INC            => "-I$POSTGRES_INCLUDE -I$dbi_arch_dir",
+     OBJECT         => "Pg\$(OBJ_EXT) dbdimp\$(OBJ_EXT) quote\$(OBJ_EXT) types\$(OBJ_EXT)",
+     LIBS           => ["-L$POSTGRES_LIB -lpq -lm"],
+     AUTHOR         => 'Greg Sabino Mullane',
+     ABSTRACT       => 'PostgreSQL database driver for the DBI module',
+     PREREQ_PM      => {
+                        'ExtUtils::MakeMaker' => '6.11',
+                        'DBI'                 => '1.52',
+                        'Test::More'          => '0.61',
+                        'version'             => '0',
+                       },
+     CCFLAGS        => $comp_opts,
+     PERL_MALLOC_OK => 1,
+     NEEDS_LINKING  => 1,
+     NO_META        => 1,
      NORECURS       => 1,
-	 clean          => { FILES => 'trace Pg.xsi README.testdatabase' },
+     clean          => { FILES => 'trace Pg.xsi README.testdatabase' },
      realclean      => { FILES => 'dbdpg_test_database/' },
 );
 
@@ -224,9 +224,9 @@ if ($os eq 'hpux') {
     }
 }
 elsif ($os =~ /Win32/) {
-	my $msdir = $POSTGRES_LIB;
-	$msdir =~ s{"$}{/ms"};
-	$opts{LIBS}[0] .= " -L$msdir -lsecur32";
+    my $msdir = $POSTGRES_LIB;
+    $msdir =~ s{"$}{/ms"};
+    $opts{LIBS}[0] .= " -L$msdir -lsecur32";
 }
 
 if ($Config{dlsrc} =~ /dl_none/) {
@@ -234,37 +234,37 @@ if ($Config{dlsrc} =~ /dl_none/) {
 }
 
 {
-	package MY; ## no critic
-	sub MY::test { ## no critic
-		my $string = shift->SUPER::test(@_);
-		$string =~ s/(PERL_DL_NONLAZY=1)/PGINITDB="$initdb" $1/g;
-		return $string;
-	}
+    package MY; ## no critic
+    sub MY::test { ## no critic
+        my $string = shift->SUPER::test(@_);
+        $string =~ s/(PERL_DL_NONLAZY=1)/PGINITDB="$initdb" $1/g;
+        return $string;
+    }
 }
 
 sub constants {
-	my $self = shift;
+    my $self = shift;
 
-	my $old_constants = $self->SUPER::constants();
-	my $new_constants = '';
-	for my $line (split /\n/ => $old_constants) {
-		if ($line =~ /^INC = .*strawberry.*/ ) {
-			print qq(Strawberry Perl found; adjusting the INC variable;\n);
-			$line . ' -I ' . DBI::DBD::dbd_dbi_arch_dir();
-			print qq(INC is now $line\n);
-		}
-		$new_constants .= "$line\n";
-	}
-	return $new_constants;
+    my $old_constants = $self->SUPER::constants();
+    my $new_constants = '';
+    for my $line (split /\n/ => $old_constants) {
+        if ($line =~ /^INC = .*strawberry.*/ ) {
+            print qq(Strawberry Perl found; adjusting the INC variable;\n);
+            $line . ' -I ' . DBI::DBD::dbd_dbi_arch_dir();
+            print qq(INC is now $line\n);
+        }
+        $new_constants .= "$line\n";
+    }
+    return $new_constants;
 }
 
 sub MY::postamble { ## no critic ProhibitQualifiedSubDeclarations
-	no strict 'subs'; ## no critic ProhibitNoStrict
-	my $string = DBI::DBD->dbd_postamble();
-	use strict 'subs';
-	## Evil, evil stuff - but we really want to suppress the "duplicate function" message!
-	$string =~ s/dependancy/dependency/g; ## why not, while we are here
-	$string =~ s{(BASEEXT\)/g)}{$1; s/^do\\\(/dontdo\\\(/};
+    no strict 'subs'; ## no critic ProhibitNoStrict
+    my $string = DBI::DBD->dbd_postamble();
+    use strict 'subs';
+    ## Evil, evil stuff - but we really want to suppress the "duplicate function" message!
+    $string =~ s/dependancy/dependency/g; ## why not, while we are here
+    $string =~ s{(BASEEXT\)/g)}{$1; s/^do\\\(/dontdo\\\(/};
 
         my $tags = <<'MAKE_FRAG';
 .PHONY: tags
@@ -312,21 +312,21 @@ splint: $(H_FILES) $(C_FILES)
 
 MAKE_SPLINT
 
-	$string =~ s/SDEFINES = /SDEFINES =$defines/;
+    $string =~ s/SDEFINES = /SDEFINES =$defines/;
 
-	return $string;
+    return $string;
 }
 
 my $output = WriteMakefile(%opts);
 
 if (!exists $output->{EXTRALIBS} or
 
-	($output->{EXTRALIBS} !~ /\-lpq/ and $output->{EXTRALIBS} !~ /libpq/)) {
+    ($output->{EXTRALIBS} !~ /\-lpq/ and $output->{EXTRALIBS} !~ /libpq/)) {
 
-	my $makefile = exists $output->{MAKEFILE}
-		? "\nRemoving ($output->{MAKEFILE})\n" : '';
+    my $makefile = exists $output->{MAKEFILE}
+        ? "\nRemoving ($output->{MAKEFILE})\n" : '';
 
-	warn qq{
+    warn qq{
 ==========================================================
 
 WARNING! No libpq libraries were detected!
@@ -339,10 +339,10 @@ $makefile
 
 };
 
-	## Do not let make proceed
-	unlink $output->{MAKEFILE} if $makefile;
+    ## Do not let make proceed
+    unlink $output->{MAKEFILE} if $makefile;
 
-	exit 1;
+    exit 1;
 }
 
 exit 0;
