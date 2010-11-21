@@ -229,6 +229,9 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 		}
 	}
 
+	/* Figure out the client_encoding for UTF work */
+	imp_dbh->is_utf8 = strncmp("UTF8", PQparameterStatus(imp_dbh->conn, "client_encoding"), 4)
+		? DBDPG_FALSE : DBDPG_TRUE;
 	imp_dbh->pg_bool_tf      = DBDPG_FALSE;
 	imp_dbh->pg_enable_utf8  = DBDPG_FALSE;
  	imp_dbh->prepare_now     = DBDPG_FALSE;
@@ -281,7 +284,7 @@ static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
 	sv_setpv(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate);
 
 	/* Set as utf-8 */
-	if (imp_dbh->pg_enable_utf8)
+	if (imp_dbh->is_utf8)
 		SvUTF8_on(DBIc_ERRSTR(imp_xxh));
 
 	if (TEND) TRC(DBILOGFP, "%sEnd pg_error\n", THEADER);
@@ -736,7 +739,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		else if (strEQ("pg_prepare_now", key))
 			retsv = newSViv((IV)imp_dbh->prepare_now);
 #ifdef is_utf8_string
-		else if (strEQ("pg_enable_utf8", key))
+		else if (strEQ("pg_enable_utf8", key)) 
 			retsv = newSViv((IV)imp_dbh->pg_enable_utf8);
 #endif
 		break;
@@ -857,6 +860,10 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 #ifdef is_utf8_string
 		else if (strEQ("pg_enable_utf8", key)) {
 			imp_dbh->pg_enable_utf8 = newval!=0 ? DBDPG_TRUE : DBDPG_FALSE;
+			/* Turning on does nothing now, but explicit off will force is_utf8 off! */
+			if (imp_dbh->pg_enable_utf8 == DBDPG_FALSE) {
+				imp_dbh->is_utf8 = DBDPG_FALSE;
+			}
 			retval = 1;
 		}
 #endif
@@ -2623,11 +2630,8 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 				else {
 					SV *sv = newSVpvn(string, section_size);
 #ifdef is_utf8_string
-					if (imp_dbh->pg_enable_utf8) {
-						SvUTF8_off(sv);
-						if (is_high_bit_set(aTHX_ (unsigned char *)string, section_size) && is_utf8_string((unsigned char*)string, section_size)) {
-							SvUTF8_on(sv);
-						}
+					if (imp_dbh->is_utf8) {
+						SvUTF8_on(sv);
 					}
 #endif
 					av_push(currentav, sv);
@@ -3426,20 +3430,8 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 				}
 			}
 #ifdef is_utf8_string
-			if (imp_dbh->pg_enable_utf8 && type_info) {
-				SvUTF8_off(sv);
-				switch (type_info->type_id) {
-				case PG_CHAR:
-				case PG_TEXT:
-				case PG_BPCHAR:
-				case PG_VARCHAR:
-					if (is_high_bit_set(aTHX_ value, value_len) && is_utf8_string((unsigned char*)value, value_len)) {
-						SvUTF8_on(sv);
-					}
-					break;
-				default:
-					break;
-				}
+			if (imp_dbh->is_utf8) {
+				SvUTF8_on(sv);
 			}
 #endif
 		}

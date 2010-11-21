@@ -569,7 +569,6 @@ SKIP: {
 		if $server_encoding ne 'UTF8';
 
 	$t='String should be UTF-8';
-	local $dbh->{pg_enable_utf8} = 1;
 	my $utf8_str = chr(0x100).'dam'; # LATIN CAPITAL LETTER A WITH MACRON
     ok (Encode::is_utf8( $utf8_str ), $t);
 
@@ -624,6 +623,8 @@ SKIP: {
 	};
 	is ($@, q{}, $t);
 
+	local $dbh->{pg_enable_utf8} = 1;
+
 	$t='Retreiving an array containing utf-8 works';
 	$SQL = q{SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1};
 	$sth = $dbh->prepare($SQL);
@@ -632,8 +633,8 @@ SKIP: {
 	$expected = [1,['Bob',$utf8_str],'one'];
 	is_deeply ($result, $expected, $t);
 
-	$t='Selected ASCII string should not be UTF-8';
-    ok (!Encode::is_utf8( $result->[1][0] ), $t);
+	$t='Selected ASCII string should be UTF-8';
+    ok (Encode::is_utf8( $result->[1][0] ), $t);
 
 	$t='Selected string should be UTF-8';
     ok (Encode::is_utf8( $result->[1][1] ), $t);
