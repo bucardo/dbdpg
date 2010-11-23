@@ -70,33 +70,22 @@ sub test_outputs {
     $sth = $dbh->prepare(q{SELECT bytetest FROM dbd_pg_test WHERE id=?});
     $sth->execute(400);
     my $byte = $sth->fetchall_arrayref()->[0][0];
-    my $exp = $output eq 'hex'
-        ? 'x61615c62625c63635c5c3064645c'
-        : 'aa\bb\cc\\\0dd\\';
-    is ($byte, $exp, $t);
+    is ($byte, 'aa\bb\cc\\\0dd\\', $t);
 
     $t='Received correct text from BYTEA column with quote';
     $t.=" ($output output)" if $output;
     $sth->execute(402);
     $byte = $sth->fetchall_arrayref()->[0][0];
-    is ($byte, ($output eq 'hex' ? 'x27' : '\''), $t);
+    is ($byte, '\'', $t);
 
     $t='Ensure proper handling of high bit characters';
     $t.=" ($output output)" if $output;
     $sth->execute(403);
     ($binary_in) = $sth->fetchrow_array();
-    if ($output eq 'hex') {
-        my $hex = 'x' . unpack 'H*', $binary_out;
-        is $binary_in, $hex, $t;
-        $sth->execute(404);
-        ($binary_in) = $sth->fetchrow_array();
-        is $binary_in, $hex, $t;
-    } else {
-        ok ($binary_in eq $binary_out, $t);
-        $sth->execute(404);
-        ($binary_in) = $sth->fetchrow_array();
-        ok ($binary_in eq $binary_out, $t);
-    }
+    cmp_ok $binary_in, 'eq', $binary_out, $t;
+    $sth->execute(404);
+    ($binary_in) = $sth->fetchrow_array();
+    ok ($binary_in eq $binary_out, $t);
 
     $t='quote properly handles bytea strings';
     $t.=" ($output output)" if $output;
