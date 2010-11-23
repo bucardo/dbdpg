@@ -1,5 +1,10 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+2.17.3
+
+  - Fixed the number of tests to skip in t/01connect.t when the $DBI_DSN
+    environment variable lacks a database specification.
+
 2.17.2 Released November 21, 2010 (subversion r14542)
 
   - Support dequoting of hex bytea format for 9.0.
