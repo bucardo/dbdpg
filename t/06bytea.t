@@ -51,7 +51,7 @@ ok ($sth->execute(404, $binary_out), $t);
 
 if ($pgversion < 90000) {
     test_outputs(undef);
-    SKIP { skip 'No BYTEA output format setting before 9.0', 10 };
+    SKIP { skip 'No BYTEA output format setting before 9.0', 5 };
 } else {
     test_outputs($_) for qw(hex escape);
 }
