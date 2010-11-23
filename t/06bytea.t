@@ -49,60 +49,60 @@ ok ($sth->execute(403, $binary_out), $t);
 $sth->{pg_server_prepare} = 1;
 ok ($sth->execute(404, $binary_out), $t);
 
-SKIP: {
-    my @output;
-    if ($pgversion < 90000) {
-        skip 'No BYTEA output format setting before 9.0', 5;
-    } else {
-        @output = (qw(hex escape));
-    }
-    for my $output (@output) {
-        $dbh->do(qq{SET bytea_output = '$output'}) if $output;
-
-        $t='Received correct text from BYTEA column with backslashes';
-        $t.=" ($output output)" if $output;
-        $sth = $dbh->prepare(q{SELECT bytetest FROM dbd_pg_test WHERE id=?});
-        $sth->execute(400);
-        my $byte = $sth->fetchall_arrayref()->[0][0];
-        my $exp = $output eq 'hex'
-            ? 'x61615c62625c63635c5c3064645c'
-            : 'aa\bb\cc\\\0dd\\';
-        is ($byte, $exp, $t);
-
-        $t='Received correct text from BYTEA column with quote';
-        $t.=" ($output output)" if $output;
-        $sth->execute(402);
-        $byte = $sth->fetchall_arrayref()->[0][0];
-        is ($byte, ($output eq 'hex' ? 'x27' : '\''), $t);
-
-        $t='Ensure proper handling of high bit characters';
-        $t.=" ($output output)" if $output;
-        $sth->execute(403);
-        ($binary_in) = $sth->fetchrow_array();
-        if ($output eq 'hex') {
-            my $hex = 'x' . unpack 'H*', $binary_out;
-            is $binary_in, $hex, $t;
-            $sth->execute(404);
-            ($binary_in) = $sth->fetchrow_array();
-            is $binary_in, $hex, $t;
-        } else {
-            ok ($binary_in eq $binary_out, $t);
-            $sth->execute(404);
-            ($binary_in) = $sth->fetchrow_array();
-            ok ($binary_in eq $binary_out, $t);
-        }
-
-        $t='quote properly handles bytea strings';
-        $t.=" ($output output)" if $output;
-        my $string = "abc\123\\def\0ghi";
-        my $result = $dbh->quote($string, { pg_type => PG_BYTEA });
-        my $E = $pgversion >= 80100 ? q{E} : q{};
-        my $expected = qq{${E}'abc\123\\\\\\\\def\\\\000ghi'};
-        is ($result, $expected, $t);
-    }
+if ($pgversion < 90000) {
+    test_outputs(undef);
+    SKIP { skip 'No BYTEA output format setting before 9.0', 10 };
+} else {
+    test_outputs($_) for qw(hex escape);
 }
 
 $sth->finish();
 
 cleanup_database($dbh,'test');
 $dbh->disconnect();
+
+sub test_outputs {
+    my $output = shift;
+    $dbh->do(qq{SET bytea_output = '$output'}) if $output;
+
+    $t='Received correct text from BYTEA column with backslashes';
+    $t.=" ($output output)" if $output;
+    $sth = $dbh->prepare(q{SELECT bytetest FROM dbd_pg_test WHERE id=?});
+    $sth->execute(400);
+    my $byte = $sth->fetchall_arrayref()->[0][0];
+    my $exp = $output eq 'hex'
+        ? 'x61615c62625c63635c5c3064645c'
+        : 'aa\bb\cc\\\0dd\\';
+    is ($byte, $exp, $t);
+
+    $t='Received correct text from BYTEA column with quote';
+    $t.=" ($output output)" if $output;
+    $sth->execute(402);
+    $byte = $sth->fetchall_arrayref()->[0][0];
+    is ($byte, ($output eq 'hex' ? 'x27' : '\''), $t);
+
+    $t='Ensure proper handling of high bit characters';
+    $t.=" ($output output)" if $output;
+    $sth->execute(403);
+    ($binary_in) = $sth->fetchrow_array();
+    if ($output eq 'hex') {
+        my $hex = 'x' . unpack 'H*', $binary_out;
+        is $binary_in, $hex, $t;
+        $sth->execute(404);
+        ($binary_in) = $sth->fetchrow_array();
+        is $binary_in, $hex, $t;
+    } else {
+        ok ($binary_in eq $binary_out, $t);
+        $sth->execute(404);
+        ($binary_in) = $sth->fetchrow_array();
+        ok ($binary_in eq $binary_out, $t);
+    }
+
+    $t='quote properly handles bytea strings';
+    $t.=" ($output output)" if $output;
+    my $string = "abc\123\\def\0ghi";
+    my $result = $dbh->quote($string, { pg_type => PG_BYTEA });
+    my $E = $pgversion >= 80100 ? q{E} : q{};
+    my $expected = qq{${E}'abc\123\\\\\\\\def\\\\000ghi'};
+    is ($result, $expected, $t);
+}
