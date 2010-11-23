@@ -49,47 +49,42 @@ ok ($sth->execute(403, $binary_out), $t);
 $sth->{pg_server_prepare} = 1;
 ok ($sth->execute(404, $binary_out), $t);
 
-my @output;
-if ($pgversion >= 90000) {
-	@output = qw(hex escape);
-}
-else {
-	@output = (undef);
-	SKIP: { skip 'No BYTEA output format setting before 9.0', 5 }
-}
+SKIP: {
+    skip 'No BYTEA output format setting before 9.0', 10
+        if $pgversion < 90000;
+    for my $output (qw(hex escape)) {
+        $dbh->do(qq{SET bytea_output = '$output'}) if $output;
 
-for my $output (@output) {
-	$dbh->do(qq{SET bytea_output = '$output'}) if $output;
+        $t='Received correct text from BYTEA column with backslashes';
+        $t.=" ($output output)" if $output;
+        $sth = $dbh->prepare(q{SELECT bytetest FROM dbd_pg_test WHERE id=?});
+        $sth->execute(400);
+        my $byte = $sth->fetchall_arrayref()->[0][0];
+        is ($byte, 'aa\bb\cc\\\0dd\\', $t);
 
-	$t='Received correct text from BYTEA column with backslashes';
-	$t.=" ($output output)" if $output;
-	$sth = $dbh->prepare(q{SELECT bytetest FROM dbd_pg_test WHERE id=?});
-	$sth->execute(400);
-	my $byte = $sth->fetchall_arrayref()->[0][0];
-	is ($byte, 'aa\bb\cc\\\0dd\\', $t);
+        $t='Received correct text from BYTEA column with quote';
+        $t.=" ($output output)" if $output;
+        $sth->execute(402);
+        $byte = $sth->fetchall_arrayref()->[0][0];
+        is ($byte, '\'', $t);
 
-	$t='Received correct text from BYTEA column with quote';
-	$t.=" ($output output)" if $output;
-	$sth->execute(402);
-	$byte = $sth->fetchall_arrayref()->[0][0];
-	is ($byte, '\'', $t);
+        $t='Ensure proper handling of high bit characters';
+        $t.=" ($output output)" if $output;
+        $sth->execute(403);
+        ($binary_in) = $sth->fetchrow_array();
+        ok ($binary_in eq $binary_out, $t);
+        $sth->execute(404);
+        ($binary_in) = $sth->fetchrow_array();
+        ok ($binary_in eq $binary_out, $t);
 
-	$t='Ensure proper handling of high bit characters';
-	$t.=" ($output output)" if $output;
-	$sth->execute(403);
-	($binary_in) = $sth->fetchrow_array();
-	ok ($binary_in eq $binary_out, $t);
-	$sth->execute(404);
-	($binary_in) = $sth->fetchrow_array();
-	ok ($binary_in eq $binary_out, $t);
-
-	$t='quote properly handles bytea strings';
-	$t.=" ($output output)" if $output;
-	my $string = "abc\123\\def\0ghi";
-	my $result = $dbh->quote($string, { pg_type => PG_BYTEA });
-	my $E = $pgversion >= 80100 ? q{E} : q{};
-	my $expected = qq{${E}'abc\123\\\\\\\\def\\\\000ghi'};
-	is ($result, $expected, $t);
+        $t='quote properly handles bytea strings';
+        $t.=" ($output output)" if $output;
+        my $string = "abc\123\\def\0ghi";
+        my $result = $dbh->quote($string, { pg_type => PG_BYTEA });
+        my $E = $pgversion >= 80100 ? q{E} : q{};
+        my $expected = qq{${E}'abc\123\\\\\\\\def\\\\000ghi'};
+        is ($result, $expected, $t);
+    }
 }
 
 $sth->finish();
