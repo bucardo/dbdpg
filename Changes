@@ -4,8 +4,10 @@
 
   - Fix the number of tests to skip in t/01connect.t when the $DBI_DSN
     environment variable lacks a database specification.
-  - Fix the number of tests to skip in t/06bytea.t when running on a version
+  - Fix algorithm for skiping tests in t/06bytea.t when running on a version
     of PostgreSQL lower than 9.0.
+  - Fix failing tests in t/06bytea.t when running on PostgreSQL 9.0 or later
+    and using hexadecimal binary format.
 
 2.17.2 Released November 21, 2010 (subversion r14542)
 
