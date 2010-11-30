@@ -2,12 +2,14 @@
 
 2.17.3
 
+  - New method for handling UTF8: partially deprecate pg_enable_utf8.
+    (still in progress)
   - Fix memory leak in pg_db_cancel (missing PQclear)
     [Rainer Weikusat] (CPAN bug #63441)
   - Fix the number of tests to skip in t/01connect.t when the $DBI_DSN
-    environment variable lacks a database specification.
+    environment variable lacks a database specification. [David E. Wheeler]
   - Fix algorithm for skiping tests in t/06bytea.t when running on a version
-    of PostgreSQL lower than 9.0.
+    of PostgreSQL lower than 9.0. [David E. Wheeler]
 
 2.17.2 Released November 21, 2010 (subversion r14542)
 
