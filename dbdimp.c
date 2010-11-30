@@ -4773,6 +4773,9 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
 
 	status = _sqlstate(aTHX_ imp_dbh, result);
 
+	TRACE_PQCLEAR;
+	PQclear(result);
+
 	/* If we actually cancelled a running query, just return true - the caller must rollback if needed */
 	if (0 == strncmp(imp_dbh->sqlstate, "57014", 5)) {
 		if (TEND) TRC(DBILOGFP, "%sEnd pg_db_cancel\n", THEADER);
