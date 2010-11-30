@@ -4853,6 +4853,8 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
 			/* Suck up the cancellation notice */
 			TRACE_PQGETRESULT;
 			while ((result = PQgetResult(imp_dbh->conn)) != NULL) {
+				TRACE_PQCLEAR;
+				PQclear(result);
 			}
 			/* We need to rollback! - reprepare!? */
 			TRACE_PQEXEC;
