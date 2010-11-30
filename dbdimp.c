@@ -3370,15 +3370,20 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 	
 	for (i = 0; i < num_fields; ++i) {
 		SV *sv;
+		int can_be_utf8;
 
 		if (TRACE5)
 			TRC(DBILOGFP, "%sFetching field #%d\n", THEADER, i);
 
 		sv = AvARRAY(av)[i];
 
+		/* Only mark as utf8 if the type supports it (or is unknown) */
+		can_be_utf8 = DBDPG_TRUE;
+
 		TRACE_PQGETISNULL;
 		if (PQgetisnull(imp_sth->result, imp_sth->cur_tuple, i)!=0) {
 			SvROK(sv) ? (void)sv_unref(sv) : (void)SvOK_off(sv);
+			can_be_utf8 = DBDPG_FALSE;
 		}
 		else {
 			TRACE_PQGETVALUE;
@@ -3397,6 +3402,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 					/* For certain types, we can cast to non-string Perlish values */
 					switch (type_info->type_id) {
 					case PG_BOOL:
+						can_be_utf8 = DBDPG_FALSE;
 						if (imp_dbh->pg_bool_tf) {
 							*value = ('1' == *value) ? 't' : 'f';
 							sv_setpvn(sv, (char *)value, value_len);
@@ -3407,10 +3413,15 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 					case PG_OID:
 					case PG_INT4:
 					case PG_INT2:
+						can_be_utf8 = DBDPG_FALSE;
 						sv_setiv(sv, atol((char *)value));
 						break;
+					case PG_BYTEA:
+						/* Here solely to ensure it does not get set to utf8 */
+						can_be_utf8 = DBDPG_FALSE;
 					default:
 						sv_setpvn(sv, (char *)value, value_len);
+						/* None of the above need to be utf8 */
 					}
 				}
 				else {
@@ -3430,7 +3441,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 				}
 			}
 #ifdef is_utf8_string
-			if (imp_dbh->is_utf8) {
+			if (imp_dbh->is_utf8 && can_be_utf8) {
 				SvUTF8_on(sv);
 			}
 #endif
