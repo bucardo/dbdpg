@@ -529,9 +529,10 @@ void dequote_bytea(char *string, STRLEN *retlen, int estring)
 		return;
 
 	if ('\\' == *string && 'x' == *(string+1))
-		return _dequote_bytea_hex(string, retlen, estring);
+		_dequote_bytea_hex(string, retlen, estring);
 	else
-		return _dequote_bytea_escape(string, retlen, estring);
+		_dequote_bytea_escape(string, retlen, estring);
+	return;
 }
 
 /*
