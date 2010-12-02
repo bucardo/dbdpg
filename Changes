@@ -1,6 +1,6 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-2.17.3
+2.18.0
 
   - New method for handling UTF8: partially deprecate pg_enable_utf8.
     (still in progress)
