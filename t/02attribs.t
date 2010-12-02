@@ -435,14 +435,14 @@ SKIP: {
 	my ($id, $name) = $sth->fetchrow_array();
 	ok (Encode::is_utf8($name), $t);
 
-	$t='Unicode (utf8) data returned from database is not corrupted';
+	$t='Unicode (utf8) data returned from UTF8 database is not corrupted';
 	is (length($name), 4, $t);
 
-	$t='ASCII text returned from database does not have utf8 bit set';
+	$t='ASCII text returned from UTF8 database does have utf8 bit set';
 	$sth->finish();
 	$sth->execute(1);
 	my ($id2, $name2) = $sth->fetchrow_array();
-	ok (!Encode::is_utf8($name2), $t);
+	ok (Encode::is_utf8($name2), $t);
 	$sth->finish();
 }
 

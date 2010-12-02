@@ -859,8 +859,9 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 
 #ifdef is_utf8_string
 		else if (strEQ("pg_enable_utf8", key)) {
-			imp_dbh->pg_enable_utf8 = newval!=0 ? DBDPG_TRUE : DBDPG_FALSE;
-			/* Turning on does nothing now, but explicit off will force is_utf8 off! */
+			/* Turning on has no effect now, but an explicit off will force utf8 off */
+			imp_dbh->pg_enable_utf8 = (SvOK(valuesv) && 0 == (unsigned)SvIV(valuesv))
+				? DBDPG_FALSE : DBDPG_TRUE;
 			if (imp_dbh->pg_enable_utf8 == DBDPG_FALSE) {
 				imp_dbh->is_utf8 = DBDPG_FALSE;
 			}
@@ -1066,8 +1067,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 				fieldname = PQfname(imp_sth->result, fields);
 				sv_fieldname = newSVpv(fieldname,0);
 #ifdef is_utf8_string
-				if (is_high_bit_set(aTHX_ (unsigned char *)fieldname, strlen(fieldname)) && is_utf8_string((unsigned char *)fieldname, strlen(fieldname)))
-					SvUTF8_on(sv_fieldname);
+				SvUTF8_on(sv_fieldname);
 #endif
 				(void)av_store(av, fields, sv_fieldname);
 			}
