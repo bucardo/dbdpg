@@ -82,7 +82,7 @@ sub test_outputs {
     $t.=" ($output output)" if $output;
     $sth->execute(403);
     ($binary_in) = $sth->fetchrow_array();
-    cmp_ok $binary_in, 'eq', $binary_out, $t;
+    cmp_ok ($binary_in, 'eq', $binary_out, $t);
     $sth->execute(404);
     ($binary_in) = $sth->fetchrow_array();
     ok ($binary_in eq $binary_out, $t);

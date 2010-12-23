@@ -1244,8 +1244,7 @@ use 5.006001;
 			# NOTNULL inverts the sense of NULLABLE
 			$row->{NOTNULL} = ($row->{NOTNULL} ? 0 : 1);
 
-			my @pri_keys = ();
-			@pri_keys = $dbh->primary_key( undef, undef, $table );
+			my @pri_keys = $dbh->primary_key( undef, undef, $table );
 			$row->{PRIMARY_KEY} = scalar(grep { /^$row->{NAME}$/i } @pri_keys) ? 1 : 0;
 		}
 
@@ -1309,7 +1308,7 @@ use 5.006001;
 		my $GIG = 1073741824;
 		my $PS = 'precision/scale';
 		my $LEN = 'length';
-		my $UN = undef;
+		my $UN;
 		my $ti =
 			[
 			 $names,
