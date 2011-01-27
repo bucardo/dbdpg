@@ -26,15 +26,17 @@ struct imp_dbh_st {
 	int     pg_errorlevel;     /* PQsetErrorVerbosity. Set by user, defaults to 1 */
 	int     server_prepare;    /* do we want to use PQexecPrepared? 0=no 1=yes 2=smart. Can be changed by user */
 	int     async_status;      /* 0=no async 1=async started -1=async has been cancelled */
+	int     pg_enable_utf8;    /* -1=not set  0=force off  1=force on */
 
     imp_sth_t *async_sth;      /* current async statement handle */
 	AV      *savepoints;       /* list of savepoints */
 	PGconn  *conn;             /* connection structure */
 	char    *sqlstate;         /* from the last result */
+	char    *client_encoding;  /* the initial (default) client_encoding */
 
 	bool    is_utf8;           /* does the client_encoding return UTF8? */
+	bool    pg_byte_soup;      /* is the server_encoding SQL_ASCII? */
 	bool    pg_bool_tf;        /* do bools return 't'/'f'? Set by user, default is 0 */
-	bool    pg_enable_utf8;    /* should we attempt to make utf8 strings? Set by user, default is 0 */
 	bool    prepare_now;       /* force immediate prepares, even with placeholders. Set by user, default is 0 */
 	bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */
 	bool    dollaronly;        /* only consider $1, $2 ... as valid placeholders */

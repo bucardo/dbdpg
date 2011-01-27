@@ -229,11 +229,36 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 		}
 	}
 
-	/* Figure out the client_encoding for UTF work */
-	imp_dbh->is_utf8 = strncmp("UTF8", PQparameterStatus(imp_dbh->conn, "client_encoding"), 4)
-		? DBDPG_FALSE : DBDPG_TRUE;
+	/* Store the old client_encoding in case we need to restore to it later */
+	/* Longest name is currently 'SHIFT_JIS_2004', so allow for that plus a lot */
+	Renew(imp_dbh->client_encoding, 42, char); /* freed in dbd_db_destroy */
+	strncpy(imp_dbh->client_encoding, PQparameterStatus(imp_dbh->conn, "client_encoding"), 42);
+
+	/* We need to know if the server is SQL_ASCII. We assume not */
+	imp_dbh->pg_byte_soup = DBDPG_FALSE;
+
+	if (0 == strncmp("UTF8", PQparameterStatus(imp_dbh->conn, "client_encoding"), 4)) {
+		imp_dbh->is_utf8 = DBDPG_TRUE;
+	}
+	else {
+		imp_dbh->is_utf8 = DBDPG_FALSE;
+		/* Can we set pg_enable_utf8 this early? */
+		/* We need to find the server_encoding to make sure it is possible to change 
+		 the client_encoding to UTF-8. This is safe for all but SQL_ASCII */
+		/* If we are not SQL_ASCII, let's change the encoding to UTF-8 right now */
+		if (0 == strncmp("SQL_ASCII", PQparameterStatus(imp_dbh->conn, "server_encoding"), 9)) {
+			imp_dbh->pg_byte_soup = DBDPG_TRUE;
+		}
+		else {
+			PQexec(imp_dbh->conn, "SET client_encoding = 'UTF-8'");
+			imp_dbh->is_utf8 = DBDPG_TRUE;
+		}
+	}
+
+	/* At this point, the only way that is_utf8 is false is for SQL_ASCII databases */
+
 	imp_dbh->pg_bool_tf      = DBDPG_FALSE;
-	imp_dbh->pg_enable_utf8  = DBDPG_FALSE;
+	imp_dbh->pg_enable_utf8  = -1;
  	imp_dbh->prepare_now     = DBDPG_FALSE;
 	imp_dbh->done_begin      = DBDPG_FALSE;
 	imp_dbh->dollaronly      = DBDPG_FALSE;
@@ -284,8 +309,10 @@ static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
 	sv_setpv(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate);
 
 	/* Set as utf-8 */
+#ifdef is_utf8_string
 	if (imp_dbh->is_utf8)
 		SvUTF8_on(DBIc_ERRSTR(imp_xxh));
+#endif
 
 	if (TEND) TRC(DBILOGFP, "%sEnd pg_error\n", THEADER);
 
@@ -859,11 +886,13 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 
 #ifdef is_utf8_string
 		else if (strEQ("pg_enable_utf8", key)) {
-			/* Turning on has no effect now, but an explicit off will force utf8 off */
 			imp_dbh->pg_enable_utf8 = (SvOK(valuesv) && 0 == (unsigned)SvIV(valuesv))
-				? DBDPG_FALSE : DBDPG_TRUE;
-			if (imp_dbh->pg_enable_utf8 == DBDPG_FALSE) {
+				? 0 : 1;
+			if (0 == imp_dbh->pg_enable_utf8) {
 				imp_dbh->is_utf8 = DBDPG_FALSE;
+			}
+			else {
+				imp_dbh->is_utf8 = DBDPG_TRUE;
 			}
 			retval = 1;
 		}
