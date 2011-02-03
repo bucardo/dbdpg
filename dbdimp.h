@@ -121,8 +121,8 @@ struct imp_sth_st {
 #define dbd_init  pg_init
 extern void dbd_init (dbistate_t *dbistate);
 
-#define dbd_db_login  pg_db_login
-int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char * pwd);
+#define dbd_db_login6 pg_db_login6
+int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char * pwd, SV *attr);
 
 #define dbd_db_ping  pg_db_ping
 int dbd_db_ping(SV *dbh);

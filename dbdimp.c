@@ -100,9 +100,10 @@ void dbd_init (dbistate_t *dbistate)
 
 
 /* ================================================================== */
-int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char * pwd)
+int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char * pwd, SV *attr)
 {
 
+	dTHR;
 	dTHX;
 	char *         conn_str;
 	char *         dest;
@@ -281,6 +282,7 @@ int dbd_db_login (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char
 	DBIc_ACTIVE_on(imp_dbh);
 
 	if (TEND) TRC(DBILOGFP, "%sEnd dbd_db_login\n", THEADER);
+
 	return 1;
 
 } /* end of dbd_db_login */
