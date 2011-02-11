@@ -2410,7 +2410,7 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version,
 	int xy, yz;
 	SV * svitem;
 	char * string;
-	STRLEN svlen;
+	STRLEN stringlength;
 	SV * value;
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_stringify_array\n", THEADER);
@@ -2491,8 +2491,8 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version,
 				sv_catpv(value, "\"");
 				if (SvUTF8(svitem))
 					SvUTF8_on(value);
-				string = SvPV(svitem, svlen);
-				while (svlen--) {
+				string = SvPV(svitem, stringlength);
+				while (stringlength--) {
 
 					/* If an embedded quote, throw a backslash before it */
 					if ('\"' == *string)
