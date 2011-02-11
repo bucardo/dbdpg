@@ -4923,6 +4923,39 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
 } /* end of handle_old_async */
 
 
+/* ================================================================== */
+/* Attempt to cancel a synchronous query
+   Returns true if the cancel succeeded, and false if it did not */
+int dbd_st_cancel(SV *sth, imp_sth_t *imp_sth)
+{
+	dTHX;
+	D_imp_dbh_from_sth;
+	PGcancel *cancel;
+	char errbuf[256];
+
+	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_cancel\n", THEADER);
+
+	/* Get the cancel structure */
+	TRACE_PQGETCANCEL;
+	cancel = PQgetCancel(imp_dbh->conn);
+
+	/* This almost always works. If not, free our structure and complain loudly */
+	TRACE_PQGETCANCEL;
+	if (!PQcancel(cancel, errbuf, sizeof(errbuf))) {
+		TRACE_PQFREECANCEL;
+		PQfreeCancel(cancel);
+		if (TRACEWARN) TRC(DBILOGFP, "%sPQcancel failed: %s\n", THEADER, errbuf);
+		pg_error(aTHX_ sth, PGRES_FATAL_ERROR, "PQcancel failed");
+		if (TEND) TRC(DBILOGFP, "%sEnd dbd_st_cancel (error: cancel failed)\n", THEADER);
+		return DBDPG_FALSE;
+	}
+	TRACE_PQFREECANCEL;
+	PQfreeCancel(cancel);
+
+	if (TEND) TRC(DBILOGFP, "%sEnd dbd_st_cancel\n", THEADER);
+	return DBDPG_TRUE;
+
+} /* end of dbd_st_cancel */
 
 /*
 Some information to keep you sane:

@@ -796,6 +796,13 @@ pg_cancel(sth)
 	D_imp_sth(sth);
 	ST(0) = pg_db_cancel_sth(sth, imp_sth) ? &PL_sv_yes : &PL_sv_no;
 
+void
+cancel(sth)
+	SV *sth
+	CODE:
+	D_imp_sth(sth);
+	ST(0) = dbd_st_cancel(sth, imp_sth) ? &PL_sv_yes : &PL_sv_no;
+
 #if PGLIBVERSION >= 80000
 
 void

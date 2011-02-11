@@ -166,8 +166,11 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth);
 #define dbd_st_rows pg_st_rows
 int dbd_st_rows (SV * sth, imp_sth_t * imp_sth);
 
-#define dbd_st_finish  pg_st_finidh
+#define dbd_st_finish  pg_st_finish
 int dbd_st_finish (SV * sth, imp_sth_t * imp_sth);
+
+#define dbd_st_cancel pg_st_cancel
+int dbd_st_cancel (SV * sth, imp_sth_t * imp_sth);
 
 #define dbd_st_destroy  pg_st_destroy
 void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth);
