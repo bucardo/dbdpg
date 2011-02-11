@@ -51,7 +51,7 @@ ok ($sth->execute(404, $binary_out), $t);
 
 if ($pgversion < 90000) {
     test_outputs(undef);
-    SKIP: { skip 'No BYTEA output format setting before 9.0', 5 };
+    SKIP: { skip 'No BYTEA output format setting before 9.0', 5 }
 } else {
     test_outputs($_) for qw(hex escape);
 }
@@ -94,4 +94,5 @@ sub test_outputs {
     my $E = $pgversion >= 80100 ? q{E} : q{};
     my $expected = qq{${E}'abc\123\\\\\\\\def\\\\000ghi'};
     is ($result, $expected, $t);
+	return;
 }
