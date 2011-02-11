@@ -3123,10 +3123,9 @@ marks, such as geometric operators.
 
 =head3 B<pg_enable_utf8> (boolean)
 
-DBD::Pg specific attribute. Partially deprecated, as we now mark all strings 
-coming from a database with a client_encoding of 'UTF8' as utf8. However, 
-setting pg_enable_utf8 to false will override this automatic check, for 
-backwards compatibility with applications. This attribute is only relevant under
+DBD::Pg specific attribute. If true, then the C<utf8> flag will be turned on
+for returned character data (if the data is valid UTF-8). For details about
+the C<utf8> flag, see the C<Encode> module. This attribute is only relevant under
 perl 5.8 and later.
 
 =head3 B<pg_errorlevel> (integer)
