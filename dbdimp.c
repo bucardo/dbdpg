@@ -3014,14 +3014,15 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	   6b. All placeholders are bound (and "pg_server_prepare" is 2)
 	*/
 	if (TRACE4) TRC(DBILOGFP,
-					"%sPQexec* decision: dml=%d direct=%d server_prepare=%d numbound=%d numphs=%d default=%d\n",
+					"%sPQexec* decision: dml=%d direct=%d server_prepare=%d numbound=%d numphs=%d default=%d current=%d\n",
 					THEADER, 
 					imp_sth->is_dml,
 					imp_sth->direct,
 					imp_sth->server_prepare,
 					imp_sth->numbound,
 					imp_sth->numphs,
-					imp_sth->has_default);
+					imp_sth->has_default,
+					imp_sth->has_current);
 
 	if (imp_sth->is_dml
 		&& !imp_sth->direct
