@@ -2,6 +2,7 @@
 
 2.18.0
 
+  - Fix memory leak with ParamValues. [Martin J. Evans] (CPAN bug #60863)
   - New cancel() method per DBI spec. [Eric Simon] (CPAN bug #63516)
   - New method for handling UTF8: partially deprecate pg_enable_utf8.
     (still in progress)

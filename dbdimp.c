@@ -973,18 +973,22 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			ph_t *currph;
 			int i;
 			for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
+                SV *key, *val;
+                key = (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1));
+ 
 				if (NULL == currph->value) {
-					(void)hv_store_ent 
-						(pvhv,
-						 (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1)),
-						 newSV(0), 0);
+                    val = newSV(0);
+					if (!hv_store_ent(pvhv, key, val, 0)) {
+                        SvREFCNT_dec(val) ;
+                    }
 				}
 				else {
-					(void)hv_store_ent
-						(pvhv,
-						 (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1)),
-						 newSVpv(currph->value,0),0);
+                    val = newSVpv(currph->value,0);
+					if (!hv_store_ent(pvhv, key, val, 0)) {
+                        SvREFCNT_dec(val) ;
+                    }
 				}
+                SvREFCNT_dec(key) ;
 			}
 			retsv = newRV_noinc((SV*)pvhv);
 		}
@@ -1037,7 +1041,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 
 	if (retsv != Nullsv) {
 		if (TEND) TRC(DBILOGFP, "%sEnd dbd_st_FETCH_attrib\n", THEADER);
-		return retsv;
+		return sv_2mortal(retsv);
 	}
 
 	if (! imp_sth->result) {
