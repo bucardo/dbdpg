@@ -922,10 +922,13 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			ph_t *currph;
 			int i;
 			for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
-				(void)hv_store_ent 
-					(pvhv,
-					 (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1)),
-					 newSViv(NULL == currph->bind_type ? 0 : 1), 0);
+                SV *key, *val;
+                key = (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1));
+				val = newSViv(NULL == currph->bind_type ? 0 : 1);
+				if (! hv_store_ent(pvhv, key, val, 0)) {
+					SvREFCNT_dec(val);
+				}
+				SvREFCNT_dec(key);
 			}
 			retsv = newRV_noinc((SV*)pvhv);
 		}
@@ -944,10 +947,13 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			ph_t *currph;
 			int i;
 			for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
+				SV *key, *val;
+				key = (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1));
 				if (NULL == currph->bind_type) {
-					(void)hv_store_ent
-						(pvhv, (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1)),
-						 newSV(0), 0);
+					val = newSV(0);
+					if (! hv_store_ent(pvhv, key, val, 0)) {
+						SvREFCNT_dec(val);
+					}
 				}
 				else {
 					HV *pvhv2 = newHV();
@@ -957,10 +963,12 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 					else {
 						(void)hv_store(pvhv2, "pg_type", 7, newSViv(currph->bind_type->type_id), 0);
 					}
-					(void)hv_store_ent
-						(pvhv, (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1)),
-						 newRV_noinc((SV*)pvhv2), 0);
+					val = newRV_noinc((SV*)pvhv2);
+					if (! hv_store_ent(pvhv, key, val, 0)) {
+						SvREFCNT_dec(val);
+					}
 				}
+				SvREFCNT_dec(key);
 			}
 			retsv = newRV_noinc((SV*)pvhv);
 		}
@@ -979,16 +987,16 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 				if (NULL == currph->value) {
                     val = newSV(0);
 					if (!hv_store_ent(pvhv, key, val, 0)) {
-                        SvREFCNT_dec(val) ;
+                        SvREFCNT_dec(val);
                     }
 				}
 				else {
                     val = newSVpv(currph->value,0);
 					if (!hv_store_ent(pvhv, key, val, 0)) {
-                        SvREFCNT_dec(val) ;
+                        SvREFCNT_dec(val);
                     }
 				}
-                SvREFCNT_dec(key) ;
+                SvREFCNT_dec(key);
 			}
 			retsv = newRV_noinc((SV*)pvhv);
 		}
