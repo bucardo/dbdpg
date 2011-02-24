@@ -668,18 +668,20 @@ my $oldaction;
 eval {
 	# This statement will block indefinitely because of the 'FOR UPDATE' clause,
 	# so we set up an alarm to cancel it after 2 seconds.
-	my $sth = $dbh2->prepare('SELECT * FROM dbd_pg_test WHERE id = ? FOR UPDATE');
-	$sth->{RaiseError} = 1;
+	my $sthl = $dbh2->prepare('SELECT * FROM dbd_pg_test WHERE id = ? FOR UPDATE');
+	$sthl->{RaiseError} = 1;
 
-	my $action = POSIX::SigAction->new(sub {$sth->cancel},POSIX::SigSet->new(SIGALRM));
+	my $action = POSIX::SigAction->new(
+		sub {$sthl->cancel},POSIX::SigSet->new(SIGALRM));
 	$oldaction = POSIX::SigAction->new;
-	POSIX::sigaction(SIGALRM,$action,$oldaction);
+	POSIX::sigaction(SIGALRM,$action,$oldaction);  ## no critic (ProhibitCallsToUnexportedSubs)
 
 	alarm(2); # seconds before alarm
-	$sth->execute(1);
+	$sthl->execute(1);
 	alarm(0); # cancel alarm (if execute didn't block)
 };
-POSIX::sigaction(SIGALRM,$oldaction); # restore original signal handler
+# restore original signal handler
+POSIX::sigaction(SIGALRM,$oldaction); ## no critic (ProhibitCallsToUnexportedSubs)
 like ($@,qr/canceling statement due to user request/,'cancel');
 $dbh2->disconnect();
 
