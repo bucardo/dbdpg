@@ -100,7 +100,7 @@ use 5.006001;
 	}
 
 	## Deprecated
-	sub _pg_use_catalog {
+	sub _pg_use_catalog { ## no critic (ProhibitUnusedPrivateSubroutines)
 		return 'pg_catalog.';
 	}
 
@@ -439,47 +439,47 @@ use 5.006001;
 			: 'af.adsrc';
 
 		my $col_info_sql = qq!
-			SELECT
-				NULL::text AS "TABLE_CAT"
-				, quote_ident(n.nspname) AS "TABLE_SCHEM"
-				, quote_ident(c.relname) AS "TABLE_NAME"
-				, quote_ident(a.attname) AS "COLUMN_NAME"
-				, a.atttypid AS "DATA_TYPE"
-				, pg_catalog.format_type(a.atttypid, NULL) AS "TYPE_NAME"
-				, a.attlen AS "COLUMN_SIZE"
-				, NULL::text AS "BUFFER_LENGTH"
-				, NULL::text AS "DECIMAL_DIGITS"
-				, NULL::text AS "NUM_PREC_RADIX"
-				, CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
-				, $remarks AS "REMARKS"
-				, $column_def AS "COLUMN_DEF"
-				, NULL::text AS "SQL_DATA_TYPE"
-				, NULL::text AS "SQL_DATETIME_SUB"
-				, NULL::text AS "CHAR_OCTET_LENGTH"
-				, a.attnum AS "ORDINAL_POSITION"
-				, CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
-				, pg_catalog.format_type(a.atttypid, a.atttypmod) AS "pg_type"
-				, '?' AS "pg_constraint"
-				, n.nspname AS "pg_schema"
-				, c.relname AS "pg_table"
-				, a.attname AS "pg_column"
-				, a.attrelid AS "pg_attrelid"
-				, a.attnum AS "pg_attnum"
-				, a.atttypmod AS "pg_atttypmod"
-				, t.typtype AS "_pg_type_typtype"
-				, t.oid AS "_pg_type_oid"
-			FROM
-				pg_catalog.pg_type t
-				JOIN pg_catalog.pg_attribute a ON (t.oid = a.atttypid)
-				JOIN pg_catalog.pg_class c ON (a.attrelid = c.oid)
-				LEFT JOIN pg_catalog.pg_attrdef af ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
-				$schemajoin
-			WHERE
-				a.attnum >= 0
-				AND c.relkind IN ('r','v')
-				$whereclause
-			ORDER BY "TABLE_SCHEM", "TABLE_NAME", "ORDINAL_POSITION"
-			!;
+            SELECT
+                NULL::text AS "TABLE_CAT"
+                , quote_ident(n.nspname) AS "TABLE_SCHEM"
+                , quote_ident(c.relname) AS "TABLE_NAME"
+                , quote_ident(a.attname) AS "COLUMN_NAME"
+                , a.atttypid AS "DATA_TYPE"
+                , pg_catalog.format_type(a.atttypid, NULL) AS "TYPE_NAME"
+                , a.attlen AS "COLUMN_SIZE"
+                , NULL::text AS "BUFFER_LENGTH"
+                , NULL::text AS "DECIMAL_DIGITS"
+                , NULL::text AS "NUM_PREC_RADIX"
+                , CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
+                , $remarks AS "REMARKS"
+                , $column_def AS "COLUMN_DEF"
+                , NULL::text AS "SQL_DATA_TYPE"
+                , NULL::text AS "SQL_DATETIME_SUB"
+                , NULL::text AS "CHAR_OCTET_LENGTH"
+                , a.attnum AS "ORDINAL_POSITION"
+                , CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
+                , pg_catalog.format_type(a.atttypid, a.atttypmod) AS "pg_type"
+                , '?' AS "pg_constraint"
+                , n.nspname AS "pg_schema"
+                , c.relname AS "pg_table"
+                , a.attname AS "pg_column"
+                , a.attrelid AS "pg_attrelid"
+                , a.attnum AS "pg_attnum"
+                , a.atttypmod AS "pg_atttypmod"
+                , t.typtype AS "_pg_type_typtype"
+                , t.oid AS "_pg_type_oid"
+            FROM
+                pg_catalog.pg_type t
+                JOIN pg_catalog.pg_attribute a ON (t.oid = a.atttypid)
+                JOIN pg_catalog.pg_class c ON (a.attrelid = c.oid)
+                LEFT JOIN pg_catalog.pg_attrdef af ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
+                $schemajoin
+            WHERE
+                a.attnum >= 0
+                AND c.relkind IN ('r','v')
+                $whereclause
+            ORDER BY "TABLE_SCHEM", "TABLE_NAME", "ORDINAL_POSITION"
+            !;
 
 		my $data = $dbh->selectall_arrayref($col_info_sql) or return undef;
 
@@ -586,35 +586,35 @@ use 5.006001;
 		}
 
 		my $table_stats_sql = qq{
-			SELECT d.relpages, d.reltuples, n.nspname
-			FROM   pg_catalog.pg_class d, pg_catalog.pg_namespace n
-			WHERE  d.relname = ? $schema_where
-		};
+            SELECT d.relpages, d.reltuples, n.nspname
+            FROM   pg_catalog.pg_class d, pg_catalog.pg_namespace n
+            WHERE  d.relname = ? $schema_where
+        };
 
 		my $colnames_sql = qq{
-			SELECT
-				a.attnum, a.attname
-			FROM
-				pg_catalog.pg_attribute a, pg_catalog.pg_class d, pg_catalog.pg_namespace n
-			WHERE
-				a.attrelid = d.oid AND d.relname = ? $schema_where
-		};
+            SELECT
+                a.attnum, a.attname
+            FROM
+                pg_catalog.pg_attribute a, pg_catalog.pg_class d, pg_catalog.pg_namespace n
+            WHERE
+                a.attrelid = d.oid AND d.relname = ? $schema_where
+        };
 
 		my $stats_sql = qq{
-			SELECT
-				c.relname, i.indkey, i.indisunique, i.indisclustered, a.amname,
-				n.nspname, c.relpages, c.reltuples, i.indexprs,
-				pg_get_expr(i.indpred,i.indrelid) as predicate
-			FROM
-				pg_catalog.pg_index i, pg_catalog.pg_class c,
-				pg_catalog.pg_class d, pg_catalog.pg_am a,
-				pg_catalog.pg_namespace n
-			WHERE
-				d.relname = ? $schema_where AND d.oid = i.indrelid
-				AND i.indexrelid = c.oid AND c.relam = a.oid
-			ORDER BY
-				i.indisunique desc, a.amname, c.relname
-		};
+            SELECT
+                c.relname, i.indkey, i.indisunique, i.indisclustered, a.amname,
+                n.nspname, c.relpages, c.reltuples, i.indexprs,
+                pg_get_expr(i.indpred,i.indrelid) as predicate
+            FROM
+                pg_catalog.pg_index i, pg_catalog.pg_class c,
+                pg_catalog.pg_class d, pg_catalog.pg_am a,
+                pg_catalog.pg_namespace n
+            WHERE
+                d.relname = ? $schema_where AND d.oid = i.indrelid
+                AND i.indexrelid = c.oid AND c.relam = a.oid
+            ORDER BY
+                i.indisunique desc, a.amname, c.relname
+        };
 
 		my @output_rows;
 
@@ -722,23 +722,23 @@ use 5.006001;
 		}
 
 		my $pri_key_sql = qq{
-			SELECT
-				  c.oid
-				, quote_ident(n.nspname)
-				, quote_ident(c.relname)
-				, quote_ident(c2.relname)
-				, i.indkey, quote_ident(t.spcname), quote_ident(t.spclocation)
-				, n.nspname, c.relname, c2.relname
-			FROM
-				pg_catalog.pg_class c
-				JOIN pg_catalog.pg_index i ON (i.indrelid = c.oid)
-				JOIN pg_catalog.pg_class c2 ON (c2.oid = i.indexrelid)
-				LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-				LEFT JOIN $TSJOIN
-			WHERE
-				i.indisprimary IS TRUE
-			$whereclause
-		};
+            SELECT
+                  c.oid
+                , quote_ident(n.nspname)
+                , quote_ident(c.relname)
+                , quote_ident(c2.relname)
+                , i.indkey, quote_ident(t.spcname), quote_ident(t.spclocation)
+                , n.nspname, c.relname, c2.relname
+            FROM
+                pg_catalog.pg_class c
+                JOIN pg_catalog.pg_index i ON (i.indrelid = c.oid)
+                JOIN pg_catalog.pg_class c2 ON (c2.oid = i.indexrelid)
+                LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
+                LEFT JOIN $TSJOIN
+            WHERE
+                i.indisprimary IS TRUE
+            $whereclause
+        };
 
 		my $sth = $dbh->prepare($pri_key_sql) or return undef;
 		$sth->execute();
@@ -748,13 +748,13 @@ use 5.006001;
 		# Get the attribute information
 		my $indkey = join ',', split /\s+/, $info->[4];
 		my $sql = qq{
-			SELECT a.attnum, pg_catalog.quote_ident(a.attname) AS colname,
-				pg_catalog.quote_ident(t.typname) AS typename
-			FROM pg_catalog.pg_attribute a, pg_catalog.pg_type t
-			WHERE a.attrelid = '$info->[0]'
-			AND a.atttypid = t.oid
-			AND attnum IN ($indkey);
-		};
+            SELECT a.attnum, pg_catalog.quote_ident(a.attname) AS colname,
+                pg_catalog.quote_ident(t.typname) AS typename
+            FROM pg_catalog.pg_attribute a, pg_catalog.pg_type t
+            WHERE a.attrelid = '$info->[0]'
+            AND a.atttypid = t.oid
+            AND attnum IN ($indkey);
+        };
 		$sth = $dbh->prepare($sql) or return undef;
 		$sth->execute();
 		my $attribs = $sth->fetchall_hashref('attnum');
@@ -906,38 +906,38 @@ use 5.006001;
 
 		## Grab everything except specific column names:
 		my $fk_sql = qq{
-		SELECT conrelid, confrelid, contype, conkey, confkey,
-			pg_catalog.quote_ident(c.relname) AS t_name, pg_catalog.quote_ident(n2.nspname) AS t_schema,
-			pg_catalog.quote_ident(n.nspname) AS c_schema, pg_catalog.quote_ident(conname) AS c_name,
-			CASE
-				WHEN confupdtype = 'c' THEN 0
-				WHEN confupdtype = 'r' THEN 1
-				WHEN confupdtype = 'n' THEN 2
-				WHEN confupdtype = 'a' THEN 3
-				WHEN confupdtype = 'd' THEN 4
-				ELSE -1
-			END AS update,
-			CASE
-				WHEN confdeltype = 'c' THEN 0
-				WHEN confdeltype = 'r' THEN 1
-				WHEN confdeltype = 'n' THEN 2
-				WHEN confdeltype = 'a' THEN 3
-				WHEN confdeltype = 'd' THEN 4
-				ELSE -1
-			END AS delete,
-			CASE
-				WHEN condeferrable = 'f' THEN 7
-				WHEN condeferred = 't' THEN 6
-				WHEN condeferred = 'f' THEN 5
-				ELSE -1
-			END AS defer
-			FROM pg_catalog.pg_constraint k, pg_catalog.pg_class c, pg_catalog.pg_namespace n, pg_catalog.pg_namespace n2
-			WHERE $WHERE
-				AND k.connamespace = n.oid
-				AND k.conrelid = c.oid
-				AND c.relnamespace = n2.oid
-				ORDER BY conrelid ASC
-				};
+        SELECT conrelid, confrelid, contype, conkey, confkey,
+            pg_catalog.quote_ident(c.relname) AS t_name, pg_catalog.quote_ident(n2.nspname) AS t_schema,
+            pg_catalog.quote_ident(n.nspname) AS c_schema, pg_catalog.quote_ident(conname) AS c_name,
+            CASE
+                WHEN confupdtype = 'c' THEN 0
+                WHEN confupdtype = 'r' THEN 1
+                WHEN confupdtype = 'n' THEN 2
+                WHEN confupdtype = 'a' THEN 3
+                WHEN confupdtype = 'd' THEN 4
+                ELSE -1
+            END AS update,
+            CASE
+                WHEN confdeltype = 'c' THEN 0
+                WHEN confdeltype = 'r' THEN 1
+                WHEN confdeltype = 'n' THEN 2
+                WHEN confdeltype = 'a' THEN 3
+                WHEN confdeltype = 'd' THEN 4
+                ELSE -1
+            END AS delete,
+            CASE
+                WHEN condeferrable = 'f' THEN 7
+                WHEN condeferred = 't' THEN 6
+                WHEN condeferred = 'f' THEN 5
+                ELSE -1
+            END AS defer
+            FROM pg_catalog.pg_constraint k, pg_catalog.pg_class c, pg_catalog.pg_namespace n, pg_catalog.pg_namespace n2
+            WHERE $WHERE
+                AND k.connamespace = n.oid
+                AND k.conrelid = c.oid
+                AND c.relnamespace = n2.oid
+                ORDER BY conrelid ASC
+                };
 
 		my $sth = $dbh->prepare($fk_sql);
 		$sth->execute();
@@ -961,11 +961,11 @@ use 5.006001;
 		}
 		## Get the information about the columns computed above
 		my $SQL = qq{
-			SELECT a.attrelid, a.attnum, pg_catalog.quote_ident(a.attname) AS colname, 
-				pg_catalog.quote_ident(t.typname) AS typename
-			FROM pg_catalog.pg_attribute a, pg_catalog.pg_type t
-			WHERE a.atttypid = t.oid
-			AND (\n};
+            SELECT a.attrelid, a.attnum, pg_catalog.quote_ident(a.attname) AS colname, 
+                pg_catalog.quote_ident(t.typname) AS typename
+            FROM pg_catalog.pg_attribute a, pg_catalog.pg_type t
+            WHERE a.atttypid = t.oid
+            AND (\n};
 
 		$SQL .= join "\n\t\t\t\tOR\n" => map {
 			my $cols = join ',' => keys %{$colnum{$_}};
@@ -1101,13 +1101,13 @@ use 5.006001;
 				and (defined $table and $table eq '')
 			 ) {
 			$tbl_sql = qq{
-					SELECT
-						 NULL::text AS "TABLE_CAT"
-					 , NULL::text AS "TABLE_SCHEM"
-					 , NULL::text AS "TABLE_NAME"
-					 , NULL::text AS "TABLE_TYPE"
-					 , NULL::text AS "REMARKS" $extracols
-					};
+                    SELECT
+                         NULL::text AS "TABLE_CAT"
+                     , NULL::text AS "TABLE_SCHEM"
+                     , NULL::text AS "TABLE_NAME"
+                     , NULL::text AS "TABLE_TYPE"
+                     , NULL::text AS "REMARKS" $extracols
+                    };
 		}
 		elsif (# Rule 19b
 					 (defined $catalog and $catalog eq '')
@@ -1116,14 +1116,14 @@ use 5.006001;
 					) {
 			$extracols = q{,n.nspname AS pg_schema, NULL::text AS pg_table};
 			$tbl_sql = qq{SELECT
-						 NULL::text AS "TABLE_CAT"
-					 , quote_ident(n.nspname) AS "TABLE_SCHEM"
-					 , NULL::text AS "TABLE_NAME"
-					 , NULL::text AS "TABLE_TYPE"
-					 , CASE WHEN n.nspname ~ '^pg_' THEN 'system schema' ELSE 'owned by ' || pg_get_userbyid(n.nspowner) END AS "REMARKS" $extracols
-					FROM pg_catalog.pg_namespace n
-					ORDER BY "TABLE_SCHEM"
-					};
+                       NULL::text AS "TABLE_CAT"
+                     , quote_ident(n.nspname) AS "TABLE_SCHEM"
+                     , NULL::text AS "TABLE_NAME"
+                     , NULL::text AS "TABLE_TYPE"
+                     , CASE WHEN n.nspname ~ '^pg_' THEN 'system schema' ELSE 'owned by ' || pg_get_userbyid(n.nspowner) END AS "REMARKS" $extracols
+                    FROM pg_catalog.pg_namespace n
+                    ORDER BY "TABLE_SCHEM"
+                    };
 		}
 		elsif (# Rule 19c
 					 (defined $catalog and $catalog eq '')
@@ -1132,20 +1132,20 @@ use 5.006001;
 					 and (defined $type and $type eq '%')
 					) {
 			$tbl_sql = qq{
-					SELECT
-					   NULL::text AS "TABLE_CAT"
-					 , NULL::text AS "TABLE_SCHEM"
-					 , NULL::text AS "TABLE_NAME"
-					 , 'TABLE'    AS "TABLE_TYPE"
-					 , 'relkind: r' AS "REMARKS" $extracols
-					UNION
-					SELECT
-					   NULL::text AS "TABLE_CAT"
-					 , NULL::text AS "TABLE_SCHEM"
-					 , NULL::text AS "TABLE_NAME"
-					 , 'VIEW'     AS "TABLE_TYPE"
-					 , 'relkind: v' AS "REMARKS" $extracols
-				};
+                    SELECT
+                       NULL::text AS "TABLE_CAT"
+                     , NULL::text AS "TABLE_SCHEM"
+                     , NULL::text AS "TABLE_NAME"
+                     , 'TABLE'    AS "TABLE_TYPE"
+                     , 'relkind: r' AS "REMARKS" $extracols
+                    UNION
+                    SELECT
+                       NULL::text AS "TABLE_CAT"
+                     , NULL::text AS "TABLE_SCHEM"
+                     , NULL::text AS "TABLE_NAME"
+                     , 'VIEW'     AS "TABLE_TYPE"
+                     , 'relkind: v' AS "REMARKS" $extracols
+                };
 		}
 		else {
 			# Default SQL
@@ -1178,24 +1178,24 @@ use 5.006001;
 			}
 			my $whereclause = join "\n\t\t\t\t\t AND " => @search;
 			$tbl_sql = qq{
-				SELECT NULL::text AS "TABLE_CAT"
-					 , quote_ident(n.nspname) AS "TABLE_SCHEM"
-					 , quote_ident(c.relname) AS "TABLE_NAME"
-					 , CASE
-					 		WHEN c.relkind = 'v' THEN
-								CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM VIEW' ELSE 'VIEW' END
-							ELSE
-								CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END
-						END AS "TABLE_TYPE"
-					 , d.description AS "REMARKS" $showtablespace $extracols
-				FROM pg_catalog.pg_class AS c
-					LEFT JOIN pg_catalog.pg_description AS d
-						ON (c.oid = d.objoid AND c.tableoid = d.classoid AND d.objsubid = 0)
-					LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-					LEFT JOIN $TSJOIN
-				WHERE $whereclause
-				ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
-				};
+                SELECT NULL::text AS "TABLE_CAT"
+                     , quote_ident(n.nspname) AS "TABLE_SCHEM"
+                     , quote_ident(c.relname) AS "TABLE_NAME"
+                     , CASE
+                             WHEN c.relkind = 'v' THEN
+                                CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM VIEW' ELSE 'VIEW' END
+                            ELSE
+                                CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END
+                        END AS "TABLE_TYPE"
+                     , d.description AS "REMARKS" $showtablespace $extracols
+                FROM pg_catalog.pg_class AS c
+                    LEFT JOIN pg_catalog.pg_description AS d
+                        ON (c.oid = d.objoid AND c.tableoid = d.classoid AND d.objsubid = 0)
+                    LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
+                    LEFT JOIN $TSJOIN
+                WHERE $whereclause
+                ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
+                };
 		}
 		my $sth = $dbh->prepare( $tbl_sql ) or return undef;
 		$sth->execute();

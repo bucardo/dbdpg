@@ -1141,7 +1141,7 @@ is ($dbh->quote( $testtime, $tstype ), qq{'$testtime'}, $t);
 $t='DB handle method "quote" works with an undefined value';
 my $foo;
 {
-	no warnings; ## Perl does not like undef args
+	no warnings;## Perl does not like undef args
 	is ($dbh->quote($foo), q{NULL}, $t);
 }
 $t='DB handle method "quote" works with a supplied data type argument';
@@ -1411,7 +1411,7 @@ SKIP: {
 
 	$t='DB handle method "pg_lo_import" works';
 	my ($fh,$filename) = File::Temp::tmpnam();
-	print $fh "abc\ndef";
+	print {$fh} "abc\ndef";
 	close $fh or warn 'Failed to close temporary file';
 	$handle = $dbh->pg_lo_import($filename);
 	my $objid = $handle;
@@ -1546,7 +1546,7 @@ SKIP: {
 
 	$t='DB handle method "pg_lo_import" works (AutoCommit on)';
 	my ($fh,$filename) = File::Temp::tmpnam();
-	print $fh "abc\ndef";
+	print {$fh} "abc\ndef";
 	close $fh or warn 'Failed to close temporary file';
 	$handle = $dbh->pg_lo_import($filename);
 	ok ($handle, $t);

@@ -30,7 +30,7 @@ plan tests => 67;
 
 isnt ($dbh, undef, 'Connect to database for async testing');
 
-my ($t,$sth,$count,$res,$expected,@data);
+my ($t,$sth,$res);
 my $pgversion = $dbh->{pg_server_version};
 my $table = 'dbd_pg_test1';
 

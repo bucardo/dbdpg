@@ -22,7 +22,7 @@ else {
 
 ok (defined $dbh, 'Connect to database for bytea testing');
 
-my ($sth,$count,$result,$expected,@data,$t);
+my ($result,$expected,@data,$t);
 
 my $table = 'dbd_pg_test4';
 $dbh->do(qq{CREATE TABLE $table(id2 integer, val2 text)});

@@ -27,7 +27,7 @@ isnt ($dbh, undef, 'Connect to database for statement handle method testing');
 
 my $pglibversion = $dbh->{pg_lib_version};
 
-my ($SQL, $sth, $sth2, $result, @result, $expected, $warning, $rows, $t);
+my ($SQL, $sth, $sth2, $result, @result, $expected, $rows, $t);
 
 #
 # Test of the prepare flags
@@ -674,14 +674,14 @@ eval {
 	my $action = POSIX::SigAction->new(
 		sub {$sthl->cancel},POSIX::SigSet->new(SIGALRM));
 	$oldaction = POSIX::SigAction->new;
-	POSIX::sigaction(SIGALRM,$action,$oldaction);  ## no critic (ProhibitCallsToUnexportedSubs)
+	POSIX::sigaction(SIGALRM,$action,$oldaction);
 
 	alarm(2); # seconds before alarm
 	$sthl->execute(1);
 	alarm(0); # cancel alarm (if execute didn't block)
 };
 # restore original signal handler
-POSIX::sigaction(SIGALRM,$oldaction); ## no critic (ProhibitCallsToUnexportedSubs)
+POSIX::sigaction(SIGALRM,$oldaction);
 like ($@,qr/canceling statement due to user request/,'cancel');
 $dbh2->disconnect();
 
