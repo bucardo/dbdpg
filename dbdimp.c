@@ -3823,6 +3823,10 @@ pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 
 	if (copystatus > 0) {
 		sv_setpv(dataline, tempbuf);
+#ifdef is_utf8_string
+		if (imp_dbh->pg_enable_utf8)
+			SvUTF8_on(dataline);
+#endif
 		TRACE_PQFREEMEM;
 		PQfreemem(tempbuf);
 	}

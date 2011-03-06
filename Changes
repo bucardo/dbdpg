@@ -1,15 +1,19 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
+3.x?
+
+  - New method for handling UTF8: partially deprecate pg_enable_utf8.
+    (still in progress)
+
 2.18.0
 
   - Fix memory leak with ParamValues. [Martin J. Evans] (CPAN bug #60863)
   - New cancel() method per DBI spec. [Eric Simon] (CPAN bug #63516)
-  - New method for handling UTF8: partially deprecate pg_enable_utf8.
-    (still in progress)
   - Fix memory leak in handle_old_async (missing PQclear)
     [Rainer Weikusat] (CPAN bug #63408)
   - Fix memory leak in pg_db_cancel (missing PQclear)
     [Rainer Weikusat] (CPAN bug #63441)
+  - Mark pg_getcopydata strings as UTF8 as needed (CPAN bug #66006)
   - Function dequote_bytea returning void should not try to return something
     [Dagobert Michelsen] (CPAN bug #63497)
   - Fix the number of tests to skip in t/01connect.t when the $DBI_DSN
