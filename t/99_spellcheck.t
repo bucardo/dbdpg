@@ -562,21 +562,22 @@ struct
 
 ## README.dev:
 DProf
-GPL
-NYTProf
 dprofpp
 gpl
-nytprofhtml
-profiler
-spellcheck
-testfile
+GPL
 leaktester
 mak
 mathinline
 MDevel
 nCompiled
 nServer
+NYTProf
+nytprofhtml
+profiler
+spellcheck
 SvTRUE
+testfile
+testme
 txt
 XSubPPtmpAAAA
 
