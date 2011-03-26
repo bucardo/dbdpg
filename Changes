@@ -7,6 +7,7 @@
 
 2.18.0
 
+  - Fix memory leak when binding arrays [GSM] (CPAN bug #65734)
   - Fix memory leak with ParamValues. [Martin J. Evans] (CPAN bug #60863)
   - New cancel() method per DBI spec. [Eric Simon] (CPAN bug #63516)
   - Fix memory leak in handle_old_async (missing PQclear)
