@@ -13,6 +13,7 @@ README.dev
 win32.mak
 LICENSES/gpl-2.0.txt
 LICENSES/artistic.txt
+testme.tmp.pl
 
 Pg.h
 Pg.xs
