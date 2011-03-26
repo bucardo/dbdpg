@@ -73,6 +73,8 @@ LICENSES/gpl-2.0.txt - GPL license
 
 LICENSES/artistic.txt - Artistic (Perl) license
 
+testme.tmp.pl - Quick helper file for testing individual bugs
+
 
 * Build files:
 
