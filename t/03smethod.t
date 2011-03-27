@@ -682,7 +682,7 @@ eval {
 };
 # restore original signal handler
 POSIX::sigaction(SIGALRM,$oldaction);
-like ($@,qr/canceling statement due to user request/,'cancel');
+like ($@,qr/canceling \w+ due to user request/,'cancel');
 $dbh2->disconnect();
 
 cleanup_database($dbh,'test');
