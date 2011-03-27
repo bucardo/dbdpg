@@ -426,12 +426,18 @@ eval {
 };
 is ($@, q{}, $t);
 
-$t='Calling do() with invalid crowded placeholders fails cleanly';
-$dbh->commit();
-eval {
-  $dbh->do(q{SELECT ??}, undef, 'public', 'error');
-};
-is($dbh->state, '42601', $t);
+SKIP: {
+	if ($pglibversion < 80000) {
+		skip ('Skipping specific placeholder test on 7.4-compiled servers', 1);
+
+		$t='Calling do() with invalid crowded placeholders fails cleanly';
+		$dbh->commit();
+		eval {
+			$dbh->do(q{SELECT ??}, undef, 'public', 'error');
+		};
+		is($dbh->state, '42601', $t);
+	}
+}
 
 $t='Prepare/execute with non-DML placeholder works';
 $dbh->commit();

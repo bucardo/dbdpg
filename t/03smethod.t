@@ -657,33 +657,40 @@ is ($sth->{pg_current_row}, 0, $t);
 # Test of the statement handle method "cancel"
 #
 
-$dbh->do('INSERT INTO dbd_pg_test (id) VALUES (?)',undef,1);
-$dbh->commit;
-$dbh->do('SELECT * FROM dbd_pg_test WHERE id = ? FOR UPDATE',undef,1);
+SKIP: {
+	## 7.4 does not have cancel
+	if ($pglibversion < 80000) {
+		skip ('Not testing cancel 7.4-compiled servers', 1);
+	}
 
-my $dbh2 = $dbh->clone;
-$dbh2->do('SET search_path TO ' . $dbh->selectrow_array('SHOW search_path'));
+	$dbh->do('INSERT INTO dbd_pg_test (id) VALUES (?)',undef,1);
+	$dbh->commit;
+	$dbh->do('SELECT * FROM dbd_pg_test WHERE id = ? FOR UPDATE',undef,1);
 
-my $oldaction;
-eval {
-	# This statement will block indefinitely because of the 'FOR UPDATE' clause,
-	# so we set up an alarm to cancel it after 2 seconds.
-	my $sthl = $dbh2->prepare('SELECT * FROM dbd_pg_test WHERE id = ? FOR UPDATE');
-	$sthl->{RaiseError} = 1;
+	my $dbh2 = $dbh->clone;
+	$dbh2->do('SET search_path TO ' . $dbh->selectrow_array('SHOW search_path'));
 
-	my $action = POSIX::SigAction->new(
-		sub {$sthl->cancel},POSIX::SigSet->new(SIGALRM));
-	$oldaction = POSIX::SigAction->new;
-	POSIX::sigaction(SIGALRM,$action,$oldaction);
+	my $oldaction;
+	eval {
+		# This statement will block indefinitely because of the 'FOR UPDATE' clause,
+		# so we set up an alarm to cancel it after 2 seconds.
+		my $sthl = $dbh2->prepare('SELECT * FROM dbd_pg_test WHERE id = ? FOR UPDATE');
+		$sthl->{RaiseError} = 1;
 
-	alarm(2); # seconds before alarm
-	$sthl->execute(1);
-	alarm(0); # cancel alarm (if execute didn't block)
-};
-# restore original signal handler
-POSIX::sigaction(SIGALRM,$oldaction);
-like ($@,qr/canceling \w+ due to user request/,'cancel');
-$dbh2->disconnect();
+		my $action = POSIX::SigAction->new(
+			sub {$sthl->cancel},POSIX::SigSet->new(SIGALRM));
+		$oldaction = POSIX::SigAction->new;
+		POSIX::sigaction(SIGALRM,$action,$oldaction);
+
+		alarm(2); # seconds before alarm
+		$sthl->execute(1);
+		alarm(0); # cancel alarm (if execute didn't block)
+	};
+	# restore original signal handler
+	POSIX::sigaction(SIGALRM,$oldaction);
+	like ($@,qr/canceling \w+ due to user request/,'cancel');
+	$dbh2->disconnect();
+}
 
 cleanup_database($dbh,'test');
 $dbh->rollback();
