@@ -21,6 +21,8 @@
     environment variable lacks a database specification. [David E. Wheeler]
   - Fix algorithm for skipping tests in t/06bytea.t when running on a version
     of PostgreSQL lower than 9.0. [David E. Wheeler]
+  - Small tweaks to get tests working when compiled against Postgres 7.4
+    (CPAN bug #61713)
 
 2.17.2 Released November 21, 2010 (subversion r14542)
 
