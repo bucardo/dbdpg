@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 235;
+plan tests => 234;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -534,7 +534,7 @@ eval {
 like ($@, qr{Invalid placeholders}, $t);
 
 $t='Dollar quotes with invalid characters are not parsed as identifiers';
-for my $char (qw!+ / : @ [ `!) {
+for my $char (qw!+ / : @ [ `!) { ## six characters
 	eval {
 		$sth = $dbh->prepare(qq{SELECT \$abc${char}\$ 123 \$abc${char}\$});
 		$sth->execute();
@@ -545,7 +545,7 @@ for my $char (qw!+ / : @ [ `!) {
 
 $t='Dollar quotes with valid characters are parsed as identifiers';
 $dbh->rollback();
-for my $char (qw{0 9 A Z a z}) {
+for my $char (qw{0 9 A Z a z}) { ## six letters
 	eval {
 		$sth = $dbh->prepare(qq{SELECT \$abc${char}\$ 123 \$abc${char}\$});
 		$sth->execute();
