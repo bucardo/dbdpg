@@ -36,6 +36,7 @@ sql_type_info_t* sql_type_data(int);
 #define             PG_CIRCLE  718
 #define            PG_CSTRING  2275
 #define               PG_DATE  1082
+#define        PG_FDW_HANDLER  3115
 #define             PG_FLOAT4  700
 #define             PG_FLOAT8  701
 #define          PG_GTSVECTOR  3642
@@ -59,6 +60,7 @@ sql_type_info_t* sql_type_data(int);
 #define               PG_PATH  602
 #define       PG_PG_ATTRIBUTE  75
 #define           PG_PG_CLASS  83
+#define       PG_PG_NODE_TREE  194
 #define            PG_PG_PROC  81
 #define            PG_PG_TYPE  71
 #define              PG_POINT  600

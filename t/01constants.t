@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 ## We cannot 'use warnings' here as PG_TSQUERY and others trip it up
 ## no critic (RequireUseWarnings)
-use Test::More tests => 134;
+use Test::More tests => 136;
 select(($|=1,select(STDERR),$|=1)[1]);
 
 use DBD::Pg qw(:pg_types :async);
@@ -43,6 +43,7 @@ is (PG_CSTRING              ,  2275, 'PG_CSTRING returns correct value');
 is (PG_CSTRINGARRAY         ,  1263, 'PG_CSTRINGARRAY returns correct value');
 is (PG_DATE                 ,  1082, 'PG_DATE returns correct value');
 is (PG_DATEARRAY            ,  1182, 'PG_DATEARRAY returns correct value');
+is (PG_FDW_HANDLER          ,  3115, 'PG_FDW_HANDLER returns correct value');
 is (PG_FLOAT4               ,   700, 'PG_FLOAT4 returns correct value');
 is (PG_FLOAT4ARRAY          ,  1021, 'PG_FLOAT4ARRAY returns correct value');
 is (PG_FLOAT8               ,   701, 'PG_FLOAT8 returns correct value');
@@ -84,6 +85,7 @@ is (PG_PATH                 ,   602, 'PG_PATH returns correct value');
 is (PG_PATHARRAY            ,  1019, 'PG_PATHARRAY returns correct value');
 is (PG_PG_ATTRIBUTE         ,    75, 'PG_PG_ATTRIBUTE returns correct value');
 is (PG_PG_CLASS             ,    83, 'PG_PG_CLASS returns correct value');
+is (PG_PG_NODE_TREE         ,   194, 'PG_PG_NODE_TREE returns correct value');
 is (PG_PG_PROC              ,    81, 'PG_PG_PROC returns correct value');
 is (PG_PG_TYPE              ,    71, 'PG_PG_TYPE returns correct value');
 is (PG_POINT                ,   600, 'PG_POINT returns correct value');
