@@ -27,7 +27,7 @@ quote.h
 
 .perlcriticrc
 t/dbdpg_test_setup.pl
-t/00-signature.t
+t/00_signature.t
 t/00basic.t
 t/01connect.t
 t/01constants.t
