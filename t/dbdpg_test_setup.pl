@@ -751,7 +751,7 @@ sub shutdown_test_database {
 	my ($testdsn,$testuser,$helpconnect,$su,$uid,$testdir,$pg_ctl,$initdb) = get_test_settings();
 
 	if (-e $testdir and -e "$testdir/data/postmaster.pid") {
-		my $COM = qq{$pg_ctl -D $testdir/data --silent -m fast stop};
+		my $COM = qq{$pg_ctl -D $testdir/data -m fast stop};
 		my $olddir = getcwd;
 		if ($su) {
 			$COM = qq{su $su -m -c "$COM"};
