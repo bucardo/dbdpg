@@ -1,0 +1,42 @@
+#!/usr/bin/env perl
+
+## Quick script to test all available combinations of Postgres
+## Usage: $0 <postgresdir>
+
+use strict;
+use warnings;
+
+my $basedir = shift || "$ENV{HOME}/code/postgres";
+
+-d $basedir or die qq{No such directory: $basedir\n};
+
+my @versions = qw/ 7.4 8.0 8.1 8.2 8.3 8.4 9.0 HEAD /;
+
+## Sanity check:
+for my $lver (@versions) {
+	my $libdir = "$basedir/$lver/lib";
+	-d $libdir or die qq{Could not find directory: $libdir\n};
+}
+
+for my $lver (@versions) {
+	my $libdir = "$basedir/$lver/lib";
+	-d $libdir or die qq{Could not find directory: $libdir\n};
+	for my $tver (@versions) {
+
+		my $outfile = "dbdpg.testing.$lver.vs.$tver.log";
+		print "Testing library $lver against $tver: results stored in $outfile\n";
+		open my $fh, '>', $outfile or die qq{Could not open "$outfile": $!\n};
+
+		my $COM = "POSTGRES_LIB=/home/greg/code/postgres/$lver/lib perl Makefile.PL 2>&1";
+		print "$COM\n";
+		print $fh qx{$COM};
+
+		(my $port = $tver) =~ s/\.//;
+		$port = "5$port" . 0;
+		$port =~ /HEAD/ and $port = 5999;
+
+		$COM = "PGPORT=$port make test";
+		print "$COM\n";
+		print $fh qx{$COM};
+	}
+}
