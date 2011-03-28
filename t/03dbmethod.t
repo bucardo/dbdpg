@@ -445,6 +445,8 @@ $dbh->do(q{SET transaction_read_only = 'on'});
 is ($dbh->get_info(25), 'Y', $t);
 
 $t='DB handle method "get_info" returns correct string for SQL_DATA_SOURCE_READ_ONLY when "off"';
+## Recent versions of Postgres are very fussy: must rollback
+$dbh->rollback();
 $dbh->do(q{SET transaction_read_only = 'off'});
 is ($dbh->get_info(25), 'N', $t);
 
