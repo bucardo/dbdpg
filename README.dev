@@ -147,7 +147,7 @@ t/00_release.t - Quick check that all version numbers match.
 t/00basic.t - Very basic test to see if DBI and DBD::Pg load properly. Requires Test::Warn 
   for the version warning test.
 
-t/00-signature.t - Uses Module::Signature to verify SIGNATURE file. All tests are skipped 
+t/00_signature.t - Uses Module::Signature to verify SIGNATURE file. All tests are skipped 
   if the environment variable TEST_SIGNATURE is not set.
 
 t/01connect.t - Basic connection tests, outputs pretty, detailed connection information.
