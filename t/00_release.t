@@ -49,7 +49,7 @@ close $fh or warn qq{Could not close "$file": $!\n};
 $file = 'Changes';
 open $fh, '<', $file or die qq{Could not open "$file": $!\n};
 while (<$fh>) {
-	if (/^$vre/) {
+	if (/^(?:Version )*$vre/) {
 		push @{$v{$file}} => [$1,$.];
 		last;
 	}
