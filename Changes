@@ -1,32 +1,40 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-3.x?
 
-  - New method for handling UTF8: partially deprecate pg_enable_utf8.
-    (still in progress)
-
-2.18.0
+Version 2.18.0  Released March 28, 2011
 
   - Thanks to 123people.com for sponsoring work on this release [GSM]
+
   - Fix memory leak when binding arrays [GSM] (CPAN bug #65734)
+
   - Fix memory leak with ParamValues. [Martin J. Evans] (CPAN bug #60863)
+
   - New cancel() method per DBI spec. [Eric Simon] (CPAN bug #63516)
+
   - Fix memory leak in handle_old_async (missing PQclear)
     [Rainer Weikusat] (CPAN bug #63408)
+
   - Fix memory leak in pg_db_cancel (missing PQclear)
     [Rainer Weikusat] (CPAN bug #63441)
+
   - Mark pg_getcopydata strings as UTF8 as needed (CPAN bug #66006)
+
   - Function dequote_bytea returning void should not try to return something
     [Dagobert Michelsen] (CPAN bug #63497)
+
   - Fix the number of tests to skip in t/01connect.t when the $DBI_DSN
     environment variable lacks a database specification. [David E. Wheeler]
+
   - Fix algorithm for skipping tests in t/06bytea.t when running on a version
     of PostgreSQL lower than 9.0. [David E. Wheeler]
+
   - Small tweaks to get tests working when compiled against Postgres 7.4
     (CPAN bug #61713) [GSM]
+
   - Fix failing test when run as non-superuser [GSM] (CPAN bug #61534)
 
-2.17.2 Released November 21, 2010 (subversion r14542)
+
+Version 2.17.2  Released November 21, 2010 (subversion r14542)
 
   - Support dequoting of hex bytea format for 9.0.
     [Dagfinn Ilmari Mannsåker] (CPAN bug #60200).
@@ -37,12 +45,14 @@
   - Fix for some 7.4 failing tests [Dagfinn Ilmari Mannsåker]
   - Return bare instead of undef in test connections (CPAN bug #61574)
 
-2.17.1 Released April 8, 2010 (subversion r13899)
+
+Version 2.17.1  Released April 8, 2010 (subversion r13899)
 
   - Only use lo_import_with_oid if Postgres libraries are 8.4 or better
     [GSM] (CPAN bug #56363)
 
-2.17.0 Released April 6, 2010 (subversion r13890)
+
+Version 2.17.0  Released April 6, 2010 (subversion r13890)
 
   - Do not automatically ROLLBACK on a failed pg_cancel [GSM] (CPAN bug #55188)
   - Added support for new lo_import_with_oid function.
@@ -50,10 +60,12 @@
   - Don't limit stored user name to \w in tests [GSM] (CPAN bug #54372)
   - Allow tests to support versions back to Postgres 7.4 [GSM]
 
+
 2.16.1 Released January 20, 2010 (subversion r13756)
 
   - Output error messages in UTF-8 as needed. Reported by 
     Michael Hofmann. [GSM] (CPAN bug #53854)
+
 
 2.16.0 Released December 17, 2009 (subversion r13672)
 
@@ -65,9 +77,11 @@
 
  - Fixed POD escapes (CPAN bug #51856) [FWIE@cpan.org]
 
+
 2.15.1 Released August 7, 2009 (subversion r13173)
 
   - Release to fix the SIGNATURE file. [GSM]
+
 
 2.15.0 Released August 4, 2009 (subversion r13164)
 
@@ -77,9 +91,11 @@
   - Put single quotes around array literals when quoting arrays via
     the quote() method. Per report from David Garamond (CPAN bug #48420) [GSM]
 
+
 2.14.1 Released July 28, 2009 (subversion r13140)
 
   - Remove invalid bigint assignment [Tim Bunce]
+
 
 2.14.0 Released July 27, 2009 (subversion r13130)
 
@@ -99,9 +115,11 @@
   - Fix spelling error in type_info (CPAN bug #47786) [justin.d.hunter@gmail.com]
   - Add functions to support MS VC++ 7.0 (CPAN bug #47858) [Taro Nishino]
 
+
 2.13.1 Released April 23, 2009 (subversion r12713)
 
   - Fix leak in pg_warn (CPAN bug #45163) [rweikusat@mssgmbh.com]
+
 
 2.13.0 Released April 13, 2009 (subversion r12695)
 
@@ -112,6 +130,7 @@
     [rweikusat@mssgmbh.com]
   - Fix minor Perl::Critic nags (CPAN bug #44704) (Debian #bug 521969) [GSM]
   - Clarify change of $dbh->{Name} behavior (CPAN bug 44985) [GSM]
+
 
 2.12.0 Released March 28, 2009 (subversion r12627)
 
@@ -128,28 +147,34 @@
   - Fix minor bugs in POD docs. [Frank Wiegand] (CPAN bug #44242)
   - Fix minor bug in POD docs. [Tim Mattison]
 
+
 2.11.8 Released December 28, 2008 (subversion r12161)
 
   - Fix minor bug in t/12placeholders.t test (CPAN bug #41723)
 
+
 2.11.7 Released December 13, 2008 (subversion r12158)
 
   - Fix placeholder parsing logic (CPAN bug #41582)
+
 
 2.11.6 Released November 30, 2008 (subversion r12126)
 
   - Only set UTF8 flag on array items after UTF8 test. (CPAN bug #41253)
     [Armando Santos]
 
+
 2.11.5 Released November 24, 2008 (subversion r12102)
 
   - Clear prepared_statement name on failure to prepare: prevents 
     the wrong error when using prepare_cached. [GSM]
 
+
 2.11.4 Released November 12, 2008
 
   - Don't set LC_MESSAGES unless superuser in tests. Remove all 
     language-specific string checking for tests. (CPAN bug #40604)
+
 
 2.11.3 Released November 3, 2008 (subversion r12031)
 
@@ -158,13 +183,16 @@
   - Fix small POD error (CPAN bug #40209)
   - Tweak Perl::Critic policy list (CPAN bug #40130)
 
+
 2.11.2 Released October 15, 2008 (subversion r11983)
 
   - Fix core dump when invalid placeholders used. (CPAN bug #40075) [GSM]
 
+
 2.11.1 Released October 14, 2008 (subversion r11980)
 
   - $sth->{ParamTypes} returns 'TYPE' when possible.
+
 
 2.11.0 Released October 13, 2008 (subversion r11976)
 
@@ -173,12 +201,14 @@
     Thanks to Martin Evan (martin.evans@easysoft.com) and Brian 
     (elspicyjack@gmail.com) on the dbi-users list.
 
+
 2.10.7 Released September 22, 2008 (subversion r11869)
 
   - Fix test issue when dbname contains dashes.
     [Rainer Tammer]
   - Revert META.yml to 1.0, until such time as tools 
     can handle 1.1 (CPAN bug #39461) [Taro Nishino]
+
 
 2.10.6 Released September 19, 2008 (subversion r11830)
 
@@ -187,26 +217,32 @@
     on older servers. [GSM]
   - Skip unicode tests if server is set to 'LATIN1' [GSM]
 
+
 2.10.5 Released September 16, 2008 (subversion r11800)
 
   - Fix SIGNATURE file
+
 
 2.10.4 Released September 16, 2008 (subversion r11797)
 
   - Force use of math library when compiling. Per report 
     of AIX problems by Rainer Tammer.
 
+
 2.10.3 Released August 31, 2008 (subversion r11706)
 
   - Previous version had wrong SIGNATURE file
+
 
 2.10.2 Released August 31, 2008 (subversion r11704)
 
   - Fix minor problem in t/99_yaml.t
 
+
 2.10.1 Released August 31, 2008 (subversion r11697)
 
   - Minor testing fix.
+
 
 2.10.0 Released August 26, 2008 (subversion r11678)
 
@@ -217,16 +253,19 @@
   - Allow multi-statement do() calls with parameters to work if pg_server_prepare
     is set to 0 (CPAN bug #38623) [GSM]
 
+
 2.9.2 Released August 18, 2008 (subversion r11664)
 
   - Empty Postgres arrays should return empty Perl arrays, not undef.
     (CPAN bug #38552) [David E. Wheeler]
+
 
 2.9.1 Released August 17, 2008 (subversion r11660)
 
   - Return undef when mapping Postgres array to Perl array and 
     the array is empty '{}'. (CPAN bug #38552) [GSM]
   - Minor documentation improvements. [GSM]
+
 
 2.9.0 Released August 3, 2008 (subversion r11624)
 
@@ -239,20 +278,24 @@
   - Many documentation improvements. [GSM]
   - Win32 build improvements [T.J. Ferraro]
 
+
 2.8.8 Released December 17, 2009
 
   - Security release to fix high bit character problem in bytea
     (CPAN bug #51153) (Debian bug #554489)
+
 
 2.8.7 Released July 24, 2008 (subversion r11582)
 
   - Modify test scripts to work better on FreeBSD boxes. [GSM]
   - Much documentation improvement and POD tweaking. [GSM]
 
+
 2.8.6 Released July 21, 2008 (subversion r11558)
 
   - More testing improvements to increase odds of all tests being
     run, especially when testing as root. [GSM]
+
 
 2.8.5 Released July 13, 2008 (subversion r11529)
 
@@ -262,25 +305,30 @@
     output the debugging information about the final 'rollback'. [GSM]
   - More documentation improvements. [GSM]
 
+
 2.8.4 Released July 10, 2008 (subversion r11520)
 
   - Minor Perl::Critic test adjustments. [GSM]
   - Documentation enhancements. [GSM]
   - Yet more minor testing tweaks. [GSM]
 
+
 2.8.3 Released July 6, 2008 (subversion r11495)
 
   - Minor testing functionality tweaks, lots of test cleanups, minor doc enhancements. [GSM]
 
+
 2.8.2 Released June 29, 2008 (subversion r11466)
 
   - Minor testing tweaks, doc fixes. [GSM]
+
 
 2.8.1 Released June 11, 2008 (subversion r11417)
 
   - Force testing to use a custom socket dir, to avoid 
     permission problems. Thanks to Frank Wiegand for 
     help in uncovering this. [GSM]
+
 
 2.8.0 Released June 1, 2008 (subversion r11366)
 
@@ -292,6 +340,7 @@
     (CPAN bug #36237) [Ian Macdonald]
   - Clean up get_info() information. [GSM]
 
+
 2.7.2 Released May 14, 2008 (subversion r11269)
 
   - Handle embedded commas in quotes properly when destringifying 
@@ -299,9 +348,11 @@
   - Fix typo in docs with trace_parser_flags() (Martin J. Evans)
   - More testing tweaks [GSM]
 
+
 2.7.1 Released May 11, 2008 (subversion r11250)
 
   - Yet more minor testing tweaks. [GSM]
+
 
 2.7.0 Released May 10, 2008 (subversion r11239)
 
@@ -309,22 +360,27 @@
     backslashes. Fixes any problems with standard_conforming_strings.
     (CPAN bug #27538) [GSM]
 
+
 2.6.6 Released May 7, 2008 (subversion r11214)
 
   - Fix minor problem in t/99_spellcheck.t [GSM]
+
 
 2.6.5 Released May 7, 2008 (subversion r11209)
 
   - Add spell checker to tests. [GSM]
   - More tweaks to the testing suite. [GSM]
 
+
 2.6.4 Released May 2, 2008 (subversion r11186)
 
   - More tweaks to the test suite. [GSM]
 
+
 2.6.3 Released May 1, 2008 (subversion r11169)
 
   - Minor tweaks to the test suite. [GSM]
+
 
 2.6.2 Released April 30, 2008 (subversion r11161)
 
@@ -333,11 +389,13 @@
   - Allow 'make test' create a test database from scratch if
     it cannot find an existing one to use. [GSM]
 
+
 2.6.1 Released April 22, 2008 (subversion r11133)
 
   - Don't free placeholder section, fixes problem when using 
     more than one named placeholder with the same name.
     (CPAN bug #35303) [GSM]
+
 
 2.6.0 Released April 16, 2008 (subversion r11095)
 
@@ -347,10 +405,12 @@
   - Fix minor build and compilation issues with Strawberry Perl [GSM]
   - Add Bundle::DBD::Pg [GSM]
 
+
 2.5.1 Released April 7, 2008 (subversion r11056)
 
   - Correctly handle negative PID numbers on Win32 systems when
     generating prepared statement names (CPAN bug # 34738) [GSM]
+
 
 2.5.0 Released March 23, 2008 (subversion r10990)
 
@@ -358,20 +418,24 @@
     [Dave Rolsky] (CPAN ticket #34351)
   - Minor test fixes. [GSM]
 
+
 2.4.0 Released March 21, 2008 (subversion r10974)
 
   - Remove problematic and unneeded Test::Warn test from 00basic.t.
   - Add $sth->{pg_current_row} [GSM]
+
 
 2.3.0 Released March 19, 2008 (subversion r10951)
 
   - Add $sth->{pg_bound} and $sth->{pg_numbound} [GSM]
   - Fix broken call to $sth->{pg_segments} [GSM]
 
+
 2.2.2 Released March 3, 2008 (subversion r10873)
 
   - Remove non-working tracing from types.c and quote.c [GSM]
   - Add parse_trace_flag as statement handle method. [GSM]
+
 
 2.2.1 Released March 1, 2008 (subversion r10865)
 
@@ -380,15 +444,18 @@
   - Fix char count in Renew() (CPAN bug #33738) [Alexey Tourbin]
   - Change local trace_flags to lowercase. [GSM]
 
+
 2.2.0 Released February 27, 2008 (subversion r10849)
 
   - Introduce enhanced trace flags. See the documentation 
      on parse_trace_flags() for details. [GSM]
   - Remove version.pm dependency from Makefile.PL (CPAN bug #33429)
 
+
 2.1.3 Released February 20, 2008 (subversion r10813)
 
   - Do not assume POSTGRES_LIB is a plain dirname, as it may have " -lssl".
+
 
 2.1.2 Released February 19, 2008 (subversion r10806)
 
@@ -396,9 +463,11 @@
     or POSTGRES_INCLUDE are set but not valid.
   - Fix dependency requirements, especially version.pm [GSM]
 
+
 2.1.1 Released February 19, 2008 (subversion r10798)
 
   - Better URLs to cpan.org resources. [GSM]
+
 
 2.1.0 Released February 18, 2008 (subversion r10793)
 
@@ -411,6 +480,7 @@
   - Force client encoding of UTF8 for some tests. [GSM]
   - Make 03dbmethod.t pass minor test for version 8.1.9 (CPAN bug #33282) [GSM]
   - Add a local copy of dbivport.h [GSM]
+
 
 2.0.0 Released February 10, 2008 (subversion r10715)
 
@@ -498,7 +568,9 @@ Documentation fixes:
   - Fix META.yml file. (CPAN bug #25759) [GSM]
 
 1.49 May 7, 2006 (subversion r7814)
+
   - Thanks to Backcountry.com for sponsoring work on this release. [GSM]
+
   - Add the statement handle attribute ParamTypes, and fix an error 
     in ParamValues. ParamTypes requires DBI 1.49 or better. [GSM]
   - Strip the final newline from error messages, so that die can add 
