@@ -13,7 +13,6 @@ my $testfh;
 if (exists $ENV{TEST_OUTPUT}) {
 	my $file = $ENV{TEST_OUTPUT};
 	open $testfh, '>>', $file or die qq{Could not append file "$file": $!\n};
-	#Test::More->builder->output($testfh);
 	Test::More->builder->failure_output($testfh);
 	Test::More->builder->todo_output($testfh);
 }
