@@ -682,11 +682,13 @@ http://www.postgresql.org/community/weeklynews/
 * Tell Greg to post on PlanetPostgresql.
 
 * If a non-beta, clean out any CPAN bugs, including going back and marking resolved 
-bugs with this new version, once it appears in the choices.
+bugs with this new version, once it appears in the choices (takes a day or two for 
+the version to appear as a choice in the pulldown).
+
+* Check the CPAN testers report a few days after the PAUSE upload:
+http://www.cpantesters.org/distro/D/DBD-Pg.html
 
 * Update this file based on your experiences!!
-
-* Wait for the bugs or accolades to pour in.
 
 
 =====================
