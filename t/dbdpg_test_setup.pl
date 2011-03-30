@@ -101,7 +101,7 @@ sub connect_database {
 			1;
 		};
 
-		if ($@ =~ /invalid connection option/) {
+		if ($@ =~ /invalid connection option/ or $@ =~ /failed:.*"dbbarf"/) {
 			return $helpconnect, $@, undef;
 		}
 
