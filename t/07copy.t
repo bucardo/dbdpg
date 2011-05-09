@@ -6,6 +6,7 @@ use 5.006;
 use strict;
 use warnings;
 use Data::Dumper;
+use DBD::Pg ':async';
 use Test::More;
 use lib 't','.';
 require 'dbdpg_test_setup.pl';
@@ -14,7 +15,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if ($dbh) {
-	plan tests => 55;
+	plan tests => 57;
 }
 else {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -326,6 +327,29 @@ eval {
 	$dbh->do('SELECT 234');
 };
 is ($@, q{}, $t);
+
+$t='Async queries work after COPY OUT';
+$dbh->do('CREATE TEMP TABLE foobar AS SELECT 123::INTEGER AS x');
+$dbh->do('COPY foobar TO STDOUT');
+1 while ($dbh->pg_getcopydata($buffer) >= 0);
+
+eval {
+	$dbh->do('SELECT 111', { pg_async => PG_ASYNC} );
+};
+is ($@, q{}, $t);
+$dbh->pg_result();
+
+$t='Async queries work after COPY IN';
+$dbh->do('COPY foobar FROM STDIN');
+$dbh->pg_putcopydata(456);
+$dbh->pg_putcopyend();
+
+eval {
+	$dbh->do('SELECT 222', { pg_async => PG_ASYNC} );
+};
+is ($@, q{}, $t);
+$dbh->pg_result();
+
 
 SKIP: {
 	$pgversion < 80200 and skip ('Server version 8.2 or greater needed for test', 1);
