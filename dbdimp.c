@@ -3849,6 +3849,9 @@ pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 		TRACE_PQGETRESULT;
 		result = PQgetResult(imp_dbh->conn);
 		status = _sqlstate(aTHX_ imp_dbh, result);
+		while (result != NULL) {
+			result = PQgetResult(imp_dbh->conn);
+		}
 		TRACE_PQCLEAR;
 		PQclear(result);
 		if (PGRES_COMMAND_OK != status) {
@@ -3941,6 +3944,9 @@ int pg_db_putcopyend (SV * dbh)
 		TRACE_PQGETRESULT;
 		result = PQgetResult(imp_dbh->conn);
 		status = _sqlstate(aTHX_ imp_dbh, result);
+		while (result != NULL) {
+			result = PQgetResult(imp_dbh->conn);
+		}
 		TRACE_PQCLEAR;
 		PQclear(result);
 		if (PGRES_COMMAND_OK != status) {
