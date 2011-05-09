@@ -261,8 +261,9 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 
 
 /* ================================================================== */
-
-/* Database specific error handling. */
+/* 
+   Database specific error handling.
+*/
 static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
 {
 	D_imp_xxh(h);
@@ -294,7 +295,9 @@ static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
 
 
 /* ================================================================== */
-/* Turn database notices into perl warnings for proper handling. */
+/*
+  Turn database notices into perl warnings for proper handling.
+*/
 static void pg_warn (void * arg, const char * message)
 {
 	dTHX;
@@ -334,7 +337,9 @@ static void pg_warn (void * arg, const char * message)
 
 
 /* ================================================================== */
-/* Quick command executor used throughout this file */
+/*
+  Quick command executor used throughout this file
+*/
 static ExecStatusType _result(pTHX_ imp_dbh_t * imp_dbh, const char * sql)
 {
 	PGresult *     result;
@@ -359,7 +364,9 @@ static ExecStatusType _result(pTHX_ imp_dbh_t * imp_dbh, const char * sql)
 
 
 /* ================================================================== */
-/* Set the SQLSTATE based on a result, returns the status */
+/*
+  Set the SQLSTATE based on a result, returns the status
+*/
 static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
 {
 	ExecStatusType status   = PGRES_FATAL_ERROR; /* until proven otherwise */
@@ -1338,8 +1345,10 @@ int dbd_discon_all (SV * drh, imp_drh_t * imp_drh)
 } /* end of dbd_discon_all */
 
 
-/* Deprecated in favor of $dbh->{pg_socket} */
 /* ================================================================== */
+/*
+  Deprecated in favor of $dbh->{pg_socket}
+*/
 int pg_db_getfd (imp_dbh_t * imp_dbh)
 {
 	dTHX;
@@ -3491,7 +3500,9 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 
 
 /* ================================================================== */
-/* Pop off savepoints to the specified savepoint name */
+/* 
+   Pop off savepoints to the specified savepoint name
+*/
 static void pg_db_free_savepoints_to (pTHX_ imp_dbh_t * imp_dbh, const char *savepoint)
 {
 	I32 i;
@@ -3725,8 +3736,7 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 
 
 /* ================================================================== */
-int
-pg_db_putline (SV * dbh, const char * buffer)
+int pg_db_putline (SV * dbh, const char * buffer)
 {
 	dTHX;
 	D_imp_dbh(dbh);
@@ -3757,8 +3767,7 @@ pg_db_putline (SV * dbh, const char * buffer)
 
 
 /* ================================================================== */
-int
-pg_db_getline (SV * dbh, SV * svbuf, int length)
+int pg_db_getline (SV * dbh, SV * svbuf, int length)
 {
 	dTHX;
 	D_imp_dbh(dbh);
@@ -3804,8 +3813,7 @@ pg_db_getline (SV * dbh, SV * svbuf, int length)
 
 
 /* ================================================================== */
-int
-pg_db_getcopydata (SV * dbh, SV * dataline, int async)
+int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 {
 	dTHX;
 	D_imp_dbh(dbh);
@@ -3871,8 +3879,7 @@ pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 
 
 /* ================================================================== */
-int
-pg_db_putcopydata (SV * dbh, SV * dataline)
+int pg_db_putcopydata (SV * dbh, SV * dataline)
 {
 	dTHX;
 	D_imp_dbh(dbh);
@@ -4179,7 +4186,9 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 
 
 /* ================================================================== */
-/* For lo_* functions. Used to ensure we are in a transaction */
+/* 
+   For lo_* functions. Used to ensure we are in a transaction
+*/
 static int pg_db_start_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh)
 {
 	int status = -1;
@@ -4205,8 +4214,10 @@ static int pg_db_start_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh)
 
 
 /* ================================================================== */
-/* For lo_import and lo_export functions. Used to commit or rollback a 
-   transaction, but only if AutoCommit is on. */
+/* 
+   For lo_import and lo_export functions. Used to commit or rollback a 
+   transaction, but only if AutoCommit is on.
+*/
 static int pg_db_end_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int commit)
 {
 	int status = -1;
@@ -4608,7 +4619,9 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
 
 
 /* ================================================================== */
-/* Return the result of an asynchronous query, waiting if needed */
+/* 
+   Return the result of an asynchronous query, waiting if needed
+*/
 int pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 {
 	dTHX;
@@ -4707,16 +4720,15 @@ int pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 } /* end of pg_db_result */
 
 
+/* ================================================================== */
 /* 
-==================================================================
-Indicates if an asynchronous query has finished yet
-Accepts either a database or a statement handle
-Returns:
-  -1 if no query is running (and raises an exception)
-  +1 if the query is finished
+   Indicates if an asynchronous query has finished yet
+   Accepts either a database or a statement handle
+   Returns:
+   -1 if no query is running (and raises an exception)
+   +1 if the query is finished
    0 if the query is still running
-  -2 for other errors
-==================================================================
+   -2 for other errors
 */
 int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 {
@@ -4746,14 +4758,13 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 } /* end of pg_db_ready */
 
 
-/*
-Attempt to cancel a running asynchronous query
-Returns true if the cancel succeeded, and false if it did not
-In this case, pg_cancel will return false.
-NOTE: We only return true if we cancelled
-*/
-
 /* ================================================================== */
+/*
+  Attempt to cancel a running asynchronous query
+  Returns true if the cancel succeeded, and false if it did not
+  In this case, pg_cancel will return false.
+  NOTE: We only return true if we cancelled
+*/
 int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
 {
 	dTHX;
@@ -4853,12 +4864,11 @@ int pg_db_cancel_sth(SV *sth, imp_sth_t *imp_sth)
 } /* end of pg_db_cancel_sth */
 
 
-/*
-Finish up an existing async query, either by cancelling it,
-or by waiting for a result.
-
- */
 /* ================================================================== */
+/*
+  Finish up an existing async query, either by cancelling it,
+  or by waiting for a result.
+ */
 static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int asyncflag) {
 
 	PGresult *result;
@@ -4949,8 +4959,10 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
 
 
 /* ================================================================== */
-/* Attempt to cancel a synchronous query
-   Returns true if the cancel succeeded, and false if it did not */
+/* 
+   Attempt to cancel a synchronous query
+   Returns true if the cancel succeeded, and false if it did not
+*/
 int dbd_st_cancel(SV *sth, imp_sth_t *imp_sth)
 {
 	dTHX;
