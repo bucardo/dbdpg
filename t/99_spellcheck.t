@@ -561,6 +561,9 @@ rowtypes
 struct
 
 ## README.dev:
+
+cpantesters
+distro
 DProf
 dprofpp
 gpl
@@ -574,8 +577,10 @@ nServer
 NYTProf
 nytprofhtml
 profiler
+pulldown
 spellcheck
 SvTRUE
+testallversions
 testfile
 testme
 txt
