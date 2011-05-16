@@ -1,6 +1,9 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 
+  - Better error message when trying to do things post-disconnect [GSM]
+
+
 Version 2.18.1  Released May 9, 2011
 
   - Fix LANG testing issue [GSM] (CPAN bug #56705)

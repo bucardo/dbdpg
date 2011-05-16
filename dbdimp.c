@@ -2712,8 +2712,10 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 	if (TSTART) TRC(DBILOGFP, "%sBegin pg_quickexec (query: %s async: %d async_status: %d)\n",
 			THEADER, sql, asyncflag, imp_dbh->async_status);
 
-	if (NULL == imp_dbh->conn)
-		croak("execute on disconnected handle");
+	if (NULL == imp_dbh->conn) {
+		pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, "Database handle has been disconnected");
+		return -2;
+	}
 
 	/* Abort if we are in the middle of a copy */
 	if (imp_dbh->copystate != 0) {
@@ -2880,8 +2882,10 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	
 	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_st_execute\n", THEADER);
 	
-	if (NULL == imp_dbh->conn)
-		croak("execute on disconnected handle");
+	if (NULL == imp_dbh->conn) {
+		pg_error(aTHX_ sth, PGRES_FATAL_ERROR, "Cannot call execute on a disconnected database handle");
+		return -2;
+	}
 
 	/* Abort if we are in the middle of a copy */
 	if (imp_dbh->copystate!=0)
