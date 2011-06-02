@@ -18,6 +18,7 @@ The mailing list is at:
 The development of DBD::Pg can be tracked at:
 
     http://svn.perl.org/modules/DBD-Pg/trunk/
+    git://bucardo.org/dbdpg.git
 
 For information about PostgreSQL, visit:
 
