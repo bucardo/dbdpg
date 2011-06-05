@@ -22,7 +22,7 @@ testallversions.tmp.pl
 \.log$
 \.blame$
 
-\.svn/*
+\.git/*
 ^tmp/*
 cover_db/
 dbdpg_test_database/*

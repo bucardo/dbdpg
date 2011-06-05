@@ -272,7 +272,7 @@ sub MY::postamble { ## no critic ProhibitQualifiedSubDeclarations
 tags:
 	ctags -f tags --recurse --totals \
 		--exclude=blib \
-		--exclude=.svn \
+		--exclude=.git \
 		--exclude='*~' \
 		--languages=Perl,C --langmap=c:+.h,Perl:+.t \
 

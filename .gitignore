@@ -1,0 +1,10 @@
+Makefile
+*.o
+Pg.bs
+Pg.c
+*.xsi
+blib/
+pm_to_blib
+README.testdatabase
+dbdpg_test_database/
+

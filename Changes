@@ -3,13 +3,14 @@
 
   - Better error message when trying to do things post-disconnect [GSM]
 
+  - Switch from subversion to git. [GSM]
+
 
 Version 2.18.1  Released May 9, 2011
 
   - Fix LANG testing issue [GSM] (CPAN bug #56705)
 
   - Fix bug when async commands issued immediately after a COPY. [GSM] (CPAN bug #68041)
-
 
 Version 2.18.0  Released March 28, 2011 (subversion r14081)
 
