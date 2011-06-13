@@ -222,7 +222,7 @@ use 5.006001;
 		 });
 
 		# Connect to the database..
-		DBD::Pg::db::_login($dbh, $dbname, $user, $pass) or return undef;
+		DBD::Pg::db::_login($dbh, $dbname, $user, $pass, $attr) or return undef;
 
 		my $version = $dbh->{pg_server_version};
 		$dbh->{private_dbdpg}{version} = $version;
