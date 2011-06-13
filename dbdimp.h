@@ -32,6 +32,7 @@ struct imp_dbh_st {
 	PGconn  *conn;             /* connection structure */
 	char    *sqlstate;         /* from the last result */
 	const char  *server_encoding;  /* encoding detected at login */
+	int utf8;
 
 	bool    pg_bool_tf;        /* do bools return 't'/'f'? Set by user, default is 0 */
 	bool    pg_enable_utf8;    /* should we attempt to make utf8 strings? Set by user, default is 0 */

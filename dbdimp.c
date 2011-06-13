@@ -105,11 +105,13 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 
 	dTHR;
 	dTHX;
+	SV   **        svp;
 	char *         conn_str;
 	char *         dest;
 	bool           inquote = DBDPG_FALSE;
 	STRLEN         connect_string_size;
 	ConnStatusType connstatus;
+	int            utf8int;
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_login\n", THEADER);
   
@@ -214,6 +216,31 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 
 	/* Grab the server encoding so we can set out utf8 flags intelligently */
 	imp_dbh->server_encoding = PQparameterStatus(imp_dbh->conn, "server_encoding");
+
+	/* Check the value of the pg_enable_utf8 attribute. Default to not there or -1 */
+	utf8int = -1;
+	DBD_ATTRIB_GET_IV(attr, "pg_enable_utf8", 14, svp, utf8int);
+
+	/*
+	  We need to see if we are treating things with utf8 respect, or as byte soup
+	  The rules are:
+	  pg_enable_utf8 trumps everything else
+	  SQL_ASCII is always byte soup
+	  Everything else is not
+	*/
+	if (utf8int > 1) { /* Force it on, no matter what */
+	  imp_dbh->utf8 = 1;
+    }
+    else {
+		if (utf8int == 0) { /* Force it off, no matter what */
+			imp_dbh->utf8 = 0;
+		}
+		else {
+			imp_dbh->utf8 = 
+				(0 == strncmp(imp_dbh->server_encoding, "SQL_ASCII", 9))
+				? 0 : 1;
+		}
+	}
 
 	/* Figure out this particular backend's version */
 	imp_dbh->pg_server_version = -1;
