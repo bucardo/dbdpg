@@ -212,6 +212,9 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	TRACE_PQPROTOCOLVERSION;
 	imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
 
+	/* Grab the server encoding so we can set out utf8 flags intelligently */
+	imp_dbh->server_encoding = PQparameterStatus(imp_dbh->conn, "server_encoding");
+
 	/* Figure out this particular backend's version */
 	imp_dbh->pg_server_version = -1;
 #if PGLIBVERSION >= 80000
@@ -230,6 +233,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 		}
 	}
 
+	/* Set all the defaults for this database handle */
 	imp_dbh->pg_bool_tf      = DBDPG_FALSE;
 	imp_dbh->pg_enable_utf8  = DBDPG_FALSE;
  	imp_dbh->prepare_now     = DBDPG_FALSE;
