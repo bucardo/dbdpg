@@ -1,7 +1,5 @@
 package App::Info;
 
-# $Id$
-
 =head1 NAME
 
 App::Info - Information about software packages on a system

@@ -1,7 +1,5 @@
 package App::Info::Request;
 
-# $Id$
-
 =head1 NAME
 
 App::Info::Request - App::Info event handler request object

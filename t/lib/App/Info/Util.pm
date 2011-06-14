@@ -1,7 +1,5 @@
 package App::Info::Util;
 
-# $Id$
-
 =head1 NAME
 
 App::Info::Util - Utility class for App::Info subclasses

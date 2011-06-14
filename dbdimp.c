@@ -1,7 +1,5 @@
 /*
 
-  $Id$
-
   Copyright (c) 2002-2011 Greg Sabino Mullane and others: see the Changes file
   Portions Copyright (c) 2002 Jeffrey W. Baker
   Portions Copyright (c) 1997-2000 Edmund Mergl
@@ -16,7 +14,7 @@
 #include "Pg.h"
 
 #if defined (_WIN32) && !defined (atoll)
-#  define atoll(X) _atoi64(X)
+#define atoll(X) _atoi64(X)
 #endif
 
 #ifndef powf

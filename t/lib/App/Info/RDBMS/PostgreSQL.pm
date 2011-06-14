@@ -1,7 +1,5 @@
 package App::Info::RDBMS::PostgreSQL;
 
-# $Id$
-
 =head1 NAME
 
 App::Info::RDBMS::PostgreSQL - Information about PostgreSQL

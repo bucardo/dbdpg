@@ -1,7 +1,5 @@
 /*
 
-   $Id$
-
    Copyright (c) 2003-2011 Greg Sabino Mullane and others: see the Changes file
 
    You may distribute under the terms of either the GNU General Public

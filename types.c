@@ -1,7 +1,5 @@
 /*
 
-   $Id$
-
    Copyright (c) 2003-2011 Greg Sabino Mullane and others: see the Changes file
    
    You may distribute under the terms of either the GNU General Public
@@ -603,8 +601,6 @@ $file = 'types.c';
 open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
 
 print $newfh qq{$slashstar
-
-   \$Id: types.c 11297 2008-05-20 21:52:34Z turnstep \$
 
    Copyright (c) 2003-2011 Greg Sabino Mullane and others: see the Changes file
    

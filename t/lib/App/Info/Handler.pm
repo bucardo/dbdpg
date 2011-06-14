@@ -1,7 +1,5 @@
 package App::Info::Handler;
 
-# $Id$
-
 =head1 NAME
 
 App::Info::Handler - App::Info event handler base class

@@ -1,7 +1,5 @@
 package App::Info::Handler::Prompt;
 
-# $Id$
-
 =head1 NAME
 
 App::Info::Handler::Prompt - Prompting App::Info event handler

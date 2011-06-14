@@ -1,5 +1,4 @@
 #  -*-cperl-*-
-#  $Id$
 #
 #  Copyright (c) 2002-2011 Greg Sabino Mullane and others: see the Changes file
 #  Portions Copyright (c) 2002 Jeffrey W. Baker
