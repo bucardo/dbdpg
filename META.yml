@@ -16,6 +16,7 @@ requires:
 build_requires:
   DBI                       : 1.52
   Test::More                : 0.61
+  Time::HiRes               : 0
   version                   : 0
 configure_requires:
   DBI                       : 1.52
@@ -24,17 +25,7 @@ recommends:
   Cwd                       : 0
   Encode                    : 0
   File::Temp                : 0
-  File::Comments            : 0
-  File::Comments::Plugin::C : 0
   Module::Signature         : 0.50
-  Perl::Critic              : 0
-  Pod::Spell                : 0
-  Time::HiRes               : 0
-  Test::Pod                 : 0.95
-  Test::Pod::Coverage       : 0
-  Test::Warn                : 0.08
-  Test::YAML::Meta          : 0.03
-  Text::SpellChecker        : 0
 
 provides:
   DBD::Pg:
