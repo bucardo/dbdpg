@@ -1626,6 +1626,7 @@ use 5.006001;
 				pg_bool_tf                     => undef,
 				pg_db                          => undef,
 				pg_default_port                => undef,
+				pg_utf8_strings                => undef,
 				pg_enable_utf8                 => undef,
 				pg_errorlevel                  => undef,
 				pg_expand_array                => undef,
@@ -3122,12 +3123,19 @@ DBD::Pg specific attribute. Defaults to false. When true, question marks inside 
 are not treated as L<placeholders|/Placeholders>. Useful for statements that contain unquoted question 
 marks, such as geometric operators.
 
+=head3 B<pg_utf8_strings> (boolean)
+
+DBD::Pg specific attribute. In normal use, this should not be needed, as it will be set 
+automatically according to the server encoding. SQL_ASCII will set this to false, while 
+everything else will set it to true. If you force it off, then everything will be returned 
+as byte soup, even data from UTF-8 databases, which is very likely not what you want. If 
+you force it on for SQL_ASCII databases, the results will be unpredictable. It is recommended 
+that you only use this attribute as a last resort and with a full understanding of what 
+it does.
+
 =head3 B<pg_enable_utf8> (boolean)
 
-DBD::Pg specific attribute. If true, then the C<utf8> flag will be turned on
-for returned character data (if the data is valid UTF-8). For details about
-the C<utf8> flag, see the C<Encode> module. This attribute is only relevant under
-perl 5.8 and later.
+Deprecated, please us pg_utf8_strings instead.
 
 =head3 B<pg_errorlevel> (integer)
 

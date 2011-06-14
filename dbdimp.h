@@ -31,11 +31,10 @@ struct imp_dbh_st {
 	AV      *savepoints;       /* list of savepoints */
 	PGconn  *conn;             /* connection structure */
 	char    *sqlstate;         /* from the last result */
-	const char  *server_encoding;  /* encoding detected at login */
-	int utf8;
 
 	bool    pg_bool_tf;        /* do bools return 't'/'f'? Set by user, default is 0 */
-	bool    pg_enable_utf8;    /* should we attempt to make utf8 strings? Set by user, default is 0 */
+    bool    utf8_strings;      /* so we set the utf8 flag on data from the database? */
+	bool    pg_enable_utf8;    /* (DEPRECATED) should we attempt to make utf8 strings? Set by user, default is 0 */
 	bool    prepare_now;       /* force immediate prepares, even with placeholders. Set by user, default is 0 */
 	bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */
 	bool    dollaronly;        /* only consider $1, $2 ... as valid placeholders */
