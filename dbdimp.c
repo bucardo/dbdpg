@@ -427,6 +427,7 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
 		case PGRES_TUPLES_OK:
 		case PGRES_COPY_OUT:
 		case PGRES_COPY_IN:
+        case PGRES_COPY_BOTH:
 			strncpy(imp_dbh->sqlstate, "00000", 6); /* SUCCESSFUL COMPLETION */
 			break;
 		case PGRES_BAD_RESPONSE:
@@ -811,6 +812,9 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		}
 		break;
 
+	default: /* Do nothing, unknown name */
+        break;
+
 	}
 
 	if (TEND) TRC(DBILOGFP, "%sEnd dbd_db_FETCH_attrib\n", THEADER);
@@ -1083,6 +1087,9 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			retsv = newSViv((IV)imp_sth->dollaronly);
 		break;
 
+	default: /* Do nothing, unknown name */
+		break;
+
 	}
 
 	if (retsv != Nullsv) {
@@ -1280,6 +1287,9 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 		}
 		break;
 
+	default: /* Do nothing, unknown name */
+		break;
+
 	}
 
 	if (TEND) TRC(DBILOGFP, "%sEnd dbd_st_FETCH_attrib\n", THEADER);
@@ -1349,6 +1359,10 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 			retval = 1;
 		}
 		break;
+
+	default: /* Do nothing, unknown name */
+		break;
+
 	}
 
 	if (TEND) TRC(DBILOGFP, "%sEnd dbd_st_STORE_attrib\n", THEADER);
@@ -2842,6 +2856,7 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 		break;
 	case PGRES_COPY_OUT:
 	case PGRES_COPY_IN:
+    case PGRES_COPY_BOTH:
 		/* Copy Out/In data transfer in progress */
 		imp_dbh->copystate = status;
 		rows = -1;
@@ -4679,6 +4694,7 @@ int pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 			break;
 		case PGRES_COPY_OUT:
 		case PGRES_COPY_IN:
+		case PGRES_COPY_BOTH:
 			/* Copy Out/In data transfer in progress */
 			imp_dbh->copystate = status;
 			rows = -1;
