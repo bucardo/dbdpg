@@ -7,6 +7,8 @@ use 5.006001;
 ## No version.pm for this one, as the prereqs are not loaded yet.
 my $VERSION = '2.18.1';
 
+## App::Info is stored inside t/lib
+## Create a proper path so we can use it below
 my $lib;
 BEGIN {
     use vars qw/$sep/;
@@ -23,6 +25,7 @@ BEGIN {
 }
 
 use lib $lib;
+
 if ($VERSION =~ /_/) {
     print "WARNING! This is a test version ($VERSION) and should not be used in production!\n";
 }
