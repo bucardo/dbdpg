@@ -1,4 +1,5 @@
 Makefile
+Makefile.old
 *.o
 Pg.bs
 Pg.c
@@ -7,4 +8,4 @@ blib/
 pm_to_blib
 README.testdatabase
 dbdpg_test_database/
-
+tmp/
