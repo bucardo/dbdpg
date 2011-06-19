@@ -1,6 +1,6 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
-Version ???
+Version 2.99.9_1 (will be 3.0.0)
 
   - Cleanup and overhaul the UTF-8 support. Use the server_encoding to 
     determine if we set the internal utf8 flag on text from the database. 
