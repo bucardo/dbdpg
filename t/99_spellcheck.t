@@ -588,6 +588,7 @@ XSubPPtmpAAAA
 
 ## README:
 BOOTCHECK
+bucardo
 cabrion
 CentOS
 conf
