@@ -42,6 +42,10 @@ static int errno;
 #define INV_WRITE 0x00020000
 #endif
 
+#ifndef PGRES_COPY_BOTH
+#define PGRES_COPY_BOTH 8
+#endif
+
 #ifdef BUFSIZ
 #undef BUFSIZ
 #endif
