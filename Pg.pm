@@ -3134,7 +3134,7 @@ it does.
 
 =head3 B<pg_enable_utf8> (boolean)
 
-Deprecated, please us pg_utf8_strings instead.
+Deprecated, please use pg_utf8_strings instead.
 
 =head3 B<pg_errorlevel> (integer)
 
