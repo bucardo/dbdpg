@@ -19,7 +19,7 @@ The logic for setting "pg_internal" when unspecified is:
 
  - If "client_encoding" <> "server_encoding", or perhaps better yet if
    the pg_setting("client_encoding") returns a different value than
-   the default version for that setting, then we assuming that the
+   the default version for that setting, then we assume that the
    client encoding choice is *explicit* and the user will be wanting
    to get raw octets back from DBI, thus set pg_internal to 0.
 
@@ -27,7 +27,8 @@ The logic for setting "pg_internal" when unspecified is:
 
 Immediately after the connection initialization completes, we will
 check for the set pg_internal flag; if set, we issue a "SET
-client_encoding TO 'utf-8'" and commit.
+client_encoding TO 'utf-8'" and commit (unless the client_encoding 
+is already utf-8 of course).
 
 
 Proposal for an "encoding" DBD attribute interface
