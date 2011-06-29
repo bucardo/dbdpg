@@ -108,7 +108,9 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	bool           inquote = DBDPG_FALSE;
 	STRLEN         connect_string_size;
 	ConnStatusType connstatus;
-	int            utf8int;
+	int            unicode;
+	const char *   server_encoding;
+	const char *   client_encoding;
 
 	if (TSTART) TRC(DBILOGFP, "%sBegin dbd_db_login\n", THEADER);
   
@@ -211,28 +213,32 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	TRACE_PQPROTOCOLVERSION;
 	imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
 
-	/* Check the value of the pg_utf8_strings attribute. Default to not set (-1) */
-	utf8int = -1;
-	DBD_ATTRIB_GET_IV(attr, "pg_utf8_strings", 15, svp, utf8int);
+	/* Check the value of the pg_unicode attribute. Default to not set (-1) */
+	unicode = -1;
+	DBD_ATTRIB_GET_IV(attr, "pg_unicode", 10, svp, unicode);
 
 	/*
 	  We need to see if we are treating things with utf8 respect, or as byte soup
 	  The rules are:
-	  - pg_utf8_strings trumps everything else
-	  - SQL_ASCII is always byte soup
-	  - Everything else is not
+	  - An explicit pg_unicode setting trumps everything else
+	  - A server_encoding of SQL_ASCII is always byte soup
+      - If the client_encoding matches the server_encoding, set unicode on
+	  - Otherwise, we leave things alone
 	*/
-	if (utf8int > 1) { /* Force it on, no matter what */
-	  imp_dbh->utf8_strings = DBDPG_TRUE;
+	client_encoding = PQparameterStatus(imp_dbh->conn, "client_encoding");
+
+	if (unicode > 1) { /* Force it on, no matter what */
+	  imp_dbh->unicode = DBDPG_TRUE;
     }
     else {
-		if (utf8int == 0) { /* Force it off, no matter what */
-			imp_dbh->utf8_strings = DBDPG_FALSE;
+		if (unicode == 0) { /* Force it off, no matter what */
+			imp_dbh->unicode = DBDPG_FALSE;
 		}
-		else { /* Neither is set, so use the server_encoding */
-			imp_dbh->utf8_strings = 
-				(0 == strncmp(PQparameterStatus(imp_dbh->conn, "server_encoding"), "SQL_ASCII", 9))
-				? DBDPG_FALSE : DBDPG_TRUE;
+		else { /* Neither is set, so check the encodings */
+			server_encoding = PQparameterStatus(imp_dbh->conn, "server_encoding");
+			/* If they match, set unicode to true, otherwise, false */
+			imp_dbh->unicode = (0==strcmp(server_encoding, client_encoding))
+					   ? DBDPG_TRUE : DBDPG_FALSE;
 		}
 	}
 
@@ -271,7 +277,6 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	/* Deprecated: */
 	imp_dbh->pg_enable_utf8  = DBDPG_FALSE;
 
-
 	/* If using server version 7.4, switch to "smart" */
 	imp_dbh->server_prepare = PGLIBVERSION >= 80000 ? 1 : 2;
 
@@ -280,6 +285,12 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 
 	/* Tell DBI that we should call disconnect when the handle dies */
 	DBIc_ACTIVE_on(imp_dbh);
+
+	/* If needed, set the client_encoding to UTF-8 */
+	if (imp_dbh->unicode &&
+		(0 == strncmp(client_encoding, "UTF-8", 5))) {
+		PQexec(imp_dbh->conn, "SET client_encoding = 'UTF-8'");
+	}
 
 	if (TEND) TRC(DBILOGFP, "%sEnd dbd_db_login\n", THEADER);
 
@@ -312,7 +323,7 @@ static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
 	sv_setpv(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate);
 
 	/* Set as utf-8 */
-	if (imp_dbh->utf8_strings)
+	if (imp_dbh->unicode)
 		SvUTF8_on(DBIc_ERRSTR(imp_xxh));
 
 	if (TEND) TRC(DBILOGFP, "%sEnd pg_error\n", THEADER);
@@ -374,6 +385,11 @@ static ExecStatusType _result(pTHX_ imp_dbh_t * imp_dbh, const char * sql)
 	if (TSTART) TRC(DBILOGFP, "%sBegin _result (sql: %s)\n", THEADER, sql);
 
 	if (TSQL) TRC(DBILOGFP, "%s;\n\n", sql);
+
+	/* Upgrade to a true UTF-8 string in place as needed */
+	if (imp_dbh->unicode) {
+		// upgrade_utf8 magic on 'sql'
+	}
 
 	TRACE_PQEXEC;
 	result = PQexec(imp_dbh->conn, sql);
@@ -733,7 +749,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		}
 		break;
 
-	case 10: /* AutoCommit  pg_bool_tf  pg_pid_number  pg_options */
+	case 10: /* AutoCommit  pg_bool_tf  pg_pid_number  pg_options  pg_unicode */
 
 		if (strEQ("AutoCommit", key))
 			retsv = boolSV(DBIc_has(imp_dbh, DBIcf_AutoCommit));
@@ -745,6 +761,8 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 			TRACE_PQOPTIONS;
 			retsv = newSVpv(PQoptions(imp_dbh->conn),0);
 		}
+		else if (strEQ("pg_unicode", key))
+			retsv = newSViv((IV)imp_dbh->unicode);
 		break;
 
 	case 11: /* pg_INV_READ  pg_protocol */
@@ -777,7 +795,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 			retsv = newSViv((IV)imp_dbh->pg_enable_utf8);
 		break;
 
-	case 15: /* pg_default_port pg_async_status pg_expand_array pg_utf8_strings */
+	case 15: /* pg_default_port pg_async_status pg_expand_array */
 
 		if (strEQ("pg_default_port", key))
 			retsv = newSViv((IV) PGDEFPORT );
@@ -785,8 +803,6 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 			retsv = newSViv((IV)imp_dbh->async_status);
 		else if (strEQ("pg_expand_array", key))
 			retsv = newSViv((IV)imp_dbh->expand_array);
-		else if (strEQ("pg_utf8_strings", key))
-			retsv = newSViv((IV)imp_dbh->utf8_strings);
 		break;
 
 	case 17: /* pg_server_prepare  pg_server_version */
@@ -854,7 +870,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 		}
 		break;
 
-	case 10: /* AutoCommit  pg_bool_tf */
+	case 10: /* AutoCommit  pg_bool_tf  pg_unicode*/
 
 		if (strEQ("AutoCommit", key)) {
 			if (newval != DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
@@ -866,10 +882,18 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			}
 			retval = 1;
 		}
+
 		else if (strEQ("pg_bool_tf", key)) {
 			imp_dbh->pg_bool_tf = newval!=0 ? DBDPG_TRUE : DBDPG_FALSE;
 			retval = 1;
 		}
+
+		else if (strEQ("pg_unicode", key)) {
+			imp_dbh->unicode = newval!=0 ? DBDPG_TRUE : DBDPG_FALSE;
+			retval = 1;
+		}
+
+
 		break;
 
 	case 13: /* pg_errorlevel */
@@ -902,15 +926,10 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 
 		break;
 
-	case 15: /* pg_expand_array pg_utf8_strings */
+	case 15: /* pg_expand_array */
 
 		if (strEQ("pg_expand_array", key)) {
 			imp_dbh->expand_array = newval ? DBDPG_TRUE : DBDPG_FALSE;
-			retval = 1;
-		}
-
-		else if (strEQ("pg_utf8_strings", key)) {
-			imp_dbh->utf8_strings = newval!=0 ? DBDPG_TRUE : DBDPG_FALSE;
 			retval = 1;
 		}
 
@@ -1120,7 +1139,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 				TRACE_PQFNAME;
 				fieldname = PQfname(imp_sth->result, fields);
 				sv_fieldname = newSVpv(fieldname,0);
-				if (imp_dbh->utf8_strings)
+				if (imp_dbh->unicode)
 					SvUTF8_on(sv_fieldname);
 				(void)av_store(av, fields, sv_fieldname);
 			}
@@ -2694,7 +2713,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 					av_push(currentav, newSViv('t' == *string ? 1 : 0));
 				else {
 					SV *sv = newSVpvn(string, section_size);
-					if (imp_dbh->utf8_strings)
+					if (imp_dbh->unicode)
 						SvUTF8_on(sv);
 					av_push(currentav, sv);
 				}
@@ -2821,6 +2840,11 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 	}
 
 	if (TSQL) TRC(DBILOGFP, "%s;\n\n", sql);
+
+	/* Upgrade to a true UTF-8 string in place as needed */
+	if (imp_dbh->unicode) {
+		// upgrade_utf8 magic on 'sql'
+	}
 
 	TRACE_PQEXEC;
 	result = PQexec(imp_dbh->conn, sql);
@@ -3145,6 +3169,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		}
 		else {
 			TRACE_PQEXECPREPARED;
+			// upgrade utf8 magic: prepare_name, PQvals
 			imp_sth->result = PQexecPrepared
 				(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
 		}
@@ -3224,6 +3249,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			}
 			else {
 				TRACE_PQEXECPARAMS;
+				// upgrade utf8 magic: statement, PQvals
 				imp_sth->result = PQexecParams
 					(imp_dbh->conn, statement, imp_sth->numphs, imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
 			}
@@ -3263,6 +3289,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			}
 			else {
 				TRACE_PQEXEC;
+				// upgrade utf8 magic: statement
 				imp_sth->result = PQexec(imp_dbh->conn, statement);
 			}
 
@@ -3468,7 +3495,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 						break;
 					default:
 						sv_setpvn(sv, (char *)value, value_len);
-						if (imp_dbh->utf8_strings)
+						if (imp_dbh->unicode)
 							SvUTF8_on(sv);
 					}
 				}
@@ -3476,7 +3503,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 					value_len = strlen((char *)value);
 					sv_setpvn(sv, (char *)value, value_len);
 					/* Check for specific types here? */
-					if (imp_dbh->utf8_strings)
+					if (imp_dbh->unicode)
 						SvUTF8_on(sv);
 				}
 			
@@ -3506,7 +3533,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 				*/
 				const char * const s = SvPV(AvARRAY(av)[i],len);
 				sv_setpvn(currph->inout, s, len);
-				if (imp_dbh->utf8_strings)
+				if (imp_dbh->unicode)
 					SvUTF8_on(currph->inout);
 			}
 		}
@@ -3852,7 +3879,7 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 
 	if (copystatus > 0) {
 		sv_setpv(dataline, tempbuf);
-		if (imp_dbh->utf8_strings)
+		if (imp_dbh->unicode)
 			SvUTF8_on(dataline);
 		TRACE_PQFREEMEM;
 		PQfreemem(tempbuf);

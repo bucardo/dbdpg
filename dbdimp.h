@@ -31,7 +31,7 @@ struct imp_dbh_st {
 	char    *sqlstate;         /* from the last result */
 
 	bool    pg_bool_tf;        /* do bools return 't'/'f'? Set by user, default is 0 */
-    bool    utf8_strings;      /* so we set the utf8 flag on data from the database? */
+    bool    unicode;           /* do we force client_encoding to UTF-8 and set the Perl utf8 string on returned data? */
 	bool    pg_enable_utf8;    /* (DEPRECATED) should we attempt to make utf8 strings? Set by user, default is 0 */
 	bool    prepare_now;       /* force immediate prepares, even with placeholders. Set by user, default is 0 */
 	bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */
