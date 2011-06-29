@@ -119,7 +119,7 @@ DWC feels strongly that we should avoid setting the SvUTF8 flag on any
 retrieved/created SV which does not require it; as such, an operation
 that can quickly check whether there are any hi-bit characters in a
 given (char*) would need to be weighed against the possible
-inconvenience of *always* setting the SvUTF8 flag on eligible strings,
+convenience of *always* setting the SvUTF8 flag on eligible strings,
 regardless of whether it is full ASCII.
 
 Considering that we already utilize strlen() which traverses the
