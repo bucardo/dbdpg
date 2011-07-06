@@ -668,6 +668,7 @@ INV
 NULLs
 Oid
 PQoids
+PQvals
 PGRES
 ROK
 StartTransactionCommand
@@ -688,6 +689,7 @@ dereference
 destringify
 dollarquote
 dollarstring
+encodings
 fallthrough
 firstword
 getcom
