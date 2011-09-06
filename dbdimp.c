@@ -288,7 +288,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 
 	/* If needed, set the client_encoding to UTF-8 */
 	if (imp_dbh->unicode &&
-		(0 == strncmp(client_encoding, "UTF-8", 5))) {
+		(0 != strncmp(client_encoding, "UTF-8", 5))) {
 		PQexec(imp_dbh->conn, "SET client_encoding = 'UTF-8'");
 	}
 

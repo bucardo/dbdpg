@@ -81,6 +81,10 @@ should prevent accidental corruption.
    already have fast-tracked code-paths for this type of operation,
    since we know the data will be valid UTF8.
 
+   - look at "sv_utf8_decode" in perlapi; it's marked experimental,
+     but based on the versions of perl I have handy it exists from
+     perl 5.8.3 - 5.12.3 with the provided API.
+
 When processing data coming *in* from the user i.e., (SV*) we consider
 the following:
 
