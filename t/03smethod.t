@@ -688,7 +688,7 @@ SKIP: {
 	};
 	# restore original signal handler
 	POSIX::sigaction(SIGALRM,$oldaction);
-	like ($@,qr/canceling \w+ due to user request/,'cancel');
+	like ($@, qr/execute failed/, 'cancel');
 	$dbh2->disconnect();
 }
 
