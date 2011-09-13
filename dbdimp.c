@@ -216,10 +216,15 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	DBD_ATTRIB_GET_IV(attr, "pg_utf8_flag", 12, svp, imp_dbh->pg_utf8_flag);
 	if (imp_dbh->pg_utf8_flag == -1) { /* Has not been explicitly set by the user */
 		/*
-		  Check the client_encoding. If UTF-8, set the flag on, else off
+		  Check the client_encoding. If UTF-8 and server is not SQL_ASCII, set the flag on, else off
 		*/
-		imp_dbh->utf8_flag = (0 == strncmp(PQparameterStatus(imp_dbh->conn, "client_encoding"), "UTF8", 4))
-			? 0 : 1;
+		imp_dbh->utf8_flag =
+			(
+			 (0 == strncmp(PQparameterStatus(imp_dbh->conn, "client_encoding"), "UTF8", 4))
+			 &&
+			 (0 != strncmp(PQparameterStatus(imp_dbh->conn, "server_encoding"), "SQL_ASCII", 9))
+			 )
+			? 1 : 0;
 	}
 	else {
 		/* We allow -1 and 0 direct, and force everything else to 1 */
