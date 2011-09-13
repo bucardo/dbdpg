@@ -3406,24 +3406,29 @@ static void check_client_encoding(pTHX_ imp_dbh_t * imp_dbh)
 
 	/* See if the client_encoding has changed */
 	if (imp_dbh->pg_utf8_flag == -1) { /* Only check if they have not set it themselves */
-		if (imp_dbh->utf8_flag) {
-			if (0 != strncmp(PQparameterStatus(imp_dbh->conn, "client_encoding"), "UTF8", 4)) {
-				imp_dbh->utf8_flag = 0;
-				if (TRACE4)
-					TRC(DBILOGFP, "%sclient_encoding change caused utf8 flag to change from on to off\n",
-						THEADER);
+
+		/* We won't change anything if the server_encoding is SQL_ASCII */
+		if (0 != strncmp(PQparameterStatus(imp_dbh->conn, "server_encoding"), "SQL_ASCII", 9)) {
+			if (imp_dbh->utf8_flag) {
+				if (0 != strncmp(PQparameterStatus(imp_dbh->conn, "client_encoding"), "UTF8", 4)) {
+					imp_dbh->utf8_flag = 0;
+					if (TRACE4)
+						TRC(DBILOGFP, "%sclient_encoding change caused utf8 flag to change from on to off\n",
+							THEADER);
+				}
 			}
-		}
-		else {
-			if (0 == strncmp(PQparameterStatus(imp_dbh->conn, "client_encoding"), "UTF8", 4)) {
-				imp_dbh->utf8_flag = 1;
-				if (TRACE4)
-					TRC(DBILOGFP, "%sclient_encoding change caused utf8 flag to change from off to on\n",
-						THEADER);
+			else {
+				if (0 == strncmp(PQparameterStatus(imp_dbh->conn, "client_encoding"), "UTF8", 4)) {
+					imp_dbh->utf8_flag = 1;
+					if (TRACE4)
+						TRC(DBILOGFP, "%sclient_encoding change caused utf8 flag to change from off to on\n",
+							THEADER);
+				}
 			}
 		}
 	}
-}
+
+} /* end of check_client_encoding */
 
 
 /* ================================================================== */
