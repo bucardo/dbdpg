@@ -24,14 +24,15 @@ struct imp_dbh_st {
 	int     pg_errorlevel;     /* PQsetErrorVerbosity. Set by user, defaults to 1 */
 	int     server_prepare;    /* do we want to use PQexecPrepared? 0=no 1=yes 2=smart. Can be changed by user */
 	int     async_status;      /* 0=no async 1=async started -1=async has been cancelled */
+    int     pg_utf8_flag;      /* what the user has set pg_utf8_flag to. -1 means not set */
 
     imp_sth_t *async_sth;      /* current async statement handle */
 	AV      *savepoints;       /* list of savepoints */
 	PGconn  *conn;             /* connection structure */
 	char    *sqlstate;         /* from the last result */
 
+    bool    utf8_flag;         /* are we setting the internal Perl utf8 flag on for incoming data? */
 	bool    pg_bool_tf;        /* do bools return 't'/'f'? Set by user, default is 0 */
-    bool    unicode;           /* do we force client_encoding to UTF-8 and set the Perl utf8 string on returned data? */
 	bool    pg_enable_utf8;    /* (DEPRECATED) should we attempt to make utf8 strings? Set by user, default is 0 */
 	bool    prepare_now;       /* force immediate prepares, even with placeholders. Set by user, default is 0 */
 	bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */

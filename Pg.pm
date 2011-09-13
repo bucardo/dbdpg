@@ -1625,7 +1625,7 @@ use 5.006001;
 				pg_bool_tf                     => undef,
 				pg_db                          => undef,
 				pg_default_port                => undef,
-				pg_unicode                     => undef,
+				pg_utf8_flag                   => undef,
 				pg_enable_utf8                 => undef,
 				pg_errorlevel                  => undef,
 				pg_expand_array                => undef,
@@ -3122,19 +3122,20 @@ DBD::Pg specific attribute. Defaults to false. When true, question marks inside 
 are not treated as L<placeholders|/Placeholders>. Useful for statements that contain unquoted question 
 marks, such as geometric operators.
 
-=head3 B<pg_unicode> (boolean)
+=head3 B<pg_utf8_flag> (boolean)
 
 DBD::Pg specific attribute. In normal use, this should not be needed, as it will be set 
-automatically according to the server encoding. SQL_ASCII will set this to false, while 
-everything else will set it to true. If you force it off, then everything will be returned 
-as byte soup, even data from UTF-8 databases, which is very likely not what you want. If 
-you force it on for SQL_ASCII databases, the results will be unpredictable. It is recommended 
-that you only use this attribute as a last resort and with a full understanding of what 
-it does.
+automatically according to the client encoding. If the client_encoding is 'UTF8', this 
+attribute will be turned on, which will cause strings coming back from the database to 
+be marked with Perl's internal utf8 flag. If you set this flag, then no checking of 
+client_encoding will ever be done. Do not use this flag unless you really know what 
+you are doing, and understand how utf8 differs from UTF8. Setting to 1 will always 
+cause the flag to be set. Setting to 0 will prevent the flag from ever being set. 
+Setting to -1 will switch to the default behavior of checking the client_encoding.
 
 =head3 B<pg_enable_utf8> (boolean)
 
-Deprecated, please use pg_unicode instead.
+Deprecated.
 
 =head3 B<pg_errorlevel> (integer)
 
