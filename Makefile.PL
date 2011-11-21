@@ -206,6 +206,7 @@ my %opts =
                         'ExtUtils::MakeMaker' => '6.11',
                         'DBI'                 => '1.52',
                         'Test::More'          => '0.61',
+                        'Time::HiRes'         => '0',
                         'version'             => '0',
                        },
      CCFLAGS        => $comp_opts,
