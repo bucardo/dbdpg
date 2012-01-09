@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 235;
+plan tests => 238;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -547,6 +547,15 @@ $dbh->rollback();
 for my $char (qw{0 9 A Z a z}) { ## six letters
 	eval {
 		$sth = $dbh->prepare(qq{SELECT \$abc${char}\$ 123 \$abc${char}\$});
+		$sth->execute();
+		$sth->finish();
+	};
+	is ($@, q{}, $t);
+}
+
+for my $ident (qq{\x{5317}}, qq{abc\x{5317}}, qq{_cde\x{5317}}) { ## hi-bit chars
+	eval {
+		$sth = $dbh->prepare(qq{SELECT \$$ident\$ 123 \$$ident\$});
 		$sth->execute();
 		$sth->finish();
 	};

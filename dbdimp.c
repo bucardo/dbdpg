@@ -1785,12 +1785,12 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 			(*statement == '$' 
 			 || *statement == '_'
 			 || (*statement >= 'A' && *statement <= 'Z') 
-			 || (*statement >= 'a' && *statement <= 'z'))) {
+			 || (*statement >= 'a' && *statement <= 'z')
+			 || ((unsigned char)*statement >= (unsigned char)'\200'))) {
 			/* "SQL identifiers must begin with a letter (a-z, but also letters with diacritical marks and non-Latin letters) 
                 or an underscore (_). Subsequent characters in an identifier or key word can be letters, underscores, 
                 digits (0-9), or dollar signs ($)
 			*/
-			/* Postgres technically allows \200-\377 as well, but we don't */
 			sectionsize = 0; /* How far from the first dollar sign are we? */
 			found = 0; /* Have we found the end of the dollarquote? */
 
@@ -1808,7 +1808,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 					|| (ch >= 58 && ch <= 64)
 					|| (ch >= 91 && ch <= 94)
 					|| ch == 96
-					|| (ch >= 123)) {
+					) {
 					break;
 				}
 			} /* end first scan */
