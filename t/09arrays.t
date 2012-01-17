@@ -18,17 +18,13 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 257;
+plan tests => 200;
 
 isnt ($dbh, undef, 'Connect to database for array testing');
 
 my ($sth,$result,$t);
 
 my $pgversion = $dbh->{pg_server_version};
-
-if ($pgversion >= 80100) {
-  $dbh->do('SET escape_string_warning = false');
-}
 
 my $SQL = q{DELETE FROM dbd_pg_test WHERE pname = 'Array Testing'};
 my $cleararray = $dbh->prepare($SQL);
@@ -52,9 +48,9 @@ $SQL = q{SELECT testarray3 FROM dbd_pg_test WHERE pname= 'Array Testing'};
 my $getarray_bool = $dbh->prepare($SQL);
 
 $t='Array quoting allows direct insertion into statements';
-$SQL = q{INSERT INTO dbd_pg_test (id,testarray2) VALUES };
+$SQL = q{INSERT INTO dbd_pg_test (id,testarray) VALUES };
 my $quoteid = $dbh->quote(123);
-my $quotearr = $dbh->quote([456]);
+my $quotearr = $dbh->quote(["Quote's Test"]);
 $SQL .= qq{($quoteid, $quotearr)};
 eval {
 	$dbh->do($SQL);
@@ -62,8 +58,8 @@ eval {
 is ($@, q{}, $t);
 $dbh->rollback();
 
-## Input
-## Expected
+## Input (eval-able Perl)
+## Expected (ERROR or raw PostgreSQL output)
 ## Name of test
 
 my $array_tests =
@@ -120,51 +116,51 @@ ERROR: must be of equal size
 Unbalanced array
 
 [123]
-{123} quote: {"123"}
+{123}
 Simple 1-D numeric array
 
 ['abc']
-{abc} quote: {"abc"}
+{abc}
 Simple 1-D text array
 
 ['a','b,c']
-{a,"b,c"} quote: {"a","b,c"}
+{a,"b,c"}
 Text array with commas and quotes
 
 ['a','b,}']
-{a,"b,}"} quote: {"a","b,}"}
+{a,"b,}"}
 Text array with commas, escaped closing brace
 
 ['a','b,]']
-{a,"b,]"} quote: {"a","b,]"}
+{a,"b,]"}
 Text array with commas, escaped closing bracket
 
 [1,2]
-{1,2} quote: {"1","2"}
+{1,2}
 Simple 1-D numeric array
 
 [[1]]
-{{1}} quote: {{"1"}}
+{{1}}
 Simple 2-D numeric array
 
 [[1,2]]
-{{1,2}} quote: {{"1","2"}}
+{{1,2}}
 Simple 2-D numeric array
 
 [[[1]]]
-{{{1}}} quote: {{{"1"}}}
+{{{1}}}
 Simple 3-D numeric array
 
 [[["alpha",2],[23,"pop"]]]
-{{{alpha,2},{23,pop}}} quote: {{{"alpha","2"},{"23","pop"}}}
+{{{alpha,2},{23,pop}}}
 3-D mixed array
 
 [[[1,2,3],[4,5,"6"],["seven","8","9"]]]
-{{{1,2,3},{4,5,6},{seven,8,9}}} quote: {{{"1","2","3"},{"4","5","6"},{"seven","8","9"}}}
+{{{1,2,3},{4,5,6},{seven,8,9}}}
 3-D mixed array
 
 [q{O'RLY?}]
-{O'RLY?} quote: {"O'RLY?"}
+{O'RLY?}
 Simple single quote
 
 [q{O"RLY?}]
@@ -172,19 +168,19 @@ Simple single quote
 Simple double quote
 
 [[q{O"RLY?}],[q|'Ya' - "really"|],[123]]
-{{"O\"RLY?"},{"'Ya' - \"really\""},{123}} quote: {{"O\"RLY?"},{"'Ya' - \"really\""},{"123"}}
+{{"O\"RLY?"},{"'Ya' - \"really\""},{123}}
 Many quotes
 
 ["Single\\\\Backslash"]
-{"Single\\\\\\\\Backslash"} quote: {"Single\\\\\\\\Backslash"}
+{"Single\\\\Backslash"}
 Single backslash testing
 
 ["Double\\\\\\\\Backslash"]
-{"Double\\\\\\\\\\\\\\\\Backslash"} quote: {"Double\\\\\\\\\\\\\\\\Backslash"}
+{"Double\\\\\\\\Backslash"}
 Double backslash testing
 
 [["Test\\\nRun","Quite \"so\""],["back\\\\\\\\slashes are a \"pa\\\\in\"",123] ]
-{{"Test\\\\\\\\nRun","Quite \"so\""},{"back\\\\\\\\\\\\\\\\slashes are a \"pa\\\\\\\\in\"",123}} quote: {{"Test\\\\\\\nRun","Quite \"so\""},{"back\\\\\\\\\\\\\\\\slashes are a \"pa\\\\\\\\in\"","123"}}
+{{"Test\\\nRun","Quite \"so\""},{"back\\\\\\\\slashes are a \"pa\\\\in\"",123}}
 Escape party - backslash+newline, two + one
 
 [undef]
@@ -196,25 +192,25 @@ NEED 80200: Simple undef test
 NEED 80200: Simple undef test
 
 [[1,2],[undef,3],["four",undef],[undef,undef]]
-{{1,2},{NULL,3},{four,NULL},{NULL,NULL}} quote: {{"1","2"},{NULL,"3"},{"four",NULL},{NULL,NULL}}
+{{1,2},{NULL,3},{four,NULL},{NULL,NULL}}
 NEED 80200: Multiple undef test
 
 !;
 
 ## Note: We silently allow things like this: [[[]],[]]
 
-$dbh->{pg_expand_array} = 0;
+sub safe_getarray {
+	my $ret = eval {
+		$getarray->execute();
+		$getarray->fetchall_arrayref()->[0][0];
+	};
+	$@ || $ret
+}
 
 for my $test (split /\n\n/ => $array_tests) {
 	next unless $test =~ /\w/;
 	my ($input,$expected,$msg) = split /\n/ => $test;
-	my $qexpected = $expected;
-	if ($expected =~ s/\s*quote:\s*(.+)//) {
-		$qexpected = $1;
-	}
-	if ($qexpected !~ /^ERROR/) {
-		$qexpected = qq{'$qexpected'};
-	}
+	my $perl_input = eval $input;
 
 	if ($msg =~ s/NEED (\d+):\s*//) {
 		my $ver = $1;
@@ -226,86 +222,45 @@ for my $test (split /\n\n/ => $array_tests) {
 		}
 	}
 
-	$t="Correct array inserted: $msg : $input";
-	$cleararray->execute();
+	# INSERT via bind values
+	$dbh->rollback;
 	eval {
-		$addarray->execute(eval $input);
+		$addarray->execute($perl_input);
 	};
 	if ($expected =~ /error:\s+(.+)/i) {
-		like ($@, qr{$1}, "Array failed : $msg : $input");
-		like ($@, qr{$1}, "Array failed : $msg : $input");
+		like ($@, qr{$1}, "[bind] Array insert error : $msg : $input");
 	}
 	else {
-		is ($@, q{}, "Array worked : $msg : $input");
-		$getarray->execute();
-		$result = $getarray->fetchall_arrayref()->[0][0];
-		is ($result, $expected, $t);
+		is ($@, q{}, "[bind] Array insert success : $msg : $input");
+
+		$t="[bind][!expand] Correct array inserted: $msg : $input";
+		$dbh->{pg_expand_array} = 0;
+		is (safe_getarray, $expected, $t);
+
+		$t="[bind][expand] Correct array inserted: $msg : $input";
+		$dbh->{pg_expand_array} = 1;
+		is_deeply (safe_getarray, $perl_input, $t);
 	}
 
-	$t="Array quote worked : $msg : $input";
+	# INSERT via `quote' and dynamic SQL
+	$dbh->rollback;
 	eval {
-		$result = $dbh->quote(eval $input );
+		$quotearr = $dbh->quote($perl_input);
+		$SQL = qq{INSERT INTO dbd_pg_test(id,pname,testarray) VALUES (99,'Array Testing',$quotearr)};
+		$dbh->do($SQL);
 	};
-	if ($qexpected =~ /error:\s+(.+)/i) {
+	if ($expected =~ /error:\s+(.+)/i) {
 		my $errmsg = $1;
 		$errmsg =~ s/bind/quote/;
-		like ($@, qr{$errmsg}, "Array quote failed : $msg : $input");
-		like ($@, qr{$errmsg}, "Array quote failed : $msg : $input");
+		like ($@, qr{$errmsg}, "[quote] Array insert error : $msg : $input");
 	}
 	else {
-		is ($@, q{}, $t);
+		is ($@, q{}, "[quote] Array insert success : $msg : $input");
 
-		$t="Correct array quote: $msg : $input";
-		is ($result, $qexpected, $t);
-	}
+		# No need to recheck !expand case.
 
-}
-
-
-## Same thing, but expand the arrays
-$dbh->{pg_expand_array} = 1;
-
-for my $test (split /\n\n/ => $array_tests) {
-	next unless $test =~ /\w/;
-	my ($input,$expected,$msg) = split /\n/ => $test;
-	my $qexpected = $expected;
-	if ($expected =~ s/\s*quote:\s*(.+)//) {
-		$qexpected = $1;
-	}
-
-	if ($msg =~ s/NEED (\d+):\s*//) {
-		my $ver = $1;
-		if ($pgversion < $ver) {
-		  SKIP: {
-				skip ('Cannot test NULL arrays unless version 8.2 or better', 2);
-			}
-			next;
-		}
-	}
-
-	$t="Array worked : $msg : $input";
-	$cleararray->execute();
-	eval {
-		$addarray->execute(eval $input);
-	};
-	if ($expected =~ /error:\s+(.+)/i) {
-		like ($@, qr{$1}, "Array failed : $msg : $input");
-		like ($@, qr{$1}, "Array failed : $msg : $input");
-	}
-	else {
-		is ($@, q{}, $t);
-
-		$t="Correct array inserted: $msg : $input";
-		$getarray->execute();
-		$result = $getarray->fetchall_arrayref()->[0][0];
-		$qexpected =~ s/{}/{''}/;
-		$qexpected =~ y/{}/[]/;
-		$qexpected =~ s/NULL/undef/g;
-		if ($msg =~ /closing brace/) {
-			$qexpected =~ s/]"/}"/;
-		}
-		$expected = eval $qexpected;
-		is_deeply ($result, $expected, $t);
+		$t="[quote][expand] Correct array inserted: $msg : $input";
+		is_deeply (safe_getarray, $perl_input, $t);
 	}
 
 	if ($msg =~ /STOP/) {
@@ -315,7 +270,6 @@ for my $test (split /\n\n/ => $array_tests) {
 		$dbh->disconnect;
 		exit;
 	}
-
 }
 
 
