@@ -106,7 +106,8 @@ like ($@, qr{last_insert_id}, $t);
 $t='DB handle method "do()" returns correct count with CREATE AS SELECT';
 $dbh->rollback();
 $result = $dbh->do('CREATE TEMP TABLE foobar AS SELECT * FROM pg_class LIMIT 3');
-is ($result, 3, $t);
+$expected = $pgversion >= 90000 ? 3 : '0E0';
+is ($result, $expected, $t);
 
 $t='DB handle method "last_insert_id" works when given a valid sequence and an invalid table';
 $dbh->rollback();
