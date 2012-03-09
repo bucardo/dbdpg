@@ -618,8 +618,7 @@ extension for any miscellaneous files you have that use often (e.g. libpq-fe.h.t
 * Run "make skipcheck". This will show you a list of files that will NOT be packed into the 
 release tarball. Make sure there is nothing important here.
 
-* Update the SIGNATURE file with Module::Signature. Make sure this is done *after* 
-you check everything else in, due to the the magic (dollarsign)Id lines.
+* Update the SIGNATURE file with Module::Signature (e.g. make signature)
 
 * Run "make disttest". This unpacks the tarball, then runs "make" and "make test" on it.
 You may also want to remove the directory it creates later by using "make realclean"
