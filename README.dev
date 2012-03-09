@@ -38,6 +38,7 @@ the Pg.c file from Pg.xs and DBI's Perl.xsi. The files Pg.pm and
 blib/arch/auto/DBD/Pg/Pg.so form the core of the module once installed.
 (The above is oversimplified).
 
+The canonical git repo is at git://bucardo.org/dbdpg.git
 
 ===============
 == File List ==

@@ -68,6 +68,12 @@ http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
 and selecting the "Report a new bug" link. Please check that the bug 
 has not already been reported first.
 
+PATCHES:
+--------
+
+Patches are always welcome: the best way is to attach a git diff output 
+to a bug report at the above URL for rt.cpan.org. Feel free to ask 
+for a commit bit as well, if you think you might be patching more than once. :)
 
 INSTALLATION:
 -------------

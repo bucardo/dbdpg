@@ -4191,6 +4191,12 @@ or by manipulating the schema search path with C<SET search_path>, e.g.
 To report a bug, or view the current list of bugs, please visit 
 http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
 
+=head1 DEVELOPMENT
+
+Patches can be submitted to rt.cpan.org. Detailed information on how to 
+help out with this module can be found in the README.dev file. The latest 
+development version can be obtained via: git clone git://bucardo.org/dbdpg.git
+
 =head1 AUTHORS
 
 DBI by Tim Bunce L<http://www.tim.bunce.name>
