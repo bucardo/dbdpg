@@ -2970,8 +2970,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	if (!imp_sth->is_dml
 		|| imp_sth->has_default
 		|| imp_sth->has_current
-		|| (1 != imp_sth->server_prepare
-			&& imp_sth->numbound != imp_sth->numphs)
+		|| 1 != imp_sth->server_prepare
 		) {
 		for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 			if (currph->isdefault) {
