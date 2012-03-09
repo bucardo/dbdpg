@@ -1,7 +1,7 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 2.19.0
+Version 2.19.0  Released March 9, 2012
 
   - Use proper formatting for warn() and croak() (CPAN bug #75642)
     [Niko Tyni]
@@ -10,10 +10,17 @@ Version 2.19.0
 
   - Fix for named placeholders (CPAN bug #70953) [Jan Pazdziora]
 
+  - Various fixes to the array-marshalling code [Noah Misch, Mark 
+    Stosberg, and David Christensen] (CPAN bug #58552)
+
+  - Allow hi-bit chars in dollar-quoted identifiers (CPAN bug #73832)
+
   - Have do() return count for things such as CREATE TABLE .. AS SELECT
-    (CPAN bug #71073) [Pavel Stehule]
+    Will only work on 9.0 or better. (CPAN bug #71073) [Pavel Stehule]
 
   - Better error message when trying to do things post-disconnect [GSM]
+
+  - Always respect pg_server_prepare=0 by using PQexec not PQexecParams. [GSM]
 
   - Fix error in async docs (CPAN bug #72812)
 
