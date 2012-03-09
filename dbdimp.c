@@ -2815,7 +2815,8 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 			rows = atoi(cmdStatus + 5);
 		}
 		else if (0 == strncmp(cmdStatus, "DELETE", 6)
- 			  || 0 == strncmp(cmdStatus, "UPDATE", 6)) {
+ 			  || 0 == strncmp(cmdStatus, "UPDATE", 6)
+ 			  || 0 == strncmp(cmdStatus, "SELECT", 6)) {
 			rows = atoi(cmdStatus + 7);
 		}
 		break;

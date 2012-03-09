@@ -1,4 +1,4 @@
-'GSM' is Greg Sabino Mullane, greg@turnstep.com)
+'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
 Version thenext
@@ -9,6 +9,9 @@ Version thenext
   - Fix localized regex in test (CPAN bug #70759)
 
   - Fix for named placeholders (CPAN bug #70953) [Jan Pazdziora]
+
+  - Have do() return count for things such as CREATE TABLE .. AS SELECT
+    (CPAN bug #71073) [Pavel Stehule]
 
   - Better error message when trying to do things post-disconnect [GSM]
 
