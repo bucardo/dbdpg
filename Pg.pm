@@ -553,7 +553,7 @@ use 5.006001;
 			(
 			 'column_info',
 			 $data,
-			 [ sort { $col_map{$a} <=> $col_map{$b} } keys %col_map]
+			 [ sort { $col_map{$a} <=> $col_map{$b} } keys %col_map],
 			 );
 	}
 
@@ -972,7 +972,7 @@ use 5.006001;
 			"\t\t\t\t( a.attrelid = '$_' AND a.attnum IN ($cols) )"
 		} sort keys %colnum;
 
-		$sth = $dbh->prepare(qq{$SQL \)});
+		$sth = $dbh->prepare(qq{$SQL )});
 		$sth->execute();
 		my $attribs = $sth->fetchall_arrayref({});
 
@@ -2785,7 +2785,7 @@ return the following:
 
   Value    Meaning
   --------------------------------------------------
-   -1      There is no connection to the database at all (e.g. after C<disconnect>)
+   -1      There is no connection to the database at all (e.g. after disconnect)
    -2      An unknown transaction status was returned (e.g. after forking)
    -3      The handle exists, but no data was returned from a test query.
 

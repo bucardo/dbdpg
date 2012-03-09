@@ -50,7 +50,7 @@ my $getarray_bool = $dbh->prepare($SQL);
 $t='Array quoting allows direct insertion into statements';
 $SQL = q{INSERT INTO dbd_pg_test (id,testarray) VALUES };
 my $quoteid = $dbh->quote(123);
-my $quotearr = $dbh->quote(["Quote's Test"]);
+my $quotearr = $dbh->quote([q{Quote's Test}]);
 $SQL .= qq{($quoteid, $quotearr)};
 eval {
 	$dbh->do($SQL);
@@ -204,7 +204,7 @@ sub safe_getarray {
 		$getarray->execute();
 		$getarray->fetchall_arrayref()->[0][0];
 	};
-	$@ || $ret
+	return $@ || $ret;
 }
 
 for my $test (split /\n\n/ => $array_tests) {

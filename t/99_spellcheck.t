@@ -255,6 +255,7 @@ ENV
 ErrCount
 errorlevel
 errstr
+eval
 externs
 ExtUtils
 fe
@@ -561,7 +562,8 @@ rowtypes
 struct
 
 ## README.dev:
-
+bucardo
+Conway's
 cpantesters
 distro
 DProf
@@ -578,6 +580,7 @@ NYTProf
 nytprofhtml
 profiler
 pulldown
+repo
 spellcheck
 SvTRUE
 testallversions
@@ -592,6 +595,7 @@ bucardo
 cabrion
 CentOS
 conf
+cryptographically
 danla
 david
 dll
@@ -635,10 +639,14 @@ ints
 Garamond
 gborg
 Hofmann
+Kai
 n's
+optimizations
 Perlish
 Pg's
+Pieter
 qw
+regex
 spellcheck
 Szilakszi
 uc
@@ -653,6 +661,7 @@ PGSERVICE
 
 ## Pg.xs:
 PQexec
+stringifiable
 struct
 
 ## dbdimp.c:

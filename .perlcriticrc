@@ -2,8 +2,9 @@ verbose = 9
 profile-strictness = quiet
 
 [Documentation::PodSpelling]
-stop_words = ActiveKids AutoCommit boolean Bunce CachedKids ChildHandles ChopBlanks CompatMode CursorName DBD DBI Datatype dbdpg enum ErrCount FetchHashKeyName HandleError HandleSetErr InactiveDestroy LongReadLen LongTruncOk Mergl Momjian Mullane NULLABLE OID ParamValues ParamTypes PgBouncer pgend pglibpq pglogin pgprefix pgquote pgstart PGSERVICE PGSYSCONFDIR perl Postgres PostgreSQL PrintError PrintWarn README RaiseError RowCache RowCacheSize RowsInCache SQL SQLSTATE SSL STDIN STDERR STDOUT Sabino Savepoints ShowErrorStatement TaintIn TaintOut TraceLevel UTF Username afterwards arrayrefs attr autocommit backend bitmask bytea cancelled datatype dbd dbh errstr fd filename getfd getline hashref largeobject len libpq lseg pgbuiltin pgsql runtime savepoint savepoints schemas sslmode tablename tablespace tablespaces tuple typename username varchar undef Perlish arrayref datatypes bool func PID dr ReadOnly nullable hashrefs DSN
+stop_words = ActiveKids AutoCommit boolean Bunce CachedKids ChildHandles ChopBlanks CompatMode CursorName DBD DBI Datatype dbdpg dev enum ErrCount FetchHashKeyName HandleError HandleSetErr InactiveDestroy LongReadLen LongTruncOk Mergl Momjian Mullane NULLABLE OID ParamValues ParamTypes PgBouncer pgend pglibpq pglogin pgprefix pgquote pgstart PGSERVICE PGSYSCONFDIR perl Postgres PostgreSQL PrintError PrintWarn README RaiseError RowCache RowCacheSize RowsInCache SQL SQLSTATE SSL STDIN STDERR STDOUT Sabino Savepoints ShowErrorStatement TaintIn TaintOut TraceLevel UTF Username afterwards arrayrefs attr autocommit backend bitmask bytea cancelled datatype dbd dbh errstr fd filename getfd getline hashref largeobject len libpq lseg pgbuiltin pgsql runtime savepoint savepoints schemas sslmode tablename tablespace tablespaces tuple typename username varchar undef Perlish arrayref datatypes bool func PID dr ReadOnly nullable hashrefs DSN
 
+[-Bangs::ProhibitBitwiseOperators]
 [-Bangs::ProhibitCommentedOutCode]
 [-Bangs::ProhibitFlagComments]
 [-Bangs::ProhibitNumberedNames]
@@ -18,6 +19,7 @@ stop_words = ActiveKids AutoCommit boolean Bunce CachedKids ChildHandles ChopBla
 [-CodeLayout::RequireTidyCode]
 [-CodeLayout::RequireASCII]
 [-CodeLayout::RequireUseUTF8]
+[-Compatibility::PodMinimumVersion]
 [-ControlStructures::ProhibitCascadingIfElse]
 [-ControlStructures::ProhibitCStyleForLoops]
 [-ControlStructures::ProhibitPostfixControls]
