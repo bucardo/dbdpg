@@ -12,6 +12,7 @@ Version thenext
 
   - Switch from subversion to git. [GSM]
 
+  - Fix error in async docs (CPAN bug #72812)
 
 Version 2.18.1  Released May 9, 2011
 

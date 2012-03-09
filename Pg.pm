@@ -3838,7 +3838,7 @@ of version 8.0 or greater) The basic usage is as follows:
   do_something_else();
   {
     if ($dbh->pg_ready()) {
-      $res = pg_result();
+      $res = $dbh->pg_result();
       print "Result of do(): $res\n";
     }
     print "Query is still running...\n";
