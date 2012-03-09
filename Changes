@@ -1,7 +1,7 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version thenext
+Version 2.19.0
 
   - Use proper formatting for warn() and croak() (CPAN bug #75642)
     [Niko Tyni]
