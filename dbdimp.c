@@ -3126,7 +3126,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			&& imp_sth->numphs
 			&& !imp_sth->has_default
 			&& !imp_sth->has_current
-			&& (1 == imp_sth->server_prepare || imp_sth->numbound == imp_sth->numphs)
+			&& 1 == imp_sth->server_prepare
 			) {
 
 			if (TRACE5) TRC(DBILOGFP, "%sPQexecParams\n", THEADER);
