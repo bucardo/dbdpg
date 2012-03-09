@@ -326,7 +326,7 @@ static void pg_warn (void * arg, const char * message)
 						DBIc_is(imp_dbh, DBIcf_PrintWarn) ? 1 : 0);
 
 		if (DBIc_WARN(imp_dbh) && DBIc_is(imp_dbh, DBIcf_PrintWarn))
-			warn(message);
+			warn("%s", message);
 
 		if (TEND) TRC(DBILOGFP, "%sEnd pg_warn\n", THEADER);
 	}
@@ -1543,7 +1543,7 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 
 		if (pg_st_prepare_statement(aTHX_ sth, imp_sth)!=0) {
 			TRACE_PQERRORMESSAGE;
-			croak (PQerrorMessage(imp_dbh->conn));
+			croak ("%s", PQerrorMessage(imp_dbh->conn));
 		}
 	}
 

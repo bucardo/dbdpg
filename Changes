@@ -1,6 +1,11 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com)
 
 
+Version thenext
+
+  - Use proper formatting for warn() and croak() (CPAN bug #75642)
+    [Niko Tyni]
+
   - Fix localized regex in test (CPAN bug #70759)
 
   - Better error message when trying to do things post-disconnect [GSM]
