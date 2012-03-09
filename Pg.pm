@@ -16,7 +16,7 @@ use 5.006001;
 {
 	package DBD::Pg;
 
-	use version; our $VERSION = qv('2.99.9_2');
+	use version; our $VERSION = qv('2.18.1');
 
 	use DBI ();
 	use DynaLoader ();
@@ -1625,7 +1625,6 @@ use 5.006001;
 				pg_bool_tf                     => undef,
 				pg_db                          => undef,
 				pg_default_port                => undef,
-				pg_utf8_flag                   => undef,
 				pg_enable_utf8                 => undef,
 				pg_errorlevel                  => undef,
 				pg_expand_array                => undef,
@@ -1732,7 +1731,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 2.99.9_2 of the DBD::Pg module
+This documents version 2.18.1 of the DBD::Pg module
 
 =head1 DESCRIPTION
 
@@ -3122,20 +3121,12 @@ DBD::Pg specific attribute. Defaults to false. When true, question marks inside 
 are not treated as L<placeholders|/Placeholders>. Useful for statements that contain unquoted question 
 marks, such as geometric operators.
 
-=head3 B<pg_utf8_flag> (boolean)
-
-DBD::Pg specific attribute. In normal use, this should not be needed, as it will be set 
-automatically according to the client encoding. If the client_encoding is 'UTF8', this 
-attribute will be turned on, which will cause strings coming back from the database to 
-be marked with Perl's internal utf8 flag. If you set this flag, then no checking of 
-client_encoding will ever be done. Do not use this flag unless you really know what 
-you are doing, and understand how utf8 differs from UTF8. Setting to 1 will always 
-cause the flag to be set. Setting to 0 will prevent the flag from ever being set. 
-Setting to -1 will switch to the default behavior of checking the client_encoding.
-
 =head3 B<pg_enable_utf8> (boolean)
 
-Deprecated.
+DBD::Pg specific attribute. If true, then the C<utf8> flag will be turned on
+for returned character data (if the data is valid UTF-8). For details about
+the C<utf8> flag, see the C<Encode> module. This attribute is only relevant under
+perl 5.8 and later.
 
 =head3 B<pg_errorlevel> (integer)
 

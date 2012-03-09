@@ -39,7 +39,6 @@ t/06bytea.t
 t/07copy.t
 t/08async.t
 t/09arrays.t
-t/10utf8flag.t
 t/12placeholders.t
 t/20savepoints.t
 t/99cleanup.t

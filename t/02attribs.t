@@ -55,7 +55,7 @@ d pg_options
 d pg_socket
 d pg_pid
 d pg_standard_conforming strings
-d pg_utf8_strings
+d pg_enable_utf8
 d Warn
 
 d pg_prepare_now - tested in 03smethod.t
@@ -420,7 +420,7 @@ SKIP: {
 	$SQL = 'SELECT id, pname FROM dbd_pg_test WHERE id = ?';
 	$sth = $dbh->prepare($SQL);
 	$sth->execute(1);
-	## local $dbh->{pg_utf8_strings} = 1;
+	local $dbh->{pg_enable_utf8} = 1;
 
 	$t='Quote method returns correct utf-8 characters';
 	my $utf8_str = chr(0x100).'dam'; # LATIN CAPITAL LETTER A WITH MACRON
@@ -438,11 +438,11 @@ SKIP: {
 	$t='Unicode (utf8) data returned from database is not corrupted';
 	is (length($name), 4, $t);
 
-	$t='ASCII text returned from database *does* have utf8 bit set';
+	$t='ASCII text returned from database does have utf8 bit set';
 	$sth->finish();
 	$sth->execute(1);
 	my ($id2, $name2) = $sth->fetchrow_array();
-	ok (Encode::is_utf8($name2), $t);
+	ok (!Encode::is_utf8($name2), $t);
 	$sth->finish();
 }
 

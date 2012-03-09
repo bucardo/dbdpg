@@ -18,20 +18,14 @@ use vars qw/$sth $info $count $SQL/;
 my $tracelevel = shift || 0;
 $ENV{DBI_TRACE} = $tracelevel;
 
-my $dbname = 'latin';
-$dbname = 'greg';
-my $DSN = "DBI:Pg:dbname=$dbname";
-
+my $DSN = 'DBI:Pg:dbname=postgres';
 my $dbh = DBI->connect($DSN, '', '', {AutoCommit=>0,RaiseError=>1,PrintError=>0})
   or die "Connection failed!\n";
 
 my $me = $dbh->{Driver}{Name};
 print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::VERSION\n";
 
-my $SQL = 'SHOW client_encoding';
-my $enc = $dbh->selectall_arrayref($SQL)->[0][0];
-print "Client encoding: $enc\n";
-$dbh->commit();
+memory_leak_test_bug_65734();
 
 exit;
 
