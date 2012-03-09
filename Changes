@@ -8,11 +8,13 @@ Version thenext
 
   - Fix localized regex in test (CPAN bug #70759)
 
+  - Fix for named placeholders (CPAN bug #70953) [Jan Pazdziora]
+
   - Better error message when trying to do things post-disconnect [GSM]
 
-  - Switch from subversion to git. [GSM]
-
   - Fix error in async docs (CPAN bug #72812)
+
+  - Switch from subversion to git. [GSM]
 
 Version 2.18.1  Released May 9, 2011
 

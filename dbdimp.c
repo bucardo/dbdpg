@@ -1911,7 +1911,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 			sectionsize = currpos-sectionstop;
 			/* Have we seen this placeholder yet? */
 			for (xint=1,thisph=imp_sth->ph; NULL != thisph; thisph=thisph->nextph,xint++) {
-				if (0==strncmp(thisph->fooname, statement-sectionsize, sectionsize)) {
+				if (0==strncmp(thisph->fooname, statement-sectionsize, sectionsize + 1)) {
 					newseg->placeholder = xint;
 					newseg->ph = thisph;
 					break;

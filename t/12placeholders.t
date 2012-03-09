@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 238;
+plan tests => 239;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -110,6 +110,16 @@ eval {
 	$sth->execute('foo');
 };
 like ($@, qr{when 0 are needed}, $t);
+
+$t='Execute with named placeholders works';
+$sql = q{SELECT pname FROM dbd_pg_test WHERE pname = :foobar2 AND pname = :foobar AND pname = :foobar2};
+eval {
+	$sth = $dbh->prepare($sql);
+	$sth->bind_param(':foobar', 123);
+	$sth->bind_param(':foobar2', 456);
+	$sth->execute();
+};
+is ($@, q{}, $t);
 
 $t='Prepare with large number of parameters works';
 ## Test large number of placeholders
