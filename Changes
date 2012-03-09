@@ -13,7 +13,8 @@ Version 2.19.0  Released March 9, 2012
   - Various fixes to the array-marshalling code [Noah Misch, Mark 
     Stosberg, and David Christensen] (CPAN bug #58552)
 
-  - Allow hi-bit chars in dollar-quoted identifiers (CPAN bug #73832)
+  - Allow hi-bit chars in dollar-quoted identifiers 
+    [David Christensen] (CPAN bug #73832)
 
   - Have do() return count for things such as CREATE TABLE .. AS SELECT
     Will only work on 9.0 or better. (CPAN bug #71073) [Pavel Stehule]

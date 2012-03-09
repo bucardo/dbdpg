@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.66.
+signed via the Module::Signature module, version 0.68.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -14,57 +14,57 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: RIPEMD160
 
-SHA1 60008bc93c714fe8ede90cfae2d5444077b5659e .perlcriticrc
-SHA1 734bf40473c3b74b2e1e74e0e891e7f3df0073fd Changes
+SHA1 c2fd448ad2624dcf8c2556ed96c9b96b93226861 .perlcriticrc
+SHA1 47aaccf661a3ddadc10a64de551f8f0b975ac99e Changes
 SHA1 21bc5f3c797d4d5b72285198ffeb1e4e1f0a2902 LICENSES/artistic.txt
 SHA1 06877624ea5c77efe3b7e39b0f909eda6e25a4ec LICENSES/gpl-2.0.txt
 SHA1 117e5883538d3a9bcdb7b4f015ae0b3ae060c0fe MANIFEST
-SHA1 9aa8e51bdd4f3c1f3528e1bab45f503fc45991d4 MANIFEST.SKIP
-SHA1 d1642a332a695d87a87523e2a4532e2e97b15719 META.yml
-SHA1 c4afd24fbbe0e840ad54ccec4a370ead7d5d0407 Makefile.PL
-SHA1 17d0501f8bacb2fba6c5ddfac072c45e5c3ff6c5 Pg.h
-SHA1 92f60ab6f8a8ebe01890b48350598b505b879c44 Pg.pm
-SHA1 9d30acdb46c61b5bba0226782a9652de929906e5 Pg.xs
-SHA1 04d041e07bea9e0563a2bbc999e07cd3a3a95649 README
-SHA1 af5c1ae27ef74a05ccd7539a5cd09297887d08ed README.dev
+SHA1 8d2857ee9a6326c08507d8552f86709dd068fbe5 MANIFEST.SKIP
+SHA1 c0d1b10d5a14ab7abb4f97d84a9b93f8da9e9af8 META.yml
+SHA1 b56cbe764bde06eaf209272638d96240b30fcdc9 Makefile.PL
+SHA1 926476ded02a7416b728c0679ac74bbd4b50c457 Pg.h
+SHA1 96d25609db77437a27ff488221ad5e187e1b673e Pg.pm
+SHA1 b941c69074e649ba9a934864ef247a1bbb47a336 Pg.xs
+SHA1 72f4398651d810e34afe50261565e14cbe2bf6cf README
+SHA1 5280743d68c6950814626fe2f77cc32027ea7505 README.dev
 SHA1 7e213bf90f513595b59c0a2c4ef94fea1592efcf README.win32
 SHA1 56367817fd4315160c5123b880fdf69d59974948 TODO
-SHA1 d77c8a25d92065390041c6d5312beb7641eb3a3d dbdimp.c
-SHA1 22cc5de68760e581dfb89005f493df81c1b48092 dbdimp.h
+SHA1 dd919cf5aae725447dde2ac7f6b541f87ac51180 dbdimp.c
+SHA1 26562b3b5f8abf26547381975dd3ed60e48ab36b dbdimp.h
 SHA1 6c33bcf138e577722283bef02fceb8cbce4d100d dbivport.h
-SHA1 a8457a4fadea6bdce9cef4f7c58985ac5560234b lib/Bundle/DBD/Pg.pm
-SHA1 7b88775116f57ab8dd7be46672aa366f32bcc70c quote.c
+SHA1 5c1435975405cdd028ec1f3a59e653c89c260040 lib/Bundle/DBD/Pg.pm
+SHA1 82c1cc1b15a55e0b553165ea4dd6cfff2bb008a4 quote.c
 SHA1 7ccff1056809e35bcc1a3ff4f5a3d337f207681f quote.h
 SHA1 93aa7e8cae0a361d1e6163dea0281ebff41f3c5f t/00_signature.t
 SHA1 073baf503a601ceeb49516d61bd275f0c1e51563 t/00basic.t
 SHA1 1f50adea4f2c7a5110eca34dc8b6d5dc9d4121ed t/01connect.t
 SHA1 ce0b281693d4b8309a7a4e7a07ec6f898d937e60 t/01constants.t
 SHA1 42b9933a52e9a95051aa06f5556559c7272d5901 t/02attribs.t
-SHA1 5f5f88fa6cd92f1bfcab33104f8e597b517790f6 t/03dbmethod.t
-SHA1 9f9519dc96f35f479d2fa64097dcde195bce73d2 t/03smethod.t
+SHA1 60c78c431a04f34c83c0ca18044cad397f0802ca t/03dbmethod.t
+SHA1 d5d619fb3c1df974b9e8b2f85df2c8ff8dc54f48 t/03smethod.t
 SHA1 723db2e94914a5739c867f5b2b0151cced63d614 t/04misc.t
 SHA1 b7b72e0a9569e97e97975ea12e4adbc99a50d076 t/06bytea.t
 SHA1 c4c43b2229411c3850de0a9cb9bae8e5ccc7d822 t/07copy.t
 SHA1 e6fe3d9c739d31f344c4a56382004a97202e4d51 t/08async.t
-SHA1 877b2591531317802336eee5983bb5ca052c7a4f t/09arrays.t
-SHA1 ea049356a2a6f7355fbfb398414f707564c0eacb t/12placeholders.t
+SHA1 a78b82d35ab294149decacc160a468d8d94fa434 t/09arrays.t
+SHA1 5f68030aaac3eaae52494faa5ab058260d01fa0a t/12placeholders.t
 SHA1 81558ca5c783ea6792fd103444a04df615a8d127 t/20savepoints.t
 SHA1 dfef0062e9549b2cad7b429c7214734ab6ab5a4a t/99cleanup.t
 SHA1 7c7e5d7b141344c20193282aebe7eedfc83921f7 t/dbdpg_test_setup.pl
-SHA1 30b4c1b0a41123bbbdc690588a2fdb319023bf0c t/lib/App/Info.pm
-SHA1 94cd383136553746ff12128aa367fb71e98087df t/lib/App/Info/Handler.pm
-SHA1 b5bf85b12a5fc207c44113a9c028fb7fbd68531f t/lib/App/Info/Handler/Prompt.pm
-SHA1 805cc21eda3c34a612f1413f77c997fbc2ff90f9 t/lib/App/Info/RDBMS.pm
-SHA1 c4526a50a9266817c64a8f8a9e3fa19b27715f50 t/lib/App/Info/RDBMS/PostgreSQL.pm
-SHA1 188d73fe871cc0afa65837c19eb2a6b43884a8f4 t/lib/App/Info/Request.pm
-SHA1 6eaa2bdb5bc68d1b68933f59dd21882b920a5df0 t/lib/App/Info/Util.pm
+SHA1 96edfd4f4165c50f98353f800fbd182555762a0c t/lib/App/Info.pm
+SHA1 b3349a313289db245720d0a3c7446662e9b6af33 t/lib/App/Info/Handler.pm
+SHA1 a669fab6421aa2a8385f33b0e90efcd3d7040415 t/lib/App/Info/Handler/Prompt.pm
+SHA1 d3e9a478612e570c0b9af03f99e987ba01a6e36e t/lib/App/Info/RDBMS.pm
+SHA1 2fa62674d3121d67ff9c1d6aee844a1a8bf62088 t/lib/App/Info/RDBMS/PostgreSQL.pm
+SHA1 ef601a037cd4c9866ae4922298418b92b203ab47 t/lib/App/Info/Request.pm
+SHA1 108f10ce0dc3657a706861d57f4f8bcddabf2ada t/lib/App/Info/Util.pm
 SHA1 f81b99c61f210e1d95fb0913ff0ac7be9dca33fb testme.tmp.pl
-SHA1 19feb26da4346f416f75f742500f4fdd6df18135 types.c
+SHA1 191e3d66b5e0c71cf520076d1322b6309560bcd0 types.c
 SHA1 3346dfbefe3a9af077276fb412e42281306577d2 types.h
 SHA1 f07cd5ecaeb854c81ceb9206364979cf607e6546 win32.mak
 -----BEGIN PGP SIGNATURE-----
 
-iEYEAREDAAYFAk3IEgQACgkQvJuQZxSWSsjHoQCg8yK5ahfw2iJkasBFbUg+I9Kr
-+6IAoNYOaoHIk4s4/jF10icsss4iD9mr
-=AJTu
+iEYEAREDAAYFAk9ah9gACgkQvJuQZxSWSsgakQCePTwzetzBmAIL/rnxE93dDDo/
+hCAAoMxvZtECl/yFFCXqA5N7kcGcaUZ/
+=RLJu
 -----END PGP SIGNATURE-----
