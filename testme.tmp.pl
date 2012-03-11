@@ -8,6 +8,7 @@ BEGIN {
 use strict;
 use warnings;
 use DBI ':sql_types';
+use utf8;
 use Data::Dumper;
 use YAML;
 use DBD::Pg qw/:pg_types/;
@@ -25,9 +26,53 @@ my $dbh = DBI->connect($DSN, '', '', {AutoCommit=>0,RaiseError=>1,PrintError=>0}
 my $me = $dbh->{Driver}{Name};
 print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::VERSION\n";
 
-memory_leak_test_bug_65734();
+utf8_print_test();
+
+#memory_leak_test_bug_65734();
 
 exit;
+
+
+sub utf8_print_test {
+
+	## Set things up
+	$dbh->do('CREATE TEMPORARY TABLE ctest (c TEXT)');
+
+	## Add some UTF-8 content
+	$dbh->do("INSERT INTO ctest VALUES ('*JIHOMORAVSKÝ*')");
+	$dbh->do("INSERT INTO ctest VALUES ('*Špindlerův Mlýn*')");
+
+	## Pull data back out via execute/bind/fetch
+	$SQL = 'SELECT c FROM ctest';
+
+	my $result;
+
+	for my $loop (1..4) {
+
+		my $onoff = 'off';
+		if ($loop == 1 or $loop==3) {
+			$dbh->{pg_enable_utf8} = 0;
+		}
+		else {
+			$dbh->{pg_enable_utf8} = 1;
+			$onoff = 'on';
+		}
+
+		if ($loop>2) {
+			binmode STDOUT, ':utf8';
+		}
+
+		$sth = $dbh->prepare($SQL);
+		$sth->execute();
+		$sth->bind_columns(\$result);
+		while ($sth->fetch() ) {
+			print DPeek $result;
+			print "\n Print with pg_enable_utf8 $onoff: $result\n";
+			warn " Warn with pg_enable_utf8 $onoff: $result\n\n";
+		}
+	}
+
+} ## end of utf8_print_test
 
 sub memory_leak_test_bug_65734 {
 
