@@ -3,6 +3,7 @@
 
 Version 2.19.1
 
+  - Fix crash when passing in an array with undefined elements. [GSM]
 
 Version 2.19.0  Released March 9, 2012 (git commit 05ab092905ce6891ed83e173412ee70d6cdb8cb5)
 
@@ -28,7 +29,8 @@ Version 2.19.0  Released March 9, 2012 (git commit 05ab092905ce6891ed83e173412ee
 
   - Fix error in async docs (CPAN bug #72812)
 
-  - Switch from subversion to git. [GSM]
+  - Switch from subversion to git.
+    git clone git://bucardo.org/dbdpg.git [GSM]
 
 Version 2.18.1  Released May 9, 2011 (git commit 5ea7d91bf1704fe0cae06c49806055cb35207950)
 
