@@ -5,6 +5,7 @@ Version 2.19.1
 
   - Fix crash when passing in an array with undefined elements. [GSM]
 
+
 Version 2.19.0  Released March 9, 2012 (git commit 05ab092905ce6891ed83e173412ee70d6cdb8cb5)
 
   - Use proper formatting for warn() and croak() (CPAN bug #75642)
