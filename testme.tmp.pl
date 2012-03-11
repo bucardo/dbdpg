@@ -69,6 +69,8 @@ sub utf8_print_test {
 			print DPeek $result;
 			print "\n Print with pg_enable_utf8 $onoff: $result\n";
 			warn " Warn with pg_enable_utf8 $onoff: $result\n\n";
+			utf8::upgrade($result);
+			print DPeek $result; print "\n\n";
 		}
 	}
 
