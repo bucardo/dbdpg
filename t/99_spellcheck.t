@@ -73,6 +73,7 @@ for my $file (qw/README Changes TODO README.dev README.win32/) {
 			s{eg/lotest.pl}{};
 			s{\[.+?\]}{}gs;
 			s{\S+\@\S+\.\S+}{}gs;
+			s{git commit [a-f0-9]+}{git commit}gs;
 		}
 		elsif ($file eq 'README.dev') {
 			s/^\t\$.+//gsm;
@@ -633,6 +634,7 @@ Ubuntu
 ## Changes:
 bigint
 boolean
+bucardo
 destringifying
 expr
 ints
@@ -640,6 +642,7 @@ Garamond
 gborg
 Hofmann
 Kai
+marshalling
 n's
 optimizations
 Perlish
