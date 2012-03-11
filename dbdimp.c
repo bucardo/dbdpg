@@ -2463,7 +2463,16 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 
 	done = 0;
 	currarr = lastarr = toparr;
+
+	/* We want to walk through to find out the depth */
 	while (!done) {
+
+		/* If we come across a null, we are done */
+		if (! av_exists(currarr, 0)) {
+			done = 1;
+			break;
+		}
+
 		/* Grab the first item of the current array */
 		svitem = *av_fetch(currarr, 0, 0);
 
@@ -2509,30 +2518,35 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 			sv_catpv(value, "{");
 		}
 		for (yz=0; yz < array_items; yz++) {
-			svitem = *av_fetch(currarr, yz, 0);
-
-			if (SvROK(svitem))
-				croak("Arrays must contain only scalars and other arrays");
-
-			if (!SvOK(svitem)) { /* Insert NULL if we can */
-				/* Only version 8.2 and up can handle NULLs in arrays */
-				if (server_version < 80200)
-					croak("Cannot use NULLs in arrays until version 8.2");
-				sv_catpv(value, "NULL"); /* Beware of array_nulls config param! */
+			if (! av_exists(currarr, yz)) {
+				sv_catpv(value, "NULL");
 			}
 			else {
-				sv_catpv(value, "\"");
-				if (SvUTF8(svitem))
-					SvUTF8_on(value);
-				string = SvPV(svitem, stringlength);
-				while (stringlength--) {
- 					/* Escape backslashes and double-quotes. */
- 					if ('\"' == *string || '\\' == *string)
-						sv_catpvn(value, "\\", 1);
-					sv_catpvn(value, string, 1);
-					string++;
+				svitem = *av_fetch(currarr, yz, 0);
+
+				if (SvROK(svitem))
+					croak("Arrays must contain only scalars and other arrays");
+
+				if (!SvOK(svitem)) { /* Insert NULL if we can */
+					/* Only version 8.2 and up can handle NULLs in arrays */
+					if (server_version < 80200)
+						croak("Cannot use NULLs in arrays until version 8.2");
+					sv_catpv(value, "NULL"); /* Beware of array_nulls config param! */
 				}
-				sv_catpv(value, "\"");
+				else {
+					sv_catpv(value, "\"");
+					if (SvUTF8(svitem))
+						SvUTF8_on(value);
+					string = SvPV(svitem, stringlength);
+					while (stringlength--) {
+						/* Escape backslashes and double-quotes. */
+						if ('\"' == *string || '\\' == *string)
+							sv_catpvn(value, "\\", 1);
+						sv_catpvn(value, string, 1);
+						string++;
+					}
+					sv_catpv(value, "\"");
+				}
 			}
 
 			if (yz < array_items-1)

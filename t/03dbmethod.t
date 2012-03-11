@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 532;
+plan tests => 534;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -103,11 +103,25 @@ eval {
 };
 like ($@, qr{last_insert_id}, $t);
 
-$t='DB handle method "do()" returns correct count with CREATE AS SELECT';
+$t='DB handle method "do" returns correct count with CREATE AS SELECT';
 $dbh->rollback();
 $result = $dbh->do('CREATE TEMP TABLE foobar AS SELECT * FROM pg_class LIMIT 3');
 $expected = $pgversion >= 90000 ? 3 : '0E0';
 is ($result, $expected, $t);
+
+$t='DB handle method "do" works properly with passed-in array with undefined entries';
+$dbh->rollback();
+$dbh->do('CREATE TEMP TABLE foobar (id INT, p TEXT[])');
+my @aa;
+$aa[2] = 'asasa';
+eval {
+	$dbh->do('INSERT INTO foobar (p) VALUES (?)', undef, \@aa);
+};
+is ($@, q{}, $t);
+
+$SQL = 'SELECT * FROM foobar';
+$result = $dbh->selectall_arrayref($SQL)->[0];
+is_deeply ($result, [undef,[undef,undef,'asasa']], $t);
 
 $t='DB handle method "last_insert_id" works when given a valid sequence and an invalid table';
 $dbh->rollback();
