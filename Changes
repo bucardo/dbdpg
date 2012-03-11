@@ -1,7 +1,10 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 2.19.0  Released March 9, 2012
+Version 2.19.1
+
+
+Version 2.19.0  Released March 9, 2012 (git commit 05ab092905ce6891ed83e173412ee70d6cdb8cb5)
 
   - Use proper formatting for warn() and croak() (CPAN bug #75642)
     [Niko Tyni]
@@ -27,7 +30,7 @@ Version 2.19.0  Released March 9, 2012
 
   - Switch from subversion to git. [GSM]
 
-Version 2.18.1  Released May 9, 2011
+Version 2.18.1  Released May 9, 2011 (git commit 5ea7d91bf1704fe0cae06c49806055cb35207950)
 
   - Fix LANG testing issue [GSM] (CPAN bug #56705)
 
