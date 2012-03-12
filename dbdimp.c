@@ -1911,7 +1911,13 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 			sectionsize = currpos-sectionstop;
 			/* Have we seen this placeholder yet? */
 			for (xint=1,thisph=imp_sth->ph; NULL != thisph; thisph=thisph->nextph,xint++) {
-				if (0==strncmp(thisph->fooname, statement-sectionsize, sectionsize + 1)) {
+				/*
+				  Because we need to make sure :foobar does not match as a previous 
+				   hit when seeing :foobar2, we always use the greater of the two lengths:
+				   the length of the old name or the current name we are scanning
+				*/
+				if (0==strncmp(thisph->fooname, statement-sectionsize,
+							   strlen(thisph->fooname) > sectionsize ? strlen(thisph->fooname) : sectionsize)) {
 					newseg->placeholder = xint;
 					newseg->ph = thisph;
 					break;

@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 240;
+plan tests => 243;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -121,8 +121,36 @@ eval {
 };
 is ($@, q{}, $t);
 
+## Same, but fiddle with whitespace
+$sql = q{SELECT pname FROM dbd_pg_test WHERE pname = :foobar AND pname = :foobar2 AND pname = :foobar2};
+eval {
+	$sth = $dbh->prepare($sql);
+	$sth->bind_param(':foobar', 123);
+	$sth->bind_param(':foobar2', 456);
+	$sth->execute();
+};
+is ($@, q{}, $t);
+
+$sql = q{SELECT pname FROM dbd_pg_test WHERE pname = :foobar AND pname = :foobar AND pname = :foobar2 };
+eval {
+	$sth = $dbh->prepare($sql);
+	$sth->bind_param(':foobar', 123);
+	$sth->bind_param(':foobar2', 456);
+	$sth->execute();
+};
+is ($@, q{}, $t);
+
 $t='Execute with repeated named placeholders works';
 $sql = q{SELECT pname FROM dbd_pg_test WHERE pname = :foobar AND pname = :foobar };
+eval {
+	$sth = $dbh->prepare($sql);
+	$sth->bind_param(':foobar', 123);
+	$sth->execute();
+};
+is ($@, q{}, $t);
+
+## Same thing, different whitespace
+$sql = q{SELECT pname FROM dbd_pg_test WHERE pname = :foobar AND pname = :foobar};
 eval {
 	$sth = $dbh->prepare($sql);
 	$sth->bind_param(':foobar', 123);
