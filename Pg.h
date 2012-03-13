@@ -108,13 +108,20 @@ DBISTATE_DECLARE;
 
 /* Fancy stuff for tracing of commonly used libpq functions */
 #define TRACE_XX                   if (TLIBPQ_slow) TRC(DBILOGFP,
+/* XXX every use of every one of these costs at least one call to DBIS
+ * and possibly +1 for DBILOGFP and another for THEADER_slow!
+ * A better approach may be something like DBD::Oracle's
+ * http://cpansearch.perl.org/src/PYTHIAN/DBD-Oracle-1.42/ocitrace.h
+ * #define PGfooBar_log_stat(imp_xxh, stat, a,b,c) ... where imp_xxh
+ * is used to determine the logging and stat holds the result.
+ * That makes the code uncluttered and gives good flexibility.
+ */
 #define TRACE_PQBACKENDPID         TRACE_XX "%sPQbackendPID\n",          THEADER_slow)
 #define TRACE_PQCANCEL             TRACE_XX "%sPQcancel\n",              THEADER_slow)
 #define TRACE_PQCLEAR              TRACE_XX "%sPQclear\n",               THEADER_slow)
 #define TRACE_PQCMDSTATUS          TRACE_XX "%sPQcmdStatus\n",           THEADER_slow)
 #define TRACE_PQCMDTUPLES          TRACE_XX "%sPQcmdTuples\n",           THEADER_slow)
 #define TRACE_PQCONNECTDB          TRACE_XX "%sPQconnectdb\n",           THEADER_slow)
-#define TRACE_PQCONSUMEINPUT       TRACE_XX "%sPQconsumeInput\n",        THEADER_slow)
 #define TRACE_PQCONSUMEINPUT       TRACE_XX "%sPQconsumeInput\n",        THEADER_slow)
 #define TRACE_PQDB                 TRACE_XX "%sPQdb\n",                  THEADER_slow)
 #define TRACE_PQENDCOPY            TRACE_XX "%sPQendcopy\n",             THEADER_slow)
@@ -126,7 +133,6 @@ DBISTATE_DECLARE;
 #define TRACE_PQFMOD               TRACE_XX "%sPQfmod\n",                THEADER_slow)
 #define TRACE_PQFNAME              TRACE_XX "%sPQfname\n",               THEADER_slow)
 #define TRACE_PQFREECANCEL         TRACE_XX "%sPQfreeCancel\n",          THEADER_slow)
-#define TRACE_PQFREEMEM            TRACE_XX "%sPQfreemem\n",             THEADER_slow)
 #define TRACE_PQFREEMEM            TRACE_XX "%sPQfreemem\n",             THEADER_slow)
 #define TRACE_PQFSIZE              TRACE_XX "%sPQfsize\n",               THEADER_slow)
 #define TRACE_PQFTABLECOL          TRACE_XX "%sPQftableCol\n",           THEADER_slow)
