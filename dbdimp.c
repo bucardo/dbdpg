@@ -93,7 +93,7 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
 void dbd_init (dbistate_t *dbistate)
 {
 	dTHX;
-	DBIS = dbistate;
+	DBISTATE_INIT;
 }
 
 
@@ -3398,7 +3398,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 		return Nullav; /* we reached the last tuple */
 	}
 
-	av = DBIS->get_fbav(imp_sth);
+	av = DBIc_DBISTATE(imp_sth)->get_fbav(imp_sth);
 	num_fields = AvFILL(av)+1;
 	
 	chopblanks = (int)DBIc_has(imp_sth, DBIcf_ChopBlanks);
