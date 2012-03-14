@@ -841,5 +841,3 @@ perldoc DBI::Profile
 
 
 Also see perldoc DBI::DBD. It's fairly old and incomplete, but still useful.
-
-
