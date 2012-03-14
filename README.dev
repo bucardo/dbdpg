@@ -700,7 +700,7 @@ that may make life easier for other developers can go here.
 
 * Temporary tables
 
-We do not use temporary tables in most of our test because they are 
+We do not use temporary tables in most of our tests because they are 
 not persistent across tests, they mess up the schema testing, and they 
 are not compatible with the foreign key testing. But do try and use them 
 whenever possible.
