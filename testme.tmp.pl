@@ -26,11 +26,37 @@ my $dbh = DBI->connect($DSN, '', '', {AutoCommit=>0,RaiseError=>1,PrintError=>0}
 my $me = $dbh->{Driver}{Name};
 print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::VERSION\n";
 
-utf8_print_test();
+commit_return_test();
+
+#utf8_print_test();
 
 #memory_leak_test_bug_65734();
 
 exit;
+
+
+sub commit_return_test {
+
+	$dbh->{RaiseError} = 0;
+	$dbh->{PrintError} = 1;
+	$dbh->{AutoCommit} = 0;
+
+	## Test value returned by the commit() method
+	my $res = $dbh->commit();
+	print "-->Initial commit returns a value of $res\n";
+
+	$res = $dbh->commit();
+	print "-->When called twice, commit returns a value of $res\n";
+
+	$dbh->do('SELECT 123');
+	$dbh->do('SELECT fail');
+
+	$res = $dbh->commit();
+	print "-->After exception, commit returns a value of $res\n";
+
+	return;
+
+} ## end of commit_return_test
 
 
 sub utf8_print_test {
