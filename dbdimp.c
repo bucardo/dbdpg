@@ -54,7 +54,7 @@ void PQfreeCancel(PGcancel *cancel) {
 
 #endif
 
-#if PGLIBVERSION < 80400
+#if PGLIBVERSION <= 80300
 
 Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId);
 Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId) {
