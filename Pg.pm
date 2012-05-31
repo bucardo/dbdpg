@@ -740,6 +740,10 @@ use 5.006001;
             $whereclause
         };
 
+		if ($dbh->{private_dbdpg}{version} >= 90200) {
+			$pri_key_sql =~ s/t.spclocation/pg_tablespace_location(t.oid)/;
+		}
+
 		my $sth = $dbh->prepare($pri_key_sql) or return undef;
 		$sth->execute();
 		my $info = $sth->fetchall_arrayref()->[0];
@@ -1152,6 +1156,9 @@ use 5.006001;
 			$extracols = q{,n.nspname AS pg_schema, c.relname AS pg_table};
 			my @search;
 			my $showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(t.spclocation) AS "pg_tablespace_location"';
+			if ($dbh->{private_dbdpg}{version} >= 90200) {
+				$showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(pg_tablespace_location(t.oid)) AS "pg_tablespace_location"';
+			}
 
 			## If the schema or table has an underscore or a %, use a LIKE comparison
 			if (defined $schema and length $schema) {
