@@ -1973,8 +1973,12 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		if (placeholder_type > 0)
 			imp_sth->placeholder_type = placeholder_type;
 
-		/* If this segment also, ended the string, set ch so we bail out early */
-		if ('\0' == *statement)
+		/* 
+		   Check if this segment also ends the string.
+		   If it does, we simply leave right away.
+		   Make sure we don't peek at statement if we know it is past the end of the string.
+		*/
+		if ('\0' != ch && '\0' == *statement)
 			break;
 
 	} /* end large while(1) loop: statement parsing */
