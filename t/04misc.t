@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 57;
+plan tests => 70;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -374,6 +374,19 @@ if (defined $problem) {
 else {
 	pass "pg_st_split_statement gave no problems with various lengths";
 }
+
+## Check for problems with insane number of placeholders
+for my $ph (1..13) {
+	my $total = 2**$ph;
+	$t = "prepare/execute works with $total placeholders";
+	my $sql = 'SELECT count(*) FROM pg_class WHERE relpages IN (' . ('?,' x $total);
+	$sql =~ s/.$/\)/;
+	my $sth = $dbh->prepare($sql);
+	my @arr = (1..$total);
+	my $count = $sth->execute(@arr);
+	is $count, 1, $t;
+}
+
 
 cleanup_database($dbh,'test');
 $dbh->disconnect();
