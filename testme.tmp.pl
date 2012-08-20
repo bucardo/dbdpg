@@ -50,9 +50,12 @@ sub commit_return_test {
 
 	$dbh->do('SELECT 123');
 	$dbh->do('SELECT fail');
+	$dbh->do('SELECT 111');
 
 	$res = $dbh->commit();
 	print "-->After exception, commit returns a value of $res\n";
+
+	$dbh->do('SELECT 456');
 
 	return;
 

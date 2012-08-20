@@ -17,10 +17,6 @@
 #define atoll(X) _atoi64(X)
 #endif
 
-#ifndef powf
-#define powf (float)pow
-#endif
-
 #define sword signed int
 #define sb2 signed short
 #define ub2 unsigned short
@@ -2071,13 +2067,15 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 {
 	D_imp_dbh_from_sth;
 	char *       statement;
-	unsigned int x;
+	unsigned int placeholder_digits;
+	int          x;
 	STRLEN       execsize;
 	PGresult *   result;
 	int          status = -1;
 	seg_t *      currseg;
 	bool         oldprepare = DBDPG_TRUE;
 	ph_t *       currph;
+	long         power_of_ten;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_prepare_statement\n", THEADER_slow);
 
@@ -2112,13 +2110,14 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 			if (0==currseg->placeholder)
 				continue;
 			/* The parameter itself: dollar sign plus digit(s) */
-			for (x=1; x<7; x++) {
-				if (currseg->placeholder < powf((float)10,(float)x))
+			power_of_ten = 10;
+			for (placeholder_digits=1; placeholder_digits<7; placeholder_digits++, power_of_ten *= 10) {
+				if (currseg->placeholder < power_of_ten)
 					break;
 			}
-			if (x>=7)
+			if (placeholder_digits >= 7)
 				croak("Too many placeholders!");
-			execsize += x+1;
+			execsize += placeholder_digits+1;
 			if (oldprepare) {
 				/* The parameter type, only once per number please */
 				if (!currseg->ph->referenced)
@@ -2900,10 +2899,12 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	ph_t *        currph;
 	int           status = -1;
 	STRLEN        execsize, x;
+	unsigned int  placeholder_digits;
 	seg_t *       currseg;
 	char *        statement = NULL;
 	int           num_fields;
 	int           ret = -2;
+	long          power_of_ten;
 	
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_execute\n", THEADER_slow);
 	
@@ -3155,13 +3156,14 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				if (0==currseg->placeholder)
 					continue;
 				/* The parameter itself: dollar sign plus digit(s) */
-				for (x=1; x<7; x++) {
-					if (currseg->placeholder < powf((float)10,(float)x))
+				power_of_ten = 10;
+				for (placeholder_digits=1; placeholder_digits<7; placeholder_digits++, power_of_ten *= 10) {
+					if (currseg->placeholder < power_of_ten)
 						break;
 				}
-				if (x>=7)
+				if (placeholder_digits >= 7)
 					croak("Too many placeholders!");
-				execsize += x+1;
+				execsize += placeholder_digits+1;
 			}
 
 			/* Create the statement */
