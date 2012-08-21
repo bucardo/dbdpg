@@ -1,7 +1,7 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 2.19.3  Released ??
+Version 2.19.3  Released August 21, 2012
 
   - Fix bug in pg_st_split_statement causing segfaults
     (CPAN bug #79035)
