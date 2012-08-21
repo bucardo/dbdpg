@@ -1900,7 +1900,7 @@ handle. This is a number used by libpq and is one of:
 
   0  Empty query string
   1  A command that returns no data successfully completed.
-  2  A command that returns data sucessfully completed.
+  2  A command that returns data successfully completed.
   3  A COPY OUT command is still in progress.
   4  A COPY IN command is still in progress.
   5  A bad response was received from the backend.
