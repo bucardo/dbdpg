@@ -5,7 +5,7 @@ use warnings;
 use 5.006001;
 
 ## No version.pm for this one, as the prereqs are not loaded yet.
-my $VERSION = '2.19.2';
+my $VERSION = '2.19.3';
 
 ## App::Info is stored inside t/lib
 ## Create a proper path so we can use it below
