@@ -385,6 +385,7 @@ for my $ph (1..13) {
 	my @arr = (1..$total);
 	my $count = $sth->execute(@arr);
 	is $count, 1, $t;
+	$sth->finish();
 }
 
 cleanup_database($dbh,'test');
