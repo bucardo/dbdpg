@@ -623,6 +623,9 @@ release tarball. Make sure there is nothing important here.
 * Run "make disttest". This unpacks the tarball, then runs "make" and "make test" on it.
 You may also want to remove the directory it creates later by using "make realclean"
 
+* Make a new git tag: git tag -u 01234abc 1.2.3 -n "Version 1.2.3, released April 1, 2015"
+In the example above, 01234abc is your pgp shortid and 1.2.3 is the new version number.
+
 * Make checksums
 
 Generate md5 and sha1 checksums of the tarball. Include this in your emails.
