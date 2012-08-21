@@ -381,7 +381,7 @@ for my $ph (1..13) {
 	$t = "prepare/execute works with $total placeholders";
 	my $sql = 'SELECT count(*) FROM pg_class WHERE relpages IN (' . ('?,' x $total);
 	$sql =~ s/.$/\)/;
-	my $sth = $dbh->prepare($sql);
+	$sth = $dbh->prepare($sql);
 	my @arr = (1..$total);
 	my $count = $sth->execute(@arr);
 	is $count, 1, $t;

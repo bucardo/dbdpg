@@ -558,6 +558,7 @@ YAML
 yml
 
 ## TODO:
+cpantesters
 hashrefs
 rowtypes
 struct
@@ -832,7 +833,16 @@ uc
 Nothing
 
 ## Pg.h:
+DBILOGFP
+DBIS
+PGfooBar
+PYTHIAN
+THEADER
+cpansearch
+ocitrace
 preprocessors
+src
+xxh
 
 ## Makefile.PL:
 prereqs
