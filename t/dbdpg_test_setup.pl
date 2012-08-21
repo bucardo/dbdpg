@@ -67,12 +67,28 @@ sub connect_database {
 	my $alias = qr{(database|db|dbname)};
 	my $info;
 	my $olddir = getcwd;
+	my $debug = $ENV{DBDPG_DEBUG} || 0;
 
 	## We'll try various ways to get to a database to test with
 
 	## First, check to see if we've been here before and left directions
 	my ($testdsn,$testuser,$helpconnect,$su,$uid,$testdir,$pg_ctl,$initdb,$error,$version)
 		= get_test_settings();
+
+	if ($debug) {
+		diag "Test settings:
+dsn: $testdsn
+user: $testuser
+helpconnect: $helpconnect
+su: $su
+uid: $uid
+testdir: $testdir
+pg_ctl: $pg_ctl
+initdb: $initdb
+error: $error
+version: $version
+";
+	}
 
 	## Did we fail last time? Fail this time too, but quicker!
 	if ($testdsn =~ /FAIL!/) {
@@ -410,40 +426,57 @@ sub connect_database {
 			}
 		}
 		$@ = '';
-		## Change to this new port and fire it up
+
+		$debug and diag "Port to use: $testport";
+
 		my $conf = "$testdir/data/postgresql.conf";
 		my $cfh;
-		if (! open $cfh, '>>', $conf) {
-			$@ = qq{Could not open "$conf": $!};
-			last GETHANDLE; ## Fail - no conf file
-		}
-		print $cfh "\n\n## DBD::Pg testing parameters\n";
-		print $cfh "port=$testport\n";
-		print $cfh "max_connections=4\n";
-		if ($version >= 8.0) {
-			print $cfh "log_statement = 'all'\n";
-			print $cfh "log_line_prefix = '%m [%p] '\n";
-		}
-		else {
-			print $cfh "silent_mode = true\n";
-		}
-		if ($version == 8.1) {
-			print {$cfh} "redirect_stderr = on\n";
-		}
 
-		if ($version >= 8.3) {
-			print {$cfh} "logging_collector = on\n";
-		}
-		print $cfh "log_min_messages = 'DEBUG1'\n";
-		print $cfh "listen_addresses='127.0.0.1'\n" if $^O =~ /Win32/;
-		print $cfh "\n";
-		close $cfh or die qq{Could not close "$conf": $!\n};
-
-		## Attempt to start up the test server
+		## If there is already a pid file, do not modify the config
+		## We assume a previous run put it there, so we extract the port
 		if (-e "$testdir/data/postmaster.pid") {
+			$debug and diag qq{File "$testdir/data/postmaster.pid" exists};
+			open my $cfh, '<', $conf or die qq{Could not open "$conf": $!\n};
+			while (<$cfh>) {
+				if (/^\s*port\s*=\s*(\d+)/) {
+					$testport = $1;
+					$debug and diag qq{Found port $testport inside conf file\n};
+				}
+			}
+			close $cfh or die qq{Could not close "$conf": $!\n};
 			## Assume it's up, and move on
 		}
 		else {
+			## Change to this new port and fire it up
+			if (! open $cfh, '>>', $conf) {
+				$@ = qq{Could not open "$conf": $!};
+				$debug and diag qq{Failed to open "$conf"};
+				last GETHANDLE; ## Fail - no conf file
+			}
+			$debug and diag qq{Writing to "$conf"};
+			print $cfh "\n\n## DBD::Pg testing parameters\n";
+			print $cfh "port=$testport\n";
+			print $cfh "max_connections=4\n";
+			if ($version >= 8.0) {
+				print $cfh "log_statement = 'all'\n";
+				print $cfh "log_line_prefix = '%m [%p] '\n";
+			}
+			else {
+				print $cfh "silent_mode = true\n";
+			}
+			if ($version == 8.1) {
+				print {$cfh} "redirect_stderr = on\n";
+			}
+
+			if ($version >= 8.3) {
+				print {$cfh} "logging_collector = on\n";
+			}
+			print $cfh "log_min_messages = 'DEBUG1'\n";
+			print $cfh "listen_addresses='127.0.0.1'\n" if $^O =~ /Win32/;
+			print $cfh "\n";
+			close $cfh or die qq{Could not close "$conf": $!\n};
+
+			## Attempt to start up the test server
 			$info = '';
 			my $option = '';
 			if ($^O !~ /Win32/) {
@@ -467,6 +500,7 @@ sub connect_database {
 				chdir $testdir;
 				$COM = qq{su -m $su -c "$COM"};
 			}
+			$debug and diag qq{Running: $COM};
 			eval {
 				$info = qx{$COM};
 			};
@@ -488,6 +522,7 @@ sub connect_database {
 			$testdsn .= ";host=$testdir/data/socket";
 		}
 
+		$debug and diag qq{Test DSN: $testdsn};
 		my $loop = 1;
 	  STARTUP: {
 			eval {
