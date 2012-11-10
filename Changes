@@ -1,12 +1,18 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
+Version ???
+
+
+  - Spelling fix per CPAN bug #78168
+
+
 Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb7244046e8f47420d)
 
   - Fix bug in pg_st_split_statement causing segfaults
     (CPAN bug #79035)
 
-  - Make sure table_info() and other functions use pg_tablespace_location 
+  - Make sure table_info() and other functions use pg_tablespace_location() 
     instead of spclocation for Postgres servers 9.2 and greater. [GSM + others]
 
 
