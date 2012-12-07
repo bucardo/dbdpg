@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 534;
+plan tests => 535;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -103,9 +103,18 @@ eval {
 };
 like ($@, qr{last_insert_id}, $t);
 
+$SQL = 'CREATE TEMP TABLE foobar AS SELECT * FROM pg_class LIMIT 3';
+
 $t='DB handle method "do" returns correct count with CREATE AS SELECT';
 $dbh->rollback();
-$result = $dbh->do('CREATE TEMP TABLE foobar AS SELECT * FROM pg_class LIMIT 3');
+$result = $dbh->do($SQL);
+$expected = $pgversion >= 90000 ? 3 : '0E0';
+is ($result, $expected, $t);
+
+$t='DB handle method "execute" returns correct count with CREATE AS SELECT';
+$dbh->rollback();
+$sth = $dbh->prepare($SQL);
+$result = $sth->execute();
 $expected = $pgversion >= 90000 ? 3 : '0E0';
 is ($result, $expected, $t);
 

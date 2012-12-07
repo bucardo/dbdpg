@@ -3313,7 +3313,8 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				gotrows = DBDPG_TRUE;
 			}
 			else if (0 == strncmp(cmdStatus, "DELETE", 6)
-					 || 0 == strncmp(cmdStatus, "UPDATE", 6)) {
+					 || 0 == strncmp(cmdStatus, "UPDATE", 6)
+					 || 0 == strncmp(cmdStatus, "SELECT", 6)) {
 				ret = atoi(cmdStatus + 7);
 				gotrows = DBDPG_TRUE;
 			}
@@ -3393,8 +3394,9 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_fetch (error: no statement)\n", THEADER_slow);
 		return Nullav;
 	}
-	
+
 	TRACE_PQNTUPLES;
+
 	if (imp_sth->cur_tuple == imp_sth->rows) {
 		if (TRACE5_slow)
 			TRC(DBILOGFP, "%sFetched the last tuple (%d)\n", THEADER_slow, imp_sth->cur_tuple);
@@ -4705,7 +4707,8 @@ int pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 				rows = atoi(cmdStatus + 5);
 			}
 			else if (0 == strncmp(cmdStatus, "DELETE", 6)
-					 || 0 == strncmp(cmdStatus, "UPDATE", 6)) {
+					 || 0 == strncmp(cmdStatus, "UPDATE", 6)
+					 || 0 == strncmp(cmdStatus, "SELECT", 6)) {
 				rows = atoi(cmdStatus + 7);
 			}
 			break;

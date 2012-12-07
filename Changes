@@ -4,6 +4,8 @@
 Version ???
 
 
+  - Make sure CREATE TABLE .. AS SELECT returns rows in non do() cases. [GSM]
+
   - Spelling fix per CPAN bug #78168
 
 
