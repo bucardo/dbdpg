@@ -10,6 +10,8 @@ Version ???
 
   - Make sure CREATE TABLE .. AS SELECT returns rows in non do() cases. [GSM]
 
+  - Remove math.h linking, as we no longer need it (CPAN bug #79256)
+
   - Spelling fix per CPAN bug #78168
 
   - Better wording for the AutoCommit docs (CPAN bug #82536)

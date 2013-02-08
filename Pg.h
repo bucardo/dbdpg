@@ -8,7 +8,6 @@
 
 */
 
-#include <math.h>
 #include <wchar.h>
 
 #ifdef WIN32
