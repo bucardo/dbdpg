@@ -3794,10 +3794,8 @@ complete definition of C<AutoCommit> please refer to the DBI documentation.
 
 According to the DBI specification the default for C<AutoCommit> is a true
 value. In this mode, any change to the database becomes valid immediately. Any
-C<BEGIN>, C<COMMIT> or C<ROLLBACK> statements will be rejected. DBD::Pg
-implements C<AutoCommit> by issuing a C<BEGIN> statement immediately before
-executing a statement, and a C<COMMIT> afterwards. Note that preparing a 
-statement is not always enough to trigger the first C<BEGIN>, as the actual 
+C<BEGIN>, C<COMMIT> or C<ROLLBACK> statements will be rejected. Note that 
+preparing a statement does not always contact the server, as the actual 
 C<PREPARE> is usually postponed until the first call to L</execute>.
 
 =head2 Savepoints

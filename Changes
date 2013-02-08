@@ -4,12 +4,15 @@
 Version ???
 
 
+  - Adjust lo_import_with_oid check for 8.3 (CPAN bug #83145)
+
   - Better handling of libpq errors to return SQLSTATE 08000 (Stephen Keller)
 
   - Make sure CREATE TABLE .. AS SELECT returns rows in non do() cases. [GSM]
 
   - Spelling fix per CPAN bug #78168
 
+  - Better wording for the AutoCommit docs (CPAN bug #82536)
 
 Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb7244046e8f47420d)
 
