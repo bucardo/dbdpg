@@ -23,6 +23,7 @@ Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb724
 
   - Make sure table_info() and other functions use pg_tablespace_location() 
     instead of spclocation for Postgres servers 9.2 and greater. [GSM + others]
+    (CPAN bug #77042)
 
 
 Version 2.19.2  Released March 12, 2012 (git commit 52c80cc795855af8bf93eb0c81c76bd6f07a5f70)
