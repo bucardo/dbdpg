@@ -16,6 +16,9 @@ Version ???
 
   - Better wording for the AutoCommit docs (CPAN bug #82536)
 
+  - Change NOTICE to DEBUG1 in t/02attribs.t test for handle attribute "PrintWarn":
+    implicit index creation is now quieter in Postgres [Erik Rijkers]
+
 Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb7244046e8f47420d)
 
   - Fix bug in pg_st_split_statement causing segfaults
