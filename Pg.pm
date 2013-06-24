@@ -1672,7 +1672,7 @@ use 5.006001;
 		my $sth = shift;
 		my ($p_id, $value_array, $attr) = @_;
 
-		## Bail if the second arg is not undef or an an arrayref
+		## Bail if the second arg is not undef or an arrayref
 		return $sth->set_err(1, "Value for parameter $p_id must be a scalar or an arrayref, not a ".ref($value_array))
 			if defined $value_array and ref $value_array and ref $value_array ne 'ARRAY';
 
@@ -1680,7 +1680,7 @@ use 5.006001;
 		return $sth->set_err(1, q{Can't use named placeholders for non-driver supported bind_param_array})
 			unless DBI::looks_like_number($p_id); # because we rely on execute(@ary) here
 
-		## Store the list of items in the hash (will be undef or an arayref)
+		## Store the list of items in the hash (will be undef or an arrayref)
 		$sth->{ParamArrays}{$p_id} = $value_array;
 
 		## If any attribs were passed in, we need to call bind_param
@@ -2199,7 +2199,7 @@ Postgres backend are only handled by one of the processes. If you don't set thin
 properly, you will see messages such as "I<server closed the connection unexpectedly>", 
 and "I<message type 0x32 arrived from server while idle>". The best solution is to either 
 have the child process reconnect to the database with a fresh database handle, or to 
-rewrite your application not to use use forking. See the section on L</Asynchronous Queries> 
+rewrite your application not to use forking. See the section on L</Asynchronous Queries> 
 for a way to have your script continue to work while the database is processing a request.
 
 =head3 B<RaiseError> (boolean, inherited)
@@ -2641,7 +2641,7 @@ If you did not want to worry about the sequence name:
 Issues a COMMIT to the server, indicating that the current transaction is finished and that 
 all changes made will be visible to other processes. If AutoCommit is enabled, then 
 a warning is given and no COMMIT is issued. Returns true on success, false on error.
-See also the the section on L</Transactions>.
+See also the section on L</Transactions>.
 
 =head3 B<rollback>
 
@@ -3114,7 +3114,7 @@ Please not that this method is not foolproof: there are still ways to update the
 database. Consider this a safety net to catch applications that should not be 
 issuing commands such as INSERT, UPDATE, or DELETE.
 
-This method method requires DBI version 1.55 or better.
+This method requires DBI version 1.55 or better.
 
 =head3 B<pg_server_prepare> (integer)
 
@@ -3494,7 +3494,7 @@ a reference to a list. Do not use this in a scalar context.
   $hash_ref = $sth->fetchrow_hashref($name);
 
 Fetches the next row of data and returns a hashref containing the name of the columns as the keys 
-and the data itself as the values. Any NULL value is returned as as undef value.
+and the data itself as the values. Any NULL value is returned as an undef value.
 
 If there are no more rows or if an error occurs, the this method return undef. You should 
 check C<< $sth->err >> afterwards (or use the L</RaiseError> attribute) to discover if the undef returned 
