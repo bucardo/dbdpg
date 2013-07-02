@@ -210,7 +210,7 @@ version: $version
 
 	if (! $testdsn) {
 		$helpconnect = 1;
-		$testdsn = $^O =~ /Win32/ ? 'dbi:Pg:host=localhost' : 'dbi:Pg:';
+#		$testdsn = $^O =~ /Win32/ ? 'dbi:Pg:host=localhost' : 'dbi:Pg:';
 	}
 	if (! $testuser) {
 		$testuser = 'postgres';
@@ -223,7 +223,6 @@ version: $version
 								{RaiseError => 1, PrintError => 0, AutoCommit => 1});
 		};
 		last GETHANDLE if ! $@; ## Made it!
-
 		## If the error was because of the user, try a few others
 		if ($@ =~ /postgres/) {
 
@@ -395,6 +394,20 @@ version: $version
 			last GETHANDLE; ## Fail - bad output
 		}
 
+		## Attempt to boost the system oids above an int for certain testing
+		(my $resetxlog = $initdb) =~ s/initdb/pg_resetxlog/;
+		eval {
+			$info = qx{$resetxlog --help};
+		};
+		if (! $@ and $info =~ /XID/) {
+			if (! -e "$testdir/data/postmaster.pid") {
+				eval {
+					$info = qx{ $resetxlog -o 2222333344 $testdir/data };
+				};
+				## We don't really care if it worked or not!
+			}
+		}
+
 		## Which user do we connect as?
 		if (!$su and $info =~ /owned by user "(.+?)"/) {
 			$testuser = $1;
@@ -531,8 +544,10 @@ version: $version
 			};
 			## Regardless of the error, try again.
 			## We used to check the message, but LANG problems may complicate that.
-
 			if ($@) {
+
+				$debug and diag qq{Connection error: $@\n};
+
 				if ($@ =~ /database "postgres" does not exist/) {
 					## Old server, so let's create a postgres database manually
 					sleep 2;
@@ -541,12 +556,29 @@ version: $version
 						$dbh = DBI->connect($tempdsn, $testuser, '',
 											{RaiseError => 1, PrintError => 0, AutoCommit => 1});
 					};
-					$dbh->do('CREATE DATABASE postgres');
-					$dbh->disconnect();
 					if ($@) {
 						die "Could not connect: $@\n";
 					}
+					$dbh->do('CREATE DATABASE postgres');
+					$dbh->disconnect();
 				}
+
+				if ($@ =~ /role "postgres" does not exist/) {
+					## Probably just created with the current user, so use that
+					if (exists $ENV{USER} and length $ENV{USER}) {
+						$debug and diag qq{Switched to new user: $testuser\n};
+						eval {
+							$dbh = DBI->connect($testdsn, $ENV{USER}, '',
+												{RaiseError => 1, PrintError => 0, AutoCommit => 1});
+						};
+						if ($@) {
+							die "Could not connect: $@\n";
+						}
+						$dbh->do('CREATE USER postgres SUPERUSER');
+						$dbh->disconnect();
+					}
+				}
+
 				if ($loop++ < 5) {
 					sleep 1;
 					redo STARTUP;
