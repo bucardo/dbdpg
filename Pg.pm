@@ -4217,7 +4217,8 @@ Parts of this package were originally copied from DBI and DBD-Oracle.
 B<Mailing List>
 
 The current maintainers may be reached through the 'dbd-pg' mailing list:
-<dbd-pg@perl.org>
+<dbd-pg@perl.org>. Subscribe by sending an email to dbd-pg-subscribe@perl.org. 
+Visit the archives at http://grokbase.com/g/perl/dbd-pg
 
 =head1 COPYRIGHT AND LICENSE
 

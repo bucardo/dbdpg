@@ -56,6 +56,12 @@ are connecting to. The easiest way to gather all of this
 information is to run "make test", which outputs it all early in 
 the tests.
 
+View the archive at http://grokbase.com/g/perl/dbd-pg
+
+To subscribe, email dbd-pg-subscribe@perl.org
+To unsubscribe, email dbd-pg-unsubscribe@perl.org
+To get help regarding your subscription, email dbd-pg-help@perl.org
+
 You can also try the #postgresql channel on irc.freenode.net, which 
 usually (but not always) has people who can help you with DBD::Pg.
 
