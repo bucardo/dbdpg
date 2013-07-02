@@ -47,8 +47,8 @@ use constant WIN32 => $^O eq 'MSWin32';
 
 my $u = App::Info::Util->new;
 my @EXES = qw(postgres createdb createlang createuser dropdb droplang
-              dropuser initdb pg_dump pg_dumpall pg_restore postmaster
-              vacuumdb psql);
+              dropuser initdb pg_dump pg_dumpall pg_resetxlog pg_restore
+              pg_upgrade postmaster vacuumdb psql);
 
 =head1 INTERFACE
 
@@ -95,7 +95,11 @@ via the C<search_exe_names> parameter). These parameters are:
 
 =item search_pg_dumpall_names
 
+=item search_pg_resetxlog_names
+
 =item search_pg_restore_names
+
+=item search_pg_upgrade_names
 
 =item search_postmaster_names
 
@@ -964,7 +968,11 @@ The available executable methods are:
 
 =item pg_dumpall
 
+=item pg_resetxlog
+
 =item pg_restore
+
+=item pg_upgrade
 
 =item postmaster
 
@@ -998,7 +1006,11 @@ And the corresponding search names methods are:
 
 =item search_pg_dumpall_names
 
+=item search_pg_resetxlog_names
+
 =item search_pg_restore_names
+
+=item search_pg_upgrade_names
 
 =item search_postmaster_names
 
@@ -1055,7 +1067,7 @@ L<http://www.postgresql.org/> is the PostgreSQL home page.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2002-2004, David Wheeler. All Rights Reserved.
+Copyright (c) 2002-2013, David Wheeler. All Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it under the
 same terms as Perl itself.
