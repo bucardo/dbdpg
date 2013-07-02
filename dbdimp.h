@@ -30,13 +30,17 @@ struct imp_dbh_st {
 	PGconn  *conn;             /* connection structure */
 	char    *sqlstate;         /* from the last result */
 
+
 	bool    pg_bool_tf;        /* do bools return 't'/'f'? Set by user, default is 0 */
-	bool    pg_enable_utf8;    /* should we attempt to make utf8 strings? Set by user, default is 0 */
 	bool    prepare_now;       /* force immediate prepares, even with placeholders. Set by user, default is 0 */
 	bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */
 	bool    dollaronly;        /* only consider $1, $2 ... as valid placeholders */
 	bool    expand_array;      /* transform arrays from the db into Perl arrays? Default is 1 */
 	bool    txn_read_only;     /* are we in read-only mode? Set with $dbh->{ReadOnly} */
+
+	int     pg_enable_utf8;    /* legacy utf8 flag: force utf8 flag on or off, regardless of client_encoding */
+	bool    pg_utf8_flag;      /* are we currently flipping the utf8 flag on? */
+    bool    client_encoding_utf8; /* is the client_encoding utf8 last we checked? */
 };
 
 

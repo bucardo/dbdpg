@@ -224,8 +224,15 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 		}
 	}
 
-	imp_dbh->pg_bool_tf      = DBDPG_FALSE;
-	imp_dbh->pg_enable_utf8  = DBDPG_FALSE;
+	imp_dbh->client_encoding_utf8 =
+		(0 == strncmp(PQparameterStatus(imp_dbh->conn, "client_encoding"), "UTF8", 4))
+		? DBDPG_TRUE : DBDPG_FALSE;
+
+	/* If the client_encoding is UTF8, flip the utf8 flag until convinced otherwise */
+	imp_dbh->pg_utf8_flag = imp_dbh->client_encoding_utf8;
+
+	imp_dbh->pg_enable_utf8  = -1;
+
  	imp_dbh->prepare_now     = DBDPG_FALSE;
 	imp_dbh->done_begin      = DBDPG_FALSE;
 	imp_dbh->dollaronly      = DBDPG_FALSE;
@@ -278,10 +285,8 @@ static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
 	sv_setpv(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate);
 
 	/* Set as utf-8 */
-#ifdef is_utf8_string
-	if (imp_dbh->pg_enable_utf8)
+	if (imp_dbh->pg_utf8_flag)
 		SvUTF8_on(DBIc_ERRSTR(imp_xxh));
-#endif
 
 	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_error\n", THEADER_slow);
 
@@ -725,10 +730,12 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 			retsv = newSViv((IV)imp_dbh->pg_protocol);
 		break;
 
-	case 12: /* pg_INV_WRITE */
+	case 12: /* pg_INV_WRITE pg_utf8_flag */
 
 		if (strEQ("pg_INV_WRITE", key))
 			retsv = newSViv((IV) INV_WRITE );
+		else if (strEQ("pg_utf8_flag", key))
+			retsv = newSViv((IV)imp_dbh->pg_utf8_flag);
 		break;
 
 	case 13: /* pg_errorlevel */
@@ -743,10 +750,8 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 			retsv = newSViv((IV) PGLIBVERSION );
 		else if (strEQ("pg_prepare_now", key))
 			retsv = newSViv((IV)imp_dbh->prepare_now);
-#ifdef is_utf8_string
 		else if (strEQ("pg_enable_utf8", key))
 			retsv = newSViv((IV)imp_dbh->pg_enable_utf8);
-#endif
 		break;
 
 	case 15: /* pg_default_port pg_async_status pg_expand_array */
@@ -865,12 +870,33 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			retval = 1;
 		}
 
-#ifdef is_utf8_string
+		/* 
+		   We don't want to check the client_encoding every single time we talk to the database,
+		   so we only do it here, which allows people to signal DBD::Pg that something 
+		   may have changed, so could you please rescan client_encoding?
+		*/
 		else if (strEQ("pg_enable_utf8", key)) {
-			imp_dbh->pg_enable_utf8 = newval!=0 ? DBDPG_TRUE : DBDPG_FALSE;
+			/* Technically, we only allow -1, 0, and 1 */
+			imp_dbh->pg_enable_utf8 = newval;
+
+			/* Never use the utf8 flag, no matter what */
+			if (0 == imp_dbh->pg_enable_utf8) {
+				imp_dbh->pg_utf8_flag = DBDPG_FALSE;
+			}
+			/* Always use the flag, no matter what */
+			else if (1 == imp_dbh->pg_enable_utf8) {
+				imp_dbh->pg_utf8_flag = DBDPG_TRUE;
+			}
+			/* Do The Right Thing */
+			else {
+				imp_dbh->client_encoding_utf8 =
+					(0 == strncmp(PQparameterStatus(imp_dbh->conn, "client_encoding"), "UTF8", 4))
+					? DBDPG_TRUE : DBDPG_FALSE;
+				imp_dbh->pg_enable_utf8 = -1;
+				imp_dbh->pg_utf8_flag = imp_dbh->client_encoding_utf8;
+			}
 			retval = 1;
 		}
-#endif
 		break;
 
 	case 15: /* pg_expand_array */
@@ -1084,10 +1110,8 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 				TRACE_PQFNAME;
 				fieldname = PQfname(imp_sth->result, fields);
 				sv_fieldname = newSVpv(fieldname,0);
-#ifdef is_utf8_string
 				if (is_high_bit_set(aTHX_ (unsigned char *)fieldname, strlen(fieldname)) && is_utf8_string((unsigned char *)fieldname, strlen(fieldname)))
 					SvUTF8_on(sv_fieldname);
-#endif
 				(void)av_store(av, fields, sv_fieldname);
 			}
 		}
@@ -2677,14 +2701,9 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 					av_push(currentav, newSViv('t' == *string ? 1 : 0));
 				else {
 					SV *sv = newSVpvn(string, section_size);
-#ifdef is_utf8_string
-					if (imp_dbh->pg_enable_utf8) {
-						SvUTF8_off(sv);
-						if (is_high_bit_set(aTHX_ (unsigned char *)string, section_size) && is_utf8_string((unsigned char*)string, section_size)) {
-							SvUTF8_on(sv);
-						}
+					if (imp_dbh->pg_utf8_flag) {
+						SvUTF8_on(sv);
 					}
-#endif
 					av_push(currentav, sv);
 
 				}
@@ -3490,23 +3509,18 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 					}
 				}
 			}
-#ifdef is_utf8_string
-			if (imp_dbh->pg_enable_utf8 && type_info) {
-				SvUTF8_off(sv);
-				switch (type_info->type_id) {
-				case PG_CHAR:
-				case PG_TEXT:
-				case PG_BPCHAR:
-				case PG_VARCHAR:
-					if (is_high_bit_set(aTHX_ value, value_len) && is_utf8_string((unsigned char*)value, value_len)) {
-						SvUTF8_on(sv);
-					}
-					break;
-				default:
-					break;
+			if (imp_dbh->pg_utf8_flag) {
+				/*
+				  The only exception to our rule about setting utf8 if the client_encoding
+				  is set to UTF8 is bytea.
+				*/
+				if (type_info && PG_BYTEA == type_info->type_id) {
+					SvUTF8_off(sv);
+				}
+				else {
+					SvUTF8_on(sv);
 				}
 			}
-#endif
 		}
 	}
 	
@@ -3870,10 +3884,8 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 
 	if (copystatus > 0) {
 		sv_setpv(dataline, tempbuf);
-#ifdef is_utf8_string
-		if (imp_dbh->pg_enable_utf8)
+		if (imp_dbh->pg_utf8_flag)
 			SvUTF8_on(dataline);
-#endif
 		TRACE_PQFREEMEM;
 		PQfreemem(tempbuf);
 	}

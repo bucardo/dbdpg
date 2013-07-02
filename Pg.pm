@@ -1633,6 +1633,7 @@ use 5.006001;
 				pg_db                          => undef,
 				pg_default_port                => undef,
 				pg_enable_utf8                 => undef,
+				pg_utf8_flag                   => undef,
 				pg_errorlevel                  => undef,
 				pg_expand_array                => undef,
 				pg_host                        => undef,
@@ -3128,12 +3129,26 @@ DBD::Pg specific attribute. Defaults to false. When true, question marks inside 
 are not treated as L<placeholders|/Placeholders>. Useful for statements that contain unquoted question 
 marks, such as geometric operators.
 
-=head3 B<pg_enable_utf8> (boolean)
+=head3 B<pg_enable_utf8> (integer)
 
-DBD::Pg specific attribute. If true, then the C<utf8> flag will be turned on
-for returned character data (if the data is valid UTF-8). For details about
-the C<utf8> flag, see the C<Encode> module. This attribute is only relevant under
-perl 5.8 and later.
+DBD::Pg specific attribute. The behavior of DBD::Pg with regards to this flag has 
+changed as of version xxx. The default value for this attribute, -1, indicates 
+that the internal C<utf8> flag will be turned on for all strings coming back 
+from the database if the client_encoding is set to 'UTF8'. Use of this default 
+is highly encouraged, and you should not need to use this attribute except 
+for the following two conditions:
+
+If this attribute is set to 0, then the internal C<utf8> flag will *never* be 
+turned on for returned data, regardless of the current client_encoding.
+
+If this attribute is set to -1, then the internal C<utf8> flag will *always* 
+be turned on for returned data, regardless of the current client_encoding 
+(with the exception of bytea data).
+
+Note that the value of client_encoding is only checked on connection time. If 
+you change the client_encoding to/from 'UTF8' after connecting, you can set 
+pg_enable_utf8 to -1 to force DBD::Pg to read in the new client_encoding and 
+act accordingly.
 
 =head3 B<pg_errorlevel> (integer)
 
