@@ -3466,7 +3466,6 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 						else
 							sv_setiv(sv, '1' == *value ? 1 : 0);
 						break;
-					case PG_OID:
 					case PG_INT4:
 					case PG_INT2:
 						sv_setiv(sv, atol((char *)value));
