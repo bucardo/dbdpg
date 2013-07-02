@@ -214,6 +214,10 @@ my %opts =
      NEEDS_LINKING  => 1,
      NO_META        => 1,
      NORECURS       => 1,
+     PM             => {
+                        'Pg.pm' => '$(INST_LIBDIR)/Pg.pm',
+                        'lib/Bundle/DBD/Pg.pm' => '$(INST_LIB)/Bundle/DBD/Pg.pm',
+                       },
      clean          => { FILES => 'trace Pg.xsi README.testdatabase' },
      realclean      => { FILES => 'dbdpg_test_database/' },
 );
