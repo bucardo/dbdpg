@@ -3141,7 +3141,7 @@ for the following two conditions:
 If this attribute is set to 0, then the internal C<utf8> flag will *never* be 
 turned on for returned data, regardless of the current client_encoding.
 
-If this attribute is set to -1, then the internal C<utf8> flag will *always* 
+If this attribute is set to 1, then the internal C<utf8> flag will *always* 
 be turned on for returned data, regardless of the current client_encoding 
 (with the exception of bytea data).
 
