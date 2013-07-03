@@ -877,6 +877,9 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 		*/
 		else if (strEQ("pg_enable_utf8", key)) {
 			/* Technically, we only allow -1, 0, and 1 */
+			if (SvOK(valuesv)) {
+				newval = (unsigned)SvIV(valuesv);
+			}
 			imp_dbh->pg_enable_utf8 = newval;
 
 			/* Never use the utf8 flag, no matter what */
@@ -888,12 +891,15 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 				imp_dbh->pg_utf8_flag = DBDPG_TRUE;
 			}
 			/* Do The Right Thing */
-			else {
+			else if (-1 == imp_dbh->pg_enable_utf8) {
 				imp_dbh->client_encoding_utf8 =
 					(0 == strncmp(PQparameterStatus(imp_dbh->conn, "client_encoding"), "UTF8", 4))
 					? DBDPG_TRUE : DBDPG_FALSE;
 				imp_dbh->pg_enable_utf8 = -1;
 				imp_dbh->pg_utf8_flag = imp_dbh->client_encoding_utf8;
+			}
+			else {
+				warn("The pg_enable_utf8 setting can only be set to 0, 1, or -1");
 			}
 			retval = 1;
 		}
