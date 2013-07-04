@@ -25,6 +25,7 @@ sql_type_info_t* sql_type_data(int);
 #define                PG_ANY  2276
 #define         PG_ANYELEMENT  2283
 #define            PG_ANYENUM  3500
+#define           PG_ANYRANGE  3831
 #define                PG_BIT  1560
 #define               PG_BOOL  16
 #define                PG_BOX  603
@@ -36,6 +37,7 @@ sql_type_info_t* sql_type_data(int);
 #define             PG_CIRCLE  718
 #define            PG_CSTRING  2275
 #define               PG_DATE  1082
+#define          PG_DATERANGE  3912
 #define        PG_FDW_HANDLER  3115
 #define             PG_FLOAT4  700
 #define             PG_FLOAT8  701
@@ -44,9 +46,12 @@ sql_type_info_t* sql_type_data(int);
 #define               PG_INT2  21
 #define         PG_INT2VECTOR  22
 #define               PG_INT4  23
+#define          PG_INT4RANGE  3904
 #define               PG_INT8  20
+#define          PG_INT8RANGE  3926
 #define           PG_INTERNAL  2281
 #define           PG_INTERVAL  1186
+#define               PG_JSON  114
 #define   PG_LANGUAGE_HANDLER  2280
 #define               PG_LINE  628
 #define               PG_LSEG  601
@@ -54,6 +59,7 @@ sql_type_info_t* sql_type_data(int);
 #define              PG_MONEY  790
 #define               PG_NAME  19
 #define            PG_NUMERIC  1700
+#define           PG_NUMRANGE  3906
 #define                PG_OID  26
 #define          PG_OIDVECTOR  30
 #define             PG_OPAQUE  2282
@@ -86,6 +92,8 @@ sql_type_info_t* sql_type_data(int);
 #define          PG_TINTERVAL  704
 #define            PG_TRIGGER  2279
 #define            PG_TSQUERY  3615
+#define            PG_TSRANGE  3908
+#define          PG_TSTZRANGE  3910
 #define           PG_TSVECTOR  3614
 #define      PG_TXID_SNAPSHOT  2970
 #define            PG_UNKNOWN  705
@@ -110,6 +118,7 @@ sql_type_info_t* sql_type_data(int);
 #define        PG_CIRCLEARRAY  719
 #define       PG_CSTRINGARRAY  1263
 #define          PG_DATEARRAY  1182
+#define     PG_DATERANGEARRAY  3913
 #define        PG_FLOAT4ARRAY  1021
 #define        PG_FLOAT8ARRAY  1022
 #define     PG_GTSVECTORARRAY  3644
@@ -117,14 +126,18 @@ sql_type_info_t* sql_type_data(int);
 #define          PG_INT2ARRAY  1005
 #define    PG_INT2VECTORARRAY  1006
 #define          PG_INT4ARRAY  1007
+#define     PG_INT4RANGEARRAY  3905
 #define          PG_INT8ARRAY  1016
+#define     PG_INT8RANGEARRAY  3927
 #define      PG_INTERVALARRAY  1187
+#define          PG_JSONARRAY  199
 #define          PG_LINEARRAY  629
 #define          PG_LSEGARRAY  1018
 #define       PG_MACADDRARRAY  1040
 #define         PG_MONEYARRAY  791
 #define          PG_NAMEARRAY  1003
 #define       PG_NUMERICARRAY  1231
+#define      PG_NUMRANGEARRAY  3907
 #define           PG_OIDARRAY  1028
 #define     PG_OIDVECTORARRAY  1013
 #define          PG_PATHARRAY  1019
@@ -149,6 +162,8 @@ sql_type_info_t* sql_type_data(int);
 #define        PG_TIMETZARRAY  1270
 #define     PG_TINTERVALARRAY  1025
 #define       PG_TSQUERYARRAY  3645
+#define       PG_TSRANGEARRAY  3909
+#define     PG_TSTZRANGEARRAY  3911
 #define      PG_TSVECTORARRAY  3643
 #define PG_TXID_SNAPSHOTARRAY  2949
 #define          PG_UUIDARRAY  2951
