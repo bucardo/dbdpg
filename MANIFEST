@@ -41,6 +41,7 @@ t/08async.t
 t/09arrays.t
 t/12placeholders.t
 t/20savepoints.t
+t/30unicode.t
 t/99cleanup.t
 
 t/lib/App/Info.pm
