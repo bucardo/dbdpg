@@ -3,6 +3,8 @@
 
 Version ???
 
+  - Map SQL_CHAR back to bpchar, not char. [GSM]
+
   - Do not force oids to Perl ints (CPAN bug #85836)
 
   - Adjust lo_import_with_oid check for 8.3 (CPAN bug #83145)
