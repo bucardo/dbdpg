@@ -360,8 +360,8 @@ sql_type_info_t* sql_type_data(int sql_type)
 
 	switch(sql_type) {
 		case SQL_BOOLEAN:                      return &sql_types[0];
+		case SQL_CHAR:                         return &sql_types[1];
 		case SQL_VARBINARY:                    return &sql_types[2];
-		case SQL_CHAR:                         return &sql_types[3];
 		case SQL_TYPE_DATE:                    return &sql_types[4];
 		case SQL_FLOAT:                        return &sql_types[5];
 		case SQL_DOUBLE:                       return &sql_types[6];
@@ -712,7 +712,8 @@ for my $name (sort { $a cmp $b } keys %pgtype) {
 		## {SQL_VARCHAR, "SQL_VARCHAR", quote_string, dequote_string, {VARCHAROID}, DBDPG_TRUE },
 		printf $newfh qq! {%s,"%s",1,',', "none", $pgtype{$name}{quote}, $pgtype{$name}{dequote}, \{$pgtype{$name}{define}\}, $pgtype{$name}{svtype}\},\n!, $sql, $sql;
 		$maxlen = length $sql if length $sql > $maxlen;
-		$pos{$sql} = $item++;
+		$pos{$sql} = $item if $pgtype{$name}{sqlc};
+		$item++;
 	}
 }
 print $newfh "\};\n\n";
