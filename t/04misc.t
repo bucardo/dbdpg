@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 70;
+plan tests => 71;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -387,6 +387,25 @@ for my $ph (1..13) {
 	is $count, 1, $t;
 	$sth->finish();
 }
+
+## Make sure our mapping of char/SQL_CHAR/bpchar is working as expected
+$dbh->do('CREATE TEMP TABLE tt (c_test int, char4 char(4))');
+
+$sth = $dbh->prepare ('SELECT * FROM tt');
+$sth->execute;
+my @stt = @{$sth->{TYPE}};
+
+$sth = $dbh->prepare('INSERT INTO tt VALUES (?,?)');
+
+$sth->bind_param(1, undef, $stt[0]); ## 4
+$sth->bind_param(2, undef, $stt[1]); ## 1 aka SQL_CHAR
+$sth->execute(2, "0301");
+
+my $SQL = 'SELECT char4 FROM tt';
+my $result = $dbh->selectall_arrayref($SQL)->[0][0];
+
+$t = q{Using bind_param with type 1 yields a correct bpchar value};
+is( $result, '0301', $t);
 
 cleanup_database($dbh,'test');
 $dbh->disconnect();
