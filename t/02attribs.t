@@ -442,7 +442,7 @@ SKIP: {
 	$sth->finish();
 	$sth->execute(1);
 	my ($id2, $name2) = $sth->fetchrow_array();
-	ok (!Encode::is_utf8($name2), $t);
+	ok (Encode::is_utf8($name2), $t);
 	$sth->finish();
 }
 
