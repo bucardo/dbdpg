@@ -7,6 +7,9 @@ Version ???
 
   - Do not force oids to Perl ints (CPAN bug #85836)
 
+  - Return better sqlstate codes on fatal errors
+    (Rainer Weikusat)
+
   - Adjust lo_import_with_oid check for 8.3 (CPAN bug #83145)
 
   - Better handling of libpq errors to return SQLSTATE 08000 (Stephen Keller)
