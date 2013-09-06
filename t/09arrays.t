@@ -588,8 +588,8 @@ SKIP: {
 	$expected = [1,['Bob',$utf8_str],'one'];
 	is_deeply ($result, $expected, $t);
 
-	$t='Selected ASCII string should not be UTF-8';
-    ok (!Encode::is_utf8( $result->[1][0] ), $t);
+	$t='Selected ASCII string should be UTF-8';
+    ok (Encode::is_utf8( $result->[1][0] ), $t);
 
 	$t='Selected string should be UTF-8';
     ok (Encode::is_utf8( $result->[1][1] ), $t);
