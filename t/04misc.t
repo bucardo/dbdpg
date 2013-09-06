@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 71;
+plan tests => 77;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -76,6 +76,73 @@ for my $flag (qw/pglibpq pgstart pgend pgprefix pglogin pgquote/) {
 	$t = qq{Statement handle method 'server_trace_flags' returns $hex for flag $flag};
 	$num = $sth->parse_trace_flag($flag);
 	is ($num, $hex, $t);
+}
+
+SKIP: {
+
+	my $SQL = q{
+CREATE OR REPLACE FUNCTION dbdpg_test_error_handler(TEXT)
+RETURNS boolean
+LANGUAGE plpgsql
+AS $BC$
+ DECLARE
+   level ALIAS FOR $1;
+ BEGIN 
+  IF level ~* 'notice' THEN
+    RAISE NOTICE 'RAISE NOTICE FROM dbdpg_test_error_handler';
+  ELSIF level ~* 'warning' THEN
+    RAISE WARNING 'RAISE WARNING FROM dbdpg_test_error_handler';
+  ELSIF level ~* 'exception' THEN
+    RAISE EXCEPTION 'RAISE EXCEPTION FROM dbdpg_test_error_handler';
+  END IF;
+  RETURN TRUE;
+ END;
+$BC$
+};
+
+	eval {
+		$dbh->do($SQL);
+		$dbh->commit();
+	};
+	if ($@) {
+		$dbh->rollback();
+		$@ and skip ('Cannot load function  for testing', 6);
+	}
+
+	my $sth = $dbh->prepare('SELECT * FROM dbdpg_test_error_handler( ? )');
+
+	is( $sth->err, undef, q{Statement attribute 'err' is initially undef});
+
+  TODO: {
+		local $TODO = q{Known bug: notice and warnings should set err to 6};
+
+		for my $level (qw/notice warning/) {
+			$sth->execute($level);
+			is( $sth->err, 6, qq{Statement attribute 'err' set to 6 for level $level});
+		}
+	}
+
+	$dbh->do(q{SET client_min_messages = 'FATAL'});
+
+	for my $level (qw/exception/) {
+		eval { $sth->execute($level);};
+		is( $sth->err, 7, qq{Statement attribute 'err' set to 7 for level $level});
+		$dbh->rollback;
+	}
+
+	for my $level (qw/normal/) {
+		$sth->execute($level);
+		is( $sth->err, undef, qq{Statement attribute 'err' set to undef when no notices raised});
+	}
+
+	$sth->finish;
+
+	is( $sth->err, undef, qq{Statement attribute 'err' set to undef after statement finishes});
+
+	$dbh->do('DROP FUNCTION dbdpg_test_error_handler(TEXT)') or die $dbh->errstr;
+	$dbh->do('SET client_min_messages = NOTICE');
+	$dbh->commit();
+
 }
 
 SKIP: {
