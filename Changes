@@ -1,7 +1,11 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version ???
+Version 3.0.0?
+
+  - Major change in UTF-8 handlind. If client_encoding is set to UTF-8, 
+    always mark returned Perl strings as utf8. See the docs for 
+    pg_enable_utf8 for more information.
 
   - Map SQL_CHAR back to bpchar, not char. [GSM]
 
@@ -24,6 +28,7 @@ Version ???
 
   - Change NOTICE to DEBUG1 in t/02attribs.t test for handle attribute "PrintWarn":
     implicit index creation is now quieter in Postgres [Erik Rijkers]
+
 
 Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb7244046e8f47420d)
 
