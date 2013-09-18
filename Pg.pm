@@ -879,9 +879,6 @@ use 5.008001;
 		my $ftable = $_[5] || '';
 		my $args = $_[6];
 
-		## No way to currently specify it, but we are ready when there is
-		my $odbc = 0;
-
 		## Must have at least one named table
 		return undef if !$ptable and !$ftable;
 
@@ -911,7 +908,7 @@ use 5.008001;
 
 		## We now need information about each constraint we care about.
 		## Foreign table: only 'f' / Primary table: only 'p' or 'u'
-		my $WHERE = $odbc ? q{((contype = 'p'} : q{((contype IN ('p','u')};
+		my $WHERE = q{((contype IN ('p','u')};
 		if (length $ptable) {
 			$WHERE .= " AND conrelid=$oid{'P'}::oid";
 		}
@@ -1050,9 +1047,6 @@ use 5.008001;
 				next if ! ref $u;
 			}
 
-			## ODBC is primary keys only
-			next if $odbc and ($u->{'contype'} ne 'p' or $multi eq 'index');
-
 			my $conkey = $t->{'conkey'};
 			my $confkey = $t->{'confkey'};
 			for (my $y=0; $conkey->[$y]; $y++) {
@@ -1094,34 +1088,20 @@ use 5.008001;
 			} ## End each column in this foreign key
 		} ## End each foreign key
 
-		my @CLI_cols = (qw(
+		my @cols = (qw(
 			UK_TABLE_CAT UK_TABLE_SCHEM UK_TABLE_NAME UK_COLUMN_NAME
 			FK_TABLE_CAT FK_TABLE_SCHEM FK_TABLE_NAME FK_COLUMN_NAME
 			ORDINAL_POSITION UPDATE_RULE DELETE_RULE FK_NAME UK_NAME
 			DEFERABILITY UNIQUE_OR_PRIMARY UK_DATA_TYPE FK_DATA_TYPE
 		));
 
-		my @ODBC_cols = (qw(
-			PKTABLE_CAT PKTABLE_SCHEM PKTABLE_NAME PKCOLUMN_NAME
-			FKTABLE_CAT FKTABLE_SCHEM FKTABLE_NAME FKCOLUMN_NAME
-			KEY_SEQ UPDATE_RULE DELETE_RULE FK_NAME PK_NAME
-			DEFERABILITY UNIQUE_OR_PRIMARY PK_DATA_TYPE FKDATA_TYPE
-		));
-
 		if ($oldname eq 'NAME_lc') {
-			if ($odbc) {
-				for my $col (@ODBC_cols) {
-					$col = lc $col;
-				}
-			}
-			else {
-				for my $col (@CLI_cols) {
-					$col = lc $col;
-				}
+			for my $col (@cols) {
+				$col = lc $col;
 			}
 		}
 
-		return _prepare_from_data('foreign_key_info', $fkinfo, $odbc ? \@ODBC_cols : \@CLI_cols);
+		return _prepare_from_data('foreign_key_info', $fkinfo, \@cols);
 
 	}
 
