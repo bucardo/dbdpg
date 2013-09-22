@@ -3,7 +3,7 @@
 
 Version 3.0.0?
 
-  - Major change in UTF-8 handlind. If client_encoding is set to UTF-8, 
+  - Major change in UTF-8 handling. If client_encoding is set to UTF-8, 
     always mark returned Perl strings as utf8. See the docs for 
     pg_enable_utf8 for more information.
 
@@ -12,11 +12,15 @@ Version 3.0.0?
   - Do not force oids to Perl ints (CPAN bug #85836)
 
   - Return better sqlstate codes on fatal errors
-    (Rainer Weikusat)
+    [Rainer Weikusat]
+
+  - Better prepared statement names to avoid bug
+    [Spencer Sun] (CPAN bug #88827)
 
   - Adjust lo_import_with_oid check for 8.3 (CPAN bug #83145)
 
-  - Better handling of libpq errors to return SQLSTATE 08000 (Stephen Keller)
+  - Better handling of libpq errors to return SQLSTATE 08000
+    [Stephen Keller]
 
   - Make sure CREATE TABLE .. AS SELECT returns rows in non do() cases. [GSM]
 
