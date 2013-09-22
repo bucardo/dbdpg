@@ -1041,7 +1041,7 @@ use 5.006001;
 				# FK_COLUMN_NAME
 				$fkinfo->[$x][7] = $attinfo{$t->{'conrelid'}}{$conkey->[$y]}{'colname'};
 				# ORDINAL_POSITION
-				$fkinfo->[$x][8] = $conkey->[$y];
+				$fkinfo->[$x][8] = $y+1;
 				# UPDATE_RULE
 				$fkinfo->[$x][9] = "$t->{'update'}";
 				# DELETE_RULE

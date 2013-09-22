@@ -893,7 +893,7 @@ my $fk1 = [
 					 $schema, ## FK Schema
 					 $table2, ## FK Table
 					 'f2', ## FK Table
-					 2, ## Ordinal position
+					 1, ## Ordinal position
 					 3, ## Update rule
 					 3, ## Delete rule
 					 'dbd_pg_test2_fk1', ## FK name
@@ -936,7 +936,7 @@ my $fk2 = [
 					 $schema,
 					 $table2,
 					 'f3',
-					 '3',
+					 '1',
 					 '0', ## cascade
 					 '2', ## set null
 					 'dbd_pg_test2_fk2',
@@ -967,7 +967,7 @@ my $fk3 = [
 					 $schema,
 					 $table2,
 					 'f3',
-					 '3',
+					 '1',
 					 '4', ## set default
 					 '1', ## restrict
 					 'dbd_pg_test2_aafk3',
@@ -1055,8 +1055,8 @@ my $fk5 = [
 # primary column name [3]
 # foreign column name [7]
 # ordinal position [8]
-my @fk6 = @$fk5; my $fk6 = \@fk6; $fk6->[3] = 'a'; $fk6->[7] = 'f3'; $fk6->[8] = 3;
-my @fk7 = @$fk5; my $fk7 = \@fk7; $fk7->[3] = 'b'; $fk7->[7] = 'f2'; $fk7->[8] = 2;
+my @fk6 = @$fk5; my $fk6 = \@fk6; $fk6->[3] = 'a'; $fk6->[7] = 'f3'; $fk6->[8] = 2;
+my @fk7 = @$fk5; my $fk7 = \@fk7; $fk7->[3] = 'b'; $fk7->[7] = 'f2'; $fk7->[8] = 3;
 $expected = [$fk3,$fk1,$fk2,$fk5,$fk6,$fk7];
 is_deeply ($result, $expected, $t);
 
