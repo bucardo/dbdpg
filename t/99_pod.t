@@ -35,7 +35,7 @@ t/lib/App/Info/RDBMS.pm
 
 SKIP: {
 	if ($@ or $Test::Pod::VERSION < $PODVERSION) {
-		skip ("Test::Pod $PODVERSION is required", 2);
+		skip ("Test::Pod $PODVERSION is required", 9);
 	}
 	for my $filename (@pm_files) {
 		pod_file_ok($filename);
