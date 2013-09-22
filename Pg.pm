@@ -877,6 +877,9 @@ use 5.006001;
 				if (length $_->[1]) {
 					$SQL .= ' AND n.nspname = ' . $dbh->quote($_->[1]);
 				}
+				else {
+					$SQL .= ' AND pg_catalog.pg_table_is_visible(c.oid)'
+				}
 				my $info = $dbh->selectall_arrayref($SQL);
 				return undef if ! @$info;
 				$oid{$_->[2]} = $info->[0][0];

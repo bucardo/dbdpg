@@ -31,7 +31,7 @@ plan tests => 535;
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
 my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
-my ($schema,$schema2) = ('dbd_pg_testschema', 'dbd_pg_testschema2');
+my ($schema,$schema2,$schema3) = ('dbd_pg_testschema', 'dbd_pg_testschema2', 'dbd_pg_testschema3');
 my ($table1,$table2,$table3) = ('dbd_pg_test1','dbd_pg_test2','dbd_pg_test3');
 my ($sequence2,$sequence3,$sequence4) = ('dbd_pg_testsequence2','dbd_pg_testsequence3','dbd_pg_testsequence4');
 
@@ -800,7 +800,7 @@ is ($sth, undef, $t);
 
 # Drop any tables that may exist
 my $fktables = join ',' => map { "'dbd_pg_test$_'" } (1..3);
-$SQL = "SELECT relname FROM pg_catalog.pg_class WHERE relkind='r' AND relname IN ($fktables)";
+$SQL = "SELECT n.nspname||'.'||r.relname FROM pg_catalog.pg_class r, pg_catalog.pg_namespace n WHERE relkind='r' AND r.relnamespace = n.oid AND r.relname IN ($fktables)";
 {
 	local $SIG{__WARN__} = sub {};
 	for (@{$dbh->selectall_arrayref($SQL)}) {
@@ -823,12 +823,21 @@ $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test9',undef,undef,'dbd_pg_tes
 is ($sth, undef, $t);
 
 ## Create a pk table
-{
+
+# The order of the tables returned by the OID query in foreign_key_info
+# seems to be influenced by schema creation order, so create the schemas
+# in the opposite order of the search_path, so we have at least a vague
+# chance of testing that we respect the search_path order. Also create
+# the tables in the opposite order, for good measure
+$dbh->do("CREATE SCHEMA $schema3");
+$dbh->do("CREATE SCHEMA $schema2");
+$dbh->do("SET search_path = $schema2,$schema3");
+for my $s ($schema3, $schema2) {
 	local $SIG{__WARN__} = sub {};
-	$dbh->do('CREATE TABLE dbd_pg_test1 (a INT, b INT NOT NULL, c INT NOT NULL, '.
+	$dbh->do("CREATE TABLE $s.dbd_pg_test1 (a INT, b INT NOT NULL, c INT NOT NULL, ".
 			 'CONSTRAINT dbd_pg_test1_pk PRIMARY KEY (a))');
-	$dbh->do('ALTER TABLE dbd_pg_test1 ADD CONSTRAINT dbd_pg_test1_uc1 UNIQUE (b)');
-	$dbh->do('CREATE UNIQUE INDEX dbd_pg_test1_index_c ON dbd_pg_test1(c)');
+	$dbh->do("ALTER TABLE $s.dbd_pg_test1 ADD CONSTRAINT dbd_pg_test1_uc1 UNIQUE (b)");
+	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test1_index_c ON $s.dbd_pg_test1(c)");
 	$dbh->commit();
 }
 
@@ -838,10 +847,10 @@ $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
 is ($sth, undef, $t);
 
 ## Create a simple foreign key table
-{
+for my $s ($schema3, $schema2) {
 	local $SIG{__WARN__} = sub {};
-	$dbh->do('CREATE TABLE dbd_pg_test2 (f1 INT PRIMARY KEY, f2 INT NOT NULL, f3 INT NOT NULL)');
-	$dbh->do('ALTER TABLE dbd_pg_test2 ADD CONSTRAINT dbd_pg_test2_fk1 FOREIGN KEY(f2) REFERENCES dbd_pg_test1(a)');
+	$dbh->do("CREATE TABLE $s.dbd_pg_test2 (f1 INT PRIMARY KEY, f2 INT NOT NULL, f3 INT NOT NULL)");
+	$dbh->do("ALTER TABLE $s.dbd_pg_test2 ADD CONSTRAINT dbd_pg_test2_fk1 FOREIGN KEY(f2) REFERENCES $s.dbd_pg_test1(a)");
 	$dbh->commit();
 }
 
@@ -886,11 +895,11 @@ $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk1 = [
 					 undef, ## Catalog
-					 $schema, ## Schema
+					 $schema2, ## Schema
 					 $table1, ## Table
 					 'a', ## Column
 					 undef, ## FK Catalog
-					 $schema, ## FK Schema
+					 $schema2, ## FK Schema
 					 $table2, ## FK Table
 					 'f2', ## FK Table
 					 1, ## Ordinal position
@@ -929,11 +938,11 @@ $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk2 = [
 					 undef,
-					 $schema,
+					 $schema2,
 					 $table1,
 					 'b',
 					 undef,
-					 $schema,
+					 $schema2,
 					 $table2,
 					 'f3',
 					 '1',
@@ -960,11 +969,11 @@ $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk3 = [
 					 undef,
-					 $schema,
+					 $schema2,
 					 $table1,
 					 'c',
 					 undef,
-					 $schema,
+					 $schema2,
 					 $table2,
 					 'f3',
 					 '1',
@@ -982,10 +991,10 @@ is_deeply ($result, $expected, $t);
 
 ## Create another foreign key table to point to the first (primary) table
 $t='DB handle method "foreign_key_info" works for multiple fks';
-{
+for my $s ($schema3, $schema2) {
 	local $SIG{__WARN__} = sub {};
-	$dbh->do('CREATE TABLE dbd_pg_test3 (ff1 INT NOT NULL)');
-	$dbh->do('ALTER TABLE dbd_pg_test3 ADD CONSTRAINT dbd_pg_test3_fk1 FOREIGN KEY(ff1) REFERENCES dbd_pg_test1(a)');
+	$dbh->do("CREATE TABLE $s.dbd_pg_test3 (ff1 INT NOT NULL)");
+	$dbh->do("ALTER TABLE $s.dbd_pg_test3 ADD CONSTRAINT dbd_pg_test3_fk1 FOREIGN KEY(ff1) REFERENCES $s.dbd_pg_test1(a)");
 	$dbh->commit();
 }
 
@@ -993,11 +1002,11 @@ $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk4 = [
 					 undef,
-					 $schema,
+					 $schema2,
 					 $table1,
 					 'a',
 					 undef,
-					 $schema,
+					 $schema2,
 					 $table3,
 					 'ff1',
 					 '1',
@@ -1034,11 +1043,11 @@ $result = $sth->fetchall_arrayref();
 ## "dbd_pg_test2_fk4" FOREIGN KEY (f1, f3, f2) REFERENCES dbd_pg_test1(c, a, b)
 my $fk5 = [
 					 undef,
-					 $schema,
+					 $schema2,
 					 $table1,
 					 'c',
 					 undef,
-					 $schema,
+					 $schema2,
 					 $table2,
 					 'f1',
 					 '1',
@@ -1083,12 +1092,15 @@ $result = $sth->fetchrow_hashref();
 ok (exists $result->{'FK_TABLE_NAME'}, $t);
 
 # Clean everything up
-{
-	$dbh->do('DROP TABLE dbd_pg_test3');
-	$dbh->do('DROP TABLE dbd_pg_test2');
-	$dbh->do('DROP TABLE dbd_pg_test1');
+for my $s ($schema3, $schema2) {
+	$dbh->do("DROP TABLE $s.dbd_pg_test3");
+	$dbh->do("DROP TABLE $s.dbd_pg_test2");
+	$dbh->do("DROP TABLE $s.dbd_pg_test1");
 }
+$dbh->do("DROP SCHEMA $schema2");
+$dbh->do("DROP SCHEMA $schema3");
 
+$dbh->do("SET search_path = $schema");
 #
 # Test of the "tables" database handle method
 #
