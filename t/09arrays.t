@@ -216,7 +216,7 @@ for my $test (split /\n\n/ => $array_tests) {
 		my $ver = $1;
 		if ($pgversion < $ver) {
 		  SKIP: {
-				skip ('Cannot test NULL arrays unless version 8.2 or better', 4);
+				skip ('Cannot test NULL arrays unless version 8.2 or better', 5);
 			}
 			next;
 		}
