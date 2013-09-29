@@ -1345,8 +1345,8 @@ use 5.006001;
              SQL_FLOAT,                                                                    $UN, $UN, $UN ],
 ['float8',   SQL_REAL,          15,   $UN,$UN,   $PS,  1,0,2, 0,0,0,   'REAL',      0,15,
              SQL_REAL,                                                                     $UN, $UN, $UN ],
-['int8',     SQL_DOUBLE,        20,   $UN,$UN,   $UN,  1,0,2, 0,0,0,   'LONGINT',   0,0,
-             SQL_DOUBLE,                                                                   $UN, $UN, $UN ],
+['int8',     SQL_BIGINT,        20,   $UN,$UN,   $UN,  1,0,2, 0,0,0,   'LONGINT',   0,0,
+             SQL_BIGINT,                                                                   $UN, $UN, $UN ],
 ['date',     SQL_DATE,          10,   q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'DATE',      0,0,
              SQL_DATE,                                                                     $UN, $UN, $UN ],
 ['tinterval',SQL_TIME,          18,   q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'TINTERVAL', 0,6,
@@ -1386,7 +1386,7 @@ use 5.006001;
 
 	# Set up lookup for SQL types we don't want to escape.
 	my %no_escape = map { $_ => 1 }
-		DBI::SQL_INTEGER, DBI::SQL_SMALLINT, DBI::SQL_DECIMAL,
+		DBI::SQL_INTEGER, DBI::SQL_SMALLINT, DBI::SQL_BIGINT, DBI::SQL_DECIMAL,
 		DBI::SQL_FLOAT, DBI::SQL_REAL, DBI::SQL_DOUBLE, DBI::SQL_NUMERIC;
 
 	sub get_info {
@@ -3006,7 +3006,7 @@ according to the following table:
   | varchar       | VARCHAR(n)                         |
   | int2          | SMALLINT                           |
   | int4          | INT                                |
-  | int8          | /                                  |
+  | int8          | BIGINT                             |
   | money         | /                                  |
   | float4        | FLOAT(p)   p<7=float4, p<16=float8 |
   | float8        | REAL                               |
