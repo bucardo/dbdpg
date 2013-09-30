@@ -7,6 +7,8 @@ Version 3.0.0?
     always mark returned Perl strings as utf8. See the docs for 
     pg_enable_utf8 for more information.
 
+  - Bump DBI requirement to 1.54
+
   - Map SQL_CHAR back to bpchar, not char. [GSM]
 
   - Do not force oids to Perl ints (CPAN bug #85836)
@@ -38,6 +40,9 @@ Version 3.0.0?
 
   - Change NOTICE to DEBUG1 in t/02attribs.t test for handle attribute "PrintWarn":
     implicit index creation is now quieter in Postgres [Erik Rijkers]
+
+  - Use correct SQL_BIGINT constant for int8
+    [Dagfinn Ilmari Mannsåker]
 
 
 Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb7244046e8f47420d)

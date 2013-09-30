@@ -10,16 +10,16 @@ distribution_type           : module
 dynamic_config              : 1
 
 requires:
-  DBI                       : 1.52
+  DBI                       : 1.54
   perl                      : 5.006001
   version                   : 0
 build_requires:
-  DBI                       : 1.52
+  DBI                       : 1.54
   Test::More                : 0.61
   Time::HiRes               : 0
   version                   : 0
 configure_requires:
-  DBI                       : 1.52
+  DBI                       : 1.54
   version                   : 0
 recommends:
   Cwd                       : 0
