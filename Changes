@@ -44,6 +44,8 @@ Version 3.0.0?
   - Use correct SQL_BIGINT constant for int8
     [Dagfinn Ilmari Mannsåker]
 
+  - Fix assertion when binding array columns on debug perls >= 5.16
+    [Dagfinn Ilmari Mannsåker]
 
 Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb7244046e8f47420d)
 
