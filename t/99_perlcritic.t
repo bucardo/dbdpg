@@ -12,8 +12,8 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 my (@testfiles,%fileslurp,$t);
 
-if (! $ENV{RELEASE_TESTING}) {
-	plan (skip_all =>  'Test skipped unless environment variable RELEASE_TESTING is set');
+if (! $ENV{AUTHOR_TESTING}) {
+	plan (skip_all =>  'Test skipped unless environment variable AUTHOR_TESTING is set');
 }
 elsif (!eval { require Perl::Critic; 1 }) {
 	plan skip_all => 'Could not find Perl::Critic';

@@ -9,8 +9,8 @@ use warnings;
 use Test::More;
 select(($|=1,select(STDERR),$|=1)[1]);
 
-if (! $ENV{RELEASE_TESTING}) {
-	plan (skip_all =>  'Test skipped unless environment variable RELEASE_TESTING is set');
+if (! $ENV{AUTHOR_TESTING}) {
+	plan (skip_all =>  'Test skipped unless environment variable AUTHOR_TESTING is set');
 }
 
 plan tests => 19;
