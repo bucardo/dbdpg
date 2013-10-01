@@ -29,7 +29,7 @@ For information on what has changed for each version, see the Changes files.
 REQUIREMENTS:
 -------------
 
-	build, test, and install Perl 5         (at least 5.6.1)
+	build, test, and install Perl 5         (at least 5.8.4)
 	build, test, and install the DBI module (at least 1.54)
 	build, test, and install PostgreSQL     (at least 7.4)
 	build, test, and install Test::Simple   (at least 0.47)

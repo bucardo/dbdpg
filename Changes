@@ -9,6 +9,8 @@ Version 3.0.0?
 
   - Bump DBI requirement to 1.54
 
+  - Bump Perl requirement to 5.8.4
+
   - Map SQL_CHAR back to bpchar, not char. [GSM]
 
   - Do not force oids to Perl ints (CPAN bug #85836)
