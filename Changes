@@ -49,6 +49,8 @@ Version 3.0.0?
   - Fix assertion when binding array columns on debug perls >= 5.16
     [Dagfinn Ilmari Mannsåker]
 
+  - Adjust test to use 3 digit exponential values (CPAN bug #59449)
+
 Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb7244046e8f47420d)
 
   - Fix bug in pg_st_split_statement causing segfaults

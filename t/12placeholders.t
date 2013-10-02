@@ -224,14 +224,14 @@ point datatype floating point numbers
 (1.34,667)
 
 point datatype exponential numbers
-1e34,9E4
-'1e34,9E4'
-(1e+34,90000)
+1e134,9E4
+'1e134,9E4'
+(1e+134,90000)
 
 point datatype plus and minus signs
-1e+34,-.45
-'1e+34,-.45'
-(1e+34,-0.45)
+1e+134,-.45
+'1e+134,-.45'
+(1e+134,-0.45)
 
 point datatype invalid number
 123,abc
@@ -269,13 +269,13 @@ line datatype floating point numbers
 ERROR: not yet implemented
 
 line datatype exponential numbers
-1e34,9E4
-'1e34,9E4'
+1e134,9E4
+'1e134,9E4'
 ERROR: not yet implemented
 
 line datatype plus and minus signs
-1e+34,-.45
-'1e+34,-.45'
+1e+134,-.45
+'1e+134,-.45'
 ERROR: not yet implemented
 
 line datatype invalid number
