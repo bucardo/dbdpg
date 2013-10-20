@@ -107,6 +107,7 @@ use 5.008001;
 		return 'pg_catalog.';
 	}
 
+	my $methods_are_installed = 0;
 	sub driver {
 		return $drh if defined $drh;
 		my($class, $attr) = @_;
@@ -122,41 +123,44 @@ use 5.008001;
 			'Attribution' => "DBD::Pg $VERSION by Greg Sabino Mullane and others",
 		});
 
+		if (!$methods_are_installed) {
+			DBD::Pg::db->install_method('pg_cancel');
+			DBD::Pg::db->install_method('pg_endcopy');
+			DBD::Pg::db->install_method('pg_getline');
+			DBD::Pg::db->install_method('pg_getcopydata');
+			DBD::Pg::db->install_method('pg_getcopydata_async');
+			DBD::Pg::db->install_method('pg_notifies');
+			DBD::Pg::db->install_method('pg_putcopydata');
+			DBD::Pg::db->install_method('pg_putcopyend');
+			DBD::Pg::db->install_method('pg_ping');
+			DBD::Pg::db->install_method('pg_putline');
+			DBD::Pg::db->install_method('pg_ready');
+			DBD::Pg::db->install_method('pg_release');
+			DBD::Pg::db->install_method('pg_result'); ## NOT duplicated below!
+			DBD::Pg::db->install_method('pg_rollback_to');
+			DBD::Pg::db->install_method('pg_savepoint');
+			DBD::Pg::db->install_method('pg_server_trace');
+			DBD::Pg::db->install_method('pg_server_untrace');
+			DBD::Pg::db->install_method('pg_type_info');
 
-		DBD::Pg::db->install_method('pg_cancel');
-		DBD::Pg::db->install_method('pg_endcopy');
-		DBD::Pg::db->install_method('pg_getline');
-		DBD::Pg::db->install_method('pg_getcopydata');
-		DBD::Pg::db->install_method('pg_getcopydata_async');
-		DBD::Pg::db->install_method('pg_notifies');
-		DBD::Pg::db->install_method('pg_putcopydata');
-		DBD::Pg::db->install_method('pg_putcopyend');
-		DBD::Pg::db->install_method('pg_ping');
-		DBD::Pg::db->install_method('pg_putline');
-		DBD::Pg::db->install_method('pg_ready');
-		DBD::Pg::db->install_method('pg_release');
-		DBD::Pg::db->install_method('pg_result'); ## NOT duplicated below!
-		DBD::Pg::db->install_method('pg_rollback_to');
-		DBD::Pg::db->install_method('pg_savepoint');
-		DBD::Pg::db->install_method('pg_server_trace');
-		DBD::Pg::db->install_method('pg_server_untrace');
-		DBD::Pg::db->install_method('pg_type_info');
+			DBD::Pg::st->install_method('pg_cancel');
+			DBD::Pg::st->install_method('pg_result');
+			DBD::Pg::st->install_method('pg_ready');
 
-		DBD::Pg::st->install_method('pg_cancel');
-		DBD::Pg::st->install_method('pg_result');
-		DBD::Pg::st->install_method('pg_ready');
+			DBD::Pg::db->install_method('pg_lo_creat');
+			DBD::Pg::db->install_method('pg_lo_open');
+			DBD::Pg::db->install_method('pg_lo_write');
+			DBD::Pg::db->install_method('pg_lo_read');
+			DBD::Pg::db->install_method('pg_lo_lseek');
+			DBD::Pg::db->install_method('pg_lo_tell');
+			DBD::Pg::db->install_method('pg_lo_close');
+			DBD::Pg::db->install_method('pg_lo_unlink');
+			DBD::Pg::db->install_method('pg_lo_import');
+			DBD::Pg::db->install_method('pg_lo_import_with_oid');
+			DBD::Pg::db->install_method('pg_lo_export');
 
-		DBD::Pg::db->install_method('pg_lo_creat');
-		DBD::Pg::db->install_method('pg_lo_open');
-		DBD::Pg::db->install_method('pg_lo_write');
-		DBD::Pg::db->install_method('pg_lo_read');
-		DBD::Pg::db->install_method('pg_lo_lseek');
-		DBD::Pg::db->install_method('pg_lo_tell');
-		DBD::Pg::db->install_method('pg_lo_close');
-		DBD::Pg::db->install_method('pg_lo_unlink');
-		DBD::Pg::db->install_method('pg_lo_import');
-		DBD::Pg::db->install_method('pg_lo_import_with_oid');
-		DBD::Pg::db->install_method('pg_lo_export');
+			$methods_are_installed++;
+		}
 
 		return $drh;
 
