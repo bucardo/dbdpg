@@ -11,7 +11,7 @@
 
 use strict;
 use warnings;
-use 5.008004;
+use 5.008001;
 
 {
 	package DBD::Pg;

@@ -11,7 +11,7 @@ dynamic_config              : 1
 
 requires:
   DBI                       : 1.54
-  perl                      : 5.008004
+  perl                      : 5.008001
   version                   : 0
 build_requires:
   DBI                       : 1.54

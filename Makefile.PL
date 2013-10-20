@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
 use Config;
 use strict;
 use warnings;
-use 5.008004;
+use 5.008001;
 
 ## No version.pm for this one, as the prereqs are not loaded yet.
 my $VERSION = '2.19.3';
