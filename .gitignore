@@ -13,3 +13,6 @@ core*
 MYMETA*
 *~
 *.tmp
+*#
+*.orig
+*.blame
