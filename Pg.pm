@@ -153,6 +153,7 @@ use 5.008001;
 			DBD::Pg::db->install_method('pg_lo_read');
 			DBD::Pg::db->install_method('pg_lo_lseek');
 			DBD::Pg::db->install_method('pg_lo_tell');
+			DBD::Pg::db->install_method('pg_lo_truncate');
 			DBD::Pg::db->install_method('pg_lo_close');
 			DBD::Pg::db->install_method('pg_lo_unlink');
 			DBD::Pg::db->install_method('pg_lo_import');
@@ -2142,6 +2143,13 @@ location and C<undef> upon failure. This function cannot be used if AutoCommit i
   $loc = $dbh->pg_lo_tell($lobj_fd);
 
 Returns the current read or write location on the large object C<$lobj_fd> and C<undef> upon failure.
+This function cannot be used if AutoCommit is enabled.
+
+=item lo_truncate
+
+  $loc = $dbh->pg_lo_truncate($lobj_fd, $len);
+
+Truncates the given large object to the new size. Returns C<undef> on failure, and 0 on success.
 This function cannot be used if AutoCommit is enabled.
 
 =item lo_close

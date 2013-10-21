@@ -232,6 +232,8 @@ int pg_db_lo_lseek (SV *dbh, int fd, int offset, int whence);
 
 int pg_db_lo_tell (SV *dbh, int fd);
 
+int pg_db_lo_truncate (SV *dbh, int fd, size_t len);
+
 int pg_db_lo_unlink (SV *dbh, unsigned int lobjId);
 
 unsigned int pg_db_lo_import (SV *dbh, char *filename);

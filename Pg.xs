@@ -475,6 +475,16 @@ pg_lo_tell(dbh, fd)
 
 
 void
+pg_lo_truncate(dbh, fd, len)
+	SV * dbh
+	int fd
+    size_t len
+	CODE:
+		const int ret = pg_db_lo_truncate(dbh, fd, len);
+		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
+
+
+void
 pg_lo_close(dbh, fd)
 	SV * dbh
 	int fd

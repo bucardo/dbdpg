@@ -4477,6 +4477,7 @@ int pg_db_lo_lseek (SV * dbh, int fd, int offset, int whence)
 
 }
 
+
 /* ================================================================== */
 int pg_db_lo_tell (SV * dbh, int fd)
 {
@@ -4498,6 +4499,31 @@ int pg_db_lo_tell (SV * dbh, int fd)
 	}
 
 	return lo_tell(imp_dbh->conn, fd); /* current position, <0 on error */
+
+}
+
+/* ================================================================== */
+int pg_db_lo_truncate (SV * dbh, int fd, size_t len)
+{
+
+	dTHX;
+	D_imp_dbh(dbh);
+
+	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_lo_truncate (fd: %d length: %d)\n",
+						 THEADER_slow, fd, (int)len);
+
+	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+		croak("Cannot call pg_lo_truncate when AutoCommit is on");
+	}
+
+	if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
+		return -1;
+
+	if (TLIBPQ_slow) {
+		TRC(DBILOGFP, "%slo_truncate\n", THEADER_slow);
+	}
+
+	return lo_truncate(imp_dbh->conn, fd, len); /* 0 success, <0 on error */
 
 }
 

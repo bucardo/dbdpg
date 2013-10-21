@@ -1424,13 +1424,28 @@ $t='DB handle method "pg_lo_tell" works';
 $result = $dbh->pg_lo_tell($handle);
 is ($result, 11, $t);
 
-$t='DB handle method "pg_lo_read" read back the same data that was written';
+$t='DB handle method "pg_lo_read" reads back the same data that was written';
 $dbh->pg_lo_lseek($handle, 0, 0);
 my ($buf2,$data) = ('','');
 while ($dbh->pg_lo_read($handle, $data, 513)) {
 	$buf2 .= $data;
 }
 is (length($buf), length($buf2), $t);
+
+SKIP: {
+
+	$pgversion < 80300 and skip ('Server version 8.3 or greater needed for pg_lo_truncate tests', 2);
+	$t='DB handle method "pg_lo_truncate" works';
+	$result = $dbh->pg_lo_truncate($handle, 4);
+	is ($result, 0, $t);
+
+	$dbh->pg_lo_lseek($handle, 0, 0);
+	($buf2,$data) = ('','');
+	while ($dbh->pg_lo_read($handle, $data, 100)) {
+		$buf2 .= $data;
+	}
+	is (length($buf2), 4, $t);
+}
 
 $t='DB handle method "pg_lo_close" works after read';
 $result = $dbh->pg_lo_close($handle);
