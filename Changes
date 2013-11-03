@@ -21,6 +21,9 @@ Version 3.0.0?
   - Better prepared statement names to avoid bug
     [Spencer Sun] (CPAN bug #88827)
 
+  - Add pg_expression field to statistics_info output to show 
+    functional index information (CPAN bug #76608) [GSM]
+
   - Adjust lo_import_with_oid check for 8.3 (CPAN bug #83145)
 
   - Better handling of libpq errors to return SQLSTATE 08000
