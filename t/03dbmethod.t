@@ -688,8 +688,10 @@ is ($sth, undef, $t);
 			 'CONSTRAINT dbd_pg_test1_pk PRIMARY KEY (a))');
 	$dbh->do("ALTER TABLE $table1 ADD CONSTRAINT dbd_pg_test1_uc1 UNIQUE (b)");
 	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test1_index_c ON $table1(c)");
+
 	$dbh->do("CREATE TABLE $table2 (a INT, b INT, c INT, PRIMARY KEY(a,b), UNIQUE(b,c))");
-	$dbh->do("CREATE INDEX dbd_pg_test2_skipme ON $table2(c,(a+b))");
+	$dbh->do("CREATE INDEX dbd_pg_test2_expr ON $table2(c,(a+b))");
+
 	$dbh->do("CREATE TABLE $table3 (a INT, b INT, c INT, PRIMARY KEY(a)) WITH OIDS");
 	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_index_b ON $table3(b)");
 	$dbh->do("CREATE INDEX dbd_pg_test3_index_c ON $table3 USING hash(c)");
@@ -700,30 +702,32 @@ is ($sth, undef, $t);
 
 my $correct_stats = {
 one => [
-	[ undef, $schema, $table1, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef ],
-	[ undef, $schema, $table1, '0', undef, 'dbd_pg_test1_index_c', 'btree',  1, 'c', 'A', '0', '1', undef ],
-	[ undef, $schema, $table1, '0', undef, 'dbd_pg_test1_pk',      'btree',  1, 'a', 'A', '0', '1', undef ],
-	[ undef, $schema, $table1, '0', undef, 'dbd_pg_test1_uc1',     'btree',  1, 'b', 'A', '0', '1', undef ],
+	[ undef, $schema, $table1, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef ],
+	[ undef, $schema, $table1, '0', undef, 'dbd_pg_test1_index_c', 'btree',  1, 'c', 'A', '0', '1', undef, 'c' ],
+	[ undef, $schema, $table1, '0', undef, 'dbd_pg_test1_pk',      'btree',  1, 'a', 'A', '0', '1', undef, 'a' ],
+	[ undef, $schema, $table1, '0', undef, 'dbd_pg_test1_uc1',     'btree',  1, 'b', 'A', '0', '1', undef, 'b' ],
 	],
 	two => [
-	[ undef, $schema, $table2, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef ],
-	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  1, 'b', 'A', '0', '1', undef ],
-	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  2, 'c', 'A', '0', '1', undef ],
-	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  1, 'a', 'A', '0', '1', undef ],
-	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  2, 'b', 'A', '0', '1', undef ],
+	[ undef, $schema, $table2, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef ],
+	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  1, 'b', 'A', '0', '1', undef, 'b' ],
+	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  2, 'c', 'A', '0', '1', undef, 'c' ],
+	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a' ],
+	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  2, 'b', 'A', '0', '1', undef, 'b' ],
+	[ undef, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  1, 'c', 'A', '0', '1', undef, 'c' ],
+	[ undef, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  2, undef, 'A', '0', '1', undef, '(a + b)' ],
 	],
 	three => [
-	[ undef, $schema, $table3, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef ],
-	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef ],
-	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef ],
-	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))' ],
-	[ undef, $schema, $table3, '1', undef, 'dbd_pg_test3_oid',     'btree',  1, 'oid', 'A', '0', '1', undef ],
-	[ undef, $schema, $table3, '1', undef, 'dbd_pg_test3_index_c', 'hashed', 1, 'c', 'A', '0', '4', undef ],
+	[ undef, $schema, $table3, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef ],
+	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef, 'b' ],
+	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a' ],
+	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))', 'c' ],
+	[ undef, $schema, $table3, '1', undef, 'dbd_pg_test3_oid',     'btree',  1, 'oid', 'A', '0', '1', undef, 'oid' ],
+	[ undef, $schema, $table3, '1', undef, 'dbd_pg_test3_index_c', 'hashed', 1, 'c', 'A', '0', '4', undef, 'c' ],
 ],
 	three_uo => [
-	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef ],
-	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef ],
-	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))' ],
+	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef, 'b' ],
+	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a' ],
+	[ undef, $schema, $table3, '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))', 'c' ],
 	],
 };
 
@@ -787,7 +791,6 @@ $dbh->do("DROP TABLE $table2");
 $dbh->do("DROP TABLE $table1");
 
 } ## end of statistics_info tests
-
 
 #
 # Test of the "foreign_key_info" database handle method

@@ -611,8 +611,9 @@ use 5.008001;
 		my $stats_sql = qq{
             SELECT
                 c.relname, i.indkey, i.indisunique, i.indisclustered, a.amname,
-                n.nspname, c.relpages, c.reltuples, i.indexprs,
-                pg_get_expr(i.indpred,i.indrelid) as predicate
+                n.nspname, c.relpages, c.reltuples, i.indexprs, i.indnatts, i.indexrelid,
+                pg_get_expr(i.indpred,i.indrelid) as predicate,
+                pg_get_expr(i.indexprs,i.indrelid, true) AS indexdef
             FROM
                 pg_catalog.pg_index i, pg_catalog.pg_class c,
                 pg_catalog.pg_class d, pg_catalog.pg_am a,
@@ -622,6 +623,14 @@ use 5.008001;
                 AND i.indexrelid = c.oid AND c.relam = a.oid
             ORDER BY
                 i.indisunique desc, a.amname, c.relname
+        };
+
+		my $indexdef_sql = qq{
+            SELECT
+                pg_get_indexdef(indexrelid,x,true)
+            FROM
+              pg_index
+            JOIN generate_series(1,?) s(x) ON indexrelid = ?
         };
 
 		my @output_rows;
@@ -645,6 +654,7 @@ use 5.008001;
 				$tst->{reltuples},# CARDINALITY
 				$tst->{relpages}, # PAGES
 				undef,            # FILTER_CONDITION
+                undef,            # pg_expression
 			]);
 		}
 
@@ -653,16 +663,16 @@ use 5.008001;
 		$colnames_sth->execute(@exe_args) or return undef;
 		my $colnames = $colnames_sth->fetchall_hashref('attnum');
 
+		# Fetch the individual parts of the index
+		my $sth_indexdef = $dbh->prepare($indexdef_sql);
+
 		# Fetch the index definitions
 		my $sth = $dbh->prepare($stats_sql);
 		$sth->execute(@exe_args) or return undef;
 
 		STAT_ROW:
-		#use Data::Dumper;
-		#warn Dumper $stats_sql;
 		while (my $row = $sth->fetchrow_hashref) {
-			#warn Dumper $row;
-			next if $row->{indexprs}; # We can't return these accurately via this interface ...
+
 			next if $unique_only and !$row->{indisunique};
 
 			my $indtype = $row->{indisclustered}
@@ -675,20 +685,25 @@ use 5.008001;
 			my $nonunique = $row->{indisunique} ? 0 : 1;
 
 			my @index_row = (
-				undef,             # TABLE_CAT
-				$row->{nspname},   # TABLE_SCHEM
-				$table,            # TABLE_NAME
-				$nonunique,        # NON_UNIQUE
-				undef,             # INDEX_QUALIFIER
-				$row->{relname},   # INDEX_NAME
-				$indtype,          # TYPE
-				undef,             # ORDINAL_POSITION
-				undef,             # COLUMN_NAME
-				'A',               # ASC_OR_DESC
-				$row->{reltuples}, # CARDINALITY
-				$row->{relpages},  # PAGES
-				$row->{predicate}, # FILTER_CONDITION
+				undef,             # TABLE_CAT         0
+				$row->{nspname},   # TABLE_SCHEM       1
+				$table,            # TABLE_NAME        2
+				$nonunique,        # NON_UNIQUE        3
+				undef,             # INDEX_QUALIFIER   4
+				$row->{relname},   # INDEX_NAME        5
+				$indtype,          # TYPE              6
+				undef,             # ORDINAL_POSITION  7
+				undef,             # COLUMN_NAME       8
+				'A',               # ASC_OR_DESC       9
+				$row->{reltuples}, # CARDINALITY      10
+				$row->{relpages},  # PAGES            11
+				$row->{predicate}, # FILTER_CONDITION 12
+                undef,             # pg_expression    13
 			);
+
+			## Grab expression information
+			$sth_indexdef->execute($row->{indnatts}, $row->{indexrelid});
+			my $expression = $sth_indexdef->fetchall_arrayref();
 
 			my $col_nums = $row->{indkey};
 			$col_nums =~ s/^\s+//;
@@ -697,15 +712,17 @@ use 5.008001;
 			my $ord_pos = 1;
 			for my $col_num (@col_nums) {
 				my @copy = @index_row;
-				$copy[7] = $ord_pos++; # ORDINAL_POSITION
+				$copy[7] = $ord_pos; # ORDINAL_POSITION
 				$copy[8] = $colnames->{$col_num}->{attname}; # COLUMN_NAME
+				$copy[13] = $expression->[$ord_pos-1][0];
 				push(@output_rows, \@copy);
+				$ord_pos++;
 			}
 		}
 
 		my @output_colnames = qw/ TABLE_CAT TABLE_SCHEM TABLE_NAME NON_UNIQUE INDEX_QUALIFIER
 					INDEX_NAME TYPE ORDINAL_POSITION COLUMN_NAME ASC_OR_DESC
-					CARDINALITY PAGES FILTER_CONDITION /;
+					CARDINALITY PAGES FILTER_CONDITION pg_expression /;
 
 		return _prepare_from_data('statistics_info', \@output_rows, \@output_colnames);
 	}
@@ -2983,10 +3000,23 @@ Returns a statement handle that can be fetched from to give statistics informati
 on a specific table and its indexes. The C<$table> argument is mandatory. The 
 C<$schema> argument is optional but recommended. The C<$unique_only> argument, if true, 
 causes only information about unique indexes to be returned. The C<$quick> argument is 
-not used by DBD::Pg. For information on the format of the rows returned, please see the DBI 
-documentation.
+not used by DBD::Pg. For information on the format of the standard rows returned, please 
+see the DBI documentation.
 
 =for html <a href="http://search.cpan.org/~timb/DBI/DBI.pm#statistics_info">DBI section on statistics_info</a>
+
+In addition, the following Postgres specific columns are returned:
+
+=over 4
+
+=item pg_expression
+
+Postgres allows indexes on functions and scalar expressions based on one or more columns. This field 
+will always be populated if an index, but the lack of an entry in the COLUMN_NAME should indicate 
+that this is an index expression.
+
+=back
+
 
 =head3 B<tables>
 
