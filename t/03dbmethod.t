@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 535;
+plan tests => 536;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -681,9 +681,14 @@ $t='DB handle method "statistics_info" returns undef: bad table';
 $sth = $dbh->statistics_info(undef,undef,'dbd_pg_test9',undef,undef);
 is ($sth, undef, $t);
 
+
 ## Create some tables with various indexes
 {
 	local $SIG{__WARN__} = sub {};
+
+	## Drop the third schema
+	$dbh->do("DROP SCHEMA IF EXISTS $schema3 CASCADE");
+
 	$dbh->do("CREATE TABLE $table1 (a INT, b INT NOT NULL, c INT NOT NULL, ".
 			 'CONSTRAINT dbd_pg_test1_pk PRIMARY KEY (a))');
 	$dbh->do("ALTER TABLE $table1 ADD CONSTRAINT dbd_pg_test1_uc1 UNIQUE (b)");
@@ -844,6 +849,9 @@ for my $s ($schema3, $schema2) {
 	$dbh->commit();
 }
 
+## Make sure the foreign_key_info is turning this back on internally:
+$dbh->{pg_expand_array} = 0;
+
 ## Good primary with no foreign keys
 $t='DB handle method "foreign_key_info" returns undef: good pk (but unreferenced)';
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
@@ -891,6 +899,9 @@ for my $r (@$result) {
 	}
 }
 is_deeply (\%missing, {}, $t);
+
+$t='Calling foreign_key_info does not change pg_expand_array';
+is ($dbh->{pg_expand_array}, 0, $t);
 
 ## Good primary
 $t='DB handle method "foreign_key_info" works for good pk';

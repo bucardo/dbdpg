@@ -973,7 +973,13 @@ use 5.008001;
 
 		my $sth = $dbh->prepare($fk_sql);
 		$sth->execute();
+
+		## We have to make sure expand_array is on for the items below to work
+		my $oldexpand = $dbh->FETCH('pg_expand_array');
+		$oldexpand or $dbh->STORE('pg_expand_array', 1);
+
 		my $info = $sth->fetchall_arrayref({});
+		$oldexpand or $dbh->STORE('pg_expand_array', 0);
 		return undef if ! defined $info or ! @$info;
 
 		## Return undef if just ptable given but no fk found
