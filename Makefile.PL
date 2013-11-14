@@ -205,7 +205,7 @@ my %opts =
      PREREQ_PM      => {
                         'ExtUtils::MakeMaker' => '6.11',
                         'DBI'                 => '1.54',
-                        'Test::More'          => '0.61',
+                        'Test::More'          => '0.88',
                         'Time::HiRes'         => '0',
                         'version'             => '0',
                        },
