@@ -15,7 +15,7 @@ requires:
   version                   : 0
 build_requires:
   DBI                       : 1.54
-  Test::More                : 0.61
+  Test::More                : 0.88
   Time::HiRes               : 0
   version                   : 0
 configure_requires:
