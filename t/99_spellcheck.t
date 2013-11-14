@@ -152,6 +152,7 @@ __DATA__
 
 ## Common:
 
+grokbase
 ActiveKids
 adbin
 adsrc
@@ -558,12 +559,17 @@ YAML
 yml
 
 ## TODO:
+ala
+hstore
 cpantesters
 hashrefs
 rowtypes
 struct
 
 ## README.dev:
+abc
+pgp
+shortid
 bucardo
 Conway's
 cpantesters
@@ -642,6 +648,12 @@ ints
 Garamond
 gborg
 Hofmann
+BIGINT
+bpchar
+oids
+perls
+reinstalling
+spclocation
 Kai
 marshalling
 n's
@@ -657,6 +669,7 @@ uc
 VC
 
 ## Pg.pm:
+onwards
 lseg
 afterwards
 hashrefs
