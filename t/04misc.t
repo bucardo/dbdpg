@@ -109,7 +109,7 @@ $BC$
 		$@ and skip ('Cannot load function  for testing', 6);
 	}
 
-	my $sth = $dbh->prepare('SELECT * FROM dbdpg_test_error_handler( ? )');
+	$sth = $dbh->prepare('SELECT * FROM dbdpg_test_error_handler( ? )');
 
 	is( $sth->err, undef, q{Statement attribute 'err' is initially undef});
 
@@ -132,12 +132,12 @@ $BC$
 
 	for my $level (qw/normal/) {
 		$sth->execute($level);
-		is( $sth->err, undef, qq{Statement attribute 'err' set to undef when no notices raised});
+		is( $sth->err, undef, q{Statement attribute 'err' set to undef when no notices raised});
 	}
 
 	$sth->finish;
 
-	is( $sth->err, undef, qq{Statement attribute 'err' set to undef after statement finishes});
+	is( $sth->err, undef, q{Statement attribute 'err' set to undef after statement finishes});
 
 	$dbh->do('DROP FUNCTION dbdpg_test_error_handler(TEXT)') or die $dbh->errstr;
 	$dbh->do('SET client_min_messages = NOTICE');
@@ -466,7 +466,7 @@ $sth = $dbh->prepare('INSERT INTO tt VALUES (?,?)');
 
 $sth->bind_param(1, undef, $stt[0]); ## 4
 $sth->bind_param(2, undef, $stt[1]); ## 1 aka SQL_CHAR
-$sth->execute(2, "0301");
+$sth->execute(2, '0301');
 
 my $SQL = 'SELECT char4 FROM tt';
 my $result = $dbh->selectall_arrayref($SQL)->[0][0];

@@ -22,7 +22,7 @@ BEGIN {
 		my $fh;
 		if (open $fh, '<', $file) {
 			{ local $/; $_ = <$fh>; }
-			close $fh;
+			close $fh or die qq{Could not close file "$file" $!\n};
 			for my $keyword (qw/ CCFLAGS INC LIBS /) {
 				if (/^#\s+$keyword => (.+)/m) {
 					diag "$keyword: $1";
