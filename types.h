@@ -38,6 +38,7 @@ sql_type_info_t* sql_type_data(int);
 #define            PG_CSTRING  2275
 #define               PG_DATE  1082
 #define          PG_DATERANGE  3912
+#define      PG_EVENT_TRIGGER  3838
 #define        PG_FDW_HANDLER  3115
 #define             PG_FLOAT4  700
 #define             PG_FLOAT8  701

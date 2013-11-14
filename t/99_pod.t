@@ -94,6 +94,7 @@ SKIP: {
 		 qr{PG_DATEARRAY},
 		 qr{PG_DATERANGE},
 		 qr{PG_DATERANGEARRAY},
+		 qr{PG_EVENT_TRIGGER},
 		 qr{PG_FDW_HANDLER},
 		 qr{PG_FLOAT4},
 		 qr{PG_FLOAT4ARRAY},

@@ -58,6 +58,7 @@ constant(name=Nullch)
 	PG_DATEARRAY          = 1182
 	PG_DATERANGE          = 3912
 	PG_DATERANGEARRAY     = 3913
+	PG_EVENT_TRIGGER      = 3838
 	PG_FDW_HANDLER        = 3115
 	PG_FLOAT4             = 700
 	PG_FLOAT4ARRAY        = 1021
