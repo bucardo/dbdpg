@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 ## We cannot 'use warnings' here as PG_TSQUERY and others trip it up
 ## no critic (RequireUseWarnings)
-use Test::More tests => 151;
+use Test::More;
 select(($|=1,select(STDERR),$|=1)[1]);
 
 use DBD::Pg qw(:pg_types :async);
@@ -46,6 +46,7 @@ is (PG_DATE                 ,  1082, 'PG_DATE returns correct value');
 is (PG_DATEARRAY            ,  1182, 'PG_DATEARRAY returns correct value');
 is (PG_DATERANGE            ,  3912, 'PG_DATERANGE returns correct value');
 is (PG_DATERANGEARRAY       ,  3913, 'PG_DATERANGEARRAY returns correct value');
+is (PG_EVENT_TRIGGER        ,  3838, 'PG_EVENT_TRIGGER returns correct value');
 is (PG_FDW_HANDLER          ,  3115, 'PG_FDW_HANDLER returns correct value');
 is (PG_FLOAT4               ,   700, 'PG_FLOAT4 returns correct value');
 is (PG_FLOAT4ARRAY          ,  1021, 'PG_FLOAT4ARRAY returns correct value');
@@ -164,3 +165,4 @@ is (PG_XIDARRAY             ,  1011, 'PG_XIDARRAY returns correct value');
 is (PG_XML                  ,   142, 'PG_XML returns correct value');
 is (PG_XMLARRAY             ,   143, 'PG_XMLARRAY returns correct value');
 
+done_testing();
