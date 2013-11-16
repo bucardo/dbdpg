@@ -469,7 +469,7 @@ version: $version
 			$debug and diag qq{Writing to "$conf"};
 			print $cfh "\n\n## DBD::Pg testing parameters\n";
 			print $cfh "port=$testport\n";
-			print $cfh "max_connections=4\n";
+			print $cfh "max_connections=5\n";
 			if ($version >= 8.0) {
 				print $cfh "log_statement = 'all'\n";
 				print $cfh "log_line_prefix = '%m [%p] '\n";
@@ -485,6 +485,9 @@ version: $version
 				print {$cfh} "logging_collector = on\n";
 			}
 			print $cfh "log_min_messages = 'DEBUG1'\n";
+			print $cfh "log_filename = 'postgres%Y-%m-%d.log'\n";
+			print $cfh "log_rotation_size = 0\n";
+
 			print $cfh "listen_addresses='127.0.0.1'\n" if $^O =~ /Win32/;
 			print $cfh "\n";
 			close $cfh or die qq{Could not close "$conf": $!\n};
