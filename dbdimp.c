@@ -3739,11 +3739,11 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 
 	/* If the AutoInactiveDestroy flag has been set, we go no further */
 	if (DBIc_AIADESTROY(imp_dbh)) {
-		if (TRACE4) {
-			TRC(DBILOGFP, "%sskipping sth destroy due to AutoInactiveDestroy\n", THEADER);
+		if (TRACE4_slow) {
+			TRC(DBILOGFP, "%sskipping sth destroy due to AutoInactiveDestroy\n", THEADER_slow);
 		}
 		DBIc_IMPSET_off(imp_sth); /* let DBI know we've done it */
-		if (TEND) TRC(DBILOGFP, "%sEnd dbd_st_destroy (AutoInactiveDestroy set)\n", THEADER);
+		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_destroy (AutoInactiveDestroy set)\n", THEADER_slow);
 		return;
 	}
 
