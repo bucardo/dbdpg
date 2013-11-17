@@ -7,7 +7,7 @@ Version 3.0.0?
     always mark returned Perl strings as utf8. See the docs for 
     pg_enable_utf8 for more information.
 
-  - Bump DBI requirement to 1.54
+  - Bump DBI requirement to 1.614
 
   - Bump Perl requirement to 5.8.1
 

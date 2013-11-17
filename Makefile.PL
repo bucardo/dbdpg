@@ -5,7 +5,7 @@ use warnings;
 use 5.008001;
 
 ## No version.pm for this one, as the prereqs are not loaded yet.
-my $VERSION = '2.19.3';
+my $VERSION = '2.20.1_1';
 
 ## App::Info is stored inside t/lib
 ## Create a proper path so we can use it below
@@ -204,7 +204,7 @@ my %opts =
      ABSTRACT       => 'PostgreSQL database driver for the DBI module',
      PREREQ_PM      => {
                         'ExtUtils::MakeMaker' => '6.11',
-                        'DBI'                 => '1.54',
+                        'DBI'                 => '1.614',
                         'Test::More'          => '0.88',
                         'Time::HiRes'         => '0',
                         'version'             => '0',

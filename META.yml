@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name                        : DBD-Pg
-version                     : 2.19.3
+version                     : 2.20.1_1
 abstract                    : DBI PostgreSQL interface
 author:              
   - Greg Sabino Mullane <greg@turnstep.com>
@@ -10,16 +10,16 @@ distribution_type           : module
 dynamic_config              : 1
 
 requires:
-  DBI                       : 1.54
+  DBI                       : 1.614
   perl                      : 5.008001
   version                   : 0
 build_requires:
-  DBI                       : 1.54
+  DBI                       : 1.614
   Test::More                : 0.88
   Time::HiRes               : 0
   version                   : 0
 configure_requires:
-  DBI                       : 1.54
+  DBI                       : 1.614
   version                   : 0
 recommends:
   Cwd                       : 0
@@ -30,10 +30,10 @@ recommends:
 provides:
   DBD::Pg:
     file                    : Pg.pm
-    version                 : 2.19.3
+    version                 : 2.20.1_1
   Bundle::DBD::Pg:
     file                    : lib/Bundle/DBD/Pg.pm
-    version                 : 2.19.3
+    version                 : 2.20.1_1
 
 keywords:
   - Postgres

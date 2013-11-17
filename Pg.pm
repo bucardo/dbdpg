@@ -16,7 +16,7 @@ use 5.008001;
 {
 	package DBD::Pg;
 
-	use version; our $VERSION = qv('2.19.3');
+	use version; our $VERSION = qv('2.20.1_1');
 
 	use DBI ();
 	use DynaLoader ();
@@ -71,7 +71,7 @@ use 5.008001;
 	Exporter::export_ok_tags('pg_types', 'async');
 	@EXPORT = qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT PG_BYTEA);
 
-	require_version DBI 1.54;
+	require_version DBI 1.614;
 
 	bootstrap DBD::Pg $VERSION;
 
@@ -1773,7 +1773,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 2.19.3 of the DBD::Pg module
+This documents version 2.20.1_1 of the DBD::Pg module
 
 =head1 DESCRIPTION
 
