@@ -6,14 +6,17 @@ Version 3.0.0?
   - Major change in UTF-8 handling. If client_encoding is set to UTF-8, 
     always mark returned Perl strings as utf8. See the docs for 
     pg_enable_utf8 for more information.
+    [Greg Sabino Mullane, David E. Wheeler, David Christensen]
 
   - Bump DBI requirement to 1.614
 
   - Bump Perl requirement to 5.8.1
 
-  - Map SQL_CHAR back to bpchar, not char. [GSM]
+  - Map SQL_CHAR back to bpchar, not char.
+    [Greg Sabino Mullane, reported by H.Merijn Brand]
 
-  - Do not force oids to Perl ints (CPAN bug #85836)
+  - Do not force oids to Perl ints
+    [Greg Sabino Mullane] (CPAN bug #85836)
 
   - Return better sqlstate codes on fatal errors
     [Rainer Weikusat]
@@ -22,14 +25,19 @@ Version 3.0.0?
     [Spencer Sun] (CPAN bug #88827)
 
   - Add pg_expression field to statistics_info output to show 
-    functional index information (CPAN bug #76608) [GSM]
+    functional index information
+    [Greg Sabino Mullane] (CPAN bug #76608)
 
-  - Adjust lo_import_with_oid check for 8.3 (CPAN bug #83145)
+  - Adjust lo_import_with_oid check for 8.3
+    (CPAN bug #83145)
 
   - Better handling of libpq errors to return SQLSTATE 08000
     [Stephen Keller]
 
-  - Make sure CREATE TABLE .. AS SELECT returns rows in non do() cases. [GSM]
+  - Make sure CREATE TABLE .. AS SELECT returns rows in non do() cases.
+
+  - Add support for AutoInactiveDestroy
+    [David Dick] (CPAN bug #68893)
 
   - Fix ORDINAL_POSITION in foreign_key_info
     [Dagfinn Ilmari Mannsåker] (CPAN bug #88794)
@@ -37,14 +45,21 @@ Version 3.0.0?
   - Fix foreign_key_info with unspecified schema
     [Dagfinn Ilmari Mannsåker] (CPAN bug #88787)
 
-  - Remove math.h linking, as we no longer need it (CPAN bug #79256)
+  - Allow foreign_key_info to work when pg_expand_array is off
+    [Greg Sabino Mullane and Tim Bunce] (CPAN bug #51780)
 
-  - Spelling fix per CPAN bug #78168
+  - Remove math.h linking, as we no longer need it
+    (CPAN bug #79256)
 
-  - Better wording for the AutoCommit docs (CPAN bug #82536)
+  - Spelling fixes
+    (CPAN bug #78168)
+
+  - Better wording for the AutoCommit docs
+    (CPAN bug #82536)
 
   - Change NOTICE to DEBUG1 in t/02attribs.t test for handle attribute "PrintWarn":
-    implicit index creation is now quieter in Postgres [Erik Rijkers]
+    implicit index creation is now quieter in Postgres.
+    [Erik Rijkers]
 
   - Use correct SQL_BIGINT constant for int8
     [Dagfinn Ilmari Mannsåker]
@@ -52,10 +67,12 @@ Version 3.0.0?
   - Fix assertion when binding array columns on debug perls >= 5.16
     [Dagfinn Ilmari Mannsåker]
 
-  - Adjust test to use 3 digit exponential values (CPAN bug #59449)
+  - Adjust test to use 3 digit exponential values
+    [Greg Sabino Mullane] (CPAN bug #59449)
 
-  - Avoid reinstalling driver methods in threads (CPAN bug #83638)
-    [Dagfinn Ilmari Mannsåker]
+  - Avoid reinstalling driver methods in threads
+    [Dagfinn Ilmari Mannsåker] (CPAN bug #83638)
+
 
 Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb7244046e8f47420d)
 
