@@ -152,6 +152,7 @@ __DATA__
 
 ## Common:
 
+AutoInactiveDestroy
 grokbase
 ActiveKids
 adbin
