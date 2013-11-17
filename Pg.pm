@@ -2244,6 +2244,13 @@ have the child process reconnect to the database with a fresh database handle, o
 rewrite your application not to use forking. See the section on L</Asynchronous Queries> 
 for a way to have your script continue to work while the database is processing a request.
 
+=head3 B<AutoInactiveDestroy> (boolean)
+
+The InactiveDestroy attribute, described above, needs to be explicitly set in the child 
+process after a fork. If the code that performs the fork is in a third party module such 
+as Sys::Syslog, this can present a problem. Use AutoInactiveDestroy to get around this 
+problem.
+
 =head3 B<RaiseError> (boolean, inherited)
 
 Forces errors to always raise an exception. Although it defaults to off, it is recommended that this 

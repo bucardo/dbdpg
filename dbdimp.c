@@ -3737,6 +3737,16 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 	if (NULL == imp_sth->seg) /* Already been destroyed! */
 		croak("dbd_st_destroy called twice!");
 
+	/* If the AutoInactiveDestroy flag has been set, we go no further */
+	if (DBIc_AIADESTROY(imp_dbh)) {
+		if (TRACE4) {
+			TRC(DBILOGFP, "%sskipping sth destroy due to AutoInactiveDestroy\n", THEADER);
+		}
+		DBIc_IMPSET_off(imp_sth); /* let DBI know we've done it */
+		if (TEND) TRC(DBILOGFP, "%sEnd dbd_st_destroy (AutoInactiveDestroy set)\n", THEADER);
+		return;
+	}
+
 	/* If the InactiveDestroy flag has been set, we go no further */
 	if (DBIc_IADESTROY(imp_dbh)) {
 		if (TRACE4_slow) {

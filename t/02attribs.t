@@ -18,7 +18,7 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 249;
+plan tests => 260;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -101,6 +101,7 @@ a Taint
 a Profile (not tested)
 a ReadOnly
 
+d AutoInactiveDestroy (must be the last one tested)
 d InactiveDestroy (must be the last one tested)
 
 };
@@ -1530,6 +1531,79 @@ SKIP: {
 $t='Database handle attribute "InactiveDestroy" is set properly';
 $attrib = $dbh->{InactiveDestroy};
 ok (!$attrib, $t);
+
+# Disconnect in preparation for the fork tests
+ok ($dbh->disconnect(), 'Disconnect from database');
+
+$t='Database handle attribute "Active" is false after disconnect';
+$attrib = $dbh->{Active};
+is ($attrib, '', $t);
+
+SKIP: {
+	skip ('Cannot test database handle "AutoInactiveDestroy" on a non-forking system', 8)
+		if $^O =~ /Win/;
+
+	require Test::Simple;
+
+	skip ('Test::Simple version 0.47 or better required for testing of attribute "AutoInactiveDestroy"', 8)
+		if $Test::Simple::VERSION < 0.47;
+
+	# Test of forking. Hang on to your hats
+
+	my $answer = 42;
+	$SQL = "SELECT $answer FROM dbd_pg_test WHERE id > ? LIMIT 1";
+
+	for my $destroy (0,1) {
+
+		$dbh = connect_database({nosetup => 1, AutoCommit => 1 });
+		$dbh->{'AutoInactiveDestroy'} = $destroy;
+		$dbh->{'pg_server_prepare'} = 0;
+		$sth = $dbh->prepare($SQL);
+		$sth->execute(1);
+		$sth->finish();
+
+		# Desired flow: parent test, child test, child kill, parent test
+
+		if (fork) {
+			$t=qq{Parent in fork test is working properly ("AutoInactiveDestroy" = $destroy)};
+			$sth->execute(1);
+			$val = $sth->fetchall_arrayref()->[0][0];
+			is ($val, $answer, $t);
+			# Let the child exit first
+			select(undef,undef,undef,0.3);
+		}
+		else { # Child
+			select(undef,undef,undef,0.1); # Age before beauty
+			exit; ## Calls disconnect via DESTROY unless AutoInactiveDestroy set
+		}
+
+		if ($destroy) {
+			$t=qq{Ping works after the child has exited ("AutoInactiveDestroy" = $destroy)};
+			ok ($dbh->ping(), $t);
+
+			$t='Successful ping returns a SQLSTATE code of 00000 (empty string)';
+			my $state = $dbh->state();
+			is ($state, '', $t);
+
+			$t='Statement handle works after forking';
+			$sth->execute(1);
+			$val = $sth->fetchall_arrayref()->[0][0];
+			is ($val, $answer, $t);
+		}
+		else {
+			$t=qq{Ping fails after the child has exited ("AutoInactiveDestroy" = $destroy)};
+			is ( $dbh->ping(), 0, $t);
+
+			$t='Failed ping returns a SQLSTATE code of 08000';
+			my $state = $dbh->state();
+			is ($state, '08000', $t);
+
+			$t=qq{pg_ping gives an error code of -2 after the child has exited ("AutoInactiveDestroy" = $destroy)};
+			is ( $dbh->pg_ping(), -2,$t);
+			ok ($dbh->disconnect(), 'Disconnect from database');
+		}
+	}
+}
 
 # Disconnect in preparation for the fork tests
 ok ($dbh->disconnect(), 'Disconnect from database');
