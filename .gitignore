@@ -16,3 +16,7 @@ MYMETA*
 *#
 *.orig
 *.blame
+dbdpg.testing.*
+*.log
+*.patch
+
