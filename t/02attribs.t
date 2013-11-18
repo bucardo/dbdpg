@@ -1557,7 +1557,7 @@ SKIP: {
 
 		$dbh = connect_database({nosetup => 1, AutoCommit => 1 });
 		$dbh->{'AutoInactiveDestroy'} = $destroy;
-		$dbh->{'pg_server_prepare'} = 0;
+		$dbh->{'pg_server_prepare'} = 1;
 		$sth = $dbh->prepare($SQL);
 		$sth->execute(1);
 		$sth->finish();
