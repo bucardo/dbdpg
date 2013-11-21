@@ -3819,10 +3819,12 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 
 
 /* ================================================================== */
-int pg_db_putline (SV * dbh, const char * buffer)
+int pg_db_putline (SV * dbh, SV * svbuf)
 {
 	dTHX;
 	D_imp_dbh(dbh);
+	const char * buffer;
+	STRLEN len;
 	int copystatus;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_putline\n", THEADER_slow);
@@ -3830,6 +3832,11 @@ int pg_db_putline (SV * dbh, const char * buffer)
 	/* We must be in COPY IN state */
 	if (PGRES_COPY_IN != imp_dbh->copystate)
 		croak("pg_putline can only be called directly after issuing a COPY FROM command\n");
+
+	if (!svbuf || !SvOK(svbuf))
+		croak("pg_putline can only be called with a defined value\n");
+
+	buffer = SvPV(svbuf,len);
 
 	TRACE_PQPUTCOPYDATA;
 	copystatus = PQputCopyData(imp_dbh->conn, buffer, (int)strlen(buffer));

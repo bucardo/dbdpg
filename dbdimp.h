@@ -196,7 +196,7 @@ SV * pg_stringify_array(SV * input, const char * array_delim, int server_version
 
 int pg_quickexec (SV *dbh, const char *sql, const int asyncflag);
 
-int pg_db_putline (SV *dbh, const char *buffer);
+int pg_db_putline (SV *dbh, SV *svbuf);
 
 int pg_db_getline (SV *dbh, SV * svbuf, int length);
 

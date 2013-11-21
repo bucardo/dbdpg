@@ -638,7 +638,7 @@ lo_export(dbh, lobjId, filename)
 void
 pg_putline(dbh, buf)
 	SV * dbh
-	char * buf
+	SV * buf
 	CODE:
 		ST(0) = (pg_db_putline(dbh, buf)!=0) ? &PL_sv_no : &PL_sv_yes;
 
@@ -646,7 +646,7 @@ pg_putline(dbh, buf)
 void
 putline(dbh, buf)
 	SV * dbh
-	char * buf
+	SV * buf
 	CODE:
 		ST(0) = (pg_db_putline(dbh, buf)!=0) ? &PL_sv_no : &PL_sv_yes;
 
