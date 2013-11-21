@@ -329,7 +329,7 @@ char * quote_float(char *string, STRLEN len, STRLEN *retlen, int estring)
 	if (len<1)
 		croak("Invalid float");
 
-	result = string;
+	result = (char*)string;
 	*retlen = len;
 
 	/* Allow some standard strings in */
