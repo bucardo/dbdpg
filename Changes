@@ -1,11 +1,11 @@
 'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 3.0.0?
+Version 3.0.0
 
   - Major change in UTF-8 handling. If client_encoding is set to UTF-8, 
-    always mark returned Perl strings as utf8. See the docs for 
-    pg_enable_utf8 for more information.
+    always mark returned Perl strings as utf8. See the pg_enable_utf8 docs
+    for more information.
     [Greg Sabino Mullane, David E. Wheeler, David Christensen]
 
   - Bump DBI requirement to 1.614
