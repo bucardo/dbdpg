@@ -36,7 +36,7 @@ utility may be considered more general, so feel free to use it elsewhere.
 The methods added in addition to the usual File::Spec suspects are designed to
 facilitate locating files and directories on the file system, as well as
 searching those files. The assumption is that, in order to provide useful
-metadata about a given software package, an App::Info subclass must find
+meta data about a given software package, an App::Info subclass must find
 relevant files and directories and parse them with regular expressions. This
 class offers methods that simplify those tasks.
 
@@ -47,13 +47,15 @@ use File::Spec ();
 use Config;
 use vars qw(@ISA $VERSION);
 @ISA = qw(File::Spec);
-$VERSION = '0.45';
+$VERSION = '0.57';
 
-my %path_dems = (MacOS   => qr',',
-                 MSWin32 => qr';',
-                 os2     => qr';',
-                 VMS     => undef,
-                 epoc    => undef);
+my %path_dems = (
+    MacOS   => qr',',
+    MSWin32 => qr';',
+    os2     => qr';',
+    VMS     => undef,
+    epoc    => undef
+);
 
 my $path_dem = exists $path_dems{$^O} ? $path_dems{$^O} : qr':';
 
@@ -71,6 +73,8 @@ to. The constructor here is provided merely as a convenience.
 =cut
 
 sub new { bless {}, ref $_[0] || $_[0] }
+
+##############################################################################
 
 =head1 OBJECT METHODS
 
@@ -94,33 +98,35 @@ sub first_dir {
     return;
 }
 
+##############################################################################
+
 =head2 first_path
 
   my $path = $ENV{PATH};
   $dir = $util->first_path($path);
 
 Takes the $path string and splits it into a list of directory paths, based on
-the path demarcator on the local file system. Then calls C<first_dir()> to
-return the first directoy in the path list that exists on the local file
-system. The path demarcator is specified for the following file systems:
+the path delimiter on the local file system. Then calls C<first_dir()> to
+return the first directory in the path list that exists on the local file
+system. The path delimiter is specified for the following file systems:
 
 =over 4
 
-=item MacOS: ","
+=item * MacOS: ","
 
-=item MSWin32: ";"
+=item * MSWin32: ";"
 
-=item os2: ";"
+=item * os2: ";"
 
-=item VMS: undef
+=item * VMS: undef
 
 This method always returns undef on VMS. Patches welcome.
 
-=item epoc: undef
+=item * epoc: undef
 
 This method always returns undef on epoch. Patches welcome.
 
-=item Unix: ":"
+=item * Unix: ":"
 
 All other operating systems are assumed to be Unix-based.
 
@@ -132,6 +138,8 @@ sub first_path {
     return unless $path_dem;
     shift->first_dir(split /$path_dem/, shift)
 }
+
+##############################################################################
 
 =head2 first_file
 
@@ -149,6 +157,8 @@ sub first_file {
     return;
 }
 
+##############################################################################
+
 =head2 first_exe
 
   my $exe = $util->first_exe(@exelist);
@@ -163,6 +173,8 @@ sub first_exe {
     foreach (@_) { return $_ if -f && -x }
     return;
 }
+
+##############################################################################
 
 =head2 first_cat_path
 
@@ -220,12 +232,14 @@ sub first_cat_path {
     return;
 }
 
+##############################################################################
+
 =head2 first_cat_dir
 
   my $dir = $util->first_cat_dir('ick.txt', @paths);
   $dir = $util->first_cat_dir(['this.txt', 'that.txt'], @paths);
 
-Funtionally identical to C<first_cat_path()>, except that it returns the
+Functionally identical to C<first_cat_path()>, except that it returns the
 directory path in which the first file was found, rather than the full
 concatenated path. Thus, in the above example, if the file found was
 F</usr/bin/httpd>, while C<first_cat_path()> would return that value,
@@ -245,12 +259,14 @@ sub first_cat_dir {
     return;
 }
 
+##############################################################################
+
 =head2 first_cat_exe
 
-  my $exe = $util->first_cat_exe('ick.txt', @paths);
-  $exe = $util->first_cat_exe(['this.txt', 'that.txt'], @paths);
+  my $exe = $util->first_cat_exe('ick.exe', @paths);
+  $exe = $util->first_cat_exe(['this.exe', 'that.exe'], @paths);
 
-Funtionally identical to C<first_cat_path()>, except that it returns the full
+Functionally identical to C<first_cat_path()>, except that it returns the full
 path to the first executable file found, rather than simply the first file
 found.
 
@@ -267,6 +283,8 @@ sub first_cat_exe {
     }
     return;
 }
+
+##############################################################################
 
 =head2 search_file
 
@@ -286,7 +304,7 @@ be grabbed like this:
   my @nums = $util->search_file($file, $regex);
 
 Now C<@nums> will contain the values C<(6, 5, 8)>. Note that in a scalar
-context, the above search would yeild an array reference:
+context, the above search would yield an array reference:
 
   my $regex = qr/Version\s+(\d+)\.(\d+),[^\d]*(\d+)/;
   my $nums = $util->search_file($file, $regex);
@@ -306,7 +324,7 @@ contains a single element: C<("the who?")>.
 
 Note that a regular expression without parentheses -- that is, one that
 doesn't grab values and put them into $1, $2, etc., will never successfully
-match a line in this method. You must include something to parentetically
+match a line in this method. You must include something to parenthetically
 match. If you just want to know the value of what was matched, parenthesize
 the whole thing and if the value returns, you have a match. Also, if you need
 to match patterns across lines, try using multiple regular expressions with
@@ -317,7 +335,7 @@ C<multi_search_file()>, instead.
 sub search_file {
     my ($self, $file, $regex) = @_;
     return unless $file && $regex;
-    open F, "<$file" or Carp::croak "Cannot open $file: $!\n";
+    open F, "<$file" or require Carp && Carp::croak("Cannot open $file: $!\n");
     my @ret;
     while (<F>) {
         # If we find a match, we're done.
@@ -330,17 +348,48 @@ sub search_file {
     return wantarray ? @ret : $#ret <= 0 ? $ret[0] : \@ret;
 }
 
+##############################################################################
+
+=head2 files_in_dir
+
+  my @files = $util->files_in_dir($dir);
+     @files = $util->files_in_dir($dir, $filter);
+  my $files = $util->files_in_dir($dir);
+     $files = $util->files_in_dir($dir, $filter);
+
+Returns an list or array reference of all of the files and directories in the
+file system directory C<$dir>. An optional second argument is a code reference
+that filters the files. The code reference should examine the C<$_> for a file
+name and return true if it's a file that you're interested and false if it's
+not.
+
+=cut
+
+sub files_in_dir {
+    my ($self, $dir, $code) = @_;
+    return unless $dir;
+    local *DIR;
+    opendir DIR, $dir or require Carp && Carp::croak("Cannot open $dir: $!\n");
+    my @files = $code
+        ? grep { $code->() } readdir DIR
+        : readdir DIR;
+    closedir DIR;
+    return wantarray ? @files : \@files;
+}
+
+##############################################################################
+
 =head2 multi_search_file
 
   my @regexen = (qr/(one)/, qr/(two)\s+(three)/);
   my @matches = $util->multi_search_file($file, @regexen);
 
-Like C<search_file()>, this mehod opens C<$file> and parses it for regular
-expresion matches. This method, however, can take a list of regular
+Like C<search_file()>, this method opens C<$file> and parses it for regular
+expression matches. This method, however, can take a list of regular
 expressions to look for, and will return the values found for all of them.
 Regular expressions that match and return multiple values will be returned as
-array referernces, while those that match and return a single value will
-return just that single value.
+array references, while those that match and return a single value will return
+just that single value.
 
 For example, say you are parsing a file with lines like the following:
 
@@ -401,7 +450,7 @@ sub multi_search_file {
     my ($self, $file, @regexen) = @_;
     return unless $file && @regexen;
     my @each = @regexen;
-    open F, "<$file" or Carp::croak "Cannot open $file: $!\n";
+    open F, "<$file" or require Carp && Carp::croak("Cannot open $file: $!\n");
     my %ret;
     while (my $line = <F>) {
         my @splice;
@@ -427,6 +476,8 @@ sub multi_search_file {
     return wantarray ? @ret{@regexen} : \@ret{@regexen};
 }
 
+##############################################################################
+
 =head2 lib_dirs
 
   my @dirs = $util->lib_dirs;
@@ -442,22 +493,29 @@ sub lib_dirs {
     grep { defined and length }
     map { split ' ' }
     grep { defined }
-    $Config{libsdirs},
-    $Config{loclibpth},
+    # Quote Config access to work around
+    # http://bugs.activestate.com/show_bug.cgi?id=89447
+    "$Config{libsdirs}",
+    "$Config{loclibpth}",
     '/sw/lib';
 }
 
 1;
 __END__
 
-=head1 BUGS
+=head1 SUPPORT
 
-Please send bug reports to <bug-app-info@rt.cpan.org> or file them at
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=App-Info>.
+This module is stored in an open L<GitHub
+repository|http://github.com/theory/app-info/>. Feel free to fork and
+contribute!
+
+Please file bug reports via L<GitHub
+Issues|http://github.com/theory/app-info/issues/> or by sending mail to
+L<bug-App-Info@rt.cpan.org|mailto:bug-App-Info@rt.cpan.org>.
 
 =head1 AUTHOR
 
-David Wheeler <david@justatheory.com>
+David E. Wheeler <david@justatheory.com>
 
 =head1 SEE ALSO
 
@@ -467,9 +525,9 @@ L<App::Info::RDBMS::PostgreSQL|App::Info::RDBMS::PostgreSQL>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2002-2004, David Wheeler. All Rights Reserved.
+Copyright (c) 2002-2011, David E. Wheeler. Some Rights Reserved.
 
-This module is free software; you can redistribute it and/or modify it under the
-same terms as Perl itself.
+This module is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

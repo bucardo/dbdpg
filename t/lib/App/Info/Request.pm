@@ -42,7 +42,8 @@ to handle the request appropriately.
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.45';
+use Carp;
+$VERSION = '0.57';
 
 ##############################################################################
 
@@ -117,6 +118,21 @@ sub new {
 ##############################################################################
 
 =head2 Object Methods
+
+=head3 key
+
+  my $key = $req->key;
+
+Returns the key stored in the App::Info::Request object. The key is used by
+the App::Info subclass to uniquely identify the information it is harvesting,
+such as the path to an executable. It might be used by request handlers,
+for example, to see if an option was passed on the command-line.
+
+=cut
+
+sub key { $_[0]->{key} }
+
+##############################################################################
 
 =head3 message
 
@@ -244,14 +260,19 @@ sub value {
 1;
 __END__
 
-=head1 BUGS
+=head1 SUPPORT
 
-Please send bug reports to <bug-app-info@rt.cpan.org> or file them at
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=App-Info>.
+This module is stored in an open L<GitHub
+repository|http://github.com/theory/app-info/>. Feel free to fork and
+contribute!
+
+Please file bug reports via L<GitHub
+Issues|http://github.com/theory/app-info/issues/> or by sending mail to
+L<bug-App-Info@rt.cpan.org|mailto:bug-App-Info@rt.cpan.org>.
 
 =head1 AUTHOR
 
-David Wheeler <david@justatheory.com>
+David E. Wheeler <david@justatheory.com>
 
 =head1 SEE ALSO
 
@@ -277,7 +298,7 @@ exemplars for using App::Info::Request objects when handling events.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2002-2004, David Wheeler. All Rights Reserved.
+Copyright (c) 2002-2011, David E. Wheeler. Some Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it under the
 same terms as Perl itself.

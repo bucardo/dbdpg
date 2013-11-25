@@ -26,7 +26,7 @@ methods defined by App::Info::RDBMS. Methods that trigger events will trigger
 them only the first time they're called (See L<App::Info|App::Info> for
 documentation on handling events). To start over (after, say, someone has
 installed PostgreSQL) construct a new App::Info::RDBMS::PostgreSQL object to
-aggregate new metadata.
+aggregate new meta data.
 
 Some of the methods trigger the same events. This is due to cross-calling of
 shared subroutines. However, any one event should be triggered no more than
@@ -42,13 +42,13 @@ use App::Info::RDBMS;
 use App::Info::Util;
 use vars qw(@ISA $VERSION);
 @ISA = qw(App::Info::RDBMS);
-$VERSION = '0.45';
+$VERSION = '0.57';
 use constant WIN32 => $^O eq 'MSWin32';
 
 my $u = App::Info::Util->new;
 my @EXES = qw(postgres createdb createlang createuser dropdb droplang
-              dropuser initdb pg_dump pg_dumpall pg_resetxlog pg_restore
-              pg_upgrade postmaster vacuumdb psql);
+              dropuser initdb pg_dump pg_dumpall pg_restore postmaster
+              vacuumdb psql);
 
 =head1 INTERFACE
 
@@ -95,11 +95,7 @@ via the C<search_exe_names> parameter). These parameters are:
 
 =item search_pg_dumpall_names
 
-=item search_pg_resetxlog_names
-
 =item search_pg_restore_names
-
-=item search_pg_upgrade_names
 
 =item search_postmaster_names
 
@@ -139,16 +135,16 @@ sub new {
     my @paths = $self->search_bin_dirs;
     my @exes = $self->search_exe_names;
 
-    if (my $cfg = $u->first_cat_exe(\@exes, @paths) and !$ENV{DBDPG_TESTINITDB}) {
+    if (my $cfg = $u->first_cat_exe(\@exes, @paths)) {
         # We found it. Confirm.
-        $self->{pg_config} = $self->confirm( key      => 'pg_config',
+        $self->{pg_config} = $self->confirm( key      => 'path to pg_config',
                                              prompt   => "Path to pg_config?",
                                              value    => $cfg,
                                              callback => sub { -x },
                                              error    => 'Not an executable');
     } else {
         # Handle an unknown value.
-        $self->{pg_config} = $self->unknown( key      => 'pg_config',
+        $self->{pg_config} = $self->unknown( key      => 'path to pg_config',
                                              prompt   => "Path to pg_config?",
                                              callback => sub { -x },
                                              error    => 'Not an executable');
@@ -293,7 +289,7 @@ sub name {
     $get_version->($self) unless $self->{'--version'};
 
     # Handle an unknown name.
-    $self->{name} ||= $self->unknown( key => 'name' );
+    $self->{name} ||= $self->unknown( key => 'postgres name' );
 
     # Return the name.
     return $self->{name};
@@ -354,7 +350,7 @@ sub version {
             # Return true.
             return 1;
         };
-        $self->{version} = $self->unknown( key      => 'version number',
+        $self->{version} = $self->unknown( key     => 'postgres version number',
                                            callback => $chk_version);
     }
 
@@ -369,7 +365,7 @@ sub version {
 
 Returns the PostgreSQL major version number. App::Info::RDBMS::PostgreSQL
 parses the major version number from the system call C<`pg_config --version`>.
-For example, C<version()> returns "7.1.2", then this method returns "7".
+For example, if C<version()> returns "7.1.2", then this method returns "7".
 
 B<Events:>
 
@@ -407,7 +403,7 @@ sub major_version {
     # Load data.
     $get_version->($self) unless exists $self->{'--version'};
     # Handle an unknown value.
-    $self->{major} = $self->unknown( key      => 'major version number',
+    $self->{major} = $self->unknown( key      => 'postgres major version number',
                                      callback => $is_int)
       unless $self->{major};
     return $self->{major};
@@ -455,7 +451,7 @@ sub minor_version {
     # Load data.
     $get_version->($self) unless exists $self->{'--version'};
     # Handle an unknown value.
-    $self->{minor} = $self->unknown( key      => 'minor version number',
+    $self->{minor} = $self->unknown( key      => 'postgres minor version number',
                                      callback => $is_int)
       unless defined $self->{minor};
     return $self->{minor};
@@ -503,7 +499,7 @@ sub patch_version {
     # Load data.
     $get_version->($self) unless exists $self->{'--version'};
     # Handle an unknown value.
-    $self->{patch} = $self->unknown( key      => 'patch version number',
+    $self->{patch} = $self->unknown( key      => 'postgres patch version number',
                                      callback => $is_int)
       unless defined $self->{patch};
     return $self->{patch};
@@ -558,7 +554,7 @@ my $find_exe = sub  {
         if (my $exe = $u->first_cat_exe([$self->$meth(), $exe], $bin)) {
             # We found it. Confirm.
             $self->{$key} = $self->confirm(
-                key      => $key,
+                key      => "path to $key",
                 prompt   => "Path to $key executable?",
                 value    => $exe,
                 callback => sub { -x },
@@ -567,7 +563,7 @@ my $find_exe = sub  {
         } else {
             # Handle an unknown value.
             $self->{$key} = $self->unknown(
-                key      => $key,
+                key      => "path to $key",
                 prompt   => "Path to $key executable?",
                 callback => sub { -x },
                 error    => 'Not an executable'
@@ -628,7 +624,7 @@ sub bin_dir {
         } else {
             # Handle an unknown value.
             $self->error("Cannot find bin directory");
-            $self->{bin_dir} = $self->unknown( key      => 'bin directory',
+            $self->{bin_dir} = $self->unknown( key      => 'postgres bin dir',
                                                callback => $is_dir)
         }
     }
@@ -674,7 +670,7 @@ sub inc_dir {
         } else {
             # Handle an unknown value.
             $self->error("Cannot find include directory");
-            $self->{inc_dir} = $self->unknown( key      => 'include directory',
+            $self->{inc_dir} = $self->unknown( key      => 'postgres include dir',
                                                callback => $is_dir)
         }
     }
@@ -720,7 +716,7 @@ sub lib_dir {
         } else {
             # Handle an unknown value.
             $self->error("Cannot find library directory");
-            $self->{lib_dir} = $self->unknown( key      => 'library directory',
+            $self->{lib_dir} = $self->unknown( key      => 'postgres library dir',
                                                callback => $is_dir)
         }
     }
@@ -769,7 +765,7 @@ sub so_lib_dir {
             # Handle an unknown value.
             $self->error("Cannot find shared object library directory");
             $self->{so_lib_dir} =
-              $self->unknown( key      => 'shared object library directory',
+              $self->unknown( key      => 'postgres so directory',
                               callback => $is_dir)
         }
     }
@@ -968,11 +964,7 @@ The available executable methods are:
 
 =item pg_dumpall
 
-=item pg_resetxlog
-
 =item pg_restore
-
-=item pg_upgrade
 
 =item postmaster
 
@@ -1006,11 +998,7 @@ And the corresponding search names methods are:
 
 =item search_pg_dumpall_names
 
-=item search_pg_resetxlog_names
-
 =item search_pg_restore_names
-
-=item search_pg_upgrade_names
 
 =item search_postmaster_names
 
@@ -1043,14 +1031,19 @@ Path to executable?
 1;
 __END__
 
-=head1 BUGS
+=head1 SUPPORT
 
-Please send bug reports to <bug-app-info@rt.cpan.org> or file them at
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=App-Info>.
+This module is stored in an open L<GitHub
+repository|http://github.com/theory/app-info/>. Feel free to fork and
+contribute!
+
+Please file bug reports via L<GitHub
+Issues|http://github.com/theory/app-info/issues/> or by sending mail to
+L<bug-App-Info@rt.cpan.org|mailto:bug-App-Info@rt.cpan.org>.
 
 =head1 AUTHOR
 
-David Wheeler <david@justatheory.com> based on code by Sam Tregar
+David E. Wheeler <david@justatheory.com> based on code by Sam Tregar
 <sam@tregar.com>.
 
 =head1 SEE ALSO
@@ -1067,7 +1060,7 @@ L<http://www.postgresql.org/> is the PostgreSQL home page.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2002-2013, David Wheeler. All Rights Reserved.
+Copyright (c) 2002-2011, David E. Wheeler. Some Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it under the
 same terms as Perl itself.

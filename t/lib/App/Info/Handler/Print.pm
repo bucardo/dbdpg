@@ -52,7 +52,7 @@ print event messages to different filehandle.
 use strict;
 use App::Info::Handler;
 use vars qw($VERSION @ISA);
-$VERSION = '0.58';
+$VERSION = '0.57';
 @ISA = qw(App::Info::Handler);
 
 # Register ourselves.

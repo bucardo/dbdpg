@@ -33,7 +33,7 @@ handlers, read on!
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.45';
+$VERSION = '0.57';
 
 my %handlers;
 
@@ -51,7 +51,7 @@ This class method may be used by App::Info::Handler subclasses to register
 themselves with App::Info::Handler. Multiple registrations are supported. The
 idea is that a subclass can define different functionality by specifying
 different strings that represent different modes of constructing an
-App::Info::Handler subclass object. The keys are case-sensitve, and should be
+App::Info::Handler subclass object. The keys are case-sensitive, and should be
 unique across App::Info::Handler subclasses so that many subclasses can be
 loaded and used separately. If the C<$key> is already registered,
 C<register_handler()> will throw an exception. The values are code references
@@ -131,7 +131,7 @@ __END__
 =head1 SUBCLASSING
 
 I hatched the idea of the App::Info event model with its subclassable handlers
-as a way of separating the aggregation of application metadata from writing a
+as a way of separating the aggregation of application meta data from writing a
 user interface for handling certain conditions. I felt it a better idea to
 allow people to create their own user interfaces, and instead to provide only
 a few examples. The App::Info::Handler class defines the API interface for
@@ -216,7 +216,7 @@ The final step in creating a new App::Info event handler is to implement the
 C<handler()> method itself. This method takes a single argument, an
 App::Info::Request object, and is expected to return true if it handled the
 request, and false if it did not. The App::Info::Request object contains all
-the metadata relevant to a request, including the type of event that triggered
+the meta data relevant to a request, including the type of event that triggered
 it; see L<App::Info::Request|App::Info::Request> for its documentation.
 
 Use the App::Info::Request object however you like to handle the request
@@ -234,23 +234,23 @@ so is up to you and the handler.
 
 For unknown and confirm events, you are expected to prompt the user for a
 value. If it's a confirm event, offer the known value (found in
-C<< $req->value >>) as a default.
+C<$req-E<gt>value>) as a default.
 
 =item *
 
-For unknown and confirm events, you are expected to call C<< $req->callback >>
-and pass in the new value. If C<< $req->callback >> returns a false value, you
-are expected to display the error message in C<< $req->error >> and prompt the
-user again. Note that C<< $req->value >> calls C<< $req->callback >>
+For unknown and confirm events, you are expected to call C<$req-E<gt>callback>
+and pass in the new value. If C<$req-E<gt>callback> returns a false value, you
+are expected to display the error message in C<$req-E<gt>error> and prompt the
+user again. Note that C<$req-E<gt>value> calls C<$req-E<gt>callback>
 internally, and thus assigns the value and returns true if
-C<< $req->callback >> returns true, and does not assign the value and returns
-false if C<< $req->callback >> returns false.
+C<$req-E<gt>callback> returns true, and does not assign the value and returns
+false if C<$req-E<gt>callback> returns false.
 
 =item *
 
 For unknown and confirm events, if you've collected a new value and
-C<< $req->callback >> returns true for that value, you are expected to assign
-the value by passing it to C<< $req->value >>. This allows App::Info to give
+C<$req-E<gt>callback> returns true for that value, you are expected to assign
+the value by passing it to C<$req-E<gt>value>. This allows App::Info to give
 the value back to the calling App::Info concrete subclass.
 
 =back
@@ -261,14 +261,19 @@ their logical examples. Consult the App::Info documentation of the L<event
 methods|App::Info/"Events"> for details on how App::Info constructs the
 App::Info::Request object for each event type.
 
-=head1 BUGS
+=head1 SUPPORT
 
-Please send bug reports to <bug-app-info@rt.cpan.org> or file them at
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=App-Info>.
+This module is stored in an open L<GitHub
+repository|http://github.com/theory/app-info/>. Feel free to fork and
+contribute!
+
+Please file bug reports via L<GitHub
+Issues|http://github.com/theory/app-info/issues/> or by sending mail to
+L<bug-App-Info@rt.cpan.org|mailto:bug-App-Info@rt.cpan.org>.
 
 =head1 AUTHOR
 
-David Wheeler <david@justatheory.com>
+David E. Wheeler <david@justatheory.com>
 
 =head1 SEE ALSO
 
@@ -295,7 +300,7 @@ App::Info clients.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2002-2004, David Wheeler. All Rights Reserved.
+Copyright (c) 2002-2011, David E. Wheeler. Some Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it under the
 same terms as Perl itself.

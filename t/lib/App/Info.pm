@@ -21,10 +21,10 @@ App::Info - Information about software packages on a system
 =head1 DESCRIPTION
 
 App::Info is an abstract base class designed to provide a generalized
-interface for subclasses that provide metadata about software packages
+interface for subclasses that provide meta data about software packages
 installed on a system. The idea is that these classes can be used in Perl
 application installers in order to determine whether software dependencies
-have been fulfilled, and to get necessary metadata about those software
+have been fulfilled, and to get necessary meta data about those software
 packages.
 
 App::Info provides an event model for handling events triggered by App::Info
@@ -54,7 +54,7 @@ use App::Info::Handler;
 use App::Info::Request;
 use vars qw($VERSION);
 
-$VERSION = '0.45';
+$VERSION = '0.57';
 
 ##############################################################################
 ##############################################################################
@@ -129,7 +129,7 @@ parameters that can be passed to C<new()> are:
 =item search_exe_names
 
 An array reference of possible names for binary executables. These may be used
-by subclases to search for application programs that can be used to retreive
+by subclasses to search for application programs that can be used to retrieve
 application information, such as version numbers. The subclasses generally
 provide reasonable defaults for most cases.
 
@@ -142,13 +142,13 @@ addition to and in preference to the defaults used by each subclass.
 =item search_lib_names
 
 An array reference of possible names for library files. These may be used by
-subclases to search for library files for the application. The subclasses
+subclasses to search for library files for the application. The subclasses
 generally provide reasonable defaults for most cases.
 
 =item search_so_lib_names
 
 An array reference of possible names for shared object library files. These
-may be used by subclases to search for shared object library files for the
+may be used by subclasses to search for shared object library files for the
 application. The subclasses generally provide reasonable defaults for most
 cases.
 
@@ -162,7 +162,7 @@ subclass.
 =item search_inc_names
 
 An array reference of possible names for include files. These may be used by
-subclases to search for include files for the application. The subclasses
+subclasses to search for include files for the application. The subclasses
 generally provide reasonable defaults for most cases.
 
 =item search_inc_dirs
@@ -223,10 +223,10 @@ sub new {
 ##############################################################################
 ##############################################################################
 
-=head2 Metadata Object Methods
+=head2 Meta Data Object Methods
 
 These are abstract methods in App::Info and must be provided by its
-subclasses. They provide the essential metadata of the software package
+subclasses. They provide the essential meta data of the software package
 supported by the App::Info subclass.
 
 =head3 key_name
@@ -410,17 +410,17 @@ sub download_url  { $croak->(shift, 'download_url') }
 =head2 Search Attributes
 
 These methods return lists of things to look for on the local file system when
-searching for appliation programs, library files, and include files. They are
+searching for application programs, library files, and include files. They are
 empty by default, since each subclass generally relies on its own settings,
-but you can add your own as preferred search parameters by specifying them
-as parameters to the C<new()> constructor.
+but you can add your own as preferred search parameters by specifying them as
+parameters to the C<new()> constructor.
 
 =head3 exe_names
 
   my @search_exe_names = $app->search_exe_names;
 
 Returns a list of possible names for an executable. Typically used by the
-C<new()> constructor to search fo an executable to execute and collect
+C<new()> constructor to search for an executable to execute and collect
 application info.
 
 =cut
@@ -602,7 +602,7 @@ sub on_error {
   my @handlers = $app->on_unknown;
   $app->on_uknown(@handlers);
 
-Unknown events are trigged when the App::Info subclass cannot find the value
+Unknown events are triggered when the App::Info subclass cannot find the value
 to be returned by a method call. By default, these events are ignored. A
 common way of handling them is to have the application prompt the user for the
 relevant data. The App::Info::Handler::Prompt class included with the
@@ -659,7 +659,7 @@ sub on_confirm {
 
 As an abstract base class, App::Info is not intended to be used directly.
 Instead, you'll use concrete subclasses that implement the interface it
-defines. These subclasses each provide the metadata necessary for a given
+defines. These subclasses each provide the meta data necessary for a given
 software package, via the interface outlined above (plus any additional
 methods the class author deems sensible for a given application).
 
@@ -708,7 +708,7 @@ the functionality you need.
 Use the methods described below to trigger events. Events are designed to
 provide a simple way for App::Info subclass developers to send status messages
 and errors, to confirm data values, and to request a value when the class
-caonnot determine a value itself. Events may optionally be handled by module
+cannot determine a value itself. Events may optionally be handled by module
 users who assign App::Info::Handler subclass objects to your App::Info
 subclass object using the event handling methods described in the L<"Event
 Handler Object Methods"> section.
@@ -861,7 +861,7 @@ App::Info::Request object passed to event handlers.
 =back
 
 This may be the event method you use most, as it should be called in every
-metadata method if you cannot provide the data needed by that method. It will
+meta data method if you cannot provide the data needed by that method. It will
 typically be the last part of the method. Here's an example demonstrating each
 of the above arguments:
 
@@ -874,7 +874,7 @@ of the above arguments:
 
 sub unknown {
     my ($self, %params) = @_;
-    my $key = delete $params{key}
+    my $key = $params{key}
       or Carp::croak("No key parameter passed to unknown()");
     # Just return the value if we've already handled this value. Ideally this
     # shouldn't happen.
@@ -902,13 +902,13 @@ sub unknown {
 This method is very similar to C<unknown()>, but serves a different purpose.
 Use this method for significant data points where you've found an appropriate
 value, but want to ensure it's really the correct value. A "significant data
-point" is usually a value essential for your class to collect metadata values.
+point" is usually a value essential for your class to collect meta data values.
 For example, you might need to locate an executable that you can then call to
 collect other data. In general, this will only happen once for an object --
 during object construction -- but there may be cases in which it is needed
 more than that. But hopefully, once you've confirmed in the constructor that
 you've found what you need, you can use that information to collect the data
-needed by all of the metadata methods and can assume that they'll be right
+needed by all of the meta data methods and can assume that they'll be right
 because that first, significant data point has been confirmed.
 
 Other than where and how often to call C<confirm()>, its use is quite similar
@@ -969,7 +969,7 @@ Here's an example usage demonstrating all of the above arguments:
 
 sub confirm {
     my ($self, %params) = @_;
-    my $key = delete $params{key}
+    my $key = $params{key}
       or Carp::croak("No key parameter passed to confirm()");
     return $self->{__confirm__}{$key} if exists $self->{__confirm__}{$key};
 
@@ -1075,15 +1075,15 @@ the following simple guidelines: Use C<error()> when you expect something to
 work and then it just doesn't (as when a file exists and should contain the
 information you seek, but then doesn't). Use C<unknown()> when you're less
 sure of your processes for finding the value, and also for any of the values
-that should be returned by any of the L<metadata object methods|"Metadata
+that should be returned by any of the L<meta data object methods|"Metadata
 Object Methods">. And of course, C<error()> would be more appropriate when you
 encounter an unexpected condition and don't think that it could be handled in
 any other way.
 
 Now, more than likely, a method such C<_find_version()> would be called by the
-C<version()> method, which is a metadata method mandated by the App::Info
+C<version()> method, which is a meta data method mandated by the App::Info
 abstract base class. This is an appropriate place to handle an unknown version
-value. Indeed, every one of your metadata methods should make use of the
+value. Indeed, every one of your meta data methods should make use of the
 C<unknown()> method. The C<version()> method then should look something like
 this:
 
@@ -1109,7 +1109,7 @@ every time, as C<unknown()> will return the same value every time it is called
 (as, indeed, should C<_find_version()>. But by checking for the C<version> key
 in C<$self> ourselves, we save some of the overhead.
 
-But as I said before, every metadata method should make use of the
+But as I said before, every meta data method should make use of the
 C<unknown()> method. Thus, the C<major()> method might looks something like
 this:
 
@@ -1132,7 +1132,7 @@ this:
 
 Finally, the C<confirm()> method should be used to verify core pieces of data
 that significant numbers of other methods rely on. Typically such data are
-executables or configuration files from which will be drawn other metadata.
+executables or configuration files from which will be drawn other meta data.
 Most often, such major data points will be sought in the object constructor.
 Here's an example:
 
@@ -1181,8 +1181,8 @@ the super class to construct the object first. Doing so allows any event
 handling arguments to set up the event handlers, so that when we call
 C<confirm()> or C<unknown()> the event will be handled as the client expects.
 
-If we needed our subclass constructor to take its own parameter argumente, the
-approach is to specify the same C<< key => $arg >> syntax as is used by
+If we needed our subclass constructor to take its own parameter argument, the
+approach is to specify the same C<key => $arg> syntax as is used by
 App::Info's C<new()> method. Say we wanted to allow clients of our App::Info
 subclass to pass in a list of alternate executable locations for us to search.
 Such an argument would most make sense as an array reference. So we specify
@@ -1212,7 +1212,7 @@ To summarize, here are some guidelines for subclassing App::Info.
 =item *
 
 Always subclass an App::Info category subclass. This will help to keep the
-App::Info namespace well-organized. New categories can be added as needed.
+App::Info name space well-organized. New categories can be added as needed.
 
 =item *
 
@@ -1242,7 +1242,7 @@ exceptions for fatal errors.
 
 =item *
 
-Use the C<unknown()> event triggering method when a metadata or other
+Use the C<unknown()> event triggering method when a meta data or other
 important value is unknown and you want to give any event handlers the chance
 to provide the data.
 
@@ -1273,14 +1273,19 @@ aggregated in Bundle distributions.
 
 But I get ahead of myself...
 
-=head1 BUGS
+=head1 SUPPORT
 
-Please send bug reports to <bug-app-info@rt.cpan.org> or file them at
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=App-Info>.
+This module is stored in an open L<GitHub
+repository|http://github.com/theory/app-info/>. Feel free to fork and
+contribute!
+
+Please file bug reports via L<GitHub
+Issues|http://github.com/theory/app-info/issues/> or by sending mail to
+L<bug-App-Info@rt.cpan.org|mailto:bug-App-Info@rt.cpan.org>.
 
 =head1 AUTHOR
 
-David Wheeler <david@justatheory.com>
+David E. Wheeler <david@justatheory.com>
 
 =head1 SEE ALSO
 
@@ -1337,7 +1342,7 @@ App::Info::Handler subclasses.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2002-2004, David Wheeler. All Rights Reserved.
+Copyright (c) 2002-2011, David E. Wheeler. Some Rights Reserved.
 
 This module is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
