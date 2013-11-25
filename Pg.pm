@@ -1685,6 +1685,7 @@ use 5.008001;
 				pg_server_version              => undef,
 				pg_socket                      => undef,
 				pg_standard_conforming_strings => undef,
+				pg_switch_prepared             => undef,
 				pg_user                        => undef,
 		};
 	}
@@ -1739,6 +1740,7 @@ use 5.008001;
 				pg_segments               => undef,
 				pg_server_prepare         => undef,
 				pg_size                   => undef,
+				pg_switch_prepared        => undef,
 				pg_type                   => undef,
 		};
     }
@@ -3184,6 +3186,16 @@ DBD::Pg specific attribute. Indicates if DBD::Pg should attempt to use server-si
 prepared statements. The default value, 1, indicates that prepared statements should 
 be used whenever possible. See the section on the L</prepare> method for more information.
 
+=head3 B<pg_switch_prepared> (integer)
+
+DBD::Pg specific attribute. Indicates when DBD::Pg will internally switch from using 
+PQexecParams to PQexecPrepared. In other words, when it will start using server-side 
+prepared statements (assuming all other requirements for them are met). The default value, 
+2, means that a prepared statement will be prepared and used the second and subsequent 
+time execute is called. To always use PQexecPrepared instead of PQexecParams, set 
+pg_switch_prepared to 1. Setting it to 0 will force DBD::Pg to use PQexecPrepared always - 
+this was the default behavior in versions older than 3.0.0.
+
 =head3 B<pg_placeholder_dollaronly> (boolean)
 
 DBD::Pg specific attribute. Defaults to false. When true, question marks inside of statements 
@@ -3840,6 +3852,16 @@ DBD::Pg specific attribute. Indicates if DBD::Pg should attempt to use server-si
 prepared statements for this statement handle. The default value, 1, indicates that prepared 
 statements should be used whenever possible. See the section on the L</prepare> method for 
 more information.
+
+=head3 B<pg_switch_prepared> (integer)
+
+DBD::Pg specific attribute. Indicates when DBD::Pg will internally switch from using 
+PQexecParams to PQexecPrepared. In other words, when it will start using server-side 
+prepared statements (assuming all other requirements for them are met). The default value, 
+2, means that a prepared statement will be prepared and used the second and subsequent 
+time execute is called. To always use PQexecPrepared instead of PQexecParams, set 
+pg_switch_prepared to 1 (this was the default behavior in earlier versions). 
+Setting pg_switch_prepared to 0 will force DBD::Pg to always use PQexecParams.
 
 =head3 B<pg_placeholder_dollaronly> (boolean)
 

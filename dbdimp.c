@@ -233,17 +233,18 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 
 	imp_dbh->pg_enable_utf8  = -1;
 
- 	imp_dbh->prepare_now     = DBDPG_FALSE;
-	imp_dbh->done_begin      = DBDPG_FALSE;
-	imp_dbh->dollaronly      = DBDPG_FALSE;
-	imp_dbh->expand_array    = DBDPG_TRUE;
-	imp_dbh->txn_read_only   = DBDPG_FALSE;
-	imp_dbh->pid_number      = getpid();
-	imp_dbh->prepare_number  = 1;
-	imp_dbh->copystate       = 0;
-	imp_dbh->pg_errorlevel   = 1; /* Default */
-	imp_dbh->async_status    = 0;
-	imp_dbh->async_sth       = NULL;
+ 	imp_dbh->prepare_now       = DBDPG_FALSE;
+	imp_dbh->done_begin        = DBDPG_FALSE;
+	imp_dbh->dollaronly        = DBDPG_FALSE;
+	imp_dbh->expand_array      = DBDPG_TRUE;
+	imp_dbh->txn_read_only     = DBDPG_FALSE;
+	imp_dbh->pid_number        = getpid();
+	imp_dbh->prepare_number    = 1;
+	imp_dbh->switch_prepared   = 2;
+	imp_dbh->copystate         = 0;
+	imp_dbh->pg_errorlevel     = 1; /* Default */
+	imp_dbh->async_status      = 0;
+	imp_dbh->async_sth         = NULL;
 
 	/* If using server version 7.4, switch to "smart" */
 	imp_dbh->server_prepare = PGLIBVERSION >= 80000 ? 1 : 2;
@@ -1474,37 +1475,39 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 		croak ("Cannot prepare empty statement");
 
 	/* Set default values for this statement handle */
-	imp_sth->placeholder_type = 0;
-	imp_sth->numsegs          = 0;
-	imp_sth->numphs           = 0;
-	imp_sth->numbound         = 0;
-	imp_sth->cur_tuple        = 0;
-	imp_sth->rows             = -1; /* per DBI spec */
-	imp_sth->totalsize        = 0;
-	imp_sth->async_flag       = 0;
-	imp_sth->async_status     = 0;
-	imp_sth->prepare_name     = NULL;
-	imp_sth->firstword        = NULL;
-	imp_sth->result           = NULL;
-	imp_sth->type_info        = NULL;
-	imp_sth->seg              = NULL;
-	imp_sth->ph               = NULL;
-	imp_sth->PQvals           = NULL;
-	imp_sth->PQlens           = NULL;
-	imp_sth->PQfmts           = NULL;
-	imp_sth->PQoids           = NULL;
-	imp_sth->prepared_by_us   = DBDPG_FALSE; /* Set to 1 when actually done preparing */
-	imp_sth->onetime          = DBDPG_FALSE; /* Allow internal shortcut */
-	imp_sth->direct           = DBDPG_FALSE;
-	imp_sth->is_dml           = DBDPG_FALSE; /* Not preparable DML until proved otherwise */
-	imp_sth->has_binary       = DBDPG_FALSE; /* Are any of the params binary? */
-	imp_sth->has_default      = DBDPG_FALSE; /* Are any of the params DEFAULT? */
-	imp_sth->has_current      = DBDPG_FALSE; /* Are any of the params DEFAULT? */
-	imp_sth->use_inout        = DBDPG_FALSE; /* Are any of the placeholders using inout? */
-	imp_sth->all_bound        = DBDPG_FALSE; /* Have all placeholders been bound? */
+	imp_sth->placeholder_type  = 0;
+	imp_sth->numsegs           = 0;
+	imp_sth->numphs            = 0;
+	imp_sth->numbound          = 0;
+	imp_sth->cur_tuple         = 0;
+	imp_sth->rows              = -1; /* per DBI spec */
+	imp_sth->totalsize         = 0;
+	imp_sth->async_flag        = 0;
+	imp_sth->async_status      = 0;
+	imp_sth->prepare_name      = NULL;
+	imp_sth->firstword         = NULL;
+	imp_sth->result            = NULL;
+	imp_sth->type_info         = NULL;
+	imp_sth->seg               = NULL;
+	imp_sth->ph                = NULL;
+	imp_sth->PQvals            = NULL;
+	imp_sth->PQlens            = NULL;
+	imp_sth->PQfmts            = NULL;
+	imp_sth->PQoids            = NULL;
+	imp_sth->prepared_by_us    = DBDPG_FALSE; /* Set to 1 when actually done preparing */
+	imp_sth->onetime           = DBDPG_FALSE; /* Allow internal shortcut */
+	imp_sth->direct            = DBDPG_FALSE;
+	imp_sth->is_dml            = DBDPG_FALSE; /* Not preparable DML until proved otherwise */
+	imp_sth->has_binary        = DBDPG_FALSE; /* Are any of the params binary? */
+	imp_sth->has_default       = DBDPG_FALSE; /* Are any of the params DEFAULT? */
+	imp_sth->has_current       = DBDPG_FALSE; /* Are any of the params DEFAULT? */
+	imp_sth->use_inout         = DBDPG_FALSE; /* Are any of the placeholders using inout? */
+	imp_sth->all_bound         = DBDPG_FALSE; /* Have all placeholders been bound? */
+	imp_sth->number_iterations = 0;
 
 	/* We inherit some preferences from the database handle */
 	imp_sth->server_prepare   = imp_dbh->server_prepare;
+	imp_sth->switch_prepared  = imp_dbh->switch_prepared;
 	imp_sth->prepare_now      = imp_dbh->prepare_now;
 	imp_sth->dollaronly       = imp_dbh->dollaronly;
 
@@ -2951,6 +2954,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	char *        statement = NULL;
 	int           num_fields;
 	int           ret = -2;
+	int           pqtype = 0;
 	long          power_of_ten;
 	
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_execute\n", THEADER_slow);
@@ -3029,17 +3033,64 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	/*
 	  Now, we need to build the statement to send to the backend
 	  We are using one of PQexec, PQexecPrepared, or PQexecParams
-	  First, we figure out the size of the statement...
+	  Let's figure out which we are going to use and set pqtype
+	  0= unknown
+	  1= PQexec
+	  2= PQexecParams
+	  3= PQexecPrepared
 	*/
 
-	execsize = imp_sth->totalsize; /* Total of all segments */
+	if (TRACE4_slow) TRC(DBILOGFP,
+					"%sPQexec* decision: dml=%d direct=%d server_prepare=%d numbound=%d numphs=%d default=%d current=%d\n",
+					THEADER_slow, 
+					imp_sth->is_dml,
+					imp_sth->direct,
+					imp_sth->server_prepare,
+					imp_sth->numbound,
+					imp_sth->numphs,
+					imp_sth->has_default,
+					imp_sth->has_current);
 
-	/* If using plain old PQexec, we need to quote each value ourselves */
+	/* We must use PQexec if:
+	   1. The statement is *not* DML (e.g. is DDL, which cannot be prepared)
+	   2. We have a DEFAULT parameter
+	   3. We have a CURRENT parameter
+	   4. pg_direct is true
+	   5. pg_server_prepare is false
+	   6. pg_server_prepare is 2, but all placeholders are not bound
+	*/
 	if (!imp_sth->is_dml
 		|| imp_sth->has_default
 		|| imp_sth->has_current
-		|| 1 != imp_sth->server_prepare
-		) {
+		|| imp_sth->direct
+		|| !imp_sth->server_prepare
+		|| (2==imp_sth->server_prepare && imp_sth->numbound != imp_sth->numphs)
+		)
+		pqtype = 1; /* PQexec */
+	else if (0==imp_sth->switch_prepared || imp_sth->number_iterations < imp_sth->switch_prepared) {
+		pqtype = 2; /* PQexecParams */
+	}
+	else {
+		pqtype = 3; /* PQexecPrepared */
+	}
+
+	/* Increment our count */
+	imp_sth->number_iterations++;
+
+	/* We use the new server_side prepare style if:
+	   1. The statement is DML (DDL is not preparable)
+	   2. The attribute "pg_direct" is false
+	   3. The attribute "pg_server_prepare" is not 0
+	   4. The "onetime" attribute has not been set
+	   5. There are no DEFAULT or CURRENT values
+	   6a. The attribute "pg_server_prepare" is 1
+	   OR
+	   6b. All placeholders are bound (and "pg_server_prepare" is 2)
+	*/
+	execsize = imp_sth->totalsize; /* Total of all segments */
+
+	/* If using plain old PQexec, we need to quote each value ourselves */
+	if (1 == pqtype) {
 		for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 			if (currph->isdefault) {
 				Renew(currph->quoted, 8, char); /* freed in dbd_st_destroy */
@@ -3074,7 +3125,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		}
 	}
 	else { /* We are using a server that can handle PQexecParams/PQexecPrepared */
-		/* Put all values into an array to pass to PQexecPrepared */
+		/* Put all values into an array to pass to one of the above */
 		if (NULL == imp_sth->PQvals) {
 			Newz(0, imp_sth->PQvals, (unsigned int)imp_sth->numphs, const char *); /* freed in dbd_st_destroy */
 		}
@@ -3102,36 +3153,116 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		}
 	}
 	
-	/* We use the new server_side prepare style if:
-	   1. The statement is DML (DDL is not preparable)
-	   2. The attribute "pg_direct" is false
-	   3. The attribute "pg_server_prepare" is not 0
-	   4. The "onetime" attribute has not been set
-	   5. There are no DEFAULT or CURRENT values
-	   6a. The attribute "pg_server_prepare" is 1
-	   OR
-	   6b. All placeholders are bound (and "pg_server_prepare" is 2)
-	*/
-	if (TRACE4_slow) TRC(DBILOGFP,
-					"%sPQexec* decision: dml=%d direct=%d server_prepare=%d numbound=%d numphs=%d default=%d current=%d\n",
-					THEADER_slow, 
-					imp_sth->is_dml,
-					imp_sth->direct,
-					imp_sth->server_prepare,
-					imp_sth->numbound,
-					imp_sth->numphs,
-					imp_sth->has_default,
-					imp_sth->has_current);
+	/* Run one of PQexec, PQexecParams, or PQexecPrepared */
+	if (1 == pqtype) { /* PQexec */
 
-	if (imp_sth->is_dml
-		&& !imp_sth->direct
-		&& 0 != imp_sth->server_prepare
-		&& !imp_sth->has_default
-		&& !imp_sth->has_current
-		&& !imp_sth->onetime
-		&& (1 == imp_sth->server_prepare
-			|| (imp_sth->numbound == imp_sth->numphs))
-		){
+		if (TRACE5_slow) TRC(DBILOGFP, "%sPQexec\n", THEADER_slow);
+
+		/* Go through and quote each value, then turn into a giant statement */
+		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
+			if (currseg->placeholder!=0)
+				execsize += currseg->ph->quotedlen;
+		}
+
+		New(0, statement, execsize+1, char); /* freed below */
+		statement[0] = '\0';
+		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
+			if (currseg->segment != NULL)
+				strcat(statement, currseg->segment);
+			if (currseg->placeholder!=0)
+				strcat(statement, currseg->ph->quoted);
+		}
+		statement[execsize] = '\0';
+
+		if (TRACE5_slow) TRC(DBILOGFP, "%sRunning %s with (%s)\n", 
+							 THEADER_slow, imp_sth->async_flag & 1 ? "PQsendQuery" : "PQexec", statement);
+			
+		if (TSQL)
+			TRC(DBILOGFP, "%s;\n\n", statement);
+
+		if (imp_sth->async_flag & PG_ASYNC) {
+			TRACE_PQSENDQUERY;
+			ret = PQsendQuery(imp_dbh->conn, statement);
+		}
+		else {
+			TRACE_PQEXEC;
+			imp_sth->result = PQexec(imp_dbh->conn, statement);
+		}
+
+		Safefree(statement);
+
+	}
+	else if (2 == pqtype) { /* PQexecParams */
+		if (TRACE5_slow) TRC(DBILOGFP, "%sPQexecParams\n", THEADER_slow);
+
+		/* Figure out how big the statement plus placeholders will be */
+		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
+			if (0==currseg->placeholder)
+				continue;
+			/* The parameter itself: dollar sign plus digit(s) */
+			power_of_ten = 10;
+			for (placeholder_digits=1; placeholder_digits<7; placeholder_digits++, power_of_ten *= 10) {
+				if (currseg->placeholder < power_of_ten)
+					break;
+			}
+			if (placeholder_digits >= 7)
+				croak("Too many placeholders!");
+			execsize += placeholder_digits+1;
+		}
+
+		/* Create the statement */
+		New(0, statement, execsize+1, char); /* freed below */
+		statement[0] = '\0';
+		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
+			if (currseg->segment != NULL)
+				strcat(statement, currseg->segment);
+			if (currseg->placeholder!=0)
+				sprintf(strchr(statement, '\0'), "$%d", currseg->placeholder);
+		}
+		statement[execsize] = '\0';
+			
+		/* Populate PQoids */
+		if (NULL == imp_sth->PQoids) {
+			Newz(0, imp_sth->PQoids, (unsigned int)imp_sth->numphs, Oid);
+		}
+		for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
+			imp_sth->PQoids[x++] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
+		}
+		
+		if (TRACE7_slow) {
+			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
+				TRC(DBILOGFP, "%sPQexecParams item #%d\n", THEADER_slow, (int)x);
+				TRC(DBILOGFP, "%s-> Type: (%d)\n", THEADER_slow, imp_sth->PQoids[x]);
+				TRC(DBILOGFP, "%s-> Value: (%s)\n", THEADER_slow, imp_sth->PQvals[x]);
+				TRC(DBILOGFP, "%s-> Length: (%d)\n", THEADER_slow, imp_sth->PQlens ? imp_sth->PQlens[x] : 0);
+				TRC(DBILOGFP, "%s-> Format: (%d)\n", THEADER_slow, imp_sth->PQfmts ? imp_sth->PQfmts[x] : 0);
+			}
+		}
+
+		if (TSQL) {
+			TRC(DBILOGFP, "EXECUTE %s (\n", statement);
+			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
+				TRC(DBILOGFP, "$%d: %s\n", (int)x+1, imp_sth->PQvals[x]);
+			}
+			TRC(DBILOGFP, ");\n\n");
+		}
+
+		if (TRACE5_slow) TRC(DBILOGFP, "%sRunning PQexecParams with (%s)\n", THEADER_slow, statement);
+		if (imp_sth->async_flag & PG_ASYNC) {
+			TRACE_PQSENDQUERYPARAMS;
+			ret = PQsendQueryParams
+				(imp_dbh->conn, statement, imp_sth->numphs, imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+		}
+		else {
+			TRACE_PQEXECPARAMS;
+			imp_sth->result = PQexecParams
+				(imp_dbh->conn, statement, imp_sth->numphs, imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+		}
+
+		Safefree(statement);
+
+	}
+	else if (3 == pqtype) { /* PQexecPrepared */
 	
 		if (TRACE4_slow) TRC(DBILOGFP, "%sPQexecPrepared\n", THEADER_slow);
 
@@ -3182,131 +3313,8 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
 		}
 	} /* end new-style prepare */
-	else {
 		
-		/* prepare via PQexec or PQexecParams */
-
-
-		/* PQexecParams */
-
-		if (imp_sth->is_dml
-			&& imp_sth->numphs
-			&& !imp_sth->has_default
-			&& !imp_sth->has_current
-			&& 1 == imp_sth->server_prepare
-			) {
-
-			if (TRACE5_slow) TRC(DBILOGFP, "%sPQexecParams\n", THEADER_slow);
-
-			/* Figure out how big the statement plus placeholders will be */
-			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-				if (0==currseg->placeholder)
-					continue;
-				/* The parameter itself: dollar sign plus digit(s) */
-				power_of_ten = 10;
-				for (placeholder_digits=1; placeholder_digits<7; placeholder_digits++, power_of_ten *= 10) {
-					if (currseg->placeholder < power_of_ten)
-						break;
-				}
-				if (placeholder_digits >= 7)
-					croak("Too many placeholders!");
-				execsize += placeholder_digits+1;
-			}
-
-			/* Create the statement */
-			New(0, statement, execsize+1, char); /* freed below */
-			statement[0] = '\0';
-			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-				if (currseg->segment != NULL)
-					strcat(statement, currseg->segment);
-				if (currseg->placeholder!=0)
-					sprintf(strchr(statement, '\0'), "$%d", currseg->placeholder);
-			}
-			statement[execsize] = '\0';
-			
-			/* Populate PQoids */
-			if (NULL == imp_sth->PQoids) {
-				Newz(0, imp_sth->PQoids, (unsigned int)imp_sth->numphs, Oid);
-			}
-			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
-				imp_sth->PQoids[x++] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
-			}
-		
-			if (TRACE7_slow) {
-				for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-					TRC(DBILOGFP, "%sPQexecParams item #%d\n", THEADER_slow, (int)x);
-					TRC(DBILOGFP, "%s-> Type: (%d)\n", THEADER_slow, imp_sth->PQoids[x]);
-					TRC(DBILOGFP, "%s-> Value: (%s)\n", THEADER_slow, imp_sth->PQvals[x]);
-					TRC(DBILOGFP, "%s-> Length: (%d)\n", THEADER_slow, imp_sth->PQlens ? imp_sth->PQlens[x] : 0);
-					TRC(DBILOGFP, "%s-> Format: (%d)\n", THEADER_slow, imp_sth->PQfmts ? imp_sth->PQfmts[x] : 0);
-				}
-			}
-
-			if (TSQL) {
-				TRC(DBILOGFP, "EXECUTE %s (\n", statement);
-				for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-					TRC(DBILOGFP, "$%d: %s\n", (int)x+1, imp_sth->PQvals[x]);
-				}
-				TRC(DBILOGFP, ");\n\n");
-			}
-
-			if (TRACE5_slow) TRC(DBILOGFP, "%sRunning PQexecParams with (%s)\n", THEADER_slow, statement);
-			if (imp_sth->async_flag & PG_ASYNC) {
-				TRACE_PQSENDQUERYPARAMS;
-				ret = PQsendQueryParams
-					(imp_dbh->conn, statement, imp_sth->numphs, imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
-			}
-			else {
-				TRACE_PQEXECPARAMS;
-				imp_sth->result = PQexecParams
-					(imp_dbh->conn, statement, imp_sth->numphs, imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
-			}
-		}
-		
-		/* PQexec */
-
-		else {
-
-			if (TRACE5_slow) TRC(DBILOGFP, "%sPQexec\n", THEADER_slow);
-
-			/* Go through and quote each value, then turn into a giant statement */
-			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-				if (currseg->placeholder!=0)
-					execsize += currseg->ph->quotedlen;
-			}
-
-			New(0, statement, execsize+1, char); /* freed below */
-			statement[0] = '\0';
-			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-				if (currseg->segment != NULL)
-					strcat(statement, currseg->segment);
-				if (currseg->placeholder!=0)
-					strcat(statement, currseg->ph->quoted);
-			}
-			statement[execsize] = '\0';
-
-			if (TRACE5_slow) TRC(DBILOGFP, "%sRunning %s with (%s)\n", 
-							THEADER_slow, imp_sth->async_flag & 1 ? "PQsendQuery" : "PQexec", statement);
-			
-			if (TSQL)
-				TRC(DBILOGFP, "%s;\n\n", statement);
-
-			if (imp_sth->async_flag & PG_ASYNC) {
-				TRACE_PQSENDQUERY;
-				ret = PQsendQuery(imp_dbh->conn, statement);
-			}
-			else {
-				TRACE_PQEXEC;
-				imp_sth->result = PQexec(imp_dbh->conn, statement);
-			}
-
-		} /* end PQexec */
-
-		Safefree(statement);
-
-	} /* end non-prepared exec */
-
-	/* Some form of PQexec/PQsendQuery has been run at this point */
+	/* Some form of PQexec* has been run at this point */
 
 	/* If running asynchronously, we don't stick around for the result */
 	if (imp_sth->async_flag & PG_ASYNC) {
