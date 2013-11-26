@@ -3,10 +3,11 @@ Possible items to do, in no particular order
 Feature requests can be entered at 
 http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
 
+May also be some at
+https://github.com/bucardo/dbdpg
+(although we prefer using cpan.org)
+
 - Map hstore to hashes ala array/array mapping
-- Don't automatically use server-side prepare until a threshold is reached, 
-  e.g. X number of executes. Make this a parameter.
-  POC: b997f051f11a1dc0415d9f4e937b6dd0ba96d2d6
 - Fix ping problem: http://www.cpantesters.org/cpan/report/53c5cc72-6d39-11e1-8b9d-82c3d2d9ea9f
 - Use WITH HOLD for cursor work
 - Devise a way to automatically create ppm for Windows builds
