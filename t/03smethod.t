@@ -21,7 +21,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 97;
+plan tests => 122;
 
 isnt ($dbh, undef, 'Connect to database for statement handle method testing');
 
@@ -52,6 +52,49 @@ $dbh->{pg_server_prepare} = 0;
 $sth = $dbh->prepare($SQL);
 $sth->execute(1);
 ok ($sth->execute, $t);
+
+$t='Setting database attribute pg_switch_prepared to 7 works';
+$dbh->{pg_switch_prepared} = 7;
+is ($dbh->{pg_switch_prepared}, 7, $t);
+
+$t='Statement handle inherits pg_switch_prepared setting';
+$sth = $dbh->prepare($SQL);
+is ($sth->{pg_switch_prepared}, 7, $t);
+
+$t='Setting statement attribute pg_switch_prepared to 6 works';
+$sth->{pg_switch_prepared} = 6;
+is ($sth->{pg_switch_prepared}, 6, $t);
+
+$t='Running with statement attribute pg_switch_prepared at 6 works';
+for (1..10) {
+	$sth->execute(1);
+	my $it = "$t (run $_ of 10)";
+	ok ($sth->execute, $it);
+}
+
+$t='Running with statement attribute pg_switch_prepared at -1 works';
+$sth->{pg_switch_prepared} = -1;
+for (1..4) {
+	$sth->execute(1);
+	my $it = "$t (run $_ of 4)";
+	ok ($sth->execute, $it);
+}
+
+$t='Running with statement attribute pg_switch_prepared at 0 works';
+$sth->{pg_switch_prepared} = 0;
+for (1..4) {
+	$sth->execute(1);
+	my $it = "$t (run $_ of 4)";
+	ok ($sth->execute, $it);
+}
+
+$t='Running with statement attribute pg_switch_prepared at 1 works';
+$sth->{pg_switch_prepared} = 1;
+for (1..4) {
+	$sth->execute(1);
+	my $it = "$t (run $_ of 4)";
+	ok ($sth->execute, $it);
+}
 
 ## 7.4 does not have a full SSP implementation, so we simply skip these tests.
 if ($pglibversion < 80000) {

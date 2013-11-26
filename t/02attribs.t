@@ -60,6 +60,7 @@ d Warn
 
 d pg_prepare_now - tested in 03smethod.t
 d pg_server_prepare - tested in 03smethod.t
+d pg_switch_prepared - tested in 03smethod.t
 d pg_prepare_now - tested in 03smethod.t
 d pg_placeholder_dollaronly - tested in 12placeholders.t
 

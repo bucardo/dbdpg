@@ -785,6 +785,12 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 			retsv = newSViv((IV)imp_dbh->pg_server_version);
 		break;
 
+	case 18: /* pg_switch_prepared */
+
+		if (strEQ("pg_switch_prepared", key))
+			retsv = newSViv((IV)imp_dbh->switch_prepared);
+		break;
+
 	case 25: /* pg_placeholder_dollaronly */
 
 		if (strEQ("pg_placeholder_dollaronly", key))
@@ -935,6 +941,16 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			/* Default to "2" if an invalid value is passed in */
 			imp_dbh->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
 			retval = 1;
+		}
+		break;
+
+	case 18: /* pg_switch_prepared */
+
+		if (strEQ("pg_switch_prepared", key)) {
+			if (SvOK(valuesv)) {
+				imp_dbh->switch_prepared = (unsigned)SvIV(valuesv);
+				retval = 1;
+			}
 		}
 		break;
 
@@ -1089,6 +1105,12 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 
 		if (strEQ("pg_server_prepare", key))
 			retsv = newSViv((IV)imp_sth->server_prepare);
+		break;
+
+	case 18: /* pg_switch_prepared */
+
+		if (strEQ("pg_switch_prepared", key))
+			retsv = newSViv((IV)imp_sth->switch_prepared);
 		break;
 
 	case 25: /* pg_placeholder_dollaronly */
@@ -1352,10 +1374,18 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 		}
 		break;
 
-	case 17: /* pg_server_prepare*/
+	case 17: /* pg_server_prepare */
 
 		if (strEQ("pg_server_prepare", key)) {
 			imp_sth->server_prepare = strEQ(value,"0") ? DBDPG_FALSE : DBDPG_TRUE;
+			retval = 1;
+		}
+		break;
+
+	case 18: /* pg_switch_prepared */
+
+		if (strEQ("pg_switch_prepared", key)) {
+			imp_sth->switch_prepared = (int)SvIV(valuesv);
 			retval = 1;
 		}
 		break;
