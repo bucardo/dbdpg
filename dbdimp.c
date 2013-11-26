@@ -3051,6 +3051,9 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 					imp_sth->has_default,
 					imp_sth->has_current);
 
+	/* Increment our count */
+	imp_sth->number_iterations++;
+
 	/* We must use PQexec if:
 	   1. The statement is *not* DML (e.g. is DDL, which cannot be prepared)
 	   2. We have a DEFAULT parameter
@@ -3073,9 +3076,6 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	else {
 		pqtype = 3; /* PQexecPrepared */
 	}
-
-	/* Increment our count */
-	imp_sth->number_iterations++;
 
 	/* We use the new server_side prepare style if:
 	   1. The statement is DML (DDL is not preparable)
