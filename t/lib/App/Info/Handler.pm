@@ -234,23 +234,23 @@ so is up to you and the handler.
 
 For unknown and confirm events, you are expected to prompt the user for a
 value. If it's a confirm event, offer the known value (found in
-C<$req-E<gt>value>) as a default.
+C<< $req->value >>) as a default.
 
 =item *
 
-For unknown and confirm events, you are expected to call C<$req-E<gt>callback>
-and pass in the new value. If C<$req-E<gt>callback> returns a false value, you
-are expected to display the error message in C<$req-E<gt>error> and prompt the
-user again. Note that C<$req-E<gt>value> calls C<$req-E<gt>callback>
+For unknown and confirm events, you are expected to call C<< $req->callback >>
+and pass in the new value. If C<< $req->callback >> returns a false value, you
+are expected to display the error message in C<< $req->error >> and prompt the
+user again. Note that C<< $req->value >> calls C<< $req->callback >>
 internally, and thus assigns the value and returns true if
-C<$req-E<gt>callback> returns true, and does not assign the value and returns
-false if C<$req-E<gt>callback> returns false.
+C<< $req->callback >> returns true, and does not assign the value and returns
+false if C<< $req->callback >> returns false.
 
 =item *
 
 For unknown and confirm events, if you've collected a new value and
-C<$req-E<gt>callback> returns true for that value, you are expected to assign
-the value by passing it to C<$req-E<gt>value>. This allows App::Info to give
+C<< $req->callback >> returns true for that value, you are expected to assign
+the value by passing it to C<< $req->value >>. This allows App::Info to give
 the value back to the calling App::Info concrete subclass.
 
 =back
