@@ -566,6 +566,9 @@ cpantesters
 hashrefs
 rowtypes
 struct
+bucardo
+github
+https
 
 ## README.dev:
 abc
