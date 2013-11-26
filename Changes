@@ -12,6 +12,12 @@ Version 3.0.0
 
   - Bump Perl requirement to 5.8.1
 
+  - Add new handle attribute, switch_prepared, to control when we stop 
+    using PQexecParams and start using PQexecPrepared. The default is 2: 
+    in previous versions, the effective behavior was 1 (i.e. PQexecParams 
+    was never used).
+    [Greg Sabino Mullane]
+
   - Map SQL_CHAR back to bpchar, not char.
     [Greg Sabino Mullane, reported by H.Merijn Brand]
 
@@ -72,6 +78,10 @@ Version 3.0.0
 
   - Avoid reinstalling driver methods in threads
     [Dagfinn Ilmari Mannsåker] (CPAN bug #83638)
+
+  - Make sure App::Info does not prompt for pg_config location 
+    if AUTOMATED_TESTING or PERL_MM_USE_DEFAULT is set.
+    [David E. Wheeler] (CPAN bug #90799)
 
 
 Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb7244046e8f47420d)
