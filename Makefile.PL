@@ -72,15 +72,17 @@ my $POSTGRES_LIB;
 # We need the version information to properly set compiler options later
 # Use App::Info to get the data we need.
 require App::Info::RDBMS::PostgreSQL;
-my $p = $ENV{PERL_MM_USE_DEFAULT} || $ENV{AUTOMATED_TESTING} ? do {
+my $prompt;
+if ($ENV{PERL_MM_USE_DEFAULT} or $ENV{AUTOMATED_TESTING}) {
     require App::Info::Handler::Print;
-    App::Info::Handler::Print->new;
-} : do {
+    $prompt = App::Info::Handler::Print->new;
+}
+else {
     require App::Info::Handler::Prompt;
-    App::Info::Handler::Prompt->new;
-};
+    $prompt = App::Info::Handler::Prompt->new;
+}
 
-my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $p);
+my $pg = App::Info::RDBMS::PostgreSQL->new(on_unknown => $prompt);
 my ($major_ver, $minor_ver, $patch, $conf, $bindir) = map {$pg->$_}
     qw/major_version minor_version patch_version configure bin_dir/;
 my $initdb = '';
@@ -103,7 +105,14 @@ if (defined $major_ver) {
 # 2. App::Info::RDBMS::PostgreSQL information
 # 3. subdirectory of $ENV{POSTGRES_HOME}
 
-$POSTGRES_INCLUDE = $ENV{POSTGRES_INCLUDE} || $pg->inc_dir || "$ENV{POSTGRES_HOME}/include";
+$POSTGRES_INCLUDE = $ENV{POSTGRES_INCLUDE} || $pg->inc_dir;
+
+if (! defined $POSTGRES_INCLUDE) {
+	if (! defined $ENV{POSTGRES_HOME}) {
+		die "No POSTGRES_HOME defined, cannot find automatically\n";
+	}
+	$POSTGRES_INCLUDE = "$ENV{POSTGRES_HOME}/include";
+}
 
 $POSTGRES_LIB = $ENV{POSTGRES_LIB} || $pg->lib_dir || "$ENV{POSTGRES_HOME}/lib";
 
