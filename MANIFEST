@@ -47,6 +47,7 @@ t/99cleanup.t
 t/lib/App/Info.pm
 t/lib/App/Info/Handler.pm
 t/lib/App/Info/Handler/Prompt.pm
+t/lib/App/Info/Handler/Print.pm
 t/lib/App/Info/RDBMS.pm
 t/lib/App/Info/RDBMS/PostgreSQL.pm
 t/lib/App/Info/Request.pm
