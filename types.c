@@ -587,7 +587,7 @@ while (<$oldfh>) {
 				printf $newfh qq{is (%-*s, %5s, '%s returns correct value');\n},
 					3+$maxlen, $pgtype{$_}{define}, $pgtype{$_}{oid}, $pgtype{$_}{define};
 			}
-			print $newfh "\n";
+			print $newfh "\ndone_testing();\n";
 			$step = 1;
 			last;
 		}
