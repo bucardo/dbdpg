@@ -26,6 +26,8 @@ my $dbh = DBI->connect($DSN, '', '', {AutoCommit=>0,RaiseError=>1,PrintError=>0}
 my $me = $dbh->{Driver}{Name};
 print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::VERSION\n";
 
+user_arrays();
+
 commit_return_test();
 
 #utf8_print_test();
@@ -33,6 +35,18 @@ commit_return_test();
 #memory_leak_test_bug_65734();
 
 exit;
+
+
+sub user_arrays {
+
+print "User arrays!\n";
+
+
+
+
+exit;
+
+} ## end of user_arrays
 
 
 sub commit_return_test {
