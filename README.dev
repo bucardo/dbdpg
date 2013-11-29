@@ -204,6 +204,7 @@ we are compiling against (by calling pg_config). It consists of:
 t/lib/App/Info.pm
 t/lib/App/Info/Handler.pm
 t/lib/App/Info/Handler/Prompt.pm
+t/lib/App/Info/Handler/Print.pm
 t/lib/App/Info/RDBMS.pm
 t/lib/App/Info/RDBMS/PostgreSQL.pm
 t/lib/App/Info/Request.pm
