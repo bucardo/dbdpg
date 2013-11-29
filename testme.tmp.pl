@@ -41,7 +41,34 @@ sub user_arrays {
 
 print "User arrays!\n";
 
+print Dumper $dbh->type_info(-5);
 
+$dbh->do ("create table xx_test (c_test bigint)");
+my $sth = $dbh->prepare ("select * from xx_test");
+$sth->execute;
+DDumper ($sth->{TYPE}[0], $dbh->type_info ($sth->{TYPE}[0]));
+$dbh->do ("drop table xx_test");
+
+exit;
+
+$dbh->do('drop table if exists domodomo');
+$dbh->do('create domain domo as int[][]');
+$dbh->do('create table domodomo (id serial, foo domo)');
+$SQL = 'INSERT INTO domodomo(foo) VALUES (?)';
+$sth = $dbh->prepare($SQL);
+$sth->execute(q!{{1},{2}}!);
+
+$SQL = 'SELECT foo FROM domodomo';
+my $f = $dbh->prepare($SQL);
+$f->execute();
+my $res = $f->fetchall_arrayref();
+print Dumper $res;
+print $res->[0];
+
+$dbh->do("CREATE TYPE customint AS ENUM('1','2')");
+my $q2 = $dbh->prepare("SELECT '{1,2}'::customint[]");
+$q2->execute();
+print Dumper $q2->fetchrow_array(); # prints "{1,2}", not an array
 
 
 exit;

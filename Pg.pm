@@ -1373,7 +1373,7 @@ use 5.008001;
              SQL_FLOAT,                                                                    $UN, $UN, $UN ],
 ['float8',   SQL_REAL,          15,   $UN,$UN,   $PS,  1,0,2, 0,0,0,   'REAL',      0,15,
              SQL_REAL,                                                                     $UN, $UN, $UN ],
-['int8',     SQL_BIGINT,        20,   $UN,$UN,   $UN,  1,0,2, 0,0,0,   'LONGINT',   0,0,
+['int8',     SQL_BIGINT,        20,   $UN,$UN,   $UN,  1,0,2, 0,0,0,   'INT8',   0,0,
              SQL_BIGINT,                                                                   $UN, $UN, $UN ],
 ['date',     SQL_DATE,          10,   q{'},q{'}, $UN,  1,0,2, $UN,0,0, 'DATE',      0,0,
              SQL_DATE,                                                                     $UN, $UN, $UN ],
