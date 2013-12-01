@@ -10,18 +10,21 @@ my $basedir = shift || "$ENV{HOME}/code/postgres";
 
 -d $basedir or die qq{No such directory: $basedir\n};
 
-my @versions = qw/ 7.4 8.0 8.1 8.2 8.3 8.4 9.0 HEAD /;
+my @versions = qw/ 9.0 9.1 9.2 9.3 HEAD /;
 
 ## Sanity check:
 for my $lver (@versions) {
 	my $libdir = "$basedir/$lver/lib";
-	-d $libdir or die qq{Could not find directory: $libdir\n};
+	-d $libdir or warn qq{Could not find directory: $libdir\n};
 }
 
 for my $lver (@versions) {
 	my $libdir = "$basedir/$lver/lib";
-	-d $libdir or die qq{Could not find directory: $libdir\n};
+	next if ! -d $libdir;
 	for my $tver (@versions) {
+
+		my $libdir2 = "$basedir/$tver/lib";
+		next if ! -d $libdir2;
 
 		my $outfile = "dbdpg.testing.$lver.vs.$tver.log";
 		print "Testing library $lver against $tver: results stored in $outfile\n";
