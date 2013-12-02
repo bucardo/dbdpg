@@ -3966,7 +3966,7 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 	if (copystatus > 0) {
 		sv_setpv(dataline, tempbuf);
 		if (imp_dbh->pg_utf8_flag)
-			sv_utf8_upgrade(dataline)
+			sv_utf8_upgrade(dataline);
 		TRACE_PQFREEMEM;
 		PQfreemem(tempbuf);
 	}
