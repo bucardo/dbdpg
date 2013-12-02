@@ -3578,7 +3578,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 					SvUTF8_off(sv);
 				}
 				else {
-					SvUTF8_on(sv);
+					sv_utf8_upgrade(sv);
 				}
 			}
 		}
@@ -3966,7 +3966,7 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 	if (copystatus > 0) {
 		sv_setpv(dataline, tempbuf);
 		if (imp_dbh->pg_utf8_flag)
-			SvUTF8_on(dataline);
+			sv_utf8_upgrade(dataline)
 		TRACE_PQFREEMEM;
 		PQfreemem(tempbuf);
 	}
