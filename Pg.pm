@@ -2600,7 +2600,7 @@ handle level. Examples:
 Alternatively, you can set it at prepare time:
 
   $sth = $dbh->prepare(q{SELECT * FROM mytable WHERE lseg1 ?-| lseg2 AND name = $1},
-    {pg_placeholder_dollaronly = 1});
+    {pg_placeholder_dollaronly => 1});
   $sth->execute('segname');
 
 =head3 B<prepare_cached>
