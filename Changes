@@ -83,6 +83,9 @@ Version 3.0.0
     if AUTOMATED_TESTING or PERL_MM_USE_DEFAULT is set.
     [David E. Wheeler] (CPAN bug #90799)
 
+  - Fix typo in docs for pg_placeholder_dollaronly.
+    [Bryan Carpenter] (CPAN bug #91400)
+
 
 Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb7244046e8f47420d)
 
