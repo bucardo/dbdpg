@@ -224,7 +224,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 		if (SvROK(to_quote_sv) && !SvAMAGIC(to_quote_sv)) {
 			if (SvTYPE(SvRV(to_quote_sv)) != SVt_PVAV)
 				croak("Cannot quote a reference");
-			to_quote_sv = pg_stringify_array(to_quote_sv, ",", imp_dbh->pg_server_version);
+			to_quote_sv = pg_stringify_array(to_quote_sv, ",", imp_dbh->pg_server_version, imp_dbh->client_encoding_utf8);
 		}
 
 		/* Null is always returned as "NULL", so we can ignore any type given */

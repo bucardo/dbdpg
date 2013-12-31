@@ -197,7 +197,9 @@ int pg_db_getfd (imp_dbh_t * imp_dbh);
 
 SV * pg_db_pg_notifies (SV *dbh, imp_dbh_t *imp_dbh);
 
-SV * pg_stringify_array(SV * input, const char * array_delim, int server_version);
+SV * pg_rightgraded_sv(pTHX_ SV *input, bool utf8);
+
+SV * pg_stringify_array(SV * input, const char * array_delim, int server_version, bool utf8);
 
 int pg_quickexec (SV *dbh, const char *sql, const int asyncflag);
 

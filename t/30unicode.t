@@ -23,41 +23,51 @@ if (! $dbh) {
 
 isnt ($dbh, undef, 'Connect to database for unicode testing');
 
-my $pgversion = $dbh->{pg_server_version};
-
 my $t;
 
-my $name = "\N{LATIN CAPITAL LETTER E WITH ACUTE}milie du Ch\N{LATIN SMALL LETTER A WITH CIRCUMFLEX}telet";
+my $name_d = my $name_u = "\N{LATIN CAPITAL LETTER E WITH ACUTE}milie du Ch\N{LATIN SMALL LETTER A WITH CIRCUMFLEX}telet";
+utf8::downgrade($name_d);
+utf8::upgrade($name_u);
 
-my $SQL = 'SELECT ?::text';
-my $sth = $dbh->prepare($SQL);
-$sth->execute($name);
-my $result = $sth->fetchall_arrayref->[0][0];
-$t = 'Fetching UTF-8 string from the database returns proper string';
-is ($result, $name, $t);
-$t = 'Fetching UTF-8 string from the database returns string with UTF-8 flag on';
-ok (utf8::is_utf8($result), $t);
+foreach (
+    [upgraded => text => $name_u],
+    [downgraded => text => $name_d],
+    [upgraded => 'text[]' => [$name_u]],
+    [downgraded => 'text[]' => [$name_d]],
+    [mixed => 'text[]' => [$name_d,$name_u]],
+) {
+    my ($state, $type, $value) = @$_;
+    $dbh->{pg_enable_utf8} = 1;
 
-$dbh->{pg_enable_utf8} = 0;
-$sth->execute($name);
-$result = $sth->fetchall_arrayref->[0][0];
-$t = 'Fetching UTF-8 string from the database returns proper string (pg_enable_utf8=0)';
-my $noutfname  = $name;
-Encode::_utf8_off($noutfname);
-is ($result, $noutfname, $t);
-$t = 'Fetching UTF-8 string from the database returns string with UTF-8 flag off (pg_enable_utf8=0)';
-ok (!utf8::is_utf8($result), $t);
+    my $SQL = "SELECT ?::$type";
+    my $sth = $dbh->prepare($SQL);
+    $sth->execute($value);
+    my $result = $sth->fetchall_arrayref->[0][0];
+    $t = "Fetching $state UTF-8 $type from the database returns proper value";
+    is_deeply ($result, $value, $t);
+    $t = "Fetching $state UTF-8 $type from the database returns string with UTF-8 flag on";
+    ok (utf8::is_utf8($_), $t) for (ref $result ? @{$result} : $result);
+
+    $dbh->{pg_enable_utf8} = 0;
+    $sth->execute($value);
+    $result = $sth->fetchall_arrayref->[0][0];
+    $t = "Fetching $state UTF-8 $type from the database returns proper string (pg_enable_utf8=0)";
+    utf8::encode($_) for (ref $value ? @{$value} : $value);
+    is_deeply ($result, $value, $t);
+    $t = "Fetching $state UTF-8 $type from the database returns string with UTF-8 flag off (pg_enable_utf8=0)";
+    ok (!utf8::is_utf8($result), $t) for (ref $result ? @{$result} : $result);
+}
 
 $t = 'Generated string is not utf8';
-$name = 'Ada Lovelace';
+my $name = 'Ada Lovelace';
 utf8::encode($name);
 ok (!utf8::is_utf8($name), $t);
 
 $dbh->{pg_enable_utf8} = -1;
-$SQL = 'SELECT ?::text';
-$sth = $dbh->prepare($SQL);
+my $SQL = 'SELECT ?::text';
+my $sth = $dbh->prepare($SQL);
 $sth->execute($name);
-$result = $sth->fetchall_arrayref->[0][0];
+my $result = $sth->fetchall_arrayref->[0][0];
 $t = 'Fetching ASCII string from the database returns proper string';
 is ($result, $name, $t);
 $t = 'Fetching ASCII string from the database returns string with UTF-8 flag on';
