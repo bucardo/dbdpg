@@ -9,6 +9,7 @@
 
 */
 
+#define NEED_newSVpvn_flags
 
 #include "Pg.h"
 
@@ -215,6 +216,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 
 	CODE:
 	{
+		bool utf8;
 		D_imp_dbh(dbh);
 
 		SvGETMAGIC(to_quote_sv);
@@ -267,16 +269,18 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 			}
 
 			/* At this point, type_info points to a valid struct, one way or another */
+			utf8 = imp_dbh->client_encoding_utf8 && PG_BYTEA != type_info->type_id;
 
 			if (SvMAGICAL(to_quote_sv))
 				(void)mg_get(to_quote_sv);
+
+			/* avoid up- or down-grading the argument */
+			to_quote_sv = pg_rightgraded_sv(aTHX_ to_quote_sv, utf8);
 				
 			to_quote = SvPV(to_quote_sv, len);
 			/* Need good debugging here */
 			quoted = type_info->quote(to_quote, len, &retlen, imp_dbh->pg_server_version >= 80100 ? 1 : 0);
-			RETVAL = newSVpvn(quoted, retlen);
-			if (SvUTF8(to_quote_sv)) /* What about overloaded objects? */
-				SvUTF8_on(RETVAL);
+			RETVAL = newSVpvn_utf8(quoted, retlen, utf8);
 			Safefree (quoted);
 		}
 	}
