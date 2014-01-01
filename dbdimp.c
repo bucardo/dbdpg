@@ -1530,12 +1530,15 @@ SV * pg_db_pg_notifies (SV * dbh, imp_dbh_t * imp_dbh)
 
 
 /* ================================================================== */
-int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attribs)
+int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * attribs)
 {
 	dTHX;
 	D_imp_dbh_from_sth;
 	STRLEN mypos=0, wordstart, newsize; /* Used to find and set firstword */
 	SV **svp; /* To help parse the arguments */
+
+	statement_sv = pg_rightgraded_sv(aTHX_ statement_sv, imp_dbh->client_encoding_utf8);
+	char *statement = SvPV_nolen(statement_sv);
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_prepare (statement: %s)\n", THEADER_slow, statement);
 

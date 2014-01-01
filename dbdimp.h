@@ -158,8 +158,8 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 #define dbd_discon_all  pg_discon_all
 int dbd_discon_all (SV * drh, imp_drh_t * imp_drh);
 
-#define dbd_st_prepare  pg_st_prepare
-int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attribs);
+#define dbd_st_prepare_sv  pg_st_prepare_sv
+int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * attribs);
 
 #define dbd_bind_ph pg_bind_ph
 int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV sql_type, SV * attribs, int is_inout, IV maxlen);
