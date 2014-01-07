@@ -8,6 +8,7 @@ use 5.006;
 use strict;
 use warnings;
 use utf8;
+use charnames ':full';
 use Encode;
 use Test::More;
 use lib 't','.';
@@ -67,6 +68,11 @@ $t = 'Fetching ASCII string from the database returns proper string (pg_enable_u
 is ($result, $name, $t);
 $t = 'Fetching ASCII string from the database returns string with UTF-8 flag off (pg_enable_utf8=0)';
 ok (!utf8::is_utf8($result), $t);
+
+my $before = "\N{WHITE SMILING FACE}";
+my ($after) = $dbh->selectrow_array('SELECT ?::text', {}, $before);
+is($after, $before, 'string is the same after round trip');
+ok(utf8::is_utf8($after), 'string has utf8 flag set');
 
 
 cleanup_database($dbh,'test');
