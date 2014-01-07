@@ -39,7 +39,7 @@ while (<DATA>) {
 
 sub spellcheck {
 	my ($desc, $text, $filename) = @_;
-	my $check = Text::SpellChecker->new(text => $text);
+	my $check = Text::SpellChecker->new(text => $text, lang => 'en_US');
 	my %badword;
 	while (my $word = $check->next_word) {
 		next if $okword{Common}{$word} or $okword{$filename}{$word};
