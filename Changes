@@ -86,6 +86,9 @@ Version 3.0.0
   - Fix typo in docs for pg_placeholder_dollaronly.
     [Bryan Carpenter] (CPAN bug #91400)
 
+  - Explicitly specify en_US for spell checking
+    [Dagfinn Ilmari Mannsåker] (CPAN bug #91804)
+
 
 Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb7244046e8f47420d)
 
