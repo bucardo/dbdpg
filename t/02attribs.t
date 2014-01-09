@@ -438,7 +438,7 @@ SKIP: {
 	ok (Encode::is_utf8($name), $t);
 
 	$t='Unicode (utf8) data returned from database is not corrupted';
-	is (length($name), 5, $t);
+	is (length($name), 4, $t);
 
 	$t='ASCII text returned from database does have utf8 bit set';
 	$sth->finish();
