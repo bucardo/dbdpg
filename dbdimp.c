@@ -287,7 +287,7 @@ static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
 
 	/* Set as utf-8 */
 	if (imp_dbh->pg_utf8_flag)
-		sv_utf8_upgrade(DBIc_ERRSTR(imp_xxh));
+		SvUTF8_on(DBIc_ERRSTR(imp_xxh));
 
 	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_error\n", THEADER_slow);
 
@@ -1151,7 +1151,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 				TRACE_PQFNAME;
 				fieldname = PQfname(imp_sth->result, fields);
 				sv_fieldname = newSVpv(fieldname,0);
-				sv_utf8_upgrade(sv_fieldname);
+				SvUTF8_on(sv_fieldname);
 				(void)av_store(av, fields, sv_fieldname);
 			}
 		}
@@ -2754,7 +2754,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 				else {
 					SV *sv = newSVpvn(string, section_size);
 					if (imp_dbh->pg_utf8_flag) {
-						sv_utf8_upgrade(sv);
+						SvUTF8_on(sv);
 					}
 					av_push(currentav, sv);
 
@@ -3570,14 +3570,14 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 			}
 			if (imp_dbh->pg_utf8_flag) {
 				/*
-				  The only exception to our rule about setting utf8 if the client_encoding
-				  is set to UTF8 is bytea.
+				  The only exception to our rule about setting utf8 (when the client_encoding
+				  is set to UTF8) is bytea.
 				*/
 				if (type_info && PG_BYTEA == type_info->type_id) {
 					SvUTF8_off(sv);
 				}
 				else {
-					sv_utf8_upgrade(sv);
+					SvUTF8_on(sv);
 				}
 			}
 		}
@@ -3965,7 +3965,7 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 	if (copystatus > 0) {
 		sv_setpv(dataline, tempbuf);
 		if (imp_dbh->pg_utf8_flag)
-			sv_utf8_upgrade(dataline);
+			SvUTF8_on(dataline);
 		TRACE_PQFREEMEM;
 		PQfreemem(tempbuf);
 	}

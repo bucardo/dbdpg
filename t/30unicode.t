@@ -27,8 +27,7 @@ my $pgversion = $dbh->{pg_server_version};
 
 my $t;
 
-my $name = 'Émilie du Châtelet';
-utf8::encode($name);
+my $name = "\N{LATIN CAPITAL LETTER E WITH ACUTE}milie du Ch\N{LATIN SMALL LETTER A WITH CIRCUMFLEX}telet";
 
 my $SQL = 'SELECT ?::text';
 my $sth = $dbh->prepare($SQL);
@@ -43,13 +42,16 @@ $dbh->{pg_enable_utf8} = 0;
 $sth->execute($name);
 $result = $sth->fetchall_arrayref->[0][0];
 $t = 'Fetching UTF-8 string from the database returns proper string (pg_enable_utf8=0)';
-is ($result, $name, $t);
+my $noutfname  = $name;
+Encode::_utf8_off($noutfname);
+is ($result, $noutfname, $t);
 $t = 'Fetching UTF-8 string from the database returns string with UTF-8 flag off (pg_enable_utf8=0)';
 ok (!utf8::is_utf8($result), $t);
 
-
+$t = 'Generated string is not utf8';
 $name = 'Ada Lovelace';
 utf8::encode($name);
+ok (!utf8::is_utf8($name), $t);
 
 $dbh->{pg_enable_utf8} = -1;
 $SQL = 'SELECT ?::text';
@@ -69,11 +71,11 @@ is ($result, $name, $t);
 $t = 'Fetching ASCII string from the database returns string with UTF-8 flag off (pg_enable_utf8=0)';
 ok (!utf8::is_utf8($result), $t);
 
+$dbh->{pg_enable_utf8} = 1;
 my $before = "\N{WHITE SMILING FACE}";
 my ($after) = $dbh->selectrow_array('SELECT ?::text', {}, $before);
 is($after, $before, 'string is the same after round trip');
 ok(utf8::is_utf8($after), 'string has utf8 flag set');
-
 
 cleanup_database($dbh,'test');
 $dbh->disconnect();
