@@ -4,7 +4,7 @@ package Bundle::DBD::Pg;
 use strict;
 use warnings;
 
-$VERSION = '2.20.1_5';
+$VERSION = '2.20.1_6';
 
 1;
 
