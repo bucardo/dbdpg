@@ -1,4 +1,4 @@
-'GSM' is Greg Sabino Mullane, greg@turnstep.com
+ 'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
 Version 3.0.0
@@ -18,7 +18,7 @@ Version 3.0.0
     was never used).
     [Greg Sabino Mullane]
 
-  - Map SQL_CHAR back to bpchar, not char.
+  - Map SQL_CHAR back to bpchar, not char
     [Greg Sabino Mullane, reported by H.Merijn Brand]
 
   - Do not force oids to Perl ints
@@ -40,7 +40,7 @@ Version 3.0.0
   - Better handling of libpq errors to return SQLSTATE 08000
     [Stephen Keller]
 
-  - Make sure CREATE TABLE .. AS SELECT returns rows in non do() cases.
+  - Make sure CREATE TABLE .. AS SELECT returns rows in non do() cases
 
   - Add support for AutoInactiveDestroy
     [David Dick] (CPAN bug #68893)
@@ -80,11 +80,14 @@ Version 3.0.0
     [Dagfinn Ilmari Mannsåker] (CPAN bug #83638)
 
   - Make sure App::Info does not prompt for pg_config location 
-    if AUTOMATED_TESTING or PERL_MM_USE_DEFAULT is set.
+    if AUTOMATED_TESTING or PERL_MM_USE_DEFAULT is set
     [David E. Wheeler] (CPAN bug #90799)
 
-  - Fix typo in docs for pg_placeholder_dollaronly.
+  - Fix typo in docs for pg_placeholder_dollaronly
     [Bryan Carpenter] (CPAN bug #91400)
+
+  - Cleanup dangling largeobjects in tests
+    [Fitz Elliott] (CPAN bug #92212)
 
   - Explicitly specify en_US for spell checking
     [Dagfinn Ilmari Mannsåker] (CPAN bug #91804)
