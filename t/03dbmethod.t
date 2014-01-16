@@ -1535,6 +1535,7 @@ SKIP: {
 			$thandle = $dbh->pg_lo_import_with_oid($filename, 0);
 		};
 		ok ($thandle, $t);
+		$dbh->rollback();
 	}
 
 	unlink $filename;
@@ -1560,6 +1561,7 @@ SKIP: {
 	is ($data, "abc\ndef", $t);
 	close $fh or warn 'Could not close tempfile';
 	unlink $filename;
+	$dbh->pg_lo_unlink($objid);
 }
 
 ## Same pg_lo_* tests, but with AutoCommit on
@@ -1637,6 +1639,11 @@ SKIP: {
 	$info = $sth->fetchall_arrayref()->[0][0];
 	is_deeply ($info, "abc\ndef", $t);
 
+	# cleanup last lo
+	$dbh->{AutoCommit} = 0;
+	$dbh->pg_lo_unlink($handle);
+	$dbh->{AutoCommit} = 1;
+
 	$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, no command)';
 	$dbh->begin_work();
 	$handle = $dbh->pg_lo_import($filename);
@@ -1708,6 +1715,11 @@ SKIP: {
 	is ($data, "abc\ndef", $t);
 	close $fh or warn 'Could not close tempfile';
 	unlink $filename;
+
+	# cleanup last lo
+	$dbh->{AutoCommit} = 0;
+	$dbh->pg_lo_unlink($handle);
+	$dbh->{AutoCommit} = 1;
 }
 $dbh->{AutoCommit} = 0;
 
