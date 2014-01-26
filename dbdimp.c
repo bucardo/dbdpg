@@ -2677,6 +2677,8 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_destringify_array (string: %s quotechar: %c)\n",
 					THEADER_slow, input, coltype->array_delimeter);
 
+	fprintf(stderr, "Trying to destringify %s\n", input);
+
 	/*
 	  Note: we don't do careful balance checking here, as this is coming straight from 
 	  the Postgres backend, and we rely on it to give us a sane and balanced structure
@@ -2749,8 +2751,13 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 					av_push(currentav, newSViv(SvIV(sv_2mortal(newSVpvn(string,section_size)))));
 				else if (2 == coltype->svtype)
 					av_push(currentav, newSVnv(SvNV(sv_2mortal(newSVpvn(string,section_size)))));
-				else if (3 == coltype->svtype)
-					av_push(currentav, newSViv('t' == *string ? 1 : 0));
+				else if (3 == coltype->svtype) {
+					if (imp_dbh->pg_bool_tf) {
+						av_push(currentav, newSVpv('1' == *string ? "t" : "f", 0));
+					}
+					else
+						av_push(currentav, newSViv('1' == *string ? 1 : 0));
+				}
 				else {
 					SV *sv = newSVpvn(string, section_size);
 					if (0 != strncmp(coltype->type_name, "_bytea", 6)
