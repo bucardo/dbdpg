@@ -28,13 +28,12 @@ if ($pgversion >= 80100) {
 
 my ($sth, $t);
 
-$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytetest,bytearray) VALUES (?,?,'{1,2,3}')});
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytetest,bytearray,testarray2) VALUES (?,?,'{1,2,3}','{5,6,7}')});
 
 $t='bytea insert test with string containing null and backslashes';
 $sth->bind_param(1, undef, { pg_type => PG_INT4 });
 $sth->bind_param(2, undef, { pg_type => PG_BYTEA });
-ok ($sth->execute(400, 'aa\\bb\\cc\\\0dd\\'
-), $t);
+ok ($sth->execute(400, 'aa\\bb\\cc\\\0dd\\'), $t);
 
 $t='bytea insert test with string containing a single quote';
 ok ($sth->execute(401, '\''), $t);
@@ -59,6 +58,20 @@ else {
 }
 
 $sth->finish();
+
+## Test arrays of bytea
+my $SQL = 'SELECT testarray2, bytetest, bytearray FROM dbd_pg_test';
+$sth = $dbh->prepare($SQL);
+$sth->execute();
+my $info = $sth->fetch;
+$sth->finish();
+use Data::Dumper;
+use Data::Peek;
+warn Dumper $info;
+warn DPeek($info->[0][0]);
+warn DPeek($info->[1]);
+warn DPeek($info->[2][0]);
+
 
 cleanup_database($dbh,'test');
 $dbh->disconnect();
