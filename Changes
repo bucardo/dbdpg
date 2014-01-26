@@ -18,6 +18,9 @@ Version 3.0.0
     was never used).
     [Greg Sabino Mullane]
 
+  - Better handling of items inside of arrays, particularly bytea arrays.
+    [Greg Sabino Mullane] (CPAN bug #91454)
+
   - Map SQL_CHAR back to bpchar, not char
     [Greg Sabino Mullane, reported by H.Merijn Brand]
 
