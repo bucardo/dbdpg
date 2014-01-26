@@ -2753,7 +2753,8 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 					av_push(currentav, newSViv('t' == *string ? 1 : 0));
 				else {
 					SV *sv = newSVpvn(string, section_size);
-					if (imp_dbh->pg_utf8_flag) {
+					if (0 != strncmp(coltype->type_name, "_bytea", 6)
+						&& imp_dbh->pg_utf8_flag) {
 						SvUTF8_on(sv);
 					}
 					av_push(currentav, sv);
