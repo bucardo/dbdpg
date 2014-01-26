@@ -59,20 +59,6 @@ else {
 
 $sth->finish();
 
-## Test arrays of bytea
-my $SQL = 'SELECT testarray2, bytetest, bytearray FROM dbd_pg_test';
-$sth = $dbh->prepare($SQL);
-$sth->execute();
-my $info = $sth->fetch;
-$sth->finish();
-use Data::Dumper;
-use Data::Peek;
-warn Dumper $info;
-warn DPeek($info->[0][0]);
-warn DPeek($info->[1]);
-warn DPeek($info->[2][0]);
-
-
 cleanup_database($dbh,'test');
 $dbh->disconnect();
 
