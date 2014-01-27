@@ -2677,8 +2677,6 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_destringify_array (string: %s quotechar: %c)\n",
 					THEADER_slow, input, coltype->array_delimeter);
 
-	fprintf(stderr, "Trying to destringify %s\n", input);
-
 	/*
 	  Note: we don't do careful balance checking here, as this is coming straight from 
 	  the Postgres backend, and we rely on it to give us a sane and balanced structure
