@@ -92,6 +92,9 @@ Version 3.0.0
   - Cleanup dangling largeobjects in tests
     [Fitz Elliott] (CPAN bug #92212)
 
+  - Fix skip test counting in t/09arrays.t
+    [Greg Sabino Mullane] (CPAN bug #79544)
+
   - Explicitly specify en_US for spell checking
     [Dagfinn Ilmari Mannsåker] (CPAN bug #91804)
 
