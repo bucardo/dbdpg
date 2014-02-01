@@ -9,6 +9,12 @@ use strict;
 use warnings;
 use Test::More tests => 1;
 use lib 't','.';
+
+if ($ENV{DBDPG_NOCLEANUP}) {
+	ok (q{No cleaning up because ENV 'DBDPG_NOCLEANUP' is set});
+	exit;
+}
+
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
