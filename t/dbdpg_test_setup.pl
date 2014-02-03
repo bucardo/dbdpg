@@ -210,7 +210,7 @@ version: $version
 
 	if (! $testdsn) {
 		$helpconnect = 1;
-#		$testdsn = $^O =~ /Win32/ ? 'dbi:Pg:host=localhost' : 'dbi:Pg:';
+		$testdsn = $^O =~ /Win32/ ? 'dbi:Pg:host=localhost' : 'dbi:Pg:';
 	}
 	if (! $testuser) {
 		$testuser = 'postgres';
@@ -222,6 +222,7 @@ version: $version
 			$dbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
 								{RaiseError => 1, PrintError => 0, AutoCommit => 1});
 		};
+
 		last GETHANDLE if ! $@; ## Made it!
 		## If the error was because of the user, try a few others
 		if ($@ =~ /postgres/) {
@@ -263,7 +264,7 @@ version: $version
 		$helpconnect = 16;
 
 		## Use the initdb found by App::Info
-		$initdb = $ENV{PGINITDB} || '';
+		$initdb = $ENV{DBDPG_INITDB} || $ENV{DBDPG_INITDB} || '';
 		if (!$initdb or ! -e $initdb) {
 			$initdb = 'initdb';
 		}
@@ -287,7 +288,7 @@ version: $version
 			}
 			else {
 				my $msg = 'Failed to run initdb (executable probably not available)';
-				exists $ENV{PGINITDB} and $msg .= " ENV was: $ENV{PGINITDB}";
+				exists $ENV{DBDPG_INITDB} and $msg .= " ENV was: $ENV{DBDPG_INITDB}";
 				$msg .= " Final call was: $initdb";
 				$@ = $msg;
 			}
@@ -719,8 +720,8 @@ sub get_test_settings {
 
 	## Find the best candidate for the pg_ctl program
 	my $pg_ctl = 'pg_ctl';
-	if (exists $ENV{PGINITDB} and -e $ENV{PGINITDB}) {
-		($pg_ctl = $ENV{PGINITDB}) =~ s/initdb/pg_ctl/;
+	if (exists $ENV{DBDPG_INITDB} and -e $ENV{DBDPG_INITDB}) {
+		($pg_ctl = $ENV{DBDPG_INITDB}) =~ s/initdb/pg_ctl/;
 	}
 	my ($testdsn, $testuser, $testdir, $error) = ('','','','?');
 	my ($helpconnect, $su, $uid, $initdb, $version) = (0,'','','default',0);
