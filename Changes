@@ -1,6 +1,11 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
+Version ?
+
+  - Allow "WITH" and "VALUES" as valid words starting a DML statement
+    [Greg Sabino Mullane] (CPAN bug #92724)
+
 Version 3.0.0  Released February 3, 2014 (git commit 9725314f27a8d65fc05bdeda3da8ce9c251f79bd)
 
   - Major change in UTF-8 handling. If client_encoding is set to UTF-8, 
