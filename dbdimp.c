@@ -1580,7 +1580,9 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 		if (0 == strcasecmp(imp_sth->firstword, "SELECT") ||
 			0 == strcasecmp(imp_sth->firstword, "INSERT") ||
 			0 == strcasecmp(imp_sth->firstword, "UPDATE") ||
-			0 == strcasecmp(imp_sth->firstword, "DELETE")
+			0 == strcasecmp(imp_sth->firstword, "DELETE") ||
+			0 == strcasecmp(imp_sth->firstword, "VALUES") ||
+			0 == strcasecmp(imp_sth->firstword, "WITH")
 			) {
 			imp_sth->is_dml = DBDPG_TRUE;
 		}
