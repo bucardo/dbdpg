@@ -405,7 +405,7 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
 	
 	if (!sqlstate) {
 		/* Do our best to map the status result to a sqlstate code */
-		switch (status) {
+		switch ((int)status) {
 		case PGRES_EMPTY_QUERY:
 		case PGRES_COMMAND_OK:
 		case PGRES_TUPLES_OK:
@@ -2907,7 +2907,7 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 	imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
 
 	if (TRACE4_slow) TRC(DBILOGFP, "%sGot a status of %d\n", THEADER_slow, status);
-	switch (status) {
+	switch ((int)status) {
 	case PGRES_TUPLES_OK:
 		TRACE_PQNTUPLES;
 		rows = PQntuples(result);
@@ -4824,7 +4824,7 @@ int pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 	while ((result = PQgetResult(imp_dbh->conn)) != NULL) {
 		/* TODO: Better multiple result-set handling */
 		status = _sqlstate(aTHX_ imp_dbh, result);
-		switch (status) {
+		switch ((int)status) {
 		case PGRES_TUPLES_OK:
 			TRACE_PQNTUPLES;
 			rows = PQntuples(result);
