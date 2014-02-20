@@ -109,7 +109,8 @@ $POSTGRES_INCLUDE = $ENV{POSTGRES_INCLUDE} || $pg->inc_dir;
 
 if (! defined $POSTGRES_INCLUDE) {
 	if (! defined $ENV{POSTGRES_HOME}) {
-		die "No POSTGRES_HOME defined, cannot find automatically\n";
+		warn "No POSTGRES_HOME defined, cannot find automatically\n";
+		exit 0;
 	}
 	$POSTGRES_INCLUDE = "$ENV{POSTGRES_HOME}/include";
 }
