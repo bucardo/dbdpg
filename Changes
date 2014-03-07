@@ -3,6 +3,9 @@
 
 Version ?
 
+  - Make sure UTF-8 enabled notifications are handled correctly
+    [Greg Sabino Mullane]
+
   - Allow "WITH" and "VALUES" as valid words starting a DML statement
     [Greg Sabino Mullane] (CPAN bug #92724)
 
