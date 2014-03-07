@@ -1474,11 +1474,21 @@ SV * pg_db_pg_notifies (SV * dbh, imp_dbh_t * imp_dbh)
 	}
 
 	ret=newAV();
-	av_push(ret, newSVpv(notify->relname,0) );
+
+	SV *relnamesv = newSVpv(notify->relname, 0);
+	if (imp_dbh->pg_utf8_flag) {
+		SvUTF8_on(relnamesv);
+	}
+	av_push(ret, relnamesv);
+
 	av_push(ret, newSViv(notify->be_pid) );
-	av_push(ret, newSVpv(notify->extra,0) );
-	/* Think about utf-8 in payloads someday... */
-	
+
+	SV *payloadsv = newSVpv(notify->extra, 0);
+	if (imp_dbh->pg_utf8_flag) {
+		SvUTF8_on(payloadsv);
+	}
+	av_push(ret, payloadsv);
+
 	TRACE_PQFREEMEM;
  	PQfreemem(notify);
 
