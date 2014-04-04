@@ -53,6 +53,7 @@ sql_type_info_t* sql_type_data(int);
 #define           PG_INTERNAL  2281
 #define           PG_INTERVAL  1186
 #define               PG_JSON  114
+#define              PG_JSONB  3802
 #define   PG_LANGUAGE_HANDLER  2280
 #define               PG_LINE  628
 #define               PG_LSEG  601
@@ -67,6 +68,7 @@ sql_type_info_t* sql_type_data(int);
 #define               PG_PATH  602
 #define       PG_PG_ATTRIBUTE  75
 #define           PG_PG_CLASS  83
+#define             PG_PG_LSN  3220
 #define       PG_PG_NODE_TREE  194
 #define            PG_PG_PROC  81
 #define            PG_PG_TYPE  71
@@ -132,6 +134,7 @@ sql_type_info_t* sql_type_data(int);
 #define     PG_INT8RANGEARRAY  3927
 #define      PG_INTERVALARRAY  1187
 #define          PG_JSONARRAY  199
+#define         PG_JSONBARRAY  3807
 #define          PG_LINEARRAY  629
 #define          PG_LSEGARRAY  1018
 #define       PG_MACADDRARRAY  1040
@@ -142,6 +145,7 @@ sql_type_info_t* sql_type_data(int);
 #define           PG_OIDARRAY  1028
 #define     PG_OIDVECTORARRAY  1013
 #define          PG_PATHARRAY  1019
+#define        PG_PG_LSNARRAY  3221
 #define         PG_POINTARRAY  1017
 #define       PG_POLYGONARRAY  1027
 #define        PG_RECORDARRAY  2287
