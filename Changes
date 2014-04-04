@@ -1,7 +1,7 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version ?
+Version 3.1.0  Released April 4, 2014
 
   - Make sure UTF-8 enabled notifications are handled correctly
     [Greg Sabino Mullane]
