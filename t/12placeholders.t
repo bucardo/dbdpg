@@ -586,7 +586,7 @@ for my $char (qw!+ / : @ [ `!) { ## six characters
 		$sth->execute();
 		$sth->finish();
 	};
-	like ($@, qr{syntax error}, $t);
+	like ($@, qr{syntax error}, "$t: char=$char");
 }
 
 $t='Dollar quotes with valid characters are parsed as identifiers';
