@@ -251,12 +251,11 @@ is ($value, 1, $t);
 
 {
 
-local $SIG{__WARN__} = sub { $warning = shift; };
+local $SIG{__WARN__} = sub { $warning .= shift; };
 
 $dbh->do(q{SET client_min_messages = 'DEBUG1'});
 $t='DB handle attribute "PrintWarn" works when on';
 $warning = q{};
-## FIXME: Fails on recent Postgres because the final message is a LOG
 eval {
 	$dbh->do('CREATE TEMP TABLE dbd_pg_test_temp(id INT PRIMARY KEY)');
 };
