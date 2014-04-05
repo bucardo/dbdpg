@@ -653,8 +653,6 @@ to the Changes files. Then commit the Changes file.
 
 * Announce to the "public" lists
 
-dbd-pg@perl.org
-pgsql-interfaces@postgresql.org
 dbi-users@perl.org, dbi-dev@perl.org, dbi-announce@perl.org
 
 The format for DBI announcements:
