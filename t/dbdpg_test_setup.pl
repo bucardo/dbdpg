@@ -117,7 +117,7 @@ version: $version
 			1;
 		};
 
-		if ($@ =~ /invalid connection option/ or $@ =~ /failed:.*"dbbarf"/) {
+		if ($@ =~ /invalid connection option/ or $@ =~ /"dbbarf"/) {
 			return $helpconnect, $@, undef;
 		}
 
