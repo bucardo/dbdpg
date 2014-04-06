@@ -1,7 +1,7 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 3.1.1  Released April 6, 2014 (git commit ?)
+Version 3.1.1  Released April 6, 2014 (git commit d337f93133e67267d54b65dc22a23f06e6883ad0)
 
   - Minor adjustments so tests pass in varying locales.
 
