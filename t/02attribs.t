@@ -1642,7 +1642,7 @@ SKIP: {
 			$val = $sth->fetchall_arrayref()->[0][0];
 			is ($val, $answer, $t);
 			# Let the child exit first
-			select(undef,undef,undef,0.3);
+			select(undef,undef,undef,0.5);
 		}
 		else { # Child
 			$dbh->{InactiveDestroy} = $destroy;
