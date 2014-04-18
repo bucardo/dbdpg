@@ -1168,7 +1168,7 @@ if ($client_level eq 'error') {
 		skip (q{Cannot test "HandleError" attribute because client_min_messages is set to 'error'}, 2);
 	}
  SKIP: {
-		skip (q{Cannot test "HandleSetErr" attribute because client_min_messages is set to 'error'}, 4);
+		skip (q{Cannot test "HandleSetErr" attribute because client_min_messages is set to 'error'}, 3);
 	}
 }
 else {
