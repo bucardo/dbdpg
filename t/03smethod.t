@@ -706,6 +706,10 @@ SKIP: {
 		skip ('Not testing cancel 7.4-compiled servers', 1);
 	}
 
+	if ($^O =~ /Win/) {
+		skip ('Cannot test POSIX signalling on Windows', 1);
+	}
+
 	$dbh->do('INSERT INTO dbd_pg_test (id) VALUES (?)',undef,1);
 	$dbh->commit;
 	$dbh->do('SELECT * FROM dbd_pg_test WHERE id = ? FOR UPDATE',undef,1);
