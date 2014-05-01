@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 243;
+plan tests => 250;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -194,7 +194,7 @@ my @geotypes = qw/point line lseg box path polygon circle/;
 
 eval { $dbh->do('DROP TABLE dbd_pg_test_geom'); }; $dbh->commit();
 
-$SQL = 'CREATE TABLE dbd_pg_test_geom (';
+$SQL = 'CREATE TABLE dbd_pg_test_geom ( id INT, argh TEXT[], ';
 for my $type (@geotypes) {
 	$SQL .= "x$type $type,";
 }
@@ -465,6 +465,7 @@ eval {
   $dbh->do(q{SET search_path TO ?}, undef, 'pg_catalog');
 };
 is ($@, q{}, $t);
+$dbh->rollback();
 
 $t='Calling do() with DML placeholder works';
 $dbh->commit();
@@ -492,10 +493,9 @@ eval {
   $sth->execute('pg_catalog');
 };
 is ($@, q{}, $t);
-$dbh->do(q{SET search_path TO DEFAULT});
+$dbh->rollback();
 
 $t='Prepare/execute does not allow geometric operators';
-$dbh->commit();
 eval {
 	$sth = $dbh->prepare(q{SELECT ?- lseg '(1,0),(1,1)'});
 	$sth->execute();
@@ -551,6 +551,58 @@ eval {
 	$sth->finish();
 };
 like ($@, qr{unbound placeholder}, $t);
+
+$t=q{Value of placeholder_nocolons defaults to 0};
+is ($dbh->{pg_placeholder_nocolons}, 0, $t);
+
+$t='Without placeholder_nocolons, queries with array slices fail';
+$SQL = q{SELECT argh[1:2] FROM dbd_pg_test_geom WHERE id = ?};
+eval {
+	$sth = $dbh->prepare($SQL);
+	$sth->execute(1);
+	$sth->finish();
+};
+like ($@, qr{Cannot mix placeholder styles}, $t);
+
+$t='Use of statement level placeholder_nocolons allows use of ? placeholders while ignoring :';
+eval {
+	$sth = $dbh->prepare($SQL, {pg_placeholder_nocolons => 1});
+	$sth->execute(1);
+	$sth->finish();
+};
+is ($@, q{}, $t);
+
+$t='Use of database level placeholder_nocolons allows use of ? placeholders while ignoring :';
+$dbh->{pg_placeholder_nocolons} = 1;
+eval {
+	$sth = $dbh->prepare($SQL);
+	$sth->execute(1);
+	$sth->finish();
+};
+is ($@, q{}, $t);
+
+$t=q{Value of placeholder_nocolons can be retrieved};
+is ($dbh->{pg_placeholder_nocolons}, 1, $t);
+
+$t='Use of statement level placeholder_nocolons allows use of $ placeholders while ignoring :';
+$dbh->{pg_placeholder_nocolons} = 0;
+$SQL = q{SELECT argh[1:2] FROM dbd_pg_test_geom WHERE id = $1};
+eval {
+	$sth = $dbh->prepare($SQL, {pg_placeholder_nocolons => 1});
+	$sth->execute(1);
+	$sth->finish();
+};
+is ($@, q{}, $t);
+
+$t='Use of database level placeholder_nocolons allows use of $ placeholders while ignoring :';
+$dbh->{pg_placeholder_nocolons} = 1;
+eval {
+	$sth = $dbh->prepare($SQL);
+	$sth->execute(1);
+	$sth->finish();
+};
+is ($@, q{}, $t);
+$dbh->{pg_placeholder_nocolons} = 0;
 
 $t='Prepare works with identical named placeholders';
 eval {
