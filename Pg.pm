@@ -1679,6 +1679,7 @@ use 5.008001;
 				pg_pass                        => undef,
 				pg_pid                         => undef,
 				pg_placeholder_dollaronly      => undef,
+				pg_placeholder_nocolons        => undef,
 				pg_port                        => undef,
 				pg_prepare_now                 => undef,
 				pg_protocol                    => undef,
@@ -1736,6 +1737,7 @@ use 5.008001;
 				pg_cmd_status             => undef,
 				pg_oid_status             => undef,
 				pg_placeholder_dollaronly => undef,
+				pg_placeholder_nocolons   => undef,
 				pg_prepare_name           => undef,
 				pg_prepare_now            => undef,
 				pg_segments               => undef,
@@ -2604,6 +2606,20 @@ Alternatively, you can set it at prepare time:
     {pg_placeholder_dollaronly => 1});
   $sth->execute('segname');
 
+If your queries use array slices but you still want to use question marks as
+placeholders, you can tell DBD::Pg to ignore just colon placeholders by setting
+the L</pg_placeholder_nocolons> attribute in the same way. Examples:
+
+  $dbh->{pg_placeholder_nocolons} = 1;
+  $sth = $dbh->prepare(q{SELECT array[1:2] FROM mytable WHERE id = ?});
+  $sth->execute(1);
+
+Again, you may set it param time as well:
+
+  $sth = $dbh->prepare(q{SELECT array[1:2] FROM mytable WHERE id = ?}.
+    {pg_placeholder_nocolons => 1});
+  $sth->execute(1);
+
 =head3 B<prepare_cached>
 
   $sth = $dbh->prepare_cached($statement, \%attr);
@@ -3202,6 +3218,12 @@ this was the default behavior in versions older than 3.0.0.
 DBD::Pg specific attribute. Defaults to false. When true, question marks inside of statements 
 are not treated as L<placeholders|/Placeholders>. Useful for statements that contain unquoted question 
 marks, such as geometric operators.
+
+=head3 B<pg_placeholder_nocolons> (boolean)
+
+DBD::Pg specific attribute. Defaults to false. When true, colons inside of statements
+are not treated as L<placeholders|/Placeholders>. Useful for statements that contain an
+array slice.
 
 =head3 B<pg_enable_utf8> (integer)
 
@@ -3869,6 +3891,12 @@ Setting pg_switch_prepared to 0 will force DBD::Pg to always use PQexecParams.
 DBD::Pg specific attribute. Defaults to off. When true, question marks inside of the query 
 being prepared are not treated as placeholders. Useful for statements that contain unquoted question 
 marks, such as geometric operators.
+
+=head3 B<pg_placeholder_nocolons> (boolean)
+
+DBD::Pg specific attribute. Defaults to off. When true, colons inside of statements
+are not treated as L<placeholders|/Placeholders>. Useful for statements that contain an
+array slice.
 
 =head3 B<pg_async> (integer)
 

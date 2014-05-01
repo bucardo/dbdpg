@@ -236,6 +236,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
  	imp_dbh->prepare_now       = DBDPG_FALSE;
 	imp_dbh->done_begin        = DBDPG_FALSE;
 	imp_dbh->dollaronly        = DBDPG_FALSE;
+	imp_dbh->nocolons          = DBDPG_FALSE;
 	imp_dbh->expand_array      = DBDPG_TRUE;
 	imp_dbh->txn_read_only     = DBDPG_FALSE;
 	imp_dbh->pid_number        = getpid();
@@ -791,6 +792,12 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 			retsv = newSViv((IV)imp_dbh->switch_prepared);
 		break;
 
+	case 23: /* pg_placeholder_nocolons */
+
+		if (strEQ("pg_placeholder_nocolons", key))
+			retsv = newSViv((IV)imp_dbh->nocolons);
+		break;
+
 	case 25: /* pg_placeholder_dollaronly */
 
 		if (strEQ("pg_placeholder_dollaronly", key))
@@ -954,6 +961,14 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 		}
 		break;
 
+	case 23: /* pg_placeholder_nocolons */
+
+		if (strEQ("pg_placeholder_nocolons", key)) {
+			imp_dbh->nocolons = newval ? DBDPG_TRUE : DBDPG_FALSE;
+			retval = 1;
+		}
+		break;
+
 	case 25: /* pg_placeholder_dollaronly */
 
 		if (strEQ("pg_placeholder_dollaronly", key)) {
@@ -1111,6 +1126,12 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 
 		if (strEQ("pg_switch_prepared", key))
 			retsv = newSViv((IV)imp_sth->switch_prepared);
+		break;
+
+	case 23: /* pg_placeholder_nocolons */
+
+		if (strEQ("pg_placeholder_nocolons", key))
+			retsv = newSViv((IV)imp_sth->nocolons);
 		break;
 
 	case 25: /* pg_placeholder_dollaronly */
@@ -1389,6 +1410,14 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 		}
 		break;
 
+	case 23: /* pg_placeholder_nocolons */
+
+		if (strEQ("pg_placeholder_nocolons", key)) {
+			imp_sth->nocolons = SvTRUE(valuesv) ? DBDPG_TRUE : DBDPG_FALSE;
+			retval = 1;
+		}
+		break;
+
 	case 25: /* pg_placeholder_dollaronly */
 
 		if (strEQ("pg_placeholder_dollaronly", key)) {
@@ -1549,6 +1578,7 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 	imp_sth->switch_prepared  = imp_dbh->switch_prepared;
 	imp_sth->prepare_now      = imp_dbh->prepare_now;
 	imp_sth->dollaronly       = imp_dbh->dollaronly;
+	imp_sth->nocolons         = imp_dbh->nocolons;
 
 	/* Parse and set any attributes passed in */
 	if (attribs) {
@@ -1564,6 +1594,9 @@ int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attrib
 		}
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_placeholder_dollaronly", 25, 0)) != NULL) {
 			imp_sth->dollaronly = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
+		}
+		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_placeholder_nocolons", 23, 0)) != NULL) {
+			imp_sth->nocolons = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
 		}
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_async", 8, 0)) != NULL) {
 			imp_sth->async_flag = (int)SvIV(*svp);
@@ -1950,7 +1983,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 				placeholder_type = 1;
 			}
 			/* Colon style, but skip two colons in a row (e.g. myval::float) */
-			else if (':' == ch) {
+			else if (':' == ch && ! imp_sth->nocolons) {
 				if (':' == *statement) {
 					/* Might as well skip _all_ consecutive colons */
 					while(':' == *statement) {
