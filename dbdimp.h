@@ -36,6 +36,7 @@ struct imp_dbh_st {
 	bool    prepare_now;       /* force immediate prepares, even with placeholders. Set by user, default is 0 */
 	bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */
 	bool    dollaronly;        /* only consider $1, $2 ... as valid placeholders */
+	bool    nocolons;          /* do not consider :1, :2 ... as valid placeholders */
 	bool    expand_array;      /* transform arrays from the db into Perl arrays? Default is 1 */
 	bool    txn_read_only;     /* are we in read-only mode? Set with $dbh->{ReadOnly} */
 
@@ -112,6 +113,7 @@ struct imp_sth_st {
 	bool   has_default;      /* does it have one or more 'DEFAULT' values? */
 	bool   has_current;      /* does it have one or more 'DEFAULT' values? */
 	bool   dollaronly;       /* Only use $1 as placeholders, allow all else */
+	bool   nocolons;         /* do not consider :1, :2 ... as valid placeholders */
 	bool   use_inout;        /* Any placeholders using inout? */
 	bool   all_bound;        /* Have all placeholders been bound? */
 };
