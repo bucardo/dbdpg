@@ -5,7 +5,7 @@ use warnings;
 use 5.008001;
 
 ## No version.pm for this one, as the prereqs are not loaded yet.
-my $VERSION = '3.1.1';
+my $VERSION = '3.2.0';
 
 ## App::Info is stored inside t/lib
 ## Create a proper path so we can use it below
@@ -303,7 +303,7 @@ MAKE_FRAG
 
 	$string .= <<'MAKE_SPLINT';
 
-## This must be version 3.1.2 or better: earlier versions have many 
+## This must be version 3.2.0 or better: earlier versions have many 
 ## problems parsing the DBI header files
 SPLINT = splint
 
