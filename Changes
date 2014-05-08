@@ -1,6 +1,20 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
+Version 3.2.0
+
+  - Add new attribute pg_placeholder_nocolons to turn off all parsing of
+    colons into placeholders.
+    [Graham Ollis] (CPAN bug #95173)
+
+  - Fix incorrect skip count for HandleSetErr
+    [Greg Sabino Mullane] (CPAN bug #94841)
+
+  - Don't attempt to use the POSIX signalling stuff if the OS is Win
+    [Greg Sabino Mullane] (CPAN bug ##94841)
+
+
+
 Version 3.1.1  Released April 6, 2014 (git commit d337f93133e67267d54b65dc22a23f06e6883ad0)
 
   - Minor adjustments so tests pass in varying locales.
