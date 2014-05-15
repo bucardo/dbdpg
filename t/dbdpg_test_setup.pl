@@ -264,7 +264,7 @@ version: $version
 		$helpconnect = 16;
 
 		## Use the initdb found by App::Info
-		$initdb = $ENV{DBDPG_INITDB} || $ENV{DBDPG_INITDB} || '';
+		$initdb = $ENV{DBDPG_INITDB} || $ENV{PGINITDB} || '';
 		if (!$initdb or ! -e $initdb) {
 			$initdb = 'initdb';
 		}
