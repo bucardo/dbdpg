@@ -1,7 +1,7 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 3.2.0
+Version 3.2.0  Released May 15, 2014 (git commit 897974c2865259bb9786d8b0989f8e42db0a0d79)
 
   - Add new attribute pg_placeholder_nocolons to turn off all parsing of
     colons into placeholders.
