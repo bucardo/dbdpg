@@ -13,6 +13,8 @@ Version 3.2.0
   - Don't attempt to use the POSIX signalling stuff if the OS is Win
     [Greg Sabino Mullane] (CPAN bug ##94841)
 
+  - Fix missing check for PGINITDB in the test suite.
+    [Nicholas Clark]
 
 
 Version 3.1.1  Released April 6, 2014 (git commit d337f93133e67267d54b65dc22a23f06e6883ad0)
