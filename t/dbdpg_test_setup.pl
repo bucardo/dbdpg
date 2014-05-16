@@ -722,6 +722,8 @@ sub get_test_settings {
 	my $pg_ctl = 'pg_ctl';
 	if (exists $ENV{DBDPG_INITDB} and -e $ENV{DBDPG_INITDB}) {
 		($pg_ctl = $ENV{DBDPG_INITDB}) =~ s/initdb/pg_ctl/;
+	} elsif (exists $ENV{PGINITDB} and -e $ENV{PGINITDB}) {
+		($pg_ctl = $ENV{PGINITDB}) =~ s/initdb/pg_ctl/;
 	}
 	my ($testdsn, $testuser, $testdir, $error) = ('','','','?');
 	my ($helpconnect, $su, $uid, $initdb, $version) = (0,'','','default',0);
