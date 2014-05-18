@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 250;
+plan tests => 251;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -555,8 +555,17 @@ like ($@, qr{unbound placeholder}, $t);
 $t=q{Value of placeholder_nocolons defaults to 0};
 is ($dbh->{pg_placeholder_nocolons}, 0, $t);
 
-$t='Without placeholder_nocolons, queries with array slices fail';
+$t='Simple array slices do not get picked up as placeholders';
 $SQL = q{SELECT argh[1:2] FROM dbd_pg_test_geom WHERE id = ?};
+eval {
+	$sth = $dbh->prepare($SQL);
+	$sth->execute(1);
+	$sth->finish();
+};
+is ($@, q{}, $t);
+
+$t='Without placeholder_nocolons, queries with array slices fail';
+$SQL = q{SELECT argh[1 :2] FROM dbd_pg_test_geom WHERE id = ?};
 eval {
 	$sth = $dbh->prepare($SQL);
 	$sth->execute(1);

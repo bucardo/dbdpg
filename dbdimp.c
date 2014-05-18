@@ -1699,6 +1699,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
  	unsigned char ch; /* The current character being checked */
 
+	unsigned char oldch; /* The previous character */
+
 	char quote; /* Current quote or comment character: used only in those two blocks */
 
 	bool found; /* Simple boolean */
@@ -1754,7 +1756,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 	/* Start everyone at the start of the string */
 	currpos = sectionstart = 0;
 
-	ch = 1;
+	ch = oldch = 1;
 
 	while (1) {
 
@@ -1762,6 +1764,9 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		if (ch < 1) {
 			break;
 		}
+
+		/* Store the old character in case we need to look backwards */
+		oldch = ch;
 
 		/* Put the current letter into ch, and advance statement to the next character */
 		ch = *statement++;
@@ -1771,12 +1776,14 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 		/* Quick short-circuit for uninteresting characters */
 		if (
-			(ch < 34 && ch != 0) || (ch > 63 && ch != 91) ||
-			(ch!=34 && ch!=39 &&    /* simple quoting */
-			 ch!=45 && ch!=47 &&    /* comment */
-			 ch!=36 &&              /* dollar quoting or placeholder */
-			 ch!=58 && ch!=63 &&    /* placeholder */
-			 ch!=91 &&              /* array slice */
+			(ch < 34 && ch != 0)
+			|| (ch > 63 && ch != 91) /* > @ABC... but not [ */
+			|| 
+			(ch!=34 && ch!=39 &&    /* " ' simple quoting */
+			 ch!=45 && ch!=47 &&    /* - / comment */
+			 ch!=36 &&              /* $   dollar quoting or placeholder */
+			 ch!=58 && ch!=63 &&    /* : ? placeholder */
+			 ch!=91 &&              /* [   array slice */
 			 ch!=0                  /* end of the string (create segment) */
 			 )
 			) {
@@ -1982,8 +1989,9 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 			if ('?' == ch) {
 				placeholder_type = 1;
 			}
-			/* Colon style, but skip two colons in a row (e.g. myval::float) */
+			/* Colon style */
 			else if (':' == ch && ! imp_sth->nocolons) {
+				/* Skip two colons in a row (e.g. myval::float) */
 				if (':' == *statement) {
 					/* Might as well skip _all_ consecutive colons */
 					while(':' == *statement) {
@@ -1992,6 +2000,16 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 					}
 					continue;
 				}
+				/* Skip number-colon-number */
+				if (isDIGIT(oldch) && isDIGIT(*statement)) {
+					/* Eat until we don't see a number */
+					while (isDIGIT(*statement)) {
+						++statement;
+						++currpos;
+					}
+					continue;
+				}
+				/* Only allow colon placeholders if they start with alphanum */
 				if (isALNUM(*statement)) {
 					while(isALNUM(*statement)) {
 						++statement;
