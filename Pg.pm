@@ -1171,19 +1171,28 @@ use 5.008001;
 					 and (defined $type and $type eq '%')
 					) {
 			$tbl_sql = qq{
-                    SELECT
-                       NULL::text AS "TABLE_CAT"
-                     , NULL::text AS "TABLE_SCHEM"
-                     , NULL::text AS "TABLE_NAME"
-                     , 'TABLE'    AS "TABLE_TYPE"
-                     , 'relkind: r' AS "REMARKS" $extracols
-                    UNION
-                    SELECT
-                       NULL::text AS "TABLE_CAT"
-                     , NULL::text AS "TABLE_SCHEM"
-                     , NULL::text AS "TABLE_NAME"
-                     , 'VIEW'     AS "TABLE_TYPE"
-                     , 'relkind: v' AS "REMARKS" $extracols
+                    SELECT "TABLE_CAT"
+                         , "TABLE_SCHEM"
+                         , "TABLE_NAME"
+                         , "TABLE_TYPE"
+                         , "REMARKS"
+                    FROM
+                      (SELECT NULL::text AS "TABLE_CAT"
+                            , NULL::text AS "TABLE_SCHEM"
+                            , NULL::text AS "TABLE_NAME") dummy_cols
+                    CROSS JOIN
+                      (SELECT 'TABLE'        AS "TABLE_TYPE"
+                            , 'relkind: r'   AS "REMARKS"
+                       UNION
+                       SELECT 'SYSTEM TABLE'
+                            , 'relkind: r; nspname ~ ^pg_'
+                       UNION
+                       SELECT 'VIEW'
+                            , 'relkind: v'
+                       UNION
+                       SELECT 'SYSTEM VIEW'
+                            , 'relkind: v; nspname ~ ^pg_') type_info
+                     ORDER BY "TABLE_TYPE" ASC
                 };
 		}
 		else {
@@ -1202,17 +1211,20 @@ use 5.008001;
 			if (defined $table and length $table) {
 					push @search, 'c.relname ' . ($table =~ /[_%]/ ? 'LIKE ' : '= ') . $dbh->quote($table);
 			}
-			## All we can see is "table" or "view". Default is both
-			my $typesearch = q{IN ('r','v')};
-			if (defined $type and length $type) {
-				if ($type =~ /\btable\b/i and $type !~ /\bview\b/i) {
-					$typesearch = q{= 'r'};
-				}
-				elsif ($type =~ /\bview\b/i and $type !~ /\btable\b/i) {
-					$typesearch = q{= 'v'};
-				}
-			}
-			push @search, "c.relkind $typesearch";
+
+      my %typesearch = (
+          TABLE          => q{c.relkind = 'r' AND n.nspname !~ '^pg_'},
+          VIEW           => q{c.relkind = 'v' AND n.nspname !~ '^pg_'},
+          'SYSTEM TABLE' => q{c.relkind = 'r' AND n.nspname  ~ '^pg_'},
+          'SYSTEM VIEW'  => q{c.relkind = 'v' AND n.nspname  ~ '^pg_'},
+      );
+			my $typespec = join ' OR ' =>
+			                 map { s/^'//g; s/'$//g; $typesearch{uc($_)} }
+			                   split(',', $type);
+			$typespec = $typespec
+			            ? "($typespec)"
+									: "c.relkind IN ('r', 'v')"; # default any table/view
+			push @search, $typespec;
 
 			my $TSJOIN = 'pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
 			if ($dbh->{private_dbdpg}{version} < 80000) {
