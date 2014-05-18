@@ -2,6 +2,10 @@
 
 Version 3.2.1
 
+  - Stricter testing for array slices: disallow number-colon-number from being
+    parsed as a placeholder.
+    [Greg Sabino Mullane] (CPAN bug #95713)
+
   - Adjust test regex to fix failing t/01_connect.t on some platforms
     [Greg Sabino Mullane]
 
