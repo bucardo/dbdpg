@@ -23,8 +23,6 @@ if (! $dbh) {
 
 isnt ($dbh, undef, 'Connect to database for unicode testing');
 
-my $t;
-
 my $name_d = my $name_u = "\N{LATIN CAPITAL LETTER E WITH ACUTE}milie du Ch\N{LATIN SMALL LETTER A WITH CIRCUMFLEX}telet";
 utf8::downgrade($name_d);
 utf8::upgrade($name_u);
@@ -39,17 +37,32 @@ foreach (
     [mixed => 'text[]' => [$name_d,$name_u]],
 ) {
     my ($state, $type, $value) = @$_;
-    foreach (
-        [placeholder => "SELECT ?::$type", $value],
+    foreach my $test (
+        {
+            qtype => 'placeholder',
+            sql => "SELECT ?::$type",
+            args => [$value],
+        },
         (($type eq 'text') ? (
-            [interpolated => "SELECT '$value'::$type"],
+            {
+                qtype => 'interpolated',
+                sql => "SELECT '$value'::$type",
+            },
         ):()),
     ) {
         foreach my $enable_utf8 (1, 0, -1) {
-            my ($qtype, $sql, @args) = @$_;
-            my $desc = "$state UTF-8 $qtype $type (pg_enable_utf8=$enable_utf8)";
-            is(utf8::is_utf8($sql), ($state eq 'upgraded'), "$desc query has correct flag")
-                if $qtype eq 'interpolated';
+            my $desc = "$state UTF-8 $test->{qtype} $type (pg_enable_utf8=$enable_utf8)";
+            my @args = @{$test->{args} || []};
+            my $want;
+            if ($enable_utf8) {
+                $want = $value;
+            } else {
+                $want = ref $value ? [ map encode_utf8($_), @{$value} ]
+                    : encode_utf8($value);
+            }
+
+            is(utf8::is_utf8($test->{sql}), ($state eq 'upgraded'), "$desc query has correct flag")
+                if $test->{qtype} eq 'interpolated';
             if ($state ne 'mixed') {
                 foreach my $arg (map { ref($_) ? @{$_} : $_ } @args) {
                     is(utf8::is_utf8($arg), ($state eq 'upgraded'), "$desc arg has correct flag")
@@ -57,22 +70,18 @@ foreach (
             }
             $dbh->{pg_enable_utf8} = $enable_utf8;
 
-            my $sth = $dbh->prepare($sql);
+            my $sth = $dbh->prepare($test->{sql});
             $sth->execute(@args);
             my $result = $sth->fetchall_arrayref->[0][0];
-            my $return_value =
-                $enable_utf8 ? $value :
-                ref $value   ? [ map encode_utf8($_), @{$value} ] :
-                encode_utf8($value);
-            $t = "$desc returns proper value";
-            is_deeply ($result, $return_value, $t);
-            $t = "$desc returns string with correct UTF-8 flag ";
-            is(utf8::is_utf8($_), !!$enable_utf8, $t) for (ref $result ? @{$result} : $result);
+            is_deeply ($result, $want,
+                       "$desc returns proper value");
+            is(utf8::is_utf8($_), !!$enable_utf8, "$desc returns string with correct UTF-8 flag")
+                for (ref $result ? @{$result} : $result);
         }
     }
 }
 
-$t = 'Generated string is not utf8';
+my $t = 'Generated string is not utf8';
 my $name = 'Ada Lovelace';
 utf8::encode($name);
 ok (!utf8::is_utf8($name), $t);
