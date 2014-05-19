@@ -23,20 +23,38 @@ if (! $dbh) {
 
 isnt ($dbh, undef, 'Connect to database for unicode testing');
 
-my $name_d = my $name_u = "\N{LATIN CAPITAL LETTER E WITH ACUTE}milie du Ch\N{LATIN SMALL LETTER A WITH CIRCUMFLEX}telet";
-utf8::downgrade($name_d);
-utf8::upgrade($name_u);
 
-# Before 5.12.0 the text to the left of => gets to be SvUTF8() under use utf8;
-# even if it's plain ASCII. This would confuse what we test for below.
+my @tests;
+
+# Beware, characters used for testing need to be known to Unicode version 4.0.0,
+# which is what perl 5.8.1 shipped with.
 foreach (
-    [upgraded => 'text' => $name_u],
-    [downgraded => 'text' => $name_d],
-    [upgraded => 'text[]' => [$name_u]],
-    [downgraded => 'text[]' => [$name_d]],
-    [mixed => 'text[]' => [$name_d,$name_u]],
-) {
-    my ($state, $type, $value) = @$_;
+    [ascii => 'Ada Lovelace'],
+    ['latin 1 range' => "\N{LATIN CAPITAL LETTER E WITH ACUTE}milie du Ch\N{LATIN SMALL LETTER A WITH CIRCUMFLEX}telet"],
+    # I'm finding it awkward to continue the theme of female mathematicians
+    ['base plane' => "Interrobang\N{INTERROBANG}"],
+    ['astral plane' => "\N{MUSICAL SYMBOL CRESCENDO}"],
+     ) {
+    my ($range, $text) = @$_;
+    my $name_d = my $name_u = $text;
+    utf8::upgrade($name_u);
+    # Before 5.12.0 the text to the left of => gets to be SvUTF8() under use utf8;
+    # even if it's plain ASCII. This would confuse what we test for below.
+    push @tests, (
+        [upgraded => $range => 'text' => $name_u],
+        [upgraded => $range => 'text[]' => [$name_u]],
+    );
+    if (utf8::downgrade($name_d, 1)) {
+        push @tests, (
+            [downgraded => $range => 'text' => $name_d],
+            [downgraded => $range => 'text[]' => [$name_d]],
+            [mixed => $range => 'text[]' => [$name_d,$name_u]],
+        );
+    }
+}
+
+foreach (@tests) {
+    my ($state, $range, $type, $value) = @$_;
     foreach my $test (
         {
             qtype => 'placeholder',
@@ -48,6 +66,7 @@ foreach (
                 qtype => 'interpolated',
                 sql => "SELECT '$value'::$type",
             },
+            # Test that what we send is the same as the database's idea of characters:
             {
                 qtype => 'placeholder length',
                 sql => "SELECT length(?::$type)",
@@ -62,7 +81,7 @@ foreach (
         ):()),
     ) {
         foreach my $enable_utf8 (1, 0, -1) {
-            my $desc = "$state UTF-8 $test->{qtype} $type (pg_enable_utf8=$enable_utf8)";
+            my $desc = "$state $range UTF-8 $test->{qtype} $type (pg_enable_utf8=$enable_utf8)";
             my @args = @{$test->{args} || []};
             my $want = exists $test->{want} ? $test->{want} : $value;
             if (!$enable_utf8) {
