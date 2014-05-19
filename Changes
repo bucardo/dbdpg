@@ -9,6 +9,9 @@ Version 3.2.1
   - Adjust test regex to fix failing t/01_connect.t on some platforms
     [Greg Sabino Mullane]
 
+  - Further tweaks to get PGINITDB working for test suite.
+    [Nicholas Clark]
+
 
 Version 3.2.0  Released May 15, 2014 (git commit 897974c2865259bb9786d8b0989f8e42db0a0d79)
 
