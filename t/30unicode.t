@@ -45,7 +45,7 @@ foreach (
             [interpolated => "SELECT '$value'::$type"],
         ):()),
     ) {
-        foreach my $enable_utf8 (1, 0) {
+        foreach my $enable_utf8 (1, 0, -1) {
             my ($qtype, $sql, @args) = @$_;
             my $desc = "$state UTF-8 $qtype $type (pg_enable_utf8=$enable_utf8)";
             is(utf8::is_utf8($sql), ($state eq 'upgraded'), "$desc query has correct flag")
