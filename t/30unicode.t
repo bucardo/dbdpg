@@ -48,21 +48,30 @@ foreach (
                 qtype => 'interpolated',
                 sql => "SELECT '$value'::$type",
             },
+            {
+                qtype => 'placeholder length',
+                sql => "SELECT length(?::$type)",
+                args => [$value],
+                want => length($value),
+            },
+            {
+                qtype => 'interpolated length',
+                sql => "SELECT length('$value'::$type)",
+                want => length($value),
+            },
         ):()),
     ) {
         foreach my $enable_utf8 (1, 0, -1) {
             my $desc = "$state UTF-8 $test->{qtype} $type (pg_enable_utf8=$enable_utf8)";
             my @args = @{$test->{args} || []};
-            my $want;
-            if ($enable_utf8) {
-                $want = $value;
-            } else {
-                $want = ref $value ? [ map encode_utf8($_), @{$value} ]
-                    : encode_utf8($value);
+            my $want = exists $test->{want} ? $test->{want} : $value;
+            if (!$enable_utf8) {
+                $want = ref $want ? [ map encode_utf8($_), @{$want} ]
+                    : encode_utf8($want);
             }
 
             is(utf8::is_utf8($test->{sql}), ($state eq 'upgraded'), "$desc query has correct flag")
-                if $test->{qtype} eq 'interpolated';
+                if $test->{qtype} =~ /^interpolated/;
             if ($state ne 'mixed') {
                 foreach my $arg (map { ref($_) ? @{$_} : $_ } @args) {
                     is(utf8::is_utf8($arg), ($state eq 'upgraded'), "$desc arg has correct flag")
@@ -75,8 +84,14 @@ foreach (
             my $result = $sth->fetchall_arrayref->[0][0];
             is_deeply ($result, $want,
                        "$desc returns proper value");
-            is(utf8::is_utf8($_), !!$enable_utf8, "$desc returns string with correct UTF-8 flag")
-                for (ref $result ? @{$result} : $result);
+            unless ($test->{qtype} =~ /length$/) {
+                # Whilst XS code can set SVf_UTF8 on an IV, the core's SV
+                # copying code doesn't copy it. So we can't assume that numeric
+                # values we see "out here" still have it set. Hence skip this
+                # test for the SQL length() tests.
+                is(utf8::is_utf8($_), !!$enable_utf8, "$desc returns string with correct UTF-8 flag")
+                    for (ref $result ? @{$result} : $result);
+            }
         }
     }
 }
