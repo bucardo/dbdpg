@@ -3851,7 +3851,7 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 		croak("dbd_st_destroy called twice!");
 
 	/* If the AutoInactiveDestroy flag has been set, we go no further */
-	if (DBIc_AIADESTROY(imp_dbh)) {
+	if ((DBIc_AIADESTROY(imp_dbh)) && ((U32)PerlProc_getpid() != imp_dbh->pid_number)) {
 		if (TRACE4_slow) {
 			TRC(DBILOGFP, "%sskipping sth destroy due to AutoInactiveDestroy\n", THEADER_slow);
 		}
