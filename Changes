@@ -6,6 +6,9 @@ Version 3.2.1
     parsed as a placeholder.
     [Greg Sabino Mullane] (CPAN bug #95713)
 
+  - Fix for small leak with AutoInactiveDestroy
+    [David Dick] (CPAN bug #95505)
+
   - Adjust test regex to fix failing t/01_connect.t on some platforms
     [Greg Sabino Mullane]
 
