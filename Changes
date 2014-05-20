@@ -1,6 +1,6 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
-Version 3.2.1  Released May 20, 2014
+Version 3.2.1  Released May 20, 2014 (git commit a56ef5c4715440d4fc2054df5477996b0e287467)
 
   - Stricter testing for array slices: disallow number-colon-number from being
     parsed as a placeholder.
