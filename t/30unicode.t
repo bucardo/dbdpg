@@ -144,6 +144,42 @@ my ($after) = $dbh->selectrow_array('SELECT ?::text', {}, $before);
 is($after, $before, 'string is the same after round trip');
 ok(utf8::is_utf8($after), 'string has utf8 flag set');
 
+# Test that what we get is the same as the database's idea of characters:
+for my $name ("LATIN CAPITAL LETTER N",
+              "LATIN SMALL LETTER E WITH ACUTE",
+              "CURRENCY SIGN",
+              # Has a different code point in Unicode, Windows 1252 and ISO-8859-15
+              "EURO SIGN",
+              "POUND SIGN",
+              "YEN SIGN",
+              # Has a different code point in Unicode and Windows 1252
+              "LATIN CAPITAL LETTER S WITH CARON",
+              "SNOWMAN",
+              # U+1D196 should be 1 character, not a surrogate pair
+              "MUSICAL SYMBOL TR",
+          ) {
+    my $ord = charnames::vianame($name);
+  SKIP:
+    foreach my $enable_utf8 (1, 0, -1) {
+        my $desc = sprintf "chr(?) for U+%04X $name, \$enable_utf8=$enable_utf8", $ord;
+        skip "Pg < 8.3 has broken $desc", 1
+            if $ord > 127 && $dbh->{pg_server_version} < 80300;
+        $dbh->{pg_enable_utf8} = $enable_utf8;
+         my $sth = $dbh->prepare('SELECT chr(?)');
+        $sth->execute($ord);
+        my $result = $sth->fetchall_arrayref->[0][0];
+        if (!$enable_utf8) {
+            # We asked for UTF-8 octets to arrive in Perl-space.
+            # Check this, and convert them to character(s).
+            # If we didn't, the next two tests are meaningless, so skip them.
+            is(utf8::decode($result), 1, "Got valid UTF-8 for $desc")
+                or next;
+        }
+        is (length $result, 1, "Got 1 character for $desc");
+        is (ord $result, $ord, "Got correct character for $desc");
+    }
+}
+
 cleanup_database($dbh,'test');
 $dbh->disconnect();
 
