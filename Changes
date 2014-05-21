@@ -1,5 +1,27 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
+
+Version 3.3  unreleased
+
+  - Major cleanup of UTF-8 support:
+      Fix quoting of UTF-8 values
+      Add support for UTF-8 statement strings
+      Fix UTF-8 support in placeholders and return values
+    [Dagfinn Ilmari Mannsåker]
+      Test that the Pg server agrees with us about the lengths of input strings.
+      Refactor Unicode test to use anon hashes to describe the tests to run.
+      Test pg_enable_utf8 of -1, in addition to 0 and 1.
+      Extend the Unicode round-trip tests to verify ASCII, BMP and non-BMP code points.
+      Test that characters created in the server reach the client correctly.
+    [Nicholas Clark <nick@ccl4.org>]
+
+  - Rewrite foreign_key_info to be just one query
+    [Dagfinn Ilmari Mannsåker]
+
+  - Remove ODBC support from foreign_key_info
+    [Dagfinn Ilmari Mannsåker]
+
+
 Version 3.2.1  Released May 20, 2014 (git commit a56ef5c4715440d4fc2054df5477996b0e287467)
 
   - Stricter testing for array slices: disallow number-colon-number from being
