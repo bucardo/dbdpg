@@ -832,11 +832,9 @@ is ($sth, undef, $t);
 
 ## Create a pk table
 
-# The order of the tables returned by the OID query in foreign_key_info
-# seems to be influenced by schema creation order, so create the schemas
-# in the opposite order of the search_path, so we have at least a vague
-# chance of testing that we respect the search_path order. Also create
-# the tables in the opposite order, for good measure
+# Create identical tables and relations in multiple schemas, and in the
+# opposite order of the search_path, so we have at least a vague chance
+# of testing that we respect the search_path order.
 $dbh->do("CREATE SCHEMA $schema3");
 $dbh->do("CREATE SCHEMA $schema2");
 $dbh->do("SET search_path = $schema2,$schema3");
