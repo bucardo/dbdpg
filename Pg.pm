@@ -1,6 +1,6 @@
 #  -*-cperl-*-
 #
-#  Copyright (c) 2002-2013 Greg Sabino Mullane and others: see the Changes file
+#  Copyright (c) 2002-2014 Greg Sabino Mullane and others: see the Changes file
 #  Portions Copyright (c) 2002 Jeffrey W. Baker
 #  Portions Copyright (c) 1997-2001 Edmund Mergl
 #  Portions Copyright (c) 1994-1997 Tim Bunce
@@ -16,7 +16,7 @@ use 5.008001;
 {
 	package DBD::Pg;
 
-	use version; our $VERSION = qv('3.2.1');
+	use version; our $VERSION = qv('3.3.0');
 
 	use DBI ();
 	use DynaLoader ();
@@ -1652,7 +1652,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 3.2.1 of the DBD::Pg module
+This documents version 3.3.0 of the DBD::Pg module
 
 =head1 DESCRIPTION
 
@@ -1665,7 +1665,7 @@ This documentation describes driver specific behavior and restrictions. It is
 not supposed to be used as the only reference for the user. In any case
 consult the B<DBI> documentation first!
 
-=for html <a href="http://search.cpan.org/~timb/DBI/DBI.pm">Latest DBI docmentation.</a>
+=for html <a href="http://search.cpan.org/dist/DBI/DBI.pm">Latest DBI docmentation.</a>
 
 =head1 THE DBI CLASS
 
@@ -1826,7 +1826,7 @@ handle. This is a number used by libpq and is one of:
   $str = $h->errstr;
 
 Returns the last error that was reported by Postgres. This message is affected 
-by the L</pg_errorlevel> setting.
+by the L<pg_errorlevel|/pg_errorlevel_(integer)> setting.
 
 =head3 B<state>
 
@@ -1953,7 +1953,7 @@ the database has been disconnected. Also output if trace level is 5 or greater.
 
 =for text See the DBI section on TRACING for more information.
 
-=for html See the <a href="http://search.cpan.org/~timb/DBI/DBI.pm#TRACING">DBI section on TRACING</a> for more information.<br />
+=for html See the <a href="http://search.cpan.org/dist/DBI/DBI.pm#TRACING">DBI section on TRACING</a> for more information.<br />
 
 =head3 B<func>
 
@@ -1995,12 +1995,12 @@ Upon failure it returns C<undef>. This function cannot be used if AutoCommit is 
 
 The old way of calling large objects functions is deprecated: $dbh->func(.., 'lo_);
 
-=item lo_open
+=item pg_lo_open
 
   $lobj_fd = $dbh->pg_lo_open($lobjId, $mode);
 
 Opens an existing large object and returns an object-descriptor for use in
-subsequent C<lo_*> calls. C<$mode> is a bitmask describing read and write
+subsequent C<pg_lo_*> calls. C<$mode> is a bitmask describing read and write
 access to the opened object. It may be one of: 
 
   $dbh->{pg_INV_READ}
@@ -2013,26 +2013,26 @@ Reading from the object will provide the object as written in other committed
 transactions, along with any writes performed by the current transaction.
 Objects opened with C<pg_INV_READ> cannot be written to. Reading from this
 object will provide the stored data at the time of the transaction snapshot
-which was active when C<lo_write> was called.
+which was active when C<pg_lo_write> was called.
 
 Returns C<undef> upon failure. Note that 0 is a perfectly correct (and common)
 object descriptor! This function cannot be used if AutoCommit is enabled.
 
-=item lo_write
+=item pg_lo_write
 
   $nbytes = $dbh->pg_lo_write($lobj_fd, $buffer, $len);
 
 Writes C<$len> bytes of c<$buffer> into the large object C<$lobj_fd>. Returns the number
 of bytes written and C<undef> upon failure. This function cannot be used if AutoCommit is enabled.
 
-=item lo_read
+=item pg_lo_read
 
   $nbytes = $dbh->pg_lo_read($lobj_fd, $buffer, $len);
 
 Reads C<$len> bytes into c<$buffer> from large object C<$lobj_fd>. Returns the number of
 bytes read and C<undef> upon failure. This function cannot be used if AutoCommit is enabled.
 
-=item lo_lseek
+=item pg_lo_lseek
 
   $loc = $dbh->pg_lo_lseek($lobj_fd, $offset, $whence);
 
@@ -2040,53 +2040,53 @@ Changes the current read or write location on the large object
 C<$obj_id>. Currently C<$whence> can only be 0 (which is L_SET). Returns the current
 location and C<undef> upon failure. This function cannot be used if AutoCommit is enabled.
 
-=item lo_tell
+=item pg_lo_tell
 
   $loc = $dbh->pg_lo_tell($lobj_fd);
 
 Returns the current read or write location on the large object C<$lobj_fd> and C<undef> upon failure.
 This function cannot be used if AutoCommit is enabled.
 
-=item lo_truncate
+=item pg_lo_truncate
 
   $loc = $dbh->pg_lo_truncate($lobj_fd, $len);
 
 Truncates the given large object to the new size. Returns C<undef> on failure, and 0 on success.
 This function cannot be used if AutoCommit is enabled.
 
-=item lo_close
+=item pg_lo_close
 
   $lobj_fd = $dbh->pg_lo_close($lobj_fd);
 
 Closes an existing large object. Returns true upon success and false upon failure.
 This function cannot be used if AutoCommit is enabled.
 
-=item lo_unlink
+=item pg_lo_unlink
 
   $ret = $dbh->pg_lo_unlink($lobjId);
 
 Deletes an existing large object. Returns true upon success and false upon failure.
 This function cannot be used if AutoCommit is enabled.
 
-=item lo_import
+=item pg_lo_import
 
   $lobjId = $dbh->pg_lo_import($filename);
 
 Imports a Unix file as a large object and returns the object id of the new
 object or C<undef> upon failure.
 
-=item lo_import_with_oid
+=item pg_lo_import_with_oid
 
   $lobjId = $dbh->pg_lo_import($filename, $OID);
 
-Same as lo_import, but attempts to use the supplied OID as the 
+Same as pg_lo_import, but attempts to use the supplied OID as the 
 large object number. If this number is 0, it falls back to the 
-behavior of lo_import (which assigns the next available OID).
+behavior of pg_lo_import (which assigns the next available OID).
 
 This is only available when DBD::Pg is compiled against a Postgres 
 server version 8.4 or later.
 
-=item lo_export
+=item pg_lo_export
 
   $ret = $dbh->pg_lo_export($lobjId, $filename);
 
@@ -2096,7 +2096,7 @@ Exports a large object into a Unix file. Returns false upon failure, true otherw
 
   $fd = $dbh->func('getfd');
 
-Deprecated, use L<< $dbh->{pg_socket}|/pg_socket >> instead.
+Deprecated, use $dbh->{pg_socket} instead.
 
 =back
 
@@ -2162,7 +2162,7 @@ true for the lifetime of the statement handle.
 =head3 B<TraceLevel> (integer, inherited)
 
 Sets the trace level, similar to the L</trace> method. See the sections on 
-L</trace> and L</parse_trace_flag> for more details.
+L</trace> and L<parse_trace_flag|/parse_trace_flag and parse_trace_flags> for more details.
 
 =head3 B<Active> (boolean, read-only)
 
@@ -2298,15 +2298,15 @@ Queries that do not begin with the word "SELECT", "INSERT",
 
 Deciding whether or not to use prepared statements depends on many factors, 
 but you can force them to be used or not used by using the 
-L</pg_server_prepare> attribute when calling L</prepare>. Setting this to "0" means to never use 
-prepared statements. Setting L</pg_server_prepare> to "1" means that prepared 
+L<pg_server_prepare|/pg_server_prepare_(integer)> attribute when calling L</prepare>. Setting this to "0" means to never use 
+prepared statements. Setting pg_server_prepare to "1" means that prepared 
 statements should be used whenever possible. This is the default when connected 
 to Postgres servers version 8.0 or higher. Servers that are version 7.4 get a special 
 default value of "2", because server-side statements were only partially supported 
 in that version. In this case, it only uses server-side prepares if all 
 parameters are specifically bound.
 
-The L</pg_server_prepare> attribute can also be set at connection time like so:
+The pg_server_prepare attribute can also be set at connection time like so:
 
   $dbh = DBI->connect($DBNAME, $DBUSER, $DBPASS,
                       { AutoCommit => 0,
@@ -2368,11 +2368,11 @@ be provided after the prepare but before the execute.
 
 A server-side prepare may happen before the first L</execute>, but only if the server can
 handle the server-side prepare, and the statement contains no placeholders. It will 
-also be prepared if the L</pg_prepare_now> attribute is passed in and set to a true 
-value. Similarly, the L</pg_prepare_now> attribute can be set to 0 to ensure that
+also be prepared if the L<pg_prepare_now|/pg_prepare_now_(boolean)> attribute is passed in and set to a true 
+value. Similarly, the pg_prepare_now attribute can be set to 0 to ensure that
 the statement is B<not> prepared immediately, although the cases in which you would
 want this are very rare. Finally, you can set the default behavior of all prepare
-statements by setting the L</pg_prepare_now> attribute on the database handle:
+statements by setting the pg_prepare_now attribute on the database handle:
 
   $dbh->{pg_prepare_now} = 1;
 
@@ -2391,7 +2391,7 @@ The following two examples will NOT be prepared right away:
 There are times when you may want to prepare a statement yourself. To do this,
 simply send the C<PREPARE> statement directly to the server (e.g. with
 the L</do> method). Create a statement handle and set the prepared name via
-the L</pg_prepare_name> attribute. The statement handle can be created with a dummy
+the L<pg_prepare_name|/pg_prepare_name_(string)> attribute. The statement handle can be created with a dummy
 statement, as it will not be executed. However, it should have the same
 number of placeholders as your prepared statement. Example:
 
@@ -2410,7 +2410,7 @@ which is the equivalent of:
   SELECT COUNT(*) FROM pg_class WHERE reltuples < 123;
 
 You can force DBD::Pg to send your query directly to the server by adding
-the L</pg_direct> attribute to your prepare call. This is not recommended,
+the L<pg_direct|/pg_direct_(boolean)> attribute to your prepare call. This is not recommended,
 but is added just in case you need it.
 
 =head4 B<Placeholders>
@@ -2467,7 +2467,7 @@ stick to one style within your program.
 If your queries use operators that contain question marks (e.g. some of the native 
 Postgres geometric operators) or array slices (e.g. C<data[100:300]>), you can tell 
 DBD::Pg to ignore any non-dollar sign placeholders by setting the 
-L</pg_placeholder_dollaronly> attribute at either the database handle or the statement 
+L<pg_placeholder_dollaronly|/pg_placeholder_dollaronly_(boolean)> attribute at either the database handle or the statement 
 handle level. Examples:
 
   $dbh->{pg_placeholder_dollaronly} = 1;
@@ -2500,7 +2500,7 @@ Again, you may set it param time as well:
 
 Implemented by DBI, no driver-specific impact. This method is most useful
 when using a server that supports server-side prepares, and you have asked
-the prepare to happen immediately via the L</pg_prepare_now> attribute.
+the prepare to happen immediately via the L<pg_prepare_now|/pg_prepare_now_(boolean)> attribute.
 
 =head3 B<do>
 
@@ -2595,7 +2595,7 @@ false on error. See also the the section on L</Transactions>.
 
 =head3 B<begin_work>
 
-This method turns on transactions until the next call to L</commit> or L</rollback>, if L</AutoCommit> is 
+This method turns on transactions until the next call to L</commit> or L</rollback>, if L<AutoCommit|/AutoCommit_(boolean)> is 
 currently enabled. If it is not enabled, calling begin_work will issue an error. Note that the 
 transaction will not actually begin until the first statement after begin_work is called.
 Example:
@@ -2909,7 +2909,7 @@ causes only information about unique indexes to be returned. The C<$quick> argum
 not used by DBD::Pg. For information on the format of the standard rows returned, please 
 see the DBI documentation.
 
-=for html <a href="http://search.cpan.org/~timb/DBI/DBI.pm#statistics_info">DBI section on statistics_info</a>
+=for html <a href="http://search.cpan.org/dist/DBI/DBI.pm#statistics_info">DBI section on statistics_info</a>
 
 In addition, the following Postgres specific columns are returned:
 
@@ -3225,11 +3225,11 @@ server is version 8.2 or better.
 
 =head3 B<pg_INV_READ> (integer, read-only)
 
-Constant to be used for the mode in L</lo_creat> and L</lo_open>.
+Constant to be used for the mode in L</pg_lo_creat> and L</pg_lo_open>.
 
 =head3 B<pg_INV_WRITE> (integer, read-only)
 
-Constant to be used for the mode in L</lo_creat> and L</lo_open>.
+Constant to be used for the mode in L</pg_lo_creat> and L</pg_lo_open>.
 
 =head3 B<Driver> (handle, read-only)
 
@@ -3462,7 +3462,7 @@ Fetches the next row of data from the statement handle, and returns a reference 
 holding the column values. Any columns that are NULL are returned as undef within the array.
 
 If there are no more rows or if an error occurs, the this method return undef. You should 
-check C<< $sth->err >> afterwards (or use the L</RaiseError> attribute) to discover if the undef returned 
+check C<< $sth->err >> afterwards (or use the L<RaiseError|/RaiseError_(boolean,_inherited)> attribute) to discover if the undef returned 
 was due to an error.
 
 Note that the same array reference is returned for each fetch, so don't store the reference and 
@@ -3485,7 +3485,7 @@ Fetches the next row of data and returns a hashref containing the name of the co
 and the data itself as the values. Any NULL value is returned as an undef value.
 
 If there are no more rows or if an error occurs, the this method return undef. You should 
-check C<< $sth->err >> afterwards (or use the L</RaiseError> attribute) to discover if the undef returned 
+check C<< $sth->err >> afterwards (or use the L<RaiseError|/RaiseError_(boolean,_inherited)> attribute) to discover if the undef returned 
 was due to an error.
 
 The optional C<$name> argument should be either C<NAME>, C<NAME_lc> or C<NAME_uc>, and indicates 
@@ -3500,7 +3500,7 @@ what sort of transformation to make to the keys in the hash.
 Returns a reference to an array of arrays that contains all the remaining rows to be fetched from the 
 statement handle. If there are no more rows, an empty arrayref will be returned. If an error occurs, 
 the data read in so far will be returned. Because of this, you should always check C<< $sth->err >> after 
-calling this method, unless L</RaiseError> has been enabled.
+calling this method, unless L<RaiseError|/RaiseError_(boolean,_inherited)> has been enabled.
 
 If C<$slice> is an array reference, fetchall_arrayref uses the L</fetchrow_arrayref> method to fetch each 
 row as an array ref. If the C<$slice> array is not empty then it is used as a slice to select individual 
@@ -4193,7 +4193,7 @@ or by manipulating the schema search path with C<SET search_path>, e.g.
 
 =for text The B<DBI> module.
 
-=for html <a href="http://search.cpan.org/~timb/DBI/DBI.pm">The DBI module</a>
+=for html <a href="http://search.cpan.org/dist/DBI/DBI.pm">The DBI module</a>
 
 =head1 BUGS
 
@@ -4213,8 +4213,8 @@ DBI by Tim Bunce L<http://www.tim.bunce.name>
 The original DBD-Pg was by Edmund Mergl (E.Mergl@bawue.de) and Jeffrey W. Baker
 (jwbaker@acm.org). Major developers include David Wheeler <david@justatheory.com>, Jason
 Stewart <jason@openinformatics.com>, Bruce Momjian <pgman@candle.pha.pa.us>, and 
-Greg Sabino Mullane <greg@turnstep.com>, with help from many others: see the F<Changes>
-file for a complete list.
+Greg Sabino Mullane <greg@turnstep.com>, with help from many others: see the Changes 
+file (L<http://search.cpan.org/dist/DBD-Pg/Changes>) for a complete list.
 
 Parts of this package were originally copied from DBI and DBD-Oracle.
 
@@ -4226,7 +4226,7 @@ Visit the archives at http://grokbase.com/g/perl/dbd-pg
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 1994-2013, Greg Sabino Mullane
+Copyright (C) 1994-2014, Greg Sabino Mullane
 
 This module (DBD::Pg) is free software; you can redistribute it and/or modify it 
 under the same terms as Perl 5.10.0. For more details, see the full text of the 
