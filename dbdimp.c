@@ -2829,7 +2829,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 				else {
 					// Bytea gets special dequoting
 					if (0 == strncmp(coltype->type_name, "_bytea", 6)) {
-						coltype->dequote(string, &section_size);
+						coltype->dequote(aTHX_ string, &section_size);
 					}
 
 					SV *sv = newSVpvn(string, section_size);
@@ -3258,6 +3258,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				if (currph->quoted)
 					Safefree(currph->quoted);
 				currph->quoted = currph->bind_type->quote(
+					aTHX_
 					currph->value,
 					currph->valuelen,
 					&currph->quotedlen,
@@ -3651,7 +3652,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 			}
 			else {
 				if (type_info) {
-					type_info->dequote(value, &value_len); /* dequote in place */
+					type_info->dequote(aTHX_ value, &value_len); /* dequote in place */
 					/* For certain types, we can cast to non-string Perlish values */
 					switch (type_info->type_id) {
 					case PG_BOOL:

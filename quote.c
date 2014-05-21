@@ -34,9 +34,8 @@ In other words, is it 8.1 or better?
 It must arrive as 0 or 1
 */
 
-char * null_quote(const char *string, STRLEN len, STRLEN *retlen, int estring)
+char * null_quote(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
-	dTHX;
 	char *result;
 
 	New(0, result, len+1, char);
@@ -47,9 +46,8 @@ char * null_quote(const char *string, STRLEN len, STRLEN *retlen, int estring)
 }
 
 
-char * quote_string(const char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_string(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
-	dTHX;
 	char * result;
 	STRLEN oldlen = len;
 	const char * const tmp = string;
@@ -93,9 +91,8 @@ char * quote_string(const char *string, STRLEN len, STRLEN *retlen, int estring)
 /* Quote a geometric constant. */
 /* Note: we only verify correct characters here, not for 100% valid input */
 /* Covers: points, lines, lsegs, boxes, polygons */
-char * quote_geom(const char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_geom(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
-	dTHX;
 	char * result;
 	const char *tmp;
 
@@ -125,9 +122,8 @@ char * quote_geom(const char *string, STRLEN len, STRLEN *retlen, int estring)
 }
 
 /* Same as quote_geom, but also allows square brackets */
-char * quote_path(const char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_path(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
-	dTHX;
 	char * result;
 	const char * const tmp = string;
 
@@ -156,9 +152,8 @@ char * quote_path(const char *string, STRLEN len, STRLEN *retlen, int estring)
 }
 
 /* Same as quote_geom, but also allows less than / greater than signs */
-char * quote_circle(const char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_circle(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
-	dTHX;
 	char * result;
 	const char * const tmp = string;
 
@@ -188,9 +183,8 @@ char * quote_circle(const char *string, STRLEN len, STRLEN *retlen, int estring)
 }
 
 
-char * quote_bytea(char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_bytea(pTHX_ char *string, STRLEN len, STRLEN *retlen, int estring)
 {
-	dTHX;
 	char * result;
 	STRLEN oldlen = len;
 
@@ -249,20 +243,18 @@ char * quote_bytea(char *string, STRLEN len, STRLEN *retlen, int estring)
 	return (char *)result - (*retlen);
 }
 
-char * quote_sql_binary(char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_sql_binary(pTHX_ char *string, STRLEN len, STRLEN *retlen, int estring)
 {
-	dTHX;
 	/* We are going to return a quote_bytea() for backwards compat but
 		 we warn first */
 	warn("Use of SQL_BINARY invalid in quote()");
-	return quote_bytea(string, len, retlen, estring);
+	return quote_bytea(aTHX_ string, len, retlen, estring);
 	
 }
 
 /* Return TRUE, FALSE, or throws an error */
-char * quote_bool(const char *value, STRLEN len, STRLEN *retlen, int estring) 
+char * quote_bool(pTHX_ const char *value, STRLEN len, STRLEN *retlen, int estring)
 {
-	dTHX;
 	char *result;
 	
 	/* Things that are true: t, T, 1, true, TRUE, 0E0, 0 but true */
@@ -299,9 +291,8 @@ char * quote_bool(const char *value, STRLEN len, STRLEN *retlen, int estring)
 	
 }
 
-char * quote_int(const char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_int(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
-	dTHX;
 	char * result;
 
 	New(0, result, len+1, char);
@@ -320,9 +311,8 @@ char * quote_int(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	return result;
 }
 
-char * quote_float(char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_float(pTHX_ char *string, STRLEN len, STRLEN *retlen, int estring)
 {
-	dTHX;
 	char * result;
 
 	/* Empty string is always an error. Here for dumb compilers. */
@@ -359,9 +349,8 @@ char * quote_float(char *string, STRLEN len, STRLEN *retlen, int estring)
 	return result;
 }
 
-char * quote_name(const char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_name(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
-	dTHX;
 	char * result;
 	const char *ptr;
 	int nquotes = 0;
@@ -424,17 +413,15 @@ char * quote_name(const char *string, STRLEN len, STRLEN *retlen, int estring)
 	return result;
 }
 
-void dequote_char(const char *string, STRLEN *retlen, int estring)
+void dequote_char(pTHX_ const char *string, STRLEN *retlen, int estring)
 {
-	dTHX;
 	/* TODO: chop_blanks if requested */
 	*retlen = strlen(string);
 }
 
 
-void dequote_string(const char *string, STRLEN *retlen, int estring)
+void dequote_string(pTHX_ const char *string, STRLEN *retlen, int estring)
 {
-	dTHX;
 	*retlen = strlen(string);
 }
 
@@ -442,7 +429,6 @@ void dequote_string(const char *string, STRLEN *retlen, int estring)
 
 static void _dequote_bytea_escape(char *string, STRLEN *retlen, int estring)
 {
-	dTHX;
 	char *result;
 
 	(*retlen) = 0;
@@ -480,7 +466,6 @@ static void _dequote_bytea_escape(char *string, STRLEN *retlen, int estring)
 
 static int _decode_hex_digit(char digit)
 {
-	dTHX;
 	if (digit >= '0' && digit <= '9')
 		return digit - '0';
 	if (digit >= 'a' && digit <= 'f')
@@ -493,7 +478,6 @@ static int _decode_hex_digit(char digit)
 
 static void _dequote_bytea_hex(char *string, STRLEN *retlen, int estring)
 {
-	dTHX;
 	char *result;
 
 	(*retlen) = 0;
@@ -515,9 +499,8 @@ static void _dequote_bytea_hex(char *string, STRLEN *retlen, int estring)
 	}
 }
 
-void dequote_bytea(char *string, STRLEN *retlen, int estring)
+void dequote_bytea(pTHX_ char *string, STRLEN *retlen, int estring)
 {
-	dTHX;
 
 	if (NULL != string) {
 		if ('\\' == *string && 'x' == *(string+1))
@@ -532,22 +515,20 @@ void dequote_bytea(char *string, STRLEN *retlen, int estring)
 	it might be nice to let people go the other way too. Say when talking
 	to something that uses SQL_BINARY
  */
-void dequote_sql_binary(char *string, STRLEN *retlen, int estring)
+void dequote_sql_binary(pTHX_ char *string, STRLEN *retlen, int estring)
 {
-	dTHX;
 
 	/* We are going to return a dequote_bytea(), just in case */
 	warn("Use of SQL_BINARY invalid in dequote()");
-	dequote_bytea(string, retlen, estring);
+	dequote_bytea(aTHX_ string, retlen, estring);
 
 	/* Put dequote_sql_binary function here at some point */
 }
 
 
 
-void dequote_bool(char *string, STRLEN *retlen, int estring)
+void dequote_bool(pTHX_ char *string, STRLEN *retlen, int estring)
 {
-	dTHX;
 
 	switch(*string){
 	case 'f': *string = '0'; break;
@@ -559,9 +540,8 @@ void dequote_bool(char *string, STRLEN *retlen, int estring)
 }
 
 
-void null_dequote(const char *string, STRLEN *retlen, int estring)
+void null_dequote(pTHX_ const char *string, STRLEN *retlen, int estring)
 {
-	dTHX;
 	*retlen = strlen(string);
 
 }
