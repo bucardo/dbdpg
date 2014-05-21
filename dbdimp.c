@@ -1530,12 +1530,15 @@ SV * pg_db_pg_notifies (SV * dbh, imp_dbh_t * imp_dbh)
 
 
 /* ================================================================== */
-int dbd_st_prepare (SV * sth, imp_sth_t * imp_sth, char * statement, SV * attribs)
+int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * attribs)
 {
 	dTHX;
 	D_imp_dbh_from_sth;
 	STRLEN mypos=0, wordstart, newsize; /* Used to find and set firstword */
 	SV **svp; /* To help parse the arguments */
+
+	statement_sv = pg_rightgraded_sv(aTHX_ statement_sv, imp_dbh->client_encoding_utf8);
+	char *statement = SvPV_nolen(statement_sv);
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_prepare (statement: %s)\n", THEADER_slow, statement);
 
@@ -2446,7 +2449,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		}
 		else if (SvTYPE(SvRV(newvalue)) == SVt_PVAV) {
 			SV * quotedval;
-			quotedval = pg_stringify_array(newvalue,",",imp_dbh->pg_server_version);
+			quotedval = pg_stringify_array(newvalue,",",imp_dbh->pg_server_version,imp_dbh->client_encoding_utf8);
 			currph->valuelen = sv_len(quotedval);
 			Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
 			Copy(SvUTF8(quotedval) ? SvPVutf8_nolen(quotedval) : SvPV_nolen(quotedval),
@@ -2544,6 +2547,8 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 	(void)SvUPGRADE(newvalue, SVt_PV);
 
 	if (SvOK(newvalue)) {
+		/* get the right encoding, without modifying the caller's copy */
+		newvalue = pg_rightgraded_sv(aTHX_ newvalue, imp_dbh->client_encoding_utf8 && PG_BYTEA!=currph->bind_type->type_id);
 		value_string = SvPV(newvalue, currph->valuelen);
 		Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
 		Copy(value_string, currph->value, currph->valuelen, char);
@@ -2582,7 +2587,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 
 
 /* ================================================================== */
-SV * pg_stringify_array(SV *input, const char * array_delim, int server_version) {
+SV * pg_stringify_array(SV *input, const char * array_delim, int server_version, bool utf8) {
 
 	dTHX;
 	AV * toparr;
@@ -2602,6 +2607,8 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 
 	toparr = (AV *) SvRV(input);
 	value = newSVpv("{", 1);
+	if (utf8)
+	    SvUTF8_on(value);
 
 	/* Empty arrays are easy */
 	if (av_len(toparr) < 0) {
@@ -2685,8 +2692,8 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version)
 				}
 				else {
 					sv_catpv(value, "\"");
-					if (SvUTF8(svitem))
-						SvUTF8_on(value);
+					/* avoid up- or down-grading the caller's value */
+					svitem = pg_rightgraded_sv(aTHX_ svitem, utf8);
 					string = SvPV(svitem, stringlength);
 					while (stringlength--) {
 						/* Escape backslashes and double-quotes. */
@@ -2872,6 +2879,41 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 
 } /* end of pg_destringify_array */
 
+SV * pg_upgraded_sv(pTHX_ SV *input) {
+	U8 *p, *end;
+	STRLEN len;
+	/* SvPV() can change the value SvUTF8() (for overloaded values and tied values). */
+	p = (U8*)SvPV(input, len);
+	if(SvUTF8(input)) return input;
+	for(end = p + len; p != end; p++) {
+		if(*p & 0x80) {
+			SV *output = sv_mortalcopy(input);
+			sv_utf8_upgrade(output);
+			return output;
+		}
+	}
+	return input;
+}
+
+SV * pg_downgraded_sv(pTHX_ SV *input) {
+	U8 *p, *end;
+	STRLEN len;
+	/* SvPV() can change the value SvUTF8() (for overloaded values and tied values). */
+	p = (U8*)SvPV(input, len);
+	if(!SvUTF8(input)) return input;
+	for(end = p + len; p != end; p++) {
+		if(*p & 0x80) {
+			SV *output = sv_mortalcopy(input);
+			sv_utf8_downgrade(output, DBDPG_FALSE);
+			return output;
+		}
+	}
+	return input;
+}
+
+SV * pg_rightgraded_sv(pTHX_ SV *input, bool utf8) {
+	return utf8 ? pg_upgraded_sv(aTHX_ input) : pg_downgraded_sv(aTHX_ input);
+}
 
 /* ================================================================== */
 int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
@@ -3652,7 +3694,11 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 				if (type_info && PG_BYTEA == type_info->type_id) {
 					SvUTF8_off(sv);
 				}
-				else {
+				/*
+				  Don't try to upgrade references (e.g. arrays).
+				  pg_destringify_array() upgrades the items as appropriate.
+				*/
+				else if (!SvROK(sv)) {
 					SvUTF8_on(sv);
 				}
 			}
