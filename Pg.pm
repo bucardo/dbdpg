@@ -1601,7 +1601,7 @@ use 5.008001;
 		return 1;
 	} ## end bind_param_array
 
-	sub private_attribute_info {
+ 	sub private_attribute_info {
 		return {
 				pg_async                  => undef,
 				pg_bound                  => undef,
@@ -3790,6 +3790,16 @@ Not used by DBD::Pg
 Not used by DBD::Pg. See the note about L</Cursors> elsewhere in this document.
 
 =head1 FURTHER INFORMATION
+
+=head2 Encoding
+
+DBD::Pg has extensive support for a client_encoding of UTF-8, and most 
+things like encoding and decoding should happen automatically. If you are 
+using a different encoding, you may need do the encoding and decoding 
+yourself. For this reason, it is highly recommended to always use a 
+client_encoding of UTF-8. The server_encoding can be anything, and no 
+recommendations are made there, other than avoid SQL_ASCII whenever 
+possible.
 
 =head2 Transactions
 
