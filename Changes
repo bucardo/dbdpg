@@ -7,7 +7,7 @@ Version 3.3.0  unreleased
       Fix quoting of UTF-8 values
       Add support for UTF-8 statement strings
       Fix UTF-8 support in placeholders and return values
-    [Dagfinn Ilmari Mannsåker]
+    [Dagfinn Ilmari Mannsåker] (CPAN bug #95214 and #91655)
       Test that the Pg server agrees with us about the lengths of input strings.
       Refactor Unicode test to use anon hashes to describe the tests to run.
       Test pg_enable_utf8 of -1, in addition to 0 and 1.
