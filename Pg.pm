@@ -3795,7 +3795,7 @@ Not used by DBD::Pg. See the note about L</Cursors> elsewhere in this document.
 
 DBD::Pg has extensive support for a client_encoding of UTF-8, and most 
 things like encoding and decoding should happen automatically. If you are 
-using a different encoding, you may need do the encoding and decoding 
+using a different encoding, you will need do the encoding and decoding 
 yourself. For this reason, it is highly recommended to always use a 
 client_encoding of UTF-8. The server_encoding can be anything, and no 
 recommendations are made there, other than avoid SQL_ASCII whenever 
