@@ -1,7 +1,7 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 3.3.0  unreleased
+Version 3.3.0  Released May 31, 2014
 
   - Major cleanup of UTF-8 support:
       Fix quoting of UTF-8 values
