@@ -258,6 +258,9 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 					else if ((svp = hv_fetch((HV*)SvRV(type_sv),"type", 4, 0)) != NULL) {
 						type_info = sql_type_data(SvIV(*svp));
 					}
+					else if ((svp = hv_fetch((HV*)SvRV(type_sv),"TYPE", 4, 0)) != NULL) {
+						type_info = sql_type_data(SvIV(*svp));
+					}
 					else {
 						type_info = NULL;
 					}
