@@ -258,6 +258,9 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 					else if ((svp = hv_fetch((HV*)SvRV(type_sv),"type", 4, 0)) != NULL) {
 						type_info = sql_type_data(SvIV(*svp));
 					}
+					else if ((svp = hv_fetch((HV*)SvRV(type_sv),"TYPE", 4, 0)) != NULL) {
+						type_info = sql_type_data(SvIV(*svp));
+					}
 					else {
 						type_info = NULL;
 					}
@@ -269,7 +272,7 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 			}
 
 			/* At this point, type_info points to a valid struct, one way or another */
-			utf8 = imp_dbh->client_encoding_utf8 && PG_BYTEA != type_info->type_id;
+			utf8 = imp_dbh->client_encoding_utf8 && !pg_type_is_binary(type_info);
 
 			if (SvMAGICAL(to_quote_sv))
 				(void)mg_get(to_quote_sv);

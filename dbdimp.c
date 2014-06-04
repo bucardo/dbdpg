@@ -2534,7 +2534,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		if (imp_sth->prepared_by_us && NULL != imp_sth->prepare_name)
 			reprepare = DBDPG_TRUE;
 		/* Mark this statement as having binary if the type is bytea */
-		if (PG_BYTEA==currph->bind_type->type_id)
+		if (pg_type_is_binary(currph->bind_type))
 			imp_sth->has_binary = DBDPG_TRUE;
 	}
 
@@ -2548,7 +2548,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 
 	if (SvOK(newvalue)) {
 		/* get the right encoding, without modifying the caller's copy */
-		newvalue = pg_rightgraded_sv(aTHX_ newvalue, imp_dbh->client_encoding_utf8 && PG_BYTEA!=currph->bind_type->type_id);
+		newvalue = pg_rightgraded_sv(aTHX_ newvalue, imp_dbh->client_encoding_utf8 && !pg_type_is_binary(currph->bind_type));
 		value_string = SvPV(newvalue, currph->valuelen);
 		Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
 		Copy(value_string, currph->value, currph->valuelen, char);
@@ -2578,7 +2578,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 			 "%sPlaceholder (%s) bound as type (%s) (type_id=%d), length %d, value of (%s)\n",
 			 THEADER_slow, name, currph->bind_type->type_name,
 			 currph->bind_type->type_id, (int)currph->valuelen,
-			 PG_BYTEA==currph->bind_type->type_id ? "(binary, not shown)" : value_string);
+			 pg_type_is_binary(currph->bind_type) ? "(binary, not shown)" : value_string);
 
 	if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_bind_ph\n", THEADER_slow);
 	return 1;
@@ -2913,6 +2913,16 @@ SV * pg_downgraded_sv(pTHX_ SV *input) {
 
 SV * pg_rightgraded_sv(pTHX_ SV *input, bool utf8) {
 	return utf8 ? pg_upgraded_sv(aTHX_ input) : pg_downgraded_sv(aTHX_ input);
+}
+
+bool pg_type_is_binary(const sql_type_info_t * const type_info) {
+	switch(type_info->type_id) {
+	case PG_BYTEA:
+	case SQL_VARBINARY:
+		return DBDPG_TRUE;
+	default:
+		return DBDPG_FALSE;
+	}
 }
 
 /* ================================================================== */
@@ -3289,7 +3299,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				Newz(0, imp_sth->PQfmts, (unsigned int)imp_sth->numphs, int); /* freed below */
 			}
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-				if (PG_BYTEA==currph->bind_type->type_id) {
+				if (pg_type_is_binary(currph->bind_type)) {
 					imp_sth->PQlens[x] = (int)currph->valuelen;
 					imp_sth->PQfmts[x] = 1;
 				}
@@ -3692,7 +3702,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 				  The only exception to our rule about setting utf8 (when the client_encoding
 				  is set to UTF8) is bytea.
 				*/
-				if (type_info && PG_BYTEA == type_info->type_id) {
+				if (type_info && pg_type_is_binary(type_info)) {
 					SvUTF8_off(sv);
 				}
 				/*
