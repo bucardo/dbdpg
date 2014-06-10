@@ -537,9 +537,35 @@ $sth = $dbh->table_info('', '%', '');
 ok ($sth, $t);
 
 # Test listing table types
+my %supported_types = (
+  'SYSTEM TABLE' => 1,
+  'SYSTEM VIEW'  => 1,
+  TABLE          => 1,
+  VIEW           => 1,
+);
 $t='DB handle method "table_info" works when called with a type of %';
 $sth = $dbh->table_info('', '', '', '%');
 ok ($sth, $t);
+$t='DB handle method "table_info" type inquiry returns all supported types';
+my @types = map { $_->[0] } @{$sth->fetchall_arrayref([3])};
+is_deeply([sort @types], [sort keys %supported_types], $t);
+
+# Test that actually seen types are a subset of supported types
+$t='DB handle method "table_info" works when called with schema, table, and type of %';
+$sth = $dbh->table_info('', '%', '%', '%');
+ok ($sth, $t);
+
+$t='DB handle method "table_info" object inquiry saw at least one object';
+$rows = $sth->fetchall_arrayref([3]);
+ok(scalar @$rows, $t);
+
+$t='DB handle method "table_info" object inquiry returns no objects of unknown type';
+my %unexpected_types;
+for (@$rows) {
+  my ($type) = @$_;
+  $unexpected_types{$type} = 1 unless exists $supported_types{$type};
+}
+is_deeply([keys %unexpected_types], [], $t);
 
 #
 # Test of the "column_info" database handle method
