@@ -1219,8 +1219,9 @@ use 5.008001;
 			    'SYSTEM VIEW'  => q{c.relkind = 'v' AND n.nspname  ~ '^pg_'},
 			);
 			my $typespec = join ' OR ' =>
-			                 map { s/^'//g; s/'$//g; $typesearch{uc($_)} }
-			                   split(',', $type || '');
+			                 grep {defined}
+			                   map { s/^'//g; s/'$//g; $typesearch{uc($_)} }
+			                     split(',', $type || '');
 			$typespec = $typespec
 			            ? "($typespec)"
 			            : "c.relkind IN ('r', 'v')"; # default any table/view
