@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 538;
+plan tests => 543;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -508,6 +508,11 @@ is ($result->{TABLE_TYPE}, 'TABLE', 'DB handle method "table_info" returns prope
 
 $t=q{DB handle method "table_info" returns correct number of rows when given a 'TABLE,VIEW' type argument};
 $sth = $dbh->table_info(undef,undef,undef,'TABLE,VIEW');
+$number = $sth->rows();
+cmp_ok ($number, '>', 1, $t);
+
+$t=q{DB handle method "table_info" returns correct number of rows when given a 'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW' type argument};
+$sth = $dbh->table_info(undef,undef,undef,'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW');
 $number = $sth->rows();
 cmp_ok ($number, '>', 1, $t);
 
