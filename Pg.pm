@@ -1220,7 +1220,7 @@ use 5.008001;
 			);
 			my $typespec = join ' OR ' =>
 			                 map { s/^'//g; s/'$//g; $typesearch{uc($_)} }
-			                   split(',', $type);
+			                   split(',', $type || '');
 			$typespec = $typespec
 			            ? "($typespec)"
 			            : "c.relkind IN ('r', 'v')"; # default any table/view
