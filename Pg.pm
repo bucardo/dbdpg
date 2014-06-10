@@ -1212,18 +1212,18 @@ use 5.008001;
 					push @search, 'c.relname ' . ($table =~ /[_%]/ ? 'LIKE ' : '= ') . $dbh->quote($table);
 			}
 
-      my %typesearch = (
-          TABLE          => q{c.relkind = 'r' AND n.nspname !~ '^pg_'},
-          VIEW           => q{c.relkind = 'v' AND n.nspname !~ '^pg_'},
-          'SYSTEM TABLE' => q{c.relkind = 'r' AND n.nspname  ~ '^pg_'},
-          'SYSTEM VIEW'  => q{c.relkind = 'v' AND n.nspname  ~ '^pg_'},
-      );
+			my %typesearch = (
+			    TABLE          => q{c.relkind = 'r' AND n.nspname !~ '^pg_'},
+			    VIEW           => q{c.relkind = 'v' AND n.nspname !~ '^pg_'},
+			    'SYSTEM TABLE' => q{c.relkind = 'r' AND n.nspname  ~ '^pg_'},
+			    'SYSTEM VIEW'  => q{c.relkind = 'v' AND n.nspname  ~ '^pg_'},
+			);
 			my $typespec = join ' OR ' =>
 			                 map { s/^'//g; s/'$//g; $typesearch{uc($_)} }
 			                   split(',', $type);
 			$typespec = $typespec
 			            ? "($typespec)"
-									: "c.relkind IN ('r', 'v')"; # default any table/view
+			            : "c.relkind IN ('r', 'v')"; # default any table/view
 			push @search, $typespec;
 
 			my $TSJOIN = 'pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
