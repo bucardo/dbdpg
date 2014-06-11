@@ -531,6 +531,14 @@ $sth = $dbh->table_info(undef,undef,undef,'TABLE');
 $rows = $sth->rows();
 cmp_ok ($rows, '<', $number, $t);
 
+$dbh->do('CREATE TEMP TABLE dbd_pg_local_temp (i INT)');
+
+$t=q{DB handle method "table_info" returns correct number of rows when given a 'LOCAL TEMPORARY' type argument};
+$sth = $dbh->table_info(undef,undef,undef,'LOCAL TEMPORARY');
+$rows = $sth->rows();
+cmp_ok ($rows, '<', $number, $t);
+cmp_ok ($rows, '>', 0, $t);
+
 # Test listing catalog names
 $t='DB handle method "table_info" works when called with a catalog of %';
 $sth = $dbh->table_info('%', '', '');
@@ -543,11 +551,13 @@ ok ($sth, $t);
 
 # Test listing table types
 my %supported_types = (
-  'SYSTEM TABLE' => 1,
-  'SYSTEM VIEW'  => 1,
-  TABLE          => 1,
-  VIEW           => 1,
+  'LOCAL TEMPORARY' => 1,
+  'SYSTEM TABLE'    => 1,
+  'SYSTEM VIEW'     => 1,
+  TABLE             => 1,
+  VIEW              => 1,
 );
+
 $t='DB handle method "table_info" works when called with a type of %';
 $sth = $dbh->table_info('', '', '', '%');
 ok ($sth, $t);
