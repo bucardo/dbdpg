@@ -1170,7 +1170,7 @@ use 5.008001;
 					 and (defined $table and $table eq '')
 					 and (defined $type and $type eq '%')
 					) {
-			$tbl_sql = qq{
+			$tbl_sql = q{
                     SELECT "TABLE_CAT"
                          , "TABLE_SCHEM"
                          , "TABLE_NAME"
@@ -1185,13 +1185,16 @@ use 5.008001;
                             , 'relkind: r'   AS "REMARKS"
                        UNION
                        SELECT 'SYSTEM TABLE'
-                            , 'relkind: r; nspname ~ ^pg_'
+                            , 'relkind: r; nspname ~ ^pg_(catalog|toast)$'
                        UNION
                        SELECT 'VIEW'
                             , 'relkind: v'
                        UNION
                        SELECT 'SYSTEM VIEW'
-                            , 'relkind: v; nspname ~ ^pg_') type_info
+                            , 'relkind: v; nspname ~ ^pg_(catalog|toast)$'
+                       UNION
+                       SELECT 'LOCAL TEMPORARY'
+                            , 'relkind: r; nspname ~ ^pg_(toast_)?temp') type_info
                      ORDER BY "TABLE_TYPE" ASC
                 };
 		}
@@ -1213,10 +1216,11 @@ use 5.008001;
 			}
 
 			my %typesearch = (
-			    TABLE          => q{c.relkind = 'r' AND n.nspname !~ '^pg_'},
-			    VIEW           => q{c.relkind = 'v' AND n.nspname !~ '^pg_'},
-			    'SYSTEM TABLE' => q{c.relkind = 'r' AND n.nspname  ~ '^pg_'},
-			    'SYSTEM VIEW'  => q{c.relkind = 'v' AND n.nspname  ~ '^pg_'},
+			    TABLE             => q{c.relkind = 'r' AND n.nspname !~ '^pg_'},
+			    VIEW              => q{c.relkind = 'v' AND n.nspname !~ '^pg_'},
+			    'SYSTEM TABLE'    => q{c.relkind = 'r' AND n.nspname IN ('pg_catalog', 'pg_toast')},
+			    'SYSTEM VIEW'     => q{c.relkind = 'v' AND n.nspname IN ('pg_catalog', 'pg_toast')},
+					'LOCAL TEMPORARY' => q{c.relkind = 'r' AND quote_ident(n.nspname) ~ '^pg_(toast_)?temp_'},
 			);
 			my $typespec = join ' OR ' =>
 			                 grep {defined}
@@ -1236,11 +1240,18 @@ use 5.008001;
                 SELECT NULL::text AS "TABLE_CAT"
                      , quote_ident(n.nspname) AS "TABLE_SCHEM"
                      , quote_ident(c.relname) AS "TABLE_NAME"
-                     , CASE
-                             WHEN c.relkind = 'v' THEN
-                                CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM VIEW' ELSE 'VIEW' END
+                     , CASE WHEN c.relkind = 'v' THEN
+                                CASE WHEN quote_ident(n.nspname) in ('pg_catalog', 'pg_toast')
+                                          THEN 'SYSTEM VIEW'
+                                     ELSE      'VIEW'
+                                 END
                             ELSE
-                                CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END
+                                CASE WHEN quote_ident(n.nspname) in ('pg_catalog', 'pg_toast')
+                                          THEN 'SYSTEM TABLE'
+                                     WHEN quote_ident(n.nspname) ~ '^pg_(toast_)?temp_'
+                                          THEN 'LOCAL TEMPORARY'
+                                     ELSE      'TABLE'
+                                 END
                         END AS "TABLE_TYPE"
                      , d.description AS "REMARKS" $showtablespace $extracols
                 FROM pg_catalog.pg_class AS c
@@ -1249,6 +1260,8 @@ use 5.008001;
                     LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
                     LEFT JOIN $TSJOIN
                 WHERE $whereclause
+                      --- exclude others' TEMPORARY tables (and views, for that matter)
+                      AND NOT (quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' AND NOT has_schema_privilege(n.nspname, 'USAGE'))
                 ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
                 };
 		}
