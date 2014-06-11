@@ -2903,11 +2903,14 @@ recommended by DBI.
 
   $sth = $dbh->table_info(undef, $schema, $table, $type);
 
-Returns all tables and views visible to the current user. 
-The schema and table arguments will do a C<LIKE> search if a percent sign (C<%>) or an 
-underscore (C<_>) is detected in the argument. The C<$type> argument accepts a value of either 
-"TABLE" or "VIEW" (using both is the default action). Note that a statement handle is returned, 
-and not a direct list of tables. See the examples below for ways to handle this.
+Returns all tables and views visible to the current user.  The schema and table
+arguments will do a C<LIKE> search if a percent sign (C<%>) or an underscore
+(C<_>) is detected in the argument. The C<$type> argument accepts any
+comma-separated combination of "TABLE", "VIEW", "SYSTEM TABLE", "SYSTEM VIEW",
+or "LOCAL TEMPORARY".  (Using all is the default action.)
+
+Note that a statement handle is returned, and not a direct list of tables. See
+the examples below for ways to handle this.
 
 The following fields are returned:
 
