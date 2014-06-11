@@ -564,7 +564,7 @@ $t='DB handle method "table_info" object inquiry saw at least one object';
 $rows = $sth->fetchall_arrayref([3]);
 ok(scalar @$rows, $t);
 
-$t='DB handle method "table_info" object inquiry returns no objects of unknown type';
+$t='DB handle method "table_info" object inquiry no types unknown to "table_info" type query';
 my %unexpected_types;
 for (@$rows) {
   my ($type) = @$_;
