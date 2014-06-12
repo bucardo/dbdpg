@@ -1201,7 +1201,8 @@ use 5.008001;
 		else {
 			# Default SQL
 			$extracols = q{,n.nspname AS pg_schema, c.relname AS pg_table};
-			my @search;
+			my @search = (q|c.relkind IN ('r', 'v')|, # No sequences, etc. for now
+			              q|NOT (quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' AND NOT has_schema_privilege(n.nspname, 'USAGE'))|);   # No others' temp objects
 			my $showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(t.spclocation) AS "pg_tablespace_location"';
 			if ($dbh->{private_dbdpg}{version} >= 90200) {
 				$showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(pg_tablespace_location(t.oid)) AS "pg_tablespace_location"';
@@ -1215,22 +1216,6 @@ use 5.008001;
 					push @search, 'c.relname ' . ($table =~ /[_%]/ ? 'LIKE ' : '= ') . $dbh->quote($table);
 			}
 
-			my %typesearch = (
-			    TABLE             => q{c.relkind = 'r' AND n.nspname !~ '^pg_'},
-			    VIEW              => q{c.relkind = 'v' AND n.nspname !~ '^pg_'},
-			    'SYSTEM TABLE'    => q{c.relkind = 'r' AND n.nspname IN ('pg_catalog', 'pg_toast')},
-			    'SYSTEM VIEW'     => q{c.relkind = 'v' AND n.nspname IN ('pg_catalog', 'pg_toast')},
-					'LOCAL TEMPORARY' => q{c.relkind = 'r' AND quote_ident(n.nspname) ~ '^pg_(toast_)?temp_'},
-			);
-			my $typespec = join ' OR ' =>
-			                 grep {defined}
-			                   map { s/^'//g; s/'$//g; $typesearch{uc($_)} }
-			                     split(',', $type || '');
-			$typespec = $typespec
-			            ? "($typespec)"
-			            : "c.relkind IN ('r', 'v')"; # default any table/view
-			push @search, $typespec;
-
 			my $TSJOIN = 'pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
 			if ($dbh->{private_dbdpg}{version} < 80000) {
 				$TSJOIN = '(SELECT 0 AS oid, 0 AS spcname, 0 AS spclocation LIMIT 0) AS t ON (t.oid=1)';
@@ -1240,30 +1225,36 @@ use 5.008001;
                 SELECT NULL::text AS "TABLE_CAT"
                      , quote_ident(n.nspname) AS "TABLE_SCHEM"
                      , quote_ident(c.relname) AS "TABLE_NAME"
-                     , CASE WHEN c.relkind = 'v' THEN
-                                CASE WHEN quote_ident(n.nspname) in ('pg_catalog', 'pg_toast')
-                                          THEN 'SYSTEM VIEW'
-                                     ELSE      'VIEW'
-                                 END
-                            ELSE
-                                CASE WHEN quote_ident(n.nspname) in ('pg_catalog', 'pg_toast')
-                                          THEN 'SYSTEM TABLE'
-                                     WHEN quote_ident(n.nspname) ~ '^pg_(toast_)?temp_'
-                                          THEN 'LOCAL TEMPORARY'
-                                     ELSE      'TABLE'
-                                 END
-                        END AS "TABLE_TYPE"
+                       -- any temp table or temp view is LOCAL TEMPORARY for us
+                     , CASE WHEN quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' THEN
+                                 'LOCAL TEMPORARY'
+                            WHEN c.relkind = 'r' THEN
+                                 CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN
+                                           'SYSTEM TABLE'
+                                      ELSE 'TABLE'
+                                  END
+                            ELSE CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN
+                                           'SYSTEM VIEW'
+                                      ELSE 'VIEW'
+                                  END
+                         END AS "TABLE_TYPE"
                      , d.description AS "REMARKS" $showtablespace $extracols
-                FROM pg_catalog.pg_class AS c
-                    LEFT JOIN pg_catalog.pg_description AS d
-                        ON (c.oid = d.objoid AND c.tableoid = d.classoid AND d.objsubid = 0)
-                    LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-                    LEFT JOIN $TSJOIN
-                WHERE $whereclause
-                      --- exclude others' TEMPORARY tables (and views, for that matter)
-                      AND NOT (quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' AND NOT has_schema_privilege(n.nspname, 'USAGE'))
-                ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
+                  FROM pg_catalog.pg_class AS c
+                  LEFT JOIN pg_catalog.pg_description AS d
+                       ON (c.oid = d.objoid AND c.tableoid = d.classoid AND d.objsubid = 0)
+                  LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
+                  LEFT JOIN $TSJOIN
+                 WHERE $whereclause
+                 ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
                 };
+
+			if (defined($type) and length($type)) {
+				my $type_restrict = join ', ' =>
+				                      map { $dbh->quote($_) unless /^'/ }
+				                        grep {length}
+				                          split(',', $type);
+				$tbl_sql = qq{SELECT * FROM ($tbl_sql) ti WHERE "TABLE_TYPE" IN ($type_restrict)};
+			}
 		}
 		my $sth = $dbh->prepare( $tbl_sql ) or return undef;
 		$sth->execute();
