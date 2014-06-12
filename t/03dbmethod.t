@@ -516,10 +516,10 @@ $sth = $dbh->table_info(undef,undef,undef,'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW')
 $number = $sth->rows();
 cmp_ok ($number, '>', 1, $t);
 
-$t='DB handle method "table_info" returns correct number of rows when given an invalid type argument';
+$t='DB handle method "table_info" returns zero rows when given an invalid type argument';
 $sth = $dbh->table_info(undef,undef,undef,'DUMMY');
 $rows = $sth->rows();
-is ($rows, $number, $t);
+is ($rows, 0, $t);
 
 $t=q{DB handle method "table_info" returns correct number of rows when given a 'VIEW' type argument};
 $sth = $dbh->table_info(undef,undef,undef,'VIEW');
@@ -549,38 +549,33 @@ $t='DB handle method "table_info" works when called with a schema of %';
 $sth = $dbh->table_info('', '%', '');
 ok ($sth, $t);
 
-# Test listing table types
-my %supported_types = (
-  'LOCAL TEMPORARY' => 1,
-  'SYSTEM TABLE'    => 1,
-  'SYSTEM VIEW'     => 1,
-  TABLE             => 1,
-  VIEW              => 1,
-);
+{ # Test listing table types
+
+my @expected = ('LOCAL TEMPORARY',
+                'SYSTEM TABLE',
+                'SYSTEM VIEW',
+                'TABLE',
+                'VIEW',);
 
 $t='DB handle method "table_info" works when called with a type of %';
 $sth = $dbh->table_info('', '', '', '%');
-ok ($sth, $t);
-$t='DB handle method "table_info" type inquiry returns all supported types';
-my @types = map { $_->[0] } @{$sth->fetchall_arrayref([3])};
-is_deeply([sort @types], [sort keys %supported_types], $t);
+ok($sth, $t);
 
-# Test that actually seen types are a subset of supported types
-$t='DB handle method "table_info" works when called with schema, table, and type of %';
-$sth = $dbh->table_info('', '%', '%', '%');
-ok ($sth, $t);
+$t='DB handle method "table_info" type list returns all expected types';
+my %advertised = map { $_->[0] => 1 } @{ $sth->fetchall_arrayref([3]) };
+is_deeply([sort keys %advertised], [sort @expected], $t);
 
-$t='DB handle method "table_info" object inquiry saw at least one object';
-$rows = $sth->fetchall_arrayref([3]);
-ok(scalar @$rows, $t);
+$t='DB handle method "table_info" object list returns no unadvertised types';
+$sth = $dbh->table_info('', '', '%');
+my %surprises = map { $_->[0] => 1 }
+                  grep { ! $advertised{$_->[0]} }
+                    @{ $sth->fetchall_arrayref([3]) };
 
-$t='DB handle method "table_info" object inquiry no types unknown to "table_info" type query';
-my %unexpected_types;
-for (@$rows) {
-  my ($type) = @$_;
-  $unexpected_types{$type} = 1 unless exists $supported_types{$type};
-}
-is_deeply([keys %unexpected_types], [], $t);
+is_deeply([keys %surprises], [], $t)
+  or diag("Objects of unexpected type(s) found: "
+          . join(', ', sort keys %surprises));
+
+} # END test listing table types
 
 #
 # Test of the "column_info" database handle method
