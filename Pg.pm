@@ -485,7 +485,7 @@ use 5.008001;
                 $schemajoin
             WHERE
                 a.attnum >= 0
-                AND c.relkind IN ('r','v')
+                AND c.relkind IN ('r','v','m')
                 $whereclause
             ORDER BY "TABLE_SCHEM", "TABLE_NAME", "ORDINAL_POSITION"
             !;
@@ -1077,13 +1077,13 @@ use 5.008001;
 					push @search, 'c.relname ' . ($table =~ /[_%]/ ? 'LIKE ' : '= ') . $dbh->quote($table);
 			}
 			## All we can see is "table" or "view". Default is both
-			my $typesearch = q{IN ('r','v')};
+			my $typesearch = q{IN ('r','v','m')};
 			if (defined $type and length $type) {
 				if ($type =~ /\btable\b/i and $type !~ /\bview\b/i) {
 					$typesearch = q{= 'r'};
 				}
 				elsif ($type =~ /\bview\b/i and $type !~ /\btable\b/i) {
-					$typesearch = q{= 'v'};
+					$typesearch = q{IN ('v','m')};
 				}
 			}
 			push @search, "c.relkind $typesearch";
@@ -1100,6 +1100,8 @@ use 5.008001;
                      , CASE
                              WHEN c.relkind = 'v' THEN
                                 CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM VIEW' ELSE 'VIEW' END
+                             WHEN c.relkind = 'm' THEN
+                                CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM VIEW' ELSE 'MATERIALIZED VIEW' END
                             ELSE
                                 CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END
                         END AS "TABLE_TYPE"
@@ -2751,7 +2753,7 @@ recommended by DBI.
 
   $sth = $dbh->table_info(undef, $schema, $table, $type);
 
-Returns all tables and views visible to the current user. 
+Returns all tables and views (including materialize views) visible to the current user. 
 The schema and table arguments will do a C<LIKE> search if a percent sign (C<%>) or an 
 underscore (C<_>) is detected in the argument. The C<$type> argument accepts a value of either 
 "TABLE" or "VIEW" (using both is the default action). Note that a statement handle is returned, 
@@ -2765,8 +2767,8 @@ B<TABLE_SCHEM>: The name of the schema that the table or view is in.
 
 B<TABLE_NAME>: The name of the table or view.
 
-B<TABLE_TYPE>: The type of object returned. Will be one of "TABLE", "VIEW", 
-or "SYSTEM TABLE".
+B<TABLE_TYPE>: The type of object returned. Will be one of "TABLE", "VIEW",
+"MATERIALIZED VIEW", "SYSTEM VIEW", or "SYSTEM TABLE".
 
 The TABLE_SCHEM and TABLE_NAME will be quoted via C<quote_ident()>.
 
@@ -2783,7 +2785,7 @@ B<pg_tablespace_name>: the name of the tablespace the table is in
 
 B<pg_tablespace_location>: the location of the tablespace the table is in
 
-Tables that have not been assigned to a particular tablespace (or views) 
+Tables that have not been assigned to a particular tablespace (or views)
 will return NULL (C<undef>) for both of the above field.
 
 Rows are returned alphabetically, with all tables first, and then all views.
@@ -2929,7 +2931,7 @@ that this is an index expression.
   @names = $dbh->tables( undef, $schema, $table, $type, \%attr );
 
 Supported by this driver as proposed by DBI. This method returns all tables
-and/or views which are visible to the current user: see L</table_info>
+and/or views (including materialized views) which are visible to the current user: see L</table_info>
 for more information about the arguments. The name of the schema appears 
 before the table or view name. This can be turned off by adding in the 
 C<pg_noprefix> attribute:
