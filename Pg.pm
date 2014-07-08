@@ -1101,7 +1101,7 @@ use 5.008001;
                              WHEN c.relkind = 'v' THEN
                                 CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM VIEW' ELSE 'VIEW' END
                              WHEN c.relkind = 'm' THEN
-                                CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM VIEW' ELSE 'MATERIALIZED VIEW' END
+                                CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM MATERIALIZED VIEW' ELSE 'MATERIALIZED VIEW' END
                             ELSE
                                 CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END
                         END AS "TABLE_TYPE"
@@ -2768,7 +2768,7 @@ B<TABLE_SCHEM>: The name of the schema that the table or view is in.
 B<TABLE_NAME>: The name of the table or view.
 
 B<TABLE_TYPE>: The type of object returned. Will be one of "TABLE", "VIEW",
-"MATERIALIZED VIEW", "SYSTEM VIEW", or "SYSTEM TABLE".
+"MATERIALIZED VIEW", "SYSTEM VIEW", "SYSTEM MATERIALIZED VIEW", or "SYSTEM TABLE".
 
 The TABLE_SCHEM and TABLE_NAME will be quoted via C<quote_ident()>.
 
