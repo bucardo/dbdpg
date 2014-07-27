@@ -554,6 +554,8 @@ ok ($sth, $t);
 my @expected = ('LOCAL TEMPORARY',
                 'SYSTEM TABLE',
                 'SYSTEM VIEW',
+				'MATERIALIZED VIEW',
+				'SYSTEM MATERIALIZED VIEW',
                 'TABLE',
                 'VIEW',);
 
