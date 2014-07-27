@@ -6,6 +6,13 @@ Version 3.4.0
   - Cleanup and improve table_info(), add LOCAL TEMPORARY support.
     [Mike Pomraning <mjp@pilcrow.madison.wi.us>] (github issue #7)
 
+    (expand on changes here before release!)
+
+
+
+
+
+
   - Make sure column_info() and table_info() can handle materialized views.
     [Greg Sabino Mullane] (CPAN bug #97032)
 
