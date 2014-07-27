@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 543;
+plan tests => 545;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -538,6 +538,22 @@ $sth = $dbh->table_info(undef,undef,undef,'LOCAL TEMPORARY');
 $rows = $sth->rows();
 cmp_ok ($rows, '<', $number, $t);
 cmp_ok ($rows, '>', 0, $t);
+
+$t=q{DB handle method "table_info" returns correct number of rows when given a 'MATERIALIZED VIEW' type argument};
+$sth = $dbh->table_info(undef,undef,undef,'MATERIALIZED VIEW');
+$rows = $sth->rows();
+is ($rows, 0, $t);
+
+SKIP: {
+	if ($pgversion < 90300) {
+		skip 'Postgres version 9.3 or better required to create materialized views', 1;
+	}
+	$dbh->do('CREATE MATERIALIZED VIEW dbd_pg_matview (a) AS SELECT count(*) FROM pg_class');
+	$t=q{DB handle method "table_info" returns correct number of rows when given a 'MATERIALIZED VIEW' type argument};
+	$sth = $dbh->table_info(undef,undef,undef,'MATERIALIZED VIEW');
+	$rows = $sth->rows();
+	is ($rows, 1, $t);
+}
 
 # Test listing catalog names
 $t='DB handle method "table_info" works when called with a catalog of %';

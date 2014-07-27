@@ -17,6 +17,11 @@ if (exists $ENV{TEST_OUTPUT}) {
 	Test::More->builder->todo_output($testfh);
 }
 
+my @matviews =
+	(
+	 'dbd_pg_matview',
+     );
+
 my @schemas =
 	(
 	 'dbd_pg_testschema',
@@ -795,6 +800,12 @@ sub cleanup_database {
 	## For now, we always run and disregard the type
 
 	$dbh->rollback() if ! $dbh->{AutoCommit};
+
+	for my $name (@matviews) {
+		my $schema = ($name =~ s/(.+)\.(.+)/$2/) ? $1 : $S;
+		next if ! relation_exists($dbh,$schema,$name);
+		$dbh->do("DROP MATERIALIZED VIEW $schema.$name");
+	}
 
 	for my $name (@tables) {
 		my $schema = ($name =~ s/(.+)\.(.+)/$2/) ? $1 : $S;
