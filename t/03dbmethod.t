@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 538;
+plan tests => 543;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -511,10 +511,15 @@ $sth = $dbh->table_info(undef,undef,undef,'TABLE,VIEW');
 $number = $sth->rows();
 cmp_ok ($number, '>', 1, $t);
 
-$t='DB handle method "table_info" returns correct number of rows when given an invalid type argument';
+$t=q{DB handle method "table_info" returns correct number of rows when given a 'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW' type argument};
+$sth = $dbh->table_info(undef,undef,undef,'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW');
+$number = $sth->rows();
+cmp_ok ($number, '>', 1, $t);
+
+$t='DB handle method "table_info" returns zero rows when given an invalid type argument';
 $sth = $dbh->table_info(undef,undef,undef,'DUMMY');
 $rows = $sth->rows();
-is ($rows, $number, $t);
+is ($rows, 0, $t);
 
 $t=q{DB handle method "table_info" returns correct number of rows when given a 'VIEW' type argument};
 $sth = $dbh->table_info(undef,undef,undef,'VIEW');
@@ -526,6 +531,14 @@ $sth = $dbh->table_info(undef,undef,undef,'TABLE');
 $rows = $sth->rows();
 cmp_ok ($rows, '<', $number, $t);
 
+$dbh->do('CREATE TEMP TABLE dbd_pg_local_temp (i INT)');
+
+$t=q{DB handle method "table_info" returns correct number of rows when given a 'LOCAL TEMPORARY' type argument};
+$sth = $dbh->table_info(undef,undef,undef,'LOCAL TEMPORARY');
+$rows = $sth->rows();
+cmp_ok ($rows, '<', $number, $t);
+cmp_ok ($rows, '>', 0, $t);
+
 # Test listing catalog names
 $t='DB handle method "table_info" works when called with a catalog of %';
 $sth = $dbh->table_info('%', '', '');
@@ -536,10 +549,33 @@ $t='DB handle method "table_info" works when called with a schema of %';
 $sth = $dbh->table_info('', '%', '');
 ok ($sth, $t);
 
-# Test listing table types
+{ # Test listing table types
+
+my @expected = ('LOCAL TEMPORARY',
+                'SYSTEM TABLE',
+                'SYSTEM VIEW',
+                'TABLE',
+                'VIEW',);
+
 $t='DB handle method "table_info" works when called with a type of %';
 $sth = $dbh->table_info('', '', '', '%');
-ok ($sth, $t);
+ok($sth, $t);
+
+$t='DB handle method "table_info" type list returns all expected types';
+my %advertised = map { $_->[0] => 1 } @{ $sth->fetchall_arrayref([3]) };
+is_deeply([sort keys %advertised], [sort @expected], $t);
+
+$t='DB handle method "table_info" object list returns no unadvertised types';
+$sth = $dbh->table_info('', '', '%');
+my %surprises = map { $_->[0] => 1 }
+                  grep { ! $advertised{$_->[0]} }
+                    @{ $sth->fetchall_arrayref([3]) };
+
+is_deeply([keys %surprises], [], $t)
+  or diag("Objects of unexpected type(s) found: "
+          . join(', ', sort keys %surprises));
+
+} # END test listing table types
 
 #
 # Test of the "column_info" database handle method

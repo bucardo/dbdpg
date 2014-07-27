@@ -1044,26 +1044,39 @@ use 5.008001;
 					 and (defined $table and $table eq '')
 					 and (defined $type and $type eq '%')
 					) {
-			$tbl_sql = qq{
-                    SELECT
-                       NULL::text AS "TABLE_CAT"
-                     , NULL::text AS "TABLE_SCHEM"
-                     , NULL::text AS "TABLE_NAME"
-                     , 'TABLE'    AS "TABLE_TYPE"
-                     , 'relkind: r' AS "REMARKS" $extracols
-                    UNION
-                    SELECT
-                       NULL::text AS "TABLE_CAT"
-                     , NULL::text AS "TABLE_SCHEM"
-                     , NULL::text AS "TABLE_NAME"
-                     , 'VIEW'     AS "TABLE_TYPE"
-                     , 'relkind: v' AS "REMARKS" $extracols
+			$tbl_sql = q{
+                    SELECT "TABLE_CAT"
+                         , "TABLE_SCHEM"
+                         , "TABLE_NAME"
+                         , "TABLE_TYPE"
+                         , "REMARKS"
+                    FROM
+                      (SELECT NULL::text AS "TABLE_CAT"
+                            , NULL::text AS "TABLE_SCHEM"
+                            , NULL::text AS "TABLE_NAME") dummy_cols
+                    CROSS JOIN
+                      (SELECT 'TABLE'        AS "TABLE_TYPE"
+                            , 'relkind: r'   AS "REMARKS"
+                       UNION
+                       SELECT 'SYSTEM TABLE'
+                            , 'relkind: r; nspname ~ ^pg_(catalog|toast)$'
+                       UNION
+                       SELECT 'VIEW'
+                            , 'relkind: v'
+                       UNION
+                       SELECT 'SYSTEM VIEW'
+                            , 'relkind: v; nspname ~ ^pg_(catalog|toast)$'
+                       UNION
+                       SELECT 'LOCAL TEMPORARY'
+                            , 'relkind: r; nspname ~ ^pg_(toast_)?temp') type_info
+                     ORDER BY "TABLE_TYPE" ASC
                 };
 		}
 		else {
 			# Default SQL
 			$extracols = q{,n.nspname AS pg_schema, c.relname AS pg_table};
-			my @search;
+			my @search = (q|c.relkind IN ('r', 'v')|, # No sequences, etc. for now
+			              q|NOT (quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' AND NOT has_schema_privilege(n.nspname, 'USAGE'))|);   # No others' temp objects
 			my $showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(t.spclocation) AS "pg_tablespace_location"';
 			if ($dbh->{private_dbdpg}{version} >= 90200) {
 				$showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(pg_tablespace_location(t.oid)) AS "pg_tablespace_location"';
@@ -1076,17 +1089,6 @@ use 5.008001;
 			if (defined $table and length $table) {
 					push @search, 'c.relname ' . ($table =~ /[_%]/ ? 'LIKE ' : '= ') . $dbh->quote($table);
 			}
-			## All we can see is "table" or "view". Default is both
-			my $typesearch = q{IN ('r','v','m')};
-			if (defined $type and length $type) {
-				if ($type =~ /\btable\b/i and $type !~ /\bview\b/i) {
-					$typesearch = q{= 'r'};
-				}
-				elsif ($type =~ /\bview\b/i and $type !~ /\btable\b/i) {
-					$typesearch = q{IN ('v','m')};
-				}
-			}
-			push @search, "c.relkind $typesearch";
 
 			my $TSJOIN = 'pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
 			if ($dbh->{private_dbdpg}{version} < 80000) {
@@ -1097,23 +1099,36 @@ use 5.008001;
                 SELECT NULL::text AS "TABLE_CAT"
                      , quote_ident(n.nspname) AS "TABLE_SCHEM"
                      , quote_ident(c.relname) AS "TABLE_NAME"
-                     , CASE
-                             WHEN c.relkind = 'v' THEN
-                                CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM VIEW' ELSE 'VIEW' END
-                             WHEN c.relkind = 'm' THEN
-                                CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM MATERIALIZED VIEW' ELSE 'MATERIALIZED VIEW' END
-                            ELSE
-                                CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN 'SYSTEM TABLE' ELSE 'TABLE' END
-                        END AS "TABLE_TYPE"
+                       -- any temp table or temp view is LOCAL TEMPORARY for us
+                     , CASE WHEN quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' THEN
+                                 'LOCAL TEMPORARY'
+                            WHEN c.relkind = 'r' THEN
+                                 CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN
+                                           'SYSTEM TABLE'
+                                      ELSE 'TABLE'
+                                  END
+                            ELSE CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN
+                                           'SYSTEM VIEW'
+                                      ELSE 'VIEW'
+                                  END
+                         END AS "TABLE_TYPE"
                      , d.description AS "REMARKS" $showtablespace $extracols
-                FROM pg_catalog.pg_class AS c
-                    LEFT JOIN pg_catalog.pg_description AS d
-                        ON (c.oid = d.objoid AND c.tableoid = d.classoid AND d.objsubid = 0)
-                    LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-                    LEFT JOIN $TSJOIN
-                WHERE $whereclause
-                ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
+                  FROM pg_catalog.pg_class AS c
+                  LEFT JOIN pg_catalog.pg_description AS d
+                       ON (c.oid = d.objoid AND c.tableoid = d.classoid AND d.objsubid = 0)
+                  LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
+                  LEFT JOIN $TSJOIN
+                 WHERE $whereclause
+                 ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
                 };
+
+			if (defined($type) and length($type)) {
+				my $type_restrict = join ', ' =>
+				                      map { $dbh->quote($_) unless /^'/ }
+				                        grep {length}
+				                          split(',', $type);
+				$tbl_sql = qq{SELECT * FROM ($tbl_sql) ti WHERE "TABLE_TYPE" IN ($type_restrict)};
+			}
 		}
 		my $sth = $dbh->prepare( $tbl_sql ) or return undef;
 		$sth->execute();
@@ -2753,11 +2768,14 @@ recommended by DBI.
 
   $sth = $dbh->table_info(undef, $schema, $table, $type);
 
-Returns all tables and views (including materialize views) visible to the current user. 
-The schema and table arguments will do a C<LIKE> search if a percent sign (C<%>) or an 
-underscore (C<_>) is detected in the argument. The C<$type> argument accepts a value of either 
-"TABLE" or "VIEW" (using both is the default action). Note that a statement handle is returned, 
-and not a direct list of tables. See the examples below for ways to handle this.
+Returns all tables and views visible to the current user.  The schema and table
+arguments will do a C<LIKE> search if a percent sign (C<%>) or an underscore
+(C<_>) is detected in the argument. The C<$type> argument accepts any
+comma-separated combination of "TABLE", "VIEW", "SYSTEM TABLE", "SYSTEM VIEW",
+or "LOCAL TEMPORARY".  (Using all is the default action.)
+
+Note that a statement handle is returned, and not a direct list of tables. See
+the examples below for ways to handle this.
 
 The following fields are returned:
 
