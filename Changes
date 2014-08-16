@@ -1,7 +1,7 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 3.4.0  Released August 16, 2014
+Version 3.4.0  Released August 16, 2014 (git commit 7a5da12d84b4c2e9879f90fb6168f56c095071fa)
 
   - Cleanup and improve table_info()
     [Mike Pomraning <mjp@pilcrow.madison.wi.us>] (github issue #7)
