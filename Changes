@@ -1,21 +1,27 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 3.4.0
+Version 3.4.0  Released August 16, 2014
 
-  - Cleanup and improve table_info(), add LOCAL TEMPORARY support.
+  - Cleanup and improve table_info()
     [Mike Pomraning <mjp@pilcrow.madison.wi.us>] (github issue #7)
 
-    (expand on changes here before release!)
+    table_info() type searching now supports TABLE, VIEW, SYSTEM TABLE,
+      SYSTEM VIEW, and LOCAL TEMPORARY
 
+    table_info() object searching fully supports the above types.
 
+    table_info() object searching no longer ignores invalid types - a filter 
+      of 'NOSUCH' will return no rows, and 'NOSUCH,LOCAL TEMPORARY' will
+      return only temp objects.
 
+    tableinfo() type filters are strictly matched now ... previously a 
+      search for SYSTEM TABLE would have fetched plain TABLE objects.
 
-
+    table_info() now treats temporary tables and temporary views as LOCAL TEMPORARY
 
   - Make sure column_info() and table_info() can handle materialized views.
     [Greg Sabino Mullane] (CPAN bug #97032)
-
 
 
 Version 3.3.0  Released May 31, 2014 (git commit 055f788cf96b380b9fe0e80b6cedb88f8d1799b8)
