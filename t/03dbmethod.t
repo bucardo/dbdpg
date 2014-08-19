@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 545;
+plan tests => 547;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -483,9 +483,14 @@ is ($dbh->get_info(25), 'N', $t);
 # Test of the "table_info" database handle method
 #
 
-$t='DB handle method "table_info" works when called with undef arguments';
+$t='DB handle method "table_info" works when called with empty arguments';
 $sth = $dbh->table_info('', '', 'dbd_pg_test', '');
 my $number = $sth->rows();
+ok ($number, $t);
+
+$t='DB handle method "table_info" works when called with \'%\' arguments';
+$sth = $dbh->table_info('%', '%', 'dbd_pg_test', '%');
+$number = $sth->rows();
 ok ($number, $t);
 
 # Check required minimum fields
@@ -1178,6 +1183,10 @@ like ($result[0], qr/dbd_pg_test/, $t);
 $t='DB handle method "tables" works with a "pg_noprefix" attribute';
 @result = $dbh->tables('', '', 'dbd_pg_test', '', {pg_noprefix => 1});
 is ($result[0], 'dbd_pg_test', $t);
+
+$t='DB handle method "tables" works with type=\'%\'';
+@result = $dbh->tables('', '', 'dbd_pg_test', '%');
+like ($result[0], qr/dbd_pg_test/, $t);
 
 #
 # Test of the "type_info_all" database handle method
