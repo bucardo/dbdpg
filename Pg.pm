@@ -1135,7 +1135,7 @@ use 5.008001;
                  ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
                 };
 
-            if (defined($type) and length($type)) {
+            if (defined($type) and length($type) and $type ne '%') {
                 my $type_restrict = join ', ' =>
                                       map { $dbh->quote($_) unless /^'/ }
                                         grep {length}
