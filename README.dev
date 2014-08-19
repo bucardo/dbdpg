@@ -575,6 +575,10 @@ other sections referenced herein (indicated with **)
 
 * Test on variety of versions (see ** Heavy Testing), including the optional tests.
 
+* Test modules that depend on DBD::Pg, in particular DBIx::Class and DBIx::Class::Schema::Loader
+
+* Consider a pre-release announcement to dbix-class-devel@lists.scsys.co.uk
+
 * Make sure everything is up to date in git (git status)
 
 * Update the versions (see ** Version Numbers) in README, Pg.pm (2 places!), Makefile.PL, 
