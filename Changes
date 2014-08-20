@@ -1,7 +1,7 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 3.4.1  Released August 20, 2014
+Version 3.4.1  Released August 20, 2014 (git commit cfd146effde09c493ac7573408ac29d6d9cbed47)
 
     - Allow '%' again for the type in table_info() and thus tables()
       It's not documented or tested in DBI, but it used to work until
