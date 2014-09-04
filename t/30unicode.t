@@ -115,35 +115,6 @@ foreach (@tests) {
     }
 }
 
-my $t = 'Generated string is not utf8';
-my $name = 'Ada Lovelace';
-utf8::encode($name);
-ok (!utf8::is_utf8($name), $t);
-
-$dbh->{pg_enable_utf8} = -1;
-my $SQL = 'SELECT ?::text';
-my $sth = $dbh->prepare($SQL);
-$sth->execute($name);
-my $result = $sth->fetchall_arrayref->[0][0];
-$t = 'Fetching ASCII string from the database returns proper string';
-is ($result, $name, $t);
-$t = 'Fetching ASCII string from the database returns string with UTF-8 flag on';
-ok (utf8::is_utf8($result), $t);
-
-$dbh->{pg_enable_utf8} = 0;
-$sth->execute($name);
-$result = $sth->fetchall_arrayref->[0][0];
-$t = 'Fetching ASCII string from the database returns proper string (pg_enable_utf8=0)';
-is ($result, $name, $t);
-$t = 'Fetching ASCII string from the database returns string with UTF-8 flag off (pg_enable_utf8=0)';
-ok (!utf8::is_utf8($result), $t);
-
-$dbh->{pg_enable_utf8} = 1;
-my $before = "\N{WHITE SMILING FACE}";
-my ($after) = $dbh->selectrow_array('SELECT ?::text', {}, $before);
-is($after, $before, 'string is the same after round trip');
-ok(utf8::is_utf8($after), 'string has utf8 flag set');
-
 # Test that what we get is the same as the database's idea of characters:
 for my $name ("LATIN CAPITAL LETTER N",
               "LATIN SMALL LETTER E WITH ACUTE",
