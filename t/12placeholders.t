@@ -169,12 +169,6 @@ is ($count, 1, $t);
 
 $sth->finish();
 
-## Force client encoding, as we cannot use backslashes in client-only encodings
-my $old_encoding = $dbh->selectall_arrayref('SHOW client_encoding')->[0][0];
-if ($old_encoding ne 'UTF8') {
-	$dbh->do(q{SET NAMES 'UTF8'});
-}
-
 $t='Prepare with backslashes inside quotes works';
 $SQL = q{SELECT setting FROM pg_settings WHERE name = 'backslash_quote'};
 $count = $dbh->selectall_arrayref($SQL)->[0];

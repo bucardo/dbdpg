@@ -541,12 +541,6 @@ SKIP: {
 	$t='Quoted array of strings should be UTF-8';
     ok (Encode::is_utf8( $quoted ), $t);
 
-	## Workaround for client encodings such as SJIS
-	my $old_encoding = $dbh->selectall_arrayref('SHOW client_encoding')->[0][0];
-	if ($old_encoding ne 'UTF8') {
-		$dbh->do(q{SET NAMES 'UTF8'});
-	}
-
 	$t='Inserting utf-8 into an array via quoted do() works';
 	$dbh->do('DELETE FROM dbd_pg_test');
 	$SQL = qq{INSERT INTO dbd_pg_test (id, testarray, val) VALUES (1, $quoted, 'one')};
