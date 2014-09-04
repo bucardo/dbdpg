@@ -655,13 +655,19 @@ for my $char (qw{0 9 A Z a z}) { ## six letters
 	is ($@, q{}, $t);
 }
 
-for my $ident (qq{\x{5317}}, qq{abc\x{5317}}, qq{_cde\x{5317}}) { ## hi-bit chars
-	eval {
-		$sth = $dbh->prepare(qq{SELECT \$$ident\$ 123 \$$ident\$});
-		$sth->execute();
-		$sth->finish();
-	};
-	is ($@, q{}, $t);
+SKIP: {
+	my $server_encoding = $dbh->selectrow_array('SHOW server_encoding');
+	skip "Cannot test non-ascii dollar quotes with server_encoding='$server_encoding' (need UTF8 or SQL_ASCII)", 3,
+		unless $server_encoding =~ /\A(?:UTF8|SQL_ASCII)\z/;
+
+	for my $ident (qq{\x{5317}}, qq{abc\x{5317}}, qq{_cde\x{5317}}) { ## hi-bit chars
+		eval {
+			$sth = $dbh->prepare(qq{SELECT \$$ident\$ 123 \$$ident\$});
+			$sth->execute();
+			$sth->finish();
+		};
+		is ($@, q{}, $t);
+	}
 }
 
 }
