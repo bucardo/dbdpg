@@ -48,6 +48,7 @@ resources:
   bugtracker                : http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
   repository                : git://bucardo.org/dbdpg.git
   MailingList               : http://www.nntp.perl.org/group/perl.dbd.pg/
+  IRC                       : irc://irc.perl.org/#dbi
 
 meta-spec:
   version                   : 1.4
