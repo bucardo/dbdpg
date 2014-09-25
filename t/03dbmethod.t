@@ -493,6 +493,9 @@ $sth = $dbh->table_info('%', '%', 'dbd_pg_test', '%');
 $number = $sth->rows();
 ok ($number, $t);
 
+$t=q{DB handle method "table_info" works when called with a 'TABLE' last argument};
+$sth = $dbh->table_info( '', '', '', "'TABLE'");
+
 # Check required minimum fields
 $t='DB handle method "table_info" returns fields required by DBI';
 $result = $sth->fetchall_arrayref({});
