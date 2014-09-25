@@ -1137,7 +1137,7 @@ use 5.008001;
 
             if (defined($type) and length($type) and $type ne '%') {
                 my $type_restrict = join ', ' =>
-                                      map { $dbh->quote($_) unless /^'/ }
+                                      map { /^'/ ? $_ : $dbh->quote($_) }
                                         grep {length}
                                           split(',', $type);
                 $tbl_sql = qq{SELECT * FROM ($tbl_sql) ti WHERE "TABLE_TYPE" IN ($type_restrict)};
