@@ -1,6 +1,13 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
+Version 3.4.3
+
+  - In tests, force the client_encoding to UTF8, skip tests that involve 
+    characters not supported by the server_encoding
+    [Dagfinn Ilmari Mannsåker <ilmari@ilmari.org>]
+
+
 Version 3.4.2  Released September 25, 2015 (git commit 61440e1f4ccb6c293c5838676da1942e0df67271)
 
   - Fix bug where single-quoted type arguments to the table_info()
