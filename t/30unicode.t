@@ -26,6 +26,8 @@ isnt ($dbh, undef, 'Connect to database for unicode testing');
 
 my @tests;
 
+my $server_encoding = $dbh->selectrow_array('SHOW server_encoding');
+
 # Beware, characters used for testing need to be known to Unicode version 4.0.0,
 # which is what perl 5.8.1 shipped with.
 foreach (
@@ -53,8 +55,14 @@ foreach (
     }
 }
 
+my %ranges = (
+    UTF8 => qr/.*/,
+    LATIN1 => qr/\A(?:ascii|latin 1 range)\z/,
+);
+
 foreach (@tests) {
     my ($state, $range, $type, $value) = @$_;
+ SKIP:
     foreach my $test (
         {
             qtype => 'placeholder',
@@ -80,6 +88,8 @@ foreach (@tests) {
             },
         ):()),
     ) {
+        skip "Can't do $range tests with server_encoding='$server_encoding'", 1
+            unless $range =~ ($ranges{$server_encoding} || qr/\A(?:ascii)\z/);
         foreach my $enable_utf8 (1, 0, -1) {
             my $desc = "$state $range UTF-8 $test->{qtype} $type (pg_enable_utf8=$enable_utf8)";
             my @args = @{$test->{args} || []};
@@ -115,34 +125,10 @@ foreach (@tests) {
     }
 }
 
-my $t = 'Generated string is not utf8';
-my $name = 'Ada Lovelace';
-utf8::encode($name);
-ok (!utf8::is_utf8($name), $t);
-
-$dbh->{pg_enable_utf8} = -1;
-my $SQL = 'SELECT ?::text';
-my $sth = $dbh->prepare($SQL);
-$sth->execute($name);
-my $result = $sth->fetchall_arrayref->[0][0];
-$t = 'Fetching ASCII string from the database returns proper string';
-is ($result, $name, $t);
-$t = 'Fetching ASCII string from the database returns string with UTF-8 flag on';
-ok (utf8::is_utf8($result), $t);
-
-$dbh->{pg_enable_utf8} = 0;
-$sth->execute($name);
-$result = $sth->fetchall_arrayref->[0][0];
-$t = 'Fetching ASCII string from the database returns proper string (pg_enable_utf8=0)';
-is ($result, $name, $t);
-$t = 'Fetching ASCII string from the database returns string with UTF-8 flag off (pg_enable_utf8=0)';
-ok (!utf8::is_utf8($result), $t);
-
-$dbh->{pg_enable_utf8} = 1;
-my $before = "\N{WHITE SMILING FACE}";
-my ($after) = $dbh->selectrow_array('SELECT ?::text', {}, $before);
-is($after, $before, 'string is the same after round trip');
-ok(utf8::is_utf8($after), 'string has utf8 flag set');
+my %ord_max = (
+    LATIN1 => 255,
+    UTF8 => 2**31,
+);
 
 # Test that what we get is the same as the database's idea of characters:
 for my $name ("LATIN CAPITAL LETTER N",
@@ -164,6 +150,8 @@ for my $name ("LATIN CAPITAL LETTER N",
         my $desc = sprintf "chr(?) for U+%04X $name, \$enable_utf8=$enable_utf8", $ord;
         skip "Pg < 8.3 has broken $desc", 1
             if $ord > 127 && $dbh->{pg_server_version} < 80300;
+        skip "Cannot do $desc with server_encoding='$server_encoding'", 1
+            if $ord > ($ord_max{$server_encoding} || 127);
         $dbh->{pg_enable_utf8} = $enable_utf8;
          my $sth = $dbh->prepare('SELECT chr(?)');
         $sth->execute($ord);

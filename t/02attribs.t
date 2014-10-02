@@ -403,13 +403,6 @@ SKIP: {
 	is ($result, 'off', $t);
 }
 
-## If Encode is available, we will insert some non-ASCII into the test table
-## Since this will fail with client encodings such as BIG5, we force UTF8
-my $old_encoding = $dbh->selectall_arrayref('SHOW client_encoding')->[0][0];
-if ($old_encoding ne 'UTF8') {
-	$dbh->do(q{SET NAMES 'UTF8'});
-}
-
 # Attempt to test whether or not we can get unicode out of the database
 SKIP: {
 	eval { require Encode; };
@@ -959,11 +952,6 @@ q{SELECT * FROM dbd_pg_test},
 	$result = $sth->{pg_cmd_status};
 	$sth->finish();
 	like ($result, qr/^$expected/, $t);
-}
-
-## From this point forward, it is safe to use the client's native encoding again
-if ($old_encoding ne 'UTF8') {
-	$dbh->do(qq{SET NAMES '$old_encoding'});
 }
 
 #
