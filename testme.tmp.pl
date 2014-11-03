@@ -40,6 +40,8 @@ memory_leak_arrays();
 
 sub memory_leak_arrays {
 
+#  $dbh->{pg_expand_array} = 0;
+
 	$dbh->do('CREATE TABLE leaktest ( id TEXT, arr TEXT[] )');
 	$dbh->do('TRUNCATE TABLE leaktest');
 	for my $var (qw/ a b c/ ) {
@@ -57,8 +59,9 @@ sub memory_leak_arrays {
 		my $count2 = Devel::Leak::NoteSV( $handle );
 		$count0 ||= $count1;
 		my $diff = $count2 - $count0;
-		printf "New SVs: %4d  Total: %d\n", $count2 - $count0, $count2;
+		printf "New SVs: %4d  Total: %d\n", $diff, $count2;
 		sleep 0.2;
+		last if $diff > 100;
 		redo;
 	}
 
