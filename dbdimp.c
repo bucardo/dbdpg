@@ -2833,6 +2833,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 					}
 
 					SV *sv = newSVpvn(string, section_size);
+					sv_2mortal(sv);
 
 					// Mark as utf8 if needed (but never bytea)
 					if (0 != strncmp(coltype->type_name, "_bytea", 6)
