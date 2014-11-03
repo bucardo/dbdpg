@@ -13,6 +13,8 @@ use Data::Dumper;
 use YAML;
 use DBD::Pg qw/:pg_types/;
 use Data::Peek;
+use Devel::Leak;
+use Time::HiRes qw/ sleep /;
 
 use vars qw/$sth $info $count $SQL/;
 
@@ -26,15 +28,41 @@ my $dbh = DBI->connect($DSN, '', '', {AutoCommit=>0,RaiseError=>1,PrintError=>0}
 my $me = $dbh->{Driver}{Name};
 print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::VERSION\n";
 
-user_arrays();
+#user_arrays();
 
-commit_return_test();
+#commit_return_test();
 
 #utf8_print_test();
 
 #memory_leak_test_bug_65734();
 
-exit;
+memory_leak_arrays();
+
+sub memory_leak_arrays {
+
+	$dbh->do('CREATE TABLE leaktest ( id TEXT, arr TEXT[] )');
+	$dbh->do('TRUNCATE TABLE leaktest');
+	for my $var (qw/ a b c/ ) {
+		$dbh->do(qq{INSERT INTO leaktest VALUES ( '$var', '{"a","b","c"}' )});
+	}
+
+	my $sth = $dbh->prepare( 'SELECT arr FROM leaktest' );
+	my $count0 = 0;
+
+	{
+		my $handle;
+		my $count1 = Devel::Leak::NoteSV( $handle );
+		$sth->execute();
+		my $r = $sth->fetchall_arrayref( {} );
+		my $count2 = Devel::Leak::NoteSV( $handle );
+		$count0 ||= $count1;
+		my $diff = $count2 - $count0;
+		printf "New SVs: %4d  Total: %d\n", $count2 - $count0, $count2;
+		sleep 0.2;
+		redo;
+	}
+
+} ## end of memory_leak_arrays
 
 
 sub user_arrays {
