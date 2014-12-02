@@ -472,7 +472,7 @@ int dbd_db_ping (SV * dbh)
 		return -2;
 	}
 
-	if (tstatus != 0) {/* 2=active, 3=intrans, 4=inerror */
+	if (tstatus != 0 && tstatus != 2) {/* 0=idle, 1=active, 2=intrans, 3=error 4=unknown */
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (result: %d)\n", THEADER_slow, 1+tstatus);
 		return 1+tstatus;
 	}
