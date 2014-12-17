@@ -465,6 +465,8 @@ int dbd_db_ping (SV * dbh)
 
 	tstatus = pg_db_txn_status(aTHX_ imp_dbh);
 
+	fprintf(stderr, "tstatus is now %d\n", tstatus);
+
 	if (TRACE5_slow) TRC(DBILOGFP, "%sdbd_db_ping txn_status is %d\n", THEADER_slow, tstatus);
 
 	if (tstatus >= 4) { /* Unknown, so we err on the side of "bad" */
@@ -472,15 +474,18 @@ int dbd_db_ping (SV * dbh)
 		return -2;
 	}
 
+	fprintf(stderr, "tstatus is now %d\n", tstatus);
+
 	if (tstatus != 0 && tstatus != 2) {/* 0=idle, 1=active, 2=intrans, 3=error 4=unknown */
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (result: %d)\n", THEADER_slow, 1+tstatus);
-		return 1+tstatus;
+		//return 1+tstatus;
 	}
 
 	/* Even though it may be reported as normal, we have to make sure by issuing a command */
 
 	status = _result(aTHX_ imp_dbh, "SELECT 'DBD::Pg ping test'");
 
+	fprintf(stderr, "Select gave us a %d\n", status);
 	if (PGRES_TUPLES_OK == status) {
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (result: 1 PGRES_TUPLES_OK)\n", THEADER_slow);
 		return 1;
