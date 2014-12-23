@@ -7,6 +7,9 @@ Version 3.4.3
     characters not supported by the server_encoding
     [Dagfinn Ilmari Mannsåker <ilmari@ilmari.org>]
 
+  - Fix memory leak when selecting from arrays
+    [Dagfinn Ilmari Mannsåker, reported by Krystian Samp]
+
 
 Version 3.4.2  Released September 25, 2014 (git commit 61440e1f4ccb6c293c5838676da1942e0df67271)
 
