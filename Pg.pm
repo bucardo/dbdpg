@@ -2738,9 +2738,11 @@ server version 9.0 or higher.
 
   $rv = $dbh->ping;
 
-This C<ping> method is used to check the validity of a database handle. The value returned is 
-either 0, indicating that the connection is no longer valid, or a positive integer, indicating 
-the following:
+The C<ping> method determines if there is a working connection to an active 
+database server. It does this by sending a small query to the server, currently 
+B<SELECT 'DBD::Pg ping test'>. It returns 0 (false) if the connection is not valid, 
+otherwise it returns a positive number (true). The value returned indicates the 
+current state:
 
   Value    Meaning
   --------------------------------------------------
