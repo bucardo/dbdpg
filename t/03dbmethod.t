@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 546;
+plan tests => 548;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -1920,6 +1920,21 @@ is ($dbh->ping(), 0, $t);
 $t='Able to reconnect to the database after disconnect';
 $dbh = connect_database({nosetup => 1});
 isnt ($dbh, undef, $t);
+
+$t='DB handle method "ping" returns 1 on an idle connection';
+$dbh->commit();
+is ($dbh->ping(), 1, $t);
+
+$t='DB handle method "ping" returns 0 when the underlying connection is gone';
+
+$pid = $dbh->selectall_arrayref('SELECT pg_backend_pid()')->[0][0];
+$dbh->commit();
+kill 15, $pid;
+sleep 1;
+is ($dbh->ping(), 0, $t);
+
+$dbh->disconnect();
+$dbh = connect_database({nosetup => 1});
 
 #
 # Test of the "pg_ping" database handle method
