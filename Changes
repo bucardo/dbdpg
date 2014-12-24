@@ -3,6 +3,10 @@
 
 Version 3.4.3
 
+  - Improve the workings of the ping() method, so it always tests for 
+    a valid database backend and returns the correct true/false.
+    [Greg Sabino Mullane] (CAN bug #100648)
+
   - In tests, force the client_encoding to UTF8, skip tests that involve 
     characters not supported by the server_encoding
     [Dagfinn Ilmari Mannsåker <ilmari@ilmari.org>]
