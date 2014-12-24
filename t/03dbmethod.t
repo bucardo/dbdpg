@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 547;
+plan tests => 546;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -1882,10 +1882,9 @@ $dbh2->disconnect();
 $t='DB handle method "ping" returns 1 on an idle connection';
 is ($dbh->ping(), 1, $t);
 
-$t='DB handle method "ping" returns 1 for a good connection inside a transaction';
+$t='DB handle method "ping" returns 3 for a good connection inside a transaction';
 $dbh->do('SELECT 123');
-$result = 1;
-is ($result, $dbh->ping(), $t);
+is ($dbh->ping(), 3, $t);
 
 $t='DB handle method "ping" returns 1 on an idle connection';
 $dbh->commit();
@@ -1899,21 +1898,20 @@ $dbh->do('COPY dbd_pg_test(id,pname) TO STDOUT');
 	local $SIG{__WARN__} = sub {};
 	$dbh->pg_getline($mtvar,100);
 }
-#is ($dbh->ping(), 2, $t);
-1 while $dbh->pg_getline($mtvar,1000);
-
-$t='DB handle method "ping" returns 1 for a good connection inside a transaction';
-$dbh->do('SELECT 123');
-is ($dbh->ping(), 1, $t);
+is ($dbh->ping(), 2, $t);
+## This has sent a SELECT, which messes up our COPY state!
+$dbh->rollback();
 
 $t='DB handle method "ping" returns a 4 when inside a failed transaction';
 eval {
 	$dbh->do('DBD::Pg creating an invalid command for testing');
 };
 is ($dbh->ping(), 4, $t);
+$dbh->rollback();
 
-
-exit;
+$t='DB handle method "ping" returns 1 on an idle connection';
+$dbh->commit();
+is ($dbh->ping(), 1, $t);
 
 $t='DB handle method "ping" fails (returns 0) on a disconnected handle';
 $dbh->disconnect();
@@ -1930,9 +1928,9 @@ isnt ($dbh, undef, $t);
 $t='DB handle method "pg_ping" returns 1 on an idle connection';
 is ($dbh->pg_ping(), 1, $t);
 
-$t='DB handle method "pg_ping" returns 1 for a good connection inside a transaction';
+$t='DB handle method "pg_ping" returns 3 for a good connection inside a transaction';
 $dbh->do('SELECT 123');
-is ($dbh->pg_ping(), 1, $t);
+is ($dbh->pg_ping(), 3, $t);
 
 $t='DB handle method "pg_ping" returns 1 on an idle connection';
 $dbh->commit();
@@ -1942,14 +1940,11 @@ $t='DB handle method "pg_ping" returns 2 when in COPY IN state';
 $dbh->do('COPY dbd_pg_test(id,pname) TO STDOUT');
 $dbh->pg_getline($mtvar,100);
 is ($dbh->pg_ping(), 2, $t);
+$dbh->rollback();
 
-$t='DB handle method "pg_ping" returns 2 immediately after COPY IN state';
-1 while $dbh->pg_getline($mtvar,1000);
-is ($dbh->pg_ping(), 2, $t);
-
-$t='DB handle method "pg_ping" returns 1 for a good connection inside a transaction';
+$t='DB handle method "pg_ping" returns 3 for a good connection inside a transaction';
 $dbh->do('SELECT 123');
-is ($dbh->pg_ping(), 1, $t);
+is ($dbh->pg_ping(), 3, $t);
 
 $t='DB handle method "pg_ping" returns a 4 when inside a failed transaction';
 eval {
@@ -1957,7 +1952,7 @@ eval {
 };
 is ($dbh->pg_ping(), 4, $t);
 
-$t='DB handle method "pg_ping" fails (returns 0) on a disconnected handle';
+$t='DB handle method "pg_ping" fails (returns -1) on a disconnected handle';
 cleanup_database($dbh,'test');
 $dbh->disconnect();
 is ($dbh->pg_ping(), -1, $t);

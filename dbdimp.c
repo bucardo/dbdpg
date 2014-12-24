@@ -464,6 +464,7 @@ int dbd_db_ping (SV * dbh)
 	}
 
 	tstatus = pg_db_txn_status(aTHX_ imp_dbh);
+	/* 0=idle 1=active 2=intrans 3=inerror 4=unknown */
 
 	if (TRACE5_slow) TRC(DBILOGFP, "%sdbd_db_ping txn_status is %d\n", THEADER_slow, tstatus);
 
@@ -472,25 +473,31 @@ int dbd_db_ping (SV * dbh)
 		return -2;
 	}
 
-	if (tstatus != 0) {/* 2=active, 3=intrans, 4=inerror */
-		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (result: %d)\n", THEADER_slow, 1+tstatus);
-		return 1+tstatus;
-	}
-
-	/* Even though it may be reported as normal, we have to make sure by issuing a command */
-
+	/* No matter what state we are in, send a SELECT to the backend */
 	status = _result(aTHX_ imp_dbh, "SELECT 'DBD::Pg ping test'");
 
-	if (PGRES_TUPLES_OK == status) {
-		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (result: 1 PGRES_TUPLES_OK)\n", THEADER_slow);
-		return 1;
+	if (0 == tstatus || 2 == tstatus) {
+
+		/* If we are simply idle or in a transaction, we should see tuples */
+
+		if (PGRES_TUPLES_OK == status) {
+			if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (result: 1 PGRES_TUPLES_OK)\n", THEADER_slow);
+			return 1+tstatus;
+		}
+
 	}
 
-	if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (result: -3)\n", THEADER_slow);
-	return -3;
+	/* A status of 7 could indicate a failed query or a dead database. We need PQstatus to be sure */
+	if (CONNECTION_BAD == PQstatus(imp_dbh->conn)) {
+		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (PQstatus returned CONNECTION_BAD)\n", THEADER_slow);
+		return -3;
+	}
+
+	if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping\n", THEADER_slow);
+	return 1+tstatus;
 
 } /* end of dbd_db_ping */
-
+ 
 
 /* ================================================================== */
 static PGTransactionStatusType pg_db_txn_status (pTHX_ imp_dbh_t * imp_dbh)

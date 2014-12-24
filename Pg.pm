@@ -2768,8 +2768,6 @@ return the following:
    -2      An unknown transaction status was returned (e.g. after forking)
    -3      The handle exists, but no data was returned from a test query.
 
-In practice, you should only ever see -1 and -2.
-
 =head3 B<get_info>
 
   $value = $dbh->get_info($info_type);
