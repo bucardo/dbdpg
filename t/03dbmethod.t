@@ -1925,16 +1925,36 @@ $t='DB handle method "ping" returns 1 on an idle connection';
 $dbh->commit();
 is ($dbh->ping(), 1, $t);
 
-$t='DB handle method "ping" returns 0 when the underlying connection is gone';
+$t='DB handle method "ping" returns 0 after a lost network connection (outside transaction)';
+my $fd = $dbh->{pg_socket} or die "Could not determine socket";
+open(DBH_PG_FH, "<&=".$fd) or die "Could not open socket: $!";
+close DBH_PG_FH or die "Could not close socket: $!";
+is ($dbh->ping(), 0, $t);
 
-$pid = $dbh->selectall_arrayref('SELECT pg_backend_pid()')->[0][0];
-$dbh->commit();
-kill 15, $pid;
-sleep 1;
+## Reconnect, and try the same thing but inside a transaction
+$t='DB handle method "ping" returns 0 after a lost network connection (inside transaction)';
+diag "About to call...";
+$dbh->disconnect();
+$dbh = connect_database({nosetup => 1});
+$dbh->do("SELECT 'DBD::Pg testing'");
+$fd = $dbh->{pg_socket} or die "Could not determine socket";
+open(DBH_PG_FH, "<&=".$fd) or die "Could not open socket: $!";
+close DBH_PG_FH or die "Could not close socket: $!";
+is ($dbh->ping(), 0, $t);
+
+$t='DB handle method "ping" returns 0 after a lost network connection (inside failed transaction)';
+$dbh->{InactiveDestroy} = 1;
+undef $dbh;
+$dbh = connect_database({nosetup => 1});
+eval { $dbh->do("SELECT 'DBD::Pg testing, will fail'::int"); };
+$fd = $dbh->{pg_socket} or die "Could not determine socket";
+open(DBH_PG_FH, "<&=".$fd) or die "Could not open socket: $!";
+close DBH_PG_FH or die "Could not close socket: $!";
 is ($dbh->ping(), 0, $t);
 
 $dbh->disconnect();
 $dbh = connect_database({nosetup => 1});
+
 
 #
 # Test of the "pg_ping" database handle method

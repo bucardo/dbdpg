@@ -476,18 +476,21 @@ int dbd_db_ping (SV * dbh)
 	/* No matter what state we are in, send a SELECT to the backend */
 	status = _result(aTHX_ imp_dbh, "SELECT 'DBD::Pg ping test'");
 
+	/* If we are idle or in a transaction, we should see tuples */
 	if (0 == tstatus || 2 == tstatus) {
-
-		/* If we are simply idle or in a transaction, we should see tuples */
 
 		if (PGRES_TUPLES_OK == status) {
 			if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (result: 1 PGRES_TUPLES_OK)\n", THEADER_slow);
 			return 1+tstatus;
 		}
 
+		/* Something is wrong, so we return an error */
+		return -2;
 	}
 
-	/* A status of 7 could indicate a failed query or a dead database. We need PQstatus to be sure */
+	/* We are in some other state. As a status of 7 could be a bad query or a dead database,
+	   we need to call PQstatus to be sure
+	*/
 	if (CONNECTION_BAD == PQstatus(imp_dbh->conn)) {
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (PQstatus returned CONNECTION_BAD)\n", THEADER_slow);
 		return -3;
