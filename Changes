@@ -1,7 +1,7 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 3.4.3
+Version 3.5.0
 
   - Improve the workings of the ping() method, so it always tests for 
     a valid database backend and returns the correct true/false.
