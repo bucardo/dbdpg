@@ -2740,7 +2740,7 @@ server version 9.0 or higher.
 
 The C<ping> method determines if there is a working connection to an active 
 database server. It does this by sending a small query to the server, currently 
-B<SELECT 'DBD::Pg ping test'>. It returns 0 (false) if the connection is not valid, 
+B<'DBD::Pg ping test v3.5.0'>. It returns 0 (false) if the connection is not valid, 
 otherwise it returns a positive number (true). The value returned indicates the 
 current state:
 
@@ -2768,7 +2768,8 @@ return the following:
   --------------------------------------------------
    -1      There is no connection to the database at all (e.g. after disconnect)
    -2      An unknown transaction status was returned (e.g. after forking)
-   -3      The handle exists, but no data was returned from a test query.
+   -3      The test query failed (PQexec returned null)
+   -4      PQstatus returned a CONNECTION_BAD
 
 =head3 B<get_info>
 

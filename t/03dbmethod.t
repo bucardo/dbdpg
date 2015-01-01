@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 548;
+plan tests => 549;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -1876,118 +1876,73 @@ is ($@, q{}, $t);
 $dbh2->disconnect();
 
 #
-# Test of the "ping" database handle method
+# Test of the "ping" and "pg_ping" database handle methods
 #
 
-$t='DB handle method "ping" returns 1 on an idle connection';
-is ($dbh->ping(), 1, $t);
+my $mtvar; ## This is an implicit test of getcopydata: please leave this var undefined
 
-$t='DB handle method "ping" returns 3 for a good connection inside a transaction';
-$dbh->do('SELECT 123');
-is ($dbh->ping(), 3, $t);
+for my $type (qw/ ping pg_ping /) {
 
-$t='DB handle method "ping" returns 1 on an idle connection';
-$dbh->commit();
-is ($dbh->ping(), 1, $t);
+	$t=qq{DB handle method "$type" returns 1 on an idle connection};
+	$dbh->commit();
+	is ($dbh->$type(), 1, $t);
 
-my $mtvar; ## This is an implicit test of getline: please leave this var undefined
+	$t=qq{DB handle method "$type" returns 2 when in COPY IN state};
+	$dbh->do('COPY dbd_pg_test(id,pname) TO STDOUT');
+	$dbh->pg_getcopydata($mtvar);
+	is ($dbh->$type(), 2, $t);
+	## the ping messes up the copy state, so all we can do is rollback
+	$dbh->rollback();
 
-$t='DB handle method "ping" returns 2 when in COPY IN state';
-$dbh->do('COPY dbd_pg_test(id,pname) TO STDOUT');
-{
-	local $SIG{__WARN__} = sub {};
-	$dbh->pg_getline($mtvar,100);
+	$t=qq{DB handle method "$type" returns 2 when in COPY IN state};
+	$dbh->do('COPY dbd_pg_test(id,pname) FROM STDIN');
+	$dbh->pg_putcopydata("123\tfoobar\n");
+	is ($dbh->$type(), 2, $t);
+	$dbh->rollback();
+
+	$t=qq{DB handle method "$type" returns 3 for a good connection inside a transaction};
+	$dbh->do('SELECT 123');
+	is ($dbh->$type(), 3, $t);
+
+	$t=qq{DB handle method "$type" returns a 4 when inside a failed transaction};
+	eval {
+		$dbh->do('DBD::Pg creating an invalid command for testing');
+	};
+	is ($dbh->$type(), 4, $t);
+	$dbh->rollback();
+
+	my $val = $type eq 'ping' ? 0 : -1;
+	$t=qq{DB handle method "type" fails (returns $val) on a disconnected handle};
+	$dbh->disconnect();
+	is ($dbh->$type(), $val, $t);
+
+	$t='Able to reconnect to the database after disconnect';
+	$dbh = connect_database({nosetup => 1});
+	isnt ($dbh, undef, $t);
+
+	$val = $type eq 'ping' ? 0 : -3;
+	$t=qq{DB handle method "$type" returns $val after a lost network connection (outside transaction)};
+	socket_fail($dbh);
+	is ($dbh->$type(), $val, $t);
+
+	## Reconnect, and try the same thing but inside a transaction
+	$val = $type eq 'ping' ? 0 : -3;
+	$t=qq{DB handle method "$type" returns $val after a lost network connection (inside transaction)};
+	$dbh = connect_database({nosetup => 1});
+	$dbh->do("SELECT 'DBD::Pg testing'");
+	socket_fail($dbh);
+	is ($dbh->$type(), $val, $t);
+
+	$type eq 'ping' and $dbh = connect_database({nosetup => 1});
 }
-is ($dbh->ping(), 2, $t);
-## This has sent a SELECT, which messes up our COPY state!
-$dbh->rollback();
 
-$t='DB handle method "ping" returns a 4 when inside a failed transaction';
-eval {
-	$dbh->do('DBD::Pg creating an invalid command for testing');
-};
-is ($dbh->ping(), 4, $t);
-$dbh->rollback();
+exit;
 
-$t='DB handle method "ping" returns 1 on an idle connection';
-$dbh->commit();
-is ($dbh->ping(), 1, $t);
+sub socket_fail {
+	my $dbh = shift;
+	$dbh->{InactiveDestroy} = 1;
+	my $fd = $dbh->{pg_socket} or die "Could not determine socket";
+	open(DBH_PG_FH, "<&=".$fd) or die "Could not open socket: $!";
+	close DBH_PG_FH or die "Could not close socket: $!";
+}
 
-$t='DB handle method "ping" fails (returns 0) on a disconnected handle';
-$dbh->disconnect();
-is ($dbh->ping(), 0, $t);
-
-$t='Able to reconnect to the database after disconnect';
-$dbh = connect_database({nosetup => 1});
-isnt ($dbh, undef, $t);
-
-$t='DB handle method "ping" returns 1 on an idle connection';
-$dbh->commit();
-is ($dbh->ping(), 1, $t);
-
-$t='DB handle method "ping" returns 0 after a lost network connection (outside transaction)';
-my $fd = $dbh->{pg_socket} or die "Could not determine socket";
-open(DBH_PG_FH, "<&=".$fd) or die "Could not open socket: $!";
-close DBH_PG_FH or die "Could not close socket: $!";
-is ($dbh->ping(), 0, $t);
-
-## Reconnect, and try the same thing but inside a transaction
-$t='DB handle method "ping" returns 0 after a lost network connection (inside transaction)';
-diag "About to call...";
-$dbh->disconnect();
-$dbh = connect_database({nosetup => 1});
-$dbh->do("SELECT 'DBD::Pg testing'");
-$fd = $dbh->{pg_socket} or die "Could not determine socket";
-open(DBH_PG_FH, "<&=".$fd) or die "Could not open socket: $!";
-close DBH_PG_FH or die "Could not close socket: $!";
-is ($dbh->ping(), 0, $t);
-
-$t='DB handle method "ping" returns 0 after a lost network connection (inside failed transaction)';
-$dbh->{InactiveDestroy} = 1;
-undef $dbh;
-$dbh = connect_database({nosetup => 1});
-eval { $dbh->do("SELECT 'DBD::Pg testing, will fail'::int"); };
-$fd = $dbh->{pg_socket} or die "Could not determine socket";
-open(DBH_PG_FH, "<&=".$fd) or die "Could not open socket: $!";
-close DBH_PG_FH or die "Could not close socket: $!";
-is ($dbh->ping(), 0, $t);
-
-$dbh->disconnect();
-$dbh = connect_database({nosetup => 1});
-
-
-#
-# Test of the "pg_ping" database handle method
-#
-
-$t='DB handle method "pg_ping" returns 1 on an idle connection';
-is ($dbh->pg_ping(), 1, $t);
-
-$t='DB handle method "pg_ping" returns 3 for a good connection inside a transaction';
-$dbh->do('SELECT 123');
-is ($dbh->pg_ping(), 3, $t);
-
-$t='DB handle method "pg_ping" returns 1 on an idle connection';
-$dbh->commit();
-is ($dbh->pg_ping(), 1, $t);
-
-$t='DB handle method "pg_ping" returns 2 when in COPY IN state';
-$dbh->do('COPY dbd_pg_test(id,pname) TO STDOUT');
-$dbh->pg_getline($mtvar,100);
-is ($dbh->pg_ping(), 2, $t);
-$dbh->rollback();
-
-$t='DB handle method "pg_ping" returns 3 for a good connection inside a transaction';
-$dbh->do('SELECT 123');
-is ($dbh->pg_ping(), 3, $t);
-
-$t='DB handle method "pg_ping" returns a 4 when inside a failed transaction';
-eval {
-	$dbh->do('DBD::Pg creating an invalid command for testing');
-};
-is ($dbh->pg_ping(), 4, $t);
-
-$t='DB handle method "pg_ping" fails (returns -1) on a disconnected handle';
-cleanup_database($dbh,'test');
-$dbh->disconnect();
-is ($dbh->pg_ping(), -1, $t);

@@ -455,6 +455,7 @@ int dbd_db_ping (SV * dbh)
 	D_imp_dbh(dbh);
 	PGTransactionStatusType tstatus;
 	ExecStatusType          status;
+	PGresult              * result;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_ping\n", THEADER_slow);
 
@@ -464,8 +465,6 @@ int dbd_db_ping (SV * dbh)
 	}
 
 	tstatus = pg_db_txn_status(aTHX_ imp_dbh);
-	/* 0=idle 1=active 2=intrans 3=inerror 4=unknown */
-
 	if (TRACE5_slow) TRC(DBILOGFP, "%sdbd_db_ping txn_status is %d\n", THEADER_slow, tstatus);
 
 	if (tstatus >= 4) { /* Unknown, so we err on the side of "bad" */
@@ -473,30 +472,30 @@ int dbd_db_ping (SV * dbh)
 		return -2;
 	}
 
-	/* No matter what state we are in, send a SELECT to the backend */
-	status = _result(aTHX_ imp_dbh, "SELECT 'DBD::Pg ping test'");
+	/* No matter what state we are in, send an empty query to the backend */
+	result = PQexec(imp_dbh->conn, "/* DBD::Pg ping test v3.5.0 */");
+	if (NULL == result) {
+		/* Something very bad, usually indicating the backend is gone */
+		return -3;
+	}
+	status = PQresultStatus(result);
+	PQclear(result);
 
-	/* If we are idle or in a transaction, we should see tuples */
-	if (0 == tstatus || 2 == tstatus) {
-
-		if (PGRES_TUPLES_OK == status) {
-			if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (result: 1 PGRES_TUPLES_OK)\n", THEADER_slow);
-			return 1+tstatus;
-		}
-
-		/* Something is wrong, so we return an error */
-		return -2;
+	/* We expect to see an empty query most times */
+	if (PGRES_EMPTY_QUERY == status) {
+		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (PGRES_EMPTY_QUERY)\n", THEADER_slow);
+		return 1+tstatus;
+		/* 0=idle 1=active 2=intrans 3=inerror 4=unknown */
 	}
 
-	/* We are in some other state. As a status of 7 could be a bad query or a dead database,
-	   we need to call PQstatus to be sure
-	*/
+	/* As a safety measure, check PQstatus as well */
 	if (CONNECTION_BAD == PQstatus(imp_dbh->conn)) {
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (PQstatus returned CONNECTION_BAD)\n", THEADER_slow);
-		return -3;
+		return -4;
 	}
 
 	if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping\n", THEADER_slow);
+
 	return 1+tstatus;
 
 } /* end of dbd_db_ping */
