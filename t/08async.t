@@ -32,8 +32,6 @@ isnt ($dbh, undef, 'Connect to database for async testing');
 
 my ($t,$sth,$res);
 my $pgversion = $dbh->{pg_server_version};
-my $table = 'dbd_pg_test1';
-
 
 ## First, test out do() in all its variants
 
