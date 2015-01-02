@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 251;
+plan tests => 253;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -841,10 +841,37 @@ while (my ($name,$res) = each %booltest) {
 	}
 }
 
+## Test of placeholder escaping. Enabled by default, so let's jump right in
+$t = q{Basic placeholder escaping works via backslash-question mark for \?};
+
+## But first, we need some operators
+$dbh->do('create operator ? (leftarg=int,rightarg=int,procedure=int4eq)');
+$dbh->commit();
+$dbh->do('create operator ?? (leftarg=text,rightarg=text,procedure=texteq)');
+$dbh->commit();
+
+$SQL = qq{SELECT count(*) FROM dbd_pg_test WHERE id \\? ?};
+$sth = $dbh->prepare($SQL);
+eval {
+	$count = $sth->execute(123);
+};
+is($@, '', $t);
+$sth->finish();
+
+$t = q{Basic placeholder escaping works via backslash-question mark for \?\?};
+$SQL = qq{SELECT count(*) FROM dbd_pg_test WHERE pname \\?\\? ?};
+$sth = $dbh->prepare($SQL);
+eval {
+	$count = $sth->execute('foobar');
+};
+is($@, '', $t);
+$sth->finish();
+
+## pg_placeholder_escaping = 1;
+
 ## Begin custom type testing
 
 $dbh->rollback();
 
 cleanup_database($dbh,'test');
 $dbh->disconnect();
-

@@ -1733,7 +1733,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_split_statement\n", THEADER_slow);
 	if (TRACE6_slow) TRC(DBILOGFP, "%spg_st_split_statement: (%s)\n", THEADER_slow, statement);
-	
+
 	/*
 	  If the pg_direct flag is set (or the string has no length), we do not split at all,
 	  but simply put everything verbatim into a single segment and return.
@@ -1976,6 +1976,21 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		
 		/* All we care about at this point is placeholder characters and end of string */
 		if ('?' != ch && '$' != ch && ':' != ch && 0!=ch) {
+			continue;
+		}
+
+		/* If this placeholder is escaped, we rewrite the string to remove the
+		   backslash, and move on as if there is no placeholder */
+		if ('\\' == oldch) {
+			/* copy the placeholder-like character but ignore the backslash */
+			unsigned char *p = statement-2;
+			while(*p++) {
+				*(p-1) = *p;
+			}
+			/* We need to adjust these items because we just rewrote statement! */
+			statement--;
+			currpos--;
+			ch = *statement;
 			continue;
 		}
 

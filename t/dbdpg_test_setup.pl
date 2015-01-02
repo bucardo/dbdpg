@@ -22,6 +22,12 @@ my @matviews =
 	 'dbd_pg_matview',
      );
 
+my @operators =
+	(
+		'?.integer.integer',
+		'??.text.text',
+    );
+
 my @schemas =
 	(
 	 'dbd_pg_testschema',
@@ -792,6 +798,20 @@ sub relation_exists {
 } ## end of relation_exists
 
 
+sub operator_exists {
+
+	my ($dbh,$opname,$leftarg,$rightarg) = @_;
+
+	my $SQL = 'SELECT 1 FROM pg_catalog.pg_operator '.
+		'WHERE oprname=? AND oprleft::regtype::text = ? AND oprright::regtype::text = ?';
+	my $sth = $dbh->prepare_cached($SQL);
+	my $count = $sth->execute($opname,$leftarg,$rightarg);
+	$sth->finish();
+	return $count < 1 ? 0 : 1;
+
+} ## end of operator_exists
+
+
 sub cleanup_database {
 
 	## Clear out any testing objects in the current database
@@ -809,6 +829,12 @@ sub cleanup_database {
 		my $schema = ($name =~ s/(.+)\.(.+)/$2/) ? $1 : $S;
 		next if ! relation_exists($dbh,$schema,$name);
 		$dbh->do("DROP MATERIALIZED VIEW $schema.$name");
+	}
+
+	for my $name (@operators) {
+		my ($opname,$leftarg,$rightarg) = split /\./ => $name;
+		next if ! operator_exists($dbh,$opname,$leftarg,$rightarg);
+		$dbh->do("DROP OPERATOR $opname($leftarg,$rightarg)");
 	}
 
 	for my $name (@tables) {
