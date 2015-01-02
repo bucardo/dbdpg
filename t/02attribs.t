@@ -194,7 +194,6 @@ is ($rows, 1, $t);
 
 ok ($dbh2->disconnect(), 'Disconnect with second database handle');
 
-
 #
 # Test of the database handle attribute "Driver"
 #
@@ -219,6 +218,7 @@ SKIP: {
 	$expected =~ s/(db|database)=/dbname=/;
 	is ($attrib, $expected, $t);
 }
+
 
 #
 # Test of the database handle attribute "RowCacheSize"
@@ -281,7 +281,6 @@ $dbh->{PrintWarn}=1;
 $dbh->rollback();
 
 }
-
 
 #
 # Test of the database handle attributes "pg_INV_WRITE" and "pg_INV_READ"
@@ -958,11 +957,12 @@ q{SELECT * FROM dbd_pg_test},
 # Test of the handle attribute "Active"
 #
 
+
 $t='Database handle attribute "Active" is true while connected';
 $attrib = $dbh->{Active};
 is ($attrib, 1, $t);
 
-$t='Statement handle attribute "Active" is false before SELECT';
+
 $sth = $dbh->prepare('SELECT 123 UNION SELECT 456');
 $attrib = $sth->{Active};
 is ($attrib, '', $t);
@@ -985,6 +985,7 @@ is ($attrib, '', $t);
 #
 # Test of the handle attribute "Executed"
 #
+
 
 my $dbh3 = connect_database({quickreturn => 1});
 $dbh3->{AutoCommit} = 0;
@@ -1031,20 +1032,18 @@ is ($dbh3->{Executed}, '', $t);
 $t='Statement handle attribute "Executed" is true after rollback()';
 is ($sth->{Executed}, 1, $t);
 
-$dbh3->disconnect();
-
 #
 # Test of the handle attribute "Kids"
 #
 
 $t='Database handle attribute "Kids" is set properly';
-$attrib = $dbh->{Kids};
-is ($attrib, 2, $t);
+$attrib = $dbh3->{Kids};
+is ($attrib, 1, $t);
 
 $t='Database handle attribute "Kids" works';
-my $sth2 = $dbh->prepare('SELECT 234');
-$attrib = $dbh->{Kids};
-is ($attrib, 3, $t);
+my $sth2 = $dbh3->prepare('SELECT 234');
+$attrib = $dbh3->{Kids};
+is ($attrib, 2, $t);
 
 $t='Statement handle attribute "Kids" is zero';
 $attrib = $sth2->{Kids};
@@ -1055,26 +1054,33 @@ is ($attrib, 0, $t);
 #
 
 $t='Database handle attribute "ActiveKids" is set properly';
-$attrib = $dbh->{ActiveKids};
+$attrib = $dbh3->{ActiveKids};
 is ($attrib, 0, $t);
 
 $t='Database handle attribute "ActiveKids" works';
-$sth2 = $dbh->prepare('SELECT 234');
+$sth2 = $dbh3->prepare('SELECT 234');
 $sth2->execute();
-$attrib = $dbh->{ActiveKids};
+$attrib = $dbh3->{ActiveKids};
 is ($attrib, 1, $t);
 
 $t='Statement handle attribute "ActiveKids" is zero';
 $attrib = $sth2->{ActiveKids};
 is ($attrib, 0, $t);
+$sth2->finish();
 
 #
 # Test of the handle attribute "CachedKids"
 #
 
 $t='Database handle attribute "CachedKids" is set properly';
-$attrib = $dbh->{CachedKids};
-is (keys %$attrib, 2, $t);
+$attrib = $dbh3->{CachedKids};
+is (keys %$attrib, 0, $t);
+my $sth4 = $dbh3->prepare_cached('select 1');
+$attrib = $dbh3->{CachedKids};
+is (keys %$attrib, 1, $t);
+$sth4->finish();
+
+$dbh3->disconnect();
 
 #
 # Test of the handle attribute "Type"
