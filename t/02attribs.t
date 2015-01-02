@@ -18,7 +18,7 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 260;
+plan tests => 258;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -1582,10 +1582,6 @@ SKIP: {
 		else {
 			$t=qq{Ping fails after the child has exited ("AutoInactiveDestroy" = $destroy)};
 			is ( $dbh->ping(), 0, $t);
-
-			$t='Failed ping returns a SQLSTATE code of 08000';
-			my $state = $dbh->state();
-			is ($state, '08000', $t);
 
 			$t=qq{pg_ping gives an error code of -2 after the child has exited ("AutoInactiveDestroy" = $destroy)};
 			is ( $dbh->pg_ping(), -2, $t);
