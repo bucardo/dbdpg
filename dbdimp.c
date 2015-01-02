@@ -237,6 +237,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	imp_dbh->done_begin        = DBDPG_FALSE;
 	imp_dbh->dollaronly        = DBDPG_FALSE;
 	imp_dbh->nocolons          = DBDPG_FALSE;
+	imp_dbh->ph_escaped        = DBDPG_TRUE;
 	imp_dbh->expand_array      = DBDPG_TRUE;
 	imp_dbh->txn_read_only     = DBDPG_FALSE;
 	imp_dbh->pid_number        = getpid();
@@ -967,6 +968,14 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 				imp_dbh->switch_prepared = (unsigned)SvIV(valuesv);
 				retval = 1;
 			}
+		}
+		break;
+
+	case 22: /* pg_placeholder_escaped */
+
+		if (strEQ("pg_placeholder_escaped", key)) {
+			imp_dbh->ph_escaped = newval ? DBDPG_TRUE : DBDPG_FALSE;
+			retval = 1;
 		}
 		break;
 
@@ -1979,15 +1988,19 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 			continue;
 		}
 
-		/* If this placeholder is escaped, we rewrite the string to remove the
-		   backslash, and move on as if there is no placeholder */
-		if ('\\' == oldch) {
+		/*
+		  If this placeholder is escaped, we rewrite the string to remove the
+		  backslash, and move on as if there is no placeholder.
+		  The use of $dbh->{pg_placeholder_escaped} = 0 is left as an emergency measure.
+		  It will probably be removed at some point.
+		*/
+		if ('\\' == oldch && imp_dbh->ph_escaped) {
 			/* copy the placeholder-like character but ignore the backslash */
 			unsigned char *p = statement-2;
 			while(*p++) {
 				*(p-1) = *p;
 			}
-			/* We need to adjust these items because we just rewrote statement! */
+			/* We need to adjust these items because we just rewrote 'statement'! */
 			statement--;
 			currpos--;
 			ch = *statement;

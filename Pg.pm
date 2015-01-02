@@ -1584,6 +1584,7 @@ use 5.008001;
                 pg_pid                         => undef,
                 pg_placeholder_dollaronly      => undef,
                 pg_placeholder_nocolons        => undef,
+                pg_placeholder_escapes         => undef,
                 pg_port                        => undef,
                 pg_prepare_now                 => undef,
                 pg_protocol                    => undef,

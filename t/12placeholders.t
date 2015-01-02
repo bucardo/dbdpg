@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 253;
+plan tests => 254;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -867,7 +867,17 @@ eval {
 is($@, '', $t);
 $sth->finish();
 
-## pg_placeholder_escaping = 1;
+## This is an emergency hatch only. Hopefully will never be used in the wild!
+$dbh->{pg_placeholder_escaped} = 0;
+$t = q{Basic placeholder escaping fails when pg_placeholder_escaped is set to false};
+$SQL = qq{SELECT count(*) FROM dbd_pg_test WHERE pname \\?\\? ?};
+$sth = $dbh->prepare($SQL);
+eval {
+	$count = $sth->execute('foobar');
+};
+like($@, qr{execute}, $t);
+$sth->finish();
+
 
 ## Begin custom type testing
 
