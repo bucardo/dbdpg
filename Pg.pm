@@ -1361,6 +1361,7 @@ use 5.008001;
      166 => ['SQL_STANDARD_CLI_CONFORMANCE',        2                         ], ## ??
      167 => ['SQL_STATIC_CURSOR_ATTRIBUTES1',       519                       ], ## ??
      168 => ['SQL_STATIC_CURSOR_ATTRIBUTES2',       5209                      ], ## ??
+    9000 => ['9000',                                1                         ], ## can escape placeholders
 
 ## DBMS Information
 
