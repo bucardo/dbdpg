@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 549;
+plan tests => 559;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
