@@ -1322,13 +1322,7 @@ use 5.008001;
         DBI::SQL_INTEGER, DBI::SQL_SMALLINT, DBI::SQL_BIGINT, DBI::SQL_DECIMAL,
         DBI::SQL_FLOAT, DBI::SQL_REAL, DBI::SQL_DOUBLE, DBI::SQL_NUMERIC;
 
-    sub get_info {
-
-        my ($dbh,$type) = @_;
-
-        return undef unless defined $type and length $type;
-
-        my %type = (
+    my %get_info_type = (
 
 ## Driver information:
 
@@ -1336,7 +1330,7 @@ use 5.008001;
    10021 => ['SQL_ASYNC_MODE',                      2                         ], ## SQL_AM_STATEMENT
      120 => ['SQL_BATCH_ROW_COUNT',                 2                         ], ## SQL_BRC_EXPLICIT
      121 => ['SQL_BATCH_SUPPORT',                   3                         ], ## 12 SELECT_PROC + ROW_COUNT_PROC
-       2 => ['SQL_DATA_SOURCE_NAME',                "dbi:Pg:$dbh->{Name}"     ],
+       2 => ['SQL_DATA_SOURCE_NAME',                sub { sprintf "dbi:Pg:%", shift->{Name} } ],
        3 => ['SQL_DRIVER_HDBC',                     0                         ], ## not applicable
      135 => ['SQL_DRIVER_HDESC',                    0                         ], ## not applicable
        4 => ['SQL_DRIVER_HENV',                     0                         ], ## not applicable
@@ -1356,21 +1350,21 @@ use 5.008001;
      150 => ['SQL_KEYSET_CURSOR_ATTRIBUTES1',       0                         ], ## applies to us?
      151 => ['SQL_KEYSET_CURSOR_ATTRIBUTES2',       0                         ], ## see above
    10022 => ['SQL_MAX_ASYNC_CONCURRENT_STATEMENTS', 0                         ], ## unlimited, probably
-       0 => ['SQL_MAX_DRIVER_CONNECTIONS',          'MAXCONNECTIONS'          ], ## magic word
+       0 => ['SQL_MAX_DRIVER_CONNECTIONS',          \'SHOW max_connections'   ],
      152 => ['SQL_ODBC_INTERFACE_CONFORMANCE',      1                         ], ## SQL_OIC_LEVEL_1
       10 => ['SQL_ODBC_VER',                        '03.00.0000'              ],
      153 => ['SQL_PARAM_ARRAY_ROW_COUNTS',          2                         ], ## correct?
      154 => ['SQL_PARAM_ARRAY_SELECTS',             3                         ], ## PAS_NO_SELECT
       11 => ['SQL_ROW_UPDATES',                     'N'                       ],
       14 => ['SQL_SEARCH_PATTERN_ESCAPE',           '\\'                      ],
-      13 => ['SQL_SERVER_NAME',                     'CURRENTDB'               ], ## magic word
+      13 => ['SQL_SERVER_NAME',                     \'SELECT pg_catalog.current_database()' ],
      166 => ['SQL_STANDARD_CLI_CONFORMANCE',        2                         ], ## ??
      167 => ['SQL_STATIC_CURSOR_ATTRIBUTES1',       519                       ], ## ??
      168 => ['SQL_STATIC_CURSOR_ATTRIBUTES2',       5209                      ], ## ??
 
 ## DBMS Information
 
-      16 => ['SQL_DATABASE_NAME',                   'CURRENTDB'               ], ## magic word
+      16 => ['SQL_DATABASE_NAME',                   \'SELECT pg_catalog.current_database()' ],
       17 => ['SQL_DBMS_NAME',                       'PostgreSQL'              ],
       18 => ['SQL_DBMS_VERSION',                    'ODBCVERSION'             ], ## magic word
 
@@ -1380,7 +1374,7 @@ use 5.008001;
       19 => ['SQL_ACCESSIBLE_TABLES',               'Y'                       ], ## is this really true?
       82 => ['SQL_BOOKMARK_PERSISTENCE',            0                         ],
       42 => ['SQL_CATALOG_TERM',                    ''                        ], ## empty = catalogs are not supported
-   10004 => ['SQL_COLLATION_SEQ',                   'ENCODING'                ], ## magic word
+   10004 => ['SQL_COLLATION_SEQ',                   \'SHOW server_encoding'   ],
       22 => ['SQL_CONCAT_NULL_BEHAVIOR',            0                         ], ## SQL_CB_NULL
       23 => ['SQL_CURSOR_COMMIT_BEHAVIOR',          1                         ], ## SQL_CB_CLOSE
       24 => ['SQL_CURSOR_ROLLBACK_BEHAVIOR',        1                         ], ## SQL_CB_CLOSE
@@ -1398,7 +1392,7 @@ use 5.008001;
       45 => ['SQL_TABLE_TERM',                      'table'                   ],
       46 => ['SQL_TXN_CAPABLE',                     2                         ], ## SQL_TC_ALL
       72 => ['SQL_TXN_ISOLATION_OPTION',            10                        ], ## 2+8
-      47 => ['SQL_USER_NAME',                       $dbh->{CURRENT_USER}      ],
+      47 => ['SQL_USER_NAME',                       sub { shift->{CURRENT_USER} } ],
 
 ## Supported SQL
 
@@ -1509,21 +1503,28 @@ use 5.008001;
      122  => ['SQL_CONVERT_WCHAR',                  0                          ],
      125  => ['SQL_CONVERT_WLONGVARCHAR',           0                          ],
      126  => ['SQL_CONVERT_WVARCHAR',               0                          ],
+    ); ## end of %get_info_type
+    ## Add keys for names into the hash
+    for (keys %get_info_type) {
+        $get_info_type{$get_info_type{$_}->[0]} = $get_info_type{$_};
+    }
 
-        ); ## end of %type
+    sub get_info {
 
-        ## Put both numbers and names into a hash
-        my %t;
-        for (keys %type) {
-            $t{$_} = $type{$_}->[1];
-            $t{$type{$_}->[0]} = $type{$_}->[1];
+        my ($dbh,$type) = @_;
+
+        return undef unless defined $type;
+        return undef unless exists $get_info_type{$type};
+
+        my $ans = $get_info_type{$type}->[1];
+
+        if (ref $ans eq 'CODE') {
+            $ans = $ans->($dbh);
         }
-
-        return undef unless exists $t{$type};
-
-        my $ans = $t{$type};
-
-        if ($ans eq 'NAMEDATALEN') {
+        elsif (ref $ans eq 'SCALAR') { # SQL
+            return $dbh->selectall_arrayref($$ans)->[0][0];
+        }
+        elsif ($ans eq 'NAMEDATALEN') {
             return $dbh->selectall_arrayref('SHOW max_identifier_length')->[0][0];
         }
         elsif ($ans eq 'ODBCVERSION') {
@@ -1536,20 +1537,11 @@ use 5.008001;
             $simpleversion =~ s/_/./g;
             return sprintf '%02d.%02d.%1d%1d%1d%1d', split (/\./, "$simpleversion.0.0.0.0.0.0");
         }
-         elsif ($ans eq 'MAXCONNECTIONS') {
-             return $dbh->selectall_arrayref('SHOW max_connections')->[0][0];
-         }
-         elsif ($ans eq 'ENCODING') {
-             return $dbh->selectall_arrayref('SHOW server_encoding')->[0][0];
-         }
          elsif ($ans eq 'KEYWORDS') {
             ## http://www.postgresql.org/docs/current/static/sql-keywords-appendix.html
             ## Basically, we want ones that are 'reserved' for PostgreSQL but not 'reserved' in SQL:2003
             ## 
             return join ',' => (qw(ANALYSE ANALYZE ASC DEFERRABLE DESC DO FREEZE ILIKE INITIALLY ISNULL LIMIT NOTNULL OFF OFFSET PLACING RETURNING VERBOSE));
-         }
-         elsif ($ans eq 'CURRENTDB') {
-             return $dbh->selectall_arrayref('SELECT pg_catalog.current_database()')->[0][0];
          }
          elsif ($ans eq 'READONLY') {
              my $SQL = q{SELECT CASE WHEN setting = 'on' THEN 'Y' ELSE 'N' END FROM pg_settings WHERE name = 'transaction_read_only'};

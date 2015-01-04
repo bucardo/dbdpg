@@ -444,6 +444,10 @@ my %get_info = (
   SQL_IDENTIFIER_QUOTE_CHAR  => 29,
   SQL_CATALOG_NAME_SEPARATOR => 41,
   SQL_USER_NAME              => 47,
+  # this also tests the dynamic attributes that run SQL
+  SQL_COLLATION_SEQ          => 10004,
+  SQL_DATABASE_NAME          => 16,
+  SQL_SERVER_NAME            => 13,
 );
 
 for (keys %get_info) {
@@ -459,6 +463,11 @@ for (keys %get_info) {
 	is ($back, $forth, $t);
 }
 
+# Make sure SQL_MAX_COLUMN_NAME_LEN looks normal
+$t='DB handle method "get_info" returns a valid looking SQL_MAX_COLUMN_NAME_LEN string}';
+my $namedatalen = $dbh->get_info('SQL_MAX_COLUMN_NAME_LEN');
+cmp_ok ($namedatalen, '>=', 63, $t);
+
 # Make sure odbcversion looks normal
 $t='DB handle method "get_info" returns a valid looking ODBCVERSION string}';
 my $odbcversion = $dbh->get_info(18);
@@ -466,7 +475,7 @@ like ($odbcversion, qr{^([1-9]\d|\d[1-9])\.\d\d\.\d\d00$}, $t);
 
 # Testing max connections is good as this info is dynamic
 $t='DB handle method "get_info" returns a number for SQL_MAX_DRIVER_CONNECTIONS';
-my $maxcon = $dbh->get_info(0);
+my $maxcon = $dbh->get_info('SQL_MAX_DRIVER_CONNECTIONS');
 like ($maxcon, qr{^\d+$}, $t);
 
 $t='DB handle method "get_info" returns correct string for SQL_DATA_SOURCE_READ_ONLY when "on"';
