@@ -3,9 +3,20 @@
 
 Version 3.5.0
 
+  - Allow "placeholder escaping" by the use of a backslash directly before it, e.g.
+    "SELECT 1 FROM jsontable WHERE foo \\? ?"
+    will contain a single placeholder, and the first question mark will be sent directly 
+    to the backend to be parsed as an operator.
+    [Greg Sabino Mullane, Tim Bunce]
+    (CPAN bug #101030)
+
   - Improve the workings of the ping() method, so it always tests for 
     a valid database backend and returns the correct true/false.
-    [Greg Sabino Mullane] (CPAN bug #100648)
+    [Greg Sabino Mullane, with help from Andrew Gierth and Tim Bunce]
+    (CPAN bug #100648)
+
+  - Add get_info(9000) => 1 to indicate driver can escape placeholders.
+    [Tim Bunce]
 
   - In tests, force the client_encoding to UTF8, skip tests that involve 
     characters not supported by the server_encoding
@@ -13,6 +24,9 @@ Version 3.5.0
 
   - Fix memory leak when selecting from arrays
     [Dagfinn Ilmari Mannsåker, reported by Krystian Samp]
+
+  - Make get_info much more efficient and slightly simpler.
+    [Tim Bunce]
 
 
 Version 3.4.2  Released September 25, 2014 (git commit 61440e1f4ccb6c293c5838676da1942e0df67271)
