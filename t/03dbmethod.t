@@ -1550,251 +1550,259 @@ $dbh->rollback();
 
 SKIP: {
 
-	eval {
-		require File::Temp;
-	};
-	$@ and skip ('Must have File::Temp to test pg_lo_import* and pg_lo_export', 8);
+	my $super = is_super();
 
-	$t='DB handle method "pg_lo_import" works';
-	my ($fh,$filename) = File::Temp::tmpnam();
-	print {$fh} "abc\ndef";
-	close $fh or warn 'Failed to close temporary file';
-	$handle = $dbh->pg_lo_import($filename);
-	my $objid = $handle;
-	ok ($handle, $t);
+	$super or skip ('Cannot run largeobject tests unless run as Postgres superuser', 38);
 
-	$t='DB handle method "pg_lo_import" inserts correct data';
-	$SQL = "SELECT data FROM pg_largeobject where loid = $handle";
-	$info = $dbh->selectall_arrayref($SQL)->[0][0];
-	is_deeply ($info, "abc\ndef", $t);
-	$dbh->commit();
 
   SKIP: {
-		if ($pglibversion < 80400) {
-			skip ('Cannot test pg_lo_import_with_oid unless compiled against 8.4 or better server', 5);
-		}
-		if ($pgversion < 80100) {
-			skip ('Cannot test pg_lo_import_with_oid against old versions of Postgres', 5);
-		}
 
-		$t='DB handle method "pg_lo_import_with_oid" works with high number';
-		my $highnumber = 345167;
-		$dbh->pg_lo_unlink($highnumber);
+		eval {
+			require File::Temp;
+		};
+		$@ and skip ('Must have File::Temp to test pg_lo_import* and pg_lo_export', 8);
+
+		$t='DB handle method "pg_lo_import" works';
+		my ($fh,$filename) = File::Temp::tmpnam();
+		print {$fh} "abc\ndef";
+		close $fh or warn 'Failed to close temporary file';
+		$handle = $dbh->pg_lo_import($filename);
+		my $objid = $handle;
+		ok ($handle, $t);
+
+		$t='DB handle method "pg_lo_import" inserts correct data';
+		$SQL = "SELECT data FROM pg_largeobject where loid = $handle";
+		$info = $dbh->selectall_arrayref($SQL)->[0][0];
+		is_deeply ($info, "abc\ndef", $t);
 		$dbh->commit();
-		my $thandle;
+
 	  SKIP: {
+			if ($pglibversion < 80400) {
+				skip ('Cannot test pg_lo_import_with_oid unless compiled against 8.4 or better server', 5);
+			}
+			if ($pgversion < 80100) {
+				skip ('Cannot test pg_lo_import_with_oid against old versions of Postgres', 5);
+			}
 
-			skip ('Known bug: pg_log_import_with_oid throws an error. See RT #90448', 3);
+			$t='DB handle method "pg_lo_import_with_oid" works with high number';
+			my $highnumber = 345167;
+			$dbh->pg_lo_unlink($highnumber);
+			$dbh->commit();
+			my $thandle;
+		  SKIP: {
 
-			$thandle = $dbh->pg_lo_import_with_oid($filename, $highnumber);
-			is ($thandle, $highnumber, $t);
+				skip ('Known bug: pg_log_import_with_oid throws an error. See RT #90448', 3);
+
+				$thandle = $dbh->pg_lo_import_with_oid($filename, $highnumber);
+				is ($thandle, $highnumber, $t);
+				ok ($thandle, $t);
+
+				$t='DB handle method "pg_lo_import_with_oid" inserts correct data';
+				$SQL = "SELECT data FROM pg_largeobject where loid = $thandle";
+				$info = $dbh->selectall_arrayref($SQL)->[0][0];
+				is_deeply ($info, "abc\ndef", $t);
+			}
+
+			$t='DB handle method "pg_lo_import_with_oid" fails when given already used number';
+			eval {
+				$thandle = $dbh->pg_lo_import_with_oid($filename, $objid);
+			};
+			is ($thandle, undef, $t);
+			$dbh->rollback();
+
+			$t='DB handle method "pg_lo_import_with_oid" falls back to lo_import when number is 0';
+			eval {
+				$thandle = $dbh->pg_lo_import_with_oid($filename, 0);
+			};
 			ok ($thandle, $t);
-
-			$t='DB handle method "pg_lo_import_with_oid" inserts correct data';
-			$SQL = "SELECT data FROM pg_largeobject where loid = $thandle";
-			$info = $dbh->selectall_arrayref($SQL)->[0][0];
-			is_deeply ($info, "abc\ndef", $t);
+			$dbh->rollback();
 		}
 
-		$t='DB handle method "pg_lo_import_with_oid" fails when given already used number';
-		eval {
-			$thandle = $dbh->pg_lo_import_with_oid($filename, $objid);
-		};
-		is ($thandle, undef, $t);
-		$dbh->rollback();
+		unlink $filename;
 
-		$t='DB handle method "pg_lo_import_with_oid" falls back to lo_import when number is 0';
-		eval {
-			$thandle = $dbh->pg_lo_import_with_oid($filename, 0);
-		};
-		ok ($thandle, $t);
-		$dbh->rollback();
+		$t='DB handle method "pg_lo_open" works after "pg_lo_insert"';
+		$handle = $dbh->pg_lo_open($handle, $R);
+		like ($handle, qr/^\d+$/o, $t);
+
+		$t='DB handle method "pg_lo_read" returns correct data after "pg_lo_import"';
+		$data = '';
+		$result = $dbh->pg_lo_read($handle, $data, 100);
+		is ($result, 7, $t);
+		is ($data, "abc\ndef", $t);
+
+		$t='DB handle method "pg_lo_export" works';
+		($fh,$filename) = File::Temp::tmpnam();
+		$result = $dbh->pg_lo_export($objid, $filename);
+		ok (-e $filename, $t);
+		seek($fh,0,1);
+		seek($fh,0,0);
+		$result = read $fh, $data, 10;
+		is ($result, 7, $t);
+		is ($data, "abc\ndef", $t);
+		close $fh or warn 'Could not close tempfile';
+		unlink $filename;
+		$dbh->pg_lo_unlink($objid);
 	}
 
-	unlink $filename;
+	## Same pg_lo_* tests, but with AutoCommit on
 
-	$t='DB handle method "pg_lo_open" works after "pg_lo_insert"';
-	$handle = $dbh->pg_lo_open($handle, $R);
-	like ($handle, qr/^\d+$/o, $t);
+	$dbh->{AutoCommit}=1;
 
-	$t='DB handle method "pg_lo_read" returns correct data after "pg_lo_import"';
-	$data = '';
-	$result = $dbh->pg_lo_read($handle, $data, 100);
-	is ($result, 7, $t);
-	is ($data, "abc\ndef", $t);
-
-	$t='DB handle method "pg_lo_export" works';
-	($fh,$filename) = File::Temp::tmpnam();
-	$result = $dbh->pg_lo_export($objid, $filename);
-	ok (-e $filename, $t);
-	seek($fh,0,1);
-	seek($fh,0,0);
-	$result = read $fh, $data, 10;
-	is ($result, 7, $t);
-	is ($data, "abc\ndef", $t);
-	close $fh or warn 'Could not close tempfile';
-	unlink $filename;
-	$dbh->pg_lo_unlink($objid);
-}
-
-## Same pg_lo_* tests, but with AutoCommit on
-
-$dbh->{AutoCommit}=1;
-
-$t='DB handle method "pg_lo_creat" fails when AutoCommit on';
-eval {
-	$dbh->pg_lo_creat($W);
-};
-like ($@, qr{pg_lo_creat when AutoCommit is on}, $t);
-
-$t='DB handle method "pg_lo_open" fails with AutoCommit on';
-eval {
-	$dbh->pg_lo_open($object, $W);
-};
-like ($@, qr{pg_lo_open when AutoCommit is on}, $t);
-
-$t='DB handle method "pg_lo_read" fails with AutoCommit on';
-eval {
-	$dbh->pg_lo_read($object, $data, 0);
-};
-like ($@, qr{pg_lo_read when AutoCommit is on}, $t);
-
-$t='DB handle method "pg_lo_lseek" fails with AutoCommit on';
-eval {
-	$dbh->pg_lo_lseek($handle, 0, 0);
-};
-like ($@, qr{pg_lo_lseek when AutoCommit is on}, $t);
-
-$t='DB handle method "pg_lo_write" fails with AutoCommit on';
-$buf = 'tangelo mulberry passionfruit raspberry plantain' x 500;
-eval {
-	$dbh->pg_lo_write($handle, $buf, length($buf));
-};
-like ($@, qr{pg_lo_write when AutoCommit is on}, $t);
-
-$t='DB handle method "pg_lo_close" fails with AutoCommit on';
-eval {
-	$dbh->pg_lo_close($handle);
-};
-like ($@, qr{pg_lo_close when AutoCommit is on}, $t);
-
-$t='DB handle method "pg_lo_tell" fails with AutoCommit on';
-eval {
-	$dbh->pg_lo_tell($handle);
-};
-like ($@, qr{pg_lo_tell when AutoCommit is on}, $t);
-
-$t='DB handle method "pg_lo_unlink" fails with AutoCommit on';
-eval {
-	$dbh->pg_lo_unlink($object);
-};
-like ($@, qr{pg_lo_unlink when AutoCommit is on}, $t);
-
-
-SKIP: {
-
+	$t='DB handle method "pg_lo_creat" fails when AutoCommit on';
 	eval {
-		require File::Temp;
+		$dbh->pg_lo_creat($W);
 	};
-	$@ and skip ('Must have File::Temp to test pg_lo_import and pg_lo_export', 5);
+	like ($@, qr{pg_lo_creat when AutoCommit is on}, $t);
 
-	$t='DB handle method "pg_lo_import" works (AutoCommit on)';
-	my ($fh,$filename) = File::Temp::tmpnam();
-	print {$fh} "abc\ndef";
-	close $fh or warn 'Failed to close temporary file';
-	$handle = $dbh->pg_lo_import($filename);
-	ok ($handle, $t);
+	$t='DB handle method "pg_lo_open" fails with AutoCommit on';
+	eval {
+		$dbh->pg_lo_open($object, $W);
+	};
+	like ($@, qr{pg_lo_open when AutoCommit is on}, $t);
 
-	$t='DB handle method "pg_lo_import" inserts correct data (AutoCommit on, begin_work not called)';
-	$SQL = 'SELECT data FROM pg_largeobject where loid = ?';
-	$sth = $dbh->prepare($SQL);
-	$sth->execute($handle);
-	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, "abc\ndef", $t);
+	$t='DB handle method "pg_lo_read" fails with AutoCommit on';
+	eval {
+		$dbh->pg_lo_read($object, $data, 0);
+	};
+	like ($@, qr{pg_lo_read when AutoCommit is on}, $t);
 
-	# cleanup last lo
+	$t='DB handle method "pg_lo_lseek" fails with AutoCommit on';
+	eval {
+		$dbh->pg_lo_lseek($handle, 0, 0);
+	};
+	like ($@, qr{pg_lo_lseek when AutoCommit is on}, $t);
+
+	$t='DB handle method "pg_lo_write" fails with AutoCommit on';
+	$buf = 'tangelo mulberry passionfruit raspberry plantain' x 500;
+	eval {
+		$dbh->pg_lo_write($handle, $buf, length($buf));
+	};
+	like ($@, qr{pg_lo_write when AutoCommit is on}, $t);
+
+	$t='DB handle method "pg_lo_close" fails with AutoCommit on';
+	eval {
+		$dbh->pg_lo_close($handle);
+	};
+	like ($@, qr{pg_lo_close when AutoCommit is on}, $t);
+
+	$t='DB handle method "pg_lo_tell" fails with AutoCommit on';
+	eval {
+		$dbh->pg_lo_tell($handle);
+	};
+	like ($@, qr{pg_lo_tell when AutoCommit is on}, $t);
+
+	$t='DB handle method "pg_lo_unlink" fails with AutoCommit on';
+	eval {
+		$dbh->pg_lo_unlink($object);
+	};
+	like ($@, qr{pg_lo_unlink when AutoCommit is on}, $t);
+
+
+  SKIP: {
+
+		eval {
+			require File::Temp;
+		};
+		$@ and skip ('Must have File::Temp to test pg_lo_import and pg_lo_export', 5);
+
+		$t='DB handle method "pg_lo_import" works (AutoCommit on)';
+		my ($fh,$filename) = File::Temp::tmpnam();
+		print {$fh} "abc\ndef";
+		close $fh or warn 'Failed to close temporary file';
+		$handle = $dbh->pg_lo_import($filename);
+		ok ($handle, $t);
+
+		$t='DB handle method "pg_lo_import" inserts correct data (AutoCommit on, begin_work not called)';
+		$SQL = 'SELECT data FROM pg_largeobject where loid = ?';
+		$sth = $dbh->prepare($SQL);
+		$sth->execute($handle);
+		$info = $sth->fetchall_arrayref()->[0][0];
+		is_deeply ($info, "abc\ndef", $t);
+
+		# cleanup last lo
+		$dbh->{AutoCommit} = 0;
+		$dbh->pg_lo_unlink($handle);
+		$dbh->{AutoCommit} = 1;
+
+		$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, no command)';
+		$dbh->begin_work();
+		$handle = $dbh->pg_lo_import($filename);
+		ok ($handle, $t);
+		$sth->execute($handle);
+		$info = $sth->fetchall_arrayref()->[0][0];
+		is_deeply ($info, "abc\ndef", $t);
+		$dbh->rollback();
+
+		$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, no command, rollback)';
+		$dbh->begin_work();
+		$handle = $dbh->pg_lo_import($filename);
+		ok ($handle, $t);
+		$dbh->rollback();
+		$sth->execute($handle);
+		$info = $sth->fetchall_arrayref()->[0][0];
+		is_deeply ($info, undef, $t);
+
+		$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, second command)';
+		$dbh->begin_work();
+		$dbh->do('SELECT 123');
+		$handle = $dbh->pg_lo_import($filename);
+		ok ($handle, $t);
+		$sth->execute($handle);
+		$info = $sth->fetchall_arrayref()->[0][0];
+		is_deeply ($info, "abc\ndef", $t);
+		$dbh->rollback();
+
+		$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, second command, rollback)';
+		$dbh->begin_work();
+		$dbh->do('SELECT 123');
+		$handle = $dbh->pg_lo_import($filename);
+		ok ($handle, $t);
+		$dbh->rollback();
+		$sth->execute($handle);
+		$info = $sth->fetchall_arrayref()->[0][0];
+		is_deeply ($info, undef, $t);
+
+		$t='DB handle method "pg_lo_import" works (AutoCommit not on, no command)';
+		$dbh->{AutoCommit} = 0;
+		$dbh->commit();
+		$handle = $dbh->pg_lo_import($filename);
+		ok ($handle, $t);
+		$sth->execute($handle);
+		$info = $sth->fetchall_arrayref()->[0][0];
+		is_deeply ($info, "abc\ndef", $t);
+
+		$t='DB handle method "pg_lo_import" works (AutoCommit not on, second command)';
+		$dbh->rollback();
+		$dbh->do('SELECT 123');
+		$handle = $dbh->pg_lo_import($filename);
+		ok ($handle, $t);
+		$sth->execute($handle);
+		$info = $sth->fetchall_arrayref()->[0][0];
+		is_deeply ($info, "abc\ndef", $t);
+
+		unlink $filename;
+		$dbh->{AutoCommit} = 1;
+
+		my $objid = $handle;
+		$t='DB handle method "pg_lo_export" works (AutoCommit on)';
+		($fh,$filename) = File::Temp::tmpnam();
+		$result = $dbh->pg_lo_export($objid, $filename);
+		ok (-e $filename, $t);
+		seek($fh,0,1);
+		seek($fh,0,0);
+		$result = read $fh, $data, 10;
+		is ($result, 7, $t);
+		is ($data, "abc\ndef", $t);
+		close $fh or warn 'Could not close tempfile';
+		unlink $filename;
+
+		# cleanup last lo
+		$dbh->{AutoCommit} = 0;
+		$dbh->pg_lo_unlink($handle);
+		$dbh->{AutoCommit} = 1;
+	}
 	$dbh->{AutoCommit} = 0;
-	$dbh->pg_lo_unlink($handle);
-	$dbh->{AutoCommit} = 1;
-
-	$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, no command)';
-	$dbh->begin_work();
-	$handle = $dbh->pg_lo_import($filename);
-	ok ($handle, $t);
-	$sth->execute($handle);
-	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, "abc\ndef", $t);
-	$dbh->rollback();
-
-	$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, no command, rollback)';
-	$dbh->begin_work();
-	$handle = $dbh->pg_lo_import($filename);
-	ok ($handle, $t);
-	$dbh->rollback();
-	$sth->execute($handle);
-	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, undef, $t);
-
-	$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, second command)';
-	$dbh->begin_work();
-	$dbh->do('SELECT 123');
-	$handle = $dbh->pg_lo_import($filename);
-	ok ($handle, $t);
-	$sth->execute($handle);
-	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, "abc\ndef", $t);
-	$dbh->rollback();
-
-	$t='DB handle method "pg_lo_import" works (AutoCommit on, begin_work called, second command, rollback)';
-	$dbh->begin_work();
-	$dbh->do('SELECT 123');
-	$handle = $dbh->pg_lo_import($filename);
-	ok ($handle, $t);
-	$dbh->rollback();
-	$sth->execute($handle);
-	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, undef, $t);
-
-	$t='DB handle method "pg_lo_import" works (AutoCommit not on, no command)';
-	$dbh->{AutoCommit} = 0;
-	$dbh->commit();
-	$handle = $dbh->pg_lo_import($filename);
-	ok ($handle, $t);
-	$sth->execute($handle);
-	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, "abc\ndef", $t);
-
-	$t='DB handle method "pg_lo_import" works (AutoCommit not on, second command)';
-	$dbh->rollback();
-	$dbh->do('SELECT 123');
-	$handle = $dbh->pg_lo_import($filename);
-	ok ($handle, $t);
-	$sth->execute($handle);
-	$info = $sth->fetchall_arrayref()->[0][0];
-	is_deeply ($info, "abc\ndef", $t);
-
-	unlink $filename;
-	$dbh->{AutoCommit} = 1;
-
-	my $objid = $handle;
-	$t='DB handle method "pg_lo_export" works (AutoCommit on)';
-	($fh,$filename) = File::Temp::tmpnam();
-	$result = $dbh->pg_lo_export($objid, $filename);
-	ok (-e $filename, $t);
-	seek($fh,0,1);
-	seek($fh,0,0);
-	$result = read $fh, $data, 10;
-	is ($result, 7, $t);
-	is ($data, "abc\ndef", $t);
-	close $fh or warn 'Could not close tempfile';
-	unlink $filename;
-
-	# cleanup last lo
-	$dbh->{AutoCommit} = 0;
-	$dbh->pg_lo_unlink($handle);
-	$dbh->{AutoCommit} = 1;
 }
-$dbh->{AutoCommit} = 0;
 
 #
 # Test of the "pg_notifies" database handle method
