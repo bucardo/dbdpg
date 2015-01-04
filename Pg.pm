@@ -2489,8 +2489,12 @@ use different ones for each statement handle you have. This is confusing at best
 stick to one style within your program.
 
 If your queries use operators that contain question marks (e.g. some of the native 
-Postgres geometric operators) or array slices (e.g. C<data[100:300]>), you can tell 
-DBD::Pg to ignore any non-dollar sign placeholders by setting the 
+Postgres geometric operators and JSON operators) or array slices (e.g. C<data[100:300]>), 
+there are methods to instruct DBD::Pg to not treat some symbols as placeholders. First, you 
+may simply add a backslash before the start of a placeholder, and DBD::Pg will strip the 
+backslash and not treat the character as a placeholder. 
+
+You can also tell DBD::Pg to ignore any non-dollar sign placeholders by setting the 
 L<pg_placeholder_dollaronly|/pg_placeholder_dollaronly_(boolean)> attribute at either the database handle or the statement 
 handle level. Examples:
 
@@ -3120,13 +3124,15 @@ this was the default behavior in versions older than 3.0.0.
 
 DBD::Pg specific attribute. Defaults to false. When true, question marks inside of statements 
 are not treated as L<placeholders|/Placeholders>. Useful for statements that contain unquoted question 
-marks, such as geometric operators.
+marks, such as geometric operators. Note that you may also simply escape question marks with 
+a backslash to prevent them from being treated as placeholders.
 
 =head3 B<pg_placeholder_nocolons> (boolean)
 
 DBD::Pg specific attribute. Defaults to false. When true, colons inside of statements
 are not treated as L<placeholders|/Placeholders>. Useful for statements that contain an
-array slice.
+array slice. You may also place a backslash directly before the colon to prevent it from 
+being treated as a placeholder.
 
 =head3 B<pg_enable_utf8> (integer)
 
@@ -3791,15 +3797,17 @@ Setting pg_switch_prepared to 0 will force DBD::Pg to always use PQexecParams.
 
 =head3 B<pg_placeholder_dollaronly> (boolean)
 
-DBD::Pg specific attribute. Defaults to off. When true, question marks inside of the query 
+DBD::Pg specific attribute. Defaults to false. When true, question marks inside of the query 
 being prepared are not treated as placeholders. Useful for statements that contain unquoted question 
-marks, such as geometric operators.
+marks, such as geometric operators. Note that you may also simply escape question marks with 
+a backslash to prevent them from being treated as placeholders.
 
 =head3 B<pg_placeholder_nocolons> (boolean)
 
-DBD::Pg specific attribute. Defaults to off. When true, colons inside of statements
+DBD::Pg specific attribute. Defaults to false. When true, colons inside of statements
 are not treated as L<placeholders|/Placeholders>. Useful for statements that contain an
-array slice.
+array slice. You may also place a backslash directly before the colon to prevent it from 
+being treated as a placeholder.
 
 =head3 B<pg_async> (integer)
 
