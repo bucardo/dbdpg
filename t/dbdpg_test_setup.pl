@@ -9,6 +9,8 @@ use Cwd;
 use 5.006;
 select(($|=1,select(STDERR),$|=1)[1]);
 
+my $superuser = 1;
+
 my $testfh;
 if (exists $ENV{TEST_OUTPUT}) {
 	my $file = $ENV{TEST_OUTPUT};
@@ -103,16 +105,20 @@ version: $version
 
 	## Did we fail last time? Fail this time too, but quicker!
 	if ($testdsn =~ /FAIL!/) {
+		$debug and diag 'Previous failure detected';
 		return $helpconnect, "Previous failure ($error)", undef;
 	}
 
 	## We may want to force an initdb call
 	if (!$helpconnect and $ENV{DBDPG_TESTINITDB}) {
+		$debug and diag 'Jumping to INITDB';
 		goto INITDB;
 	}
 
 	## Got a working DSN? Give it an attempt
 	if ($testdsn and $testuser) {
+
+		$debug and diag "Trying with $testuser and $testdsn";
 
 		## Used by t/01connect.t
 		if ($arg->{dbreplace}) {
@@ -127,6 +133,8 @@ version: $version
 								{RaiseError => 1, PrintError => 0, AutoCommit => 1});
 			1;
 		};
+
+		$debug and diag "Connection failed: $@";
 
 		if ($@ =~ /invalid connection option/ or $@ =~ /dbbarf/) {
 			return $helpconnect, $@, undef;
@@ -641,13 +649,16 @@ version: $version
 	$ENV{DBI_DSN} = $testdsn;
 	$ENV{DBI_USER} = $testuser;
 
+	$debug and diag "Got a database handle ($dbh)";
+
 	if ($arg->{quickreturn}) {
+		$debug and diag 'Returning via quickreturn';
 		return $helpconnect, '', $dbh;
 	}
 
 	my $SQL = 'SELECT usesuper FROM pg_user WHERE usename = current_user';
-	my $bga = $dbh->selectall_arrayref($SQL)->[0][0];
-	if ($bga) {
+	$superuser = $dbh->selectall_arrayref($SQL)->[0][0];
+	if ($superuser) {
 		$dbh->do(q{SET LC_MESSAGES = 'C'});
 	}
 
@@ -657,11 +668,13 @@ version: $version
 	}
 	else {
 
+		$debug and diag 'Attempting to cleanup database';
 		cleanup_database($dbh);
 
 		eval {
 			$dbh->do("CREATE SCHEMA $S");
 		};
+		$@ and $debug and diag "Create schema error: $@";
 		if ($@ =~ /Permission denied/ and $helpconnect != 16) {
 			## Okay, this ain't gonna work, let's try initdb
 			goto INITDB;
@@ -708,6 +721,12 @@ return $helpconnect, '', $dbh;
 
 } ## end of connect_database
 
+
+sub is_super {
+
+	return $superuser;
+
+}
 
 sub find_tempdir {
 
