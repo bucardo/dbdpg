@@ -1108,7 +1108,7 @@ is_deeply ($attrib, [], $t);
 
 $t='Statement handle attribute "ChildHandles" is an empty list on creation';
 {
-	my $sth4 = $dbh4->prepare('SELECT 1');
+	$sth4 = $dbh4->prepare('SELECT 1');
 	$attrib = $sth4->{ChildHandles};
 	is_deeply ($attrib, [], $t);
 

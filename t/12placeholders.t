@@ -408,7 +408,7 @@ for my $line (split /\n\n+/ => $testdata) {
 	$dbh->do('DELETE FROM dbd_pg_test_geom');
 	eval { $qresult = $dbh->quote($input, {pg_type => $typemap{$type}}); };
 	if ($@) {
-		if ($quoted !~ /ERROR: (.+)/) {
+		if ($quoted !~ /ERROR: .+/) {
 			fail ("$t error: $@");
 		}
 		else {
@@ -422,7 +422,7 @@ for my $line (split /\n\n+/ => $testdata) {
 
 	eval { $dbh->do("EXECUTE geotest('$input')"); };
 	if ($@) {
-		if ($rows !~ /ERROR: (.+)/) {
+		if ($rows !~ /ERROR: .+/) {
 			fail ("$t error: $@");
 		}
 		else {
@@ -434,7 +434,7 @@ for my $line (split /\n\n+/ => $testdata) {
 
 	eval { $sth->execute($input); };
 	if ($@) {
-		if ($rows !~ /ERROR: (.+)/) {
+		if ($rows !~ /ERROR: .+/) {
 			fail ($t);
 		}
 		else {
@@ -850,7 +850,7 @@ $dbh->commit();
 $dbh->do('create operator ?? (leftarg=text,rightarg=text,procedure=texteq)');
 $dbh->commit();
 
-$SQL = qq{SELECT count(*) FROM dbd_pg_test WHERE id \\? ?};
+$SQL = qq{SELECT count(*) FROM dbd_pg_test WHERE id \\? ?}; ## no critic
 $sth = $dbh->prepare($SQL);
 eval {
 	$count = $sth->execute(123);
@@ -859,7 +859,7 @@ is($@, '', $t);
 $sth->finish();
 
 $t = q{Basic placeholder escaping works via backslash-question mark for \?\?};
-$SQL = qq{SELECT count(*) FROM dbd_pg_test WHERE pname \\?\\? ?};
+$SQL = qq{SELECT count(*) FROM dbd_pg_test WHERE pname \\?\\? ?}; ## no critic
 $sth = $dbh->prepare($SQL);
 eval {
 	$count = $sth->execute('foobar');
@@ -870,7 +870,7 @@ $sth->finish();
 ## This is an emergency hatch only. Hopefully will never be used in the wild!
 $dbh->{pg_placeholder_escaped} = 0;
 $t = q{Basic placeholder escaping fails when pg_placeholder_escaped is set to false};
-$SQL = qq{SELECT count(*) FROM dbd_pg_test WHERE pname \\?\\? ?};
+$SQL = qq{SELECT count(*) FROM dbd_pg_test WHERE pname \\?\\? ?}; ## no critic
 $sth = $dbh->prepare($SQL);
 eval {
 	$count = $sth->execute('foobar');

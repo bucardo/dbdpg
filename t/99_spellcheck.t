@@ -68,7 +68,7 @@ for my $file (qw/README Changes TODO README.dev README.win32/) {
 		close $fh or warn qq{Could not close "$file": $!\n};
 		if ($file eq 'Changes') {
 			s{\b(?:from|by) [A-Z][\w \.]+[<\[\n]}{}gs;
-			s{\b[Tt]hanks to ([A-Z]\w+\W){1,3}}{}gs;
+			s{\b[Tt]hanks to (?:[A-Z]\w+\W){1,3}}{}gs;
 			s{Abhijit Menon-Sen}{}gs;
 			s{eg/lotest.pl}{};
 			s{\[.+?\]}{}gs;

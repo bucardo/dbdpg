@@ -89,13 +89,13 @@ foreach (@tests) {
         ):()),
     ) {
         skip "Can't do $range tests with server_encoding='$server_encoding'", 1
-            unless $range =~ ($ranges{$server_encoding} || qr/\A(?:ascii)\z/);
+            if $range !~ ($ranges{$server_encoding} || qr/\A(?:ascii)\z/);
         foreach my $enable_utf8 (1, 0, -1) {
             my $desc = "$state $range UTF-8 $test->{qtype} $type (pg_enable_utf8=$enable_utf8)";
             my @args = @{$test->{args} || []};
             my $want = exists $test->{want} ? $test->{want} : $value;
             if (!$enable_utf8) {
-                $want = ref $want ? [ map encode_utf8($_), @{$want} ]
+                $want = ref $want ? [ map encode_utf8($_), @{$want} ] ## no critic
                     : encode_utf8($want);
             }
 
@@ -113,7 +113,7 @@ foreach (@tests) {
             my $result = $sth->fetchall_arrayref->[0][0];
             is_deeply ($result, $want,
                        "$desc returns proper value");
-            unless ($test->{qtype} =~ /length$/) {
+            if ($test->{qtype} !~ /length$/) {
                 # Whilst XS code can set SVf_UTF8 on an IV, the core's SV
                 # copying code doesn't copy it. So we can't assume that numeric
                 # values we see "out here" still have it set. Hence skip this
@@ -131,18 +131,18 @@ my %ord_max = (
 );
 
 # Test that what we get is the same as the database's idea of characters:
-for my $name ("LATIN CAPITAL LETTER N",
-              "LATIN SMALL LETTER E WITH ACUTE",
-              "CURRENCY SIGN",
+for my $name ('LATIN CAPITAL LETTER N',
+              'LATIN SMALL LETTER E WITH ACUTE',
+              'CURRENCY SIGN',
               # Has a different code point in Unicode, Windows 1252 and ISO-8859-15
-              "EURO SIGN",
-              "POUND SIGN",
-              "YEN SIGN",
+              'EURO SIGN',
+              'POUND SIGN',
+              'YEN SIGN',
               # Has a different code point in Unicode and Windows 1252
-              "LATIN CAPITAL LETTER S WITH CARON",
-              "SNOWMAN",
+              'LATIN CAPITAL LETTER S WITH CARON',
+              'SNOWMAN',
               # U+1D196 should be 1 character, not a surrogate pair
-              "MUSICAL SYMBOL TR",
+              'MUSICAL SYMBOL TR',
           ) {
     my $ord = charnames::vianame($name);
   SKIP:

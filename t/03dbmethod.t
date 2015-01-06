@@ -503,7 +503,7 @@ $number = $sth->rows();
 ok ($number, $t);
 
 $t=q{DB handle method "table_info" works when called with a 'TABLE' last argument};
-$sth = $dbh->table_info( '', '', '', "'TABLE'");
+$sth = $dbh->table_info( '', '', '', q{'TABLE'});
 
 # Check required minimum fields
 $t='DB handle method "table_info" returns fields required by DBI';
@@ -607,7 +607,7 @@ my %surprises = map { $_->[0] => 1 }
                     @{ $sth->fetchall_arrayref([3]) };
 
 is_deeply([keys %surprises], [], $t)
-  or diag("Objects of unexpected type(s) found: "
+  or diag('Objects of unexpected type(s) found: '
           . join(', ', sort keys %surprises));
 
 } # END test listing table types
@@ -1946,7 +1946,7 @@ for my $type (qw/ ping pg_ping /) {
 	$val = $type eq 'ping' ? 0 : -3;
 	$t=qq{DB handle method "$type" returns $val after a lost network connection (inside transaction)};
 	$dbh = connect_database({nosetup => 1});
-	$dbh->do("SELECT 'DBD::Pg testing'");
+	$dbh->do(q{SELECT 'DBD::Pg testing'});
 	socket_fail($dbh);
 	is ($dbh->$type(), $val, $t);
 
@@ -1956,10 +1956,11 @@ for my $type (qw/ ping pg_ping /) {
 exit;
 
 sub socket_fail {
-	my $dbh = shift;
-	$dbh->{InactiveDestroy} = 1;
-	my $fd = $dbh->{pg_socket} or die "Could not determine socket";
-	open(DBH_PG_FH, "<&=".$fd) or die "Could not open socket: $!";
+	my $ldbh = shift;
+	$ldbh->{InactiveDestroy} = 1;
+	my $fd = $ldbh->{pg_socket} or die 'Could not determine socket';
+	open(DBH_PG_FH, '<&='.$fd) or die "Could not open socket: $!"; ## no critic
 	close DBH_PG_FH or die "Could not close socket: $!";
+	return;
 }
 

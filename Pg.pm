@@ -626,7 +626,7 @@ use 5.008001;
                 i.indisunique desc, a.amname, c.relname
         };
 
-		my $indexdef_sql = qq{
+		my $indexdef_sql = q{
             SELECT
                 pg_get_indexdef(indexrelid,x,true)
             FROM
@@ -961,7 +961,7 @@ use 5.008001;
 				JOIN pg_catalog.pg_class idx ON (
 					idx.oid = dep.refobjid AND idx.relkind='i'
 				)
-				LEFT JOIN pg_catalog.pg_depend dep2	ON (
+				LEFT JOIN pg_catalog.pg_depend dep2 ON (
 					dep2.classid = 'pg_catalog.pg_class'::regclass
 					AND dep2.objid = idx.oid
 					AND dep2.objsubid = 0
@@ -1139,7 +1139,7 @@ use 5.008001;
                 my $type_restrict = join ', ' =>
                                       map { /^'/ ? $_ : $dbh->quote($_) }
                                         grep {length}
-                                          split(',', $type);
+                                          split(',', $type); ## no critic
                 $tbl_sql = qq{SELECT * FROM ($tbl_sql) ti WHERE "TABLE_TYPE" IN ($type_restrict)};
             }
         }
@@ -1330,7 +1330,7 @@ use 5.008001;
    10021 => ['SQL_ASYNC_MODE',                      2                         ], ## SQL_AM_STATEMENT
      120 => ['SQL_BATCH_ROW_COUNT',                 2                         ], ## SQL_BRC_EXPLICIT
      121 => ['SQL_BATCH_SUPPORT',                   3                         ], ## 12 SELECT_PROC + ROW_COUNT_PROC
-       2 => ['SQL_DATA_SOURCE_NAME',                sub { sprintf "dbi:Pg:%", shift->{Name} } ],
+       2 => ['SQL_DATA_SOURCE_NAME',                sub { sprintf 'dbi:Pg:%', shift->{Name} } ],
        3 => ['SQL_DRIVER_HDBC',                     0                         ], ## not applicable
      135 => ['SQL_DRIVER_HDESC',                    0                         ], ## not applicable
        4 => ['SQL_DRIVER_HENV',                     0                         ], ## not applicable

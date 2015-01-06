@@ -11,7 +11,7 @@ use Test::More tests => 1;
 use lib 't','.';
 
 if ($ENV{DBDPG_NOCLEANUP}) {
-	ok (q{No cleaning up because ENV 'DBDPG_NOCLEANUP' is set});
+	pass (q{No cleaning up because ENV 'DBDPG_NOCLEANUP' is set});
 	exit;
 }
 
