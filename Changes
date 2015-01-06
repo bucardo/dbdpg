@@ -1,7 +1,7 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 3.5.0  Released January 6, 2015
+Version 3.5.0  Released January 6, 2015 (git commit bb13d3306fd1c73fac1c0c8a330c14e6b8443942)
 
   - Allow "placeholder escaping" by the use of a backslash directly before it, e.g.
     "SELECT 1 FROM jsontable WHERE foo \\? ?"
