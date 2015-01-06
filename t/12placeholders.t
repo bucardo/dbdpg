@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 254;
+plan tests => 256;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -408,7 +408,7 @@ for my $line (split /\n\n+/ => $testdata) {
 	$dbh->do('DELETE FROM dbd_pg_test_geom');
 	eval { $qresult = $dbh->quote($input, {pg_type => $typemap{$type}}); };
 	if ($@) {
-		if ($quoted !~ /ERROR: .+/) {
+		if ($quoted !~ /ERROR: (.+)/) { ## no critic
 			fail ("$t error: $@");
 		}
 		else {
@@ -876,6 +876,27 @@ eval {
 	$count = $sth->execute('foobar');
 };
 like($@, qr{execute}, $t);
+$sth->finish();
+
+## The space before the colon is significant here
+$SQL = qq{SELECT testarray [1 :5] FROM dbd_pg_test WHERE pname = :foo};
+$sth = $dbh->prepare($SQL);
+eval {
+	$sth->bind_param(':foo', 'abc');
+	$count = $sth->execute();
+};
+like($@, qr{execute}, $t);
+$sth->finish();
+
+$t = q{Placeholder escaping works for colons};
+$dbh->{pg_placeholder_escaped} = 1;
+$SQL = qq{SELECT testarray [1 \\:5] FROM dbd_pg_test WHERE pname = :foo};
+$sth = $dbh->prepare($SQL);
+eval {
+	$sth->bind_param(':foo', 'abc');
+	$count = $sth->execute();
+};
+is($@, '', $t);
 $sth->finish();
 
 
