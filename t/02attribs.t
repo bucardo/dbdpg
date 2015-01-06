@@ -1108,17 +1108,17 @@ is_deeply ($attrib, [], $t);
 
 $t='Statement handle attribute "ChildHandles" is an empty list on creation';
 {
-	$sth4 = $dbh4->prepare('SELECT 1');
-	$attrib = $sth4->{ChildHandles};
+	my $sth5 = $dbh4->prepare('SELECT 1');
+	$attrib = $sth5->{ChildHandles};
 	is_deeply ($attrib, [], $t);
 
 	$t='Database handle attribute "ChildHandles" contains newly created statement handle';
 	$attrib = $dbh4->{ChildHandles};
-	is_deeply ($attrib, [$sth4], $t);
+	is_deeply ($attrib, [$sth5], $t);
 
 	$sth4->finish();
 
-} ## sth4 now out of scope
+} ## sth5 now out of scope
 
 $t='Database handle attribute "ChildHandles" has undef for destroyed statement handle';
 $attrib = $dbh4->{ChildHandles};
