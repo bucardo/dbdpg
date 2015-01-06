@@ -821,10 +821,12 @@ sub operator_exists {
 
 	my ($dbh,$opname,$leftarg,$rightarg) = @_;
 
-	my $SQL = 'SELECT 1 FROM pg_catalog.pg_operator '.
-		'WHERE oprname=? AND oprleft::regtype::text = ? AND oprright::regtype::text = ?';
+	my $schema = 'dbd_pg_testschema';
+	my $SQL = 'SELECT 1 FROM pg_operator o, pg_namespace n '.
+		'WHERE oprname=? AND oprleft::regtype::text = ? AND oprright::regtype::text = ?'.
+			' AND o.oprnamespace = n.oid AND n.nspname = ?';
 	my $sth = $dbh->prepare_cached($SQL);
-	my $count = $sth->execute($opname,$leftarg,$rightarg);
+	my $count = $sth->execute($opname,$leftarg,$rightarg,$schema);
 	$sth->finish();
 	return $count < 1 ? 0 : 1;
 
@@ -853,7 +855,7 @@ sub cleanup_database {
 	for my $name (@operators) {
 		my ($opname,$leftarg,$rightarg) = split /\./ => $name;
 		next if ! operator_exists($dbh,$opname,$leftarg,$rightarg);
-		$dbh->do("DROP OPERATOR $opname($leftarg,$rightarg)");
+		$dbh->do("DROP OPERATOR dbd_pg_testschema.$opname($leftarg,$rightarg)");
 	}
 
 	for my $name (@tables) {
