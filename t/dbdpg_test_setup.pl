@@ -901,7 +901,6 @@ sub shutdown_test_database {
 	## Remove the test directory entirely
 	return if $ENV{DBDPG_TESTINITDB};
 	return if ! eval { require File::Path; 1; };
-	warn "Removing test database directory\n";
 	File::Path::rmtree($testdir);
 	return;
 
