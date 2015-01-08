@@ -2445,7 +2445,7 @@ question mark character. This is the method recommended by the DBI specs and is 
 portable. Each question mark is internally replaced by a "dollar sign number" in the order
 in which they appear in the query (important when using L</bind_param>).
 
-The method second type of placeholder is "dollar sign numbers". This is the method
+The second type of placeholder is "dollar sign numbers". This is the method
 that Postgres uses internally and is overall probably the best method to use
 if you do not need compatibility with other database systems. DBD::Pg, like
 PostgreSQL, allows the same number to be used more than once in the query.
