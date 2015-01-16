@@ -1996,7 +1996,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		*/
 		if ('\\' == oldch && imp_dbh->ph_escaped) {
 			/* copy the placeholder-like character but ignore the backslash */
-			unsigned char *p = statement-2;
+			char *p = statement-2;
 			while(*p++) {
 				*(p-1) = *p;
 			}
