@@ -252,6 +252,9 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 				}
 				else {
 					SV **svp;
+					/* Currently the type argument must be a hashref, so throw an exception if not */
+					if (!SvROK(type_sv) || SvTYPE(SvRV(type_sv)) != SVt_PVHV)
+						croak("Second argument to quote must be a hashref");
 					if ((svp = hv_fetch((HV*)SvRV(type_sv),"pg_type", 7, 0)) != NULL) {
 						type_info = pg_type_data(SvIV(*svp));
 					}
@@ -263,7 +266,10 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 					}
 				}
 				if (!type_info) {
-					warn("Unknown type %" IVdf ", defaulting to UNKNOWN",SvIV(type_sv));
+					if (NULL == type_info)
+						warn("No type given, defaulting to UNKNOWN");
+					else
+						warn("Unknown type %" IVdf ", defaulting to UNKNOWN", SvIV(type_sv));
 					type_info = pg_type_data(PG_UNKNOWN);
 				}
 			}

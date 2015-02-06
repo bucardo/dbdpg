@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 559;
+plan tests => 562;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -1314,6 +1314,24 @@ is ($dbh->quote('foobar'), q{'foobar'}, $t);
 # Test various quote types
 #
 
+## Invalid type arguments
+$t='DB handle method "quote" throws exception on non-reference type argument';
+eval { $dbh->quote('abc', 'def'); };
+like ($@, qr{hashref}, $t);
+
+$t='DB handle method "quote" throws exception on arrayref type argument';
+eval { $dbh->quote('abc', ['arraytest']); };
+like ($@, qr{hashref}, $t);
+
+SKIP: {
+	eval { require Test::Warn; };
+	if ($@) {
+		skip ('Need Test::Warn for some tests', 1);
+	}
+
+	$t='DB handle method "quote" allows an empty hashref';
+	Test::Warn::warning_like ( sub { $dbh->quote('abc', {}); }, qr/UNKNOWN/, $t);
+}
 
 ## Points
 $t='DB handle method "quote" works with type PG_POINT';

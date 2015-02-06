@@ -1,6 +1,14 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
+Version ??
+
+  - Prevent core dump if the second argument to the quote() method 
+    is anything but a hashref
+    [Greg Sabino Mullane]
+    (CPAN bug #101980)
+
+
 Version 3.5.0  Released January 6, 2015 (git commit bb13d3306fd1c73fac1c0c8a330c14e6b8443942)
 
   - Allow "placeholder escaping" by the use of a backslash directly before it, e.g.
