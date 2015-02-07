@@ -58,7 +58,6 @@ foreach (
 my %ranges = (
     UTF8 => qr/.*/,
     LATIN1 => qr/\A(?:ascii|latin 1 range)\z/,
-    SQL_ASCII => qr/nada/,
 );
 
 foreach (@tests) {
