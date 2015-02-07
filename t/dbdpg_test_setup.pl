@@ -829,7 +829,7 @@ sub operator_exists {
 
 	my $schema = 'dbd_pg_testschema';
 	my $SQL = 'SELECT 1 FROM pg_operator o, pg_namespace n '.
-		'WHERE oprname=? AND oprleft::regtype::text = ? AND oprright::regtype::text = ?'.
+		'WHERE oprname=? AND oprleft = ?::regtype AND oprright = ?::regtype'.
 			' AND o.oprnamespace = n.oid AND n.nspname = ?';
 	my $sth = $dbh->prepare_cached($SQL);
 	my $count = $sth->execute($opname,$leftarg,$rightarg,$schema);
