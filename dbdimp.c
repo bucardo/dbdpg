@@ -84,6 +84,7 @@ static int pg_st_deallocate_statement(pTHX_ SV *sth, imp_sth_t *imp_sth);
 static PGTransactionStatusType pg_db_txn_status (pTHX_ imp_dbh_t *imp_dbh);
 static int pg_db_start_txn (pTHX_ SV *dbh, imp_dbh_t *imp_dbh);
 static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int asyncflag);
+static void pg_db_detect_client_encoding_utf8(pTHX_ imp_dbh_t *imp_dbh);
 
 /* ================================================================== */
 void dbd_init (dbistate_t *dbistate)
@@ -224,9 +225,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 		}
 	}
 
-	imp_dbh->client_encoding_utf8 =
-		(0 == strncmp(PQparameterStatus(imp_dbh->conn, "client_encoding"), "UTF8", 4))
-		? DBDPG_TRUE : DBDPG_FALSE;
+	pg_db_detect_client_encoding_utf8(aTHX_ imp_dbh);
 
 	/* If the client_encoding is UTF8, flip the utf8 flag until convinced otherwise */
 	imp_dbh->pg_utf8_flag = imp_dbh->client_encoding_utf8;
@@ -928,9 +927,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			}
 			/* Do The Right Thing */
 			else if (-1 == imp_dbh->pg_enable_utf8) {
-				imp_dbh->client_encoding_utf8 =
-					(0 == strncmp(PQparameterStatus(imp_dbh->conn, "client_encoding"), "UTF8", 4))
-					? DBDPG_TRUE : DBDPG_FALSE;
+				pg_db_detect_client_encoding_utf8(aTHX_ imp_dbh);
 				imp_dbh->pg_enable_utf8 = -1;
 				imp_dbh->pg_utf8_flag = imp_dbh->client_encoding_utf8;
 			}
@@ -2950,6 +2947,25 @@ SV * pg_downgraded_sv(pTHX_ SV *input) {
 
 SV * pg_rightgraded_sv(pTHX_ SV *input, bool utf8) {
 	return utf8 ? pg_upgraded_sv(aTHX_ input) : pg_downgraded_sv(aTHX_ input);
+}
+
+static void pg_db_detect_client_encoding_utf8(pTHX_ imp_dbh_t *imp_dbh) {
+	char *clean_encoding;
+	int i, j;
+	const char * const client_encoding =
+		PQparameterStatus(imp_dbh->conn, "client_encoding");
+	STRLEN len = strlen(client_encoding);
+	Newx(clean_encoding, len + 1, char);
+	for (i = 0, j = 0; i < len; i++) {
+		const char c = toLOWER(client_encoding[i]);
+		if (isALPHANUMERIC_A(c))
+			clean_encoding[j++] = c;
+	};
+	clean_encoding[j] = '\0';
+	imp_dbh->client_encoding_utf8 =
+		(strnEQ(clean_encoding, "utf8", 4) || strnEQ(clean_encoding, "unicode", 8))
+		? DBDPG_TRUE : DBDPG_FALSE;
+	Safefree(clean_encoding);
 }
 
 /* ================================================================== */
