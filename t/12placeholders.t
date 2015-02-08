@@ -657,8 +657,12 @@ for my $char (qw{0 9 A Z a z}) { ## six letters
 
 SKIP: {
 	my $server_encoding = $dbh->selectrow_array('SHOW server_encoding');
+	my $client_encoding = $dbh->selectrow_array('SHOW client_encoding');
 	skip "Cannot test non-ascii dollar quotes with server_encoding='$server_encoding' (need UTF8 or SQL_ASCII)", 3,
 		unless $server_encoding =~ /\A(?:UTF8|SQL_ASCII)\z/;
+
+	skip 'Cannot test non-ascii dollar quotes unless client_encoding is UTF8', 3
+		if $client_encoding ne 'UTF8';
 
 	for my $ident (qq{\x{5317}}, qq{abc\x{5317}}, qq{_cde\x{5317}}) { ## hi-bit chars
 		eval {
