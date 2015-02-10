@@ -2958,7 +2958,7 @@ static void pg_db_detect_client_encoding_utf8(pTHX_ imp_dbh_t *imp_dbh) {
 	Newx(clean_encoding, len + 1, char);
 	for (i = 0, j = 0; i < len; i++) {
 		const char c = toLOWER(client_encoding[i]);
-		if (isALPHANUMERIC_A(c))
+		if (isALPHA(c) || isDIGIT(c))
 			clean_encoding[j++] = c;
 	};
 	clean_encoding[j] = '\0';
