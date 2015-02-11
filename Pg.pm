@@ -3117,8 +3117,8 @@ PQexecParams to PQexecPrepared. In other words, when it will start using server-
 prepared statements (assuming all other requirements for them are met). The default value, 
 2, means that a prepared statement will be prepared and used the second and subsequent 
 time execute is called. To always use PQexecPrepared instead of PQexecParams, set 
-pg_switch_prepared to 1. Setting it to 0 will force DBD::Pg to use PQexecPrepared always - 
-this was the default behavior in versions older than 3.0.0.
+pg_switch_prepared to 1 (this was the default behavior in earlier versions). 
+Setting pg_switch_prepared to 0 will force DBD::Pg to always use PQexecParams.
 
 =head3 B<pg_placeholder_dollaronly> (boolean)
 

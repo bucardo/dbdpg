@@ -21,6 +21,9 @@ Version 3.5.1
   - Documentation fix
     [Stuart A Johnston]
 
+  - Fix pg_switch_prepared database handle documentation
+    [Dagfinn Ilmari Mannsåker]
+
 Version 3.5.0  Released January 6, 2015 (git commit bb13d3306fd1c73fac1c0c8a330c14e6b8443942)
 
   - Allow "placeholder escaping" by the use of a backslash directly before it, e.g.
