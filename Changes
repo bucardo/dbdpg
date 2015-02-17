@@ -1,7 +1,7 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 
-Version 3.5.1
+Version 3.5.1  Released February 17, 2015
 
   - Prevent core dump if the second argument to the quote() method 
     is anything but a hashref
