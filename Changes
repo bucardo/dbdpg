@@ -1,5 +1,7 @@
  'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
+  - Fix enum value ordering on Postgres servers 9.1 and greater
+    [Dagfinn Ilmari Mannsåker]
 
 Version 3.5.1  Released February 17, 2015 (git commit 6c3457ee20c19ae492d29c490af6800e7e6a0774)
 

@@ -675,11 +675,16 @@ SKIP: {
 		skip ('DB handle method column_info attribute "pg_enum_values" requires at least Postgres 8.3', 2);
 	}
 
+    my @enumvalues = qw( foo bar baz buz );
     {
         local $dbh->{Warn} = 0;
 
         $dbh->do( q{CREATE TYPE dbd_pg_enumerated AS ENUM ('foo', 'bar', 'baz', 'buz')} );
         $dbh->do( q{CREATE TEMP TABLE dbd_pg_enum_test ( is_enum dbd_pg_enumerated NOT NULL )} );
+        if ($pgversion >= 90100) {
+            $dbh->do( q{ALTER TYPE dbd_pg_enumerated ADD VALUE 'first' BEFORE 'foo'} );
+            unshift @enumvalues, 'first';
+        }
     }
 
 	$t='DB handle method "column_info" returns proper pg_type';
@@ -688,7 +693,7 @@ SKIP: {
     is ($result->{pg_type}, 'dbd_pg_enumerated', $t);
 
 	$t='DB handle method "column_info" returns proper pg_enum_values';
-    is_deeply ($result->{pg_enum_values}, [ qw( foo bar baz buz ) ], $t);
+    is_deeply ($result->{pg_enum_values}, \@enumvalues, $t);
 
 	$dbh->do('DROP TABLE dbd_pg_enum_test');
 	$dbh->do('DROP TYPE dbd_pg_enumerated');

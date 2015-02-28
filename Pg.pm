@@ -547,7 +547,9 @@ use 5.008001;
 			}
 
 			if ( $typtype eq 'e' ) {
-				$SQL = "SELECT enumlabel FROM pg_catalog.pg_enum WHERE enumtypid = $typoid ORDER BY oid";
+				my $order_column = $dbh->{private_dbdpg}{version} >= 90100
+					? 'enumsortorder' : 'oid';
+				$SQL = "SELECT enumlabel FROM pg_catalog.pg_enum WHERE enumtypid = $typoid ORDER BY $order_column";
 				$row->[$col_map{pg_enum_values}] = $dbh->selectcol_arrayref($SQL);
 			}
 			else {
