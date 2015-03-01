@@ -540,18 +540,18 @@ use 5.008001;
 				qq{conrelid = $aid AND conkey = '{$attnum}'};
 			my $info = $dbh->selectall_arrayref($SQL);
 			if (@$info) {
-				$row->[19] = $info->[0][0];
+				$row->[$col_map{pg_constraint}] = $info->[0][0];
 			}
 			else {
-				$row->[19] = undef;
+				$row->[$col_map{pg_constraint}] = undef;
 			}
 
 			if ( $typtype eq 'e' ) {
 				$SQL = "SELECT enumlabel FROM pg_catalog.pg_enum WHERE enumtypid = $typoid ORDER BY oid";
-				$row->[23] = $dbh->selectcol_arrayref($SQL);
+				$row->[$col_map{pg_enum_values}] = $dbh->selectcol_arrayref($SQL);
 			}
 			else {
-				$row->[23] = undef;
+				$row->[$col_map{pg_enum_values}] = undef;
 			}
 		}
 
