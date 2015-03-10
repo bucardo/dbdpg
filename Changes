@@ -1,4 +1,3 @@
- 'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
   - Fix enum value ordering on Postgres servers 9.1 and greater
     [Dagfinn Ilmari Mannsåker]
@@ -260,6 +259,8 @@ Version 3.0.0  Released February 3, 2014 (git commit 9725314f27a8d65fc05bdeda3da
   - Explicitly specify en_US for spell checking
     [Dagfinn Ilmari Mannsåker] (CPAN bug #91804)
 
+
+'GSM' is Greg Sabino Mullane, greg@turnstep.com
 
 Version 2.19.3  Released August 21, 2012 (git commit be018f10fdaf4163f98affcb7244046e8f47420d)
 
