@@ -4127,7 +4127,7 @@ COPY OUT mode by calling "COPY tablename TO STDOUT". Data is always returned
 one data row at a time. The first argument to pg_getcopydata 
 is the variable into which the data will be stored (this variable should not 
 be undefined, or it may throw a warning, although it may be a reference). The 
-pg_gecopydata method returns a number greater than 1 indicating the new size of 
+pg_getcopydata method returns a number greater than 1 indicating the new size of 
 the variable, or a -1 when the COPY has finished. Once a -1 has been returned, no 
 other action is necessary, as COPY mode will have already terminated. Example:
 
