@@ -1184,10 +1184,11 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			SV * sv_fieldname;
 			retsv = newRV_inc(sv_2mortal((SV*)av));
 			while(--fields >= 0) {
+				D_imp_dbh_from_sth;
 				TRACE_PQFNAME;
 				fieldname = PQfname(imp_sth->result, fields);
 				sv_fieldname = newSVpv(fieldname,0);
-				SvUTF8_on(sv_fieldname);
+				if (imp_dbh->pg_utf8_flag) SvUTF8_on(sv_fieldname);
 				(void)av_store(av, fields, sv_fieldname);
 			}
 		}
@@ -1552,7 +1553,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 	STRLEN mypos=0, wordstart, newsize; /* Used to find and set firstword */
 	SV **svp; /* To help parse the arguments */
 
-	statement_sv = pg_rightgraded_sv(aTHX_ statement_sv, imp_dbh->client_encoding_utf8);
+	statement_sv = pg_rightgraded_sv(aTHX_ statement_sv, imp_dbh->pg_utf8_flag);
 	char *statement = SvPV_nolen(statement_sv);
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_prepare (statement: %s)\n", THEADER_slow, statement);
@@ -2483,7 +2484,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		}
 		else if (SvTYPE(SvRV(newvalue)) == SVt_PVAV) {
 			SV * quotedval;
-			quotedval = pg_stringify_array(newvalue,",",imp_dbh->pg_server_version,imp_dbh->client_encoding_utf8);
+			quotedval = pg_stringify_array(newvalue,",",imp_dbh->pg_server_version,imp_dbh->pg_utf8_flag);
 			currph->valuelen = sv_len(quotedval);
 			Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
 			Copy(SvUTF8(quotedval) ? SvPVutf8_nolen(quotedval) : SvPV_nolen(quotedval),
@@ -2582,7 +2583,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 
 	if (SvOK(newvalue)) {
 		/* get the right encoding, without modifying the caller's copy */
-		newvalue = pg_rightgraded_sv(aTHX_ newvalue, imp_dbh->client_encoding_utf8 && PG_BYTEA!=currph->bind_type->type_id);
+		newvalue = pg_rightgraded_sv(aTHX_ newvalue, imp_dbh->pg_utf8_flag && PG_BYTEA!=currph->bind_type->type_id);
 		value_string = SvPV(newvalue, currph->valuelen);
 		Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
 		Copy(value_string, currph->value, currph->valuelen, char);
