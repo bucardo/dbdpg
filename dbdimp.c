@@ -3765,17 +3765,8 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 	if (imp_sth->use_inout) {
 		ph_t *currph;
 		for (i=0,currph=imp_sth->ph; NULL != currph && i < num_fields; currph=currph->nextph,i++) {
-			if (currph->isinout) {
-				/* When we have Perl 5.7.3 or better as a pre-req:
-				   sv_copypv(currph->inout, AvARRAY(av)[i]);
-				*/
-				const char * const s = SvPV(AvARRAY(av)[i],len);
-				sv_setpvn(currph->inout, s, len);
-				if (SvUTF8(AvARRAY(av)[i]))
-					SvUTF8_on(currph->inout);
-				else
-					SvUTF8_off(currph->inout);
-			}
+			if (currph->isinout)
+				sv_copypv(currph->inout, AvARRAY(av)[i]);
 		}
 	}
 
