@@ -3628,14 +3628,9 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 {
 	dTHX;
 	D_imp_dbh_from_sth;
-	sql_type_info_t * type_info;
 	int               num_fields;
-	unsigned char *   value;
-	char *            p;
 	int               i;
 	int               chopblanks;
-	STRLEN            value_len = 0;
-	STRLEN            len;
 	AV *              av;
 	
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_fetch\n", THEADER_slow);
@@ -3681,6 +3676,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 	}
 	
 	for (i = 0; i < num_fields; ++i) {
+		sql_type_info_t * type_info;
 		SV *sv;
 
 		if (TRACE5_slow)
@@ -3693,6 +3689,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 			SvROK(sv) ? (void)sv_unref(sv) : (void)SvOK_off(sv);
 		}
 		else {
+			unsigned char * value;
 			TRACE_PQGETVALUE;
 			value = (unsigned char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
 
@@ -3705,6 +3702,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 			}
 			else {
 				if (type_info) {
+					STRLEN value_len;
 					type_info->dequote(aTHX_ value, &value_len); /* dequote in place */
 					/* For certain types, we can cast to non-string Perlish values */
 					switch (type_info->type_id) {
@@ -3725,13 +3723,12 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 					}
 				}
 				else {
-					value_len = strlen((char *)value);
-					sv_setpvn(sv, (char *)value, value_len);
+					sv_setpv(sv, (char *)value);
 				}
 			
 				if (type_info && (PG_BPCHAR == type_info->type_id) && chopblanks) {
-					p = SvEND(sv);
-					len = SvCUR(sv);
+					char *p = SvEND(sv);
+					STRLEN len = SvCUR(sv);
 					while(len && ' ' == *--p)
 						--len;
 					if (len != SvCUR(sv)) {
