@@ -3716,6 +3716,9 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 						break;
 					case PG_INT4:
 					case PG_INT2:
+#if IVSIZE >= 8 && LONGSIZE >= 8
+					case PG_INT8:
+#endif
 						sv_setiv(sv, atol((char *)value));
 						break;
 					default:
