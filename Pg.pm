@@ -195,11 +195,18 @@ use 5.008001;
 
 		my $dbh = DBD::Pg::dr::connect($drh, $connstring) or return;
 		$dbh->{AutoCommit}=1;
-		my $SQL = 'SELECT pg_catalog.quote_ident(datname) FROM pg_catalog.pg_database ORDER BY 1';
+		my $SQL = 'SELECT datname FROM pg_catalog.pg_database ORDER BY 1';
 		my $sth = $dbh->prepare($SQL);
 		$sth->execute() or die $DBI::errstr;
 		$attr and $attr = ";$attr";
-		my @sources = map { "dbi:Pg:dbname=$_->[0]$attr" } @{$sth->fetchall_arrayref()};
+		my @sources = map {
+			my $dbname = $_->[0];
+			if ($dbname =~ /[ ;'\\]/) {
+				$dbname =~ s/(['\\])/\\$1/g;
+				$dbname = "'$dbname'";
+			}
+			"dbi:Pg:dbname=$dbname$attr"
+		} @{$sth->fetchall_arrayref()};
 		$dbh->disconnect;
 		return @sources;
 	}
