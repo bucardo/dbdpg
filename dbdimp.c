@@ -125,7 +125,9 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 		if (';' == *dbname && !inquote)
 			*dest++ = ' ';
 		else {
-			if ('\'' == *dbname)
+			if ('\\' == *dbname && *(dbname+1) != '\0')
+				*dest++ = *dbname++;
+			else if ('\'' == *dbname)
 				inquote = !inquote;
 			*dest++ = *dbname;
 		}
