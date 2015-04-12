@@ -218,9 +218,13 @@ use 5.008001;
 		## Allow "db" and "database" as synonyms for "dbname"
 		$dbname =~ s/\b(?:db|database)\s*=/dbname=/;
 
-		if ($dbname =~ m{dbname\s*=\s*[\"\']([^\"\']+)}) {
-			$dbname =~ s/\"/\'/g;
-		}
+		# Accept SQL-style quoted identifers for back-compat
+		$dbname =~ s{\b dbname \s* = \s* " ((?: [^"]+ | "" )+ ) "}{
+			my $name = $1;
+			$name =~ s/""/"/g;
+			$name =~ s/([\\'])/\\$1/g;
+			"dbname='$name'";
+		}xe;
 
  		$user = defined($user) ? $user : defined $ENV{DBI_USER} ? $ENV{DBI_USER} : '';
 		$pass = defined($pass) ? $pass : defined $ENV{DBI_PASS} ? $ENV{DBI_PASS} : '';
