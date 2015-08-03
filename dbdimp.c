@@ -77,6 +77,7 @@ static ExecStatusType _result(pTHX_ imp_dbh_t *imp_dbh, const char *sql);
 static void _fatal_sqlstate(pTHX_ imp_dbh_t *imp_dbh);
 static ExecStatusType _sqlstate(pTHX_ imp_dbh_t *imp_dbh, PGresult *result);
 static int pg_db_rollback_commit (pTHX_ SV *dbh, imp_dbh_t *imp_dbh, int action);
+static SV *pg_st_placeholder_key (imp_sth_t *imp_sth, ph_t *currph, int i);
 static void pg_st_split_statement (pTHX_ imp_sth_t *imp_sth, int version, char *statement);
 static int pg_st_prepare_statement (pTHX_ SV *sth, imp_sth_t *imp_sth);
 static int is_high_bit_set(pTHX_ const unsigned char *val, STRLEN size);
@@ -998,6 +999,11 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 
 } /* end of dbd_db_STORE_attrib */
 
+static SV * pg_st_placeholder_key (imp_sth_t * imp_sth, ph_t * currph, int i) {
+	if (3 == imp_sth->placeholder_type)
+		return newSVpv(currph->fooname, 0);
+	return newSViv(i+1);
+}
 
 /* ================================================================== */
 SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
@@ -1021,7 +1027,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			int i;
 			for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
 				SV *key, *val;
-				key = (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1));
+				key = pg_st_placeholder_key(imp_sth, currph, i);
 				val = newSViv(NULL == currph->bind_type ? 0 : 1);
 				if (! hv_store_ent(pvhv, key, val, 0)) {
 					SvREFCNT_dec(val);
@@ -1046,7 +1052,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			int i;
 			for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
 				SV *key, *val;
-				key = (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1));
+				key = pg_st_placeholder_key(imp_sth, currph, i);
 				if (NULL == currph->bind_type) {
 					val = newSV(0);
 					if (! hv_store_ent(pvhv, key, val, 0)) {
@@ -1080,8 +1086,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			int i;
 			for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
 				SV *key, *val;
-				key = (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1));
- 
+				key = pg_st_placeholder_key(imp_sth, currph, i);
 				if (NULL == currph->value) {
 					val = newSV(0);
 					if (!hv_store_ent(pvhv, key, val, 0)) {
