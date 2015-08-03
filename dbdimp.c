@@ -67,6 +67,14 @@ typedef enum
 	} PGErrorVerbosity;
 #endif
 
+typedef enum
+	{
+		PQTYPE_UNKNOWN,
+		PQTYPE_EXEC,
+		PQTYPE_PARAMS,
+		PQTYPE_PREPARED,
+	} PQExecType;
+
 #define IS_DBI_HANDLE(h)										\
 	(SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV &&					\
 	 SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
@@ -3163,7 +3171,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	char *        statement = NULL;
 	int           num_fields;
 	int           ret = -2;
-	int           pqtype = 0;
+	PQExecType    pqtype = PQTYPE_UNKNOWN;
 	long          power_of_ten;
 	
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_execute\n", THEADER_slow);
@@ -3243,10 +3251,6 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	  Now, we need to build the statement to send to the backend
 	  We are using one of PQexec, PQexecPrepared, or PQexecParams
 	  Let's figure out which we are going to use and set pqtype
-	  0= unknown
-	  1= PQexec
-	  2= PQexecParams
-	  3= PQexecPrepared
 	*/
 
 	if (TRACE4_slow) TRC(DBILOGFP,
@@ -3278,12 +3282,12 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		|| !imp_sth->server_prepare
 		|| (2==imp_sth->server_prepare && imp_sth->numbound != imp_sth->numphs)
 		)
-		pqtype = 1; /* PQexec */
+		pqtype = PQTYPE_EXEC;
 	else if (0==imp_sth->switch_prepared || imp_sth->number_iterations < imp_sth->switch_prepared) {
-		pqtype = 2; /* PQexecParams */
+		pqtype = PQTYPE_PARAMS;
 	}
 	else {
-		pqtype = 3; /* PQexecPrepared */
+		pqtype = PQTYPE_PREPARED;
 	}
 
 	/* We use the new server_side prepare style if:
@@ -3299,7 +3303,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	execsize = imp_sth->totalsize; /* Total of all segments */
 
 	/* If using plain old PQexec, we need to quote each value ourselves */
-	if (1 == pqtype) {
+	if (PQTYPE_EXEC == pqtype) {
 		for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
 			if (currph->isdefault) {
 				Renew(currph->quoted, 8, char); /* freed in dbd_st_destroy */
@@ -3364,7 +3368,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	}
 	
 	/* Run one of PQexec, PQexecParams, or PQexecPrepared */
-	if (1 == pqtype) { /* PQexec */
+	if (PQTYPE_EXEC == pqtype) { /* PQexec */
 
 		if (TRACE5_slow) TRC(DBILOGFP, "%sPQexec\n", THEADER_slow);
 
@@ -3402,7 +3406,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		Safefree(statement);
 
 	}
-	else if (2 == pqtype) { /* PQexecParams */
+	else if (PQTYPE_PARAMS == pqtype) { /* PQexecParams */
 		if (TRACE5_slow) TRC(DBILOGFP, "%sPQexecParams\n", THEADER_slow);
 
 		/* Figure out how big the statement plus placeholders will be */
@@ -3472,7 +3476,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		Safefree(statement);
 
 	}
-	else if (3 == pqtype) { /* PQexecPrepared */
+	else if (PQTYPE_PREPARED == pqtype) { /* PQexecPrepared */
 	
 		if (TRACE4_slow) TRC(DBILOGFP, "%sPQexecPrepared\n", THEADER_slow);
 
