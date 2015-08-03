@@ -210,7 +210,7 @@ MODULE=DBD::Pg	PACKAGE = DBD::Pg::db
 
 SV*
 quote(dbh, to_quote_sv, type_sv=Nullsv)
-    SV* dbh
+	SV* dbh
 	SV* to_quote_sv
 	SV* type_sv
 
@@ -493,7 +493,7 @@ void
 pg_lo_truncate(dbh, fd, len)
 	SV * dbh
 	int fd
-    size_t len
+	size_t len
 	CODE:
 		const int ret = pg_db_lo_truncate(dbh, fd, len);
 		ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;

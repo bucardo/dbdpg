@@ -412,7 +412,7 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
 		case PGRES_TUPLES_OK:
 		case PGRES_COPY_OUT:
 		case PGRES_COPY_IN:
-        case PGRES_COPY_BOTH:
+		case PGRES_COPY_BOTH:
 			sqlstate = "00000"; /* SUCCESSFUL COMPLETION */
 			break;
 		case PGRES_BAD_RESPONSE:
@@ -823,7 +823,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		break;
 
 	default: /* Do nothing, unknown name */
-        break;
+		break;
 
 	}
 
@@ -1020,8 +1020,8 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			ph_t *currph;
 			int i;
 			for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
-                SV *key, *val;
-                key = (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1));
+				SV *key, *val;
+				key = (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1));
 				val = newSViv(NULL == currph->bind_type ? 0 : 1);
 				if (! hv_store_ent(pvhv, key, val, 0)) {
 					SvREFCNT_dec(val);
@@ -1079,22 +1079,22 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			ph_t *currph;
 			int i;
 			for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
-                SV *key, *val;
-                key = (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1));
+				SV *key, *val;
+				key = (3==imp_sth->placeholder_type ? newSVpv(currph->fooname,0) : newSViv(i+1));
  
 				if (NULL == currph->value) {
-                    val = newSV(0);
+					val = newSV(0);
 					if (!hv_store_ent(pvhv, key, val, 0)) {
-                        SvREFCNT_dec(val);
-                    }
+						SvREFCNT_dec(val);
+					}
 				}
 				else {
-                    val = newSVpv(currph->value,0);
+					val = newSVpv(currph->value,0);
 					if (!hv_store_ent(pvhv, key, val, 0)) {
-                        SvREFCNT_dec(val);
-                    }
+						SvREFCNT_dec(val);
+					}
 				}
-                SvREFCNT_dec(key);
+				SvREFCNT_dec(key);
 			}
 			retsv = newRV_noinc((SV*)pvhv);
 		}
@@ -1880,8 +1880,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 			 || (*statement >= 'a' && *statement <= 'z')
 			 || ((unsigned char)*statement >= (unsigned char)'\200'))) {
 			/* "SQL identifiers must begin with a letter (a-z, but also letters with diacritical marks and non-Latin letters) 
-                or an underscore (_). Subsequent characters in an identifier or key word can be letters, underscores, 
-                digits (0-9), or dollar signs ($)
+				or an underscore (_). Subsequent characters in an identifier or key word can be letters, underscores, 
+				digits (0-9), or dollar signs ($)
 			*/
 			sectionsize = 0; /* How far from the first dollar sign are we? */
 			found = 0; /* Have we found the end of the dollarquote? */
@@ -2544,9 +2544,9 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 	}
 	else if (sql_type) {
 		/* always bind as pg_type, because we know we are 
-           inserting into a pg database... It would make no 
-           sense to quote something to sql semantics and break
-           the insert.
+		   inserting into a pg database... It would make no 
+		   sense to quote something to sql semantics and break
+		   the insert.
 		*/
 		if (!(currph->bind_type = sql_type_data((int)sql_type))) {
 			croak("Cannot bind param %s: unknown sql_type %ld", name, (long)sql_type);
@@ -2642,7 +2642,7 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version,
 	toparr = (AV *) SvRV(input);
 	value = newSVpv("{", 1);
 	if (utf8)
-	    SvUTF8_on(value);
+		SvUTF8_on(value);
 
 	/* Empty arrays are easy */
 	if (av_len(toparr) < 0) {
@@ -3091,7 +3091,7 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 		break;
 	case PGRES_COPY_OUT:
 	case PGRES_COPY_IN:
-    case PGRES_COPY_BOTH:
+	case PGRES_COPY_BOTH:
 		/* Copy Out/In data transfer in progress */
 		imp_dbh->copystate = status;
 		rows = -1;
