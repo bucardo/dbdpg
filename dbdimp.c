@@ -1698,6 +1698,10 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 } /* end of dbd_st_prepare */
 
 
+static const char *placeholder_string[4] = {
+	"", "?", "$1", ":foo"
+};
+
 /* ================================================================== */
 static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char * statement)
 {
@@ -2066,8 +2070,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		if (placeholder_type!=0) {
 			if (imp_sth->placeholder_type && placeholder_type != imp_sth->placeholder_type)
 				croak("Cannot mix placeholder styles \"%s\" and \"%s\"",
-					  1==imp_sth->placeholder_type ? "?" : 2==imp_sth->placeholder_type ? "$1" : ":foo",
-					  1==placeholder_type ? "?" : 2==placeholder_type ? "$1" : ":foo");
+					  placeholder_string[imp_sth->placeholder_type],
+					  placeholder_string[placeholder_type]);
 		}
 		
 		/* Move on to the next letter unless we found a placeholder, or we are at the end of the string */
