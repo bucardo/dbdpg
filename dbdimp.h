@@ -74,6 +74,15 @@ struct ph_st {
 };
 typedef struct ph_st ph_t;
 
+typedef enum
+	{
+		PLACEHOLDER_NONE,
+		PLACEHOLDER_QUESTIONMARK,
+		PLACEHOLDER_DOLLAR,
+		PLACEHOLDER_COLON
+	} PGPlaceholderType;
+#define PLACEHOLDER_TYPE_COUNT (PLACEHOLDER_COLON + 1)
+
 /* Define sth implementor data structure */
 struct imp_sth_st {
 	dbih_stc_t com;          /* MUST be first element in structure */
@@ -81,7 +90,7 @@ struct imp_sth_st {
 	int    server_prepare;    /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
 	int    switch_prepared;   /* inherited from dbh */
     int    number_iterations; /* how many times has the statement been executed? Used by switch_prepared */
-	int    placeholder_type;  /* which style is being used 1=? 2=$1 3=:foo */
+	PGPlaceholderType placeholder_type;  /* which style is being used 1=? 2=$1 3=:foo */
 	int    numsegs;           /* how many segments this statement has */
 	int    numphs;            /* how many placeholders this statement has */
 	int    numbound;          /* how many placeholders were explicitly bound by the client, not us */

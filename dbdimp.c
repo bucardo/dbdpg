@@ -1000,7 +1000,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 } /* end of dbd_db_STORE_attrib */
 
 static SV * pg_st_placeholder_key (imp_sth_t * imp_sth, ph_t * currph, int i) {
-	if (3 == imp_sth->placeholder_type)
+	if (PLACEHOLDER_COLON == imp_sth->placeholder_type)
 		return newSVpv(currph->fooname, 0);
 	return newSViv(i+1);
 }
@@ -1566,7 +1566,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 		croak ("Cannot prepare empty statement");
 
 	/* Set default values for this statement handle */
-	imp_sth->placeholder_type  = 0;
+	imp_sth->placeholder_type  = PLACEHOLDER_NONE;
 	imp_sth->numsegs           = 0;
 	imp_sth->numphs            = 0;
 	imp_sth->numbound          = 0;
@@ -1698,7 +1698,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 } /* end of dbd_st_prepare */
 
 
-static const char *placeholder_string[4] = {
+static const char *placeholder_string[PLACEHOLDER_TYPE_COUNT] = {
 	"", "?", "$1", ":foo"
 };
 
@@ -1722,7 +1722,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 	int topdollar; /* Used to enforce sequential $1 arguments */
 
-	int placeholder_type; /* Which type we are in: one of 0,1,2,3 (none,?,$,:) */
+	PGPlaceholderType placeholder_type; /* Which type we are in: one of none,?,$,: */
 
  	unsigned char ch; /* The current character being checked */
 
@@ -2018,7 +2018,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		sectionstop=currpos-1;
 
 		/* Figure out if we have a placeholder */
-		placeholder_type = 0;
+		placeholder_type = PLACEHOLDER_NONE;
 
 		/* Dollar sign placeholder style */
 		if ('$' == ch && isDIGIT(*statement)) {
@@ -2028,12 +2028,12 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 				++statement;
 				++currpos;
 			}
-			placeholder_type = 2;
+			placeholder_type = PLACEHOLDER_DOLLAR;
 		}
 		else if (! imp_sth->dollaronly) {
 			/* Question mark style */
 			if ('?' == ch) {
-				placeholder_type = 1;
+				placeholder_type = PLACEHOLDER_QUESTIONMARK;
 			}
 			/* Colon style */
 			else if (':' == ch && ! imp_sth->nocolons) {
@@ -2061,13 +2061,13 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 						++statement;
 						++currpos;
 					}
-					placeholder_type = 3;
+					placeholder_type = PLACEHOLDER_COLON;
 				}
 			}
 		}
 
 		/* Check for conflicting placeholder types */
-		if (placeholder_type!=0) {
+		if (placeholder_type != PLACEHOLDER_NONE) {
 			if (imp_sth->placeholder_type && placeholder_type != imp_sth->placeholder_type)
 				croak("Cannot mix placeholder styles \"%s\" and \"%s\"",
 					  placeholder_string[imp_sth->placeholder_type],
@@ -2075,7 +2075,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		}
 		
 		/* Move on to the next letter unless we found a placeholder, or we are at the end of the string */
-		if (0==placeholder_type && ch)
+		if (PLACEHOLDER_NONE == placeholder_type && ch)
 			continue;
 
 		/* If we got here, we have a segment that needs to be saved */
@@ -2084,13 +2084,13 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		newseg->placeholder = 0;
 		newseg->ph = NULL;
 
-		if (1==placeholder_type) {
+		if (PLACEHOLDER_QUESTIONMARK == placeholder_type) {
 			newseg->placeholder = ++imp_sth->numphs;
 		}
-		else if (2==placeholder_type) {
+		else if (PLACEHOLDER_DOLLAR == placeholder_type) {
 			newseg->placeholder = atoi(statement-(currpos-sectionstop-1));
 		}
-		else if (3==placeholder_type) {
+		else if (PLACEHOLDER_COLON == placeholder_type) {
 			sectionsize = currpos-sectionstop;
 			/* Have we seen this placeholder yet? */
 			for (xint=1,thisph=imp_sth->ph; NULL != thisph; thisph=thisph->nextph,xint++) {
@@ -2157,7 +2157,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		sectionstart = currpos;
 		imp_sth->numsegs++;
 
-		if (placeholder_type > 0)
+		if (placeholder_type != PLACEHOLDER_NONE)
 			imp_sth->placeholder_type = placeholder_type;
 
 		/* 
@@ -2171,7 +2171,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 	} /* end large while(1) loop: statement parsing */
 
 	/* For dollar sign placeholders, ensure that the rules are followed */
-	if (2==imp_sth->placeholder_type) {
+	if (PLACEHOLDER_DOLLAR == imp_sth->placeholder_type) {
 		/* 
 		   We follow the Pg rules: must start with $1, repeats are allowed, 
 		   numbers must be sequential. We change numphs if repeats found
@@ -2197,7 +2197,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 	}
 
 	/* Create sequential placeholders */
-	if (3 != imp_sth->placeholder_type) {
+	if (PLACEHOLDER_COLON != imp_sth->placeholder_type) {
 		for (xint=1; xint <= imp_sth->numphs; xint++) {
 			New(0, newph, 1, ph_t); /* freed in dbd_st_destroy */
 			newph->nextph     = NULL;
@@ -2430,7 +2430,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		(void)mg_get(ph_name);
 	}
 	name = SvPV(ph_name, name_len);
-	if (3==imp_sth->placeholder_type) {
+	if (PLACEHOLDER_COLON == imp_sth->placeholder_type) {
 		if (':' != *name) {
 			croak("Placeholders must begin with ':' when using the \":foo\" style");
 		}
@@ -2445,7 +2445,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 
 	/* Find the placeholder in question */
 
-	if (3==imp_sth->placeholder_type) {
+	if (PLACEHOLDER_COLON == imp_sth->placeholder_type) {
 		for (x=0,currph=imp_sth->ph; NULL != currph; currph = currph->nextph) {
 			if (0==strcmp(currph->fooname, name)) {
 				x=1;
