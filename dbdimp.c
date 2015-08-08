@@ -3389,7 +3389,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		statement[execsize] = '\0';
 
 		if (TRACE5_slow) TRC(DBILOGFP, "%sRunning %s with (%s)\n", 
-							 THEADER_slow, imp_sth->async_flag & 1 ? "PQsendQuery" : "PQexec", statement);
+							 THEADER_slow, imp_sth->async_flag & PG_ASYNC ? "PQsendQuery" : "PQexec", statement);
 			
 		if (TSQL)
 			TRC(DBILOGFP, "%s;\n\n", statement);
