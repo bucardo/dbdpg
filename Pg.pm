@@ -1589,6 +1589,7 @@ use 5.008001;
                 pg_standard_conforming_strings => undef,
                 pg_switch_prepared             => undef,
                 pg_user                        => undef,
+                pg_single_row_mode             => undef,
         };
     }
 }
@@ -1645,6 +1646,7 @@ use 5.008001;
                 pg_size                   => undef,
                 pg_switch_prepared        => undef,
                 pg_type                   => undef,
+                pg_single_row_mode        => undef,
         };
     }
 

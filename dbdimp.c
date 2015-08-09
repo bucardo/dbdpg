@@ -58,6 +58,15 @@ Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId) {
 
 #endif
 
+#if PGLIBVERSION < 90200
+
+int PQsetSingleRowMode(const PGconn *c);
+int PQsetSingleRowMode(const PGconn *c) {
+	croak ("Cannot use pg_single_row_mode unless compiled against Postgres 9.2 or later");
+}
+
+#endif
+
 #ifndef PGErrorVerbosity
 typedef enum
 	{
@@ -79,6 +88,7 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t *imp_dbh, PGresult *result);
 static int pg_db_rollback_commit (pTHX_ SV *dbh, imp_dbh_t *imp_dbh, int action);
 static void pg_st_split_statement (pTHX_ imp_sth_t *imp_sth, int version, char *statement);
 static int pg_st_prepare_statement (pTHX_ SV *sth, imp_sth_t *imp_sth);
+static bool pg_st_get_single_row(pTHX_ SV *sth, imp_sth_t *imp_sth);
 static int is_high_bit_set(pTHX_ const unsigned char *val, STRLEN size);
 static int pg_st_deallocate_statement(pTHX_ SV *sth, imp_sth_t *imp_sth);
 static PGTransactionStatusType pg_db_txn_status (pTHX_ imp_dbh_t *imp_dbh);
@@ -239,6 +249,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	imp_dbh->ph_escaped        = DBDPG_TRUE;
 	imp_dbh->expand_array      = DBDPG_TRUE;
 	imp_dbh->txn_read_only     = DBDPG_FALSE;
+	imp_dbh->single_row_mode   = DBDPG_FALSE;
 	imp_dbh->pid_number        = getpid();
 	imp_dbh->prepare_number    = 1;
 	imp_dbh->switch_prepared   = 2;
@@ -410,6 +421,7 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
 		case PGRES_EMPTY_QUERY:
 		case PGRES_COMMAND_OK:
 		case PGRES_TUPLES_OK:
+		case PGRES_SINGLE_TUPLE:
 		case PGRES_COPY_OUT:
 		case PGRES_COPY_IN:
 		case PGRES_COPY_BOTH:
@@ -795,10 +807,12 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 			retsv = newSViv((IV)imp_dbh->pg_server_version);
 		break;
 
-	case 18: /* pg_switch_prepared */
+	case 18: /* pg_switch_prepared pg_single_row_mode */
 
 		if (strEQ("pg_switch_prepared", key))
 			retsv = newSViv((IV)imp_dbh->switch_prepared);
+		else if (strEQ("pg_single_row_mode", key))
+			retsv = newSViv((IV)imp_dbh->single_row_mode);
 		break;
 
 	case 23: /* pg_placeholder_nocolons */
@@ -958,13 +972,17 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 		}
 		break;
 
-	case 18: /* pg_switch_prepared */
+	case 18: /* pg_switch_prepared pg_single_row_mode */
 
 		if (strEQ("pg_switch_prepared", key)) {
 			if (SvOK(valuesv)) {
 				imp_dbh->switch_prepared = (unsigned)SvIV(valuesv);
 				retval = 1;
 			}
+		}
+		else if (strEQ("pg_single_row_mode", key)) {
+			imp_dbh->single_row_mode = newval ? DBDPG_TRUE : DBDPG_FALSE;
+			retval = 1;
 		}
 		break;
 
@@ -1137,10 +1155,12 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			retsv = newSViv((IV)imp_sth->server_prepare);
 		break;
 
-	case 18: /* pg_switch_prepared */
+	case 18: /* pg_switch_prepared pg_single_row_mode */
 
 		if (strEQ("pg_switch_prepared", key))
 			retsv = newSViv((IV)imp_sth->switch_prepared);
+		else if (strEQ("pg_single_row_mode", key))
+			retsv = newSViv((IV)imp_sth->single_row_mode);
 		break;
 
 	case 23: /* pg_placeholder_nocolons */
@@ -1417,10 +1437,13 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 		}
 		break;
 
-	case 18: /* pg_switch_prepared */
+	case 18: /* pg_switch_prepared pg_single_row_mode */
 
 		if (strEQ("pg_switch_prepared", key)) {
 			imp_sth->switch_prepared = (int)SvIV(valuesv);
+			retval = 1;
+		} else if (strEQ("pg_single_row_mode", key)) {
+			imp_sth->single_row_mode = SvTRUE(valuesv) ? DBDPG_TRUE : DBDPG_FALSE;
 			retval = 1;
 		}
 		break;
@@ -1597,6 +1620,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 	imp_sth->prepare_now      = imp_dbh->prepare_now;
 	imp_sth->dollaronly       = imp_dbh->dollaronly;
 	imp_sth->nocolons         = imp_dbh->nocolons;
+	imp_sth->single_row_mode  = imp_dbh->single_row_mode;
 
 	/* Parse and set any attributes passed in */
 	if (attribs) {
@@ -1618,6 +1642,9 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 		}
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_async", 8, 0)) != NULL) {
 			imp_sth->async_flag = (int)SvIV(*svp);
+		}
+		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_single_row_mode", 18, 0)) != NULL) {
+			imp_sth->single_row_mode = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
 		}
 	}
 
@@ -3225,6 +3252,12 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	  called.
 	*/
 	if (imp_sth->result && !(imp_sth->async_flag & PG_ASYNC)) {
+		PGresult *result;
+		TRACE_PQGETRESULT;
+		while (result = PQgetResult(imp_dbh->conn)) {
+			TRACE_PQCLEAR;
+			PQclear(result);
+		}
 		TRACE_PQCLEAR;
 		PQclear(imp_sth->result);
 		imp_sth->result = NULL;
@@ -3381,7 +3414,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		if (TSQL)
 			TRC(DBILOGFP, "%s;\n\n", statement);
 
-		if (imp_sth->async_flag & PG_ASYNC) {
+		if (imp_sth->async_flag & PG_ASYNC || imp_sth->single_row_mode) {
 			TRACE_PQSENDQUERY;
 			ret = PQsendQuery(imp_dbh->conn, statement);
 		}
@@ -3449,7 +3482,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		}
 
 		if (TRACE5_slow) TRC(DBILOGFP, "%sRunning PQexecParams with (%s)\n", THEADER_slow, statement);
-		if (imp_sth->async_flag & PG_ASYNC) {
+		if (imp_sth->async_flag & PG_ASYNC || imp_sth->single_row_mode) {
 			TRACE_PQSENDQUERYPARAMS;
 			ret = PQsendQueryParams
 				(imp_dbh->conn, statement, imp_sth->numphs, imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
@@ -3503,7 +3536,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			TRC(DBILOGFP, ");\n\n");
 		}
 
-		if (imp_sth->async_flag & PG_ASYNC) {
+		if (imp_sth->async_flag & PG_ASYNC || imp_sth->single_row_mode) {
 			TRACE_PQSENDQUERYPREPARED;
 			ret = PQsendQueryPrepared
 				(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
@@ -3527,20 +3560,37 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		return 0;
 	}
 
+	if (imp_sth->single_row_mode) {
+		if (ret) {
+			TRACE_PQSETSINGLEROWMODE;
+			if (PQsetSingleRowMode(imp_dbh->conn)) {
+				pg_st_get_single_row(aTHX_ sth, imp_sth);
+			}
+			else {
+				croak("PQsetSingleRowMode failed");
+			}
+		}
+		else {
+			croak("PQsend* error: %s", PQerrorMessage(imp_dbh->conn));
+		}
+	}
+
 	status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
 
 	imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
-	if (PGRES_TUPLES_OK == status) {
+	if (PGRES_TUPLES_OK == status || PGRES_SINGLE_TUPLE == status) {
 		TRACE_PQNFIELDS;
 		num_fields = PQnfields(imp_sth->result);
 		imp_sth->cur_tuple = 0;
 		DBIc_NUM_FIELDS(imp_sth) = num_fields;
 		DBIc_ACTIVE_on(imp_sth);
 		TRACE_PQNTUPLES;
-		ret = PQntuples(imp_sth->result);
+		ret = (PGRES_SINGLE_TUPLE == status)
+			? -1		 /* Unknown number of rows in single_row_mode */
+			: PQntuples(imp_sth->result);
 		if (TRACE5_slow) TRC(DBILOGFP,
-						"%sStatus was PGRES_TUPLES_OK, fields=%d, tuples=%d\n",
-						THEADER_slow, num_fields, ret);
+						"%sStatus was PGRES_%s, fields=%d, tuples=%d\n",
+						THEADER_slow, (PGRES_TUPLES_OK == status ? "TUPLES_OK" : "SINGLE_TUPLE"), num_fields, ret);
 	}
 	else if (PGRES_COMMAND_OK == status) {
 		/* non-select statement */
@@ -3632,6 +3682,8 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 	int               i;
 	int               chopblanks;
 	AV *              av;
+	/* In single row mode the PGresult only has one row */
+	int res_tuple = imp_sth->rows == -1 ? 0 : imp_sth->cur_tuple;
 	
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_fetch\n", THEADER_slow);
 
@@ -3643,6 +3695,12 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 	}
 
 	TRACE_PQNTUPLES;
+
+	/* In single row mode, fetch the next row unless we're on the first
+	 * one, which execute() already fetched for us */
+	if (imp_sth->rows == -1 && imp_sth->cur_tuple > 0)
+		if (!pg_st_get_single_row(aTHX_ sth, imp_sth))
+			return Nullav;
 
 	if (imp_sth->cur_tuple == imp_sth->rows) {
 		if (TRACE5_slow)
@@ -3685,13 +3743,13 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 		sv = AvARRAY(av)[i];
 
 		TRACE_PQGETISNULL;
-		if (PQgetisnull(imp_sth->result, imp_sth->cur_tuple, i)!=0) {
+		if (PQgetisnull(imp_sth->result, res_tuple, i)!=0) {
 			SvROK(sv) ? (void)sv_unref(sv) : (void)SvOK_off(sv);
 		}
 		else {
 			unsigned char * value;
 			TRACE_PQGETVALUE;
-			value = (unsigned char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
+			value = (unsigned char*)PQgetvalue(imp_sth->result, res_tuple, i); 
 
 			type_info = imp_sth->type_info[i];
 
@@ -3798,6 +3856,52 @@ static void pg_db_free_savepoints_to (pTHX_ imp_dbh_t * imp_dbh, const char *sav
 	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_free_savepoints_to\n", THEADER_slow);
 }
 
+static bool pg_st_get_single_row(pTHX_ SV *sth, imp_sth_t *imp_sth)
+{
+	D_imp_dbh_from_sth;
+	PGresult * result = imp_sth->result;
+	ExecStatusType status;
+	int ret = DBDPG_TRUE;
+
+	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_get_single_row\n", THEADER_slow);
+
+	if (result && PGRES_SINGLE_TUPLE != PQresultStatus(result)) {
+		pg_error(aTHX_ sth, PGRES_FATAL_ERROR, "Not in single row mode");
+		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_get_single_row (error: not in single row mode)\n", THEADER_slow, ret);
+		return DBDPG_FALSE;
+	}
+
+	if (result) {
+		TRACE_PQCLEAR;
+		PQclear(result);
+	}
+	TRACE_PQGETRESULT;
+	result = PQgetResult(imp_dbh->conn);
+	status = _sqlstate(aTHX_ imp_dbh, result);
+
+	if (!result) {
+		pg_error(aTHX_ sth, status, "Failed to get a result in single row mode");
+		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_get_single_row (error: no result)\n", THEADER_slow, ret);
+		return DBDPG_FALSE;
+	}
+
+	imp_sth->result = result;
+
+	if (PGRES_TUPLES_OK == status || PGRES_COMMAND_OK == status) /* last row */
+		imp_sth->rows = imp_sth->cur_tuple;
+	else if (PGRES_SINGLE_TUPLE != status) {
+		pg_error(aTHX_ sth, status, PQerrorMessage(imp_dbh->conn));
+		ret = DBDPG_FALSE;
+	}
+
+	if (PGRES_SINGLE_TUPLE != status) {
+		if (TRACE5_slow) TRC(DBILOGFP, "%sLast row in single tuple mode (status=%d)\n", THEADER_slow, status);
+		while (result = PQgetResult(imp_dbh->conn))
+			PQclear(result);
+	}
+	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_get_single_row (ret=%d)\n", THEADER_slow, ret);
+	return ret;
+}
 
 /* ================================================================== */
 int dbd_st_rows (SV * sth, imp_sth_t * imp_sth)
@@ -3821,6 +3925,12 @@ int dbd_st_finish (SV * sth, imp_sth_t * imp_sth)
 					THEADER_slow, imp_dbh->async_status);
 	
 	if (DBIc_ACTIVE(imp_sth) && imp_sth->result) {
+		PGresult *result;
+		TRACE_PQGETRESULT;
+		while (result = PQgetResult(imp_dbh->conn)) {
+			TRACE_PQCLEAR;
+			PQclear(result);
+		}
 		TRACE_PQCLEAR;
 		PQclear(imp_sth->result);
 		imp_sth->result = NULL;

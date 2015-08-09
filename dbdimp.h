@@ -40,6 +40,7 @@ struct imp_dbh_st {
 	bool    ph_escaped;        /* allow backslash to escape placeholders */
 	bool    expand_array;      /* transform arrays from the db into Perl arrays? Default is 1 */
 	bool    txn_read_only;     /* are we in read-only mode? Set with $dbh->{ReadOnly} */
+	bool    single_row_mode;   /* fetch a single row at a time */
 
 	int     pg_enable_utf8;    /* legacy utf8 flag: force utf8 flag on or off, regardless of client_encoding */
 	bool    pg_utf8_flag;      /* are we currently flipping the utf8 flag on? */
@@ -117,6 +118,7 @@ struct imp_sth_st {
 	bool   nocolons;         /* do not consider :1, :2 ... as valid placeholders */
 	bool   use_inout;        /* Any placeholders using inout? */
 	bool   all_bound;        /* Have all placeholders been bound? */
+	bool   single_row_mode;  /* Fetch a single row at a time */
 };
 
 
