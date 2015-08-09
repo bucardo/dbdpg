@@ -801,9 +801,10 @@ sub get_test_settings {
 sub schema_exists {
 
 	my ($dbh,$schema) = @_;
-	my $SQL = 'SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = ?';
+	my $SQL = 'SELECT count(*) FROM pg_catalog.pg_namespace WHERE nspname = ?';
 	my $sth = $dbh->prepare_cached($SQL);
-	my $count = $sth->execute($schema);
+	$sth->execute($schema);
+	my $count = $sth->fetchrow_array;
 	$sth->finish();
 	return $count < 1 ? 0 : 1;
 
@@ -813,10 +814,11 @@ sub schema_exists {
 sub relation_exists {
 
 	my ($dbh,$schema,$name) = @_;
-	my $SQL = 'SELECT 1 FROM pg_catalog.pg_class c, pg_catalog.pg_namespace n '.
+	my $SQL = 'SELECT count(*) FROM pg_catalog.pg_class c, pg_catalog.pg_namespace n '.
 		'WHERE n.oid=c.relnamespace AND n.nspname = ? AND c.relname = ?';
 	my $sth = $dbh->prepare_cached($SQL);
-	my $count = $sth->execute($schema,$name);
+	$sth->execute($schema,$name);
+	my $count = $sth->fetchrow_array;
 	$sth->finish();
 	return $count < 1 ? 0 : 1;
 
@@ -828,11 +830,12 @@ sub operator_exists {
 	my ($dbh,$opname,$leftarg,$rightarg) = @_;
 
 	my $schema = 'dbd_pg_testschema';
-	my $SQL = 'SELECT 1 FROM pg_operator o, pg_namespace n '.
+	my $SQL = 'SELECT count(*) FROM pg_operator o, pg_namespace n '.
 		'WHERE oprname=? AND oprleft = ?::regtype AND oprright = ?::regtype'.
 			' AND o.oprnamespace = n.oid AND n.nspname = ?';
 	my $sth = $dbh->prepare_cached($SQL);
-	my $count = $sth->execute($opname,$leftarg,$rightarg,$schema);
+	$sth->execute($opname,$leftarg,$rightarg,$schema);
+	my $count = $sth->fetchrow_array;
 	$sth->finish();
 	return $count < 1 ? 0 : 1;
 
