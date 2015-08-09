@@ -164,6 +164,7 @@ DBISTATE_DECLARE;
 #define TRACE_PQSERVERVERSION      TRACE_XX "%sPQserverVersion\n",       THEADER_slow)
 #define TRACE_PQSETERRORVERBOSITY  TRACE_XX "%sPQsetErrorVerbosity\n",   THEADER_slow)
 #define TRACE_PQSETNOTICEPROCESSOR TRACE_XX "%sPQsetNoticeProcessor\n",  THEADER_slow)
+#define TRACE_PQSETSINGLEROWMODE   TRACE_XX "%sPQsetSingleRowMode\n",    THEADER_slow)
 #define TRACE_PQSOCKET             TRACE_XX "%sPQsocket\n",              THEADER_slow)
 #define TRACE_PQSTATUS             TRACE_XX "%sPQstatus\n",              THEADER_slow)
 #define TRACE_PQTRACE              TRACE_XX "%sPQtrace\n",               THEADER_slow)
