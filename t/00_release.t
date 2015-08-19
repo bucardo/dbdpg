@@ -40,14 +40,18 @@ my $lastversion = '?';
 
 for my $file (sort keys %filelist) {
 	my ($expected,$regexlist) = @{ $filelist{$file} };
-	#diag "Want file $file to have $expected";
 
 	my $instances = 0;
 	open my $fh, '<', $file or die qq{Could not open "$file": $!\n};
   SLURP: while (<$fh>) {
 		for my $regex (@{ $regexlist }) {
 			if ($_ =~ /$regex/) {
-				push @{$v{$file}} => [$1, $.];
+				my $foundversion = $1;
+				push @{$v{$file}} => [$foundversion, $.];
+				if ($lastversion =~ /\d/ and $foundversion ne $lastversion) {
+					$goodversion = 0;
+				}
+				$lastversion = $foundversion;
 				$instances++;
 				last SLURP if $file eq 'Changes'; ## Only the top version please
 			}
