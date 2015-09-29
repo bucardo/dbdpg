@@ -1,5 +1,5 @@
 
-Version 3.5.2  Released September 29, 2015
+Version 3.5.2  Released September 29, 2015 (git commit be8026c9160c4a29580a97dab57cb595c5448949)
 
   - Fix enum value ordering on Postgres servers 9.1 and greater
     [Dagfinn Ilmari Mannsåker]
