@@ -24,7 +24,7 @@ SKIP: {
 		fail ('SIGNATURE file was empty');
 	}
 	else {
-		my $ret = Module::Signature::verify();
+		my $ret = Module::Signature::verify(skip=>1);
 		if ($ret eq Module::Signature::SIGNATURE_OK()) {
 			pass ('Valid SIGNATURE file');
 		}
