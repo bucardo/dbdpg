@@ -2938,8 +2938,11 @@ SV * pg_downgraded_sv(pTHX_ SV *input) {
 	for(end = p + len; p != end; p++) {
 		if(*p & 0x80) {
 			SV *output = sv_mortalcopy(input);
-			sv_utf8_downgrade(output, DBDPG_FALSE);
-			return output;
+			if (!sv_utf8_downgrade(output, DBDPG_FALSE)) {
+				return input;
+			} else {
+				return output;
+			}
 		}
 	}
 	return input;
