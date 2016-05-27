@@ -948,6 +948,7 @@ q{SELECT * FROM dbd_pg_test},
 	$t=qq{Statement handle attribute "pg_cmd_status" works for '$expected'};
 	$sth = $dbh->prepare($_);
 	$sth->execute();
+	1 while $expected eq 'SELECT' and $sth->fetchrow_arrayref;
 	$result = $sth->{pg_cmd_status};
 	$sth->finish();
 	like ($result, qr/^$expected/, $t);

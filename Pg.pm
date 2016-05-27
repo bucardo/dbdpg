@@ -669,8 +669,9 @@ use 5.008001;
 		# Fetch the individual parts of the index
 		my $sth_indexdef = $dbh->prepare($indexdef_sql);
 
-		# Fetch the index definitions
-		my $sth = $dbh->prepare($stats_sql);
+		# Fetch the index definitions, no single row mode, since we
+		# execute $sth_indexdef for each row
+		my $sth = $dbh->prepare($stats_sql, { pg_single_row_mode => 0 });
 		$sth->execute(@exe_args) or return undef;
 
 		STAT_ROW:
@@ -1145,7 +1146,7 @@ use 5.008001;
                 $tbl_sql = qq{SELECT * FROM ($tbl_sql) ti WHERE "TABLE_TYPE" IN ($type_restrict)};
             }
         }
-        my $sth = $dbh->prepare( $tbl_sql ) or return undef;
+        my $sth = $dbh->prepare( $tbl_sql, { pg_single_row_mode => 0 } ) or return undef;
         $sth->execute();
 
         return $sth;

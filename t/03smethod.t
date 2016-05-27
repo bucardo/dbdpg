@@ -334,7 +334,7 @@ is ($rows, 4, $t);
 # Test of the "execute_for_fetch" statement handle method
 #
 
-$sth = $dbh->prepare('SELECT id+200, val FROM dbd_pg_test');
+$sth = $dbh->prepare('SELECT id+200, val FROM dbd_pg_test', { pg_single_row_mode => 0 });
 my $goodrows = $sth->execute();
 $sth2 = $dbh->prepare(q{INSERT INTO dbd_pg_test (id, val) VALUES (?,?)});
 $sth2->bind_param(1,'',SQL_INTEGER);
@@ -487,7 +487,7 @@ is_deeply ($result, {}, $t);
 #
 
 $t='Statement handle method "rows" returns -1 before an execute';
-$sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (33,34)');
+$sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (33,34)', { pg_single_row_mode => 0 });
 $rows = $sth->rows();
 is ($rows, -1, $t);
 

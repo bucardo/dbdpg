@@ -258,7 +258,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	imp_dbh->ph_escaped        = DBDPG_TRUE;
 	imp_dbh->expand_array      = DBDPG_TRUE;
 	imp_dbh->txn_read_only     = DBDPG_FALSE;
-	imp_dbh->single_row_mode   = DBDPG_FALSE;
+	imp_dbh->single_row_mode   = DBDPG_TRUE; /* XXX: FOR TESTING, REVERT BEFORE MERGE! */
 	imp_dbh->pid_number        = getpid();
 	imp_dbh->prepare_number    = 1;
 	imp_dbh->switch_prepared   = 2;
@@ -4106,6 +4106,12 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 	Safefree(imp_sth->PQoids);
 
 	if (imp_sth->result) {
+		PGresult *result;
+		TRACE_PQGETRESULT;
+		while (result = PQgetResult(imp_dbh->conn)) {
+			TRACE_PQCLEAR;
+			PQclear(result);
+		}
 		TRACE_PQCLEAR;
 		PQclear(imp_sth->result);
 		imp_sth->result = NULL;
