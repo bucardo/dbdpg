@@ -4209,6 +4209,17 @@ double loop, like this:
   }
   $dbh->do("CLOSE csr");
 
+=head Single Row Mode
+
+As an alternative to cursors for queries returning large amounts of
+data, libpq since version 9.2 supports retrieveng query results
+row-by-row.  In this mode, L</execute> returns immediately, and rows
+are only received when one of the C<fetchrow_*> methods is called.
+This can be enabled by setting the L</pg_single_row_mode> attribute on
+the database or statement handle.
+
+https://www.postgresql.org/docs/current/static/libpq-single-row-mode.html
+
 =head2 Datatype bool
 
 The current implementation of PostgreSQL returns 't' for true and 'f' for
