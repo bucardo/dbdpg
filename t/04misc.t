@@ -113,6 +113,8 @@ $BC$
 
 	is( $sth->err, undef, q{Statement attribute 'err' is initially undef});
 
+	$dbh->do(q{SET client_min_messages = 'FATAL'});
+
   TODO: {
 		local $TODO = q{Known bug: notice and warnings should set err to 6};
 
@@ -121,8 +123,6 @@ $BC$
 			is( $sth->err, 6, qq{Statement attribute 'err' set to 6 for level $level});
 		}
 	}
-
-	$dbh->do(q{SET client_min_messages = 'FATAL'});
 
 	for my $level (qw/exception/) {
 		eval { $sth->execute($level);};

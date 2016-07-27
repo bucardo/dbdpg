@@ -1619,6 +1619,7 @@ SKIP: {
 
 	for my $destroy (0,1) {
 
+		local $SIG{__WARN__} = sub { warn $_[0] unless $_[0] =~ /DESTROY failed: no connection/ }; # shut up destroy warning
 		$dbh = connect_database({nosetup => 1, AutoCommit => 1});
 		$sth = $dbh->prepare($SQL);
 		$sth->execute(1);
