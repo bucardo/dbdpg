@@ -2,6 +2,7 @@
 Version 3.5.3  Released October 1, 2015 (git commit 62ddf200106467ce9ad31d85715a4cdf63e8be14)
 
   - Minor fix in the test file t/03dbmethod.t
+  - Silence warnings in t/02attribs.t and t/04misc.t
 
 
 Version 3.5.2  Released September 29, 2015 (git commit be8026c9160c4a29580a97dab57cb595c5448949)
