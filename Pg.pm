@@ -439,12 +439,6 @@ use 5.008001;
 
 		my $whereclause = join "\n\t\t\t\tAND ", '', @search;
 
-		my $schemajoin = 'JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)';
-
-		my $remarks = 'pg_catalog.col_description(a.attrelid, a.attnum)';
-
-		my $column_def = 'pg_catalog.pg_get_expr(af.adbin, af.adrelid)';
-
 		my $col_info_sql = qq!
             SELECT
                 NULL::text AS "TABLE_CAT"
@@ -458,8 +452,8 @@ use 5.008001;
                 , NULL::text AS "DECIMAL_DIGITS"
                 , NULL::text AS "NUM_PREC_RADIX"
                 , CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
-                , $remarks AS "REMARKS"
-                , $column_def AS "COLUMN_DEF"
+                , pg_catalog.col_description(a.attrelid, a.attnum) AS "REMARKS"
+                , pg_catalog.pg_get_expr(af.adbin, af.adrelid) AS "COLUMN_DEF"
                 , NULL::text AS "SQL_DATA_TYPE"
                 , NULL::text AS "SQL_DATETIME_SUB"
                 , NULL::text AS "CHAR_OCTET_LENGTH"
@@ -480,7 +474,7 @@ use 5.008001;
                 JOIN pg_catalog.pg_attribute a ON (t.oid = a.atttypid)
                 JOIN pg_catalog.pg_class c ON (a.attrelid = c.oid)
                 LEFT JOIN pg_catalog.pg_attrdef af ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
-                $schemajoin
+                JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
             WHERE
                 a.attnum >= 0
                 AND c.relkind IN ('r','v','m')
@@ -742,8 +736,6 @@ use 5.008001;
 			$whereclause .= "\n\t\t\tAND n.nspname = " . $dbh->quote($schema);
 		}
 
-		my $TSJOIN = 'pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
-
 		my $pri_key_sql = qq{
             SELECT
                   c.oid
@@ -757,7 +749,7 @@ use 5.008001;
                 JOIN pg_catalog.pg_index i ON (i.indrelid = c.oid)
                 JOIN pg_catalog.pg_class c2 ON (c2.oid = i.indexrelid)
                 LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-                LEFT JOIN $TSJOIN
+                LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)
             WHERE
                 i.indisprimary IS TRUE
             $whereclause
@@ -1093,7 +1085,6 @@ use 5.008001;
                     push @search, 'c.relname ' . ($table =~ /[_%]/ ? 'LIKE ' : '= ') . $dbh->quote($table);
             }
 
-            my $TSJOIN = 'pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
             my $whereclause = join "\n\t\t\t\t\t AND " => @search;
             $tbl_sql = qq{
                 SELECT NULL::text AS "TABLE_CAT"
@@ -1124,7 +1115,7 @@ use 5.008001;
                   LEFT JOIN pg_catalog.pg_description AS d
                        ON (c.oid = d.objoid AND c.tableoid = d.classoid AND d.objsubid = 0)
                   LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-                  LEFT JOIN $TSJOIN
+                  LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)
                  WHERE $whereclause
                  ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
                 };
