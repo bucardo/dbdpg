@@ -297,26 +297,26 @@ and the version we are connecting to. You should test all variations.
 
 One way is to keep multiple versions of PostgreSQL in standard directories, and use 
 a standard port convention to keep things simple: the port is 5XXX where XXX is the 
-version, so that PG 7.4.2 is listening on port 5742. Then set up two aliases for each 
+version, so that PG 9.4.2 is listening on port 5942. Then set up two aliases for each 
 version, like so:
 
-alias dbd747='export DBI_DSN="dbi:Pg:dbname=greg;port=5747"'
-alias dbd747m='export POSTGRES_LIB=/home/greg/pg747/lib POSTGRES_INCLUDE=/home/greg/pg747/include POSTGRES_DATA=/home/greg/pg747'
+alias dbd947='export DBI_DSN="dbi:Pg:dbname=greg;port=5947"'
+alias dbd947m='export POSTGRES_LIB=/home/greg/pg947/lib POSTGRES_INCLUDE=/home/greg/pg947/include POSTGRES_DATA=/home/greg/pg947'
 
 This allows for quick testing of each combination:
 
-> dbd747m
-> dbd747
+> dbd947m
+> dbd947
 > perl Makefile.PL
 > make test (check output for any errors)
-> dbd739
+> dbd939
 > make test
 > dbd802
 > make test
-> dbd739m
+> dbd939m
 > perl Makefile.PL
 > make test
-> dbd727
+> dbd927
 > make test
 > dbd802
 > make test

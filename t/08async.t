@@ -20,12 +20,6 @@ if (! $dbh) {
 
 my $pglibversion = $dbh->{pg_lib_version};
 
-if ($pglibversion < 80000) {
-	cleanup_database($dbh,'test');
-	$dbh->disconnect;
-	plan skip_all => 'Cannot run asynchronous queries with pre-8.0 libraries.';
-}
-
 plan tests => 67;
 
 isnt ($dbh, undef, 'Connect to database for async testing');

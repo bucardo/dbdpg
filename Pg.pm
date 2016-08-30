@@ -443,9 +443,7 @@ use 5.008001;
 
 		my $remarks = 'pg_catalog.col_description(a.attrelid, a.attnum)';
 
-		my $column_def = $dbh->{private_dbdpg}{version} >= 80000
-			? 'pg_catalog.pg_get_expr(af.adbin, af.adrelid)'
-			: 'af.adsrc';
+		my $column_def = 'pg_catalog.pg_get_expr(af.adbin, af.adrelid)';
 
 		my $col_info_sql = qq!
             SELECT
@@ -745,9 +743,6 @@ use 5.008001;
 		}
 
 		my $TSJOIN = 'pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
-		if ($dbh->{private_dbdpg}{version} < 80000) {
-			$TSJOIN = '(SELECT 0 AS oid, 0 AS spcname, 0 AS spclocation LIMIT 0) AS t ON (t.oid=1)';
-		}
 
 		my $pri_key_sql = qq{
             SELECT
@@ -1099,9 +1094,6 @@ use 5.008001;
             }
 
             my $TSJOIN = 'pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
-            if ($dbh->{private_dbdpg}{version} < 80000) {
-                $TSJOIN = '(SELECT 0 AS oid, 0 AS spcname, 0 AS spclocation LIMIT 0) AS t ON (t.oid=1)';
-            }
             my $whereclause = join "\n\t\t\t\t\t AND " => @search;
             $tbl_sql = qq{
                 SELECT NULL::text AS "TABLE_CAT"
@@ -2326,11 +2318,7 @@ Deciding whether or not to use prepared statements depends on many factors,
 but you can force them to be used or not used by using the 
 L<pg_server_prepare|/pg_server_prepare_(integer)> attribute when calling L</prepare>. Setting this to "0" means to never use 
 prepared statements. Setting pg_server_prepare to "1" means that prepared 
-statements should be used whenever possible. This is the default when connected 
-to Postgres servers version 8.0 or higher. Servers that are version 7.4 get a special 
-default value of "2", because server-side statements were only partially supported 
-in that version. In this case, it only uses server-side prepares if all 
-parameters are specifically bound.
+statements should be used whenever possible. This is the default.
 
 The pg_server_prepare attribute can also be set at connection time like so:
 
@@ -2805,14 +2793,11 @@ or "LOCAL TEMPORARY".
 
 The TABLE_SCHEM and TABLE_NAME will be quoted via C<quote_ident()>.
 
-Two additional fields specific to DBD::Pg are returned:
+Four additional fields specific to DBD::Pg are returned:
 
 B<pg_schema>: the unquoted name of the schema
 
 B<pg_table>: the unquoted name of the table
-
-If your database supports tablespaces (version 8.0 or greater), two additional
-DBD::Pg specific fields are returned:
 
 B<pg_tablespace_name>: the name of the tablespace the table is in
 
@@ -3442,10 +3427,6 @@ Executes a previously prepared statement. In addition to C<UPDATE>, C<DELETE>,
 C<INSERT> statements, for which it returns always the number of affected rows,
 the C<execute> method can also be used for C<SELECT ... INTO table> statements.
 
-The "prepare/bind/execute" process has changed significantly for PostgreSQL
-servers 7.4 and later: please see the C<prepare()> and C<bind_param()> entries for
-much more information.
-
 Setting one of the bind_values to "undef" is the equivalent of setting the value 
 to NULL in the database. Setting the bind_value to $DBDPG_DEFAULT is equivalent 
 to sending the literal string 'DEFAULT' to the backend. Note that using this 
@@ -3886,8 +3867,7 @@ created after the one being released are also destroyed.
 
 It is possible to send a query to the backend and have your script do other work while the query is 
 running on the backend. Both queries sent by the L</do> method, and by the L</execute> method can be 
-sent asynchronously. (NOTE: This will only work if DBD::Pg has been compiled against Postgres libraries 
-of version 8.0 or greater) The basic usage is as follows:
+sent asynchronously. The basic usage is as follows:
 
   use DBD::Pg ':async';
 

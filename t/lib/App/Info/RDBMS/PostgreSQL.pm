@@ -269,7 +269,7 @@ my $get_version = sub {
             @{$self}{qw(version major minor patch)} =
               ($version, $x, $y, $z);
         } elsif ($version =~ /(\d+)\.(\d+)/) {
-            # New versions, such as "7.4", are treated as patch level "0"
+            # New versions, such as "9.4", are treated as patch level "0"
             @{$self}{qw(version major minor patch)} =
               ($version, $1, $2, 0);
         } else {

@@ -743,11 +743,6 @@ is_deeply (\@result, $expected, $t);
 # Test of the "statistics_info" database handle method
 #
 
-SKIP: {
-
-$dbh->{private_dbdpg}{version} >= 80000
-	or skip ('Server must be version 8.0 or higher to test database handle method "statistics_info"', 10);
-
 $t='DB handle method "statistics_info" returns undef: no table';
 $sth = $dbh->statistics_info(undef,undef,undef,undef,undef);
 is ($sth, undef, $t);
@@ -871,7 +866,7 @@ $dbh->do("DROP TABLE $table3");
 $dbh->do("DROP TABLE $table2");
 $dbh->do("DROP TABLE $table1");
 
-} ## end of statistics_info tests
+## end of statistics_info tests
 
 #
 # Test of the "foreign_key_info" database handle method

@@ -96,19 +96,11 @@ for (1..4) {
 	ok ($sth->execute, $it);
 }
 
-## 7.4 does not have a full SSP implementation, so we simply skip these tests.
-if ($pglibversion < 80000) {
- SKIP: {
-		skip ('Not testing pg_server_prepare on 7.4-compiled servers', 2);
-	}
-}
-else {
-	$t='Prepare/execute with pg_server_prepare on at database handle works';
-	$dbh->{pg_server_prepare} = 1;
-	$sth = $dbh->prepare($SQL);
-	$sth->execute(1);
-	ok ($sth->execute, $t);
-}
+$t='Prepare/execute with pg_server_prepare on at database handle works';
+$dbh->{pg_server_prepare} = 1;
+$sth = $dbh->prepare($SQL);
+$sth->execute(1);
+ok ($sth->execute, $t);
 
 ## We must send a hashref as the final arg
 $t='Prepare failes when sent a non-hashref';
@@ -128,12 +120,10 @@ $sth = $dbh->prepare($SQL, {pg_server_prepare => 0});
 $sth->execute(1);
 ok ($sth->execute, $t);
 
-if ($pglibversion >= 80000) {
-	$t='Prepare/execute with pg_server_prepare on at statement handle works';
-	$sth = $dbh->prepare($SQL, {pg_server_prepare => 1});
-	$sth->execute(1);
-	ok ($sth->execute, $t);
-}
+$t='Prepare/execute with pg_server_prepare on at statement handle works';
+$sth = $dbh->prepare($SQL, {pg_server_prepare => 1});
+$sth->execute(1);
+ok ($sth->execute, $t);
 
 $t='Prepare/execute with pg_prepare_now on at database handle works';
 $dbh->{pg_prepare_now} = 1;
@@ -701,11 +691,6 @@ is ($sth->{pg_current_row}, 0, $t);
 #
 
 SKIP: {
-	## 7.4 does not have cancel
-	if ($pglibversion < 80000) {
-		skip ('Not testing cancel 7.4-compiled servers', 1);
-	}
-
 	if ($^O =~ /Win/) {
 		skip ('Cannot test POSIX signalling on Windows', 1);
 	}

@@ -161,9 +161,9 @@ if ($os =~ /Win32/) {
 }
 
 ## Warn about older versions
-if ($serverversion < 70400) {
+if ($serverversion < 80000) {
     print "\n****************\n";
-    print "WARNING! DBD::Pg no longer supports versions less than 7.4.\n";
+    print "WARNING! DBD::Pg no longer supports versions less than 8.0.\n";
     print "You must upgrade PostgreSQL to a newer version.\n";
     print "****************\n\n";
     exit 1;
