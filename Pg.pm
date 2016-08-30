@@ -2307,8 +2307,9 @@ Queries that do not begin with the word "SELECT", "INSERT",
 
 Deciding whether or not to use prepared statements depends on many factors, 
 but you can force them to be used or not used by using the 
-L<pg_server_prepare|/pg_server_prepare_(integer)> attribute when calling L</prepare>. Setting this to "0" means to never use 
-prepared statements. Setting pg_server_prepare to "1" means that prepared 
+L<pg_server_prepare|/pg_server_prepare_(integer)> attribute when calling L</prepare>.
+Setting this to a false value means to never use
+prepared statements. Setting pg_server_prepare ton a true value means that prepared
 statements should be used whenever possible. This is the default.
 
 The pg_server_prepare attribute can also be set at connection time like so:
@@ -3082,10 +3083,10 @@ issuing commands such as INSERT, UPDATE, or DELETE.
 
 This method requires DBI version 1.55 or better.
 
-=head3 B<pg_server_prepare> (integer)
+=head3 B<pg_server_prepare> (boolean)
 
 DBD::Pg specific attribute. Indicates if DBD::Pg should attempt to use server-side 
-prepared statements. The default value, 1, indicates that prepared statements should 
+prepared statements. The default value, true, indicates that prepared statements should
 be used whenever possible. See the section on the L</prepare> method for more information.
 
 =head3 B<pg_switch_prepared> (integer)
@@ -3752,10 +3753,10 @@ DBD::Pg specific attribute. Specifies the name of the prepared statement to use 
 statement handle. Not normally needed, see the section on the L</prepare> method for 
 more information.
 
-=head3 B<pg_server_prepare> (integer)
+=head3 B<pg_server_prepare> (boolean)
 
 DBD::Pg specific attribute. Indicates if DBD::Pg should attempt to use server-side 
-prepared statements for this statement handle. The default value, 1, indicates that prepared 
+prepared statements for this statement handle. The default value, true, indicates that prepared
 statements should be used whenever possible. See the section on the L</prepare> method for 
 more information.
 

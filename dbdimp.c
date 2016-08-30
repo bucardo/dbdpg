@@ -211,6 +211,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	imp_dbh->pg_enable_utf8  = -1;
 
  	imp_dbh->prepare_now       = DBDPG_FALSE;
+	imp_dbh->server_prepare    = DBDPG_TRUE;
 	imp_dbh->done_begin        = DBDPG_FALSE;
 	imp_dbh->dollaronly        = DBDPG_FALSE;
 	imp_dbh->nocolons          = DBDPG_FALSE;
@@ -220,7 +221,6 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	imp_dbh->pid_number        = getpid();
 	imp_dbh->prepare_number    = 1;
 	imp_dbh->switch_prepared   = 2;
-	imp_dbh->server_prepare    = 1;
 	imp_dbh->copystate         = 0;
 	imp_dbh->pg_errorlevel     = 1; /* Default */
 	imp_dbh->async_status      = 0;
@@ -925,11 +925,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 	case 17: /* pg_server_prepare */
 
 		if (strEQ("pg_server_prepare", key)) {
-			if (SvOK(valuesv)) {
-				newval = (unsigned)SvIV(valuesv);
-			}
-			/* Default to "2" if an invalid value is passed in */
-			imp_dbh->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
+			imp_dbh->server_prepare = newval ? DBDPG_TRUE : DBDPG_FALSE;
 			retval = 1;
 		}
 		break;
@@ -1393,7 +1389,7 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 	case 17: /* pg_server_prepare */
 
 		if (strEQ("pg_server_prepare", key)) {
-			imp_sth->server_prepare = strEQ(value,"0") ? DBDPG_FALSE : DBDPG_TRUE;
+			imp_sth->server_prepare = SvTRUE(valuesv) ? DBDPG_TRUE : DBDPG_FALSE;
 			retval = 1;
 		}
 		break;
@@ -1582,9 +1578,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 	/* Parse and set any attributes passed in */
 	if (attribs) {
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_server_prepare", 17, 0)) != NULL) {
-			int newval = (int)SvIV(*svp);
-			/* Default to "2" if an invalid value is passed in */
-			imp_sth->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
+			imp_sth->server_prepare = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
 		}
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_direct", 9, 0)) != NULL)
 			imp_sth->direct = 0==SvIV(*svp) ? DBDPG_FALSE : DBDPG_TRUE;
@@ -1638,7 +1632,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 	  We prepare it right away if:
 	  1. The statement is DML
 	  2. The attribute "direct" is false
-	  3. The attribute "pg_server_prepare" is not 0
+	  3. The attribute "pg_server_prepare" is true
 	  4. The attribute "pg_prepare_now" is true
 	  5. We are compiled on a 8 or greater server
 	*/
@@ -1653,7 +1647,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 
 	if (imp_sth->is_dml
 		&& !imp_sth->direct
-		&& 0 != imp_sth->server_prepare
+		&& imp_sth->server_prepare
 		&& imp_sth->prepare_now
 		) {
 		if (TRACE5_slow) TRC(DBILOGFP, "%sRunning an immediate prepare\n", THEADER_slow);
@@ -3200,14 +3194,12 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	   3. We have a CURRENT parameter
 	   4. pg_direct is true
 	   5. pg_server_prepare is false
-	   6. pg_server_prepare is 2, but all placeholders are not bound
 	*/
 	if (!imp_sth->is_dml
 		|| imp_sth->has_default
 		|| imp_sth->has_current
 		|| imp_sth->direct
 		|| !imp_sth->server_prepare
-		|| (2==imp_sth->server_prepare && imp_sth->numbound != imp_sth->numphs)
 		)
 		pqtype = PQTYPE_EXEC;
 	else if (0==imp_sth->switch_prepared || imp_sth->number_iterations < imp_sth->switch_prepared) {
@@ -3220,12 +3212,9 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	/* We use the new server_side prepare style if:
 	   1. The statement is DML (DDL is not preparable)
 	   2. The attribute "pg_direct" is false
-	   3. The attribute "pg_server_prepare" is not 0
+	   3. The attribute "pg_server_prepare" is true
 	   4. The "onetime" attribute has not been set
 	   5. There are no DEFAULT or CURRENT values
-	   6a. The attribute "pg_server_prepare" is 1
-	   OR
-	   6b. All placeholders are bound (and "pg_server_prepare" is 2)
 	*/
 	execsize = imp_sth->totalsize; /* Total of all segments */
 
