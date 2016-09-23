@@ -1535,12 +1535,12 @@ $attrib = $dbh->{Active};
 is ($attrib, '', $t);
 
 SKIP: {
-	skip ('Cannot test database handle "AutoInactiveDestroy" on a non-forking system', 9)
+	skip ('Cannot test database handle "AutoInactiveDestroy" on a non-forking system', 8)
 		if $^O =~ /Win/;
 
 	require Test::Simple;
 
-	skip ('Test::Simple version 0.47 or better required for testing of attribute "AutoInactiveDestroy"', 9)
+	skip ('Test::Simple version 0.47 or better required for testing of attribute "AutoInactiveDestroy"', 8)
 		if $Test::Simple::VERSION < 0.47;
 
 	# Test of forking. Hang on to your hats
@@ -1604,12 +1604,12 @@ $attrib = $dbh->{Active};
 is ($attrib, '', $t);
 
 SKIP: {
-	skip ('Cannot test database handle "InactiveDestroy" on a non-forking system', 8)
+	skip ('Cannot test database handle "InactiveDestroy" on a non-forking system', 7)
 		if $^O =~ /Win/;
 
 	require Test::Simple;
 
-	skip ('Test::Simple version 0.47 or better required for testing of attribute "InactiveDestroy"', 8)
+	skip ('Test::Simple version 0.47 or better required for testing of attribute "InactiveDestroy"', 7)
 		if $Test::Simple::VERSION < 0.47;
 
 	# Test of forking. Hang on to your hats
