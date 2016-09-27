@@ -1,3 +1,11 @@
+Version 3.5.4
+
+  - Fix skipped test counts in Win32 builds
+    [Andy Grundman]
+
+  - Fix UTF8 double-encoding with pg_enable_utf8 = 0
+    [Serge Pushkin]
+    (CPAN bug #103137)
 
 Version 3.5.3  Released October 1, 2015 (git commit 62ddf200106467ce9ad31d85715a4cdf63e8be14)
 
