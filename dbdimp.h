@@ -26,7 +26,7 @@ struct imp_dbh_st {
 	int     switch_prepared;   /* how many executes until we switch to PQexecPrepared */
 	int     async_status;      /* 0=no async 1=async started -1=async has been cancelled */
 
-    imp_sth_t *async_sth;      /* current async statement handle */
+	imp_sth_t *async_sth;      /* current async statement handle */
 	AV      *savepoints;       /* list of savepoints */
 	PGconn  *conn;             /* connection structure */
 	char    *sqlstate;         /* from the last result */
@@ -43,20 +43,11 @@ struct imp_dbh_st {
 
 	int     pg_enable_utf8;    /* legacy utf8 flag: force utf8 flag on or off, regardless of client_encoding */
 	bool    pg_utf8_flag;      /* are we currently flipping the utf8 flag on? */
-    bool    client_encoding_utf8; /* is the client_encoding utf8 last we checked? */
+	bool    client_encoding_utf8; /* is the client_encoding utf8 last we checked? */
 };
 
 
-/* Each statement is broken up into segments */
-struct seg_st {
-	char *segment;          /* non-placeholder string segment */
-	int placeholder;        /* which placeholder this points to, 0=none */
-	struct ph_st *ph;       /* points to the relevant ph structure */
-	struct seg_st *nextseg; /* linked lists are fun */
-};
-typedef struct seg_st seg_t;
-
-/* The placeholders are also a linked list */
+/* The placeholder structure. Used as array elements in the ph_array_t structure */
 struct ph_st {
 	char  *fooname;             /* name if using :foo style */
 	char  *value;               /* the literal passed-in value, may be binary */
@@ -70,9 +61,31 @@ struct ph_st {
 	bool   isinout;             /* is this a bind_param_inout value? */
 	SV     *inout;              /* what variable we are updating via inout magic */
 	sql_type_info_t* bind_type; /* type information for this placeholder */
-	struct ph_st *nextph;       /* more linked list goodness */
 };
 typedef struct ph_st ph_t;
+
+/* The array container for the above segment structure */
+struct ph_array_st {
+	int length;   /* length of the array */
+	int elements; /* num of elements in the array */
+	ph_t *array;     /* the array of placeholders */
+};
+typedef struct ph_array_st ph_array_t;
+
+
+/* Each statement is broken up into segments */
+struct seg_st {
+	char *segment;          /* non-placeholder string segment */
+	int placeholder;        /* which placeholder this points to, 0=none */
+};
+typedef struct seg_st seg_t;
+
+struct seg_array_st {
+	int length;
+	int elements;
+	seg_t *array;
+};
+typedef struct seg_array_st seg_array_t;
 
 typedef enum
 	{
@@ -89,7 +102,7 @@ struct imp_sth_st {
 
 	int    server_prepare;    /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
 	int    switch_prepared;   /* inherited from dbh */
-    int    number_iterations; /* how many times has the statement been executed? Used by switch_prepared */
+	int    number_iterations; /* how many times has the statement been executed? Used by switch_prepared */
 	PGPlaceholderType placeholder_type;  /* which style is being used 1=? 2=$1 3=:foo */
 	int    numsegs;           /* how many segments this statement has */
 	int    numphs;            /* how many placeholders this statement has */
@@ -111,8 +124,8 @@ struct imp_sth_st {
 	PGresult  *result;       /* result structure from the executed query */
 	sql_type_info_t **type_info; /* type of each column in result */
 
-	seg_t  *seg;             /* linked list of segments */
-	ph_t   *ph;              /* linked list of placeholders */
+	seg_array_t seg_ary;     /* array of segments */
+	ph_array_t ph_ary;       /* array of placeholders */
 
 	bool   prepare_now;      /* prepare this statement right away, even if it has placeholders */
 	bool   prepared_by_us;   /* false if {prepare_name} set directly */
