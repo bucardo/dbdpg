@@ -1220,9 +1220,10 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			retsv = newRV_noinc((SV*)arr);
 		}
 		else if (strEQ("pg_numbound", key)) {
-			int i;
-			for (i = 0; i < ph_array_count(imp_sth); i++) {
-				ph_t *currph = ph_array_element(imp_sth, i);
+			int i = 0;
+			int j;
+			for(j=0; j < ph_array_count(imp_sth); j++) {
+				ph_t *currph = ph_array_element(imp_sth, j);
 				i += NULL == currph->bind_type ? 0 : 1;
 			}
 			retsv = newSViv(i);
