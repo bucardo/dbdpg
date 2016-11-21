@@ -374,9 +374,9 @@ char * quote_name(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estr
 		char ch = *ptr;
 
 		if (
-			(ch < 'a' && ch > 'z')
+			(ch < 'a' || ch > 'z')
 			&& 
-			(ch < '0' && ch > '9')
+			(ch < '0' || ch > '9')
 			&&
 			ch != '_') {
 			safe = DBDPG_FALSE;
