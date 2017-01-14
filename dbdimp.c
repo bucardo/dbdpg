@@ -1008,6 +1008,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 } /* end of dbd_db_STORE_attrib */
 
 static SV * pg_st_placeholder_key (imp_sth_t * imp_sth, ph_t * currph, int i) {
+	dTHX;
 	if (PLACEHOLDER_COLON == imp_sth->placeholder_type)
 		return newSVpv(currph->fooname, 0);
 	return newSViv(i+1);
