@@ -866,5 +866,22 @@ pg_result(sth)
 
 #endif
 
+SV*
+pg_canonical_ids(sth)
+	SV *sth
+	CODE:
+		D_imp_sth(sth);
+		RETVAL = dbd_st_canonical_ids(sth, imp_sth);
+	OUTPUT:
+		RETVAL
+
+SV*
+pg_canonical_names(sth)
+	SV *sth
+	CODE:
+		D_imp_sth(sth);
+		RETVAL = dbd_st_canonical_names(sth, imp_sth);
+	OUTPUT:
+		RETVAL
 
 # end of Pg.xs

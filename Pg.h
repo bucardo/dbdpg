@@ -141,6 +141,7 @@ DBISTATE_DECLARE;
 #define TRACE_PQGETCOPYDATA        TRACE_XX "%sPQgetCopyData\n",         THEADER_slow)
 #define TRACE_PQGETISNULL          TRACE_XX "%sPQgetisnull\n",           THEADER_slow)
 #define TRACE_PQGETRESULT          TRACE_XX "%sPQgetResult\n",           THEADER_slow)
+#define TRACE_PQGETLENGTH          TRACE_XX "%sPQgetLength\n",           THEADER_slow)
 #define TRACE_PQGETVALUE           TRACE_XX "%sPQgetvalue\n",            THEADER_slow)
 #define TRACE_PQHOST               TRACE_XX "%sPQhost\n",                THEADER_slow)
 #define TRACE_PQISBUSY             TRACE_XX "%sPQisBusy\n",              THEADER_slow)

@@ -147,6 +147,8 @@ use 5.008001;
 			DBD::Pg::st->install_method('pg_cancel');
 			DBD::Pg::st->install_method('pg_result');
 			DBD::Pg::st->install_method('pg_ready');
+			DBD::Pg::st->install_method('pg_canonical_ids');
+			DBD::Pg::st->install_method('pg_canonical_names');
 
 			DBD::Pg::db->install_method('pg_lo_creat');
 			DBD::Pg::db->install_method('pg_lo_open');
@@ -3625,6 +3627,29 @@ available via the C<func> interface.
 For further information and examples about blobs, please read the chapter
 about Large Objects in the PostgreSQL Programmer's Guide at
 L<http://www.postgresql.org/docs/current/static/largeobjects.html>.
+
+=head3 B<pg_canonical_ids>
+
+  $data = $sth->pg_canonical_ids;
+
+DBD::Pg specific method. It returns Oid of table and position in table for
+every column in resultset.
+
+Returns array of arrays with F<Table Oid> and F<Column Position> for every
+column in resultset or undef if current column is not a simple reference.
+
+=head3 B<pg_canonical_names>
+
+  $data = $sth->pg_canonical_names;
+
+DBD::Pg specific method. It returns array of original (or canonical) names
+(from where this data is actually came from) of columns in
+F<Schema>.F<Table>.F<Column> format or undef if current column is not a
+simple reference.
+
+Note that this method is quite slow because it need additional information from
+server for every column that is simple reference. Consider to use L</pg_canonical_ids>
+instead.
 
 =head2 Statement Handle Attributes
 

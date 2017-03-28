@@ -21,7 +21,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 122;
+plan tests => 126;
 
 isnt ($dbh, undef, 'Connect to database for statement handle method testing');
 
@@ -738,6 +738,38 @@ SKIP: {
 	like ($@, qr/execute failed/, 'cancel');
 	$dbh2->disconnect();
 }
+
+#
+# Test of the statement handle methods "pg_canonical_names"
+#
+
+$t=q{Statement handle method "pg_canonical_names" returns expected values};
+$sth = $dbh->prepare("SELECT id, id AS not_id, id + 1 AS not_a_simple FROM dbd_pg_test LIMIT 1");
+$sth->execute;
+
+is_deeply($sth->pg_canonical_names, [
+    'dbd_pg_testschema.dbd_pg_test.id',
+    'dbd_pg_testschema.dbd_pg_test.id',
+    undef
+], $t);
+
+#
+# Test of the statement handle methods "pg_canonical_ids"
+#
+
+$t=q{Statement handle method "pg_canonical_ids" returns correct length};
+my $data = $sth->pg_canonical_ids;
+is ($#$data, 2, $t);
+
+$t=q{Statement handle method pg_canonical_ids has undef as the last element in returned array};
+is ($data->[2], undef, $t);
+
+$t=q{Statement handle method "pg_canonical_ids" returns identical first and second elements};
+$t=q{first and second array elements must be the same};
+is_deeply($data->[0], $data->[1], $t);
+
+$sth->finish;
+
 
 cleanup_database($dbh,'test');
 $dbh->rollback();
