@@ -43,6 +43,7 @@ sql_type_info_t* sql_type_data(int);
 #define             PG_FLOAT4  700
 #define             PG_FLOAT8  701
 #define          PG_GTSVECTOR  3642
+#define   PG_INDEX_AM_HANDLER  325
 #define               PG_INET  869
 #define               PG_INT2  21
 #define         PG_INT2VECTOR  22
@@ -68,6 +69,7 @@ sql_type_info_t* sql_type_data(int);
 #define               PG_PATH  602
 #define       PG_PG_ATTRIBUTE  75
 #define           PG_PG_CLASS  83
+#define     PG_PG_DDL_COMMAND  32
 #define             PG_PG_LSN  3220
 #define       PG_PG_NODE_TREE  194
 #define            PG_PG_PROC  81
@@ -79,10 +81,12 @@ sql_type_info_t* sql_type_data(int);
 #define           PG_REGCLASS  2205
 #define          PG_REGCONFIG  3734
 #define      PG_REGDICTIONARY  3769
+#define       PG_REGNAMESPACE  4089
 #define            PG_REGOPER  2203
 #define        PG_REGOPERATOR  2204
 #define            PG_REGPROC  24
 #define       PG_REGPROCEDURE  2202
+#define            PG_REGROLE  4096
 #define            PG_REGTYPE  2206
 #define            PG_RELTIME  703
 #define               PG_SMGR  210
@@ -94,6 +98,7 @@ sql_type_info_t* sql_type_data(int);
 #define             PG_TIMETZ  1266
 #define          PG_TINTERVAL  704
 #define            PG_TRIGGER  2279
+#define        PG_TSM_HANDLER  3310
 #define            PG_TSQUERY  3615
 #define            PG_TSRANGE  3908
 #define          PG_TSTZRANGE  3910
@@ -153,10 +158,12 @@ sql_type_info_t* sql_type_data(int);
 #define      PG_REGCLASSARRAY  2210
 #define     PG_REGCONFIGARRAY  3735
 #define PG_REGDICTIONARYARRAY  3770
+#define  PG_REGNAMESPACEARRAY  4090
 #define       PG_REGOPERARRAY  2208
 #define   PG_REGOPERATORARRAY  2209
 #define       PG_REGPROCARRAY  1008
 #define  PG_REGPROCEDUREARRAY  2207
+#define       PG_REGROLEARRAY  4097
 #define       PG_REGTYPEARRAY  2211
 #define       PG_RELTIMEARRAY  1024
 #define          PG_TEXTARRAY  1009
