@@ -128,7 +128,7 @@ static sql_type_info_t pg_types[] = {
  {PG_MACADDR           ,"macaddr"          ,1,',',"macaddr_out"         ,quote_string,dequote_string,{0},0},
  {PG_MONEY             ,"money"            ,1,',',"cash_out"            ,quote_string,dequote_string,{0},0},
  {PG_NAME              ,"name"             ,1,',',"nameout"             ,quote_name  ,null_dequote  ,{SQL_VARCHAR},0},
- {PG_NUMERIC           ,"numeric"          ,1,',',"numeric_out"         ,quote_float ,null_dequote  ,{SQL_DECIMAL},2},
+ {PG_NUMERIC           ,"numeric"          ,1,',',"numeric_out"         ,quote_float ,null_dequote  ,{SQL_NUMERIC},2},
  {PG_NUMRANGE          ,"numrange"         ,1,',',"range_out"           ,quote_string,dequote_string,{0},0},
  {PG_OID               ,"oid"              ,1,',',"oidout"              ,quote_int   ,null_dequote  ,{0},1},
  {PG_OIDVECTOR         ,"oidvector"        ,1,',',"oidvectorout"        ,quote_string,dequote_string,{0},0},
@@ -359,13 +359,13 @@ static sql_type_info_t sql_types[] = {
  {SQL_TYPE_DATE,"SQL_TYPE_DATE",1,',', "none", quote_string, dequote_string, {PG_DATE}, 0},
  {SQL_FLOAT,"SQL_FLOAT",1,',', "none", quote_float, null_dequote, {PG_FLOAT8}, 2},
  {SQL_DOUBLE,"SQL_DOUBLE",1,',', "none", quote_float, null_dequote, {PG_FLOAT8}, 2},
- {SQL_NUMERIC,"SQL_NUMERIC",1,',', "none", quote_float, null_dequote, {PG_FLOAT8}, 2},
  {SQL_REAL,"SQL_REAL",1,',', "none", quote_float, null_dequote, {PG_FLOAT8}, 2},
  {SQL_SMALLINT,"SQL_SMALLINT",1,',', "none", quote_int, null_dequote, {PG_INT2}, 1},
  {SQL_TINYINT,"SQL_TINYINT",1,',', "none", quote_int, null_dequote, {PG_INT2}, 1},
  {SQL_INTEGER,"SQL_INTEGER",1,',', "none", quote_int, null_dequote, {PG_INT4}, 1},
  {SQL_BIGINT,"SQL_BIGINT",1,',', "none", quote_int, null_dequote, {PG_INT8}, 0},
  {SQL_VARCHAR,"SQL_VARCHAR",1,',', "none", quote_name, null_dequote, {PG_NAME}, 0},
+ {SQL_NUMERIC,"SQL_NUMERIC",1,',', "none", quote_float, null_dequote, {PG_NUMERIC}, 2},
  {SQL_DECIMAL,"SQL_DECIMAL",1,',', "none", quote_float, null_dequote, {PG_NUMERIC}, 2},
  {SQL_LONGVARCHAR,"SQL_LONGVARCHAR",1,',', "none", quote_string, dequote_string, {PG_TEXT}, 0},
  {SQL_TYPE_TIME,"SQL_TYPE_TIME",1,',', "none", quote_string, dequote_string, {PG_TIME}, 0},
@@ -385,12 +385,12 @@ sql_type_info_t* sql_type_data(int sql_type)
 		case SQL_TYPE_DATE:                    return &sql_types[4];
 		case SQL_FLOAT:                        return &sql_types[5];
 		case SQL_DOUBLE:                       return &sql_types[6];
-		case SQL_NUMERIC:                      return &sql_types[7];
-		case SQL_REAL:                         return &sql_types[8];
-		case SQL_SMALLINT:                     return &sql_types[9];
-		case SQL_TINYINT:                      return &sql_types[10];
-		case SQL_INTEGER:                      return &sql_types[11];
-		case SQL_BIGINT:                       return &sql_types[12];
+		case SQL_REAL:                         return &sql_types[7];
+		case SQL_SMALLINT:                     return &sql_types[8];
+		case SQL_TINYINT:                      return &sql_types[9];
+		case SQL_INTEGER:                      return &sql_types[10];
+		case SQL_BIGINT:                       return &sql_types[11];
+		case SQL_NUMERIC:                      return &sql_types[13];
 		case SQL_DECIMAL:                      return &sql_types[14];
 		case SQL_LONGVARCHAR:                  return &sql_types[15];
 		case SQL_TYPE_TIME:                    return &sql_types[16];
@@ -775,8 +775,8 @@ int2     quote_int     null_dequote    SQL_SMALLINT|SQL_TINYINT  1  1
 int4     quote_int     null_dequote    SQL_INTEGER               1  1
 int8     quote_int     null_dequote    SQL_BIGINT                1  0
 float4   quote_float   null_dequote    0                         1  2
-float8   quote_float   null_dequote    SQL_FLOAT|SQL_DOUBLE|SQL_NUMERIC|SQL_REAL 1  2
-numeric  quote_float   null_dequote    SQL_DECIMAL               1  2
+float8   quote_float   null_dequote    SQL_FLOAT|SQL_DOUBLE|SQL_REAL 1  2
+numeric  quote_float   null_dequote    SQL_NUMERIC|SQL_DECIMAL   1  2
 oid      quote_int     null_dequote    0                         0  1
 name     quote_name    null_dequote    SQL_VARCHAR               0  0 ## XXX Wrong
 
