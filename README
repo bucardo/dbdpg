@@ -16,7 +16,7 @@ The mailing list is at:
 
 The development of DBD::Pg can be tracked at:
 
-    git://bucardo.org/dbdpg.git
+    git://github.com/bucardo/dbdpg.git
 
 For information about PostgreSQL, visit:
 

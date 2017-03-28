@@ -4281,7 +4281,7 @@ http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
 
 Patches can be submitted to rt.cpan.org. Detailed information on how to 
 help out with this module can be found in the README.dev file. The latest 
-development version can be obtained via: git clone git://bucardo.org/dbdpg.git
+development version can be obtained via: git clone git://github.com/bucardo/dbdpg.git
 
 =head1 AUTHORS
 
