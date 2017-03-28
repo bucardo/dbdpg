@@ -1,6 +1,6 @@
 #  -*-cperl-*-
 #
-#  Copyright (c) 2002-2016 Greg Sabino Mullane and others: see the Changes file
+#  Copyright (c) 2002-2017 Greg Sabino Mullane and others: see the Changes file
 #  Portions Copyright (c) 2002 Jeffrey W. Baker
 #  Portions Copyright (c) 1997-2001 Edmund Mergl
 #  Portions Copyright (c) 1994-1997 Tim Bunce
@@ -4303,7 +4303,7 @@ Visit the archives at http://grokbase.com/g/perl/dbd-pg
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 1994-2016, Greg Sabino Mullane
+Copyright (C) 1994-2017, Greg Sabino Mullane
 
 This module (DBD::Pg) is free software; you can redistribute it and/or modify it 
 under the same terms as Perl 5.10.0. For more details, see the full text of the 
