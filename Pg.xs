@@ -67,6 +67,7 @@ constant(name=Nullch)
 	PG_FLOAT8ARRAY        = 1022
 	PG_GTSVECTOR          = 3642
 	PG_GTSVECTORARRAY     = 3644
+	PG_INDEX_AM_HANDLER   = 325
 	PG_INET               = 869
 	PG_INETARRAY          = 1041
 	PG_INT2               = 21
@@ -112,6 +113,7 @@ constant(name=Nullch)
 	PG_PATHARRAY          = 1019
 	PG_PG_ATTRIBUTE       = 75
 	PG_PG_CLASS           = 83
+	PG_PG_DDL_COMMAND     = 32
 	PG_PG_LSN             = 3220
 	PG_PG_LSNARRAY        = 3221
 	PG_PG_NODE_TREE       = 194
@@ -131,6 +133,8 @@ constant(name=Nullch)
 	PG_REGCONFIGARRAY     = 3735
 	PG_REGDICTIONARY      = 3769
 	PG_REGDICTIONARYARRAY = 3770
+	PG_REGNAMESPACE       = 4089
+	PG_REGNAMESPACEARRAY  = 4090
 	PG_REGOPER            = 2203
 	PG_REGOPERARRAY       = 2208
 	PG_REGOPERATOR        = 2204
@@ -139,6 +143,8 @@ constant(name=Nullch)
 	PG_REGPROCARRAY       = 1008
 	PG_REGPROCEDURE       = 2202
 	PG_REGPROCEDUREARRAY  = 2207
+	PG_REGROLE            = 4096
+	PG_REGROLEARRAY       = 4097
 	PG_REGTYPE            = 2206
 	PG_REGTYPEARRAY       = 2211
 	PG_RELTIME            = 703
@@ -159,6 +165,7 @@ constant(name=Nullch)
 	PG_TINTERVAL          = 704
 	PG_TINTERVALARRAY     = 1025
 	PG_TRIGGER            = 2279
+	PG_TSM_HANDLER        = 3310
 	PG_TSQUERY            = 3615
 	PG_TSQUERYARRAY       = 3645
 	PG_TSRANGE            = 3908
@@ -866,5 +873,22 @@ pg_result(sth)
 
 #endif
 
+SV*
+pg_canonical_ids(sth)
+	SV *sth
+	CODE:
+		D_imp_sth(sth);
+		RETVAL = dbd_st_canonical_ids(sth, imp_sth);
+	OUTPUT:
+		RETVAL
+
+SV*
+pg_canonical_names(sth)
+	SV *sth
+	CODE:
+		D_imp_sth(sth);
+		RETVAL = dbd_st_canonical_names(sth, imp_sth);
+	OUTPUT:
+		RETVAL
 
 # end of Pg.xs

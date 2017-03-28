@@ -195,6 +195,13 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth);
 #define dbd_st_blob_read pg_st_blob_read
 int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, long len, SV * destrv, long destoffset);
 
+#define dbd_st_canonical_ids pg_st_canonical_ids
+SV* dbd_st_canonical_ids(SV *sth, imp_sth_t *imp_sth);
+
+#define dbd_st_canonical_names pg_st_canonical_names
+SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth);
+
+
 /* 
    Everything else should map back to the DBI version, or be handled by Pg.pm
    TODO: Explicitly map out each one.

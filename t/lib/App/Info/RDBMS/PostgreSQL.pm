@@ -268,15 +268,25 @@ my $get_version = sub {
             # Beta/devel/release candidates are treated as patch level "0"
             @{$self}{qw(version major minor patch)} =
               ($version, $x, $y, $z);
-        } elsif ($version =~ /(\d+)\.(\d+)/) {
+        }
+        elsif ($version =~ /^(\d)\.(\d+)/) {        # < v10
             # New versions, such as "7.4", are treated as patch level "0"
             @{$self}{qw(version major minor patch)} =
-              ($version, $1, $2, 0);
-        } else {
-            $self->error("Failed to parse PostgreSQL version parts from " .
-                         "string '$version'");
+                ($version, $1, $2, 0);
         }
-    } else {
+        elsif ($version =~ /^(\d{2,})\.(\d+)/) {    # >= v10
+            @{$self}{qw(version major minor patch)} =
+                ($version, $1, 0, $2); # from v10 onwards, $2 will be patch level
+        }
+        elsif ($version =~ /^(\d{2,})devel/) {
+            @{$self}{qw(version major minor patch)} =
+                ($version, $1, 0, 0);
+        }
+        else {
+            $self->error("Failed to parse PostgreSQL version parts from string '$version'");
+        }
+    }
+    else {
         $self->error("Unable to parse version from string '$data'");
     }
 };
@@ -342,7 +352,13 @@ sub version {
         # Create a validation code reference.
         my $chk_version = sub {
             # Try to get the version number parts.
-            my ($x, $y, $z) = /^(\d+)\.(\d+).(\d+)$/;
+            my ($x, $y, $z);
+            if ( /^(\d{2,})/) {
+                ($x, $y, $z ) = ($1, 0, 0);             #  >= v10
+            }
+            else {
+                ($x, $y, $z) = /^(\d)\.(\d+).(\d+)$/;   #  <  v10
+            }
             # Return false if we didn't get all three.
             return unless $x and defined $y and defined $z;
             # Save all three parts.

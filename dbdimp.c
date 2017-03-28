@@ -5346,6 +5346,113 @@ int dbd_st_cancel(SV *sth, imp_sth_t *imp_sth)
 
 } /* end of dbd_st_cancel */
 
+
+/* ================================================================== */
+/* 
+   Retrieves table oid and column position (in that table) for every column in resultset
+   Returns array of arrays of table oid and column pos or undef if column is not a simple reference
+*/
+SV* dbd_st_canonical_ids(SV *sth, imp_sth_t *imp_sth)
+{
+	dTHX;
+	TRACE_PQNFIELDS;
+	int fields = PQnfields(imp_sth->result);
+	AV* result = newAV();
+	av_extend(result, fields);
+	while(fields--){
+		int stored = 0;
+		TRACE_PQFTABLE;
+		int oid = PQftable(imp_sth->result, fields);
+		if(oid != InvalidOid){
+			TRACE_PQFTABLECOL;
+			int pos = PQftablecol(imp_sth->result, fields);
+			if(pos > 0){
+				AV * row = newAV();
+				av_extend(row, 2);
+				av_store(row, 0, newSViv(oid));
+				av_store(row, 1, newSViv(pos));
+				av_store(result, fields, newRV_noinc((SV *)row));
+				stored = 1;
+			}
+		}
+		if(!stored){
+			av_store(result, fields, newSV(0));
+		}
+	}
+	SV* sv = newRV_noinc((SV*) result);
+	return sv;
+
+} /* end of dbd_st_canonical_ids */
+
+
+/* ================================================================== */
+/* 
+   Retrieves canonical name (schema.table.column) for every column in resultset
+   Returns array of strings or undef if column is not a simple reference
+*/
+SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth)
+{
+	dTHX;
+	D_imp_dbh_from_sth;
+	ExecStatusType status = PGRES_FATAL_ERROR;
+	PGresult * result;
+	TRACE_PQNFIELDS;
+	int fields = PQnfields(imp_sth->result);
+	AV* result_av = newAV();
+	av_extend(result_av, fields);
+	while(fields--){
+		TRACE_PQFTABLE;
+		int oid = PQftable(imp_sth->result, fields);
+		int stored = 0;
+
+		if(oid != InvalidOid) {
+			TRACE_PQFTABLECOL;
+			int pos = PQftablecol(imp_sth->result, fields);
+			if(pos > 0){
+				char statement[200];
+				snprintf(statement, sizeof(statement),
+					"SELECT n.nspname, c.relname, a.attname FROM pg_class c LEFT JOIN pg_namespace n ON c.relnamespace = n.oid LEFT JOIN pg_attribute a ON a.attrelid = c.oid WHERE c.oid = %d AND a.attnum = %d", oid, pos);
+				TRACE_PQEXEC;
+				result = PQexec(imp_dbh->conn, statement);
+				TRACE_PQRESULTSTATUS;
+				status = PQresultStatus(result);
+				if (PGRES_TUPLES_OK == status) {
+					TRACE_PQNTUPLES;
+					if (PQntuples(result)!=0) {
+						TRACE_PQGETLENGTH;
+						int len = PQgetlength(result, 0, 0) + 1;
+						TRACE_PQGETLENGTH;
+						len += PQgetlength(result, 0, 1) + 1;
+						TRACE_PQGETLENGTH;
+						len += PQgetlength(result, 0, 2);
+						SV* table_name = newSV(len);
+						TRACE_PQGETVALUE;
+						char *nsp = PQgetvalue(result, 0, 0);
+						TRACE_PQGETVALUE;
+						char *tbl = PQgetvalue(result, 0, 1);
+						TRACE_PQGETVALUE;
+						char *col = PQgetvalue(result, 0, 2);
+						sv_setpvf(table_name, "%s.%s.%s", nsp, tbl, col);
+						if (imp_dbh->pg_utf8_flag)
+							SvUTF8_on(table_name);
+						av_store(result_av, fields, table_name);
+						stored = 1;
+					}
+				}
+				TRACE_PQCLEAR;
+				PQclear(result);
+			}
+		}
+		if(!stored){
+			av_store(result_av, fields, newSV(0));
+		}
+	}
+	SV* sv = newRV_noinc((SV*) result_av);
+	return sv;
+
+} /* end of dbd_st_canonical_names */
+
+
 /*
 Some information to keep you sane:
 typedef enum

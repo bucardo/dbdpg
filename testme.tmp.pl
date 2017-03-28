@@ -28,6 +28,10 @@ my $dbh = DBI->connect($DSN, '', '', {AutoCommit=>0,RaiseError=>1,PrintError=>0}
 my $me = $dbh->{Driver}{Name};
 print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::VERSION\n";
 
+print "Name: $dbh->{Name}\n";
+
+exit;
+
 #user_arrays();
 
 #commit_return_test();
