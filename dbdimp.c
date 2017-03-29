@@ -88,7 +88,6 @@ static int pg_db_rollback_commit (pTHX_ SV *dbh, imp_dbh_t *imp_dbh, int action)
 static SV *pg_st_placeholder_key (imp_sth_t *imp_sth, ph_t *currph, int i);
 static void pg_st_split_statement (pTHX_ imp_sth_t *imp_sth, int version, char *statement);
 static int pg_st_prepare_statement (pTHX_ SV *sth, imp_sth_t *imp_sth);
-static int is_high_bit_set(pTHX_ const unsigned char *val, STRLEN size);
 static int pg_st_deallocate_statement(pTHX_ SV *sth, imp_sth_t *imp_sth);
 static PGTransactionStatusType pg_db_txn_status (pTHX_ imp_dbh_t *imp_dbh);
 static int pg_db_start_txn (pTHX_ SV *dbh, imp_dbh_t *imp_dbh);
@@ -3626,16 +3625,6 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	return ret;
 
 } /* end of dbd_st_execute */
-
-
-/* ================================================================== */
-static int is_high_bit_set(pTHX_ const unsigned char * val, STRLEN size)
-{
-	if (TSTART_slow) TRC(DBILOGFP, "%sBegin is_high_bit_set\n", THEADER_slow);
-	while (*val && size--)
-		if (*val++ & 0x80) return 1;
-	return 0;
-}
 
 
 /* ================================================================== */
