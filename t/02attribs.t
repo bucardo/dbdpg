@@ -682,7 +682,7 @@ SKIP: {
 	is_deeply ($sth->{'NAME_uc_hash'}, {ID=>0, EXPO=>1, CASETEST=>2}, $t);
 
 	$t='Statement handle attribute "TYPE" returns correct info for RETURNING updates';
-	is_deeply ($sth->{'TYPE'}, [4,3,16], $t);
+	is_deeply ($sth->{'TYPE'}, [4,2,16], $t);
 
 	$t='Statement handle attribute "PRECISION" returns correct info for RETURNING updates';
 	is_deeply ($sth->{'PRECISION'}, [4,6,1], $t);
@@ -719,7 +719,7 @@ SKIP: {
 	is_deeply ($sth->{'NAME_uc_hash'}, {ID=>0, LII=>1, EXPO=>2, CASETEST=>3}, $t);
 
 	$t='Statement handle attribute "TYPE" returns correct info for RETURNING inserts';
-	is_deeply ($sth->{'TYPE'}, [4,4,3,16], $t);
+	is_deeply ($sth->{'TYPE'}, [4,4,2,16], $t);
 
 	$t='Statement handle attribute "PRECISION" returns correct info for RETURNING inserts';
 	is_deeply ($sth->{'PRECISION'}, [4,4,6,1], $t);
@@ -754,7 +754,7 @@ SKIP: {
 	is_deeply ($sth->{'NAME_uc_hash'}, {ID=>0, LII=>1, EXPO=>2, CASETEST=>3}, $t);
 
 	$t='Statement handle attribute "TYPE" returns correct info for RETURNING deletes';
-	is_deeply ($sth->{'TYPE'}, [4,4,3,16], $t);
+	is_deeply ($sth->{'TYPE'}, [4,4,2,16], $t);
 
 	$t='Statement handle attribute "PRECISION" returns correct info for RETURNING deletes';
 	is_deeply ($sth->{'PRECISION'}, [4,4,6,1], $t);
