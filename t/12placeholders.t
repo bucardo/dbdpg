@@ -779,14 +779,14 @@ like ($@, qr{Invalid integer}, 'Invalid integer test 2');
 ## Test quoting of the "name" type
 $prefix = q{The 'name' data type does correct quoting};
 
-for my $word (qw/User user USER trigger Trigger/) {
+for my $word (qw/User user USER trigger Trigger user-user/) {
 	$t = qq{$prefix for the word "$word"};
 	my $got = $dbh->quote($word, { pg_type => PG_NAME });
 	$expected = qq{"$word"};
 	is($got, $expected, $t);
 }
 
-for my $word (qw/auser userz user-user/) {
+for my $word (qw/auser userz/) {
 	$t = qq{$prefix for the word "$word"};
 	my $got = $dbh->quote($word, { pg_type => PG_NAME });
 	$expected = qq{$word};
