@@ -1,6 +1,11 @@
 
 Version 3.6.0
 
+  - Make sure we do not inadvertantly modify the string passed to prepare() when 
+    doing the new backslash escape manipulation.
+    [Greg Sabino Mullane]
+    (CPAN bug #114000)
+
   - Fix skipped test counts in Win32 builds
     [Andy Grundman]
 

@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 256;
+plan tests => 257;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -854,13 +854,20 @@ $dbh->commit();
 $dbh->do('create operator ?? (leftarg=text,rightarg=text,procedure=texteq)');
 $dbh->commit();
 
+## This is necessary to "reset" the var so we can test the modification properly
+undef $SQL;
+
 $SQL = qq{SELECT count(*) FROM dbd_pg_test WHERE id \\? ?}; ## no critic
+my $original_sql = "$SQL"; ## Need quotes because we don't want a shallow copy!
 $sth = $dbh->prepare($SQL);
 eval {
 	$count = $sth->execute(123);
 };
 is($@, '', $t);
 $sth->finish();
+
+$t = q{Basic placeholder escaping does NOT modify the original string}; ## RT 114000
+is ($SQL, $original_sql, $t);
 
 $t = q{Basic placeholder escaping works via backslash-question mark for \?\?};
 $SQL = qq{SELECT count(*) FROM dbd_pg_test WHERE pname \\?\\? ?}; ## no critic

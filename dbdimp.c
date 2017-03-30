@@ -1755,6 +1755,9 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 	ph_t *newph, *thisph, *currph = NULL; /* Placeholder structures to help build ll */
 
+    bool statement_rewritten = DBDPG_FALSE;
+    char * original_statement = NULL; /* Copy as needed so we can restore the original */
+
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_split_statement\n", THEADER_slow);
 	if (TRACE6_slow) TRC(DBILOGFP, "%spg_st_split_statement: (%s)\n", THEADER_slow, statement);
 
@@ -2010,6 +2013,12 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		  It will probably be removed at some point.
 		*/
 		if ('\\' == oldch && imp_dbh->ph_escaped) {
+            if (! statement_rewritten) {
+                Renew(original_statement, strlen(statement-currpos), char);
+                Copy(statement-currpos, original_statement, strlen(statement-currpos), char);
+                statement_rewritten = DBDPG_TRUE;
+            }
+
 			/* copy the placeholder-like character but ignore the backslash */
 			char *p = statement-2;
 			while(*p++) {
@@ -2254,6 +2263,12 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 	}
 
 	DBIc_NUM_PARAMS(imp_sth) = imp_sth->numphs;
+
+    if (statement_rewritten) {
+        Copy(original_statement, statement-currpos, strlen(original_statement), char);
+    }
+    Safefree(original_statement);
+
 
 	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_split_statement\n", THEADER_slow);
 	return;
