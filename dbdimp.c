@@ -3718,13 +3718,17 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 						else
 							sv_setiv(sv, '1' == *value ? 1 : 0);
 						break;
-					case PG_INT4:
 					case PG_INT2:
+					case PG_INT4:
 #if IVSIZE >= 8 && LONGSIZE >= 8
 					case PG_INT8:
 #endif
 						sv_setiv(sv, atol((char *)value));
 						break;
+                    case PG_FLOAT4:
+                    case PG_FLOAT8:
+                        sv_setnv(sv, strtod((char *)value, NULL));
+                        break;
 					default:
 						sv_setpvn(sv, (char *)value, value_len);
 					}
