@@ -4,26 +4,42 @@ Version 3.6.0
   - Make sure we do not inadvertantly modify the string passed to prepare() when 
     doing the new backslash escape manipulation.
     [Greg Sabino Mullane]
-    (CPAN bug #114000)
-
-  - Force real, float, and double precision into SvNVs
-    [Greg Sabino Mullane]
-    (CPAN bug #113683 and other places)
+    (CPAN ticket #114000)
 
   - Fix bug where $DBD::Pg::DBDPG_DEFAULT not picked up as a magic 
     string first time it is used in a script.
     [Greg Sabino Mullane]
-    (CPAN Bug #112309)
+    (CPAN ticket #112309)
+
+  - Fix UTF8 double-encoding with pg_enable_utf8 = 0
+    [Serge Pushkin]
+    (CPAN ticket #103137)
+
+  - Fix bug in quote_name which would fail to quote in some circumstances
+    (Github Issue #22)
+
+  - Allow clean parsing of new Postgres X.Y version format
+    [Erik Rijkers    er at xs4all.nl]
+
+  - Add pg_canonical_ids() and pg_canonical_names(), which returns information 
+    about each column in the result set.
+    [Warstone    warstone at list.ru]
+    (CPAN ticket #106858)
+
+  - Map SQL_NUMERIC to PG_NUMERIC (instead of PG_FLOAT8)
+    [Alice Maz    alice at alizemaz.com]
+    (CPAN ticket #120358)
+ 
+  - Force real, float, and double precision into SvNVs
+    [Greg Sabino Mullane]
+    (CPAN ticket #113683 and other places)
 
   - Fix skipped test counts in Win32 builds
     [Andy Grundman]
 
-  - Fix UTF8 double-encoding with pg_enable_utf8 = 0
-    [Serge Pushkin]
-    (CPAN bug #103137)
-
-  - Fix bug in quote_name which would fail to quote in some circumstances
-    (Github Issue #22)
+  - Allow tests to work against Postgres 8.4 by tweaking client_encoding calls.
+    [Pavel Raiskup    praiskup at redhat.com]
+    (CPAN ticket #116179)
 
   - Switched canonical repo to git://github.com/bucardo/dbdpg.git
 
