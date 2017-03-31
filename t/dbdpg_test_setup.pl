@@ -235,10 +235,6 @@ version: $version
 		$testuser = 'postgres';
 	}
 
-    # non-ASCII parts of the tests assume UTF8
-    $testdsn =~ s/;?\bclient_encoding=[^;]+//;
-    $testdsn .= ';client_encoding=utf8';
-
 	## From here on out, we don't return directly, but save it first
   GETHANDLE: {
 		eval {
@@ -554,7 +550,7 @@ version: $version
 		}
 
 		## Attempt to connect to this server
-		$testdsn = "dbi:Pg:dbname=postgres;client_encoding=utf8;port=$testport";
+		$testdsn = "dbi:Pg:dbname=postgres;port=$testport";
 		if ($^O =~ /Win32/) {
 			$testdsn .= ';host=localhost';
 		}
@@ -650,6 +646,11 @@ version: $version
 	$ENV{DBI_USER} = $testuser;
 
 	$debug and diag "Got a database handle ($dbh)";
+
+	if (!$arg->{quickreturn} or 1 != $arg->{quickreturn}) {
+		## non-ASCII parts of the tests assume UTF8
+		$dbh->do('SET client_encoding = utf8');
+	}
 
 	if ($arg->{quickreturn}) {
 		$debug and diag 'Returning via quickreturn';

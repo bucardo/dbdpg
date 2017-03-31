@@ -1100,7 +1100,7 @@ is ($attrib, 'st', $t);
 # Need a separate connection to keep the output size down
 #
 
-my $dbh4 = connect_database({quickreturn => 1});
+my $dbh4 = connect_database({quickreturn => 2});
 
 $t='Database handle attribute "ChildHandles" is an empty list on startup';
 $attrib = $dbh4->{ChildHandles};
@@ -1273,7 +1273,7 @@ if ($client_level ne 'error') {
 #
 
 $t='Database handle attribute "ErrCount" starts out at 0';
-$dbh4 = connect_database({quickreturn => 1});
+$dbh4 = connect_database({quickreturn => 2});
 is ($dbh4->{ErrCount}, 0, $t);
 
 $t='Database handle attribute "ErrCount" is incremented with set_err()';
