@@ -2496,7 +2496,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		croak("Cannot bind a non-scalar value (%s)", neatsvpv(newvalue,0));
 	}
 	/* dbi handle allowed for cursor variables */
-	if ((SvROK(newvalue) &&!IS_DBI_HANDLE(newvalue) &&!SvAMAGIC(newvalue))) {
+	if (SvROK(newvalue) &&!IS_DBI_HANDLE(newvalue)) {
 		if (strnEQ("DBD::Pg::DefaultValue", neatsvpv(newvalue,0), 21)
 			|| strnEQ("DBI::DefaultValue", neatsvpv(newvalue,0), 17)) {
 			/* This is a special type */
@@ -2525,7 +2525,11 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 			sv_2mortal(quotedval);
 			is_array = DBDPG_TRUE;
 		}
-		else {
+		else if (!SvAMAGIC(newvalue)) {
+            /*
+              We want to allow magic scalars on through - but we cannot check above,
+               because sometimes DBD::Pg::DefaultValue arrives as one!
+            */
 			croak("Cannot bind a reference\n");
 		}
 	}

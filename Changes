@@ -10,6 +10,11 @@ Version 3.6.0
     [Greg Sabino Mullane]
     (CPAN bug #113683 and other places)
 
+  - Fix bug where $DBD::Pg::DBDPG_DEFAULT not picked up as a magic 
+    string first time it is used in a script.
+    [Greg Sabino Mullane]
+    (CPAN Bug #112309)
+
   - Fix skipped test counts in Win32 builds
     [Andy Grundman]
 
