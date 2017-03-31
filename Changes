@@ -6,6 +6,10 @@ Version 3.6.0
     [Greg Sabino Mullane]
     (CPAN bug #114000)
 
+  - Force real, float, and double precision into SvNVs
+    [Greg Sabino Mullane]
+    (CPAN bug #113683 and other places)
+
   - Fix skipped test counts in Win32 builds
     [Andy Grundman]
 
