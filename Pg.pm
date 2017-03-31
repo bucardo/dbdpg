@@ -3639,10 +3639,10 @@ L<http://www.postgresql.org/docs/current/static/largeobjects.html>.
   $data = $sth->pg_canonical_ids;
 
 DBD::Pg specific method. It returns Oid of table and position in table for
-every column in resultset.
+every column in result set.
 
 Returns array of arrays with F<Table Oid> and F<Column Position> for every
-column in resultset or undef if current column is not a simple reference.
+column in result set or undef if current column is not a simple reference.
 
 =head3 B<pg_canonical_names>
 
