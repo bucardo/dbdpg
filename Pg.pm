@@ -1719,6 +1719,9 @@ The following connect statement shows almost all possible parameters:
                       {AutoCommit => 0, RaiseError => 1, PrintError => 0}
                      );
 
+Parameters containing unusual characters such as spaces can be wrapped in single quotes 
+around the value e.g. "dbi:Pg:dbname='spacey name';host=$host"
+
 If a parameter is not given, the connect() method will first look for 
 specific environment variables, and then fall back to hard-coded defaults:
 
