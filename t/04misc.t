@@ -385,13 +385,14 @@ SKIP: {
 # Test the use of $DBDPG_DEFAULT
 #
 
-$t=qq{Using \$DBDPG_DEFAULT ($DBDPG_DEFAULT) works};
+## Do NOT use the variable at all before the call - even in a string (test for RT #112309)
+$t=qq{Using \$DBDPG_DEFAULT works};
 $sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id, pname) VALUES (?,?)});
 eval {
-$sth->execute(600,$DBDPG_DEFAULT);
+    $sth->execute(600,$DBDPG_DEFAULT);
 };
-$sth->execute(602,123);
 is ($@, q{}, $t);
+$sth->execute(602,123);
 
 #
 # Test transaction status changes
