@@ -6,6 +6,7 @@ use 5.006;
 use strict;
 use warnings;
 use Test::More;
+use utf8;
 select(($|=1,select(STDERR),$|=1)[1]);
 
 my (@testfiles, $fh);
@@ -74,6 +75,7 @@ for my $file (qw/README Changes TODO README.dev README.win32/) {
 			s{\[.+?\]}{}gs;
 			s{\S+\@\S+\.\S+}{}gs;
 			s{git commit [a-f0-9]+}{git commit}gs;
+            s{B.*lint Szilakszi}{}gs;
 		}
 		elsif ($file eq 'README.dev') {
 			s/^\t\$.+//gsm;
@@ -223,6 +225,7 @@ dbh
 dbi
 DBI
 DBI's
+DBIx
 dbivport
 DBIXS
 dbmethod
@@ -275,6 +278,7 @@ gdb
 getcopydata
 getfd
 getline
+github
 greg
 GSM
 HandleError
@@ -376,6 +380,7 @@ php
 pid
 PID
 PlanetPostgresql
+POSIX
 Postgres
 POSTGRES
 postgres
@@ -558,6 +563,9 @@ XSUB
 yaml
 YAML
 yml
+JSON
+PQsetSingleRowMode
+quickexec
 
 ## TODO:
 ala
@@ -573,6 +581,7 @@ https
 ## README.dev:
 abc
 pgp
+dbix
 shortid
 bucardo
 Conway's
@@ -593,12 +602,14 @@ nytprofhtml
 profiler
 pulldown
 repo
+scsys
 spellcheck
 SvTRUE
 testallversions
 testfile
 testme
 txt
+uk
 XSubPPtmpAAAA
 
 ## README:
@@ -643,6 +654,11 @@ turnstep
 Ubuntu
 
 ## Changes:
+Bálint
+Github
+Refactor
+SvNVs
+signalling
 bigint
 boolean
 bucardo
@@ -653,6 +669,14 @@ Garamond
 gborg
 Hofmann
 BIGINT
+jsontable
+largeobjects
+repo
+BMP
+NOSUCH
+PGINITDB
+tableinfo
+dTHX
 bpchar
 oids
 perls
@@ -674,6 +698,7 @@ VC
 
 ## Pg.pm:
 onwards
+Oid
 lseg
 afterwards
 hashrefs
@@ -686,6 +711,16 @@ stringifiable
 struct
 
 ## dbdimp.c:
+Bytea
+DefaultValue
+PQstatus
+SvPV
+SvUTF
+alphanum
+pos
+pqtype
+rescan
+resultset
 ABCD
 AvARRAY
 BegunWork
@@ -800,6 +835,7 @@ SMALLINT
 SV
 TINYINT
 VARBINARY
+ndone
 arg
 arrayout
 binin
@@ -909,8 +945,12 @@ undefs
 ## t/12placeholders.t:
 encodings
 https
+LEFTARG
+RIGHTARG
 
 ## t/99_spellcheck.t:
+gsm
+sm
 Spellcheck
 ol
 textfiles

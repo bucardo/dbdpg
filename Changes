@@ -1,7 +1,7 @@
 
 Version 3.6.0
 
-  - Make sure we do not inadvertantly modify the string passed to prepare() when 
+  - Make sure we do not inadvertently modify the string passed to prepare() when 
     doing the new backslash escape manipulation.
     [Greg Sabino Mullane]
     (CPAN ticket #114000)
