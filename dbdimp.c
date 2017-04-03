@@ -3006,7 +3006,7 @@ static void pg_db_detect_client_encoding_utf8(pTHX_ imp_dbh_t *imp_dbh) {
 }
 
 /* ================================================================== */
-int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
+long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 {
 	dTHX;
 	D_imp_dbh(dbh);
@@ -3014,7 +3014,7 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 	ExecStatusType          status = PGRES_FATAL_ERROR; /* Assume the worst */
 	PGTransactionStatusType txn_status;
 	char *                  cmdStatus = NULL;
-	int                     rows = 0;
+	long                    rows = 0;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_quickexec (query: %s async: %d async_status: %d)\n",
 			THEADER_slow, sql, asyncflag, imp_dbh->async_status);
@@ -3039,7 +3039,7 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 		if (TRACE5_slow) TRC(DBILOGFP, "%shandling old async\n", THEADER_slow);
 		rows = handle_old_async(aTHX_ dbh, imp_dbh, asyncflag);
 		if (rows) {
-			if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (async rows: %d)\n", THEADER_slow, rows);
+			if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (async rows: %ld)\n", THEADER_slow, rows);
 			return rows;
 		}
 	}
@@ -3115,15 +3115,15 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 			/* INSERT(space)oid(space)numrows */
 			for (rows=8; cmdStatus[rows-1] != ' '; rows++) {
 			}
-			rows = atoi(cmdStatus + rows);
+			rows = atol(cmdStatus + rows);
 		}
 		else if (0 == strncmp(cmdStatus, "MOVE", 4)) {
-			rows = atoi(cmdStatus + 5);
+			rows = atol(cmdStatus + 5);
 		}
 		else if (0 == strncmp(cmdStatus, "DELETE", 6)
  			  || 0 == strncmp(cmdStatus, "UPDATE", 6)
  			  || 0 == strncmp(cmdStatus, "SELECT", 6)) {
-			rows = atoi(cmdStatus + 7);
+			rows = atol(cmdStatus + 7);
 		}
 		break;
 	case PGRES_COPY_OUT:
@@ -3170,7 +3170,7 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 		}
 	}
 
-	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (rows: %d, txn_status: %d)\n",
+	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (rows: %ld, txn_status: %d)\n",
 				  THEADER_slow, rows, txn_status);
 	return rows;
 
@@ -3179,7 +3179,7 @@ int pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 
 /* ================================================================== */
 /* Return value <= -2:error, >=0:ok row count, (-1=unknown count) */
-int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
+long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 {
 	dTHX;
 	D_imp_dbh_from_sth;
@@ -3190,7 +3190,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	seg_t *       currseg;
 	char *        statement = NULL;
 	int           num_fields;
-	int           ret = -2;
+	long          ret = -2;
 	PQExecType    pqtype = PQTYPE_UNKNOWN;
 	long          power_of_ten;
 	
@@ -3228,7 +3228,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		if (TRACE7_slow) TRC(DBILOGFP, "%sAttempting to handle existing async transaction\n", THEADER_slow);
 		ret = handle_old_async(aTHX_ sth, imp_dbh, imp_sth->async_flag);
 		if (ret) {
-			if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (async ret: %d)\n", THEADER_slow, ret);
+			if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (async ret: %ld)\n", THEADER_slow, ret);
 			return ret;
 		}
 	}
@@ -3572,7 +3572,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		TRACE_PQNTUPLES;
 		ret = PQntuples(imp_sth->result);
 		if (TRACE5_slow) TRC(DBILOGFP,
-						"%sStatus was PGRES_TUPLES_OK, fields=%d, tuples=%d\n",
+						"%sStatus was PGRES_TUPLES_OK, fields=%d, tuples=%ld\n",
 						THEADER_slow, num_fields, ret);
 	}
 	else if (PGRES_COMMAND_OK == status) {
@@ -3590,17 +3590,17 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				/* INSERT(space)oid(space)numrows */
 				for (ret=8; cmdStatus[ret-1] != ' '; ret++) {
 				}
-				ret = atoi(cmdStatus + ret);
+				ret = atol(cmdStatus + ret);
 				gotrows = DBDPG_TRUE;
 			}
 			else if (0 == strncmp(cmdStatus, "MOVE", 4)) {
-				ret = atoi(cmdStatus + 5);
+				ret = atol(cmdStatus + 5);
 				gotrows = DBDPG_TRUE;
 			}
 			else if (0 == strncmp(cmdStatus, "DELETE", 6)
 					 || 0 == strncmp(cmdStatus, "UPDATE", 6)
 					 || 0 == strncmp(cmdStatus, "SELECT", 6)) {
-				ret = atoi(cmdStatus + 7);
+				ret = atol(cmdStatus + 7);
 				gotrows = DBDPG_TRUE;
 			}
 		}
@@ -3640,7 +3640,7 @@ int dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	
 	imp_sth->rows = ret;
 
-	if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (rows: %d)\n", THEADER_slow, ret);
+	if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (rows: %ld)\n", THEADER_slow, ret);
 	return ret;
 
 } /* end of dbd_st_execute */
@@ -3827,7 +3827,7 @@ static void pg_db_free_savepoints_to (pTHX_ imp_dbh_t * imp_dbh, const char *sav
 
 
 /* ================================================================== */
-int dbd_st_rows (SV * sth, imp_sth_t * imp_sth)
+long dbd_st_rows (SV * sth, imp_sth_t * imp_sth)
 {
 	dTHX;
 
@@ -4981,12 +4981,12 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
 /* 
    Return the result of an asynchronous query, waiting if needed
 */
-int pg_db_result (SV *h, imp_dbh_t *imp_dbh)
+long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 {
 	dTHX;
 	PGresult *result;
 	ExecStatusType status = PGRES_FATAL_ERROR;
-	int rows = 0;
+	long rows = 0;
 	char *cmdStatus = NULL;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_result\n", THEADER_slow);
@@ -5024,15 +5024,15 @@ int pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 				/* INSERT(space)oid(space)numrows */
 				for (rows=8; cmdStatus[rows-1] != ' '; rows++) {
 				}
-				rows = atoi(cmdStatus + rows);
+				rows = atol(cmdStatus + rows);
 			}
 			else if (0 == strncmp(cmdStatus, "MOVE", 4)) {
-				rows = atoi(cmdStatus + 5);
+				rows = atol(cmdStatus + 5);
 			}
 			else if (0 == strncmp(cmdStatus, "DELETE", 6)
 					 || 0 == strncmp(cmdStatus, "UPDATE", 6)
 					 || 0 == strncmp(cmdStatus, "SELECT", 6)) {
-				rows = atoi(cmdStatus + 7);
+				rows = atol(cmdStatus + 7);
 			}
 			break;
 		case PGRES_COPY_OUT:
@@ -5075,7 +5075,7 @@ int pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 		imp_dbh->async_sth->async_status = 0;
 	}
 	imp_dbh->async_status = 0;
-	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (rows: %d)\n", THEADER_slow, rows);
+	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (rows: %ld)\n", THEADER_slow, rows);
 	return rows;
 
 } /* end of pg_db_result */

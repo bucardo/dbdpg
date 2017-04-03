@@ -34,6 +34,11 @@ Version 3.6.0
     [Greg Sabino Mullane]
     (CPAN ticket #113683 and other places)
 
+  - Support for number of rows greater than an "int". Requires support for same 
+    from a future version of libpq before it will work completely.
+    [Greg Sabino Mullane]
+    (CPAN ticket #102444)
+
   - Fix skipped test counts in Win32 builds
     [Andy Grundman]
 

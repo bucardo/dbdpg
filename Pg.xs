@@ -321,7 +321,7 @@ void do(dbh, statement, attr=Nullsv, ...)
 	PROTOTYPE: $$;$@
 	CODE:
 	{
-		int retval;
+		long retval;
 		int asyncflag = 0;
 
 		if (statement[0] == '\0') { /* Corner case */
@@ -860,7 +860,7 @@ void
 pg_result(sth)
 	SV * sth
 	CODE:
-		int ret;
+		long ret;
 		D_imp_sth(sth);
 		D_imp_dbh_from_sth;
 		ret = pg_db_result(sth, imp_dbh);

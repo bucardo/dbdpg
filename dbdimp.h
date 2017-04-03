@@ -95,7 +95,7 @@ struct imp_sth_st {
 	int    numphs;            /* how many placeholders this statement has */
 	int    numbound;          /* how many placeholders were explicitly bound by the client, not us */
 	int    cur_tuple;         /* current tuple being fetched */
-	int    rows;              /* number of affected rows */
+	long   rows;              /* number of affected rows */
 	int    async_flag;        /* async? 0=no 1=async 2=cancel 4=wait */
 	int    async_status;      /* 0=no async 1=async started -1=async has been cancelled */
 
@@ -175,13 +175,13 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV sql_type, SV * attribs, int is_inout, IV maxlen);
 
 #define dbd_st_execute pg_st_execute
-int dbd_st_execute (SV * sth, imp_sth_t * imp_sth);
+long dbd_st_execute (SV * sth, imp_sth_t * imp_sth);
 
 #define dbd_st_fetch  pg_st_fetch
 AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth);
 
 #define dbd_st_rows pg_st_rows
-int dbd_st_rows (SV * sth, imp_sth_t * imp_sth);
+long dbd_st_rows (SV * sth, imp_sth_t * imp_sth);
 
 #define dbd_st_finish  pg_st_finish
 int dbd_st_finish (SV * sth, imp_sth_t * imp_sth);
@@ -218,7 +218,7 @@ SV * pg_rightgraded_sv(pTHX_ SV *input, bool utf8);
 
 SV * pg_stringify_array(SV * input, const char * array_delim, int server_version, bool utf8);
 
-int pg_quickexec (SV *dbh, const char *sql, const int asyncflag);
+long pg_quickexec (SV *dbh, const char *sql, const int asyncflag);
 
 int pg_db_putline (SV *dbh, SV *svbuf);
 
@@ -266,7 +266,7 @@ unsigned int pg_db_lo_import_with_oid (SV *dbh, char *filename, unsigned int lob
 
 int pg_db_lo_export (SV *dbh, unsigned int lobjId, char *filename);
 
-int pg_db_result (SV *h, imp_dbh_t *imp_dbh);
+long pg_db_result (SV *h, imp_dbh_t *imp_dbh);
 
 int pg_db_ready(SV *h, imp_dbh_t *imp_dbh);
 
