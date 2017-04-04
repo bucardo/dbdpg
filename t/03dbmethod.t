@@ -594,11 +594,11 @@ my @expected = ('LOCAL TEMPORARY',
 
 $t='DB handle method "table_info" works when called with a type of %';
 $sth = $dbh->table_info('', '', '', '%');
-ok($sth, $t);
+ok ($sth, $t);
 
 $t='DB handle method "table_info" type list returns all expected types';
 my %advertised = map { $_->[0] => 1 } @{ $sth->fetchall_arrayref([3]) };
-is_deeply([sort keys %advertised], [sort @expected], $t);
+is_deeply ([sort keys %advertised], [sort @expected], $t);
 
 $t='DB handle method "table_info" object list returns no unadvertised types';
 $sth = $dbh->table_info('', '', '%');
@@ -606,7 +606,7 @@ my %surprises = map { $_->[0] => 1 }
                   grep { ! $advertised{$_->[0]} }
                     @{ $sth->fetchall_arrayref([3]) };
 
-is_deeply([keys %surprises], [], $t)
+is_deeply ([keys %surprises], [], $t)
   or diag('Objects of unexpected type(s) found: '
           . join(', ', sort keys %surprises));
 

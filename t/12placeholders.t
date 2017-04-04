@@ -477,7 +477,7 @@ SKIP: {
 	eval {
 		$dbh->do(q{SELECT ??}, undef, 'public', 'error');
 	};
-	is($dbh->state, '42601', $t);
+	is ($dbh->state, '42601', $t);
 }
 
 $t='Prepare/execute with non-DML placeholder works';
@@ -727,7 +727,7 @@ eval {
 	$val = $dbh->quote('123abc', SQL_INTEGER);
 };
 like ($@, qr{Invalid integer}, $t);
-is($val, -1, $t);
+is ($val, -1, $t);
 
 my $prefix = 'Valid float value works when quoting with SQL_FLOAT';
 for my $float ('123','0.00','0.234','23.31562', '1.23e04','6.54e+02','4e-3','NaN','Infinity','-infinity') {
@@ -783,14 +783,14 @@ for my $word (qw/User user USER trigger Trigger user-user/) {
 	$t = qq{$prefix for the word "$word"};
 	my $got = $dbh->quote($word, { pg_type => PG_NAME });
 	$expected = qq{"$word"};
-	is($got, $expected, $t);
+	is ($got, $expected, $t);
 }
 
 for my $word (qw/auser userz/) {
 	$t = qq{$prefix for the word "$word"};
 	my $got = $dbh->quote($word, { pg_type => PG_NAME });
 	$expected = qq{$word};
-	is($got, $expected, $t);
+	is ($got, $expected, $t);
 }
 
 ## Test quoting of booleans
@@ -863,7 +863,7 @@ $sth = $dbh->prepare($SQL);
 eval {
 	$count = $sth->execute(123);
 };
-is($@, '', $t);
+is ($@, '', $t);
 $sth->finish();
 
 $t = q{Basic placeholder escaping does NOT modify the original string}; ## RT 114000
@@ -875,7 +875,7 @@ $sth = $dbh->prepare($SQL);
 eval {
 	$count = $sth->execute('foobar');
 };
-is($@, '', $t);
+is ($@, '', $t);
 $sth->finish();
 
 ## This is an emergency hatch only. Hopefully will never be used in the wild!
@@ -886,7 +886,7 @@ $sth = $dbh->prepare($SQL);
 eval {
 	$count = $sth->execute('foobar');
 };
-like($@, qr{execute}, $t);
+like ($@, qr{execute}, $t);
 $sth->finish();
 
 ## The space before the colon is significant here
@@ -896,7 +896,7 @@ eval {
 	$sth->bind_param(':foo', 'abc');
 	$count = $sth->execute();
 };
-like($@, qr{execute}, $t);
+like ($@, qr{execute}, $t);
 $sth->finish();
 
 $t = q{Placeholder escaping works for colons};
@@ -907,7 +907,7 @@ eval {
 	$sth->bind_param(':foo', 'abc');
 	$count = $sth->execute();
 };
-is($@, '', $t);
+is ($@, '', $t);
 $sth->finish();
 
 

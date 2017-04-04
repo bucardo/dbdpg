@@ -744,7 +744,7 @@ SKIP: {
 #
 
 $t=q{Statement handle method "pg_canonical_names" returns expected values};
-$sth = $dbh->prepare("SELECT id, id AS not_id, id + 1 AS not_a_simple FROM dbd_pg_test LIMIT 1");
+$sth = $dbh->prepare('SELECT id, id AS not_id, id + 1 AS not_a_simple FROM dbd_pg_test LIMIT 1');
 $sth->execute;
 
 is_deeply($sth->pg_canonical_names, [
