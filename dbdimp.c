@@ -251,6 +251,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	imp_dbh->prepare_number    = 1;
 	imp_dbh->switch_prepared   = 2;
 	imp_dbh->copystate         = 0;
+	imp_dbh->copybinary        = DBDPG_FALSE;
 	imp_dbh->pg_errorlevel     = 1; /* Default */
 	imp_dbh->async_status      = 0;
 	imp_dbh->async_sth         = NULL;
@@ -3131,6 +3132,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 	case PGRES_COPY_BOTH:
 		/* Copy Out/In data transfer in progress */
 		imp_dbh->copystate = status;
+		imp_dbh->copybinary = PQbinaryTuples(result);
 		rows = -1;
 		break;
 	case PGRES_EMPTY_QUERY:
@@ -3625,6 +3627,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				THEADER_slow, PGRES_COPY_OUT == status ? "OUT" : "IN");
 		/* Copy Out/In data transfer in progress */
 		imp_dbh->copystate = status;
+		imp_dbh->copybinary = PQbinaryTuples(imp_sth->result);
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (COPY)\n", THEADER_slow);
 		return -1;
 	}
@@ -4127,7 +4130,7 @@ int pg_db_getline (SV * dbh, SV * svbuf, int length)
 		pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
 	}
 	else {
-		sv_setpv(svbuf, tempbuf);
+		sv_setpvn(svbuf, tempbuf, copystatus);
 		TRACE_PQFREEMEM;
 		PQfreemem(tempbuf);
 	}
@@ -4157,8 +4160,8 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 	copystatus = PQgetCopyData(imp_dbh->conn, &tempbuf, async);
 
 	if (copystatus > 0) {
-		sv_setpv(dataline, tempbuf);
-		if (imp_dbh->pg_utf8_flag)
+		sv_setpvn(dataline, tempbuf, copystatus);
+		if (imp_dbh->pg_utf8_flag && !imp_dbh->copybinary)
 			SvUTF8_on(dataline);
 		else
 			SvUTF8_off(dataline);
@@ -4223,7 +4226,7 @@ int pg_db_putcopydata (SV * dbh, SV * dataline)
 	if (PGRES_COPY_IN != imp_dbh->copystate)
 		croak("pg_putcopydata can only be called directly after issuing a COPY FROM command\n");
 
-	if (imp_dbh->pg_utf8_flag)
+	if (imp_dbh->pg_utf8_flag && !imp_dbh->copybinary)
 		copydata = SvPVutf8(dataline, copylen);
 	else
 		copydata = SvPVbyte(dataline, copylen);
@@ -5046,6 +5049,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 		case PGRES_COPY_BOTH:
 			/* Copy Out/In data transfer in progress */
 			imp_dbh->copystate = status;
+			imp_dbh->copybinary = PQbinaryTuples(result);
 			rows = -1;
 			break;
 		case PGRES_EMPTY_QUERY:

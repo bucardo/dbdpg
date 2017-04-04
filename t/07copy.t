@@ -15,13 +15,13 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if ($dbh) {
-	plan tests => 57;
+	plan tests => 62;
 }
 else {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 
-ok (defined $dbh, 'Connect to database for bytea testing');
+ok (defined $dbh, 'Connect to database for COPY testing');
 
 my ($result,$expected,@data,$t);
 
@@ -399,6 +399,34 @@ $dbh->do("COPY $table TO STDOUT");
 $result = $dbh->func($data[0], 100, 'getline');
 is ($result, 1, $t);
 1 while ($result = $dbh->func($data[0], 100, 'getline'));
+
+# Test binary copy mode
+$dbh->do("CREATE TEMP TABLE binarycopy AS SELECT 1::INTEGER AS x");
+$dbh->do("COPY binarycopy TO STDOUT BINARY");
+
+my $copydata;
+my $length = $dbh->pg_getcopydata($copydata);
+while ($dbh->pg_getcopydata(my $tmp) >= 0) {
+    $copydata .= $tmp;
+}
+
+ok (!utf8::is_utf8($copydata), 'pg_getcopydata clears UTF-8 flag on binary copy result');
+is (substr($copydata, 0, 11), "PGCOPY\n\377\r\n\0", 'pg_getcopydata preserves binary copy header signature');
+cmp_ok($length, '>=', 19, 'pg_getcopydata returns sane length of binary copy');
+
+$dbh->do("COPY binarycopy FROM STDIN BINARY");
+eval {
+    $dbh->pg_putcopydata($copydata);
+    $dbh->pg_putcopyend;
+};
+is $@, '', 'pg_putcopydata in binary mode works'
+    or diag $copydata;
+
+is_deeply(
+    $dbh->selectall_arrayref('SELECT * FROM binarycopy'),
+    [[1],[1]],
+    'COPY in binary mode roundtrips',
+);
 
 $dbh->do("DROP TABLE $table");
 $dbh->commit();
