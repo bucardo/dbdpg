@@ -59,6 +59,11 @@ for my $file (sort keys %filelist) {
 	}
 	close $fh or warn qq{Could not close "$file": $!\n};
 
+    if ($file eq 'README' and $lastversion =~ /_/) {
+        ## Beta gets two mentions in README
+        $expected++;
+    }
+
 	if ($instances != $expected) {
 		$goodcopies = 0;
 		diag "Version instance mismatch for $file: expected $expected, found $instances";
