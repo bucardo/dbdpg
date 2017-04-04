@@ -316,6 +316,9 @@ version: $version
 		elsif ($info =~ /(\d+\.\d+)/) {
 			$version = $1;
 		}
+		elsif ($info =~ /(\d+)devel/) { ## Can be 10devel
+			$version = $1;
+		}
 		else {
 			die "No version from initdb?! ($info)\n";
 		}
@@ -338,7 +341,9 @@ version: $version
 		warn "Please wait, creating new database for testing\n";
 		$info = '';
 		eval {
-			$info = qx{$initdb --locale=C -E UTF8 -D $testdir/data 2>&1};
+            my $com = "$initdb --locale=C -E UTF8 -D $testdir/data";
+			$debug and warn" Attempting: $com\n";
+			$info = qx{$com 2>&1};
 		};
 		last GETHANDLE if $@; ## Fail - initdb bad
 
@@ -489,7 +494,7 @@ version: $version
 			$debug and diag qq{Writing to "$conf"};
 			print $cfh "\n\n## DBD::Pg testing parameters\n";
 			print $cfh "port=$testport\n";
-			print $cfh "max_connections=5\n";
+			print $cfh "max_connections=11\n";
 			if ($version >= 8.0) {
 				print $cfh "log_statement = 'all'\n";
 				print $cfh "log_line_prefix = '%m [%p] '\n";
