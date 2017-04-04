@@ -50,8 +50,8 @@ Here is what each file in the distribution does:
 * Text files:
 
 Changes - lists changes made to each version. Please be consistent and use 
-  tabs, not spaces, to indent. Try to list who found the bug, and who 
-  fixed it (if not the same person). Put the CPAN bug # in parenthesis, 
+  spaces, not tabs, to indent. Try to list who found the bug, and who 
+  fixed it (if not the same person). Put the CPAN ticket # in parenthesis, 
   and put the person who made the actual changes in brackets. This file 
   contains a version number.
 
@@ -88,6 +88,8 @@ META.yml - YAML description file. Updated by hand and contains a version number 
 
 lib/Bundle/DBD/Pg.pm - Simple file used to enable perl -MCPAN -e 'install Bundle::DBD::Pg'
   Contains a version number.
+
+MYMETA.yml, MYMETA.json - Files automatically created: can be ignored.
 
 
 * Distribution files:
@@ -132,7 +134,7 @@ quote.c - Various methods to help quote and dequote variables. Some of this is
 quote.h - Header file for quote.c
 
 types.c - Lists all known data types for PostgreSQL.
-  Run as a perl script to check for new types and rewrites the following:
+  Can be run as a perl script to check for new types; rewrites the following:
   types.h types.c Pg.xs Pg.pm t/01constants.t 99_pod.t
 
 types.h - Header file for types.c
@@ -268,7 +270,7 @@ Please feel free to add to and clarify the above lists.
 =============
 
 All the perl files should have a cperl pragma at the top of the file, for easy use in emacs. 
-Please use tabs and not spaces everywhere, and keep the indenting to the cperl standard.
+Please use the same whitespace as surrounding code, and keep the indenting to the cperl standard.
 Use the traditional C mode for *.c files. Pg.xs is a special case: if you know of a good 
 mode for editing this file, please let us know and update this paragraph!
 
@@ -528,7 +530,7 @@ the first release candidate would be 2.2.3_1. A second would be 2.2.3_2 etc.
 Version numbers are currently set in six files:
 
 README (one place, two if a beta version)
-Pg.pm (two places)
+Pg.pm (three places)
 Changes
 Makefile.PL
 META.yml (three places)
@@ -581,7 +583,7 @@ other sections referenced herein (indicated with **)
 
 * Make sure everything is up to date in git (git status)
 
-* Update the versions (see ** Version Numbers) in README, Pg.pm (2 places!), Makefile.PL, 
+* Update the versions (see ** Version Numbers) in README, Pg.pm (3 places!), Makefile.PL, 
   lib/Bundle/DBD/Pg.pm, META.yml (3 places!), and Changes. Run the t/00_release.t file 
   to double check you got everything.
 
@@ -687,11 +689,11 @@ and adding it in. If not, bug them.
 
 http://www.postgresql.org/community/weeklynews/
 
-* Tell Greg to post on PlanetPostgresql.
+* Tell Greg to post on planet.postgresql.org
 
-* If a non-beta, clean out any CPAN bugs, including going back and marking resolved 
+* If a non-beta, clean out any CPAN and github bugs, including going back and marking resolved 
 bugs with this new version, once it appears in the choices (takes a day or two for 
-the version to appear as a choice in the pulldown).
+the version to appear as a choice in the pulldown on CPAN).
 
 * Check the CPAN testers report a few days after the PAUSE upload:
 http://www.cpantesters.org/distro/D/DBD-Pg.html
@@ -807,8 +809,6 @@ There are many ways to search the Postgres mailing lists:
 
 http://postgresql.markmail.org/
 
-http://www.nabble.com/PostgreSQL-f759.html
-
 http://archives.postgresql.org/
 
 http://groups.google.com/ (add group:pgsql.*)
@@ -849,3 +849,4 @@ perldoc DBI::Profile
 
 
 Also see perldoc DBI::DBD. It's fairly old and incomplete, but still useful.
+
