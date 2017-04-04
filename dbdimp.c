@@ -4160,6 +4160,8 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 		sv_setpv(dataline, tempbuf);
 		if (imp_dbh->pg_utf8_flag)
 			SvUTF8_on(dataline);
+		else
+			SvUTF8_off(dataline);
 		TRACE_PQFREEMEM;
 		PQfreemem(tempbuf);
 	}
@@ -4212,6 +4214,8 @@ int pg_db_putcopydata (SV * dbh, SV * dataline)
 	dTHX;
 	D_imp_dbh(dbh);
 	int copystatus;
+	const char *copydata;
+	STRLEN copylen;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_putcopydata\n", THEADER_slow);
 
@@ -4219,13 +4223,13 @@ int pg_db_putcopydata (SV * dbh, SV * dataline)
 	if (PGRES_COPY_IN != imp_dbh->copystate)
 		croak("pg_putcopydata can only be called directly after issuing a COPY FROM command\n");
 
+	if (imp_dbh->pg_utf8_flag)
+		copydata = SvPVutf8(dataline, copylen);
+	else
+		copydata = SvPVbyte(dataline, copylen);
+
 	TRACE_PQPUTCOPYDATA;
-	copystatus = PQputCopyData
-		(
-		 imp_dbh->conn,
-		 SvUTF8(dataline) ? SvPVutf8_nolen(dataline) : SvPV_nolen(dataline),
-		 (int)sv_len(dataline)
-		 );
+	copystatus = PQputCopyData(imp_dbh->conn, copydata, copylen);
 
 	if (1 == copystatus) {
 	}
