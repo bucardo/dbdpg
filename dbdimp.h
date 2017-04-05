@@ -21,6 +21,7 @@ struct imp_dbh_st {
 	int     pid_number;        /* prefixed before prepare_number */
 	int     prepare_number;    /* internal prepared statement name modifier */
 	int     copystate;         /* 0=none PGRES_COPY_IN PGRES_COPY_OUT */
+	bool    copybinary;        /* whether the copy is in binary format */
 	int     pg_errorlevel;     /* PQsetErrorVerbosity. Set by user, defaults to 1 */
 	int     server_prepare;    /* do we want to use PQexecPrepared? 0=no 1=yes 2=smart. Can be changed by user */
 	int     switch_prepared;   /* how many executes until we switch to PQexecPrepared */
