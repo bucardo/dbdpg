@@ -11,6 +11,9 @@ Version 3.5.9_1 (beta for 3.6.0)
     [Greg Sabino Mullane]
     (CPAN ticket #112309)
 
+  - Fix UTF8 flag handling in pg_(get|put)copydata
+    [Dagfinn Ilmari Mannsåker]
+
   - Fix UTF8 double-encoding with pg_enable_utf8 = 0
     [Serge Pushkin]
     (CPAN ticket #103137)
@@ -47,9 +50,6 @@ Version 3.5.9_1 (beta for 3.6.0)
     (CPAN ticket #116179)
 
   - Silence warnings in t/02attribs.t and t/04misc.t
-    [Dagfinn Ilmari Mannsåker]
-
-  - Fix UTF8 flag handling in pg_(get|put)copydata
     [Dagfinn Ilmari Mannsåker]
 
   - Support binary COPY format
