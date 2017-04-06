@@ -421,6 +421,9 @@ version: $version
 
 		## Attempt to boost the system oids above an int for certain testing
 		(my $resetxlog = $initdb) =~ s/initdb/pg_resetxlog/;
+		if ($version >= 10) {
+			$resetxlog =~ s/pg_resetxlog/pg_resetwal/;
+		}
 		eval {
 			$info = qx{$resetxlog --help};
 		};
