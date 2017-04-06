@@ -55,6 +55,9 @@ Version 3.5.9_1 (beta for 3.6.0)
   - Support binary COPY format
     [Dagfinn Ilmari Mannsåker]
 
+  - Ensure tests do not use $ENV{PGSERVICE} or $ENV{PGDATABASE}
+    [Erik Rijkers]
+
   - Switched canonical repo to git://github.com/bucardo/dbdpg.git
 
 
