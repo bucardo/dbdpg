@@ -30,6 +30,8 @@ print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::V
 
 print "Name: $dbh->{Name}\n";
 
+fatal_client();
+
 exit;
 
 #user_arrays();
@@ -40,7 +42,30 @@ exit;
 
 #memory_leak_test_bug_65734();
 
-memory_leak_arrays();
+#memory_leak_arrays();
+
+sub fatal_client {
+
+    ## RT 109591
+
+    print "Test of client_min_messages FATAL and resulting errstr\n";
+
+    $dbh->do(q{SET client_min_messages = 'FATAL'});
+
+    eval {
+        $dbh->do('SELECT 1 FROM nonesuch');
+    };
+
+    printf "\$@ is: %s\n", $@;
+    printf "errstr is: %s\n", $dbh->errstr;
+    printf "state is: %s\n", $dbh->state;
+
+
+    exit;
+
+
+} ## end of fatal_client
+
 
 sub memory_leak_arrays {
 
