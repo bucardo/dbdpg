@@ -427,7 +427,6 @@ is ($@, q{}, $t);
 
 ## Check for problems in pg_st_split_statement by having it parse long strings
 my $problem;
-diag 'Checking pg_st_split_statement. This may take a while...';
 for my $length (0..16384) {
     my $sql = sprintf 'SELECT %*d', $length + 3, $length;
     my $cur_len = $dbh->selectrow_array($sql);
