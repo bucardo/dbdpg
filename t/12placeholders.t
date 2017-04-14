@@ -890,7 +890,7 @@ like ($@, qr{execute}, $t);
 $sth->finish();
 
 ## The space before the colon is significant here
-$SQL = qq{SELECT testarray [1 :5] FROM dbd_pg_test WHERE pname = :foo};
+$SQL = q{SELECT testarray [1 :5] FROM dbd_pg_test WHERE pname = :foo};
 $sth = $dbh->prepare($SQL);
 eval {
 	$sth->bind_param(':foo', 'abc');
@@ -901,7 +901,7 @@ $sth->finish();
 
 $t = q{Placeholder escaping works for colons};
 $dbh->{pg_placeholder_escaped} = 1;
-$SQL = qq{SELECT testarray [1 \\:5] FROM dbd_pg_test WHERE pname = :foo};
+$SQL = q{SELECT testarray [1 \:5] FROM dbd_pg_test WHERE pname = :foo};
 $sth = $dbh->prepare($SQL);
 eval {
 	$sth->bind_param(':foo', 'abc');

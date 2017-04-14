@@ -237,7 +237,7 @@ for my $filename (@pm_files) {
 	while (<$fh>) {
 		last if /^=/;
 	}
-	next if ! defined $_;
+	next if ! defined $_; ## no critic
 	## Assume the rest is POD.
 	my $passed = 1;
 	while (<$fh>) {

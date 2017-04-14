@@ -109,7 +109,7 @@ foreach (@tests) {
             is(utf8::is_utf8($test->{sql}), ($state eq 'upgraded'), "$desc query has correct flag")
                 if $test->{qtype} =~ /^interpolated/;
             if ($state ne 'mixed') {
-                foreach my $arg (map { ref($_) ? @{$_} : $_ } @args) {
+                foreach my $arg (map { ref($_) ? @{$_} : $_ } @args) { ## no critic
                     is(utf8::is_utf8($arg), ($state eq 'upgraded'), "$desc arg has correct flag")
                 }
             }
@@ -118,7 +118,7 @@ foreach (@tests) {
             ## Skip pg_enable_utf=0 for now
             if (0 == $enable_utf8) {
                 if ($range eq 'latin 1 range' or $range eq 'base plane' or $range eq 'astral plane') {
-                    pass "Skipping test of pg_enable_utf=0 with $range";
+                    pass ("Skipping test of pg_enable_utf=0 with $range");
                     next;
                 }
             }

@@ -401,8 +401,8 @@ is ($result, 1, $t);
 1 while ($result = $dbh->func($data[0], 100, 'getline'));
 
 # Test binary copy mode
-$dbh->do("CREATE TEMP TABLE binarycopy AS SELECT 1::INTEGER AS x");
-$dbh->do("COPY binarycopy TO STDOUT BINARY");
+$dbh->do('CREATE TEMP TABLE binarycopy AS SELECT 1::INTEGER AS x');
+$dbh->do('COPY binarycopy TO STDOUT BINARY');
 
 my $copydata;
 my $length = $dbh->pg_getcopydata($copydata);
@@ -412,9 +412,9 @@ while ($dbh->pg_getcopydata(my $tmp) >= 0) {
 
 ok (!utf8::is_utf8($copydata), 'pg_getcopydata clears UTF-8 flag on binary copy result');
 is (substr($copydata, 0, 11), "PGCOPY\n\377\r\n\0", 'pg_getcopydata preserves binary copy header signature');
-cmp_ok($length, '>=', 19, 'pg_getcopydata returns sane length of binary copy');
+cmp_ok ($length, '>=', 19, 'pg_getcopydata returns sane length of binary copy');
 
-$dbh->do("COPY binarycopy FROM STDIN BINARY");
+$dbh->do('COPY binarycopy FROM STDIN BINARY');
 eval {
     $dbh->pg_putcopydata($copydata);
     $dbh->pg_putcopyend;
@@ -422,7 +422,7 @@ eval {
 is $@, '', 'pg_putcopydata in binary mode works'
     or diag $copydata;
 
-is_deeply(
+is_deeply (
     $dbh->selectall_arrayref('SELECT * FROM binarycopy'),
     [[1],[1]],
     'COPY in binary mode roundtrips',

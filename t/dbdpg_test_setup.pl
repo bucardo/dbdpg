@@ -81,7 +81,7 @@ sub connect_database {
 	my $info;
 	my $olddir = getcwd;
 	my $debug = $ENV{DBDPG_DEBUG} || 0;
-	delete @ENV{ "PGSERVICE", "PGDATABASE" };
+	delete @ENV{ 'PGSERVICE', 'PGDATABASE' };
 
 
 	## We'll try various ways to get to a database to test with

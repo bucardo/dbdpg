@@ -110,6 +110,7 @@ for my $file (sort keys %fileslurp) {
 		for my $func (sort keys %{$fileslurp{$file}{$linenum}}) {
 			$t=qq{Test::More method "$func" is in standard format inside $file at line $linenum};
 			## Must be at start of line (optional whitespace and comment), a space, a paren, and something interesting
+            next if $func =~ /\w+ fail/;
 			like ($fileslurp{$file}{$linenum}{$func}, qr{^\s*#?$func \(['\S]}, $t);
 		}
 	}

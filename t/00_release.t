@@ -45,7 +45,7 @@ for my $file (sort keys %filelist) {
 	open my $fh, '<', $file or die qq{Could not open "$file": $!\n};
   SLURP: while (<$fh>) {
 		for my $regex (@{ $regexlist }) {
-			if ($_ =~ /$regex/) {
+			if (/$regex/) {
 				my $foundversion = $1;
 				push @{$v{$file}} => [$foundversion, $.];
 				if ($lastversion =~ /\d/ and $foundversion ne $lastversion) {

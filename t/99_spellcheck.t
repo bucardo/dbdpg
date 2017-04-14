@@ -611,6 +611,8 @@ testme
 txt
 uk
 XSubPPtmpAAAA
+json
+MYMETA
 
 ## README:
 BOOTCHECK
