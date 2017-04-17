@@ -1,5 +1,5 @@
 
-Version 3.6.0
+Version 3.6.0  Released April 17, 2017 (git tag 3.6.0)
 
   - Make sure we do not inadvertently modify the string passed to prepare() when 
     doing the new backslash escape manipulation.
