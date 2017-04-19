@@ -181,6 +181,8 @@ t/30unicode.t - Test Unicode. Or at least UTF8.
 
 t/99cleanup.t - Removes anything we have created for the tests (e.g. tables)
 
+t/99_lint.t - Various minor code cleanliness checks. Requires TEST_CRITIC to be set.
+
 t/99_perlcritic.t - Uses Perl::Critic to check Pg.pm and all of the test files.
   Requires that TEST_CRITIC is set. It is recommended that you get all the 
   Perl::Critic policies via Bundle::Perl::Critic::IncludingOptionalDependencies.

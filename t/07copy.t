@@ -422,11 +422,8 @@ eval {
 is $@, '', 'pg_putcopydata in binary mode works'
     or diag $copydata;
 
-is_deeply (
-    $dbh->selectall_arrayref('SELECT * FROM binarycopy'),
-    [[1],[1]],
-    'COPY in binary mode roundtrips',
-);
+$t=q{COPY in binary mode roundtrips};
+is_deeply ($dbh->selectall_arrayref('SELECT * FROM binarycopy'), [[1],[1]], $t);
 
 $dbh->do("DROP TABLE $table");
 $dbh->commit();

@@ -29,6 +29,7 @@ cover_db/
 dbdpg_test_database/*
 versiontest/*
 t/00_release.t
+t/99_lint.t
 t/99_perlcritic.t
 t/99_pod.t
 t/99_spellcheck.t
