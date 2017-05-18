@@ -318,7 +318,7 @@ version: $version
 		elsif ($info =~ /(\d+\.\d+)/) {
 			$version = $1;
 		}
-		elsif ($info =~ /(\d+)devel/) { ## Can be 10devel
+		elsif ($info =~ /(\d+)(?:devel|beta)/) { ## Can be 10devel
 			$version = $1;
 		}
 		else {
