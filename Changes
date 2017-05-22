@@ -1,4 +1,11 @@
 
+
+Version 3.6.1  Released May 22, 2017 (git tag 3.6.1)
+
+  - Various fixes to support testing against Postgres 10beta
+    [David Christensen]
+
+
 Version 3.6.0  Released April 17, 2017 (git tag 3.6.0)
 
   - Make sure we do not inadvertently modify the string passed to prepare() when 

@@ -199,7 +199,6 @@ t/99_spellcheck.t - Checks the spelling of everything it can.
 dbdpg_test_database - May be created by the test suite as a place to store 
 a new database cluster.
 
-
 * Helper files
 
 The module App::Info is inside the t/lib directory (we put it there to prevent CPAN 
