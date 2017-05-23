@@ -1,5 +1,11 @@
 
 
+Version 3.6.2  Released May 23, 2017 (git tag 3.6.2)
+
+  - Remove errant debugging aid from test suite
+
+
+
 Version 3.6.1  Released May 22, 2017 (git tag 3.6.1)
 
   - Various fixes to support testing against Postgres 10beta
