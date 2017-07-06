@@ -660,6 +660,7 @@ version: $version
 	if (!$arg->{quickreturn} or 1 != $arg->{quickreturn}) {
 		## non-ASCII parts of the tests assume UTF8
 		$dbh->do('SET client_encoding = utf8');
+		$dbh->{pg_enable_utf8} = -1;
 	}
 
 	if ($arg->{quickreturn}) {

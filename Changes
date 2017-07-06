@@ -1,4 +1,6 @@
 
+  - Fix running tests with non-UTF8 server_encoding
+    (Github issue #26)
 
 Version 3.6.2  Released May 23, 2017 (git tag 3.6.2)
 
