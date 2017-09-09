@@ -1535,7 +1535,7 @@ use 5.008001;
         }
         elsif ($ans eq 'ODBCVERSION') {
             my $version = $dbh->{private_dbdpg}{version};
-            return '00.00.0000' unless $version =~ /^(\d\d?)(\d\d)(\d\d)$/o;
+            return '00.00.0000' unless $version =~ /^(\d\d?)(\d\d)(\d\d)$/;
             return sprintf '%02d.%02d.%.2d00', $1,$2,$3;
         }
         elsif ($ans eq 'DBDVERSION') {
