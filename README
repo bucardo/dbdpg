@@ -37,7 +37,7 @@ REQUIREMENTS:
 DBD::Pg needs to know where to find the libpq libraries: this is usually done 
 by checking the output of the pg_config executable. If pg_config is not available, 
 then you may need to install the development package for PostgreSQL. To do this 
-on Debian and Ubuntu, use: apt-get install postgresql-dev; on RedHat and CentOS, 
+on Debian and Ubuntu, use: apt-get install libpq-dev; on RedHat and CentOS, 
 use: yum install postgresql-devel. Note that the development libraries are needed 
 even if you already have PostgreSQL up and running.
 
