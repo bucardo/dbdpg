@@ -1541,6 +1541,7 @@ use 5.008001;
         elsif ($ans eq 'DBDVERSION') {
             my $simpleversion = $DBD::Pg::VERSION;
             $simpleversion =~ s/_/./g;
+            no warnings 'redundant';
             return sprintf '%02d.%02d.%1d%1d%1d%1d', split (/\./, "$simpleversion.0.0.0.0.0.0");
         }
          elsif ($ans eq 'KEYWORDS') {
