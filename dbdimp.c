@@ -224,13 +224,20 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 
 	if (imp_dbh->pg_server_version <= 0) {
 		int	cnt, vmaj, vmin, vrev;
-		cnt = sscanf(PQparameterStatus(imp_dbh->conn, "server_version"), "%d.%d.%d",
-					 &vmaj, &vmin, &vrev);
-		if (cnt >= 2) {
-			if (cnt == 2) /* Account for devel version e.g. 8.3beta1 */
-				vrev = 0;
-			imp_dbh->pg_server_version = (100 * vmaj + vmin) * 100 + vrev;
+        const char *vers = PQparameterStatus(imp_dbh->conn, "server_version");
+
+        if (NULL != vers) {
+			cnt = sscanf(vers, "%d.%d.%d",
+						 &vmaj, &vmin, &vrev);
+			if (cnt >= 2) {
+				if (cnt == 2) /* Account for devel version e.g. 8.3beta1 */
+					vrev = 0;
+				imp_dbh->pg_server_version = (100 * vmaj + vmin) * 100 + vrev;
+			}
 		}
+        else {
+            imp_dbh->pg_server_version = PG_UNKNOWN_VERSION ;
+        }
 	}
 
 	pg_db_detect_client_encoding_utf8(aTHX_ imp_dbh);

@@ -26,6 +26,7 @@ static int errno;
 #define PG_ASYNC 1
 #define PG_OLDQUERY_CANCEL 2
 #define PG_OLDQUERY_WAIT 4
+#define PG_UNKNOWN_VERSION 0
 
 /* Force preprocessors to use this variable. Default to something valid yet noticeable */
 #ifndef PGLIBVERSION
