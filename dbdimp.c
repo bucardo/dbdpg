@@ -2992,18 +2992,23 @@ static void pg_db_detect_client_encoding_utf8(pTHX_ imp_dbh_t *imp_dbh) {
 	int i, j;
 	const char * const client_encoding =
 		PQparameterStatus(imp_dbh->conn, "client_encoding");
-	STRLEN len = strlen(client_encoding);
-	Newx(clean_encoding, len + 1, char);
-	for (i = 0, j = 0; i < len; i++) {
-		const char c = toLOWER(client_encoding[i]);
-		if (isALPHA(c) || isDIGIT(c))
-			clean_encoding[j++] = c;
-	};
-	clean_encoding[j] = '\0';
-	imp_dbh->client_encoding_utf8 =
-		(strnEQ(clean_encoding, "utf8", 4) || strnEQ(clean_encoding, "unicode", 8))
-		? DBDPG_TRUE : DBDPG_FALSE;
-	Safefree(clean_encoding);
+	if (NULL != client_encoding) {
+		STRLEN len = strlen(client_encoding);
+		Newx(clean_encoding, len + 1, char);
+		for (i = 0, j = 0; i < len; i++) {
+			const char c = toLOWER(client_encoding[i]);
+			if (isALPHA(c) || isDIGIT(c))
+				clean_encoding[j++] = c;
+		};
+		clean_encoding[j] = '\0';
+		imp_dbh->client_encoding_utf8 =
+			(strnEQ(clean_encoding, "utf8", 4) || strnEQ(clean_encoding, "unicode", 8))
+			? DBDPG_TRUE : DBDPG_FALSE;
+		Safefree(clean_encoding);
+	}
+	else {
+		imp_dbh->client_encoding_utf8 = DBDPG_FALSE;
+	}
 }
 
 /* ================================================================== */
