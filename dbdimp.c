@@ -4076,7 +4076,7 @@ int pg_db_putline (SV * dbh, SV * svbuf)
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_putline\n", THEADER_slow);
 
 	/* We must be in COPY IN state */
-	if (PGRES_COPY_IN != imp_dbh->copystate || PGRES_COPY_BOTH != imp_dbh->copystate)
+	if (PGRES_COPY_IN != imp_dbh->copystate && PGRES_COPY_BOTH != imp_dbh->copystate)
 		croak("pg_putline can only be called directly after issuing a COPY FROM command\n");
 
 	if (!svbuf || !SvOK(svbuf))
@@ -4120,7 +4120,7 @@ int pg_db_getline (SV * dbh, SV * svbuf, int length)
 	tempbuf = NULL;
 
 	/* We must be in COPY OUT state */
-	if (PGRES_COPY_OUT != imp_dbh->copystate || PGRES_COPY_BOTH != imp_dbh->copystate)
+	if (PGRES_COPY_OUT != imp_dbh->copystate && PGRES_COPY_BOTH != imp_dbh->copystate)
 		croak("pg_getline can only be called directly after issuing a COPY TO command\n");
 
 	length = 0; /* Make compilers happy */
@@ -4163,7 +4163,7 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_getcopydata\n", THEADER_slow);
 
 	/* We must be in COPY OUT state */
-	if (PGRES_COPY_OUT != imp_dbh->copystate || PGRES_COPY_BOTH != imp_dbh->copystate)
+	if (PGRES_COPY_OUT != imp_dbh->copystate && PGRES_COPY_BOTH != imp_dbh->copystate)
 		croak("pg_getcopydata can only be called directly after issuing a COPY TO command\n");
 
 	tempbuf = NULL;
@@ -4235,7 +4235,7 @@ int pg_db_putcopydata (SV * dbh, SV * dataline)
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_putcopydata\n", THEADER_slow);
 
 	/* We must be in COPY IN state */
-	if (PGRES_COPY_IN != imp_dbh->copystate || PGRES_COPY_BOTH != imp_dbh->copystate)
+	if (PGRES_COPY_IN != imp_dbh->copystate && PGRES_COPY_BOTH != imp_dbh->copystate)
 		croak("pg_putcopydata can only be called directly after issuing a COPY FROM command\n");
 
 	if (imp_dbh->pg_utf8_flag && !imp_dbh->copybinary)
