@@ -278,7 +278,7 @@ my $get_version = sub {
             @{$self}{qw(version major minor patch)} =
                 ($version, $1, 0, $2); # from v10 onwards, $2 will be patch level
         }
-        elsif ($version =~ /^(\d{2,})(devel|beta)/) {
+        elsif ($version =~ /^(\d{2,})(devel|beta|rc|alpha)/) {
             @{$self}{qw(version major minor patch)} =
                 ($version, $1, 0, 0);
         }
