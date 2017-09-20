@@ -1,4 +1,8 @@
 
+
+Version 3.7.0
+
+
   - If no placeholders, use PQexec instead of PQexecParams
     [Greg Sabino Mullane]
 
