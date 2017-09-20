@@ -518,6 +518,21 @@ version: $version
 			print $cfh "log_filename = 'postgres%Y-%m-%d.log'\n";
 			print $cfh "log_rotation_size = 0\n";
 
+			if ($version >= 9.4) {
+				print $cfh "wal_level = logical\n";
+				print $cfh "max_replication_slots = 1\n";
+				print $cfh "max_wal_senders = 1\n";
+
+				open my $hba, '>>', "$testdir/data/pg_hba.conf"
+					or die qq{Could not open "$testdir/data/pg_hba.conf": $!\n};
+
+				print $hba "local\treplication\tall\ttrust\n";
+				print $hba "host\treplication\tall\t127.0.0.1/32\ttrust\n";
+				print $hba "host\treplication\tall\t::1/128\ttrust\n";
+
+				close $hba or die qq{Could not close "$testdir/data/pg_hba.conf": $!\n};
+			}
+
 			print $cfh "listen_addresses='127.0.0.1'\n" if $^O =~ /Win32/;
 			print $cfh "\n";
 			close $cfh or die qq{Could not close "$conf": $!\n};
