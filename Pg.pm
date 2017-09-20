@@ -2531,6 +2531,15 @@ Again, you may set it param time as well:
     {pg_placeholder_nocolons => 1});
   $sth->execute(1);
 
+It should be noted that placeholders only work when used outside of a literal string context; i.e.,
+the following examples will B<not> define/use any placeholders due to appearing inside strings
+within the SQL:
+
+  $sth = $dbh->prepare(q{SELECT id FROM mytable WHERE text LIKE '%?'});
+  $dbh->do(q{DO LANGUAGE plpgsql $$ BEGIN RAISE NOTICE ?; END $$}, undef, $message);
+
+See the DBI placeholder documentation for more details.
+
 =head3 B<prepare_cached>
 
   $sth = $dbh->prepare_cached($statement, \%attr);
