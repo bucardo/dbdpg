@@ -7,6 +7,9 @@
     [David Christensen, reported by Marko Tiikkaja]
   - Fix crash with missing server_version
     [David Christensen]
+  - Fix leak in ->state methods
+    [Dagfinn Ilmari Mannsåker]
+    (Github issue #30)
 
 Version 3.6.2  Released May 23, 2017 (git tag 3.6.2)
 
