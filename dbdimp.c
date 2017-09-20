@@ -4247,6 +4247,12 @@ int pg_db_putcopydata (SV * dbh, SV * dataline)
 	copystatus = PQputCopyData(imp_dbh->conn, copydata, copylen);
 
 	if (1 == copystatus) {
+		if (PGRES_COPY_BOTH == imp_dbh->copystate && PQflush(imp_dbh->conn)) {
+			_fatal_sqlstate(aTHX_ imp_dbh);
+
+			TRACE_PQERRORMESSAGE;
+			pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+		}
 	}
 	else if (0 == copystatus) { /* non-blocking mode only */
 	}
