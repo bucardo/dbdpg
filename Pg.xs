@@ -311,7 +311,9 @@ void state(dbh)
 	SV *dbh
 	CODE:
 	D_imp_dbh(dbh);
-	ST(0) = strEQ(imp_dbh->sqlstate,"00000") ? &PL_sv_no : newSVpv(imp_dbh->sqlstate, 5);
+	ST(0) = strEQ(imp_dbh->sqlstate,"00000")
+          ? &PL_sv_no
+          : sv_2mortal(newSVpv(imp_dbh->sqlstate, 5));
 
 
 void do(dbh, statement, attr=Nullsv, ...)
@@ -830,7 +832,9 @@ SV *sth;
 	CODE:
 		D_imp_sth(sth);
 		D_imp_dbh_from_sth;
-		ST(0) = strEQ(imp_dbh->sqlstate,"00000") ? &PL_sv_no : newSVpv(imp_dbh->sqlstate, 5);
+		ST(0) = strEQ(imp_dbh->sqlstate,"00000")
+                  ? &PL_sv_no
+                  : sv_2mortal(newSVpv(imp_dbh->sqlstate, 5));
 
 void
 pg_ready(sth)
