@@ -3301,18 +3301,20 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	/* Increment our count */
 	imp_sth->number_iterations++;
 
-	/* We must use PQexec if:
+	/* We use PQexec if:
 	   1. The statement is *not* DML (e.g. is DDL, which cannot be prepared)
 	   2. We have a DEFAULT parameter
 	   3. We have a CURRENT parameter
 	   4. pg_direct is true
-	   5. pg_server_prepare is false
-	   6. pg_server_prepare is 2, but all placeholders are not bound
+	   5. There are no placeholders
+	   6. pg_server_prepare is false
+	   7. pg_server_prepare is 2, but all placeholders are not bound
 	*/
 	if (!imp_sth->is_dml
 		|| imp_sth->has_default
 		|| imp_sth->has_current
 		|| imp_sth->direct
+		|| !imp_sth->numphs
 		|| !imp_sth->server_prepare
 		|| (2==imp_sth->server_prepare && imp_sth->numbound != imp_sth->numphs)
 		)

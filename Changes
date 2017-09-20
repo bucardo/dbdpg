@@ -1,12 +1,18 @@
 
+  - If no placeholders, use PQexec instead of PQexecParams
+    [Greg Sabino Mullane]
+
   - Fix running tests with non-UTF8 server_encoding
     [Dagfinn Ilmari Mannsåker]
     (Github issue #26)
+
   - Fix crash with missing client_encoding
     (Github issue #29)
     [David Christensen, reported by Marko Tiikkaja]
+
   - Fix crash with missing server_version
     [David Christensen]
+
   - Fix leak in ->state methods
     [Dagfinn Ilmari Mannsåker]
     (Github issue #30)
