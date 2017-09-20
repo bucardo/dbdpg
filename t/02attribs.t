@@ -8,7 +8,7 @@ use warnings;
 use Data::Dumper;
 use Test::More;
 use DBI     ':sql_types';
-use DBD::Pg ':pg_types';
+use DBD::Pg qw/ :pg_types :async /;
 use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
@@ -18,7 +18,7 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 259;
+plan tests => 271;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -28,6 +28,7 @@ my $attributes_tested = q{
 
 d = database handle specific
 s = statement handle specific
+b = both database and statement handle
 a = any type of handle (but we usually use database)
 
 In order:
@@ -76,6 +77,7 @@ s pg_size
 s pg_type
 s pg_oid_status
 s pg_cmd_status
+b pg_async_status
 
 a Active
 a Executed
@@ -952,6 +954,44 @@ q{SELECT * FROM dbd_pg_test},
 	$sth->finish();
 	like ($result, qr/^$expected/, $t);
 }
+
+#
+# Test of the datbase and statement handle attribute "pg_async_status"
+#
+
+$t=q{Statement handle attribute "pg_async_status" returns a 0 as default value};
+is ($sth->{pg_async_status}, 0, $t);
+$t=q{Database handle attribute "pg_async_status" returns a 0 as default value};
+is ($dbh->{pg_async_status}, 0, $t);
+
+$t=q{Statement handle attribute "pg_async_status" returns a 0 after a normal prepare};
+$sth = $dbh->prepare('SELECT 123');
+is ($sth->{pg_async_status}, 0, $t);
+$t=q{Database handle attribute "pg_async_status" returns a 0 after a normal prepare};
+is ($dbh->{pg_async_status}, 0, $t);
+
+$t=q{Statement handle attribute "pg_async_status" returns a 0 after a normal execute};
+$sth->execute();
+is ($sth->{pg_async_status}, 0, $t);
+$t=q{Database handle attribute "pg_async_status" returns a 0 after a normal execute};
+is ($sth->{pg_async_status}, 0, $t);
+
+$t=q{Statement handle attribute "pg_async_status" returns a 0 after an asynchronous prepare};
+$sth = $dbh->prepare('SELECT 123', { pg_async => PG_ASYNC });
+is ($sth->{pg_async_status}, 0, $t);
+$t=q{Database handle attribute "pg_async_status" returns a 0 after an asynchronous prepare};
+is ($dbh->{pg_async_status}, 0, $t);
+$sth->execute();
+$t=q{Statement handle attribute "pg_async_status" returns a 1 after an asynchronous execute};
+is ($sth->{pg_async_status}, 1, $t);
+$t=q{Database handle attribute "pg_async_status" returns a 1 after an asynchronous execute};
+is ($dbh->{pg_async_status}, 1, $t);
+
+$t=q{Statement handle attribute "pg_async_status" returns a -1 after a cancel};
+$dbh->pg_cancel();
+is ($sth->{pg_async_status}, -1, $t);
+$t=q{Database handle attribute "pg_async_status" returns a -1 after a cancel};
+is ($dbh->{pg_async_status}, -1, $t);
 
 #
 # Test of the handle attribute "Active"

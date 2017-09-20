@@ -1146,10 +1146,12 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			retsv = newSViv(imp_sth->cur_tuple);
 		break;
 
-	case 15: /* pg_prepare_name */
+	case 15: /* pg_prepare_name pg_async_status */
 
 		if (strEQ("pg_prepare_name", key))
 			retsv = newSVpv((char *)imp_sth->prepare_name, 0);
+		else if (strEQ("pg_async_status", key))
+			retsv = newSViv((IV)imp_sth->async_status);
 		break;
 
 	case 17: /* pg_server_prepare */

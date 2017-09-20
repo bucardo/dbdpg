@@ -3857,6 +3857,13 @@ being treated as a placeholder.
 DBD::Pg specific attribute. Indicates the current behavior for asynchronous queries. See the section 
 on L</Asynchronous Constants> for more information.
 
+=head3 B<pg_async_status> (integer, read-only)
+
+DBD::Pg specific attribute. Returns the current status of an L<asynchronous|/Asynchronous Queries>
+command. 0 indicates no asynchronous command is in progress, 1 indicates that 
+an asynchronous command has started and -1 indicated that an asynchronous command 
+has been cancelled.
+
 =head3 B<RowsInCache>
 
 Not used by DBD::Pg
