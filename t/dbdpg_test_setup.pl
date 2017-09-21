@@ -285,7 +285,9 @@ version: $version
 		$helpconnect = 16;
 
 		## Use the initdb found by App::Info
-		$initdb = $ENV{DBDPG_INITDB} || $ENV{PGINITDB} || '';
+        if (! length $initdb or $initdb eq 'default') {
+            $initdb = $ENV{DBDPG_INITDB} || $ENV{PGINITDB} || '';
+        }
 		if (!$initdb or ! -e $initdb) {
 			$initdb = 'initdb';
 		}
@@ -781,13 +783,20 @@ sub get_test_settings {
 
 	## Find the best candidate for the pg_ctl program
 	my $pg_ctl = 'pg_ctl';
-	if (exists $ENV{DBDPG_INITDB} and -e $ENV{DBDPG_INITDB}) {
+    my $initdb = 'default';
+    if (exists $ENV{POSTGRES_HOME} and -e "$ENV{POSTGRES_HOME}/bin/pg_ctl") {
+        $pg_ctl = "$ENV{POSTGRES_HOME}/bin/pg_ctl";
+        $initdb = "$ENV{POSTGRES_HOME}/bin/initdb";
+    }
+	elsif (exists $ENV{DBDPG_INITDB} and -e $ENV{DBDPG_INITDB}) {
 		($pg_ctl = $ENV{DBDPG_INITDB}) =~ s/initdb/pg_ctl/;
-	} elsif (exists $ENV{PGINITDB} and -e $ENV{PGINITDB}) {
+	}
+    elsif (exists $ENV{PGINITDB} and -e $ENV{PGINITDB}) {
 		($pg_ctl = $ENV{PGINITDB}) =~ s/initdb/pg_ctl/;
 	}
+
 	my ($testdsn, $testuser, $testdir, $error) = ('','','','?');
-	my ($helpconnect, $su, $uid, $initdb, $version) = (0,'','','default',0);
+	my ($helpconnect, $su, $uid, $version) = (0,'','',0);
 	my $inerror = 0;
 	if (-e $helpfile) {
 		open $fh, '<', $helpfile or die qq{Could not open "$helpfile": $!\n};
