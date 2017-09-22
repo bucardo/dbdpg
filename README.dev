@@ -519,7 +519,7 @@ something (see 20savepoints.t for an example).
 == Version Numbers ==
 =====================
 
-Version numbers follow the Postgres convention: major, minor, and revision. (Note: older versions 
+Version numbers follow the older Postgres convention: major, minor, and revision. (Note: older versions 
 of DBD::Pg used a two-number system up until version 1.49, after which it switched to 2.0.0).
 The major number should very, very rarely change, and is saved for the truly major changes 
 (e.g. those that may cause backwards compatibility problems). The minor revision is used to 
