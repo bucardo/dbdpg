@@ -9,7 +9,6 @@ https://github.com/bucardo/dbdpg
 
 
 - ShowErrorStatement should work even for "quickexec" do() calls. (RT #120268)
-- Allow sth attribute to show async status (RT #116172)
 - Remove final reference to 'adsrc' column in Pg.pm
 - Make all tests work when server and/or client encoding is SQL_ASCII
 - Enable native JSON decoding, similar to arrays, perhaps with JSON::PP
