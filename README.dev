@@ -179,6 +179,8 @@ t/20savepoints.t - Test savepoints. Requires a server version 8.0 or up.
 
 t/30unicode.t - Test Unicode. Or at least UTF8.
 
+t/40replication.t - Test logical replication. Work in progress
+
 t/99cleanup.t - Removes anything we have created for the tests (e.g. tables)
 
 t/99_lint.t - Various minor code cleanliness checks. Requires TEST_CRITIC to be set.
