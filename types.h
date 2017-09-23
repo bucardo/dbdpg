@@ -59,6 +59,7 @@ sql_type_info_t* sql_type_data(int);
 #define               PG_LINE  628
 #define               PG_LSEG  601
 #define            PG_MACADDR  829
+#define           PG_MACADDR8  774
 #define              PG_MONEY  790
 #define               PG_NAME  19
 #define            PG_NUMERIC  1700
@@ -70,7 +71,9 @@ sql_type_info_t* sql_type_data(int);
 #define       PG_PG_ATTRIBUTE  75
 #define           PG_PG_CLASS  83
 #define     PG_PG_DDL_COMMAND  32
+#define    PG_PG_DEPENDENCIES  3402
 #define             PG_PG_LSN  3220
+#define       PG_PG_NDISTINCT  3361
 #define       PG_PG_NODE_TREE  194
 #define            PG_PG_PROC  81
 #define            PG_PG_TYPE  71
@@ -142,6 +145,7 @@ sql_type_info_t* sql_type_data(int);
 #define         PG_JSONBARRAY  3807
 #define          PG_LINEARRAY  629
 #define          PG_LSEGARRAY  1018
+#define      PG_MACADDR8ARRAY  775
 #define       PG_MACADDRARRAY  1040
 #define         PG_MONEYARRAY  791
 #define          PG_NAMEARRAY  1003
