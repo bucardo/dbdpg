@@ -1,6 +1,6 @@
 
 
-Version 3.7.0
+Version 3.6.9_2
 
 
   - If no placeholders, use PQexec instead of PQexecParams
