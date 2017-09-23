@@ -16,7 +16,7 @@ use 5.008001;
 {
 	package DBD::Pg;
 
-	use version; our $VERSION = qv('3.7.0');
+	use version; our $VERSION = qv('3.6.9_1');
 
 	use DBI ();
 	use DynaLoader ();
@@ -1541,7 +1541,7 @@ use 5.008001;
         elsif ($ans eq 'DBDVERSION') {
             my $simpleversion = $DBD::Pg::VERSION;
             $simpleversion =~ s/_/./g;
-            no warnings 'redundant';
+            no warnings;
             return sprintf '%02d.%02d.%1d%1d%1d%1d', split (/\./, "$simpleversion.0.0.0.0.0.0");
         }
          elsif ($ans eq 'KEYWORDS') {
@@ -1682,7 +1682,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 3.7.0 of the DBD::Pg module
+This documents version 3.6.9_1 of the DBD::Pg module
 
 =head1 DESCRIPTION
 
@@ -2756,7 +2756,7 @@ server version 9.0 or higher.
 
 The C<ping> method determines if there is a working connection to an active 
 database server. It does this by sending a small query to the server, currently 
-B<'DBD::Pg ping test v3.7.0'>. It returns 0 (false) if the connection is not valid, 
+B<'DBD::Pg ping test v3.6.9_1'>. It returns 0 (false) if the connection is not valid, 
 otherwise it returns a positive number (true). The value returned indicates the 
 current state:
 
