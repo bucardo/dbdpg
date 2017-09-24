@@ -1,7 +1,6 @@
 
 
-Version 3.6.9_2
-
+Version 3.7.0  Released September 24, 2017 (git tag 3.7.0)
 
   - If no placeholders, use PQexec instead of PQexecParams
     [Greg Sabino Mullane]
@@ -22,9 +21,10 @@ Version 3.6.9_2
     (Github issue #30)
 
   - Add $sth->{pg_async_status} to determine async status of a statement handle.
-    Values can be 0 (no async), 1 (async), or -1 (cancelled
+    Values can be 0 (no async), 1 (async), or -1 (cancelled)
     [Greg Sabino Mullane, as requested by Dmytro Zagashev (ZDM)]
     (CPAN ticket #116172)
+
 
 Version 3.6.2  Released May 23, 2017 (git tag 3.6.2)
 
