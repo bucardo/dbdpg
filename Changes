@@ -1,4 +1,10 @@
 
+Version ???
+
+  - Declare VERSION as our in seldom-used Bundle module
+    (CPAN ticket #123218)
+
+
 
 Version 3.7.0  Released September 24, 2017 (git tag 3.7.0)
 
