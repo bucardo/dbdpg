@@ -449,10 +449,12 @@ version: $version
 		$testport = 5442;
 		## If we've got netstat available, we'll trust that
 		$info = '';
+        my $evalok = 0;
 		eval {
 			$info = qx{netstat -na 2>&1};
+            $evalok = 1;
 		};
-		if ($@) {
+		if (!$evalok) {
 			warn "netstat call failed, trying port $testport\n";
 		}
 		else {
