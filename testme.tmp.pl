@@ -30,9 +30,11 @@ print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::V
 
 print "Name: $dbh->{Name}\n";
 
-fatal_client();
+jsonb_placeholder();
 
 exit;
+
+#fatal_client();
 
 #user_arrays();
 
@@ -43,6 +45,25 @@ exit;
 #memory_leak_test_bug_65734();
 
 #memory_leak_arrays();
+
+sub jsonb_placeholder {
+
+    ## Github #33
+    ## https://github.com/bucardo/dbdpg/issues/33
+
+    print "Starting jsonb placeholder test\n";
+
+    $SQL = q{ SELECT '{"a":1}'::jsonb \? 'abc' and 1=$1 };
+
+    for ( my $i=0; $i<100; $i++ ) {
+        print "$i.. ";
+        $sth = $dbh->prepare($SQL);
+        $sth->execute(2);
+        $sth->finish();
+    }
+    print "\n";
+}
+
 
 sub fatal_client {
 
