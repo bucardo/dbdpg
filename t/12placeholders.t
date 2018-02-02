@@ -48,6 +48,29 @@ checkquote('one');
 checkquote('two');
 checkquote('three');
 checkquote('four');
+use Data::Peek;
+
+## Github issue #33
+$SQL = q{A \? B:C};
+$SQL = q{ SELECT '{"a":1}'::jsonb \? 'abc' AND 1=$1};
+my $original_sql = $SQL;
+print DPeek $SQL, "\n";
+print "Len is " . (length $SQL) . "\n";
+my $hex = unpack("xxxxxxxxi", $SQL);
+print "Hex=$hex\n";
+my $sth;
+for (1..10) {
+  $sth = $dbh->prepare($SQL);
+  $sth->finish();
+  $sth->execute(2);
+  pass "One";
+  die 123 if $SQL ne $original_sql;
+}
+print DPeek $SQL, "\n";
+print "Len is " . (length $SQL) . "\n";
+
+pass "OK";
+exit;
 
 $t='Fetch returns the correct quoted value';
 my $sth = $dbh->prepare(qq{INSERT INTO dbd_pg_test (id,pname) VALUES (?, $quo)});

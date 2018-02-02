@@ -489,7 +489,7 @@ int dbd_db_ping (SV * dbh)
 	}
 
 	/* No matter what state we are in, send an empty query to the backend */
-	result = PQexec(imp_dbh->conn, "/* DBD::Pg ping test v3.7.0 */");
+	result = PQexec(imp_dbh->conn, "/* DBD::Pg ping test v3.7.1 */");
 	if (NULL == result) {
 		/* Something very bad, usually indicating the backend is gone */
 		return -3;
