@@ -2024,8 +2024,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		*/
 		if ('\\' == oldch && imp_dbh->ph_escaped) {
             if (! statement_rewritten) {
-                Renew(original_statement, strlen(statement-currpos), char);
-                Copy(statement-currpos, original_statement, strlen(statement-currpos), char);
+                Renew(original_statement, strlen(statement-currpos)+1, char);
+                Copy(statement-currpos, original_statement, strlen(statement-currpos)+1, char);
                 statement_rewritten = DBDPG_TRUE;
             }
 
