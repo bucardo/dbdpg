@@ -48,9 +48,18 @@ checkquote('one');
 checkquote('two');
 checkquote('three');
 checkquote('four');
+use Data::Peek;
+
+## Github issue #33
+$SQL = q{ SELECT '{"a":1}'::jsonb \? 'abc' AND 123=$1};
+my $sth;
+for (1..300) {
+  $sth = $dbh->prepare($SQL);
+  $sth->execute(123);
+}
 
 $t='Fetch returns the correct quoted value';
-my $sth = $dbh->prepare(qq{INSERT INTO dbd_pg_test (id,pname) VALUES (?, $quo)});
+$sth = $dbh->prepare(qq{INSERT INTO dbd_pg_test (id,pname) VALUES (?, $quo)});
 $sth->execute(100);
 my $sql = "SELECT pname FROM dbd_pg_test WHERE pname = $quo";
 $sth = $dbh->prepare($sql);
