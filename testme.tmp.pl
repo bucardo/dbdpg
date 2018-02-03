@@ -30,9 +30,11 @@ print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::V
 
 print "Name: $dbh->{Name}\n";
 
-jsonb_placeholder();
+bad_string_length();
 
 exit;
+
+# jsonb_placeholder();
 
 #fatal_client();
 
@@ -45,6 +47,26 @@ exit;
 #memory_leak_test_bug_65734();
 
 #memory_leak_arrays();
+
+sub bad_string_length {
+
+    ## RT Ticket 114548
+    $SQL = 'SELECT md5(x::text) FROM generate_series(1,5) x';
+
+    $sth = $dbh->prepare($SQL);
+    $sth->execute();
+    my $md5size;
+    $sth->bind_columns(\$md5size);
+    while ($sth->fetch()) {
+        print "\n";
+        DDump $md5size;
+        print $md5size , "\n";
+        printf "%vx\n", $md5size;
+        print '.' x 32, '-' x 32 . "\n";
+        print substr($md5size, 0, 32), " (" . length($md5size) . ' -- ' . length(substr($md5size, 0, 32)) . ")\n";
+    }
+
+} ## end of bad_string_length
 
 sub jsonb_placeholder {
 
