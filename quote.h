@@ -1,4 +1,11 @@
 
+
+#ifdef WIN32
+#ifndef snprintf
+#define snprintf _snprintf
+#endif
+#endif
+
 char * null_quote(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_string(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_bytea(pTHX_ char *string, STRLEN len, STRLEN *retlen, int estring);
