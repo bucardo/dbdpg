@@ -6,6 +6,10 @@ Version 3.7.1
     [Greg Sabino Mullane]
     (Github issue #33)
 
+  - Make sure nulls in our self-generated arrays are not set as read-only in some Perls.
+    [Greg Sabino Mullane]
+    (CPAN ticket #107556)
+
   - Declare VERSION as our in seldom-used Bundle module
     (CPAN ticket #123218)
 

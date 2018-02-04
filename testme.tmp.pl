@@ -30,9 +30,11 @@ print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::V
 
 print "Name: $dbh->{Name}\n";
 
-bad_string_length();
+read_only_arrays();
 
 exit;
+
+# bad_string_length();
 
 # jsonb_placeholder();
 
@@ -47,6 +49,24 @@ exit;
 #memory_leak_test_bug_65734();
 
 #memory_leak_arrays();
+
+sub read_only_arrays {
+
+    ## For RT ticket #107556
+
+    $SQL = 'SELECT 5, NULL, ARRAY[1,2,3], ARRAY[1,NULL,3]';
+    $sth = $dbh->prepare($SQL);
+    $sth->execute;
+    while( my $row = $sth->fetchrow_arrayref ) {
+        $row->[0] += 0; # ok
+        $row->[1] += 0; # ok
+        $_ += 0 foreach @{ $row->[2] }; # ok
+        $_ += 0 foreach @{ $row->[3] }; # error: Modification of a read-only value attempted
+    }
+
+    exit;
+
+} ## end of read_only_arrays
 
 sub bad_string_length {
 

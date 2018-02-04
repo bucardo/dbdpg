@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 200;
+plan tests => 201;
 
 isnt ($dbh, undef, 'Connect to database for array testing');
 
@@ -218,6 +218,7 @@ for my $test (split /\n\n/ => $array_tests) {
 		  SKIP: {
 				skip ('Cannot test NULL arrays unless version 8.2 or better', 6);
 			}
+
 			next;
 		}
 	}
@@ -335,6 +336,16 @@ $addarray_bool->execute('{f,t,f,0,1,1}');
 $getarray_bool->execute();
 $result = $getarray_bool->fetchall_arrayref();
 is_deeply ($result, [[[0,1,0,0,1,1]]], $t);
+
+## Test of read-only undef sections
+
+$t = 'Modification of undefined parts of array are allowed';
+$cleararray->execute();
+$addarray_bool->execute('{f,t,null,0,NULL,NuLl}');
+$getarray_bool->execute();
+$result = $getarray_bool->fetchall_arrayref()->[0][0];
+$result->[2] = 22;
+is_deeply ($result, [0,1,22,0,undef,undef], $t);
 
 ## Pure string to array conversion testing
 

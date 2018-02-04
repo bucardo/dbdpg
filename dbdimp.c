@@ -2893,7 +2893,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 				/* Just an empty array */
 			}
 			else if (4 == section_size && 0 == strncmp(string, "NULL", 4) && '"' != *(input-1)) {
-				av_push(currentav, &PL_sv_undef);
+				av_push(currentav, newSV(0));
 			}
 			else {
 				if (1 == coltype->svtype)
