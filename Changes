@@ -10,7 +10,12 @@ Version 3.7.1
     [Greg Sabino Mullane]
     (CPAN ticket #107556)
 
-  - Declare VERSION as our in seldom-used Bundle module
+  - If the server returns no error message, and an "unknown" code from libpq, supply a custom
+    message mentioning client_min_messages may be to blame.
+    [Greg Sabino Mullane]
+    (CPAN ticket #109591)
+
+  - Declare VERSION with 'our' in seldom-used Bundle module
     (CPAN ticket #123218)
 
 

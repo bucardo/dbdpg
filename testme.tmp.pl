@@ -30,6 +30,17 @@ print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::V
 
 print "Name: $dbh->{Name}\n";
 
+$dbh->{RaiseError} = 0;
+$dbh->{PrintError} = 1;
+$dbh->{AutoCommit} = 1;
+$dbh->do('SET client_min_messages = FATAL');
+
+eval { $dbh->selectcol_arrayref('SELECT 1 FROM nonesuch'); };
+
+warn "Errstr: ". $dbh->errstr . "\n";
+warn "Error: $@";
+
+
 read_only_arrays();
 
 exit;

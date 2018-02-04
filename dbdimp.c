@@ -299,8 +299,19 @@ static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
 		error_len--;
 
 	sv_setiv(DBIc_ERR(imp_xxh), (IV)error_num);
-	sv_setpvn(DBIc_ERRSTR(imp_xxh), error_msg, error_len);
 	sv_setpv(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate);
+
+    /*
+      We need a special exception for cases in which libpq doesn't know what the error was,
+       and Postgres returns nothing. Probably client_min_messages is boosted too high.
+       See CPAN ticket #109591
+    */
+    if (7 == error_num && 0 == error_len) {
+        sv_setpvn(DBIc_ERRSTR(imp_xxh), "No error returned from Postgres. Perhaps client_min_messages is set too high?", 77);
+    }
+    else {
+        sv_setpvn(DBIc_ERRSTR(imp_xxh), error_msg, error_len);
+    }
 
 	/* Set as utf-8 */
 	if (imp_dbh->pg_utf8_flag)

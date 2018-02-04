@@ -18,7 +18,7 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 271;
+plan tests => 272;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -1182,71 +1182,62 @@ $t='Database handle attribute "PrintError" is set properly';
 $attrib = $dbh->{PrintError};
 is ($attrib, '', $t);
 
-
 # Make sure that warnings are sent back to the client
-# We assume that older servers are okay
-my $client_level = '';
-$sth = $dbh->prepare('SHOW client_min_messages');
-$sth->execute();
-$client_level = $sth->fetchall_arrayref()->[0][0];
-
 $SQL = 'Testing the DBD::Pg modules error handling -?-';
-if ($client_level eq 'error') {
- SKIP: {
-		skip (q{Cannot test "PrintError" attribute because client_min_messages is set to 'error'}, 2);
-	}
- SKIP: {
-		skip (q{Cannot test "RaiseError" attribute because client_min_messages is set to 'error'}, 2);
-	}
- SKIP: {
-		skip (q{Cannot test "HandleError" attribute because client_min_messages is set to 'error'}, 2);
-	}
- SKIP: {
-		skip (q{Cannot test "HandleSetErr" attribute because client_min_messages is set to 'error'}, 3);
-	}
-}
-else {
-	{
-		$warning = '';
-		local $SIG{__WARN__} = sub { $warning = shift; };
-		$dbh->{RaiseError} = 0;
+$dbh->do(q{SET client_min_messages = 'NOTICE'});
 
-		$t='Warning thrown when database handle attribute "PrintError" is on';
-		$dbh->{PrintError} = 1;
-		$sth = $dbh->prepare($SQL);
-		$sth->execute();
-		isnt ($warning, undef, $t);
+$warning = '';
+local $SIG{__WARN__} = sub { $warning = shift; };
+$dbh->{RaiseError} = 0;
 
-		$t='No warning thrown when database handle attribute "PrintError" is off';
-		undef $warning;
-		$dbh->{PrintError} = 0;
-		$sth = $dbh->prepare($SQL);
-		$sth->execute();
-		is ($warning, undef, $t);
-	}
-}
+$t='Warning thrown when database handle attribute "PrintError" is on';
+$dbh->{PrintError} = 1;
+$sth = $dbh->prepare($SQL);
+$sth->execute();
+isnt ($warning, undef, $t);
+
+$t='No warning thrown when database handle attribute "PrintError" is off';
+undef $warning;
+$dbh->{PrintError} = 0;
+$sth = $dbh->prepare($SQL);
+$sth->execute();
+is ($warning, undef, $t);
+
+## Special case in which errors are not sent to the client!
+$t = q{When client_min_messages is FATAL, we do our best to alert the caller it's a Bad Idea};
+$dbh->do(q{SET client_min_messages = 'FATAL'});
+$dbh->{RaiseError} = 0;
+$dbh->{AutoCommit} = 1;
+eval {
+    $dbh->do('SELECT 1 FROM nonesuh');
+};
+my $errorstring = $dbh->errstr;
+like ( $errorstring, qr/Perhaps client_min_messages/, $t);
+$dbh->rollback();
+$dbh->do(q{SET client_min_message = 'NOTICE'});
+$dbh->{RaiseError} = 1;
+$dbh->{AutoCommit} = 0;
+
 
 #
 # Test of the handle attribute RaiseError
 #
 
-if ($client_level ne 'error') {
-	$t='No error produced when database handle attribute "RaiseError" is off';
-	$dbh->{RaiseError} = 0;
-	eval {
-		$sth = $dbh->prepare($SQL);
-		$sth->execute();
-	};
-	is ($@, q{}, $t);
+$t='No error produced when database handle attribute "RaiseError" is off';
+$dbh->{RaiseError} = 0;
+eval {
+    $sth = $dbh->prepare($SQL);
+    $sth->execute();
+};
+is ($@, q{}, $t);
 
-	$t='Error produced when database handle attribute "RaiseError" is off';
-	$dbh->{RaiseError} = 1;
-	eval {
-		$sth = $dbh->prepare($SQL);
-		$sth->execute();
-	};
-	isnt ($@, q{}, $t);
-}
+$t='Error produced when database handle attribute "RaiseError" is off';
+$dbh->{RaiseError} = 1;
+eval {
+    $sth = $dbh->prepare($SQL);
+    $sth->execute();
+};
+isnt ($@, q{}, $t);
 
 
 #
@@ -1257,26 +1248,23 @@ $t='Database handle attribute "HandleError" is set properly';
 $attrib = $dbh->{HandleError};
 ok (!$attrib, $t);
 
-if ($client_level ne 'error') {
+$t='Database handle attribute "HandleError" works';
+undef $warning;
+$dbh->{HandleError} = sub { $warning = shift; };
+$sth = $dbh->prepare($SQL);
+$sth->execute();
+ok ($warning, $t);
 
-	$t='Database handle attribute "HandleError" works';
-	undef $warning;
-	$dbh->{HandleError} = sub { $warning = shift; };
-	$sth = $dbh->prepare($SQL);
-	$sth->execute();
-	ok ($warning, $t);
-
-	$t='Database handle attribute "HandleError" modifies error messages';
-	undef $warning;
-	$dbh->{HandleError} = sub { $_[0] = "Slonik $_[0]"; 0; };
-	eval {
-		$sth = $dbh->prepare($SQL);
-		$sth->execute();
-	};
-	like ($@, qr/^Slonik/, $t);
-	$dbh->{HandleError}= undef;
-	$dbh->rollback();
-}
+$t='Database handle attribute "HandleError" modifies error messages';
+undef $warning;
+$dbh->{HandleError} = sub { $_[0] = "Slonik $_[0]"; 0; };
+eval {
+    $sth = $dbh->prepare($SQL);
+    $sth->execute();
+};
+like ($@, qr/^Slonik/, $t);
+$dbh->{HandleError}= undef;
+$dbh->rollback();
 
 #
 # Test of the handle attribute HandleSetErr
@@ -1286,27 +1274,22 @@ $t='Database handle attribute "HandleSetErr" is set properly';
 $attrib = $dbh->{HandleSetErr};
 ok (!$attrib, $t);
 
-if ($client_level ne 'error') {
-
-	$t='Database handle attribute "HandleSetErr" works as expected';
-	undef $warning;
-	$dbh->{HandleSetErr} = sub {
-		my ($h,$err,$errstr,$state,$method) = @_;
-		$_[1] = 42;
-		$_[2] = 'ERRSTR';
-		$_[3] = '33133';
-		return;
-	};
-	eval {$sth = $dbh->last_insert_id('cat', 'schema', 'table', 'col', ['notahashref']); };
-	## Changing the state does not work yet.
-	like ($@, qr{ERRSTR}, $t);
-	is ($dbh->errstr, 'ERRSTR', $t);
-	is ($dbh->err, '42', $t);
-	$dbh->{HandleSetErr} = 0;
-	$dbh->rollback();
-
-}
-
+$t='Database handle attribute "HandleSetErr" works as expected';
+undef $warning;
+$dbh->{HandleSetErr} = sub {
+    my ($h,$err,$errstr,$state,$method) = @_;
+    $_[1] = 42;
+    $_[2] = 'ERRSTR';
+    $_[3] = '33133';
+    return;
+};
+eval {$sth = $dbh->last_insert_id('cat', 'schema', 'table', 'col', ['notahashref']); };
+## Changing the state does not work yet.
+like ($@, qr{ERRSTR}, $t);
+is ($dbh->errstr, 'ERRSTR', $t);
+is ($dbh->err, '42', $t);
+$dbh->{HandleSetErr} = 0;
+$dbh->rollback();
 
 #
 # Test of the handle attribute "ErrCount"
