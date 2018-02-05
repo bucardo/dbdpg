@@ -115,7 +115,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	ConnStatusType connstatus;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_login\n", THEADER_slow);
-  
+
 	/* DBD::Pg syntax: 'dbname=dbname;host=host;port=port', 'User', 'Pass' */
 	/* libpq syntax: 'dbname=dbname host=host port=port user=uid password=pwd' */
 
@@ -224,20 +224,19 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 
 	if (imp_dbh->pg_server_version <= 0) {
 		int	cnt, vmaj, vmin, vrev;
-        const char *vers = PQparameterStatus(imp_dbh->conn, "server_version");
+		const char *vers = PQparameterStatus(imp_dbh->conn, "server_version");
 
-        if (NULL != vers) {
-			cnt = sscanf(vers, "%d.%d.%d",
-						 &vmaj, &vmin, &vrev);
+		if (NULL != vers) {
+			cnt = sscanf(vers, "%d.%d.%d", &vmaj, &vmin, &vrev);
 			if (cnt >= 2) {
 				if (cnt == 2) /* Account for devel version e.g. 8.3beta1 */
 					vrev = 0;
 				imp_dbh->pg_server_version = (100 * vmaj + vmin) * 100 + vrev;
 			}
 		}
-        else {
-            imp_dbh->pg_server_version = PG_UNKNOWN_VERSION ;
-        }
+		else {
+			imp_dbh->pg_server_version = PG_UNKNOWN_VERSION ;
+		}
 	}
 
 	pg_db_detect_client_encoding_utf8(aTHX_ imp_dbh);
@@ -301,17 +300,17 @@ static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
 	sv_setiv(DBIc_ERR(imp_xxh), (IV)error_num);
 	sv_setpv(DBIc_STATE(imp_xxh), (char*)imp_dbh->sqlstate);
 
-    /*
-      We need a special exception for cases in which libpq doesn't know what the error was,
-       and Postgres returns nothing. Probably client_min_messages is boosted too high.
-       See CPAN ticket #109591
-    */
-    if (7 == error_num && 0 == error_len) {
-        sv_setpvn(DBIc_ERRSTR(imp_xxh), "No error returned from Postgres. Perhaps client_min_messages is set too high?", 77);
-    }
-    else {
-        sv_setpvn(DBIc_ERRSTR(imp_xxh), error_msg, error_len);
-    }
+	/*
+		We need a special exception for cases in which libpq doesn't know what the error was,
+		and Postgres returns nothing. Probably client_min_messages is boosted too high.
+		See CPAN ticket #109591
+	*/
+	if (7 == error_num && 0 == error_len) {
+		sv_setpvn(DBIc_ERRSTR(imp_xxh), "No error returned from Postgres. Perhaps client_min_messages is set too high?", 77);
+	}
+	else {
+		sv_setpvn(DBIc_ERRSTR(imp_xxh), error_msg, error_len);
+	}
 
 	/* Set as utf-8 */
 	if (imp_dbh->pg_utf8_flag)
@@ -1776,8 +1775,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 	ph_t *newph, *thisph, *currph = NULL; /* Placeholder structures to help build ll */
 
-    bool statement_rewritten = DBDPG_FALSE;
-    char * original_statement = NULL; /* Copy as needed so we can restore the original */
+	bool statement_rewritten = DBDPG_FALSE;
+	char * original_statement = NULL; /* Copy as needed so we can restore the original */
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_split_statement\n", THEADER_slow);
 	if (TRACE6_slow) TRC(DBILOGFP, "%spg_st_split_statement: (%s)\n", THEADER_slow, statement);
@@ -2034,11 +2033,11 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		  It will probably be removed at some point.
 		*/
 		if ('\\' == oldch && imp_dbh->ph_escaped) {
-            if (! statement_rewritten) {
-                Renew(original_statement, strlen(statement-currpos)+1, char);
-                Copy(statement-currpos, original_statement, strlen(statement-currpos)+1, char);
-                statement_rewritten = DBDPG_TRUE;
-            }
+			if (! statement_rewritten) {
+				Renew(original_statement, strlen(statement-currpos)+1, char);
+				Copy(statement-currpos, original_statement, strlen(statement-currpos)+1, char);
+				statement_rewritten = DBDPG_TRUE;
+			}
 
 			/* copy the placeholder-like character but ignore the backslash */
 			char *p = statement-2;
@@ -2285,10 +2284,10 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 	DBIc_NUM_PARAMS(imp_sth) = imp_sth->numphs;
 
-    if (statement_rewritten) {
-        Copy(original_statement, statement-currpos, strlen(original_statement), char);
-    }
-    Safefree(original_statement);
+	if (statement_rewritten) {
+		Copy(original_statement, statement-currpos, strlen(original_statement), char);
+	}
+	Safefree(original_statement);
 
 
 	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_split_statement\n", THEADER_slow);
@@ -2461,7 +2460,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 	char * value_string = NULL;
 	bool   is_array = DBDPG_FALSE;
 
-   	maxlen = 0; /* not used, this makes the compiler happy */
+	maxlen = 0; /* not used, this makes the compiler happy */
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_bind_ph (ph_name: %s)\n",
 					THEADER_slow,
@@ -2547,10 +2546,10 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 			is_array = DBDPG_TRUE;
 		}
 		else if (!SvAMAGIC(newvalue)) {
-            /*
-              We want to allow magic scalars on through - but we cannot check above,
-               because sometimes DBD::Pg::DefaultValue arrives as one!
-            */
+			/*
+			  We want to allow magic scalars on through - but we cannot check above,
+			  because sometimes DBD::Pg::DefaultValue arrives as one!
+			*/
 			croak("Cannot bind a reference\n");
 		}
 	}
