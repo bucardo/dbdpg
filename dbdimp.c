@@ -3013,7 +3013,7 @@ static void pg_db_detect_client_encoding_utf8(pTHX_ imp_dbh_t *imp_dbh) {
 		PQparameterStatus(imp_dbh->conn, "client_encoding");
 	if (NULL != client_encoding) {
 		STRLEN len = strlen(client_encoding);
-		Newx(clean_encoding, len + 1, char);
+		New(0, clean_encoding, len + 1, char);
 		for (i = 0, j = 0; i < len; i++) {
 			const char c = toLOWER(client_encoding[i]);
 			if (isALPHA(c) || isDIGIT(c))
