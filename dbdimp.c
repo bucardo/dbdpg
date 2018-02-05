@@ -2285,7 +2285,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 	DBIc_NUM_PARAMS(imp_sth) = imp_sth->numphs;
 
 	if (statement_rewritten) {
-		Copy(original_statement, statement-currpos, strlen(original_statement), char);
+		Copy(original_statement, statement-currpos, strlen(original_statement)+1, char);
 	}
 	Safefree(original_statement);
 
