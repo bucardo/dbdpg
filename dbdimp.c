@@ -2642,7 +2642,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 		newvalue = pg_rightgraded_sv(aTHX_ newvalue, imp_dbh->pg_utf8_flag && PG_BYTEA!=currph->bind_type->type_id);
 		value_string = SvPV(newvalue, currph->valuelen);
 		Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
-		Copy(value_string, currph->value, currph->valuelen, char);
+		Copy(value_string, currph->value, currph->valuelen+1, char);
 		currph->value[currph->valuelen] = '\0';
 	}
 	else {
@@ -3242,7 +3242,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			if (currph->isinout) {
 				currph->valuelen = sv_len(currph->inout);
 				Renew(currph->value, currph->valuelen+1, char);
-				Copy(SvPV_nolen(currph->inout), currph->value, currph->valuelen, char);
+				Copy(SvPV_nolen(currph->inout), currph->value, currph->valuelen+1, char);
 				currph->value[currph->valuelen] = '\0';
 			}
 		}
