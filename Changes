@@ -4,7 +4,8 @@ Version 3.7.1  Released February 11, 2017 (git tag 3.7.1)
   - Fixed problem when using placeholders and escaped question marks, the recopied string 
     was not terminated correctly.
     [Greg Sabino Mullane]
-    (Github issue #33)
+    (Github issue #33, CPAN tickets #121630, #123187, #123999)
+
 
   - Make sure nulls in our self-generated arrays are not set as read-only in some Perls.
     [Greg Sabino Mullane]
