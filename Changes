@@ -1,5 +1,5 @@
 
-Version 3.7.1
+Version 3.7.1  Released February 11, 2017 (git tag 3.7.1)
 
   - Fixed problem when using placeholders and escaped question marks, the recopied string 
     was not terminated correctly.
