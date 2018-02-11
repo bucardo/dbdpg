@@ -1,5 +1,5 @@
 
-Version 3.7.2
+Version 3.7.2  Released February 11, 2017 (git tag 3.7.2)
 
   - Remove Data::Peek dependency accidentally left in t/12placeholders.t
     [CPAN ticket #124393]
