@@ -1,4 +1,10 @@
 
+Version 3.7.2
+
+  - Remove Data::Peek dependency accidentally left in t/12placeholders.t
+    [CPAN ticket #124393]
+
+
 Version 3.7.1  Released February 11, 2017 (git tag 3.7.1)
 
   - Fixed problem when using placeholders and escaped question marks, the recopied string 

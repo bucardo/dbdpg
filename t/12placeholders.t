@@ -48,7 +48,6 @@ checkquote('one');
 checkquote('two');
 checkquote('three');
 checkquote('four');
-use Data::Peek;
 
 ## Github issue #33
 $SQL = q{ SELECT '{"a":1}'::jsonb \? 'abc' AND 123=$1};
