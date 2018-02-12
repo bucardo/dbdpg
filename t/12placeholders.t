@@ -50,11 +50,14 @@ checkquote('three');
 checkquote('four');
 
 ## Github issue #33
-$SQL = q{ SELECT '{"a":1}'::jsonb \? 'abc' AND 123=$1};
 my $sth;
-for (1..300) {
-  $sth = $dbh->prepare($SQL);
-  $sth->execute(123);
+if ($dbh->{pg_server_version} >= 90400) {
+
+    $SQL = q{ SELECT '{"a":1}'::jsonb \? 'abc' AND 123=$1};
+    for (1..300) {
+        $sth = $dbh->prepare($SQL);
+        $sth->execute(123);
+    }
 }
 
 $t='Fetch returns the correct quoted value';
