@@ -1,17 +1,19 @@
 
-Version 3.7.2  Released February 11, 2017 (git tag 3.7.2)
+Version 3.7.2  Released February 11, 2018 (git tag 3.7.2)
 
   - Remove Data::Peek dependency accidentally left in t/12placeholders.t
     [CPAN ticket #124393]
 
+  - Test tweak so we don't try to use jsonb on older versions.
+    [CPAN ticket #124934]
 
-Version 3.7.1  Released February 11, 2017 (git tag 3.7.1)
+
+Version 3.7.1  Released February 11, 2018 (git tag 3.7.1)
 
   - Fixed problem when using placeholders and escaped question marks, the recopied string 
     was not terminated correctly.
     [Greg Sabino Mullane]
     (Github issue #33, CPAN tickets #121630, #123187, #123999)
-
 
   - Make sure nulls in our self-generated arrays are not set as read-only in some Perls.
     [Greg Sabino Mullane]
