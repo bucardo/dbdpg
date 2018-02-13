@@ -1,4 +1,4 @@
-%--- #YAML:1.0
+--- #YAML:1.0
 name                        : DBD-Pg
 version                     : 3.7.3
 abstract                    : DBI PostgreSQL interface
