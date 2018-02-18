@@ -33,17 +33,12 @@ print "Name: $dbh->{Name}\n";
 $dbh->{RaiseError} = 0;
 $dbh->{PrintError} = 1;
 $dbh->{AutoCommit} = 1;
-$dbh->do('SET client_min_messages = FATAL');
 
-eval { $dbh->selectcol_arrayref('SELECT 1 FROM nonesuch'); };
-
-warn "Errstr: ". $dbh->errstr . "\n";
-warn "Error: $@";
-
-
-read_only_arrays();
+column_types_github_issue_24();
 
 exit;
+
+#read_only_arrays();
 
 # bad_string_length();
 
@@ -60,6 +55,82 @@ exit;
 #memory_leak_test_bug_65734();
 
 #memory_leak_arrays();
+
+
+sub column_types_github_issue_24 {
+
+    ## Code from https://gist.githubusercontent.com/jef-sure/9a28e7c12f0c03d32080456afd4dafd3/raw/4ada2362371d930c9b035bd749f7b93a6d75cfc1/column-types.pl
+
+    sub table_columns {
+        my $table = $_[0];
+        my @columnlist;
+        my $cih = $dbh->column_info(undef, undef, $table, undef) or die "no table $table";
+        my $i = 0;
+        while (my $chr = $cih->fetchrow_hashref) {
+            my $cn = $chr->{COLUMN_NAME};
+            $cn =~ s/\"//g;
+            push @columnlist, [$cn, $chr->{TYPE_NAME}];
+        }
+        return \@columnlist;
+    }
+
+    sub query_columns {
+        my $query = $_[0];
+        my $sth = $dbh->prepare($query) or die "query $query error: " . $dbh->errstr;
+        $sth->execute or die "query $query error: " . $dbh->errstr;
+        my @columnlist;
+        for (my $cn = 0; $cn < @{$sth->{NAME}}; ++$cn) {
+            my $ti = $dbh->type_info($sth->{TYPE}->[$cn]);
+            my $cn = $sth->{NAME}->[$cn];
+            $cn =~ s/\"//g;
+            push @columnlist, [$cn, $ti->{TYPE_NAME} // 'UNKNOWN'];
+        }
+        return \@columnlist;
+    }
+
+    sub print_columns {
+        my ($name, $cref) = @_;
+        print "\n$name:\n";
+        for my $ci (@$cref) {
+            print "$ci->[0]: $ci->[1]\n";
+        }
+    }
+
+#anton=> \d todo
+#                           Table "public.todo"
+#  Column   |  Type   |                     Modifiers
+#-----------+---------+---------------------------------------------------
+# id        | integer | not null default nextval('todo_id_seq'::regclass)
+# title     | text    |
+# completed | boolean |
+# misc      | jsonb   |
+#Indexes:
+#    "todo_pkey" PRIMARY KEY, btree (id)
+
+    $SQL = 'CREATE TABLE todo ( id SERIAL PRIMARY KEY, title text, completed boolean, misc jsonb )';
+    $dbh->do($SQL);
+
+    print_columns("todo",               table_columns("todo"));
+    print_columns("select * from todo", query_columns("select * from todo"));
+
+#output:
+#
+#todo:
+#id: integer
+#title: text
+#completed: boolean
+#misc: jsonb
+#
+#select * from todo:
+#id: int4
+#title: UNKNOWN
+#completed: bool
+#misc: unknown
+
+    exit;
+
+} ## end of column_types_github_issue_24
+
 
 sub read_only_arrays {
 
