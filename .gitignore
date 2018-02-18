@@ -18,6 +18,7 @@ MYMETA*
 *.blame
 dbdpg.testing.*
 *.log
+*.asc
 *.patch
 dbdpg_test_*
 *.tar.gz
