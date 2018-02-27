@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 562;
+plan tests => 564;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -560,6 +560,11 @@ $sth = $dbh->table_info(undef,undef,undef,'MATERIALIZED VIEW');
 $rows = $sth->rows();
 is ($rows, 0, $t);
 
+$t=q{DB handle method "table_info" returns correct number of rows when given a 'FOREIGN TABLE' type argument};
+$sth = $dbh->table_info(undef,undef,undef,'FOREIGN TABLE');
+$rows = $sth->rows();
+is ($rows, 0, $t);
+
 SKIP: {
 	if ($pgversion < 90300) {
 		skip 'Postgres version 9.3 or better required to create materialized views', 1;
@@ -569,6 +574,20 @@ SKIP: {
 	$sth = $dbh->table_info(undef,undef,undef,'MATERIALIZED VIEW');
 	$rows = $sth->rows();
 	is ($rows, 1, $t);
+}
+
+SKIP: {
+	if ($pgversion < 90100) {
+		skip 'Postgres version 9.3 or better required to create foreign tables', 1;
+	}
+	$dbh->do('CREATE FOREIGN DATA WRAPPER testfdw');
+	$dbh->do('CREATE SERVER testserver FOREIGN DATA WRAPPER testfdw');
+	$dbh->do('CREATE FOREIGN TABLE testforeign (c1 int) SERVER testserver');
+	$t=q{DB handle method "table_info" returns correct number of rows when given a 'FOREIGN TABLE' type argument};
+	$sth = $dbh->table_info(undef,undef,undef,'FOREIGN TABLE');
+	$rows = $sth->rows();
+	is ($rows, 1, $t);
+	$dbh->do('DROP FOREIGN TABLE testforeign');
 }
 
 # Test listing catalog names
@@ -588,6 +607,8 @@ my @expected = ('LOCAL TEMPORARY',
                 'SYSTEM VIEW',
 				'MATERIALIZED VIEW',
 				'SYSTEM MATERIALIZED VIEW',
+                'FOREIGN TABLE',
+                'SYSTEM FOREIGN TABLE',
                 'TABLE',
                 'VIEW',);
 

@@ -489,7 +489,7 @@ use 5.008001;
                 $schemajoin
             WHERE
                 a.attnum >= 0
-                AND c.relkind IN ('r','v','m')
+                AND c.relkind IN ('r','v','m','f')
                 $whereclause
             ORDER BY "TABLE_SCHEM", "TABLE_NAME", "ORDINAL_POSITION"
             !;
@@ -1079,6 +1079,12 @@ use 5.008001;
                        SELECT 'SYSTEM MATERIALIZED VIEW'
                             , 'relkind: m; nspname ~ ^pg_(catalog|toast)$'
                        UNION
+                       SELECT 'FOREIGN TABLE'
+                            , 'relkind: f'
+                       UNION
+                       SELECT 'SYSTEM FOREIGN TABLE'
+                            , 'relkind: f; nspname ~ ^pg_(catalog|toast)$'
+                       UNION
                        SELECT 'LOCAL TEMPORARY'
                             , 'relkind: r; nspname ~ ^pg_(toast_)?temp') type_info
                      ORDER BY "TABLE_TYPE" ASC
@@ -1087,7 +1093,7 @@ use 5.008001;
         else {
             # Default SQL
             $extracols = q{,n.nspname AS pg_schema, c.relname AS pg_table};
-            my @search = (q|c.relkind IN ('r', 'v', 'm')|, # No sequences, etc. for now
+            my @search = (q|c.relkind IN ('r', 'v', 'm', 'f')|, # No sequences, etc. for now
                           q|NOT (quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' AND NOT has_schema_privilege(n.nspname, 'USAGE'))|);   # No others' temp objects
             my $showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(t.spclocation) AS "pg_tablespace_location"';
             if ($dbh->{private_dbdpg}{version} >= 90200) {
@@ -1128,6 +1134,11 @@ use 5.008001;
                                  CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN
                                            'SYSTEM MATERIALIZED VIEW'
                                       ELSE 'MATERIALIZED VIEW'
+                                  END
+                            WHEN c.relkind = 'f' THEN
+                                 CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN
+                                           'SYSTEM FOREIGN TABLE'
+                                      ELSE 'FOREIGN TABLE'
                                   END
                             ELSE 'UNKNOWN'
                          END AS "TABLE_TYPE"
@@ -2803,7 +2814,8 @@ Returns all tables and views visible to the current user.  The schema and table
 arguments will do a C<LIKE> search if a percent sign (C<%>) or an underscore
 (C<_>) is detected in the argument. The C<$type> argument accepts any
 comma-separated combination of "TABLE", "VIEW", "SYSTEM TABLE", "SYSTEM VIEW",
-"MATERIALIZED VIEW", "SYSTEM MATERIALIZED VIEW", or "LOCAL TEMPORARY".  (Using all is the default action.)
+"MATERIALIZED VIEW", "SYSTEM MATERIALIZED VIEW", "FOREIGN TABLE", "SYSTEM FOREIGN TABLE",
+or "LOCAL TEMPORARY".  (Using all is the default action.)
 
 Note that a statement handle is returned, and not a direct list of tables. See
 the examples below for ways to handle this.
@@ -2818,7 +2830,7 @@ B<TABLE_NAME>: The name of the table or view.
 
 B<TABLE_TYPE>: The type of object returned. Will be one of "TABLE", "VIEW",
 "MATERIALIZED VIEW", "SYSTEM VIEW", "SYSTEM MATERIALIZED VIEW", "SYSTEM TABLE", 
-or "LOCAL TEMPORARY".
+"FOREIGN TABLE", "SYSTEM FOREIGN TABLE", or "LOCAL TEMPORARY".
 
 The TABLE_SCHEM and TABLE_NAME will be quoted via C<quote_ident()>.
 
@@ -2981,10 +2993,10 @@ that this is an index expression.
   @names = $dbh->tables( undef, $schema, $table, $type, \%attr );
 
 Supported by this driver as proposed by DBI. This method returns all tables
-and/or views (including materialized views) which are visible to the current user: see L</table_info>
-for more information about the arguments. The name of the schema appears 
-before the table or view name. This can be turned off by adding in the 
-C<pg_noprefix> attribute:
+and/or views (including foreign tables and materialized views) which are
+visible to the current user: see L</table_info> for more information about
+the arguments. The name of the schema appears before the table or view
+name. This can be turned off by adding in the C<pg_noprefix> attribute:
 
   my @tables = $dbh->tables( '', '', 'dbd_pg_test', '', {pg_noprefix => 1} );
 
