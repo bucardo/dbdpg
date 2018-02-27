@@ -453,7 +453,7 @@ use 5.008001;
 
 		my $col_info_sql = qq!
             SELECT
-                NULL::text AS "TABLE_CAT"
+                pg_catalog.quote_ident(pg_catalog.current_database()) AS "TABLE_CAT"
                 , pg_catalog.quote_ident(n.nspname) AS "TABLE_SCHEM"
                 , pg_catalog.quote_ident(c.relname) AS "TABLE_NAME"
                 , pg_catalog.quote_ident(a.attname) AS "COLUMN_NAME"
@@ -648,7 +648,7 @@ use 5.008001;
 			$table_stats_sth->execute(@exe_args) or return undef;
 			my $tst = $table_stats_sth->fetchrow_hashref or return undef;
 			push(@output_rows, [
-				undef,            # TABLE_CAT
+				$dbh->{pg_db},    # TABLE_CAT
 				$tst->{nspname},  # TABLE_SCHEM
 				$table,           # TABLE_NAME
 				undef,            # NON_UNIQUE
@@ -692,7 +692,7 @@ use 5.008001;
 			my $nonunique = $row->{indisunique} ? 0 : 1;
 
 			my @index_row = (
-				undef,             # TABLE_CAT         0
+				$dbh->{pg_db},     # TABLE_CAT         0
 				$row->{nspname},   # TABLE_SCHEM       1
 				$table,            # TABLE_NAME        2
 				$nonunique,        # NON_UNIQUE        3
@@ -763,6 +763,7 @@ use 5.008001;
                 , pg_catalog.quote_ident(t.spcname)
                 , pg_catalog.quote_ident(t.spclocation)
                 , n.nspname, c.relname, c2.relname
+                , pg_catalog.quote_ident(pg_catalog.current_database())
             FROM
                 pg_catalog.pg_class c
                 JOIN pg_catalog.pg_index i ON (i.indrelid = c.oid)
@@ -805,7 +806,7 @@ use 5.008001;
 			my @key_seq = split/\s+/, $info->[4];
 			for (@key_seq) {
 				# TABLE_CAT
-				$pkinfo->[$x][0] = undef;
+				$pkinfo->[$x][0] = $info->[10];
 				# SCHEMA_NAME
 				$pkinfo->[$x][1] = $info->[1];
 				# TABLE_NAME
@@ -829,7 +830,7 @@ use 5.008001;
 		else { ## Nicer way: return only one row
 
 			# TABLE_CAT
-			$info->[0] = undef;
+			$info->[0] = $info->[10];
 			# TABLESPACES
 			$info->[7] = $info->[5];
 			$info->[8] = $info->[6];
@@ -907,8 +908,14 @@ use 5.008001;
 		my $WHERE = join ' AND ', @where;
 		my $SQL = qq{
 			SELECT
-				NULL, pg_catalog.quote_ident(uk_ns.nspname), pg_catalog.quote_ident(uk_class.relname), pg_catalog.quote_ident(uk_col.attname),
-				NULL, pg_catalog.quote_ident(fk_ns.nspname), pg_catalog.quote_ident(fk_class.relname), pg_catalog.quote_ident(fk_col.attname),
+				pg_catalog.quote_ident(pg_catalog.current_database()),
+				pg_catalog.quote_ident(uk_ns.nspname),
+				pg_catalog.quote_ident(uk_class.relname),
+				pg_catalog.quote_ident(uk_col.attname),
+				pg_catalog.quote_ident(pg_catalog.current_database()),
+				pg_catalog.quote_ident(fk_ns.nspname),
+				pg_catalog.quote_ident(fk_class.relname),
+				pg_catalog.quote_ident(fk_col.attname),
 				colnum.i,
 				CASE constr.confupdtype
 					WHEN 'c' THEN 0 WHEN 'r' THEN 1 WHEN 'n' THEN 2 WHEN 'a' THEN 3 WHEN 'd' THEN 4 ELSE -1
@@ -1023,7 +1030,7 @@ use 5.008001;
 			 ) {
 			$tbl_sql = qq{
                     SELECT
-                         NULL::text AS "TABLE_CAT"
+                       pg_catalog.quote_ident(pg_catalog.current_database()) AS "TABLE_CAT"
                      , NULL::text AS "TABLE_SCHEM"
                      , NULL::text AS "TABLE_NAME"
                      , NULL::text AS "TABLE_TYPE"
@@ -1116,7 +1123,7 @@ use 5.008001;
             }
             my $whereclause = join "\n\t\t\t\t\t AND " => @search;
             $tbl_sql = qq{
-                SELECT NULL::text AS "TABLE_CAT"
+                SELECT pg_catalog.quote_ident(pg_catalog.current_database()) AS "TABLE_CAT"
                      , pg_catalog.quote_ident(n.nspname) AS "TABLE_SCHEM"
                      , pg_catalog.quote_ident(c.relname) AS "TABLE_NAME"
                        -- any temp table or temp view is LOCAL TEMPORARY for us
@@ -2824,7 +2831,8 @@ the examples below for ways to handle this.
 
 The following fields are returned:
 
-B<TABLE_CAT>: Always NULL, as Postgres does not have the concept of catalogs.
+B<TABLE_CAT>: The name of the database that the table or view is in
+(always the current datbase).
 
 B<TABLE_SCHEM>: The name of the schema that the table or view is in.
 
@@ -2876,7 +2884,6 @@ Examples of use:
 Supported by this driver as proposed by DBI with the follow exceptions.
 These fields are currently always returned with NULL (C<undef>) values:
 
-   TABLE_CAT
    BUFFER_LENGTH
    DECIMAL_DIGITS
    NUM_PREC_RADIX

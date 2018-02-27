@@ -518,7 +518,7 @@ is_deeply (\%missing, {}, $t);
 
 ## Check some of the returned fields:
 $result = $result->[0];
-is ($result->{TABLE_CAT}, undef, 'DB handle method "table_info" returns proper TABLE_CAT');
+is ($result->{TABLE_CAT}, $dbh->{pg_db}, 'DB handle method "table_info" returns proper TABLE_CAT');
 is ($result->{TABLE_NAME}, 'dbd_pg_test', 'DB handle method "table_info" returns proper TABLE_NAME');
 is ($result->{TABLE_TYPE}, 'TABLE', 'DB handle method "table_info" returns proper TABLE_TYPE');
 
@@ -671,7 +671,7 @@ is ($result->{pg_type}, 'integer', $t);
 
 ## Check some of the returned fields:
 my $r = $result;
-is ($r->{TABLE_CAT},   undef,               'DB handle method "column_info" returns proper TABLE_CAT');
+is ($r->{TABLE_CAT},   $dbh->{pg_db},       'DB handle method "column_info" returns proper TABLE_CAT');
 is ($r->{TABLE_NAME},  'dbd_pg_test',       'DB handle method "column_info returns proper TABLE_NAME');
 is ($r->{COLUMN_NAME}, 'id',                'DB handle method "column_info" returns proper COLUMN_NAME');
 is ($r->{DATA_TYPE},   4,                   'DB handle method "column_info" returns proper DATA_TYPE');
@@ -738,7 +738,7 @@ is_deeply (\%missing, {}, $t);
 
 ## Check some of the returned fields:
 $r = $result->[0];
-is ($r->{TABLE_CAT},   undef,              'DB handle method "primary_key_info" returns proper TABLE_CAT');
+is ($r->{TABLE_CAT},   $dbh->{pg_db},      'DB handle method "primary_key_info" returns proper TABLE_CAT');
 is ($r->{TABLE_NAME},  'dbd_pg_test',      'DB handle method "primary_key_info" returns proper TABLE_NAME');
 is ($r->{COLUMN_NAME}, 'id',               'DB handle method "primary_key_info" returns proper COLUMN_NAME');
 is ($r->{PK_NAME},     'dbd_pg_test_pkey', 'DB handle method "primary_key_info" returns proper PK_NAME');
@@ -1002,11 +1002,11 @@ $t='DB handle method "foreign_key_info" works for good pk';
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk1 = [
-					 undef, ## Catalog
+					 $dbh->{pg_db}, ## Catalog
 					 $schema2, ## Schema
 					 $table1, ## Table
 					 'a', ## Column
-					 undef, ## FK Catalog
+					 $dbh->{pg_db}, ## FK Catalog
 					 $schema2, ## FK Schema
 					 $table2, ## FK Table
 					 'f2', ## FK Table
@@ -1045,11 +1045,11 @@ $t='DB handle method "foreign_key_info" works for good pk / explicit fk';
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk2 = [
-					 undef,
+					 $dbh->{pg_db},
 					 $schema2,
 					 $table1,
 					 'b',
-					 undef,
+					 $dbh->{pg_db},
 					 $schema2,
 					 $table2,
 					 'f3',
@@ -1076,11 +1076,11 @@ $t='DB handle method "foreign_key_info" works for good pk / implicit fk';
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk3 = [
-					 undef,
+					 $dbh->{pg_db},
 					 $schema2,
 					 $table1,
 					 'c',
-					 undef,
+					 $dbh->{pg_db},
 					 $schema2,
 					 $table2,
 					 'f3',
@@ -1109,11 +1109,11 @@ for my $s ($schema3, $schema2) {
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
 $result = $sth->fetchall_arrayref();
 my $fk4 = [
-					 undef,
+					 $dbh->{pg_db},
 					 $schema2,
 					 $table1,
 					 'a',
-					 undef,
+					 $dbh->{pg_db},
 					 $schema2,
 					 $table3,
 					 'ff1',
@@ -1150,11 +1150,11 @@ $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,$table2);
 $result = $sth->fetchall_arrayref();
 ## "dbd_pg_test2_fk4" FOREIGN KEY (f1, f3, f2) REFERENCES dbd_pg_test1(c, a, b)
 my $fk5 = [
-					 undef,
+					 $dbh->{pg_db},
 					 $schema2,
 					 $table1,
 					 'c',
-					 undef,
+					 $dbh->{pg_db},
 					 $schema2,
 					 $table2,
 					 'f1',

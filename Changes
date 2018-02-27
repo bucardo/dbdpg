@@ -2,6 +2,9 @@
   - Add support for foreign tables in table_info() and column_info()
     [Dagfinn Ilmari Mannsåker]
 
+  - Return the current database name as TABLE_CAT in info methods
+    [Dagfinn Ilmari Mannsåker]
+
 Version 3.7.4. Released February 12, 2018 (git tag 3.7.4)
 
   - Fix typo in META.yml
