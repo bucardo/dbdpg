@@ -388,7 +388,7 @@ use 5.008001;
 			$dbh->{private_dbdpg}{$cachename} = $sequence;
 		}
 
-		$sth = $dbh->prepare_cached('SELECT currval(?)');
+		$sth = $dbh->prepare_cached('SELECT pg_catalog.currval(?)');
 		$count = $sth->execute($sequence);
 		return undef if ! defined $count;
 		return $sth->fetchall_arrayref()->[0][0];
@@ -454,9 +454,9 @@ use 5.008001;
 		my $col_info_sql = qq!
             SELECT
                 NULL::text AS "TABLE_CAT"
-                , quote_ident(n.nspname) AS "TABLE_SCHEM"
-                , quote_ident(c.relname) AS "TABLE_NAME"
-                , quote_ident(a.attname) AS "COLUMN_NAME"
+                , pg_catalog.quote_ident(n.nspname) AS "TABLE_SCHEM"
+                , pg_catalog.quote_ident(c.relname) AS "TABLE_NAME"
+                , pg_catalog.quote_ident(a.attname) AS "COLUMN_NAME"
                 , a.atttypid AS "DATA_TYPE"
                 , pg_catalog.format_type(a.atttypid, NULL) AS "TYPE_NAME"
                 , a.attlen AS "COLUMN_SIZE"
@@ -619,8 +619,8 @@ use 5.008001;
             SELECT
                 c.relname, i.indkey, i.indisunique, i.indisclustered, a.amname,
                 n.nspname, c.relpages, c.reltuples, i.indexprs, i.indnatts, i.indexrelid,
-                pg_get_expr(i.indpred,i.indrelid) as predicate,
-                pg_get_expr(i.indexprs,i.indrelid, true) AS indexdef
+                pg_catalog.pg_get_expr(i.indpred,i.indrelid) as predicate,
+                pg_catalog.pg_get_expr(i.indexprs,i.indrelid, true) AS indexdef
             FROM
                 pg_catalog.pg_index i, pg_catalog.pg_class c,
                 pg_catalog.pg_class d, pg_catalog.pg_am a,
@@ -634,10 +634,10 @@ use 5.008001;
 
 		my $indexdef_sql = q{
             SELECT
-                pg_get_indexdef(indexrelid,x,true)
+                pg_catalog.pg_get_indexdef(indexrelid,x,true)
             FROM
               pg_index
-            JOIN generate_series(1,?) s(x) ON indexrelid = ?
+            JOIN pg_catalog.generate_series(1,?) s(x) ON indexrelid = ?
         };
 
 		my @output_rows;
@@ -756,10 +756,12 @@ use 5.008001;
 		my $pri_key_sql = qq{
             SELECT
                   c.oid
-                , quote_ident(n.nspname)
-                , quote_ident(c.relname)
-                , quote_ident(c2.relname)
-                , i.indkey, quote_ident(t.spcname), quote_ident(t.spclocation)
+                , pg_catalog.quote_ident(n.nspname)
+                , pg_catalog.quote_ident(c.relname)
+                , pg_catalog.quote_ident(c2.relname)
+                , i.indkey
+                , pg_catalog.quote_ident(t.spcname)
+                , pg_catalog.quote_ident(t.spclocation)
                 , n.nspname, c.relname, c2.relname
             FROM
                 pg_catalog.pg_class c
@@ -773,7 +775,7 @@ use 5.008001;
         };
 
 		if ($dbh->{private_dbdpg}{version} >= 90200) {
-			$pri_key_sql =~ s/t.spclocation/pg_tablespace_location(t.oid)/;
+			$pri_key_sql =~ s/t.spclocation/pg_catalog.pg_tablespace_location(t.oid)/;
 		}
 
 		my $sth = $dbh->prepare($pri_key_sql) or return undef;
@@ -1036,10 +1038,10 @@ use 5.008001;
 			$extracols = q{,n.nspname AS pg_schema, NULL::text AS pg_table};
 			$tbl_sql = qq{SELECT
                        NULL::text AS "TABLE_CAT"
-                     , quote_ident(n.nspname) AS "TABLE_SCHEM"
+                     , pg_catalog.quote_ident(n.nspname) AS "TABLE_SCHEM"
                      , NULL::text AS "TABLE_NAME"
                      , NULL::text AS "TABLE_TYPE"
-                     , CASE WHEN n.nspname ~ '^pg_' THEN 'system schema' ELSE 'owned by ' || pg_get_userbyid(n.nspowner) END AS "REMARKS" $extracols
+                     , CASE WHEN n.nspname ~ '^pg_' THEN 'system schema' ELSE 'owned by ' || pg_catalog.pg_get_userbyid(n.nspowner) END AS "REMARKS" $extracols
                     FROM pg_catalog.pg_namespace n
                     ORDER BY "TABLE_SCHEM"
                     };
@@ -1094,10 +1096,10 @@ use 5.008001;
             # Default SQL
             $extracols = q{,n.nspname AS pg_schema, c.relname AS pg_table};
             my @search = (q|c.relkind IN ('r', 'v', 'm', 'f')|, # No sequences, etc. for now
-                          q|NOT (quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' AND NOT has_schema_privilege(n.nspname, 'USAGE'))|);   # No others' temp objects
-            my $showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(t.spclocation) AS "pg_tablespace_location"';
+                          q|NOT (pg_catalog.quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' AND NOT pg_catalog.has_schema_privilege(n.nspname, 'USAGE'))|);   # No others' temp objects
+            my $showtablespace = ', pg_catalog.quote_ident(t.spcname) AS "pg_tablespace_name", pg_catalog.quote_ident(t.spclocation) AS "pg_tablespace_location"';
             if ($dbh->{private_dbdpg}{version} >= 90200) {
-                $showtablespace = ', quote_ident(t.spcname) AS "pg_tablespace_name", quote_ident(pg_tablespace_location(t.oid)) AS "pg_tablespace_location"';
+                $showtablespace = ', pg_catalog.quote_ident(t.spcname) AS "pg_tablespace_name", pg_catalog.quote_ident(pg_catalog.pg_tablespace_location(t.oid)) AS "pg_tablespace_location"';
             }
 
             ## If the schema or table has an underscore or a %, use a LIKE comparison
@@ -1115,28 +1117,28 @@ use 5.008001;
             my $whereclause = join "\n\t\t\t\t\t AND " => @search;
             $tbl_sql = qq{
                 SELECT NULL::text AS "TABLE_CAT"
-                     , quote_ident(n.nspname) AS "TABLE_SCHEM"
-                     , quote_ident(c.relname) AS "TABLE_NAME"
+                     , pg_catalog.quote_ident(n.nspname) AS "TABLE_SCHEM"
+                     , pg_catalog.quote_ident(c.relname) AS "TABLE_NAME"
                        -- any temp table or temp view is LOCAL TEMPORARY for us
-                     , CASE WHEN quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' THEN
+                     , CASE WHEN pg_catalog.quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' THEN
                                  'LOCAL TEMPORARY'
                             WHEN c.relkind = 'r' THEN
-                                 CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN
+                                 CASE WHEN pg_catalog.quote_ident(n.nspname) ~ '^pg_' THEN
                                            'SYSTEM TABLE'
                                       ELSE 'TABLE'
                                   END
                             WHEN c.relkind = 'v' THEN
-                                 CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN
+                                 CASE WHEN pg_catalog.quote_ident(n.nspname) ~ '^pg_' THEN
                                            'SYSTEM VIEW'
                                       ELSE 'VIEW'
                                   END
                             WHEN c.relkind = 'm' THEN
-                                 CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN
+                                 CASE WHEN pg_catalog.quote_ident(n.nspname) ~ '^pg_' THEN
                                            'SYSTEM MATERIALIZED VIEW'
                                       ELSE 'MATERIALIZED VIEW'
                                   END
                             WHEN c.relkind = 'f' THEN
-                                 CASE WHEN quote_ident(n.nspname) ~ '^pg_' THEN
+                                 CASE WHEN pg_catalog.quote_ident(n.nspname) ~ '^pg_' THEN
                                            'SYSTEM FOREIGN TABLE'
                                       ELSE 'FOREIGN TABLE'
                                   END
