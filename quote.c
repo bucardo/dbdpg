@@ -229,7 +229,7 @@ char * quote_bytea(pTHX_ char *string, STRLEN len, STRLEN *retlen, int estring)
 			*result++ = '\\';
 		}
 		else if (*string < 0x20 || *string > 0x7e) {
-			(void) snprintf((char *)result, 6, "\\\\%03o", (unsigned char)*string++);
+			(void) sprintf((char *)result, "\\\\%03o", (unsigned char)*string++);
 			result += 5;
 		}
 		else {

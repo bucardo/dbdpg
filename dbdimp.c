@@ -1302,8 +1302,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 				y = PQftablecol(imp_sth->result, fields);
 				if (InvalidOid != x && y > 0) { /* We know what table and column this came from */
 					char statement[128];
-					snprintf(statement, sizeof(statement),
-							"SELECT attnotnull FROM pg_catalog.pg_attribute WHERE attrelid=%d AND attnum=%d", x, y);
+					sprintf(statement, "SELECT attnotnull FROM pg_catalog.pg_attribute WHERE attrelid=%d AND attnum=%d", x, y);
 					TRACE_PQEXEC;
 					result = PQexec(imp_dbh->conn, statement);
 					TRACE_PQRESULTSTATUS;
@@ -5464,7 +5463,7 @@ SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth)
 			int pos = PQftablecol(imp_sth->result, fields);
 			if(pos > 0){
 				char statement[200];
-				snprintf(statement, sizeof(statement),
+				sprintf(statement, 
 					"SELECT n.nspname, c.relname, a.attname FROM pg_class c LEFT JOIN pg_namespace n ON c.relnamespace = n.oid LEFT JOIN pg_attribute a ON a.attrelid = c.oid WHERE c.oid = %d AND a.attnum = %d", oid, pos);
 				TRACE_PQEXEC;
 				result = PQexec(imp_dbh->conn, statement);
