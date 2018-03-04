@@ -1980,6 +1980,10 @@ for my $type (qw/ ping pg_ping /) {
 	$dbh = connect_database({nosetup => 1});
 	isnt ($dbh, undef, $t);
 
+  SKIP: {
+
+        skip 'Cannot safely reopen sockets on Win32', 2 if $^O =~ /Win32/;
+
 	$val = $type eq 'ping' ? 0 : -3;
 	$t=qq{DB handle method "$type" returns $val after a lost network connection (outside transaction)};
 	socket_fail($dbh);
@@ -1994,6 +1998,7 @@ for my $type (qw/ ping pg_ping /) {
 	is ($dbh->$type(), $val, $t);
 
 	$type eq 'ping' and $dbh = connect_database({nosetup => 1});
+  }
 }
 
 exit;
