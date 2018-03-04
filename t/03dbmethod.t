@@ -580,14 +580,14 @@ SKIP: {
 	if ($pgversion < 90100) {
 		skip 'Postgres version 9.1 or better required to create foreign tables', 1;
 	}
-	$dbh->do('CREATE FOREIGN DATA WRAPPER testfdw');
-	$dbh->do('CREATE SERVER testserver FOREIGN DATA WRAPPER testfdw');
-	$dbh->do('CREATE FOREIGN TABLE testforeign (c1 int) SERVER testserver');
+	$dbh->do('CREATE FOREIGN DATA WRAPPER dbd_pg_testfdw');
+	$dbh->do('CREATE SERVER dbd_pg_testserver FOREIGN DATA WRAPPER dbd_pg_testfdw');
+	$dbh->do('CREATE FOREIGN TABLE dbd_pg_testforeign (c1 int) SERVER dbd_pg_testserver');
 	$t=q{DB handle method "table_info" returns correct number of rows when given a 'FOREIGN TABLE' type argument};
 	$sth = $dbh->table_info(undef,undef,undef,'FOREIGN TABLE');
 	$rows = $sth->rows();
 	is ($rows, 1, $t);
-	$dbh->do('DROP FOREIGN TABLE testforeign');
+    $dbh->rollback();
 }
 
 # Test listing catalog names
