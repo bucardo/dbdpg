@@ -24,6 +24,8 @@ types.c
 types.h
 quote.c
 quote.h
+sstring.h
+sstring.c
 
 .perlcriticrc
 t/dbdpg_test_setup.pl
