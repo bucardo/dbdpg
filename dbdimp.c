@@ -2516,8 +2516,8 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 	}
 	/* dbi handle allowed for cursor variables */
 	if (SvROK(newvalue) &&!IS_DBI_HANDLE(newvalue)) {
-		if (strnEQ("DBD::Pg::DefaultValue", neatsvpv(newvalue,0), 21)
-			|| strnEQ("DBI::DefaultValue", neatsvpv(newvalue,0), 17)) {
+		if (sv_isa(newvalue, "DBD::Pg::DefaultValue")
+			|| sv_isa(newvalue, "DBI::DefaultValue")) {
 			/* This is a special type */
 			Safefree(currph->value);
 			currph->value = NULL;
@@ -2525,7 +2525,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 			currph->isdefault = DBDPG_TRUE;
 			imp_sth->has_default = DBDPG_TRUE;
 		}
-		else if (strnEQ("DBD::Pg::Current", neatsvpv(newvalue,0), 16)) {
+		else if (sv_isa(newvalue, "DBD::Pg::Current")) {
 			/* This is a special type */
 			Safefree(currph->value);
 			currph->value = NULL;
