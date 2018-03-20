@@ -1614,7 +1614,6 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 	imp_sth->PQfmts            = NULL;
 	imp_sth->PQoids            = NULL;
 	imp_sth->prepared_by_us    = DBDPG_FALSE; /* Set to 1 when actually done preparing */
-	imp_sth->onetime           = DBDPG_FALSE; /* Allow internal shortcut */
 	imp_sth->direct            = DBDPG_FALSE;
 	imp_sth->is_dml            = DBDPG_FALSE; /* Not preparable DML until proved otherwise */
 	imp_sth->has_binary        = DBDPG_FALSE; /* Are any of the params binary? */
@@ -3329,11 +3328,10 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	   1. The statement is DML (DDL is not preparable)
 	   2. The attribute "pg_direct" is false
 	   3. The attribute "pg_server_prepare" is not 0
-	   4. The "onetime" attribute has not been set
-	   5. There are no DEFAULT or CURRENT values
-	   6a. The attribute "pg_server_prepare" is 1
+	   4. There are no DEFAULT or CURRENT values
+	   5a. The attribute "pg_server_prepare" is 1
 	   OR
-	   6b. All placeholders are bound (and "pg_server_prepare" is 2)
+	   5b. All placeholders are bound (and "pg_server_prepare" is 2)
 	*/
 	execsize = imp_sth->totalsize; /* Total of all segments */
 

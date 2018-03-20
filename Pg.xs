@@ -353,7 +353,6 @@ void do(dbh, statement, attr=Nullsv, ...)
 			imp_sth = (imp_sth_t*)(DBIh_COM(sth));
 			if (!dbdxst_bind_params(sth, imp_sth, items-2, ax+2))
 				XSRETURN_UNDEF;
-			imp_sth->onetime = 1; /* Tells dbdimp.c not to bother preparing this */
 			imp_sth->async_flag = asyncflag;
 			retval = dbd_st_execute(sth, imp_sth);
 		}

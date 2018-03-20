@@ -117,7 +117,6 @@ struct imp_sth_st {
 
 	bool   prepare_now;      /* prepare this statement right away, even if it has placeholders */
 	bool   prepared_by_us;   /* false if {prepare_name} set directly */
-	bool   onetime;          /* this statement is guaranteed not to be run again - so don't use SSP */
 	bool   direct;           /* allow bypassing of the statement parsing */
 	bool   is_dml;           /* is this SELECT/INSERT/UPDATE/DELETE? */
 	bool   has_binary;       /* does it have one or more binary placeholders? */
