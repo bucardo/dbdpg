@@ -22,7 +22,7 @@ plan tests => 259;
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
 
-my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
+my $pgversion = $dbh->{pg_server_version};
 if ($pgversion >= 80100) {
   $dbh->do('SET escape_string_warning = false');
 }
@@ -479,17 +479,12 @@ eval {
 };
 is ($@, q{}, $t);
 
-SKIP: {
-	if ($pglibversion < 80000) {
-		skip ('Skipping specific placeholder test on 7.4-compiled servers', 1);
-	}
-	$t='Calling do() with invalid crowded placeholders fails cleanly';
-	$dbh->commit();
-	eval {
-		$dbh->do(q{SELECT ??}, undef, 'public', 'error');
-	};
-	is ($dbh->state, '42601', $t);
-}
+$t='Calling do() with invalid crowded placeholders fails cleanly';
+$dbh->commit();
+eval {
+    $dbh->do(q{SELECT ??}, undef, 'public', 'error');
+};
+is ($dbh->state, '42601', $t);
 
 $t='Prepare/execute with non-DML placeholder works';
 $dbh->commit();
@@ -625,9 +620,6 @@ eval {
 };
 is ($@, q{}, $t);
 
-SKIP: {
-	skip 'Cannot run some quote tests on very old versions of Postgres', 14 if $pgversion < 80000;
-
 $t='Prepare works with placeholders after double slashes';
 eval {
 	$dbh->do(q{CREATE OPERATOR // ( PROCEDURE=bit, LEFTARG=int, RIGHTARG=int )});
@@ -683,8 +675,6 @@ SKIP: {
 		};
 		is ($@, q{}, $t);
 	}
-}
-
 }
 
 SKIP: {

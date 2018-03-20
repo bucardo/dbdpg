@@ -175,7 +175,7 @@ t/09arrays.t - Tests array manipulation.
 
 t/12placeholders.t - Tests placeholders.
 
-t/20savepoints.t - Test savepoints. Requires a server version 8.0 or up.
+t/20savepoints.t - Test savepoints.
 
 t/30unicode.t - Test Unicode. Or at least UTF8.
 

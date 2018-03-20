@@ -188,8 +188,7 @@ use 5.008001;
 
 		my $drh = shift;
 		my $attr = shift || '';
-		## Future: connect to "postgres" when the minimum version we support is 8.0
-		my $connstring = 'dbname=template1';
+		my $connstring = 'dbname=postgres';
 		if ($ENV{DBI_DSN}) {
 			($connstring = $ENV{DBI_DSN}) =~ s/dbi:Pg://i;
 		}
@@ -740,11 +739,6 @@ use 5.008001;
 			$whereclause .= "\n\t\t\tAND n.nspname = " . $dbh->quote($schema);
 		}
 
-		my $TSJOIN = 'pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
-		if ($dbh->{private_dbdpg}{version} < 80000) {
-			$TSJOIN = '(SELECT 0 AS oid, 0 AS spcname, 0 AS spclocation LIMIT 0) AS t ON (t.oid=1)';
-		}
-
 		my $pri_key_sql = qq{
             SELECT
                   c.oid
@@ -761,7 +755,7 @@ use 5.008001;
                 JOIN pg_catalog.pg_index i ON (i.indrelid = c.oid)
                 JOIN pg_catalog.pg_class c2 ON (c2.oid = i.indexrelid)
                 LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-                LEFT JOIN $TSJOIN
+                LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)
             WHERE
                 i.indisprimary IS TRUE
             $whereclause
@@ -1109,10 +1103,6 @@ use 5.008001;
                     push @search, 'c.relname ' . ($table =~ /[_%]/ ? 'LIKE ' : '= ') . $dbh->quote($table);
             }
 
-            my $TSJOIN = 'pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)';
-            if ($dbh->{private_dbdpg}{version} < 80000) {
-                $TSJOIN = '(SELECT 0 AS oid, 0 AS spcname, 0 AS spclocation LIMIT 0) AS t ON (t.oid=1)';
-            }
             my $whereclause = join "\n\t\t\t\t\t AND " => @search;
             $tbl_sql = qq{
                 SELECT pg_catalog.quote_ident(pg_catalog.current_database()) AS "TABLE_CAT"
@@ -1148,7 +1138,7 @@ use 5.008001;
                   LEFT JOIN pg_catalog.pg_description AS d
                        ON (c.oid = d.objoid AND c.tableoid = d.classoid AND d.objsubid = 0)
                   LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-                  LEFT JOIN $TSJOIN
+                  LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)
                  WHERE $whereclause
                  ORDER BY "TABLE_TYPE", "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"
                 };
@@ -2342,13 +2332,10 @@ Queries that do not begin with the word "SELECT", "INSERT",
 
 Deciding whether or not to use prepared statements depends on many factors, 
 but you can force them to be used or not used by using the 
-L<pg_server_prepare|/pg_server_prepare_(integer)> attribute when calling L</prepare>. Setting this to "0" means to never use 
-prepared statements. Setting pg_server_prepare to "1" means that prepared 
-statements should be used whenever possible. This is the default when connected 
-to Postgres servers version 8.0 or higher. Servers that are version 7.4 get a special 
-default value of "2", because server-side statements were only partially supported 
-in that version. In this case, it only uses server-side prepares if all 
-parameters are specifically bound.
+L<pg_server_prepare|/pg_server_prepare_(boolean)> attribute when calling L</prepare>.
+Setting this to false means to never use
+prepared statements. Setting pg_server_prepare to true means that prepared
+statements should be used whenever possible. This is the default.
 
 The pg_server_prepare attribute can also be set at connection time like so:
 
@@ -2834,14 +2821,11 @@ B<TABLE_TYPE>: The type of object returned. Will be one of "TABLE", "VIEW",
 
 The TABLE_SCHEM and TABLE_NAME will be quoted via C<quote_ident()>.
 
-Two additional fields specific to DBD::Pg are returned:
+Four additional fields specific to DBD::Pg are returned:
 
 B<pg_schema>: the unquoted name of the schema
 
 B<pg_table>: the unquoted name of the table
-
-If your database supports tablespaces (version 8.0 or greater), two additional
-DBD::Pg specific fields are returned:
 
 B<pg_tablespace_name>: the name of the tablespace the table is in
 
@@ -3134,10 +3118,10 @@ issuing commands such as INSERT, UPDATE, or DELETE.
 
 This method requires DBI version 1.55 or better.
 
-=head3 B<pg_server_prepare> (integer)
+=head3 B<pg_server_prepare> (boolean)
 
 DBD::Pg specific attribute. Indicates if DBD::Pg should attempt to use server-side 
-prepared statements. The default value, 1, indicates that prepared statements should 
+prepared statements. The default value, true, indicates that prepared statements should
 be used whenever possible. See the section on the L</prepare> method for more information.
 
 =head3 B<pg_switch_prepared> (integer)
@@ -3833,10 +3817,10 @@ DBD::Pg specific attribute. Specifies the name of the prepared statement to use 
 statement handle. Not normally needed, see the section on the L</prepare> method for 
 more information.
 
-=head3 B<pg_server_prepare> (integer)
+=head3 B<pg_server_prepare> (boolean)
 
 DBD::Pg specific attribute. Indicates if DBD::Pg should attempt to use server-side 
-prepared statements for this statement handle. The default value, 1, indicates that prepared 
+prepared statements for this statement handle. The default value, true, indicates that prepared
 statements should be used whenever possible. See the section on the L</prepare> method for 
 more information.
 
@@ -3946,8 +3930,7 @@ created after the one being released are also destroyed.
 
 It is possible to send a query to the backend and have your script do other work while the query is 
 running on the backend. Both queries sent by the L</do> method, and by the L</execute> method can be 
-sent asynchronously. (NOTE: This will only work if DBD::Pg has been compiled against Postgres libraries 
-of version 8.0 or greater) The basic usage is as follows:
+sent asynchronously. The basic usage is as follows:
 
   use DBD::Pg ':async';
 

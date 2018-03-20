@@ -499,15 +499,10 @@ version: $version
 			print $cfh "\n\n## DBD::Pg testing parameters\n";
 			print $cfh "port=$testport\n";
 			print $cfh "max_connections=11\n";
-			if ($version >= 8.0) {
-				print $cfh "log_statement = 'all'\n";
-				print $cfh "log_line_prefix = '%m [%p] '\n";
-				print $cfh "log_filename = 'postgres%Y-%m-%d.log'\n";
-				print $cfh "log_rotation_size = 0\n";
-			}
-			else {
-				print $cfh "silent_mode = true\n";
-			}
+			print $cfh "log_statement = 'all'\n";
+			print $cfh "log_line_prefix = '%m [%p] '\n";
+			print $cfh "log_filename = 'postgres%Y-%m-%d.log'\n";
+			print $cfh "log_rotation_size = 0\n";
 			if ($version == 8.1) {
 				print {$cfh} "redirect_stderr = on\n";
 			}

@@ -21,35 +21,6 @@
 #define sb2 signed short
 #define ub2 unsigned short
 
-#if PGLIBVERSION < 80000
-
-/* Should not be called, throw errors: */
-PGresult *PQprepare(PGconn *a, const char *b, const char *c, int d, const Oid *e);
-PGresult *PQprepare(PGconn *a, const char *b, const char *c, int d, const Oid *e) {
-	if (a||b||c||d||e) d=0;
-	croak ("Called wrong PQprepare");
-}
-
-int PQserverVersion(const PGconn *a);
-int PQserverVersion(const PGconn *a) { if (!a) return 0; croak ("Called wrong PQserverVersion"); }
-
-typedef struct pg_cancel PGcancel;
-int	PQcancel(PGcancel *cancel, char *errbuf, int errbufsize);
-int	PQcancel(PGcancel *cancel, char *errbuf, int errbufsize) {
-	croak ("Called wrong PQcancel");
-}
-PGcancel *PQgetCancel(PGconn *conn);
-PGcancel *PQgetCancel(PGconn *conn) {
-	croak ("Called wrong PQgetCancel");
-}
-void PQfreeCancel(PGcancel *cancel);
-void PQfreeCancel(PGcancel *cancel) {
-	croak ("Called wrong PQfreeCancel");
-}
-
-
-#endif
-
 #if PGLIBVERSION < 80300
 Oid lo_truncate (PGconn *conn, int fd, size_t len);
 Oid lo_truncate (PGconn *conn, int fd, size_t len) {
@@ -94,7 +65,7 @@ static void _fatal_sqlstate(pTHX_ imp_dbh_t *imp_dbh);
 static ExecStatusType _sqlstate(pTHX_ imp_dbh_t *imp_dbh, PGresult *result);
 static int pg_db_rollback_commit (pTHX_ SV *dbh, imp_dbh_t *imp_dbh, int action);
 static SV *pg_st_placeholder_key (imp_sth_t *imp_sth, ph_t *currph, int i);
-static void pg_st_split_statement (pTHX_ imp_sth_t *imp_sth, int version, char *statement);
+static void pg_st_split_statement (pTHX_ imp_sth_t *imp_sth, char *statement);
 static int pg_st_prepare_statement (pTHX_ SV *sth, imp_sth_t *imp_sth);
 static int pg_st_deallocate_statement(pTHX_ SV *sth, imp_sth_t *imp_sth);
 static PGTransactionStatusType pg_db_txn_status (pTHX_ imp_dbh_t *imp_dbh);
@@ -224,27 +195,18 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
 
 	/* Figure out this particular backend's version */
-	imp_dbh->pg_server_version = -1;
-#if PGLIBVERSION >= 80000
 	TRACE_PQSERVERVERSION;
 	imp_dbh->pg_server_version = PQserverVersion(imp_dbh->conn);
-#endif
 
-	if (imp_dbh->pg_server_version <= 0) {
-		int	cnt, vmaj, vmin, vrev;
-		const char *vers = PQparameterStatus(imp_dbh->conn, "server_version");
-
-		if (NULL != vers) {
-			cnt = sscanf(vers, "%d.%d.%d", &vmaj, &vmin, &vrev);
-			if (cnt >= 2) {
-				if (cnt == 2) /* Account for devel version e.g. 8.3beta1 */
-					vrev = 0;
-				imp_dbh->pg_server_version = (100 * vmaj + vmin) * 100 + vrev;
-			}
-		}
-		else {
-			imp_dbh->pg_server_version = PG_UNKNOWN_VERSION ;
-		}
+	if (imp_dbh->pg_server_version < 80000) {
+		TRACE_PQERRORMESSAGE;
+		strncpy(imp_dbh->sqlstate, "08001", 6); /* sqlclient_unable_to_establish_sqlconnection */
+		pg_error(aTHX_ dbh, CONNECTION_BAD, "Server version 8.0 required");
+		TRACE_PQFINISH;
+		PQfinish(imp_dbh->conn);
+		sv_free((SV *)imp_dbh->savepoints);
+		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login (error)\n", THEADER_slow);
+		return 0;
 	}
 
 	pg_db_detect_client_encoding_utf8(aTHX_ imp_dbh);
@@ -262,6 +224,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	imp_dbh->expand_array      = DBDPG_TRUE;
 	imp_dbh->txn_read_only     = DBDPG_FALSE;
 	imp_dbh->pid_number        = getpid();
+	imp_dbh->server_prepare    = DBDPG_TRUE;
 	imp_dbh->prepare_number    = 1;
 	imp_dbh->switch_prepared   = 2;
 	imp_dbh->copystate         = 0;
@@ -269,9 +232,6 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	imp_dbh->pg_errorlevel     = 1; /* Default */
 	imp_dbh->async_status      = 0;
 	imp_dbh->async_sth         = NULL;
-
-	/* If using server version 7.4, switch to "smart" */
-	imp_dbh->server_prepare = PGLIBVERSION >= 80000 ? 1 : 2;
 
 	/* Tell DBI that we should call destroy when the handle dies */
 	DBIc_IMPSET_on(imp_dbh);
@@ -983,11 +943,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 	case 17: /* pg_server_prepare */
 
 		if (strEQ("pg_server_prepare", key)) {
-			if (SvOK(valuesv)) {
-				newval = (unsigned)SvIV(valuesv);
-			}
-			/* Default to "2" if an invalid value is passed in */
-			imp_dbh->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
+			imp_dbh->server_prepare = newval ? DBDPG_TRUE : DBDPG_FALSE;
 			retval = 1;
 		}
 		break;
@@ -1453,7 +1409,7 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 	case 17: /* pg_server_prepare */
 
 		if (strEQ("pg_server_prepare", key)) {
-			imp_sth->server_prepare = strEQ(value,"0") ? DBDPG_FALSE : DBDPG_TRUE;
+			imp_sth->server_prepare = SvTRUE(valuesv) ? DBDPG_TRUE : DBDPG_FALSE;
 			retval = 1;
 		}
 		break;
@@ -1641,9 +1597,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 	/* Parse and set any attributes passed in */
 	if (attribs) {
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_server_prepare", 17, 0)) != NULL) {
-			int newval = (int)SvIV(*svp);
-			/* Default to "2" if an invalid value is passed in */
-			imp_sth->server_prepare = 0==newval ? 0 : 1==newval ? 1 : 2;
+			imp_sth->server_prepare = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
 		}
 		if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_direct", 9, 0)) != NULL)
 			imp_sth->direct = 0==SvIV(*svp) ? DBDPG_FALSE : DBDPG_TRUE;
@@ -1689,13 +1643,13 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 	}
 
 	/* Break the statement into segments by placeholder */
-	pg_st_split_statement(aTHX_ imp_sth, imp_dbh->pg_server_version, statement);
+	pg_st_split_statement(aTHX_ imp_sth, statement);
 
 	/*
 	  We prepare it right away if:
 	  1. The statement is DML
 	  2. The attribute "direct" is false
-	  3. The attribute "pg_server_prepare" is not 0
+	  3. The attribute "pg_server_prepare" is true
 	  4. The attribute "pg_prepare_now" is true
 	  5. We are compiled on a 8 or greater server
 	*/
@@ -1710,9 +1664,8 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 
 	if (imp_sth->is_dml
 		&& !imp_sth->direct
-		&& 0 != imp_sth->server_prepare
+		&& imp_sth->server_prepare
 		&& imp_sth->prepare_now
-		&& PGLIBVERSION >= 80000
 		) {
 		if (TRACE5_slow) TRC(DBILOGFP, "%sRunning an immediate prepare\n", THEADER_slow);
 
@@ -1736,7 +1689,7 @@ static const char *placeholder_string[PLACEHOLDER_TYPE_COUNT] = {
 };
 
 /* ================================================================== */
-static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char * statement)
+static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
 {
 
 	/* Builds the "segment" and "placeholder" structures for a statement handle */
@@ -1903,8 +1856,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 			/* 2.5: End quote was the last character in the string */
 		} /* end comment section */
 
-		/* 3: advanced dollar quoting - only if the backend is version 8 or higher */
-		if (version >= 80000 && '$' == ch && 
+		/* 3: advanced dollar quoting */
+		if ('$' == ch &&
 			(*statement == '$' 
 			 || *statement == '_'
 			 || (*statement >= 'A' && *statement <= 'Z') 
@@ -2302,15 +2255,10 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 	PGresult *   result;
 	int          status = -1;
 	seg_t *      currseg;
-	bool         oldprepare = DBDPG_TRUE;
 	ph_t *       currph;
 	long         power_of_ten;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_prepare_statement\n", THEADER_slow);
-
-#if PGLIBVERSION >= 80000
-	oldprepare = DBDPG_FALSE;
-#endif
 
 	Renew(imp_sth->prepare_name, 25, char); /* freed in dbd_st_destroy */
 
@@ -2321,20 +2269,11 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 			imp_dbh->prepare_number);
 
 	if (TRACE5_slow)
-		TRC(DBILOGFP, "%sNew statement name (%s), oldprepare is %d\n",
-			THEADER_slow, imp_sth->prepare_name, oldprepare);
-
-	/* PQprepare was not added until 8.0 */
+		TRC(DBILOGFP, "%sNew statement name (%s)\n",
+			THEADER_slow, imp_sth->prepare_name);
 
 	execsize = imp_sth->totalsize;
-	if (oldprepare)
-		execsize += strlen("PREPARE  AS ") + strlen(imp_sth->prepare_name); /* Two spaces! */
-
 	if (imp_sth->numphs!=0) {
-		if (oldprepare) {
-			execsize += strlen("()");
-			execsize += imp_sth->numphs-1; /* for the commas */
-		}
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 			if (0==currseg->placeholder)
 				continue;
@@ -2347,37 +2286,13 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 			if (placeholder_digits >= 7)
 				croak("Too many placeholders!");
 			execsize += placeholder_digits+1;
-			if (oldprepare) {
-				/* The parameter type, only once per number please */
-				if (!currseg->ph->referenced)
-					execsize += strlen(currseg->ph->bind_type->type_name);
-				currseg->ph->referenced = DBDPG_TRUE;
-			}
 		}
 	}
 
 	New(0, statement, execsize+1, char); /* freed below */
 
-	if (oldprepare) {
-		sprintf(statement, "PREPARE %s", imp_sth->prepare_name);
-		if (imp_sth->numphs!=0) {
-			strcat(statement, "(");
-			for (x=0, currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-				if (currseg->placeholder && currseg->ph->referenced) {
-					if (x!=0)
-						strcat(statement, ",");
-					strcat(statement, currseg->ph->bind_type->type_name);
-					x=1;
-					currseg->ph->referenced = DBDPG_FALSE;
-				}
-			}
-			strcat(statement, ")");
-		}
-		strcat(statement, " AS ");
-	}
-	else {
-		statement[0] = '\0';
-	}
+	statement[0] = '\0';
+
 	/* Construct the statement, with proper placeholders */
 	for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 		if (currseg->segment != NULL)
@@ -2392,33 +2307,29 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 	if (TRACE6_slow)
 		TRC(DBILOGFP, "%sPrepared statement (%s)\n", THEADER_slow, statement);
 
-	if (oldprepare) {
-		status = _result(aTHX_ imp_dbh, statement);
-	}
-	else {
-		int params = 0;
-		if (imp_sth->numbound!=0) {
-			params = imp_sth->numphs;
-			if (NULL == imp_sth->PQoids) {
-				Newz(0, imp_sth->PQoids, (unsigned int)imp_sth->numphs, Oid);
-			}
-			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
-				imp_sth->PQoids[x++] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
-			}
+	int params = 0;
+	if (imp_sth->numbound!=0) {
+		params = imp_sth->numphs;
+		if (NULL == imp_sth->PQoids) {
+			Newz(0, imp_sth->PQoids, (unsigned int)imp_sth->numphs, Oid);
 		}
-		if (TSQL)
-			TRC(DBILOGFP, "PREPARE %s AS %s;\n\n", imp_sth->prepare_name, statement);
+		for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
+			imp_sth->PQoids[x++] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
+		}
+	}
+	if (TSQL)
+		TRC(DBILOGFP, "PREPARE %s AS %s;\n\n", imp_sth->prepare_name, statement);
 
-		TRACE_PQPREPARE;
-		result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids);
-		status = _sqlstate(aTHX_ imp_dbh, result);
-		if (result) {
-			TRACE_PQCLEAR;
-			PQclear(result);
-		}
-		if (TRACE6_slow)
-			TRC(DBILOGFP, "%sUsing PQprepare: %s\n", THEADER_slow, statement);
+	TRACE_PQPREPARE;
+	result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids);
+	status = _sqlstate(aTHX_ imp_dbh, result);
+	if (result) {
+		TRACE_PQCLEAR;
+		PQclear(result);
 	}
+	if (TRACE6_slow)
+		TRC(DBILOGFP, "%sUsing PQprepare: %s\n", THEADER_slow, statement);
+
 	Safefree(statement);
 	if (PGRES_COMMAND_OK != status) {
 		TRACE_PQERRORMESSAGE;
@@ -3314,7 +3225,6 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	   4. pg_direct is true
 	   5. There are no placeholders
 	   6. pg_server_prepare is false
-	   7. pg_server_prepare is 2, but all placeholders are not bound
 	*/
 	if (!imp_sth->is_dml
 		|| imp_sth->has_default
@@ -3322,7 +3232,6 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		|| imp_sth->direct
 		|| !imp_sth->numphs
 		|| !imp_sth->server_prepare
-		|| (2==imp_sth->server_prepare && imp_sth->numbound != imp_sth->numphs)
 		)
 		pqtype = PQTYPE_EXEC;
 	else if (0==imp_sth->switch_prepared || imp_sth->number_iterations < imp_sth->switch_prepared) {
@@ -3335,11 +3244,8 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	/* We use the new server_side prepare style if:
 	   1. The statement is DML (DDL is not preparable)
 	   2. The attribute "pg_direct" is false
-	   3. The attribute "pg_server_prepare" is not 0
+	   3. The attribute "pg_server_prepare" is true
 	   4. There are no DEFAULT or CURRENT values
-	   5a. The attribute "pg_server_prepare" is 1
-	   OR
-	   5b. All placeholders are bound (and "pg_server_prepare" is 2)
 	*/
 	execsize = imp_sth->totalsize; /* Total of all segments */
 
@@ -4438,9 +4344,6 @@ int pg_db_savepoint (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_savepoint (name: %s)\n", THEADER_slow, savepoint);
 
-	if (imp_dbh->pg_server_version < 80000)
-		croak("Savepoints are only supported on server version 8.0 or higher");
-
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit))) {
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_savepoint (0)\n", THEADER_slow);
@@ -4487,9 +4390,6 @@ int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, const char *savepoint)
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_rollback_to (name: %s)\n", THEADER_slow, savepoint);
 
-	if (imp_dbh->pg_server_version < 80000)
-		croak("Savepoints are only supported on server version 8.0 or higher");
-
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit))) {
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_rollback_to (0)\n", THEADER_slow);
@@ -4523,9 +4423,6 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	char * action;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_release (name: %s)\n", THEADER_slow, savepoint);
-
-	if (imp_dbh->pg_server_version < 80000)
-		croak("Savepoints are only supported on server version 8.0 or higher");
 
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit))) {

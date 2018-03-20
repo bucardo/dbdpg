@@ -23,7 +23,7 @@ struct imp_dbh_st {
 	int     copystate;         /* 0=none PGRES_COPY_IN PGRES_COPY_OUT */
 	bool    copybinary;        /* whether the copy is in binary format */
 	int     pg_errorlevel;     /* PQsetErrorVerbosity. Set by user, defaults to 1 */
-	int     server_prepare;    /* do we want to use PQexecPrepared? 0=no 1=yes 2=smart. Can be changed by user */
+	bool    server_prepare;    /* do we want to use PQexecPrepared? Can be changed by user */
 	int     switch_prepared;   /* how many executes until we switch to PQexecPrepared */
 	int     async_status;      /* 0=no async 1=async started -1=async has been cancelled */
 
@@ -88,7 +88,7 @@ typedef enum
 struct imp_sth_st {
 	dbih_stc_t com;          /* MUST be first element in structure */
 
-	int    server_prepare;    /* inherited from dbh. 3 states: 0=no 1=yes 2=smart */
+	bool   server_prepare;    /* inherited from dbh */
 	int    switch_prepared;   /* inherited from dbh */
     int    number_iterations; /* how many times has the statement been executed? Used by switch_prepared */
 	PGPlaceholderType placeholder_type;  /* which style is being used 1=? 2=$1 3=:foo */
