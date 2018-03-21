@@ -1582,7 +1582,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 {
 	dTHX;
 	D_imp_dbh_from_sth;
-	STRLEN mypos=0, wordstart, newsize; /* Used to find and set firstword */
+	STRLEN mypos=0; /* Used to find and set firstword */
 	SV **svp; /* To help parse the arguments */
 
 	statement_sv = pg_rightgraded_sv(aTHX_ statement_sv, imp_dbh->pg_utf8_flag);
@@ -1590,7 +1590,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_prepare (statement: %s)\n", THEADER_slow, statement);
 
-	if ('\0' == *statement)
+	if ('\0' == statement)
 		croak ("Cannot prepare empty statement");
 
 	/* Set default values for this statement handle */
@@ -1655,20 +1655,18 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 	}
 
 	/* Figure out the first word in the statement */
-	while (*statement && isSPACE(*statement)) {
+	while (isSPACE(statement[mypos]))
 		mypos++;
-		statement++;
-	}
-	if (isALPHA(*statement)) {
-		wordstart = mypos;
-		while (isALPHA(*statement)) {
+
+	if (isALPHA(statement[mypos])) {
+		STRLEN wordstart = mypos, wordlen;
+		while (isALPHA(statement[mypos]))
 			mypos++;
-			statement++;
-		}
-		newsize = mypos-wordstart;
-		New(0, imp_sth->firstword, newsize+1, char); /* freed in dbd_st_destroy */
-		Copy(statement-newsize, imp_sth->firstword, newsize, char);
-		imp_sth->firstword[newsize] = '\0';
+
+		wordlen = mypos-wordstart;
+		New(0, imp_sth->firstword, wordlen+1, char); /* freed in dbd_st_destroy */
+		Copy(statement+wordstart, imp_sth->firstword, wordlen, char);
+		imp_sth->firstword[wordlen] = '\0';
 
 		/* Note whether this is preparable DML */
 		if (0 == strcasecmp(imp_sth->firstword, "SELECT") ||
@@ -1681,7 +1679,6 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 			imp_sth->is_dml = DBDPG_TRUE;
 		}
 	}
-	statement -= mypos; /* Rewind statement */
 
 	/* Break the statement into segments by placeholder */
 	pg_st_split_statement(aTHX_ imp_sth, imp_dbh->pg_server_version, statement);
