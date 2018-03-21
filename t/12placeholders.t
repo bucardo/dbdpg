@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 257;
+plan tests => 259;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -706,8 +706,8 @@ $dbh->rollback();
 SKIP: {
 	skip 'Cannot adjust standard_conforming_strings for testing on this version of Postgres', 2 if $pgversion < 80200;
 	$t='Backslash quoting inside single quotes is parsed correctly with standard_conforming_strings off';
+	$dbh->do(q{SET standard_conforming_strings = 'off'});
 	eval {
-		$dbh->do(q{SET standard_conforming_strings = 'off'});
 		local $dbh->{Warn} = '';
 		$sth = $dbh->prepare(q{SELECT '\', ?});
 		$sth->execute();
@@ -716,12 +716,29 @@ SKIP: {
 	like ($@, qr{unterminated quoted string}, $t);
 	$dbh->rollback();
 
+	$t=q{Backslash quoting inside E'' is parsed correctly with standard_conforming_strings = 'off'};
+	eval {
+		$sth = $dbh->prepare(q{SELECT E'\'?'});
+		$sth->execute();
+		$sth->finish;
+	};
+	is ($@, q{}, $t);
+	$dbh->rollback();
+
 	$t='Backslash quoting inside single quotes is parsed correctly with standard_conforming_strings on';
 	eval {
 		$dbh->do(q{SET standard_conforming_strings = 'on'});
 		$sth = $dbh->prepare(q{SELECT '\', ?::int});
 		$sth->execute(1);
 		$sth->finish();
+	};
+	is ($@, q{}, $t);
+
+	$t=q{Backslash quoting inside E'' is parsed correctly with standard_conforming_strings = 'on'};
+	eval {
+		$sth = $dbh->prepare(q{SELECT E'\'?'});
+		$sth->execute();
+		$sth->finish;
 	};
 	is ($@, q{}, $t);
 }

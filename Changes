@@ -1,4 +1,6 @@
 
+  - Handle backslash-escaped quotes in E'' strings
+
 Version 3.8.0
 
   - Add support for foreign tables in table_info() and column_info()

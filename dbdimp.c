@@ -1747,7 +1747,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 	unsigned char oldch; /* The previous character */
 
-	char standard_conforming_strings = 1; /* Status 0=on 1=unknown -1=off */
+	char non_standard_strings = -1; /* Status 0=standard 1=non_standard -1=unknown  */
 
 	int xint;
 
@@ -1833,9 +1833,10 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		if ('\'' == ch || '"' == ch) {
 			char quote = ch;
 			STRLEN backslashes = 0;
-			if ('\'' == ch && 1 == standard_conforming_strings) {
+			bool estring = (oldch == 'E') ? DBDPG_TRUE : DBDPG_FALSE; /* E'' style string with backslash escapes */
+			if ('\'' == ch && -1 == non_standard_strings) {
 				const char * scs = PQparameterStatus(imp_dbh->conn,"standard_conforming_strings");
-				standard_conforming_strings = (NULL==scs ? 1 : strncmp(scs,"on",2));
+				non_standard_strings = (NULL==scs ? 1 : 0==strncmp(scs,"on",2) ? 0 : 1);
 			}
 
 			/* Go until ending quote character (unescaped) or end of string */
@@ -1843,12 +1844,12 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 				/* 1.1 : single quotes have no meaning in double-quoted sections and vice-versa */
 				/* 1.2 : backslashed quotes do not end the section */
 				/* 1.2.1 : backslashes have no meaning in double quoted sections */
-				/* 1.2.2 : if standard_confirming_strings is set, ignore backslashes in single quotes */
+				/* 1.2.2 : if non_standard_strings is set, ignore backslashes in single quotes */
 				if (ch == quote && (quote == '"' || 0==(backslashes&1))) {
 					quote = 0;
 				}
 				else if ('\\' == ch) {
-					if (quote == '"' || standard_conforming_strings)
+					if (quote == '"' || non_standard_strings || estring)
 						backslashes++;
 				}
 				else
