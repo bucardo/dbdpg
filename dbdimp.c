@@ -1674,6 +1674,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 			0 == strcasecmp(imp_sth->firstword, "UPDATE") ||
 			0 == strcasecmp(imp_sth->firstword, "DELETE") ||
 			0 == strcasecmp(imp_sth->firstword, "VALUES") ||
+			0 == strcasecmp(imp_sth->firstword, "TABLE")  ||
 			0 == strcasecmp(imp_sth->firstword, "WITH")
 			) {
 			imp_sth->is_dml = DBDPG_TRUE;
