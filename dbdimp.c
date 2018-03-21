@@ -1741,29 +1741,13 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 	STRLEN sectionsize; /* Size of an allocated segment */
 
-	STRLEN backslashes; /* Counts backslashes, only used in quote section */
-
-	STRLEN dollarsize; /* Size of dollarstring */
-
-	int topdollar; /* Used to enforce sequential $1 arguments */
-
 	PGPlaceholderType placeholder_type; /* Which type we are in: one of none,?,$,: */
 
  	unsigned char ch; /* The current character being checked */
 
 	unsigned char oldch; /* The previous character */
 
-	char quote; /* Current quote or comment character: used only in those two blocks */
-
-	bool found; /* Simple boolean */
-
-	bool inside_dollar; /* Inside a dollar quoted value */
-
-	char * dollarstring = NULL; /* Dynamic string between $$ in dollar quoting */
-
 	char standard_conforming_strings = 1; /* Status 0=on 1=unknown -1=off */
-
-	STRLEN xlen; /* Because "x" is too hard to search for */
 
 	int xint;
 
@@ -1847,8 +1831,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 		/* 1: A traditionally quoted section */
 		if ('\'' == ch || '"' == ch) {
-			quote = ch;
-			backslashes = 0;
+			char quote = ch;
+			STRLEN backslashes = 0;
 			if ('\'' == ch && 1 == standard_conforming_strings) {
 				const char * scs = PQparameterStatus(imp_dbh->conn,"standard_conforming_strings");
 				standard_conforming_strings = (NULL==scs ? 1 : strncmp(scs,"on",2));
@@ -1885,7 +1869,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		if (('-' == ch && '-' == *statement) ||
 			('/' == ch && '*' == *statement)
 			) {
-			quote = *statement;
+			char quote = *statement;
 			/* Go until end of comment (may be newline) or end of the string */
 			while (quote && ++currpos && (ch = *statement++)) {
 				/* 2.1: dashdash only terminates at newline */
@@ -1920,13 +1904,17 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 				or an underscore (_). Subsequent characters in an identifier or key word can be letters, underscores, 
 				digits (0-9), or dollar signs ($)
 			*/
-			sectionsize = 0; /* How far from the first dollar sign are we? */
-			found = 0; /* Have we found the end of the dollarquote? */
+			char * dollarstring = NULL; /* Dynamic string between $$ in dollar quoting */
+			STRLEN dollarsize; /* Size of dollarstring */
+			STRLEN dollaroffset = 0; /* How far from the first dollar sign are we? */
+			STRLEN xlen = 0; /* The current character we are tracing */
+			bool found = DBDPG_FALSE; /* Have we found the end of the dollarquote? */
+			bool inside_dollar = DBDPG_FALSE; /* Are we evaluating the dollar sign for the end? */
 
 			/* Scan forward until we hit the matching dollarsign */
 			while ((ch = *statement++)) {
 
-				sectionsize++;
+				dollaroffset++;
 				if ('$' == ch) {
 					found = DBDPG_TRUE;
 					break;
@@ -1944,7 +1932,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 			/* Not found? Move to the next letter after the dollarsign and move on */
 			if (!found) {
-				statement -= sectionsize;
+				statement -= dollaroffset;
 				if (!ch) {
 					ch = 1; /* So the top loop still works */
 					statement--;
@@ -1953,19 +1941,17 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 			}
 
 			/* We only need to create a dollarstring if something was between the two dollar signs */
-			if (sectionsize >= 1) {
-				New(0, dollarstring, sectionsize, char); /* note: a true array, not a null-terminated string */
-				strncpy(dollarstring, statement-sectionsize, sectionsize);
+			if (dollaroffset >= 1) {
+				New(0, dollarstring, dollaroffset, char); /* note: a true array, not a null-terminated string */
+				strncpy(dollarstring, statement-dollaroffset, dollaroffset);
 			}
 
 			/* Move on and see if the quote is ever closed */
 
-			inside_dollar=0; /* Are we evaluating the dollar sign for the end? */
-			dollarsize = sectionsize;
-			xlen=0; /* The current character we are tracing */
-			found=0;
+			dollarsize = dollaroffset;
+			found = DBDPG_FALSE;
 			while ((ch = *statement++)) {
-				sectionsize++;
+				dollaroffset++;
 				if (inside_dollar) {
 					/* Special case of $$ */
 					if (dollarsize < 1) {
@@ -1977,7 +1963,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 						if (xlen >= dollarsize) {
 							found = DBDPG_TRUE;
 							statement++;
-							sectionsize--;
+							dollaroffset--;
 							break;
 						}
 					}
@@ -1996,14 +1982,14 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 
 			/* If end of string, rewind one character */
 			if (0==ch) {
-				sectionsize--;
+				dollaroffset--;
 			}
 
 			if (dollarstring)
 				Safefree(dollarstring);
 
 			/* Advance our cursor to the current position */
-			currpos += sectionsize+1;
+			currpos += dollaroffset+1;
 
 			statement--; /* Rewind statement by one */
 
@@ -2125,7 +2111,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 			newseg->placeholder = atoi(statement-(currpos-sectionstop-1));
 		}
 		else if (PLACEHOLDER_COLON == placeholder_type) {
-			sectionsize = currpos-sectionstop;
+			STRLEN phsectionsize = currpos-sectionstop;
 			/* Have we seen this placeholder yet? */
 			for (xint=1,thisph=imp_sth->ph; NULL != thisph; thisph=thisph->nextph,xint++) {
 				/*
@@ -2133,8 +2119,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 				   hit when seeing :foobar2, we always use the greater of the two lengths:
 				   the length of the old name or the current name we are scanning
 				*/
-				if (0==strncmp(thisph->fooname, statement-sectionsize,
-							   strlen(thisph->fooname) > sectionsize ? strlen(thisph->fooname) : sectionsize)) {
+				if (0==strncmp(thisph->fooname, statement-phsectionsize,
+							   strlen(thisph->fooname) > phsectionsize ? strlen(thisph->fooname) : phsectionsize)) {
 					newseg->placeholder = xint;
 					newseg->ph = thisph;
 					break;
@@ -2154,9 +2140,9 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 				newph->isdefault  = DBDPG_FALSE;
 				newph->iscurrent  = DBDPG_FALSE;
 				newph->isinout    = DBDPG_FALSE;
-				New(0, newph->fooname, sectionsize+1, char); /* freed in dbd_st_destroy */
-				Copy(statement-sectionsize, newph->fooname, sectionsize, char);
-				newph->fooname[sectionsize] = '\0';
+				New(0, newph->fooname, phsectionsize+1, char); /* freed in dbd_st_destroy */
+				Copy(statement-phsectionsize, newph->fooname, phsectionsize, char);
+				newph->fooname[phsectionsize] = '\0';
 				if (NULL==currph) {
 					imp_sth->ph = newph;
 				}
@@ -2210,14 +2196,15 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		   We follow the Pg rules: must start with $1, repeats are allowed, 
 		   numbers must be sequential. We change numphs if repeats found
 		*/
-		topdollar=0;
+		int topdollar = 0;
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 			if (currseg->placeholder > topdollar)
 				topdollar = currseg->placeholder;
 		}
 		/* Make sure every placeholder from 1 to topdollar is used at least once */
 		for (xint=1; xint <= topdollar; xint++) {
-			for (found=0, currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
+			bool found = DBDPG_FALSE;
+			for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 				if (currseg->placeholder==xint) {
 					found = DBDPG_TRUE;
 					break;
@@ -2271,7 +2258,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 		}
 		if (imp_sth->numphs) {
 			TRC(DBILOGFP, "%sPlaceholder number, fooname, id:\n", THEADER_slow);
-			for (xlen=1,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,xlen++) {
+			STRLEN xlen = 1;
+			for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph,xlen++) {
 				TRC(DBILOGFP, "%s#%d FOONAME: (%s)\n",
 					THEADER_slow, (int)xlen, currph->fooname);
 			}
