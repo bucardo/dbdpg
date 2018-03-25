@@ -1845,7 +1845,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, int version, char 
 				/* 1.1 : single quotes have no meaning in double-quoted sections and vice-versa */
 				/* 1.2 : backslashed quotes do not end the section */
 				/* 1.2.1 : backslashes have no meaning in double quoted sections */
-				/* 1.2.2 : if non_standard_strings is set, ignore backslashes in single quotes */
+				/* 1.2.2 : if non_standard_strings is not set, ignore backslashes in single quotes */
+				/* 1.2.3 : backslashes always escape in E'' strings */
 				if (ch == quote && (quote == '"' || 0==(backslashes&1))) {
 					quote = 0;
 				}
