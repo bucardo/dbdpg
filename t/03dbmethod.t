@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 564;
+plan tests => 565;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -45,6 +45,11 @@ $sth = $dbh->prepare($SQL);
 $sth->finish();
 $sth = $dbh->prepare_cached($SQL);
 $sth->finish();
+
+$t = 'Cannot prepare empty statement';
+$SQL = q{};
+eval { $dbh->prepare($SQL) };
+like ($@, qr{^Cannot prepare empty statement}, $t);
 
 # Populate the testing table for later use
 

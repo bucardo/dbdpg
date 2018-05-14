@@ -1590,7 +1590,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_prepare (statement: %s)\n", THEADER_slow, statement);
 
-	if ('\0' == statement)
+	if ('\0' == *statement)
 		croak ("Cannot prepare empty statement");
 
 	/* Set default values for this statement handle */
