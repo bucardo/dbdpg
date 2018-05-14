@@ -429,55 +429,73 @@ my $arg = shift || die "Usage: $0 path-to-pgsql-source\n";
 
 -d $arg or die qq{Sorry, but "$arg" is not a directory!\n};
 
-my $file = "$arg/src/include/catalog/pg_type.h";
-my $typefile = $file;
+my $dir = "$arg/src/include/catalog/";
 
-open my $fh, '<', $file or die qq{Could not open file "$file": $!\n};
 my $maxlen = 1;
 my %pgtype;
 my $thisname = 0;
-while(<$fh>) {
-	s/FLOAT8PASSBYVAL/t/;
-	s/FLOAT4PASSBYVAL/t/;
-	if (/^DATA\(insert OID\s+=\s+(\d+)\s+\(\s+(\S+)\s+\S+ \S+\s+\S+\s+[t|f]\s+. . [tf] ([tf]) \\(\d+) (\d+)\s+(\d+) (\d+) (\S+) (\S+) (\S+) (\S+)/o) {
-		my ($oid,$name,$typedef,$delim,$typrelid,$typelem,$typarray,$tin,$tout,$bin,$bout) =
-			($1,$2,$3,chr(oct($4)),$5,$6,$7,$8,$9,$10,$11);
-		die "Duplicated OID $oid!: $_\n" if exists $pgtype{$oid};
-		$pgtype{$name} = {
-			oid     => $oid,
-			delim   => $delim,
-			textin  => $tin,
-			textout => $tout,
-			binin   => $bin,
-			binout  => $bout,
-			quote   => 'quote_string',
-			dequote => 'dequote_string',
-			define  => 'PG_' . uc($name),
-			sql     => 0,
-			sqlc    => 0,
-			svtype  => 0,
-		};
-		if ($name =~ /_/) {
-			(my $basename = $name) =~ s/_//;
-			if (exists $pgtype{$basename}) {
-				$pgtype{$name}{delim} = $pgtype{$basename}{delim};
+my ($typefile, $file);
+
+if (-e "$dir/pg_type.dat") {
+	require "$arg/src/backend/catalog/Catalog.pm";
+
+	my $catalog = Catalog::ParseHeader("$dir/pg_type.h");
+	my $types   = Catalog::ParseData("$dir/pg_type.dat", $catalog->{columns}, 0);
+	%pgtype     = map +($_->{typname} => $_), @$types;
+}
+else {
+	$file = $typefile = "$dir/pg_type.h";
+	open my $fh, '<', $file or die qq{Could not open file "$file": $!\n};
+
+	while (<$fh>) {
+		s/FLOAT8PASSBYVAL/t/;
+		s/FLOAT4PASSBYVAL/t/;
+		if (/^DATA\(insert OID\s+=\s+(\d+)\s+\(\s+(\S+)\s+\S+ \S+\s+\S+\s+[t|f]\s+. . [tf] ([tf]) \\(\d+) (\d+)\s+(\d+) (\d+) (\S+) (\S+) (\S+) (\S+)/o) {
+			my ($oid,$name,$typedef,$delim,$typrelid,$typelem,$typarray,$tin,$tout,$bin,$bout) =
+				($1,$2,$3,chr(oct($4)),$5,$6,$7,$8,$9,$10,$11);
+			die "Duplicated OID $oid!: $_\n" if exists $pgtype{$oid};
+			$pgtype{$name} = {
+				oid       => $oid,
+				typdelim  => $delim,
+				typinput  => $tin,
+				typoutput => $tout,
+				typrecv   => $bin,
+				typsend   => $bout,
+			};
+			if ($name =~ /_/) {
+				(my $basename = $name) =~ s/_//;
+				if (exists $pgtype{$basename}) {
+					$pgtype{$name}{typdelim} = $pgtype{$basename}{typdelim};
+				}
 			}
+			$thisname = $name;
 		}
-		length($name) > $maxlen and $maxlen = length($name);
-		$thisname = $name;
-		## Special hack for array types
-		if ($tin =~ /^array/ and $name =~ /^_/) {
-			$pgtype{$name}{define} = 'PG' . uc $name . 'ARRAY';
+		elsif (/^DESCR\("(.+?)"/) {
+			$pgtype{$thisname}{descr} = $1;
+		}
+		elsif (/^DATA/) {
+			die "Bad line at $. ->$_\n";
 		}
 	}
-	elsif (/^DESCR\("(.+?)"/) {
-		$pgtype{$thisname}{description} = $1;
-	}
-	elsif (/^DATA/) {
-		die "Bad line at $. ->$_\n";
+	close $fh or die qq{Could not close "$file": $!\n};
+}
+
+for my $name (keys %pgtype) {
+	length($name) > $maxlen and $maxlen = length($name);
+	$pgtype{$name} = {
+		%{$pgtype{$name}},
+		quote   => 'quote_string',
+		dequote => 'dequote_string',
+		define  => 'PG_' . uc($name),
+		sql     => 0,
+		sqlc    => 0,
+		svtype  => 0,
+	};
+	## Special hack for array types
+	if ($pgtype{$name}{typinput} =~ /^array/ and $name =~ /^_/) {
+		$pgtype{$name}{define} = 'PG' . uc $name . 'ARRAY';
 	}
 }
-close $fh or die qq{Could not close "$file": $!\n};
 
 my ($oldfh,$newfh);
 
@@ -691,7 +709,7 @@ while (<DATA>) {
 	$pgtype{$name}{sqlc}    = $sqlc;
 	$pgtype{$name}{svtype}  = $svtype;
 	## For arrays, we want to echo the base svtype
-	if ($svtype and exists $pgtype{"_$name"} and $pgtype{"_$name"}{textin} =~ /array/) {
+	if ($svtype and exists $pgtype{"_$name"} and $pgtype{"_$name"}{typinput} =~ /array/) {
 		$pgtype{"_$name"}{svtype} = $svtype;
 	}
 }
@@ -709,7 +727,7 @@ for my $name (sort {$a cmp $b } keys %pgtype) {
 	(my $sql = $t->{sql}) =~ s{^(\w+).*}{$1};
 
 	printf $newfh qq! {%-*s,%-*s,%d,'%s',%-22s,%-12s,%-14s,\{%s\},%d\},\n!,
-		$maxlen, $t->{define}, $maxlen-2, "\"$name\"", 1, $t->{delim}, "\"$t->{textout}\"", $t->{quote}, $t->{dequote}, $sql, $t->{svtype};
+		$maxlen, $t->{define}, $maxlen-2, "\"$name\"", 1, $t->{typdelim}, "\"$t->{typoutput}\"", $t->{quote}, $t->{dequote}, $sql, $t->{svtype};
 	$pos{$name} = $item++;
 }
 
