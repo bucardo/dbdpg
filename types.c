@@ -434,9 +434,10 @@ my $dir = "$arg/src/include/catalog/";
 my $maxlen = 1;
 my %pgtype;
 my $thisname = 0;
-my ($typefile, $file);
+my $typefile;
 
 if (-e "$dir/pg_type.dat") {
+	$typefile = "$dir/pg_type.dat";
 	require "$arg/src/backend/catalog/Catalog.pm";
 
 	my $catalog = Catalog::ParseHeader("$dir/pg_type.h");
@@ -444,8 +445,8 @@ if (-e "$dir/pg_type.dat") {
 	%pgtype     = map +($_->{typname} => $_), @$types;
 }
 else {
-	$file = $typefile = "$dir/pg_type.h";
-	open my $fh, '<', $file or die qq{Could not open file "$file": $!\n};
+	$typefile = "$dir/pg_type.h";
+	open my $fh, '<', $typefile or die qq{Could not open file "$typefile": $!\n};
 
 	while (<$fh>) {
 		s/FLOAT8PASSBYVAL/t/;
@@ -477,7 +478,7 @@ else {
 			die "Bad line at $. ->$_\n";
 		}
 	}
-	close $fh or die qq{Could not close "$file": $!\n};
+	close $fh or die qq{Could not close "$typefile": $!\n};
 }
 
 for my $name (keys %pgtype) {
@@ -500,7 +501,7 @@ for my $name (keys %pgtype) {
 my ($oldfh,$newfh);
 
 ## Rewrite types.h
-$file = 'types.h';
+my $file = 'types.h';
 open $newfh, '>', "$file.tmp" or die qq{Could not create "$file.tmp": $!\n};
 
 my $slashstar = '/' . '*';
