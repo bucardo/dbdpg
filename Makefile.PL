@@ -272,7 +272,7 @@ sub constants {
     for my $line (split /\n/ => $old_constants) {
         if ($line =~ /^INC = .*strawberry.*/ ) {
             print qq(Strawberry Perl found; adjusting the INC variable;\n);
-            $line . ' -I ' . DBI::DBD::dbd_dbi_arch_dir();
+            $line .= ' -I ' . DBI::DBD::dbd_dbi_arch_dir();
             print qq(INC is now $line\n);
         }
         $new_constants .= "$line\n";
