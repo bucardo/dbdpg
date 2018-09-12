@@ -10,6 +10,9 @@ Version 3.8.0
   - Handle backslash-escaped quotes in E'' strings
     [Dagfinn Ilmari Mannsåker]
 
+  - Fix typo in Makefile.PL
+    [CPAN ticket #127097]
+
 
 Version 3.7.4. Released February 12, 2018 (git tag 3.7.4)
 
