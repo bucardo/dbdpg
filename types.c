@@ -441,7 +441,7 @@ if (-e "$dir/pg_type.dat") {
 	require "$arg/src/backend/catalog/Catalog.pm";
 
 	my $catalog = Catalog::ParseHeader("$dir/pg_type.h");
-	my $types   = Catalog::ParseData("$dir/pg_type.dat", $catalog->{columns}, 0);
+	my $types   = Catalog::ParseData($typefile, $catalog->{columns}, 0);
 	%pgtype     = map +($_->{typname} => $_), @$types;
 }
 else {
