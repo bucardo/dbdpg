@@ -3538,7 +3538,7 @@ DBI documentation for more details.
 Fetches the next row of data from the statement handle, and returns a reference to an array 
 holding the column values. Any columns that are NULL are returned as undef within the array.
 
-If there are no more rows or if an error occurs, the this method return undef. You should 
+If there are no more rows or if an error occurs, then this method return undef. You should 
 check C<< $sth->err >> afterwards (or use the L<RaiseError|/RaiseError_(boolean,_inherited)> attribute) to discover if the undef returned 
 was due to an error.
 
@@ -3561,7 +3561,7 @@ a reference to a list. Do not use this in a scalar context.
 Fetches the next row of data and returns a hashref containing the name of the columns as the keys 
 and the data itself as the values. Any NULL value is returned as an undef value.
 
-If there are no more rows or if an error occurs, the this method return undef. You should 
+If there are no more rows or if an error occurs, then this method return undef. You should 
 check C<< $sth->err >> afterwards (or use the L<RaiseError|/RaiseError_(boolean,_inherited)> attribute) to discover if the undef returned 
 was due to an error.
 
