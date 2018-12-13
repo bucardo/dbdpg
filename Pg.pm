@@ -1716,7 +1716,7 @@ This documentation describes driver specific behavior and restrictions. It is
 not supposed to be used as the only reference for the user. In any case
 consult the B<DBI> documentation first!
 
-=for html <a href="http://search.cpan.org/dist/DBI/DBI.pm">Latest DBI docmentation.</a>
+L<Latest DBI documentation.|DBI>
 
 =head1 THE DBI CLASS
 
@@ -2005,9 +2005,7 @@ the database has been disconnected. Also output if trace level is 5 or greater.
 
 =back
 
-=for text See the DBI section on TRACING for more information.
-
-=for html See the <a href="http://search.cpan.org/dist/DBI/DBI.pm#TRACING">DBI section on TRACING</a> for more information.<br />
+See the L<DBI section on TRACING|DBI/TRACING> for more information.
 
 =head3 B<func>
 
@@ -2982,7 +2980,7 @@ causes only information about unique indexes to be returned. The C<$quick> argum
 not used by DBD::Pg. For information on the format of the standard rows returned, please 
 see the DBI documentation.
 
-=for html <a href="http://search.cpan.org/dist/DBI/DBI.pm#statistics_info">DBI section on statistics_info</a>
+L<DBI section on statistics_info|DBI/statistics_info>
 
 In addition, the following Postgres specific columns are returned:
 
@@ -4310,9 +4308,7 @@ or by manipulating the schema search path with C<SET search_path>, e.g.
 
 =head1 SEE ALSO
 
-=for text The B<DBI> module.
-
-=for html <a href="http://search.cpan.org/dist/DBI/DBI.pm">The DBI module</a>
+L<The B<DBI> module|DBI>
 
 =head1 BUGS
 
