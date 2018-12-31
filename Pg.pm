@@ -443,14 +443,6 @@ use 5.008001;
 
 		my $whereclause = join "\n\t\t\t\tAND ", '', @search;
 
-		my $schemajoin = 'JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)';
-
-		my $remarks = 'pg_catalog.col_description(a.attrelid, a.attnum)';
-
-		my $column_def = $dbh->{private_dbdpg}{version} >= 80000
-			? 'pg_catalog.pg_get_expr(af.adbin, af.adrelid)'
-			: 'af.adsrc';
-
 		my $col_info_sql = qq!
             SELECT
                 pg_catalog.quote_ident(pg_catalog.current_database()) AS "TABLE_CAT"
@@ -464,8 +456,8 @@ use 5.008001;
                 , NULL::text AS "DECIMAL_DIGITS"
                 , NULL::text AS "NUM_PREC_RADIX"
                 , CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
-                , $remarks AS "REMARKS"
-                , $column_def AS "COLUMN_DEF"
+                , pg_catalog.col_description(a.attrelid, a.attnum) AS "REMARKS"
+                , pg_catalog.pg_get_expr(af.adbin, af.adrelid) AS "COLUMN_DEF"
                 , NULL::text AS "SQL_DATA_TYPE"
                 , NULL::text AS "SQL_DATETIME_SUB"
                 , NULL::text AS "CHAR_OCTET_LENGTH"
@@ -486,7 +478,7 @@ use 5.008001;
                 JOIN pg_catalog.pg_attribute a ON (t.oid = a.atttypid)
                 JOIN pg_catalog.pg_class c ON (a.attrelid = c.oid)
                 LEFT JOIN pg_catalog.pg_attrdef af ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
-                $schemajoin
+                JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
             WHERE
                 a.attnum >= 0
                 AND c.relkind IN ('r','v','m','f')
