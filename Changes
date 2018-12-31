@@ -13,6 +13,9 @@ Version 3.8.0
   - Fix typo in Makefile.PL
     [CPAN ticket #127097]
 
+  - Fix parsing of PostgreSQL versions >= 10 on Debian/Ubuntu
+    [Dagfinn Ilmari Mannsåker]
+
 
 Version 3.7.4. Released February 12, 2018 (git tag 3.7.4)
 

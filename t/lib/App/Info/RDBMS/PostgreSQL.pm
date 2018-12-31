@@ -263,9 +263,9 @@ my $get_version = sub {
 
     # Parse the version number.
     if ($version) {
-        my ($x, $y, $z) = $version =~ /(\d+)\.(\d+).(\d+)/;
+        my ($x, $y, $z) = $version =~ /^(\d+)\.(\d+)\.(\d+)/;
         if (defined $x and defined $y and defined $z) {
-            # Beta/devel/release candidates are treated as patch level "0"
+            # Pre-v10 normal releases
             @{$self}{qw(version major minor patch)} =
               ($version, $x, $y, $z);
         }
@@ -279,6 +279,7 @@ my $get_version = sub {
                 ($version, $1, 0, $2); # from v10 onwards, $2 will be patch level
         }
         elsif ($version =~ /^(\d{2,})(devel|beta|rc|alpha)/) {
+            # Beta/devel/release candidates are treated as minor/patch level "0"
             @{$self}{qw(version major minor patch)} =
                 ($version, $1, 0, 0);
         }
