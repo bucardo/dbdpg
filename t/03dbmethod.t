@@ -787,8 +787,15 @@ is ($sth, undef, $t);
 {
 	local $SIG{__WARN__} = sub {};
 
-	## Drop the third schema
-	$dbh->do("DROP SCHEMA IF EXISTS $schema3 CASCADE");
+	## Drop the third schema.
+	## PostgresSQL < 8.3 doesn't have DROP SCHEMA IF EXISTS,
+	## so check manually
+	if ($dbh->selectrow_array(
+		'SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = ?',
+		undef, $schema3
+	)) {
+		$dbh->do("DROP SCHEMA $schema3 CASCADE");
+	}
 
 	$dbh->do("CREATE TABLE $table1 (a INT, b INT NOT NULL, c INT NOT NULL, ".
 			 'CONSTRAINT dbd_pg_test1_pk PRIMARY KEY (a))');
