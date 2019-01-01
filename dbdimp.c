@@ -50,6 +50,14 @@ void PQfreeCancel(PGcancel *cancel) {
 
 #endif
 
+#if PGLIBVERSION < 80300
+Oid lo_truncate (PGconn *conn, int fd, size_t len);
+Oid lo_truncate (PGconn *conn, int fd, size_t len) {
+	croak ("Cannot use lo_truncate unless compiled against Postgres 8.3 or later");
+}
+
+#endif
+
 #if PGLIBVERSION < 80400
 Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId);
 Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId) {
