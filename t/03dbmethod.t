@@ -796,7 +796,7 @@ is ($sth, undef, $t);
 	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test1_index_c ON $table1(c)");
 
 	$dbh->do("CREATE TABLE $table2 (a INT, b INT, c INT, PRIMARY KEY(a,b), UNIQUE(b,c))");
-	$dbh->do("CREATE INDEX dbd_pg_test2_expr ON $table2(c,(a+b))");
+	$dbh->do("CREATE INDEX dbd_pg_test2_expr ON $table2((a+b),c)");
 
 	$dbh->do("CREATE TABLE $table3 (a INT, b INT, c INT, PRIMARY KEY(a)) WITH OIDS");
 	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_index_b ON $table3(b)");
@@ -819,8 +819,8 @@ one => [
 	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  2, 'c', 'A', '0', '1', undef, 'c' ],
 	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a' ],
 	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  2, 'b', 'A', '0', '1', undef, 'b' ],
-	[ undef, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  1, 'c', 'A', '0', '1', undef, 'c' ],
-	[ undef, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  2, undef, 'A', '0', '1', undef, '(a + b)' ],
+	[ undef, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  1, undef, 'A', '0', '1', undef, '(a + b)' ],
+	[ undef, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  2, 'c', 'A', '0', '1', undef, 'c' ],
 	],
 	three => [
 	[ undef, $schema, $table3, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef ],
