@@ -423,6 +423,11 @@ version: $version
 			last GETHANDLE; ## Fail - bad output
 		}
 
+		## Which user do we connect as?
+		if (!$su and $info =~ /owned by user "(.+?)"/) {
+			$testuser = $1;
+		}
+
 		## Attempt to boost the system oids above an int for certain testing
 		(my $resetxlog = $initdb) =~ s/initdb/pg_resetxlog/;
 		if ($version >= 10) {
@@ -438,11 +443,6 @@ version: $version
 				};
 				## We don't really care if it worked or not!
 			}
-		}
-
-		## Which user do we connect as?
-		if (!$su and $info =~ /owned by user "(.+?)"/) {
-			$testuser = $1;
 		}
 
 		## Now we need to find an open port to use
