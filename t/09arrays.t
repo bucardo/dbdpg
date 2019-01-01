@@ -215,8 +215,11 @@ for my $test (split /\n\n/ => $array_tests) {
 	if ($msg =~ s/NEED (\d+):\s*//) {
 		my $ver = $1;
 		if ($pgversion < $ver) {
+			my ($maj, $min, $patch) = $ver =~ /\A(\d{1,2})(\d{2})(\d{2})\z/;
+			$_ += 0 for $maj, $min, $patch;
 		  SKIP: {
-				skip ('Cannot test NULL arrays unless version 8.2 or better', 6);
+				my $count = $expected =~ /error:/ ? 2 : 5;
+				skip ("$msg requires PostgreSQL $maj.$min.$patch or newer", $count);
 			}
 
 			next;
@@ -338,15 +341,17 @@ $result = $getarray_bool->fetchall_arrayref();
 is_deeply ($result, [[[0,1,0,0,1,1]]], $t);
 
 ## Test of read-only undef sections
-
-$t = 'Modification of undefined parts of array are allowed';
-$cleararray->execute();
-$addarray_bool->execute('{f,t,null,0,NULL,NuLl}');
-$getarray_bool->execute();
-$result = $getarray_bool->fetchall_arrayref()->[0][0];
-$result->[2] = 22;
-is_deeply ($result, [0,1,22,0,undef,undef], $t);
-
+SKIP: {
+	skip 'Cannot test NULL arrays unless version 8.2 or better', 1
+		if $pgversion < 80200;
+	$t = 'Modification of undefined parts of array are allowed';
+	$cleararray->execute();
+	$addarray_bool->execute('{f,t,null,0,NULL,NuLl}');
+	$getarray_bool->execute();
+	$result = $getarray_bool->fetchall_arrayref()->[0][0];
+	$result->[2] = 22;
+	is_deeply ($result, [0,1,22,0,undef,undef], $t);
+}
 ## Pure string to array conversion testing
 
 my $array_tests_out =
@@ -432,7 +437,7 @@ NEED 80200: First item is NULL
 
 'a','NULL'
 ['a',"NULL"]
-Fake NULL is text
+NEED 80200: Fake NULL is text
 
 [[[[[1,2,3]]]]]
 [[[[[[1,2,3]]]]]]
@@ -452,11 +457,11 @@ Deep nesting
 
 1::bool
 [1]
-Test of boolean type
+NEED 80200: Test of boolean type
 
 1::bool,0::bool,'true'::boolean
 [1,0,1]
-Test of boolean types
+NEED 80200: Test of boolean types
 
 1::oid
 [1]
@@ -492,16 +497,10 @@ for my $test (split /\n\n/ => $array_tests_out) {
 	if ($msg =~ s/NEED (\d+):\s*//) {
 		my $ver = $1;
 		if ($pgversion < $ver) {
+			my ($maj, $min, $patch) = $ver =~ /\A(\d{1,2})(\d{2})(\d{2})\z/;
+			$_ += 0 for $maj, $min, $patch;
 		  SKIP: {
-				skip ('Cannot test NULL arrays unless version 8.2 or better', 1);
-			}
-			next;
-		}
-	}
-	if ($pgversion < 80200) {
-		if ($input =~ /SKIP/ or $test =~ /Fake NULL|boolean/) {
-		  SKIP: {
-				skip ('Cannot test some array items on pre-8.2 servers', 1);
+				skip ("$msg requires PostgreSQL $maj.$min.$patch or newer", 1);
 			}
 			next;
 		}
