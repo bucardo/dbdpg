@@ -787,8 +787,15 @@ is ($sth, undef, $t);
 {
 	local $SIG{__WARN__} = sub {};
 
-	## Drop the third schema
-	$dbh->do("DROP SCHEMA IF EXISTS $schema3 CASCADE");
+	## Drop the third schema.
+	## PostgresSQL < 8.3 doesn't have DROP SCHEMA IF EXISTS,
+	## so check manually
+	if ($dbh->selectrow_array(
+		'SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = ?',
+		undef, $schema3
+	)) {
+		$dbh->do("DROP SCHEMA $schema3 CASCADE");
+	}
 
 	$dbh->do("CREATE TABLE $table1 (a INT, b INT NOT NULL, c INT NOT NULL, ".
 			 'CONSTRAINT dbd_pg_test1_pk PRIMARY KEY (a))');
@@ -796,7 +803,7 @@ is ($sth, undef, $t);
 	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test1_index_c ON $table1(c)");
 
 	$dbh->do("CREATE TABLE $table2 (a INT, b INT, c INT, PRIMARY KEY(a,b), UNIQUE(b,c))");
-	$dbh->do("CREATE INDEX dbd_pg_test2_expr ON $table2(c,(a+b))");
+	$dbh->do("CREATE INDEX dbd_pg_test2_expr ON $table2((a+b),c)");
 
 	$dbh->do("CREATE TABLE $table3 (a INT, b INT, c INT, PRIMARY KEY(a)) WITH OIDS");
 	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_index_b ON $table3(b)");
@@ -819,8 +826,8 @@ one => [
 	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  2, 'c', 'A', '0', '1', undef, 'c' ],
 	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a' ],
 	[ undef, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  2, 'b', 'A', '0', '1', undef, 'b' ],
-	[ undef, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  1, 'c', 'A', '0', '1', undef, 'c' ],
-	[ undef, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  2, undef, 'A', '0', '1', undef, '(a + b)' ],
+	[ undef, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  1, undef, 'A', '0', '1', undef, '(a + b)' ],
+	[ undef, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  2, 'c', 'A', '0', '1', undef, 'c' ],
 	],
 	three => [
 	[ undef, $schema, $table3, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef ],
