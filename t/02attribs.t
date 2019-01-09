@@ -1204,15 +1204,20 @@ $sth->execute();
 is ($warning, undef, $t);
 
 ## Special case in which errors are not sent to the client!
-$t = q{When client_min_messages is FATAL, we do our best to alert the caller it's a Bad Idea};
-$dbh->do(q{SET client_min_messages = 'FATAL'});
-$dbh->{RaiseError} = 0;
-$dbh->{AutoCommit} = 1;
-eval {
-    $dbh->do('SELECT 1 FROM nonesuh');
-};
-my $errorstring = $dbh->errstr;
-like ( $errorstring, qr/Perhaps client_min_messages/, $t);
+SKIP: {
+    $t = q{When client_min_messages is FATAL, we do our best to alert the caller it's a Bad Idea};
+    $dbh->do(q{SET client_min_messages = 'FATAL'});
+    skip "This version of PostgreSQL caps client_min_messages to ERROR", 1
+        unless $dbh->selectrow_array('SHOW client_min_messages') eq 'fatal';
+
+    $dbh->{RaiseError} = 0;
+    $dbh->{AutoCommit} = 1;
+    eval {
+        $dbh->do('SELECT 1 FROM nonesuh');
+    };
+    my $errorstring = $dbh->errstr;
+    like ( $errorstring, qr/Perhaps client_min_messages/, $t);
+}
 $dbh->rollback();
 $dbh->do(q{SET client_min_message = 'NOTICE'});
 $dbh->{RaiseError} = 1;

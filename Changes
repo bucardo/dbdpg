@@ -16,6 +16,9 @@ Version 3.8.0
   - Fix parsing of PostgreSQL versions >= 10 on Debian/Ubuntu
     [Dagfinn Ilmari Mannsåker]
 
+  - Fix client_min_messages=FATAL test when PostgreSQL caps it to ERROR
+    [Dagfinn Ilmari Mannsåker]
+
 
 Version 3.7.4. Released February 12, 2018 (git tag 3.7.4)
 
