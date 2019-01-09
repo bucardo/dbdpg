@@ -704,7 +704,7 @@ SKIP: {
 $dbh->rollback();
 
 SKIP: {
-	skip 'Cannot adjust standard_conforming_strings for testing on this version of Postgres', 2 if $pgversion < 80200;
+	skip 'Cannot adjust standard_conforming_strings for testing on this version of Postgres', 4 if $pgversion < 80200;
 	$t='Backslash quoting inside single quotes is parsed correctly with standard_conforming_strings off';
 	$dbh->do(q{SET standard_conforming_strings = 'off'});
 	eval {
