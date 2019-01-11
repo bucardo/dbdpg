@@ -158,7 +158,6 @@ AutoInactiveDestroy
 grokbase
 ActiveKids
 adbin
-adsrc
 AIX
 API
 archlib

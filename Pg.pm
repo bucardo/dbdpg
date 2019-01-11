@@ -349,12 +349,12 @@ use 5.008001;
 			$oid =~ /(\d+)/ or die qq{OID was not numeric?!?\n};
 			$oid = $1;
 			## This table has a primary key. Is there a sequence associated with it via a unique, indexed column?
-			$SQL = "SELECT a.attname, i.indisprimary, pg_catalog.pg_get_expr(adbin,adrelid)\n".
+			$SQL = "SELECT a.attname, i.indisprimary, pg_catalog.pg_get_expr(d.adbin, d.adrelid)\n".
 				"FROM pg_catalog.pg_index i, pg_catalog.pg_attribute a, pg_catalog.pg_attrdef d\n ".
 				"WHERE i.indrelid = $oid AND d.adrelid=a.attrelid AND d.adnum=a.attnum\n".
 				"  AND a.attrelid = $oid AND i.indisunique IS TRUE\n".
 				"  AND a.atthasdef IS TRUE AND i.indkey[0]=a.attnum\n".
-				q{ AND d.adsrc ~ '^nextval'};
+				"  AND pg_catalog.pg_get_expr(d.adbin, d.adrelid) ~ '^nextval'";
 			$sth = $dbh->prepare($SQL);
 			$count = $sth->execute();
 			if (!defined $count or $count eq '0E0') {

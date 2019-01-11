@@ -25,6 +25,8 @@ Version 3.8.0
   - Fix support for PostgreSQL versions back to 8.0
     [Dagfinn Ilmari Mannsåker]
 
+  - Remove usage of deprecated pg_attrdef.adsrc column
+    [Dagfinn Ilmari Mannsåker]
 
 Version 3.7.4. Released February 12, 2018 (git tag 3.7.4)
 
