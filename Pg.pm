@@ -2809,7 +2809,7 @@ the examples below for ways to handle this.
 The following fields are returned:
 
 B<TABLE_CAT>: The name of the database that the table or view is in
-(always the current datbase).
+(always the current database).
 
 B<TABLE_SCHEM>: The name of the schema that the table or view is in.
 

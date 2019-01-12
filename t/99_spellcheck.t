@@ -158,6 +158,7 @@ AutoInactiveDestroy
 grokbase
 ActiveKids
 adbin
+adsrc
 AIX
 API
 archlib
@@ -278,6 +279,7 @@ getcopydata
 getfd
 getline
 github
+GH
 greg
 GSM
 HandleError
