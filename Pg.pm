@@ -592,7 +592,8 @@ use 5.008001;
 		}
 
 		my $table_stats_sql = qq{
-            SELECT d.relpages, d.reltuples, n.nspname
+            SELECT d.relpages, d.reltuples, n.nspname,
+                   pg_catalog.current_database() as catname
             FROM   pg_catalog.pg_class d, pg_catalog.pg_namespace n
             WHERE  d.relname = ? $schema_where
         };
@@ -608,6 +609,7 @@ use 5.008001;
 
 		my $stats_sql = qq{
             SELECT
+                pg_catalog.current_database() as catname,
                 c.relname, i.indkey, i.indisunique, i.indisclustered, a.amname,
                 n.nspname, c.relpages, c.reltuples, i.indexprs, i.indnatts, i.indexrelid,
                 pg_catalog.pg_get_expr(i.indpred,i.indrelid) as predicate,
@@ -639,7 +641,7 @@ use 5.008001;
 			$table_stats_sth->execute(@exe_args) or return undef;
 			my $tst = $table_stats_sth->fetchrow_hashref or return undef;
 			push(@output_rows, [
-				$dbh->{pg_db},    # TABLE_CAT
+				$tst->{catname},  # TABLE_CAT
 				$tst->{nspname},  # TABLE_SCHEM
 				$table,           # TABLE_NAME
 				undef,            # NON_UNIQUE
@@ -683,7 +685,7 @@ use 5.008001;
 			my $nonunique = $row->{indisunique} ? 0 : 1;
 
 			my @index_row = (
-				$dbh->{pg_db},     # TABLE_CAT         0
+				$row->{catname},   # TABLE_CAT         0
 				$row->{nspname},   # TABLE_SCHEM       1
 				$table,            # TABLE_NAME        2
 				$nonunique,        # NON_UNIQUE        3
