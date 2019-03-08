@@ -21,6 +21,7 @@ Version 3.8.0
 
   - Fix client_min_messages=FATAL test when PostgreSQL caps it to ERROR
     [Dagfinn Ilmari Mannsåker]
+    [CPAN ticket #128529]
 
   - Fix support for PostgreSQL versions back to 8.0
     [Dagfinn Ilmari Mannsåker]
