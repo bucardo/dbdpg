@@ -2527,7 +2527,7 @@ the L</pg_placeholder_nocolons> attribute in the same way. Examples:
 
 Again, you may set it param time as well:
 
-  $sth = $dbh->prepare(q{SELECT array[1:2] FROM mytable WHERE id = ?}.
+  $sth = $dbh->prepare(q{SELECT array[1:2] FROM mytable WHERE id = ?},
     {pg_placeholder_nocolons => 1});
   $sth->execute(1);
 

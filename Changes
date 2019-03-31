@@ -29,6 +29,9 @@ Version 3.8.0
   - Remove usage of deprecated pg_attrdef.adsrc column
     [Dagfinn Ilmari Mannsåker]
 
+  - Fix typo in pg_placeholder_colons example
+    (Github issue #41)
+
 Version 3.7.4. Released February 12, 2018 (git tag 3.7.4)
 
   - Fix typo in META.yml
