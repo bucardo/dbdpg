@@ -20,7 +20,6 @@ typedef struct sql_type_info {
 sql_type_info_t* pg_type_data(int);
 sql_type_info_t* sql_type_data(int);
 
-#define            PG_ABSTIME  702
 #define            PG_ACLITEM  1033
 #define                PG_ANY  2276
 #define         PG_ANYELEMENT  2283
@@ -55,6 +54,7 @@ sql_type_info_t* sql_type_data(int);
 #define           PG_INTERVAL  1186
 #define               PG_JSON  114
 #define              PG_JSONB  3802
+#define           PG_JSONPATH  4072
 #define   PG_LANGUAGE_HANDLER  2280
 #define               PG_LINE  628
 #define               PG_LSEG  601
@@ -73,6 +73,7 @@ sql_type_info_t* sql_type_data(int);
 #define     PG_PG_DDL_COMMAND  32
 #define    PG_PG_DEPENDENCIES  3402
 #define             PG_PG_LSN  3220
+#define        PG_PG_MCV_LIST  5017
 #define       PG_PG_NDISTINCT  3361
 #define       PG_PG_NODE_TREE  194
 #define            PG_PG_PROC  81
@@ -91,15 +92,13 @@ sql_type_info_t* sql_type_data(int);
 #define       PG_REGPROCEDURE  2202
 #define            PG_REGROLE  4096
 #define            PG_REGTYPE  2206
-#define            PG_RELTIME  703
-#define               PG_SMGR  210
+#define   PG_TABLE_AM_HANDLER  269
 #define               PG_TEXT  25
 #define                PG_TID  27
 #define               PG_TIME  1083
 #define          PG_TIMESTAMP  1114
 #define        PG_TIMESTAMPTZ  1184
 #define             PG_TIMETZ  1266
-#define          PG_TINTERVAL  704
 #define            PG_TRIGGER  2279
 #define        PG_TSM_HANDLER  3310
 #define            PG_TSQUERY  3615
@@ -114,7 +113,6 @@ sql_type_info_t* sql_type_data(int);
 #define               PG_VOID  2278
 #define                PG_XID  28
 #define                PG_XML  142
-#define       PG_ABSTIMEARRAY  1023
 #define       PG_ACLITEMARRAY  1034
 #define           PG_ANYARRAY  2277
 #define        PG_ANYNONARRAY  2776
@@ -143,6 +141,7 @@ sql_type_info_t* sql_type_data(int);
 #define      PG_INTERVALARRAY  1187
 #define          PG_JSONARRAY  199
 #define         PG_JSONBARRAY  3807
+#define      PG_JSONPATHARRAY  4073
 #define          PG_LINEARRAY  629
 #define          PG_LSEGARRAY  1018
 #define      PG_MACADDR8ARRAY  775
@@ -169,14 +168,12 @@ sql_type_info_t* sql_type_data(int);
 #define  PG_REGPROCEDUREARRAY  2207
 #define       PG_REGROLEARRAY  4097
 #define       PG_REGTYPEARRAY  2211
-#define       PG_RELTIMEARRAY  1024
 #define          PG_TEXTARRAY  1009
 #define           PG_TIDARRAY  1010
 #define          PG_TIMEARRAY  1183
 #define     PG_TIMESTAMPARRAY  1115
 #define   PG_TIMESTAMPTZARRAY  1185
 #define        PG_TIMETZARRAY  1270
-#define     PG_TINTERVALARRAY  1025
 #define       PG_TSQUERYARRAY  3645
 #define       PG_TSRANGEARRAY  3909
 #define     PG_TSTZRANGEARRAY  3911

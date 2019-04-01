@@ -15,7 +15,6 @@
 #include "Pg.h"
 
 static sql_type_info_t pg_types[] = {
- {PG_ABSTIMEARRAY      ,"_abstime"         ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_ACLITEMARRAY      ,"_aclitem"         ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_BITARRAY          ,"_bit"             ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_BOOLARRAY         ,"_bool"            ,1,',',"array_out"           ,quote_string,dequote_string,{0},3},
@@ -42,6 +41,7 @@ static sql_type_info_t pg_types[] = {
  {PG_INTERVALARRAY     ,"_interval"        ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_JSONARRAY         ,"_json"            ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_JSONBARRAY        ,"_jsonb"           ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
+ {PG_JSONPATHARRAY     ,"_jsonpath"        ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_LINEARRAY         ,"_line"            ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_LSEGARRAY         ,"_lseg"            ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_MACADDRARRAY      ,"_macaddr"         ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
@@ -68,14 +68,12 @@ static sql_type_info_t pg_types[] = {
  {PG_REGPROCEDUREARRAY ,"_regprocedure"    ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_REGROLEARRAY      ,"_regrole"         ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_REGTYPEARRAY      ,"_regtype"         ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
- {PG_RELTIMEARRAY      ,"_reltime"         ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_TEXTARRAY         ,"_text"            ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_TIDARRAY          ,"_tid"             ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_TIMEARRAY         ,"_time"            ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_TIMESTAMPARRAY    ,"_timestamp"       ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_TIMESTAMPTZARRAY  ,"_timestamptz"     ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_TIMETZARRAY       ,"_timetz"          ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
- {PG_TINTERVALARRAY    ,"_tinterval"       ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_TSQUERYARRAY      ,"_tsquery"         ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_TSRANGEARRAY      ,"_tsrange"         ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_TSTZRANGEARRAY    ,"_tstzrange"       ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
@@ -86,7 +84,6 @@ static sql_type_info_t pg_types[] = {
  {PG_VARCHARARRAY      ,"_varchar"         ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_XIDARRAY          ,"_xid"             ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
  {PG_XMLARRAY          ,"_xml"             ,1,',',"array_out"           ,quote_string,dequote_string,{0},0},
- {PG_ABSTIME           ,"abstime"          ,1,',',"abstimeout"          ,quote_string,dequote_string,{0},0},
  {PG_ACLITEM           ,"aclitem"          ,1,',',"aclitemout"          ,quote_string,dequote_string,{0},0},
  {PG_ANY               ,"any"              ,1,',',"any_out"             ,quote_string,dequote_string,{0},0},
  {PG_ANYARRAY          ,"anyarray"         ,1,',',"anyarray_out"        ,quote_string,dequote_string,{0},0},
@@ -123,6 +120,7 @@ static sql_type_info_t pg_types[] = {
  {PG_INTERVAL          ,"interval"         ,1,',',"interval_out"        ,quote_string,dequote_string,{0},0},
  {PG_JSON              ,"json"             ,1,',',"json_out"            ,quote_string,dequote_string,{0},0},
  {PG_JSONB             ,"jsonb"            ,1,',',"jsonb_out"           ,quote_string,dequote_string,{0},0},
+ {PG_JSONPATH          ,"jsonpath"         ,1,',',"jsonpath_out"        ,quote_string,dequote_string,{0},0},
  {PG_LANGUAGE_HANDLER  ,"language_handler" ,1,',',"language_handler_out",quote_string,dequote_string,{0},0},
  {PG_LINE              ,"line"             ,1,',',"line_out"            ,quote_geom  ,dequote_string,{0},0},
  {PG_LSEG              ,"lseg"             ,1,',',"lseg_out"            ,quote_geom  ,dequote_string,{0},0},
@@ -141,6 +139,7 @@ static sql_type_info_t pg_types[] = {
  {PG_PG_DDL_COMMAND    ,"pg_ddl_command"   ,1,',',"pg_ddl_command_out"  ,quote_string,dequote_string,{0},0},
  {PG_PG_DEPENDENCIES   ,"pg_dependencies"  ,1,',',"pg_dependencies_out" ,quote_string,dequote_string,{0},0},
  {PG_PG_LSN            ,"pg_lsn"           ,1,',',"pg_lsn_out"          ,quote_string,dequote_string,{0},0},
+ {PG_PG_MCV_LIST       ,"pg_mcv_list"      ,1,',',"pg_mcv_list_out"     ,quote_string,dequote_string,{0},0},
  {PG_PG_NDISTINCT      ,"pg_ndistinct"     ,1,',',"pg_ndistinct_out"    ,quote_string,dequote_string,{0},0},
  {PG_PG_NODE_TREE      ,"pg_node_tree"     ,1,',',"pg_node_tree_out"    ,quote_string,dequote_string,{0},0},
  {PG_PG_PROC           ,"pg_proc"          ,1,',',"record_out"          ,quote_string,dequote_string,{0},0},
@@ -159,15 +158,13 @@ static sql_type_info_t pg_types[] = {
  {PG_REGPROCEDURE      ,"regprocedure"     ,1,',',"regprocedureout"     ,quote_string,dequote_string,{0},0},
  {PG_REGROLE           ,"regrole"          ,1,',',"regroleout"          ,quote_string,dequote_string,{0},0},
  {PG_REGTYPE           ,"regtype"          ,1,',',"regtypeout"          ,quote_string,dequote_string,{0},0},
- {PG_RELTIME           ,"reltime"          ,1,',',"reltimeout"          ,quote_string,dequote_string,{0},0},
- {PG_SMGR              ,"smgr"             ,1,',',"smgrout"             ,quote_string,dequote_string,{0},0},
+ {PG_TABLE_AM_HANDLER  ,"table_am_handler" ,1,',',"table_am_handler_out",quote_string,dequote_string,{0},0},
  {PG_TEXT              ,"text"             ,1,',',"textout"             ,quote_string,dequote_string,{SQL_LONGVARCHAR},0},
  {PG_TID               ,"tid"              ,1,',',"tidout"              ,quote_geom  ,dequote_string,{0},0},
  {PG_TIME              ,"time"             ,1,',',"time_out"            ,quote_string,dequote_string,{SQL_TYPE_TIME},0},
  {PG_TIMESTAMP         ,"timestamp"        ,1,',',"timestamp_out"       ,quote_string,dequote_string,{SQL_TIMESTAMP},0},
  {PG_TIMESTAMPTZ       ,"timestamptz"      ,1,',',"timestamptz_out"     ,quote_string,dequote_string,{SQL_TYPE_TIMESTAMP_WITH_TIMEZONE},0},
  {PG_TIMETZ            ,"timetz"           ,1,',',"timetz_out"          ,quote_string,dequote_string,{0},0},
- {PG_TINTERVAL         ,"tinterval"        ,1,',',"tintervalout"        ,quote_string,dequote_string,{0},0},
  {PG_TRIGGER           ,"trigger"          ,1,',',"trigger_out"         ,quote_string,dequote_string,{0},0},
  {PG_TSM_HANDLER       ,"tsm_handler"      ,1,',',"tsm_handler_out"     ,quote_string,dequote_string,{0},0},
  {PG_TSQUERY           ,"tsquery"          ,1,',',"tsqueryout"          ,quote_string,dequote_string,{0},0},
@@ -188,33 +185,33 @@ sql_type_info_t* pg_type_data(int sql_type)
 {
 	switch(sql_type) {
 
-		case PG_ABSTIMEARRAY:       return &pg_types[0];
-		case PG_ACLITEMARRAY:       return &pg_types[1];
-		case PG_BITARRAY:           return &pg_types[2];
-		case PG_BOOLARRAY:          return &pg_types[3];
-		case PG_BOXARRAY:           return &pg_types[4];
-		case PG_BPCHARARRAY:        return &pg_types[5];
-		case PG_BYTEAARRAY:         return &pg_types[6];
-		case PG_CHARARRAY:          return &pg_types[7];
-		case PG_CIDARRAY:           return &pg_types[8];
-		case PG_CIDRARRAY:          return &pg_types[9];
-		case PG_CIRCLEARRAY:        return &pg_types[10];
-		case PG_CSTRINGARRAY:       return &pg_types[11];
-		case PG_DATEARRAY:          return &pg_types[12];
-		case PG_DATERANGEARRAY:     return &pg_types[13];
-		case PG_FLOAT4ARRAY:        return &pg_types[14];
-		case PG_FLOAT8ARRAY:        return &pg_types[15];
-		case PG_GTSVECTORARRAY:     return &pg_types[16];
-		case PG_INETARRAY:          return &pg_types[17];
-		case PG_INT2ARRAY:          return &pg_types[18];
-		case PG_INT2VECTORARRAY:    return &pg_types[19];
-		case PG_INT4ARRAY:          return &pg_types[20];
-		case PG_INT4RANGEARRAY:     return &pg_types[21];
-		case PG_INT8ARRAY:          return &pg_types[22];
-		case PG_INT8RANGEARRAY:     return &pg_types[23];
-		case PG_INTERVALARRAY:      return &pg_types[24];
-		case PG_JSONARRAY:          return &pg_types[25];
-		case PG_JSONBARRAY:         return &pg_types[26];
+		case PG_ACLITEMARRAY:       return &pg_types[0];
+		case PG_BITARRAY:           return &pg_types[1];
+		case PG_BOOLARRAY:          return &pg_types[2];
+		case PG_BOXARRAY:           return &pg_types[3];
+		case PG_BPCHARARRAY:        return &pg_types[4];
+		case PG_BYTEAARRAY:         return &pg_types[5];
+		case PG_CHARARRAY:          return &pg_types[6];
+		case PG_CIDARRAY:           return &pg_types[7];
+		case PG_CIDRARRAY:          return &pg_types[8];
+		case PG_CIRCLEARRAY:        return &pg_types[9];
+		case PG_CSTRINGARRAY:       return &pg_types[10];
+		case PG_DATEARRAY:          return &pg_types[11];
+		case PG_DATERANGEARRAY:     return &pg_types[12];
+		case PG_FLOAT4ARRAY:        return &pg_types[13];
+		case PG_FLOAT8ARRAY:        return &pg_types[14];
+		case PG_GTSVECTORARRAY:     return &pg_types[15];
+		case PG_INETARRAY:          return &pg_types[16];
+		case PG_INT2ARRAY:          return &pg_types[17];
+		case PG_INT2VECTORARRAY:    return &pg_types[18];
+		case PG_INT4ARRAY:          return &pg_types[19];
+		case PG_INT4RANGEARRAY:     return &pg_types[20];
+		case PG_INT8ARRAY:          return &pg_types[21];
+		case PG_INT8RANGEARRAY:     return &pg_types[22];
+		case PG_INTERVALARRAY:      return &pg_types[23];
+		case PG_JSONARRAY:          return &pg_types[24];
+		case PG_JSONBARRAY:         return &pg_types[25];
+		case PG_JSONPATHARRAY:      return &pg_types[26];
 		case PG_LINEARRAY:          return &pg_types[27];
 		case PG_LSEGARRAY:          return &pg_types[28];
 		case PG_MACADDRARRAY:       return &pg_types[29];
@@ -241,120 +238,117 @@ sql_type_info_t* pg_type_data(int sql_type)
 		case PG_REGPROCEDUREARRAY:  return &pg_types[50];
 		case PG_REGROLEARRAY:       return &pg_types[51];
 		case PG_REGTYPEARRAY:       return &pg_types[52];
-		case PG_RELTIMEARRAY:       return &pg_types[53];
-		case PG_TEXTARRAY:          return &pg_types[54];
-		case PG_TIDARRAY:           return &pg_types[55];
-		case PG_TIMEARRAY:          return &pg_types[56];
-		case PG_TIMESTAMPARRAY:     return &pg_types[57];
-		case PG_TIMESTAMPTZARRAY:   return &pg_types[58];
-		case PG_TIMETZARRAY:        return &pg_types[59];
-		case PG_TINTERVALARRAY:     return &pg_types[60];
-		case PG_TSQUERYARRAY:       return &pg_types[61];
-		case PG_TSRANGEARRAY:       return &pg_types[62];
-		case PG_TSTZRANGEARRAY:     return &pg_types[63];
-		case PG_TSVECTORARRAY:      return &pg_types[64];
-		case PG_TXID_SNAPSHOTARRAY: return &pg_types[65];
-		case PG_UUIDARRAY:          return &pg_types[66];
-		case PG_VARBITARRAY:        return &pg_types[67];
-		case PG_VARCHARARRAY:       return &pg_types[68];
-		case PG_XIDARRAY:           return &pg_types[69];
-		case PG_XMLARRAY:           return &pg_types[70];
-		case PG_ABSTIME:            return &pg_types[71];
-		case PG_ACLITEM:            return &pg_types[72];
-		case PG_ANY:                return &pg_types[73];
-		case PG_ANYARRAY:           return &pg_types[74];
-		case PG_ANYELEMENT:         return &pg_types[75];
-		case PG_ANYENUM:            return &pg_types[76];
-		case PG_ANYNONARRAY:        return &pg_types[77];
-		case PG_ANYRANGE:           return &pg_types[78];
-		case PG_BIT:                return &pg_types[79];
-		case PG_BOOL:               return &pg_types[80];
-		case PG_BOX:                return &pg_types[81];
-		case PG_BPCHAR:             return &pg_types[82];
-		case PG_BYTEA:              return &pg_types[83];
-		case PG_CHAR:               return &pg_types[84];
-		case PG_CID:                return &pg_types[85];
-		case PG_CIDR:               return &pg_types[86];
-		case PG_CIRCLE:             return &pg_types[87];
-		case PG_CSTRING:            return &pg_types[88];
-		case PG_DATE:               return &pg_types[89];
-		case PG_DATERANGE:          return &pg_types[90];
-		case PG_EVENT_TRIGGER:      return &pg_types[91];
-		case PG_FDW_HANDLER:        return &pg_types[92];
-		case PG_FLOAT4:             return &pg_types[93];
-		case PG_FLOAT8:             return &pg_types[94];
-		case PG_GTSVECTOR:          return &pg_types[95];
-		case PG_INDEX_AM_HANDLER:   return &pg_types[96];
-		case PG_INET:               return &pg_types[97];
-		case PG_INT2:               return &pg_types[98];
-		case PG_INT2VECTOR:         return &pg_types[99];
-		case PG_INT4:               return &pg_types[100];
-		case PG_INT4RANGE:          return &pg_types[101];
-		case PG_INT8:               return &pg_types[102];
-		case PG_INT8RANGE:          return &pg_types[103];
-		case PG_INTERNAL:           return &pg_types[104];
-		case PG_INTERVAL:           return &pg_types[105];
-		case PG_JSON:               return &pg_types[106];
-		case PG_JSONB:              return &pg_types[107];
-		case PG_LANGUAGE_HANDLER:   return &pg_types[108];
-		case PG_LINE:               return &pg_types[109];
-		case PG_LSEG:               return &pg_types[110];
-		case PG_MACADDR:            return &pg_types[111];
-		case PG_MACADDR8:           return &pg_types[112];
-		case PG_MONEY:              return &pg_types[113];
-		case PG_NAME:               return &pg_types[114];
-		case PG_NUMERIC:            return &pg_types[115];
-		case PG_NUMRANGE:           return &pg_types[116];
-		case PG_OID:                return &pg_types[117];
-		case PG_OIDVECTOR:          return &pg_types[118];
-		case PG_OPAQUE:             return &pg_types[119];
-		case PG_PATH:               return &pg_types[120];
-		case PG_PG_ATTRIBUTE:       return &pg_types[121];
-		case PG_PG_CLASS:           return &pg_types[122];
-		case PG_PG_DDL_COMMAND:     return &pg_types[123];
-		case PG_PG_DEPENDENCIES:    return &pg_types[124];
-		case PG_PG_LSN:             return &pg_types[125];
-		case PG_PG_NDISTINCT:       return &pg_types[126];
-		case PG_PG_NODE_TREE:       return &pg_types[127];
-		case PG_PG_PROC:            return &pg_types[128];
-		case PG_PG_TYPE:            return &pg_types[129];
-		case PG_POINT:              return &pg_types[130];
-		case PG_POLYGON:            return &pg_types[131];
-		case PG_RECORD:             return &pg_types[132];
-		case PG_REFCURSOR:          return &pg_types[133];
-		case PG_REGCLASS:           return &pg_types[134];
-		case PG_REGCONFIG:          return &pg_types[135];
-		case PG_REGDICTIONARY:      return &pg_types[136];
-		case PG_REGNAMESPACE:       return &pg_types[137];
-		case PG_REGOPER:            return &pg_types[138];
-		case PG_REGOPERATOR:        return &pg_types[139];
-		case PG_REGPROC:            return &pg_types[140];
-		case PG_REGPROCEDURE:       return &pg_types[141];
-		case PG_REGROLE:            return &pg_types[142];
-		case PG_REGTYPE:            return &pg_types[143];
-		case PG_RELTIME:            return &pg_types[144];
-		case PG_SMGR:               return &pg_types[145];
-		case PG_TEXT:               return &pg_types[146];
-		case PG_TID:                return &pg_types[147];
-		case PG_TIME:               return &pg_types[148];
-		case PG_TIMESTAMP:          return &pg_types[149];
-		case PG_TIMESTAMPTZ:        return &pg_types[150];
-		case PG_TIMETZ:             return &pg_types[151];
-		case PG_TINTERVAL:          return &pg_types[152];
-		case PG_TRIGGER:            return &pg_types[153];
-		case PG_TSM_HANDLER:        return &pg_types[154];
-		case PG_TSQUERY:            return &pg_types[155];
-		case PG_TSRANGE:            return &pg_types[156];
-		case PG_TSTZRANGE:          return &pg_types[157];
-		case PG_TSVECTOR:           return &pg_types[158];
-		case PG_TXID_SNAPSHOT:      return &pg_types[159];
-		case PG_UNKNOWN:            return &pg_types[160];
-		case PG_UUID:               return &pg_types[161];
-		case PG_VARBIT:             return &pg_types[162];
-		case PG_VARCHAR:            return &pg_types[163];
-		case PG_VOID:               return &pg_types[164];
-		case PG_XID:                return &pg_types[165];
-		case PG_XML:                return &pg_types[166];
+		case PG_TEXTARRAY:          return &pg_types[53];
+		case PG_TIDARRAY:           return &pg_types[54];
+		case PG_TIMEARRAY:          return &pg_types[55];
+		case PG_TIMESTAMPARRAY:     return &pg_types[56];
+		case PG_TIMESTAMPTZARRAY:   return &pg_types[57];
+		case PG_TIMETZARRAY:        return &pg_types[58];
+		case PG_TSQUERYARRAY:       return &pg_types[59];
+		case PG_TSRANGEARRAY:       return &pg_types[60];
+		case PG_TSTZRANGEARRAY:     return &pg_types[61];
+		case PG_TSVECTORARRAY:      return &pg_types[62];
+		case PG_TXID_SNAPSHOTARRAY: return &pg_types[63];
+		case PG_UUIDARRAY:          return &pg_types[64];
+		case PG_VARBITARRAY:        return &pg_types[65];
+		case PG_VARCHARARRAY:       return &pg_types[66];
+		case PG_XIDARRAY:           return &pg_types[67];
+		case PG_XMLARRAY:           return &pg_types[68];
+		case PG_ACLITEM:            return &pg_types[69];
+		case PG_ANY:                return &pg_types[70];
+		case PG_ANYARRAY:           return &pg_types[71];
+		case PG_ANYELEMENT:         return &pg_types[72];
+		case PG_ANYENUM:            return &pg_types[73];
+		case PG_ANYNONARRAY:        return &pg_types[74];
+		case PG_ANYRANGE:           return &pg_types[75];
+		case PG_BIT:                return &pg_types[76];
+		case PG_BOOL:               return &pg_types[77];
+		case PG_BOX:                return &pg_types[78];
+		case PG_BPCHAR:             return &pg_types[79];
+		case PG_BYTEA:              return &pg_types[80];
+		case PG_CHAR:               return &pg_types[81];
+		case PG_CID:                return &pg_types[82];
+		case PG_CIDR:               return &pg_types[83];
+		case PG_CIRCLE:             return &pg_types[84];
+		case PG_CSTRING:            return &pg_types[85];
+		case PG_DATE:               return &pg_types[86];
+		case PG_DATERANGE:          return &pg_types[87];
+		case PG_EVENT_TRIGGER:      return &pg_types[88];
+		case PG_FDW_HANDLER:        return &pg_types[89];
+		case PG_FLOAT4:             return &pg_types[90];
+		case PG_FLOAT8:             return &pg_types[91];
+		case PG_GTSVECTOR:          return &pg_types[92];
+		case PG_INDEX_AM_HANDLER:   return &pg_types[93];
+		case PG_INET:               return &pg_types[94];
+		case PG_INT2:               return &pg_types[95];
+		case PG_INT2VECTOR:         return &pg_types[96];
+		case PG_INT4:               return &pg_types[97];
+		case PG_INT4RANGE:          return &pg_types[98];
+		case PG_INT8:               return &pg_types[99];
+		case PG_INT8RANGE:          return &pg_types[100];
+		case PG_INTERNAL:           return &pg_types[101];
+		case PG_INTERVAL:           return &pg_types[102];
+		case PG_JSON:               return &pg_types[103];
+		case PG_JSONB:              return &pg_types[104];
+		case PG_JSONPATH:           return &pg_types[105];
+		case PG_LANGUAGE_HANDLER:   return &pg_types[106];
+		case PG_LINE:               return &pg_types[107];
+		case PG_LSEG:               return &pg_types[108];
+		case PG_MACADDR:            return &pg_types[109];
+		case PG_MACADDR8:           return &pg_types[110];
+		case PG_MONEY:              return &pg_types[111];
+		case PG_NAME:               return &pg_types[112];
+		case PG_NUMERIC:            return &pg_types[113];
+		case PG_NUMRANGE:           return &pg_types[114];
+		case PG_OID:                return &pg_types[115];
+		case PG_OIDVECTOR:          return &pg_types[116];
+		case PG_OPAQUE:             return &pg_types[117];
+		case PG_PATH:               return &pg_types[118];
+		case PG_PG_ATTRIBUTE:       return &pg_types[119];
+		case PG_PG_CLASS:           return &pg_types[120];
+		case PG_PG_DDL_COMMAND:     return &pg_types[121];
+		case PG_PG_DEPENDENCIES:    return &pg_types[122];
+		case PG_PG_LSN:             return &pg_types[123];
+		case PG_PG_MCV_LIST:        return &pg_types[124];
+		case PG_PG_NDISTINCT:       return &pg_types[125];
+		case PG_PG_NODE_TREE:       return &pg_types[126];
+		case PG_PG_PROC:            return &pg_types[127];
+		case PG_PG_TYPE:            return &pg_types[128];
+		case PG_POINT:              return &pg_types[129];
+		case PG_POLYGON:            return &pg_types[130];
+		case PG_RECORD:             return &pg_types[131];
+		case PG_REFCURSOR:          return &pg_types[132];
+		case PG_REGCLASS:           return &pg_types[133];
+		case PG_REGCONFIG:          return &pg_types[134];
+		case PG_REGDICTIONARY:      return &pg_types[135];
+		case PG_REGNAMESPACE:       return &pg_types[136];
+		case PG_REGOPER:            return &pg_types[137];
+		case PG_REGOPERATOR:        return &pg_types[138];
+		case PG_REGPROC:            return &pg_types[139];
+		case PG_REGPROCEDURE:       return &pg_types[140];
+		case PG_REGROLE:            return &pg_types[141];
+		case PG_REGTYPE:            return &pg_types[142];
+		case PG_TABLE_AM_HANDLER:   return &pg_types[143];
+		case PG_TEXT:               return &pg_types[144];
+		case PG_TID:                return &pg_types[145];
+		case PG_TIME:               return &pg_types[146];
+		case PG_TIMESTAMP:          return &pg_types[147];
+		case PG_TIMESTAMPTZ:        return &pg_types[148];
+		case PG_TIMETZ:             return &pg_types[149];
+		case PG_TRIGGER:            return &pg_types[150];
+		case PG_TSM_HANDLER:        return &pg_types[151];
+		case PG_TSQUERY:            return &pg_types[152];
+		case PG_TSRANGE:            return &pg_types[153];
+		case PG_TSTZRANGE:          return &pg_types[154];
+		case PG_TSVECTOR:           return &pg_types[155];
+		case PG_TXID_SNAPSHOT:      return &pg_types[156];
+		case PG_UNKNOWN:            return &pg_types[157];
+		case PG_UUID:               return &pg_types[158];
+		case PG_VARBIT:             return &pg_types[159];
+		case PG_VARCHAR:            return &pg_types[160];
+		case PG_VOID:               return &pg_types[161];
+		case PG_XID:                return &pg_types[162];
+		case PG_XML:                return &pg_types[163];
 		default: return NULL;
 	}
 }
