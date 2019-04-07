@@ -347,13 +347,26 @@ use 5.008001;
 			my $oid = $sth->fetchall_arrayref()->[0][0];
 			$oid =~ /(\d+)/ or die qq{OID was not numeric?!?\n};
 			$oid = $1;
-			## This table has a primary key. Is there a sequence associated with it via a unique, indexed column?
-			$SQL = "SELECT a.attname, i.indisprimary, pg_catalog.pg_get_expr(d.adbin, d.adrelid)\n".
-				"FROM pg_catalog.pg_index i, pg_catalog.pg_attribute a, pg_catalog.pg_attrdef d\n ".
-				"WHERE i.indrelid = $oid AND d.adrelid=a.attrelid AND d.adnum=a.attnum\n".
-				"  AND a.attrelid = $oid AND i.indisunique IS TRUE\n".
-				"  AND a.atthasdef IS TRUE AND i.indkey[0]=a.attnum\n".
-				"  AND pg_catalog.pg_get_expr(d.adbin, d.adrelid) ~ '^nextval'";
+			## Is there a sequence associated with it via a unique, indexed column,
+			## either via ownership (e.g. serial, identity) or a manual default?
+			my $idcond = $dbh->{private_dbdpg}{version} >= 100000
+				? q{a.attidentity <> ''} : q{false};
+			$SQL = qq{
+				SELECT a.attname, i.indisprimary,
+					pg_catalog.pg_get_expr(d.adbin, d.adrelid),
+					pg_catalog.pg_get_serial_sequence(${oid}::regclass::text, a.attname)
+				FROM pg_catalog.pg_index i
+					JOIN pg_catalog.pg_attribute a
+						ON i.indrelid = a.attrelid AND i.indkey[0]=a.attnum
+					LEFT JOIN pg_catalog.pg_attrdef d
+						ON a.atthasdef
+						AND a.attrelid = d.adrelid
+						AND a.attnum = d.adnum
+						AND pg_catalog.pg_get_expr(d.adbin, d.adrelid) ~ '^nextval'
+				WHERE i.indrelid = $oid
+					AND i.indisunique IS TRUE
+					AND (d.adnum IS NOT NULL OR $idcond)
+			};
 			$sth = $dbh->prepare($SQL);
 			$count = $sth->execute();
 			if (!defined $count or $count eq '0E0') {
@@ -366,8 +379,10 @@ use 5.008001;
 			## We have at least one with a default value. See if we can determine sequences
 			my @def;
 			for (@$info) {
-				next unless $_->[2] =~ /^nextval\(+'([^']+)'::/o;
-				push @$_, $1;
+				if (!defined $_->[3]) {
+					next unless $_->[2] =~ /^nextval\(+'([^']+)'::/;
+					$_->[3] = $1;
+				}
 				push @def, $_;
 			}
 			if (!@def) {

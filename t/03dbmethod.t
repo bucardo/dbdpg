@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 565;
+plan tests => 569;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -251,6 +251,28 @@ SKIP: {
 	$dbh->do("DROP SEQUENCE $schema2.$sequence3");
 }
 
+SKIP: {
+    skip('Cannot test GENERATED AS IDENTITY columns on pre-10 servers', 4)
+        if $pgversion < 100000;
+
+    for my $WHEN ('BY DEFAULT', 'ALWAYS') {
+        $t=qq{DB handle method "last_insert_id" works on GENERATED $WHEN AS IDENTITY column};
+
+        $dbh->do(qq{CREATE TABLE $schema.dbd_pg_test_identity (
+	        genid INTEGER PRIMARY KEY GENERATED $WHEN AS IDENTITY (START WITH 1),
+                otheruniq INTEGER UNIQUE GENERATED $WHEN AS IDENTITY (START WITH 10),
+                otherid INTEGER GENERATED $WHEN AS IDENTITY (START WITH 20)
+	)});
+        my $returned_id = $dbh->selectrow_array('INSERT INTO dbd_pg_test_identity DEFAULT VALUES RETURNING genid');
+        my $last_insert_id = eval {
+            $dbh->last_insert_id(undef, $schema, 'dbd_pg_test_identity', undef, undef);
+        };
+        is ($@, q{}, $t);
+        $t=qq{DB handle method "last_insert_id" returns PK value from multiple GENERATED $WHEN AS IDENTITY columns};
+        is ($last_insert_id, $returned_id, $t);
+        $dbh->do("DROP TABLE $schema.dbd_pg_test_identity");
+    }
+}
 
 $dbh->do("DROP SCHEMA $schema2");
 $dbh->do("DROP TABLE $table2");
