@@ -23,6 +23,10 @@ Version 3.8.0
     [Dagfinn Ilmari Mannsåker]
     [CPAN ticket #128529]
 
+  - Adjust tests for new pg_ctl output
+    [Erik Rijkers    er at xs4all.nl]
+    [CPAN ticket #128966]
+
   - Fix support for PostgreSQL versions back to 8.0
     [Dagfinn Ilmari Mannsåker]
 
