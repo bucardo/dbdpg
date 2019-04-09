@@ -530,7 +530,8 @@ use 5.008001;
 			$row->[$col_map{DATA_TYPE}] = DBD::Pg::db::pg_type_info($dbh,$row->[$col_map{DATA_TYPE}]);
 
 			# Add pg_constraint
-			my $SQL = q{SELECT consrc FROM pg_catalog.pg_constraint WHERE contype = 'c' AND }.
+			my $SQL = q{SELECT pg_catalog.pg_get_constraintdef(oid) }.
+				q{FROM pg_catalog.pg_constraint WHERE contype = 'c' AND }.
 				qq{conrelid = $aid AND conkey = '{$attnum}'};
 			my $info = $dbh->selectall_arrayref($SQL);
 			if (@$info) {

@@ -30,7 +30,7 @@ Version 3.8.0
   - Fix support for PostgreSQL versions back to 8.0
     [Dagfinn Ilmari Mannsåker]
 
-  - Remove usage of deprecated pg_attrdef.adsrc column
+  - Remove usage of deprecated pg_attrdef.adsrc and pg_constraint.consrc columns
     [Dagfinn Ilmari Mannsåker]
 
   - Fix typo in pg_placeholder_colons example
