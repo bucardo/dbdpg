@@ -461,19 +461,19 @@ int dbd_db_ping (SV * dbh)
 	tstatus = pg_db_txn_status(aTHX_ imp_dbh);
 	if (TRACE5_slow) TRC(DBILOGFP, "%sdbd_db_ping txn_status is %d\n", THEADER_slow, tstatus);
 
-	if (tstatus >= 4) { /* Unknown, so we err on the side of "bad" */
+	if (tstatus >= PQTRANS_UNKNOWN) { /* Unknown, so we err on the side of "bad" */
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (result: -2 unknown/bad)\n", THEADER_slow);
 		return -2;
 	}
 
 	/* No matter what state we are in, send an empty query to the backend */
 	result = PQexec(imp_dbh->conn, "/* DBD::Pg ping test v3.8.0 */");
-	if (NULL == result) {
+	status = PQresultStatus(result);
+	PQclear(result);
+	if (PGRES_FATAL_ERROR == status) {
 		/* Something very bad, usually indicating the backend is gone */
 		return -3;
 	}
-	status = PQresultStatus(result);
-	PQclear(result);
 
 	/* We expect to see an empty query most times */
 	if (PGRES_EMPTY_QUERY == status) {

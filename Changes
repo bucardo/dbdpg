@@ -23,6 +23,9 @@ Version 3.8.0
     [Dagfinn Ilmari Mannsåker]
     [CPAN ticket #128529]
 
+  - Fix ->ping error detection on PostgreSQL 12
+    [Dagfinn Ilmari Mannsåker]
+
   - Adjust tests for new pg_ctl output
     [Erik Rijkers    er at xs4all.nl]
     [CPAN ticket #128966]
