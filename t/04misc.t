@@ -113,7 +113,7 @@ $BC$
 
 	is( $sth->err, undef, q{Statement attribute 'err' is initially undef});
 
-	$dbh->do(q{SET client_min_messages = 'FATAL'});
+	$dbh->do(q{SET client_min_messages = 'ERROR'});
 
   TODO: {
 		local $TODO = q{Known bug: notice and warnings should set err to 6};
