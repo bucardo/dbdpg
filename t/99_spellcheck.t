@@ -752,7 +752,6 @@ currpos
 dashdash
 deallocating
 defaultval
-delim
 dereference
 destringify
 dollarquote
@@ -785,6 +784,7 @@ scs
 sectionstop
 slashslash
 slashstar
+sqlclient
 starslash
 stringify
 sv
@@ -834,6 +834,8 @@ DESCR
 LONGVARCHAR
 OLDQUERY
 PASSBYVAL
+ParseData
+ParseHeader
 SMALLINT
 SV
 TINYINT
@@ -848,8 +850,9 @@ bpchar
 chr
 cid
 cmp
+dat
 delim
-delimeter
+descr
 dq
 elsif
 lseg
@@ -879,10 +882,16 @@ tid
 timestamptz
 tswitch
 typarray
+typdelim
 typedef
 typefile
 typelem
+typinput
+typname
+typoutput
+typrecv
 typrelid
+typsend
 uc
 
 ## types.h:

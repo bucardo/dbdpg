@@ -508,7 +508,7 @@ typedef struct sql_type_info {
 	int     type_id;
 	char*   type_name;
 	bool    bind_ok;
-	char    array_delimeter;
+	char    array_delimiter;
 	char*   arrayout;
 	char*   (*quote)();
 	void    (*dequote)();

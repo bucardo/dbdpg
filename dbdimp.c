@@ -2741,7 +2741,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 	int    closing_braces = 0;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_destringify_array (string: %s quotechar: %c)\n",
-					THEADER_slow, input, coltype->array_delimeter);
+					THEADER_slow, input, coltype->array_delimiter);
 
 	/*
 	  Note: we don't do careful balance checking here, as this is coming straight from 
@@ -2776,7 +2776,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 		if (in_quote) {
 			if ('"' == *input) {
 				in_quote = 0;
-				/* String will be stored by following delim or brace */
+				/* String will be stored by following delimiter or brace */
 				input++;
 				continue;
 			}
@@ -2791,7 +2791,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 			av_push(currentav, newRV_noinc((SV*)newav));
 			currentav = newav;
 		}
-		else if (coltype->array_delimeter == *input) {
+		else if (coltype->array_delimiter == *input) {
 		}
 		else if ('}' == *input) {
 		}
@@ -2802,7 +2802,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
 			string[section_size++] = *input;
 		}
 
-		if ('}' == *input || (coltype->array_delimeter == *input && '}' != *(input-1))) {
+		if ('}' == *input || (coltype->array_delimiter == *input && '}' != *(input-1))) {
 			string[section_size] = '\0';
 			if (0 == section_size && !seen_quotes) {
 				/* Just an empty array */
