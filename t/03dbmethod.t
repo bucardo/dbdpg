@@ -778,6 +778,8 @@ $sth = $dbh->statistics_info(undef,undef,'dbd_pg_test9',undef,undef);
 is ($sth, undef, $t);
 
 
+my $with_oids = $pgversion < 120000 ? 'WITH OIDS' : '';
+my $hash_index_idx = $with_oids ? 5 : 4;
 ## Create some tables with various indexes
 {
 	local $SIG{__WARN__} = sub {};
@@ -800,10 +802,10 @@ is ($sth, undef, $t);
 	$dbh->do("CREATE TABLE $table2 (a INT, b INT, c INT, PRIMARY KEY(a,b), UNIQUE(b,c))");
 	$dbh->do("CREATE INDEX dbd_pg_test2_expr ON $table2((a+b),c)");
 
-	$dbh->do("CREATE TABLE $table3 (a INT, b INT, c INT, PRIMARY KEY(a)) WITH OIDS");
+	$dbh->do("CREATE TABLE $table3 (a INT, b INT, c INT, PRIMARY KEY(a)) $with_oids");
 	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_index_b ON $table3(b)");
 	$dbh->do("CREATE INDEX dbd_pg_test3_index_c ON $table3 USING hash(c)");
-	$dbh->do("CREATE INDEX dbd_pg_test3_oid ON $table3(oid)");
+	$dbh->do("CREATE INDEX dbd_pg_test3_oid ON $table3(oid)") if $with_oids;
 	$dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_pred ON $table3(c) WHERE c > 0 AND c < 45");
 	$dbh->commit();
 }
@@ -829,7 +831,7 @@ one => [
 	[ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef, 'b' ],
 	[ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a' ],
 	[ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))', 'c' ],
-	[ $dbh->{pg_db}, $schema, $table3, '1', undef, 'dbd_pg_test3_oid',     'btree',  1, 'oid', 'A', '0', '1', undef, 'oid' ],
+	($with_oids ? [ $dbh->{pg_db}, $schema, $table3, '1', undef, 'dbd_pg_test3_oid',     'btree',  1, 'oid', 'A', '0', '1', undef, 'oid' ] : ()),
 	[ $dbh->{pg_db}, $schema, $table3, '1', undef, 'dbd_pg_test3_index_c', 'hashed', 1, 'c', 'A', '0', '4', undef, 'c' ],
 ],
 	three_uo => [
@@ -862,7 +864,7 @@ $t="Correct stats output for $table3";
 $sth = $dbh->statistics_info(undef,$schema,$table3,undef,undef);
 $stats = $sth->fetchall_arrayref;
 ## Too many intra-version differences to try for an exact number here:
-$correct_stats->{three}[5][11] = $stats->[5][11] = 0;
+$correct_stats->{three}[$hash_index_idx][11] = $stats->[$hash_index_idx][11] = 0;
 is_deeply ($stats, $correct_stats->{three}, $t);
 
 $t="Correct stats output for $table3 (unique only)";
@@ -884,7 +886,7 @@ is_deeply ($stats, $correct_stats->{three_uo}, $t);
 	$t="Correct stats output for $table3";
 	$sth = $dbh->statistics_info(undef,undef,$table3,undef,undef);
 	$stats = $sth->fetchall_arrayref;
-	$correct_stats->{three}[5][11] = $stats->[5][11] = 0;
+	$correct_stats->{three}[$hash_index_idx][11] = $stats->[$hash_index_idx][11] = 0;
 	is_deeply ($stats, $correct_stats->{three}, $t);
 
 	$t="Correct stats output for $table3 (unique only)";

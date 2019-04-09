@@ -27,6 +27,9 @@ Version 3.8.0
     [Erik Rijkers    er at xs4all.nl]
     [CPAN ticket #128966]
 
+  - Adjust tests for removal of WITH OIDS in PostgreSQL 12
+    [Dagfinn Ilmari Mannsåker]
+
   - Fix support for PostgreSQL versions back to 8.0
     [Dagfinn Ilmari Mannsåker]
 
