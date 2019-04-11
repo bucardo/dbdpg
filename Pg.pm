@@ -294,7 +294,7 @@ use 5.008001;
 		## Catalog and col are not used
 		$schema = '' if ! defined $schema;
 		$table = '' if ! defined $table;
-		my $cachename = "lii$table$schema";
+		my $cachename = join("\0", 'lii', $schema, $table);
 
 		if (defined $attr and length $attr) {
 			## If not a hash, assume it is a sequence name
