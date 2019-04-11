@@ -2592,7 +2592,8 @@ current database connection.
 If you do not know the name of the sequence, you can provide a table name and
 DBD::Pg will attempt to return the correct value. To do this, there must be at
 least one column in the table with a C<NOT NULL> constraint, that has a unique
-constraint, and which uses a sequence as a default value. If more than one column
+constraint, and which uses a sequence as a default value (either manually, or via
+the C<SERIAL> pseudotype or C<GENERATED ... AS IDENTITY>). If more than one column
 meets these conditions, the primary key will be used. This involves some
 looking up of things in the system table, so DBD::Pg will cache the sequence
 name for subsequent calls. If you need to disable this caching for some reason,
