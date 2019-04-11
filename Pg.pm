@@ -366,8 +366,8 @@ use 5.008001;
 						AND (a.atthasdef OR %s)
 				WHERE c.relname = ? AND %s
 			}, $idcond, $schemawhere);
-			my $sth = $dbh->prepare_cached($SQL) or die $dbh->errstr;
-			my $count = $sth->execute(@args) or die $sth->errstr;
+			my $sth = $dbh->prepare_cached($SQL);
+			my $count = $sth->execute(@args);
 			if (!defined $count or $count eq '0E0') {
 				$sth->finish();
 				my $message = qq{Could not find the table "$table"};
