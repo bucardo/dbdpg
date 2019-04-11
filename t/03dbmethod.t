@@ -270,13 +270,15 @@ SKIP: {
         is ($@, q{}, $t);
         $t=qq{DB handle method "last_insert_id" returns PK value from multiple GENERATED $WHEN AS IDENTITY columns};
         is ($last_insert_id, $returned_id, $t);
-        $dbh->do("DROP TABLE $schema.dbd_pg_test_identity_'$WHEN'");
+        $dbh->do(qq{DROP TABLE $schema."dbd_pg_test_identity_'$WHEN'"});
     }
 }
 
 $t='DB handle method "last_insert_id" works when the sequence name needs quoting';
+$dbh->{Warn} = 0;
 $dbh->do(q{CREATE SEQUENCE "dbd_pg_test_'seq'"});
 $dbh->do(q{CREATE TABLE "dbd_pg_test_'table'" (id integer unique default nextval($$dbd_pg_test_'seq'$$))});
+$dbh->{Warn} = 1;
 $dbh->do(q{INSERT INTO "dbd_pg_test_'table'" DEFAULT VALUES});
 
 eval { $dbh->last_insert_id(undef, undef, q{dbd_pg_test_'table'}, undef, undef) };
