@@ -29,6 +29,9 @@ plan tests => 570;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
+# silence notices about implicitly created and dropped objects
+$dbh->do('set client_min_messages=warning');
+
 my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 my ($schema,$schema2,$schema3) = ('dbd_pg_testschema', 'dbd_pg_testschema2', 'dbd_pg_testschema3');
 my ($table1,$table2,$table3) = ('dbd_pg_test1','dbd_pg_test2','dbd_pg_test3');
@@ -176,10 +179,8 @@ is ($@, q{}, $t);
 $dbh->do("CREATE SCHEMA $schema2");
 $dbh->do("CREATE SEQUENCE $schema2.$sequence2");
 $dbh->do("CREATE SEQUENCE $schema.$sequence4");
-$dbh->{Warn} = 0;
 $dbh->do("CREATE TABLE $schema2.$table2(a INTEGER PRIMARY KEY NOT NULL DEFAULT nextval('$schema2.$sequence2'))");
 $dbh->do("CREATE TABLE $schema.$table2(a INTEGER PRIMARY KEY NOT NULL DEFAULT nextval('$schema.$sequence4'))");
-$dbh->{Warn} = 1;
 $dbh->do("INSERT INTO $schema2.$table2 DEFAULT VALUES");
 
 $t='DB handle method "last_insert_id" works when called with a schema not in the search path';
@@ -275,10 +276,8 @@ SKIP: {
 }
 
 $t='DB handle method "last_insert_id" works when the sequence name needs quoting';
-$dbh->{Warn} = 0;
 $dbh->do(q{CREATE SEQUENCE "dbd_pg_test_'seq'"});
 $dbh->do(q{CREATE TABLE "dbd_pg_test_'table'" (id integer unique default nextval($$dbd_pg_test_'seq'$$))});
-$dbh->{Warn} = 1;
 $dbh->do(q{INSERT INTO "dbd_pg_test_'table'" DEFAULT VALUES});
 
 eval { $dbh->last_insert_id(undef, undef, q{dbd_pg_test_'table'}, undef, undef) };
@@ -736,15 +735,12 @@ SKIP: {
 	}
 
     my @enumvalues = qw( foo bar baz buz );
-    {
-        local $dbh->{Warn} = 0;
 
-        $dbh->do( q{CREATE TYPE dbd_pg_enumerated AS ENUM ('foo', 'bar', 'baz', 'buz')} );
-        $dbh->do( q{CREATE TEMP TABLE dbd_pg_enum_test ( is_enum dbd_pg_enumerated NOT NULL )} );
-        if ($pgversion >= 90300) {
-            $dbh->do( q{ALTER TYPE dbd_pg_enumerated ADD VALUE 'first' BEFORE 'foo'} );
-            unshift @enumvalues, 'first';
-        }
+    $dbh->do( q{CREATE TYPE dbd_pg_enumerated AS ENUM ('foo', 'bar', 'baz', 'buz')} );
+    $dbh->do( q{CREATE TEMP TABLE dbd_pg_enum_test ( is_enum dbd_pg_enumerated NOT NULL )} );
+    if ($pgversion >= 90300) {
+        $dbh->do( q{ALTER TYPE dbd_pg_enumerated ADD VALUE 'first' BEFORE 'foo'} );
+        unshift @enumvalues, 'first';
     }
 
 	$t='DB handle method "column_info" returns proper pg_type';
