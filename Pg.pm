@@ -328,13 +328,12 @@ use 5.008001;
 			my ($schemajoin,$schemawhere) = ('','');
 			if (length $schema) {
 				$schemajoin = "\n JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)";
-				$schemawhere = "\n AND n.nspname = ?";
+				$schemawhere = 'n.nspname = ?';
 				push @args, $schema;
+			} else {
+				$schemawhere = 'pg_catalog.pg_table_is_visible(c.oid)';
 			}
-			$SQL = "SELECT c.oid FROM pg_catalog.pg_class c $schemajoin\n WHERE relname = ?$schemawhere";
-			if (! length $schema) {
-				$SQL .= ' AND pg_catalog.pg_table_is_visible(c.oid)';
-			}
+			$SQL = "SELECT c.oid FROM pg_catalog.pg_class c $schemajoin\n WHERE relname = ? AND $schemawhere";
 			$sth = $dbh->prepare_cached($SQL);
 			$count = $sth->execute(@args);
 			if (!defined $count or $count eq '0E0') {
@@ -353,22 +352,24 @@ use 5.008001;
 				? q{a.attidentity <> ''} : q{false};
 			$SQL = qq{
 				SELECT a.attname, i.indisprimary,
-					pg_catalog.pg_get_expr(d.adbin, d.adrelid),
-					pg_catalog.pg_get_serial_sequence(${oid}::regclass::text, a.attname)
+					COALESCE(
+						pg_catalog.pg_get_serial_sequence(\$1::regclass::text, a.attname),
+						(SELECT substring(pg_catalog.pg_get_expr(d.adbin, d.adrelid)
+										  from E'^nextval\\\\(''([^'']+)''::regclass\\\\)')
+							FROM pg_catalog.pg_attrdef d
+							WHERE a.atthasdef
+								AND a.attrelid = d.adrelid
+								AND a.attnum = d.adnum)
+					) seqname
 				FROM pg_catalog.pg_index i
 					JOIN pg_catalog.pg_attribute a
 						ON i.indrelid = a.attrelid AND i.indkey[0]=a.attnum
-					LEFT JOIN pg_catalog.pg_attrdef d
-						ON a.atthasdef
-						AND a.attrelid = d.adrelid
-						AND a.attnum = d.adnum
-						AND pg_catalog.pg_get_expr(d.adbin, d.adrelid) ~ '^nextval'
-				WHERE i.indrelid = $oid
-					AND i.indisunique IS TRUE
-					AND (d.adnum IS NOT NULL OR $idcond)
+				WHERE i.indrelid = \$1
+					AND i.indisunique
+					AND (a.atthasdef OR $idcond)
 			};
-			$sth = $dbh->prepare($SQL);
-			$count = $sth->execute();
+			my $sth = $dbh->prepare_cached($SQL);
+			my $count = $sth->execute($oid);
 			if (!defined $count or $count eq '0E0') {
 				$sth->finish();
 				$dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"});
@@ -376,15 +377,8 @@ use 5.008001;
 			}
 			my $info = $sth->fetchall_arrayref();
 
-			## We have at least one with a default value. See if we can determine sequences
-			my @def;
-			for (@$info) {
-				if (!defined $_->[3]) {
-					next unless $_->[2] =~ /^nextval\(+'([^']+)'::/;
-					$_->[3] = $1;
-				}
-				push @def, $_;
-			}
+			## We have at least one with a default value. See if we found any sequences
+			my @def = grep { defined $_->[2] } @$info;
 			if (!@def) {
 				$dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
 			}
@@ -396,7 +390,7 @@ use 5.008001;
 				}
 				@def = @pri;
 			}
-			$sequence = $def[0]->[3];
+			$sequence = $def[0]->[2];
 			## Cache this information for subsequent calls
 			$dbh->{private_dbdpg}{$cachename} = $sequence;
 		}
