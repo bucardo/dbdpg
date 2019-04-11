@@ -324,18 +324,50 @@ use 5.008001;
 				return undef;
 			}
 			my @args = ($table);
-			## Make sure the table in question exists and grab its oid
-			my ($schemajoin,$schemawhere) = ('','');
+			my $schemawhere;
 			if (length $schema) {
-				$schemajoin = "\n JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)";
+				# if given a schema, use that
 				$schemawhere = 'n.nspname = ?';
 				push @args, $schema;
 			} else {
+				# otherwise it must be visible via the search path
 				$schemawhere = 'pg_catalog.pg_table_is_visible(c.oid)';
 			}
-			$SQL = "SELECT c.oid FROM pg_catalog.pg_class c $schemajoin\n WHERE relname = ? AND $schemawhere";
-			$sth = $dbh->prepare_cached($SQL);
-			$count = $sth->execute(@args);
+			## Is there a sequence associated with the table via a unique, indexed column,
+			## either via ownership (e.g. serial, identity) or a manual default?
+			my $idcond = $dbh->{private_dbdpg}{version} >= 100000
+				? q{a.attidentity <> ''} : q{false};
+			$SQL = sprintf(q{
+				SELECT i.indisprimary,
+					COALESCE(
+						-- this takes the table name as text, not regclass
+						pg_catalog.pg_get_serial_sequence(
+							-- and pre-8.3 doesn't have a cast from regclass to text,
+							-- and pre-9.3 doesn't have format, so do it the long way
+							quote_ident(n.nspname) || '.' || quote_ident(c.relname),
+							a.attname),
+						(SELECT replace(substring(pg_catalog.pg_get_expr(d.adbin, d.adrelid)
+											from $r$^nextval\('(.+)'::[\w\s]+\)$$r$),
+										-- unescape any single quotes from the default
+										$$''$$, $$'$$)
+							FROM pg_catalog.pg_attrdef d
+							WHERE a.atthasdef
+								AND a.attrelid = d.adrelid
+								AND a.attnum = d.adnum)
+					) AS seqname
+				FROM pg_class c
+					JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
+					-- LEFT JOIN so we can distingiuish between table not found (zero rows)
+					-- and no suitable column found (at least one all-NULL row)
+					LEFT JOIN pg_catalog.pg_index i
+						ON c.oid = i.indrelid AND i.indisunique
+					LEFT JOIN pg_catalog.pg_attribute a
+						ON i.indrelid = a.attrelid AND i.indkey[0]=a.attnum
+						AND (a.atthasdef OR %s)
+				WHERE c.relname = ? AND %s
+			}, $idcond, $schemawhere);
+			my $sth = $dbh->prepare_cached($SQL) or die $dbh->errstr;
+			my $count = $sth->execute(@args) or die $sth->errstr;
 			if (!defined $count or $count eq '0E0') {
 				$sth->finish();
 				my $message = qq{Could not find the table "$table"};
@@ -343,54 +375,24 @@ use 5.008001;
 				$dbh->set_err(1, $message);
 				return undef;
 			}
-			my $oid = $sth->fetchall_arrayref()->[0][0];
-			$oid =~ /(\d+)/ or die qq{OID was not numeric?!?\n};
-			$oid = $1;
-			## Is there a sequence associated with it via a unique, indexed column,
-			## either via ownership (e.g. serial, identity) or a manual default?
-			my $idcond = $dbh->{private_dbdpg}{version} >= 100000
-				? q{a.attidentity <> ''} : q{false};
-			$SQL = qq{
-				SELECT a.attname, i.indisprimary,
-					COALESCE(
-						pg_catalog.pg_get_serial_sequence(\$1::regclass::text, a.attname),
-						(SELECT substring(pg_catalog.pg_get_expr(d.adbin, d.adrelid)
-										  from E'^nextval\\\\(''([^'']+)''::regclass\\\\)')
-							FROM pg_catalog.pg_attrdef d
-							WHERE a.atthasdef
-								AND a.attrelid = d.adrelid
-								AND a.attnum = d.adnum)
-					) seqname
-				FROM pg_catalog.pg_index i
-					JOIN pg_catalog.pg_attribute a
-						ON i.indrelid = a.attrelid AND i.indkey[0]=a.attnum
-				WHERE i.indrelid = \$1
-					AND i.indisunique
-					AND (a.atthasdef OR $idcond)
-			};
-			my $sth = $dbh->prepare_cached($SQL);
-			my $count = $sth->execute($oid);
-			if (!defined $count or $count eq '0E0') {
-				$sth->finish();
-				$dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"});
-				return undef;
-			}
 			my $info = $sth->fetchall_arrayref();
 
 			## We have at least one with a default value. See if we found any sequences
-			my @def = grep { defined $_->[2] } @$info;
+			my @def = grep { defined $_->[1] } @$info;
 			if (!@def) {
 				$dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
+				return undef;
 			}
 			## Tiebreaker goes to the primary keys
 			if (@def > 1) {
-				my @pri = grep { $_->[1] } @def;
+				my @pri = grep { $_->[0] } @def;
 				if (1 != @pri) {
 					$dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
+					return undef;
 				}
 				@def = @pri;
 			}
-			$sequence = $def[0]->[2];
+			$sequence = $def[0]->[1];
 			## Cache this information for subsequent calls
 			$dbh->{private_dbdpg}{$cachename} = $sequence;
 		}

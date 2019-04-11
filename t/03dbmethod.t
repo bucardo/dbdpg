@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 569;
+plan tests => 570;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -258,21 +258,32 @@ SKIP: {
     for my $WHEN ('BY DEFAULT', 'ALWAYS') {
         $t=qq{DB handle method "last_insert_id" works on GENERATED $WHEN AS IDENTITY column};
 
-        $dbh->do(qq{CREATE TABLE $schema.dbd_pg_test_identity (
+        $dbh->do(qq{CREATE TABLE $schema."dbd_pg_test_identity_'$WHEN'" (
 	        genid INTEGER PRIMARY KEY GENERATED $WHEN AS IDENTITY (START WITH 1),
                 otheruniq INTEGER UNIQUE GENERATED $WHEN AS IDENTITY (START WITH 10),
                 otherid INTEGER GENERATED $WHEN AS IDENTITY (START WITH 20)
 	)});
-        my $returned_id = $dbh->selectrow_array('INSERT INTO dbd_pg_test_identity DEFAULT VALUES RETURNING genid');
+        my $returned_id = $dbh->selectrow_array(qq{INSERT INTO "dbd_pg_test_identity_'$WHEN'" DEFAULT VALUES RETURNING genid});
         my $last_insert_id = eval {
-            $dbh->last_insert_id(undef, $schema, 'dbd_pg_test_identity', undef, undef);
+            $dbh->last_insert_id(undef, $schema, qq{dbd_pg_test_identity_'$WHEN'}, undef, undef);
         };
         is ($@, q{}, $t);
         $t=qq{DB handle method "last_insert_id" returns PK value from multiple GENERATED $WHEN AS IDENTITY columns};
         is ($last_insert_id, $returned_id, $t);
-        $dbh->do("DROP TABLE $schema.dbd_pg_test_identity");
+        $dbh->do("DROP TABLE $schema.dbd_pg_test_identity_'$WHEN'");
     }
 }
+
+$t='DB handle method "last_insert_id" works when the sequence name needs quoting';
+$dbh->do(q{CREATE SEQUENCE "dbd_pg_test_'seq'"});
+$dbh->do(q{CREATE TABLE "dbd_pg_test_'table'" (id integer unique default nextval($$dbd_pg_test_'seq'$$))});
+$dbh->do(q{INSERT INTO "dbd_pg_test_'table'" DEFAULT VALUES});
+
+eval { $dbh->last_insert_id(undef, undef, q{dbd_pg_test_'table'}, undef, undef) };
+is ($@, q{}, $t);
+
+$dbh->do(q{DROP TABLE "dbd_pg_test_'table'"});
+$dbh->do(q{DROP SEQUENCE "dbd_pg_test_'seq'"});
 
 $dbh->do("DROP SCHEMA $schema2");
 $dbh->do("DROP TABLE $table2");
