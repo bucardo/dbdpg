@@ -702,6 +702,7 @@ VC
 ## Pg.pm:
 onwards
 Oid
+pseudotype
 lseg
 afterwards
 hashrefs
