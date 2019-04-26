@@ -1708,7 +1708,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
 
 	unsigned char oldch; /* The previous character */
 
-	char non_standard_strings = -1; /* Status 0=standard 1=non_standard -1=unknown  */
+	signed char non_standard_strings = -1; /* Status 0=standard 1=non_standard -1=unknown  */
 
 	int xint;
 
