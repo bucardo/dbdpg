@@ -752,6 +752,11 @@ use 5.008001;
 			$whereclause .= "\n\t\t\tAND n.nspname = " . $dbh->quote($schema);
 		}
 
+		if ($dbh->{private_dbdpg}{version} < 80000) {
+                    require Carp;
+                    Carp::croak("PostgreSQL server version 8.0 or higher required");
+		}
+
 		my $pri_key_sql = qq{
             SELECT
                   c.oid
@@ -1114,6 +1119,11 @@ use 5.008001;
             }
             if (defined $table and length $table) {
                     push @search, 'c.relname ' . ($table =~ /[_%]/ ? 'LIKE ' : '= ') . $dbh->quote($table);
+            }
+
+            if ($dbh->{private_dbdpg}{version} < 80000) {
+                    require Carp;
+                    Carp::croak("PostgreSQL server version 8.0 or higher required");
             }
 
             my $whereclause = join "\n\t\t\t\t\t AND " => @search;

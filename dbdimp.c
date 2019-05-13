@@ -198,17 +198,6 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	TRACE_PQSERVERVERSION;
 	imp_dbh->pg_server_version = PQserverVersion(imp_dbh->conn);
 
-	if (imp_dbh->pg_server_version < 80000) {
-		TRACE_PQERRORMESSAGE;
-		strncpy(imp_dbh->sqlstate, "08001", 6); /* sqlclient_unable_to_establish_sqlconnection */
-		pg_error(aTHX_ dbh, CONNECTION_BAD, "Server version 8.0 required");
-		TRACE_PQFINISH;
-		PQfinish(imp_dbh->conn);
-		sv_free((SV *)imp_dbh->savepoints);
-		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login (error)\n", THEADER_slow);
-		return 0;
-	}
-
 	pg_db_detect_client_encoding_utf8(aTHX_ imp_dbh);
 
 	/* If the client_encoding is UTF8, flip the utf8 flag until convinced otherwise */
@@ -4344,6 +4333,9 @@ int pg_db_savepoint (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_savepoint (name: %s)\n", THEADER_slow, savepoint);
 
+	if (imp_dbh->pg_server_version < 80000)
+		croak("PostgreSQL server version 8.0 required");
+
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit))) {
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_savepoint (0)\n", THEADER_slow);
@@ -4390,6 +4382,9 @@ int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, const char *savepoint)
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_rollback_to (name: %s)\n", THEADER_slow, savepoint);
 
+	if (imp_dbh->pg_server_version < 80000)
+		croak("PostgreSQL server version 8.0 or higher required");
+
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit))) {
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_rollback_to (0)\n", THEADER_slow);
@@ -4423,6 +4418,9 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 	char * action;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_release (name: %s)\n", THEADER_slow, savepoint);
+
+	if (imp_dbh->pg_server_version < 80000)
+		croak("PostgreSQL server version 8.0 or higher required");
 
 	/* no action if AutoCommit = on or the connection is invalid */
 	if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit))) {
