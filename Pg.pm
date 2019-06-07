@@ -128,6 +128,7 @@ use 5.008001;
         if (!$methods_are_installed) {
             DBD::Pg::db->install_method('pg_cancel');
             DBD::Pg::db->install_method('pg_endcopy');
+            DBD::Pg::db->install_method('pg_error_field');
             DBD::Pg::db->install_method('pg_getline');
             DBD::Pg::db->install_method('pg_getcopydata');
             DBD::Pg::db->install_method('pg_getcopydata_async');

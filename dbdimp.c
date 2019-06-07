@@ -232,6 +232,8 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	imp_dbh->pg_errorlevel     = 1; /* Default */
 	imp_dbh->async_status      = 0;
 	imp_dbh->async_sth         = NULL;
+    imp_dbh->last_result       = NULL;
+    imp_dbh->clear_last_result = 0;
 
 	/* Tell DBI that we should call destroy when the handle dies */
 	DBIc_IMPSET_on(imp_dbh);
@@ -337,20 +339,21 @@ static void pg_warn (void * arg, const char * message)
 */
 static ExecStatusType _result(pTHX_ imp_dbh_t * imp_dbh, const char * sql)
 {
-	PGresult *     result;
 	ExecStatusType status;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin _result (sql: %s)\n", THEADER_slow, sql);
 
 	if (TSQL) TRC(DBILOGFP, "%s;\n\n", sql);
 
+    if (0 == imp_dbh->clear_last_result) {
+		TRACE_PQCLEAR;
+        PQclear(imp_dbh->last_result);
+    }
+
 	TRACE_PQEXEC;
-	result = PQexec(imp_dbh->conn, sql);
-
-	status = _sqlstate(aTHX_ imp_dbh, result);
-
-	TRACE_PQCLEAR;
-	PQclear(result);
+	imp_dbh->last_result = PQexec(imp_dbh->conn, sql);
+    imp_dbh->clear_last_result = 0;
+	status = _sqlstate(aTHX_ imp_dbh, imp_dbh->last_result);
 
 	if (TEND_slow) TRC(DBILOGFP, "%sEnd _result\n", THEADER_slow);
 	return status;
@@ -579,7 +582,6 @@ static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int actio
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_rollback_commit (error: status not OK)\n", THEADER_slow);
 		return 0;
 	}
-
 	/* We just did a rollback or a commit, so savepoints are not relevant, and we cannot be in a PGRES_COPY state */
 	av_undef(imp_dbh->savepoints);
 	imp_dbh->copystate=0;
@@ -657,6 +659,12 @@ void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
 		}
 		imp_dbh->async_sth = NULL;
 	}
+
+    // Do we want to uncategorically free this?
+    if (0 == imp_dbh->clear_last_result) {
+        TRACE_PQCLEAR;
+        PQclear(imp_dbh->last_result);
+    }
 
 	av_undef(imp_dbh->savepoints);
 	sv_free((SV *)imp_dbh->savepoints);
@@ -747,7 +755,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 			retsv = newSViv((IV)imp_dbh->pg_protocol);
 		break;
 
-	case 12: /* pg_INV_WRITE pg_utf8_flag */
+	case 12: /* pg_INV_WRITE  pg_utf8_flag */
 
 		if (strEQ("pg_INV_WRITE", key))
 			retsv = newSViv((IV) INV_WRITE );
@@ -2252,7 +2260,6 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 	unsigned int placeholder_digits;
 	int          x;
 	STRLEN       execsize;
-	PGresult *   result;
 	int          status = -1;
 	seg_t *      currseg;
 	ph_t *       currph;
@@ -2320,13 +2327,15 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 	if (TSQL)
 		TRC(DBILOGFP, "PREPARE %s AS %s;\n\n", imp_sth->prepare_name, statement);
 
-	TRACE_PQPREPARE;
-	result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids);
-	status = _sqlstate(aTHX_ imp_dbh, result);
-	if (result) {
+    if (imp_dbh->clear_last_result == (long int)imp_sth) {
 		TRACE_PQCLEAR;
-		PQclear(result);
+		PQclear(imp_dbh->last_result);
+        imp_dbh->last_result = NULL;
 	}
+	TRACE_PQPREPARE;
+	imp_dbh->last_result = imp_sth->result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids);
+    imp_dbh->clear_last_result = (long int)imp_sth;
+	status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
 	if (TRACE6_slow)
 		TRC(DBILOGFP, "%sUsing PQprepare: %s\n", THEADER_slow, statement);
 
@@ -2940,7 +2949,6 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 {
 	dTHX;
 	D_imp_dbh(dbh);
-	PGresult *              result;
 	ExecStatusType          status = PGRES_FATAL_ERROR; /* Assume the worst */
 	PGTransactionStatusType txn_status;
 	char *                  cmdStatus = NULL;
@@ -3023,9 +3031,15 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 
 	if (TSQL) TRC(DBILOGFP, "%s;\n\n", sql);
 
+    /* Clear ourselves, but not any sth ones */
+    if (0==imp_dbh->clear_last_result) { // or could say == self
+        TRACE_PQCLEAR;
+        PQclear(imp_dbh->last_result);
+    }
 	TRACE_PQEXEC;
-	result = PQexec(imp_dbh->conn, sql);
-	status = _sqlstate(aTHX_ imp_dbh, result);
+	imp_dbh->last_result = PQexec(imp_dbh->conn, sql);
+    imp_dbh->clear_last_result = 0;
+	status = _sqlstate(aTHX_ imp_dbh, imp_dbh->last_result);
 
 	imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
 
@@ -3033,12 +3047,12 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 	switch ((int)status) {
 	case PGRES_TUPLES_OK:
 		TRACE_PQNTUPLES;
-		rows = PQntuples(result);
+		rows = PQntuples(imp_dbh->last_result);
 		break;
 	case PGRES_COMMAND_OK:
 		/* non-select statement */
 		TRACE_PQCMDSTATUS;
-		cmdStatus = PQcmdStatus(result);
+		cmdStatus = PQcmdStatus(imp_dbh->last_result);
 		/* If the statement indicates a number of rows, we want to return that */
 		/* Note: COPY and FETCH do not currently reach here, although they return numbers */
 		if (0 == strncmp(cmdStatus, "INSERT", 6)) {
@@ -3061,7 +3075,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 	case PGRES_COPY_BOTH:
 		/* Copy Out/In data transfer in progress */
 		imp_dbh->copystate = status;
-		imp_dbh->copybinary = PQbinaryTuples(result);
+		imp_dbh->copybinary = PQbinaryTuples(imp_dbh->last_result);
 		rows = -1;
 		break;
 	case PGRES_EMPTY_QUERY:
@@ -3079,11 +3093,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 		break;
 	}
 
-	if (result) {
-		TRACE_PQCLEAR;
-		PQclear(result);
-	}
-	else {
+	if (!imp_dbh->last_result) {
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (no result)\n", THEADER_slow);
 		return -2;
 	}
@@ -3192,10 +3202,11 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	  deleted implicitly the next time pg_db_result is
 	  called.
 	*/
-	if (imp_sth->result && !(imp_sth->async_flag & PG_ASYNC)) {
+	if (imp_sth->result && !(imp_sth->async_flag & PG_ASYNC)
+        && (0==imp_dbh->clear_last_result || imp_dbh->clear_last_result == (long int)imp_sth)) {
 		TRACE_PQCLEAR;
 		PQclear(imp_sth->result);
-		imp_sth->result = NULL;
+		imp_dbh->last_result = imp_sth->result = NULL;
 	}
 
 	/*
@@ -3346,8 +3357,14 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			ret = PQsendQuery(imp_dbh->conn, statement);
 		}
 		else {
+            /* We only clear ourselves or a dbh, but never another sth */
+            if (0 == imp_dbh->clear_last_result || imp_dbh->clear_last_result == (long int)imp_sth) {
+                TRACE_PQCLEAR;
+                PQclear(imp_dbh->last_result);
+            }
 			TRACE_PQEXEC;
-			imp_sth->result = PQexec(imp_dbh->conn, statement);
+            imp_dbh->last_result = imp_sth->result = PQexec(imp_dbh->conn, statement);
+            imp_dbh->clear_last_result = (long int)imp_sth;
 		}
 
 		Safefree(statement);
@@ -3415,9 +3432,15 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				(imp_dbh->conn, statement, imp_sth->numphs, imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
 		}
 		else {
+            if (0 == imp_dbh->clear_last_result || imp_dbh->clear_last_result == (long int)imp_sth) {
+                TRACE_PQCLEAR;
+                PQclear(imp_dbh->last_result);
+            }
 			TRACE_PQEXECPARAMS;
-			imp_sth->result = PQexecParams
+            imp_sth->result = PQexecParams
 				(imp_dbh->conn, statement, imp_sth->numphs, imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+            imp_dbh->last_result = imp_sth->result;
+            imp_dbh->clear_last_result = (long int)imp_sth;
 		}
 
 		Safefree(statement);
@@ -3469,9 +3492,14 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
 		}
 		else {
+            if (0 == imp_dbh->clear_last_result || imp_dbh->clear_last_result == (long int)imp_sth) {
+                TRACE_PQCLEAR;
+                PQclear(imp_dbh->last_result);
+            }
 			TRACE_PQEXECPREPARED;
-			imp_sth->result = PQexecPrepared
+			imp_dbh->last_result = imp_sth->result = PQexecPrepared
 				(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+            imp_dbh->clear_last_result = (long int)imp_sth;
 		}
 	} /* end new-style prepare */
 		
@@ -3776,9 +3804,16 @@ int dbd_st_finish (SV * sth, imp_sth_t * imp_sth)
 					THEADER_slow, imp_dbh->async_status);
 	
 	if (DBIc_ACTIVE(imp_sth) && imp_sth->result) {
-		TRACE_PQCLEAR;
-		PQclear(imp_sth->result);
-		imp_sth->result = NULL;
+        /* If our is the current 'last_result', let imp_dbh know that it can clear this when it needs to */
+        if (imp_dbh->clear_last_result == (long int)imp_sth) {
+            imp_dbh->clear_last_result = 0;
+        }
+        else {
+            /* Ours it not the latest, so fine to clear it right here and now */
+            TRACE_PQCLEAR;
+            PQclear(imp_sth->result);
+        }
+        imp_sth->result = NULL;
 		imp_sth->rows = 0;
 	}
 	
@@ -3937,11 +3972,8 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 	Safefree(imp_sth->PQfmts);
 	Safefree(imp_sth->PQoids);
 
-	if (imp_sth->result) {
-		TRACE_PQCLEAR;
-		PQclear(imp_sth->result);
-		imp_sth->result = NULL;
-	}
+    /* We do not actually clear this as imp_dbh may need it (e.g. for pg_error_field) */
+    imp_sth->result = NULL;
 
 	/* Free all the segments */
 	currseg = imp_sth->seg;
@@ -4248,6 +4280,109 @@ int pg_db_putcopyend (SV * dbh)
 	}
 
 } /* end of pg_db_putcopyend */
+
+
+/* ================================================================== */
+SV * pg_db_error_field (SV *dbh, char * fieldname)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+    int fieldcode = 0;
+    char * startstring = fieldname;
+
+    while (*fieldname) {
+        if (*fieldname >= 'a' && *fieldname <= 'z')
+            *fieldname += 'A' - 'a';
+        fieldname++;
+    }
+    fieldname = startstring;
+    
+    /* These allow partial matches, which is why 'severity_nonlocalized'  needs to go first */
+    if ( 0 == strncmp(fieldname, "PG_DIAG_SEVERITY_NONLOCALIZED", 25) ||
+         0 == strncmp(fieldname, "SEVERITY_NONLOCAL", 17)) {
+        fieldcode = PG_DIAG_SEVERITY_NONLOCALIZED; // i.e. 'V'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_SEVERITY", 16) ||
+              0 == strncmp(fieldname, "SEVERITY", 8)) {
+        fieldcode = PG_DIAG_SEVERITY; // i.e. 'S'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_MESSAGE_PRIMARY", 20) ||
+              0 == strncmp(fieldname, "MESSAGE_PRIMARY", 13) ||
+              0 == strncmp(fieldname, "PRIMARY", 4)) {
+        fieldcode = PG_DIAG_MESSAGE_PRIMARY; // i.e. 'M'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_MESSAGE_DETAIL", 22) ||
+              0 == strncmp(fieldname, "MESSAGE_DETAIL", 14) ||
+              0 == strncmp(fieldname, "DETAIL", 6)) {
+        fieldcode = PG_DIAG_MESSAGE_DETAIL; // i.e. 'D'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_MESSAGE_HINT", 20) ||
+              0 == strncmp(fieldname, "MESSAGE_HINT", 12) ||
+              0 == strncmp(fieldname, "HINT", 4)) {
+        fieldcode = PG_DIAG_MESSAGE_HINT; // i.e. 'H'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_STATEMENT_POSITION", 21) ||
+              0 == strncmp(fieldname, "STATEMENT_POSITION", 13)) {
+        fieldcode = PG_DIAG_STATEMENT_POSITION; // i.e. 'P'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_INTERNAL_POSITION", 20) ||
+              0 == strncmp(fieldname, "INTERNAL_POSITION", 12)) {
+        fieldcode = PG_DIAG_INTERNAL_POSITION; // i.e. 'p'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_INTERNAL_QUERY", 22) ||
+              0 == strncmp(fieldname, "INTERNAL_QUERY", 14)) {
+        fieldcode = PG_DIAG_INTERNAL_QUERY; // i.e. 'q'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_CONTEXT", 15) ||
+              0 == strncmp(fieldname, "CONTEXT", 7)) {
+        fieldcode = PG_DIAG_CONTEXT; // i.e. 'W'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_SCHEMA_NAME", 14) ||
+              0 == strncmp(fieldname, "SCHEMA", 5)) {
+        fieldcode = PG_DIAG_SCHEMA_NAME; // i.e. 's'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_TABLE_NAME", 13) ||
+              0 == strncmp(fieldname, "TABLE", 5)) {
+        fieldcode = PG_DIAG_TABLE_NAME; // i.e. 't'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_COLUMN_NAME", 11) ||
+              0 == strncmp(fieldname, "COLUMN", 3)) {
+        fieldcode = PG_DIAG_COLUMN_NAME; // i.e. 'c'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_DATATYPE_NAME", 16) ||
+              0 == strncmp(fieldname, "DATATYPE", 8) ||
+              0 == strncmp(fieldname, "TYPE", 4)) {
+        fieldcode = PG_DIAG_DATATYPE_NAME; // i.e. 'd'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_CONSTRAINT_NAME", 18) ||
+              0 == strncmp(fieldname, "CONSTRAINT", 10)) {
+        fieldcode = PG_DIAG_CONSTRAINT_NAME; // i.e. 'n'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_SOURCE_FILE", 19) ||
+              0 == strncmp(fieldname, "SOURCE_FILE", 11)) {
+        fieldcode = PG_DIAG_SOURCE_FILE; // i.e. 'F'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_SOURCE_LINE", 19) ||
+              0 == strncmp(fieldname, "SOURCE_LINE", 11)) {
+        fieldcode = PG_DIAG_SOURCE_LINE; // i.e. 'L'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_SOURCE_FUNCTION", 19) ||
+              0 == strncmp(fieldname, "SOURCE_FUNCTION", 11)) {
+        fieldcode = PG_DIAG_SOURCE_FUNCTION; // i.e. 'R'
+    }
+    else if ( 0 == strncmp(fieldname, "PG_DIAG_SQLSTATE", 16) || 
+              0 == strncmp(fieldname, "SQLSTATE", 8) ||
+              0 == strncmp(fieldname, "STATE", 5)) {
+        fieldcode = PG_DIAG_SQLSTATE; // i.e. 'C'
+    }
+    else {
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, "Invalid error field");
+		return &PL_sv_undef;
+    }
+
+    return sv_2mortal(newSVpv(PQresultErrorField(imp_dbh->last_result, fieldcode), 0));
+
+} /* end of pg_db_error_field */
 
 
 /* ================================================================== */

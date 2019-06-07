@@ -386,6 +386,14 @@ pg_endcopy(dbh)
 	CODE:
 		ST(0) = (pg_db_endcopy(dbh)!=0) ? &PL_sv_no : &PL_sv_yes;
 
+  
+void
+pg_error_field(dbh, fieldname)
+	SV * dbh
+	char * fieldname;
+	CODE:
+		ST(0) = pg_db_error_field(dbh, fieldname);
+
 
 void
 pg_notifies(dbh)
