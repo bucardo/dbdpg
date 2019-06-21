@@ -63,6 +63,10 @@ my %ranges = (
     LATIN1 => qr/\A(?:ascii|latin 1 range)\z/,
 );
 
+eval { $dbh->do('DROP TABLE dbd_pg_test_unicode') };
+$dbh->commit();
+$dbh->do('CREATE TABLE dbd_pg_test_unicode(t TEXT)');
+
 foreach (@tests) {
     my ($state, $range, $type, $value) = @$_;
  SKIP:
@@ -77,6 +81,10 @@ foreach (@tests) {
                 qtype => 'interpolated',
                 sql => "SELECT '$value'::$type",
             },
+            {
+                qtype => 'interpolated insert',
+                sql => "INSERT INTO dbd_pg_test_unicode VALUES ('$value'::$type)",
+            },
             # Test that what we send is the same as the database's idea of characters:
             {
                 qtype => 'placeholder length',
@@ -85,8 +93,19 @@ foreach (@tests) {
                 want => length($value),
             },
             {
+                qtype => 'placeholder length insert',
+                sql => "INSERT INTO dbd_pg_test_unicode VALUES (length(?::$type))",
+                args => [$value],
+                want => length($value),
+            },
+            {
                 qtype => 'interpolated length',
                 sql => "SELECT length('$value'::$type)",
+                want => length($value),
+            },
+            {
+                qtype => 'interpolated length insert',
+                sql => "INSERT INTO dbd_pg_test_unicode VALUES (length('$value'::$type))",
                 want => length($value),
             },
         ):()),
@@ -133,16 +152,56 @@ foreach (@tests) {
                 die $@;
             }
             else {
+                if ($test->{qtype} =~ /insert/) {
+                    $dbh->commit();
+                    $sth = $dbh->prepare('SELECT * FROM dbd_pg_test_unicode');
+                    $sth->execute();
+                }
                 my $result = $sth->fetchall_arrayref->[0][0];
-                is_deeply ($result, $want, "$desc returns proper value");
-                if ($test->{qtype} !~ /length$/) {
+                is_deeply ($result, $want, "$desc via prepare+execute+fetchall returns proper value");
+                if ($test->{qtype} !~ /length/) {
                     # Whilst XS code can set SVf_UTF8 on an IV, the core's SV
                     # copying code doesn't copy it. So we can't assume that numeric
                     # values we see "out here" still have it set. Hence skip this
                     # test for the SQL length() tests.
-                    is (utf8::is_utf8($_), !!$enable_utf8, "$desc returns string with correct UTF-8 flag")
+                    is (utf8::is_utf8($_), !!$enable_utf8, "$desc via prepare+execute+fetchall returns string with correct UTF-8 flag")
                         for (ref $result ? @{$result} : $result);
                 }
+            }
+            if ($test->{qtype} =~ /insert/) {
+                $dbh->do('DELETE FROM dbd_pg_test_unicode');
+                $dbh->commit();
+            }
+
+
+            my $result;
+            if ($test->{qtype} =~ /insert/) {
+                eval { $dbh->do($test->{sql}, undef, @args) };
+                if (not $@) {
+                    $dbh->commit();
+                    $result = eval { $dbh->selectall_arrayref('SELECT * FROM dbd_pg_test_unicode')->[0][0] };
+                }
+            } else {
+                $result = eval { $dbh->selectall_arrayref($test->{sql}, undef, @args)->[0][0] };
+            }
+            if ($@) {
+                diag "Failure: enable_utf8=$enable_utf8, SQL=$test->{sql}, range=$range\n";
+                die $@;
+            }
+            else {
+                is_deeply ($result, $want, "$desc via do/selectall returns proper value");
+                if ($test->{qtype} !~ /length/) {
+                    # Whilst XS code can set SVf_UTF8 on an IV, the core's SV
+                    # copying code doesn't copy it. So we can't assume that numeric
+                    # values we see "out here" still have it set. Hence skip this
+                    # test for the SQL length() tests.
+                    is (utf8::is_utf8($_), !!$enable_utf8, "$desc via do/selectall returns string with correct UTF-8 flag")
+                        for (ref $result ? @{$result} : $result);
+                }
+            }
+            if ($test->{qtype} =~ /insert/) {
+                $dbh->do('DELETE FROM dbd_pg_test_unicode');
+                $dbh->commit();
             }
         }
     }
@@ -191,6 +250,8 @@ for my $name ('LATIN CAPITAL LETTER N',
     }
 }
 
+$dbh->do('DROP TABLE dbd_pg_test_unicode');
+$dbh->commit();
 cleanup_database($dbh,'test');
 $dbh->disconnect();
 
