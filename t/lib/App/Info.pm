@@ -1075,7 +1075,7 @@ the following simple guidelines: Use C<error()> when you expect something to
 work and then it just doesn't (as when a file exists and should contain the
 information you seek, but then doesn't). Use C<unknown()> when you're less
 sure of your processes for finding the value, and also for any of the values
-that should be returned by any of the L<meta data object methods|"Metadata
+that should be returned by any of the L<meta data object methods|"Meta Data
 Object Methods">. And of course, C<error()> would be more appropriate when you
 encounter an unexpected condition and don't think that it could be handled in
 any other way.

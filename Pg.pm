@@ -1875,7 +1875,7 @@ handle. This is a number used by libpq and is one of:
   $str = $h->errstr;
 
 Returns the last error that was reported by Postgres. This message is affected 
-by the L<pg_errorlevel|/pg_errorlevel_(integer)> setting.
+by the L<pg_errorlevel|/pg_errorlevel (integer)> setting.
 
 =head3 B<state>
 
@@ -2345,7 +2345,7 @@ Queries that do not begin with the word "SELECT", "INSERT",
 
 Deciding whether or not to use prepared statements depends on many factors, 
 but you can force them to be used or not used by using the 
-L<pg_server_prepare|/pg_server_prepare_(boolean)> attribute when calling L</prepare>.
+L<pg_server_prepare|/pg_server_prepare (boolean)> attribute when calling L</prepare>.
 Setting this to false means to never use
 prepared statements. Setting pg_server_prepare to true means that prepared
 statements should be used whenever possible. This is the default.
@@ -2412,7 +2412,7 @@ be provided after the prepare but before the execute.
 
 A server-side prepare may happen before the first L</execute>, but only if the server can
 handle the server-side prepare, and the statement contains no placeholders. It will 
-also be prepared if the L<pg_prepare_now|/pg_prepare_now_(boolean)> attribute is passed in and set to a true 
+also be prepared if the L<pg_prepare_now|/pg_prepare_now (boolean)> attribute is passed in and set to a true 
 value. Similarly, the pg_prepare_now attribute can be set to 0 to ensure that
 the statement is B<not> prepared immediately, although the cases in which you would
 want this are very rare. Finally, you can set the default behavior of all prepare
@@ -2435,7 +2435,7 @@ The following two examples will NOT be prepared right away:
 There are times when you may want to prepare a statement yourself. To do this,
 simply send the C<PREPARE> statement directly to the server (e.g. with
 the L</do> method). Create a statement handle and set the prepared name via
-the L<pg_prepare_name|/pg_prepare_name_(string)> attribute. The statement handle can be created with a dummy
+the L<pg_prepare_name|/pg_prepare_name (string)> attribute. The statement handle can be created with a dummy
 statement, as it will not be executed. However, it should have the same
 number of placeholders as your prepared statement. Example:
 
@@ -2454,7 +2454,7 @@ which is the equivalent of:
   SELECT COUNT(*) FROM pg_class WHERE reltuples < 123;
 
 You can force DBD::Pg to send your query directly to the server by adding
-the L<pg_direct|/pg_direct_(boolean)> attribute to your prepare call. This is not recommended,
+the L<pg_direct|/pg_direct (boolean)> attribute to your prepare call. This is not recommended,
 but is added just in case you need it.
 
 =head4 B<Placeholders>
@@ -2515,7 +2515,7 @@ may simply add a backslash before the start of a placeholder, and DBD::Pg will s
 backslash and not treat the character as a placeholder. 
 
 You can also tell DBD::Pg to ignore any non-dollar sign placeholders by setting the 
-L<pg_placeholder_dollaronly|/pg_placeholder_dollaronly_(boolean)> attribute at either the database handle or the statement 
+L<pg_placeholder_dollaronly|/pg_placeholder_dollaronly (boolean)> attribute at either the database handle or the statement 
 handle level. Examples:
 
   $dbh->{pg_placeholder_dollaronly} = 1;
@@ -2557,7 +2557,7 @@ See the DBI placeholder documentation for more details.
 
 Implemented by DBI, no driver-specific impact. This method is most useful
 when using a server that supports server-side prepares, and you have asked
-the prepare to happen immediately via the L<pg_prepare_now|/pg_prepare_now_(boolean)> attribute.
+the prepare to happen immediately via the L<pg_prepare_now|/pg_prepare_now (boolean)> attribute.
 
 =head3 B<do>
 
@@ -2653,7 +2653,7 @@ false on error. See also the the section on L</Transactions>.
 
 =head3 B<begin_work>
 
-This method turns on transactions until the next call to L</commit> or L</rollback>, if L<AutoCommit|/AutoCommit_(boolean)> is 
+This method turns on transactions until the next call to L</commit> or L</rollback>, if L<AutoCommit|/AutoCommit (boolean)> is 
 currently enabled. If it is not enabled, calling begin_work will issue an error. Note that the 
 transaction will not actually begin until the first statement after begin_work is called.
 Example:
@@ -3527,7 +3527,7 @@ Fetches the next row of data from the statement handle, and returns a reference 
 holding the column values. Any columns that are NULL are returned as undef within the array.
 
 If there are no more rows or if an error occurs, then this method return undef. You should 
-check C<< $sth->err >> afterwards (or use the L<RaiseError|/RaiseError_(boolean,_inherited)> attribute) to discover if the undef returned 
+check C<< $sth->err >> afterwards (or use the L<RaiseError|/RaiseError (boolean, inherited)> attribute) to discover if the undef returned 
 was due to an error.
 
 Note that the same array reference is returned for each fetch, so don't store the reference and 
@@ -3550,7 +3550,7 @@ Fetches the next row of data and returns a hashref containing the name of the co
 and the data itself as the values. Any NULL value is returned as an undef value.
 
 If there are no more rows or if an error occurs, then this method return undef. You should 
-check C<< $sth->err >> afterwards (or use the L<RaiseError|/RaiseError_(boolean,_inherited)> attribute) to discover if the undef returned 
+check C<< $sth->err >> afterwards (or use the L<RaiseError|/RaiseError (boolean, inherited)> attribute) to discover if the undef returned 
 was due to an error.
 
 The optional C<$name> argument should be either C<NAME>, C<NAME_lc> or C<NAME_uc>, and indicates 
@@ -3565,7 +3565,7 @@ what sort of transformation to make to the keys in the hash.
 Returns a reference to an array of arrays that contains all the remaining rows to be fetched from the 
 statement handle. If there are no more rows, an empty arrayref will be returned. If an error occurs, 
 the data read in so far will be returned. Because of this, you should always check C<< $sth->err >> after 
-calling this method, unless L<RaiseError|/RaiseError_(boolean,_inherited)> has been enabled.
+calling this method, unless L<RaiseError|/RaiseError (boolean, inherited)> has been enabled.
 
 If C<$slice> is an array reference, fetchall_arrayref uses the L</fetchrow_arrayref> method to fetch each 
 row as an array ref. If the C<$slice> array is not empty then it is used as a slice to select individual 
@@ -4143,7 +4143,7 @@ When fetching rows from a table that contains a column with an
 array type, the result will be passed back to your script as an arrayref.
 
 To turn off the automatic parsing of returned arrays into arrayrefs, 
-you can set the attribute L<pg_expand_array|/pg_expand_array_(boolean)>, which is true by default.
+you can set the attribute L<pg_expand_array|/pg_expand_array (boolean)>, which is true by default.
 
   $dbh->{pg_expand_array} = 0;
 
@@ -4271,7 +4271,7 @@ choice. DBD::Pg therefore translates the result for the C<BOOL> data type in a
 Perlish manner: 'f' becomes the number C<0> and 't' becomes the number C<1>. This way 
 the application does not have to check the database-specific returned values for 
 the data-type C<BOOL> because Perl treats C<0> as false and C<1> as true. You may 
-set the L<pg_bool_tf|/pg_bool_tf_(boolean)> attribute to a true value to change the values back to 't' and
+set the L<pg_bool_tf|/pg_bool_tf (boolean)> attribute to a true value to change the values back to 't' and
 'f' if you wish.
 
 Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
