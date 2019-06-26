@@ -2192,7 +2192,9 @@ by default.
 =head3 B<ShowErrorStatement> (boolean, inherited)
 
 Appends information about the current statement to error messages. If placeholder information 
-is available, adds that as well. Defaults to false.
+is available, adds that as well. (Note that calls to $dbh->do() create a very short-lived 
+statement handle internally and this will not be able to provide placeholder information).
+Defaults to false.
 
 =head3 B<Warn> (boolean, inherited)
 
