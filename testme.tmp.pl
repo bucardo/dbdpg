@@ -26,7 +26,8 @@ my $dbh = DBI->connect($DSN, '', '', {AutoCommit=>0,RaiseError=>1,PrintError=>0}
   or die "Connection failed!\n";
 
 my $me = $dbh->{Driver}{Name};
-print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::VERSION\n";
+my $sversion = $dbh->{pg_server_version};
+print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::VERSION, server is $sversion\n";
 
 print "Name: $dbh->{Name}\n";
 
