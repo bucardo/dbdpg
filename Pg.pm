@@ -2800,6 +2800,65 @@ return the following:
    -3      The test query failed (PQexec returned null)
    -4      PQstatus returned a CONNECTION_BAD
 
+=head3 B<pg_error_field>
+
+  $value = $dbh->pg_error_field('context');
+
+The B<pg_error_field> returns specific information about the last error that occurred. 
+It needs to be called as soon as possible after an error occurs, as any other query 
+sent to Postgres (via $dbh or $sth) will reset all the error information. Note that 
+this is called at the database handle ($dbh) level, but can return errors that occurred 
+via both database handles (e.g. $dbh->do) and statement handles (e.g. $sth->execute). 
+It takes a single argument, indicating which field to return. The value returned will be 
+undef if the previous command was not an error, or if the field is not applicable to the current error.
+
+The canonical list of field types can be found at:
+
+L<https://www.postgresql.org/docs/current/libpq-exec.html#LIBPQ-PQRESULTERRORFIELD>
+
+The literal names on that page can be used (e.g. B<PG_DIAG_STATEMENT_HINT>), but lowercase 
+is accepted too, as well as the following abbreviated forms:
+
+=over 4
+
+=item severity
+
+=item severity_nonlocal
+
+=item state
+
+=item primary
+
+=item detail
+
+=item hint
+
+=item statement_position
+
+=item internal_position
+
+=item internal_query
+
+=item context
+
+=item schema
+
+=item table
+
+=item column
+
+=item type
+
+=item constraint
+
+=item source_file
+
+=item source_line
+
+=item source_function
+
+=back
+
 =head3 B<get_info>
 
   $value = $dbh->get_info($info_type);
