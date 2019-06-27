@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 16;
+plan tests => 18;
 
 isnt ($dbh, undef, 'Connect to database for bytea testing');
 
@@ -95,5 +95,6 @@ sub test_outputs {
     my $E = $pgversion >= 80100 ? q{E} : q{};
     my $expected = qq{${E}'abc\123\\\\\\\\def\\\\000ghi'};
     is ($result, $expected, $t);
+    is ($dbh->quote($string, SQL_VARBINARY), $expected);
 	return;
 }
