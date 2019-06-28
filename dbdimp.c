@@ -202,13 +202,41 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 		/* 
 		   Special workaround for PgBouncer, which has the unfortunate habit of modifying 'server_version', 
 		   something it should never do. If we think this is the case for the version failure, we 
-		   simply let things move forward. See github issue #47
+		   try harder to ge the actual version. See github issue #47
 		*/
 		if (NULL != strstr(PQparameterStatus(imp_dbh->conn, "server_version"), "bouncer")) {
-			/* They fake some information, we fake some information */
-			imp_dbh->pg_server_version = 90600;
+
+			PGresult * result;
+			char * real_server_version;
+			int vcount, vmaj, vmin, vrev;
+
+			result = PQexec(imp_dbh->conn, "SHOW server_version");
+			real_server_version = (char*)PQgetvalue(result, 0, 0);
+			PQclear(result);
+
+			vcount = sscanf(real_server_version, "%d.%d.%d", &vmaj, &vmin, &vrev);
+
+			if (3 == vcount) {
+				/* old style, e.g. 9.6.1 */
+				imp_dbh->pg_server_version = (100 * vmaj + vmin) * 100 + vrev;
+			}
+			else if (2 == vcount) {
+				if (vmaj >= 10) {
+					/* new style, e.g. 10.1 */
+					imp_dbh->pg_server_version = 100 * 100 * vmaj + vmin;
+				}
+				else {
+					/* old style without minor version, e.g. 9.6devel */
+					imp_dbh->pg_server_version = (100 * vmaj + vmin) * 100;
+				}
+			}
+			else if (1 == vcount) {
+				/* new style without minor version, e.g. 10devel */
+				imp_dbh->pg_server_version = 100 * 100 * vmaj;
+			}
 		}
-		else {
+
+		if (imp_dbh->pg_server_version < 80000) {
 			TRACE_PQERRORMESSAGE;
 			strncpy(imp_dbh->sqlstate, "08001", 6); /* sqlclient_unable_to_establish_sqlconnection */
 			pg_error(aTHX_ dbh, CONNECTION_BAD, "Server version 8.0 required");
