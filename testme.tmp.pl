@@ -35,9 +35,10 @@ $dbh->{RaiseError} = 0;
 $dbh->{PrintError} = 1;
 $dbh->{AutoCommit} = 1;
 
-column_types_github_issue_24();
 
 exit;
+
+#column_types_github_issue_24();
 
 #read_only_arrays();
 
