@@ -45,6 +45,8 @@ struct imp_dbh_st {
 	int     pg_enable_utf8;    /* legacy utf8 flag: force utf8 flag on or off, regardless of client_encoding */
 	bool    pg_utf8_flag;      /* are we currently flipping the utf8 flag on? */
     bool    client_encoding_utf8; /* is the client_encoding utf8 last we checked? */
+    
+	imp_sth_t *do_tmp_sth;      /* temporary sth to refer inside a do() call */
 };
 
 
@@ -126,6 +128,9 @@ struct imp_sth_st {
 	bool   nocolons;         /* do not consider :1, :2 ... as valid placeholders */
 	bool   use_inout;        /* Any placeholders using inout? */
 	bool   all_bound;        /* Have all placeholders been bound? */
+
+	imp_dbh_t *do_tmp_owner;   /* if temporary, restore owner's do_tmp_sth on DESTROY */
+	imp_sth_t *do_tmp_old_val; /* to this value, if the current value points to ourselves */
 };
 
 

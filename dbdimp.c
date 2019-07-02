@@ -685,6 +685,15 @@ void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
 	dTHX;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_destroy\n", THEADER_slow);
+ 
+	if ( imp_dbh->do_tmp_sth != NULL) {
+		imp_sth_t * imp_sth = imp_dbh->do_tmp_sth;
+		while ( imp_sth != NULL && imp_sth->do_tmp_owner == imp_dbh ) {
+			imp_sth->do_tmp_owner = NULL;
+			imp_sth = imp_sth->do_tmp_old_val;
+		}
+		imp_dbh->do_tmp_sth == NULL;
+	}
 
 	if (DBIc_ACTIVE(imp_dbh))
 		(void)dbd_db_disconnect(dbh, imp_dbh);
@@ -715,7 +724,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 	STRLEN kl;
 	char * key = SvPV(keysv,kl);
 	SV *   retsv = Nullsv;
-	
+
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_FETCH (key: %s)\n", THEADER_slow, dbh ? key : key);
 
 	switch (kl) {
@@ -778,12 +787,14 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		}
 		break;
 
-	case 11: /* pg_INV_READ  pg_protocol */
+	case 11: /* pg_INV_READ  pg_protocol ParamValues */
 
 		if (strEQ("pg_INV_READ", key))
 			retsv = newSViv((IV)INV_READ);
 		else if (strEQ("pg_protocol", key))
 			retsv = newSViv((IV)imp_dbh->pg_protocol);
+		else if (strEQ("ParamValues", key) && imp_dbh->do_tmp_sth != NULL)
+			return dbd_st_FETCH_attrib (dbh, imp_dbh->do_tmp_sth, keysv);
 		break;
 
 	case 12: /* pg_INV_WRITE pg_utf8_flag */
@@ -914,7 +925,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			retval = 1;
 		}
 		break;
-
+	
 	case 13: /* pg_errorlevel */
 
 		if (strEQ("pg_errorlevel", key)) {
@@ -1044,6 +1055,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 	int               fields, x;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_FETCH (key: %s)\n", THEADER_slow, key);
+	
 	
 	/* Some can be done before we have a result: */
 	switch (kl) {
@@ -3934,6 +3946,11 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 
 	if (NULL == imp_sth->seg) /* Already been destroyed! */
 		croak("dbd_st_destroy called twice!");
+
+	if ( imp_sth->do_tmp_owner != NULL && imp_sth->do_tmp_owner->do_tmp_sth == imp_sth) {
+		imp_sth->do_tmp_owner->do_tmp_sth = imp_sth->do_tmp_old_val;
+		imp_sth->do_tmp_owner = NULL;
+	}
 
 	/* If the AutoInactiveDestroy flag has been set, we go no further */
 	if ((DBIc_AIADESTROY(imp_dbh)) && ((U32)PerlProc_getpid() != imp_dbh->pid_number)) {
