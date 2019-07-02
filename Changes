@@ -3,6 +3,9 @@ Version 3.8.1
   - Fix E'' string escape handling on architectures with unsigned chars
     [Github issue #46]
 
+  - Minor fix to allow DBD::Pg to connect to PGbouncer's internal 'pgbouncer' database.
+    [Github issue #47]
+
 Version 3.8.0, released April 25, 2019
 
   - Increase minimum supported PostgreSQL version to 8.0
