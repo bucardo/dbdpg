@@ -35,10 +35,6 @@ $dbh->{RaiseError} = 0;
 $dbh->{PrintError} = 1;
 $dbh->{AutoCommit} = 1;
 
-my $dbh2 = DBI->connect("DBI:Pg:dbname=pgbouncer;port=6432", 'postgres', '');
-
-
-
 exit;
 
 #column_types_github_issue_24();
