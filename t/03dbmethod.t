@@ -541,7 +541,7 @@ $number = $sth->rows();
 ok ($number, $t);
 
 $t=q{DB handle method "table_info" works when called with a 'TABLE' last argument};
-$sth = $dbh->table_info( '', '', '', q{'TABLE'});
+$sth = $dbh->table_info( '', $schema, '', q{'TABLE'});
 
 # Check required minimum fields
 $t='DB handle method "table_info" returns fields required by DBI';
