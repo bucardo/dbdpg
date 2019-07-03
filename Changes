@@ -10,6 +10,11 @@ Version 3.8.1
     [Greg Sabino Mullane]
     [Github issue #47]
 
+  - Fix so table_info test works on non-empty databases
+    [Matt Buchanan]
+    [CPAN ticket #127906]
+
+
 Version 3.8.0, released April 25, 2019
 
   - Increase minimum supported PostgreSQL version to 8.0
