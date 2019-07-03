@@ -1,9 +1,13 @@
 Version 3.8.1
 
+  - Fix encoding of SQL_VARBINARY type in $dbh->quote() function
+    [Pali]
+
   - Fix E'' string escape handling on architectures with unsigned chars
     [Github issue #46]
 
   - Minor fix to allow DBD::Pg to connect to PGbouncer's internal 'pgbouncer' database.
+    [Greg Sabino Mullane]
     [Github issue #47]
 
 Version 3.8.0, released April 25, 2019
