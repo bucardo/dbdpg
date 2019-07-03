@@ -103,6 +103,9 @@ initdb: $initdb
 error: $error
 version: $version
 ";
+        for my $key ( grep { /^DBDPG/ } keys %ENV ) {
+            diag "ENV $key = $ENV{$key}\n";
+        }
 	}
 
 	## Did we fail last time? Fail this time too, but quicker!
@@ -112,7 +115,8 @@ version: $version
 	}
 
 	## We may want to force an initdb call
-	if (!$helpconnect and $ENV{DBDPG_TESTINITDB}) {
+	if ((!$helpconnect and $ENV{DBDPG_TESTINITDB})
+            or (exists $ENV{DBDPG_INITDB} and $initdb ne $ENV{DBDPG_INITDB})) {
 		$debug and diag 'Jumping to INITDB';
 		goto INITDB;
 	}
@@ -279,13 +283,21 @@ version: $version
 		my $testport;
 		$helpconnect = 16;
 
+        ## Let the ENV variables win
+        for my $key (qw/ DBDPG_INITDB PGINITDB /) {
+            if (exists $ENV{$key} and length $ENV{$key}) {
+                $initdb = $ENV{$key};
+                last;
+            }
+        }
+
 		## Use the initdb found by App::Info
         if (! length $initdb or $initdb eq 'default') {
-            $initdb = $ENV{DBDPG_INITDB} || $ENV{PGINITDB} || '';
+            $initdb = 'initdb';
         }
-		if (!$initdb or ! -e $initdb) {
-			$initdb = 'initdb';
-		}
+        if (! -e $initdb) {
+            die "Invalid initdb: $initdb\n";
+        }
 
 		## Make sure initdb exists and is working properly
 		$ENV{LANG} = 'C';
