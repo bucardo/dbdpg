@@ -13,7 +13,7 @@ use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
-pass 'This test is not ready yet';
+pass ('This test is not ready yet');
 done_testing();
 exit;
 
@@ -42,11 +42,11 @@ else {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 
-ok defined $repl_dbh, 'Connect to database for logical replication testing';
+ok (defined $repl_dbh, 'Connect to database for logical replication testing');
 
 my ($systemid, $timeline, $xlogpos, $dbname) = $repl_dbh->selectrow_array('IDENTIFY_SYSTEM');
 
-ok $dbname, "connected to specific dbname=$dbname";
+ok ($dbname, "connected to specific dbname=$dbname");
 
 my $rv;
 
@@ -61,10 +61,10 @@ if ($@) {
         $rv = 1;
     }
 }
-ok $rv, 'replication slot created';
+ok ($rv, 'replication slot created');
 
 $rv = $repl_dbh->do(sprintf 'START_REPLICATION SLOT %s LOGICAL 0/0', $repl_dbh->quote_identifier($slot));
-ok $rv, 'replication started';
+ok ($rv, 'replication started');
 
 my $lastlsn = 0;
 my $tx_watch;
@@ -117,11 +117,11 @@ while (1) {
     $ts = ($ts / USECS) + PG_TO_UNIX_EPOCH_DELTA;
 
     if ($record eq 'table dbd_pg_testschema.dbd_pg_repltest: INSERT: id[integer]:1') {
-        pass 'saw insert event';
+        pass ('saw insert event');
         last;
     } elsif ($tx_watch and my ($tx) = $record =~ /^COMMIT (\d+)$/) {
         if ($tx > $tx_watch) {
-            fail 'saw insert event';
+            fail ('saw insert event');
             last;
         }
     }
@@ -129,13 +129,13 @@ while (1) {
     $lastlsn = $lsnpos;
 }
 
-$repl_dbh->disconnect;
+$repl_dbh->disconnect();
 
 # cleanup the replication slot and test table
 $dbh->do('select pg_drop_replication_slot(?)', undef, $slot);
 $dbh->do('drop table if exists dbd_pg_repltest');
-$dbh->commit;
+$dbh->commit();
 
-$dbh->disconnect;
+$dbh->disconnect();
 
-done_testing;
+done_testing();

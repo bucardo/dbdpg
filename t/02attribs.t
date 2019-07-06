@@ -1216,7 +1216,7 @@ SKIP: {
         $dbh->do('SELECT 1 FROM nonesuh');
     };
     my $errorstring = $dbh->errstr;
-    like ( $errorstring, qr/Perhaps client_min_messages/, $t);
+    like ($errorstring, qr/Perhaps client_min_messages/, $t);
 }
 $dbh->rollback();
 $dbh->do(q{SET client_min_message = 'NOTICE'});
