@@ -1,8 +1,8 @@
 #!perl
 
-## Test the COPY functionality
+## UNUSED TEST
 
-use 5.006;
+use 5.010;
 use strict;
 use warnings;
 use Data::Dumper;
@@ -15,7 +15,8 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 pass ('This test is not ready yet');
 done_testing();
-exit;
+
+exit if 1;
 
 use constant {
     DUP_OBJ => '42710',
@@ -55,7 +56,7 @@ eval {
                         $repl_dbh->quote_identifier($slot), $repl_dbh->quote_identifier($plugin));
 };
 if ($@) {
-    unless ($repl_dbh->state eq DUP_OBJ) {
+    if ($repl_dbh->state ne DUP_OBJ) {
         die sprintf 'err: %s; errstr: %s; state: %s', $repl_dbh->err, $repl_dbh->errstr, $repl_dbh->state;
     } else {
         $rv = 1;
@@ -74,7 +75,7 @@ while (1) {
     $repl_dbh->pg_putcopydata($status)
         or die sprintf 'err: %s; errstr: %s; state: %s', $repl_dbh->err, $repl_dbh->errstr, $repl_dbh->state;
 
-    unless ($tx_watch) {
+    if (!$tx_watch) {
         $dbh->do('set client_min_messages to ERROR');
         $dbh->do('drop table if exists dbd_pg_repltest');
         $dbh->do('create table dbd_pg_repltest (id int)');
@@ -85,18 +86,18 @@ while (1) {
 
     my $n = $repl_dbh->pg_getcopydata_async(my $msg);
 
-    if ($n == 0) {
+    if (0 == $n) {
         # nothing ready
         sleep 1;
         next;
     }
 
-    if ($n == -1) {
+    if (-1 == $n) {
         # COPY closed
         last;
     }
 
-    if ($n == -2) {
+    if (-2 == $n) {
         die 'could not read COPY data: ' . $repl_dbh->errstr;
     }
 
@@ -112,14 +113,14 @@ while (1) {
         die sprintf 'unrecognized streaming header: "%s"', substr($msg, 0, 1);
     }
 
-    my ($type, $startpos, $lsnpos, $ts, $record) = unpack 'Aq>3a*', $msg;
+    my ($type, $startpos, $lsnpos, $ts, $string) = unpack 'Aq>3a*', $msg;
 
     $ts = ($ts / USECS) + PG_TO_UNIX_EPOCH_DELTA;
 
-    if ($record eq 'table dbd_pg_testschema.dbd_pg_repltest: INSERT: id[integer]:1') {
+    if ($string eq 'table dbd_pg_testschema.dbd_pg_repltest: INSERT: id[integer]:1') {
         pass ('saw insert event');
         last;
-    } elsif ($tx_watch and my ($tx) = $record =~ /^COMMIT (\d+)$/) {
+    } elsif ($tx_watch and my ($tx) = $string =~ /^COMMIT (\d+)$/) {
         if ($tx > $tx_watch) {
             fail ('saw insert event');
             last;

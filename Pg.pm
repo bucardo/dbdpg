@@ -366,8 +366,8 @@ use 5.008001;
                         AND (a.atthasdef OR %s)
                 WHERE c.relname = ? AND %s
             }, $idcond, $schemawhere);
-            my $sth = $dbh->prepare_cached($SQL);
-            my $count = $sth->execute(@args);
+            $sth = $dbh->prepare_cached($SQL);
+            $count = $sth->execute(@args);
             if (!defined $count or $count eq '0E0') {
                 $sth->finish();
                 my $message = qq{Could not find the table "$table"};
@@ -1480,7 +1480,7 @@ use 5.008001;
       31  => ['SQL_MAX_CURSOR_NAME_LEN',            'NAMEDATALEN'             ], ## magic word
    10005  => ['SQL_MAX_IDENTIFIER_LEN',             'NAMEDATALEN'             ], ## magic word
      102  => ['SQL_MAX_INDEX_SIZE',                 0                         ],
-     102  => ['SQL_MAX_PROCEDURE_NAME_LEN',         'NAMEDATALEN'             ], ## magic word
+      33  => ['SQL_MAX_PROCEDURE_NAME_LEN',         'NAMEDATALEN'             ], ## magic word
      104  => ['SQL_MAX_ROW_SIZE',                   0                         ], ## actually 1.6 TB, but too big to represent here
      103  => ['SQL_MAX_ROW_SIZE_INCLUDES_LONG',     'Y'                       ],
       32  => ['SQL_MAX_SCHEMA_NAME_LEN',            'NAMEDATALEN'             ], ## magic word

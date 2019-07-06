@@ -307,7 +307,7 @@ version: $version
 		};
 		last GETHANDLE if $@; ## Fail - initdb bad
 		$version = 0;
-		if (!defined $info or ($info !~ /(Postgres)/i and $info !~ /run as root/)) {
+		if (!defined $info or ($info !~ /Postgres/i and $info !~ /run as root/)) {
 			if (defined $info) {
 				if ($info !~ /\w/) {
 					$@ = 'initdb not found: cannot run full tests without a Postgres database';
@@ -515,7 +515,7 @@ version: $version
 			print $cfh "log_line_prefix = '%m [%p] '\n";
 			print $cfh "log_filename = 'postgres%Y-%m-%d.log'\n";
 			print $cfh "log_rotation_size = 0\n";
-			if ($version == 8.1) {
+			if (8.1 == $version) {
 				print {$cfh} "redirect_stderr = on\n";
 			}
 
