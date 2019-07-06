@@ -1,4 +1,5 @@
-Version 3.8.1
+
+Version 3.8.1, released July 6, 2019
 
   - Fix encoding of SQL_VARBINARY type in $dbh->quote() function
     [Pali]
