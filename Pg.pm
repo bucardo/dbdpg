@@ -1561,9 +1561,8 @@ use 5.008001;
         }
          elsif ($ans eq 'KEYWORDS') {
             ## http://www.postgresql.org/docs/current/static/sql-keywords-appendix.html
-            ## Basically, we want ones that are 'reserved' for PostgreSQL but not 'reserved' in SQL:2003
-            ## 
-            return join ',' => (qw(ANALYSE ANALYZE ASC DEFERRABLE DESC DO FREEZE ILIKE INITIALLY ISNULL LIMIT NOTNULL OFF OFFSET PLACING RETURNING VERBOSE));
+            ## Basically, we want ones that are 'reserved' for PostgreSQL but not 'reserved' in SQL:2011
+            return join ',' => (qw(ANALYSE ANALYZE ASC CONCURRENTLY DEFERRABLE DESC DO FREEZE ILIKE INITIALLY ISNULL LIMIT NOTNULL PLACING RETURNING VARIADIC VERBOSE));
          }
          elsif ($ans eq 'READONLY') {
              my $SQL = q{SELECT CASE WHEN setting = 'on' THEN 'Y' ELSE 'N' END FROM pg_settings WHERE name = 'transaction_read_only'};
@@ -2806,6 +2805,19 @@ return the following:
 
 Supports a very large set (> 250) of the information types, including the minimum 
 recommended by DBI.
+
+Items of note:
+
+=over 4
+
+=item SQL_KEYWORDS
+
+This returns all items reserved by Postgres but NOT reserved by SQL:2011 standard. See:
+
+http://www.postgresql.org/docs/current/static/sql-keywords-appendix.htm
+
+=back
+
 
 =head3 B<table_info>
 
