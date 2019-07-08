@@ -1535,7 +1535,6 @@ use 5.008001;
 
         my ($dbh,$type) = @_;
 
-        return undef unless defined $type;
         return undef unless exists $get_info_type{$type};
 
         my $ans = $get_info_type{$type}->[1];
