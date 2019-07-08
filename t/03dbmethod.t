@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 570;
+plan tests => 576;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -474,6 +474,10 @@ eval {
 };
 isnt ($@, q{}, $t);
 
+$t='DB handle method "get_info" with undef argument returns undef';
+$result = $dbh->get_info('foobar');
+is ($result, undef, $t);
+
 my %get_info = (
   SQL_MAX_DRIVER_CONNECTIONS =>  0,
   SQL_DRIVER_NAME            =>  6,
@@ -511,10 +515,36 @@ $t='DB handle method "get_info" returns a valid looking ODBCVERSION string}';
 my $odbcversion = $dbh->get_info(18);
 like ($odbcversion, qr{^([1-9]\d|\d[1-9])\.\d\d\.\d\d00$}, $t);
 
+# Make sure odbcversion looks abnormal
+$t='DB handle method "get_info" returns zeroes if the version cannot be parsed}';
+my $oldversion = $dbh->{private_dbdpg}{version};
+$dbh->{private_dbdpg}{version} = 'FOO';
+my $odbcversion = $dbh->get_info(18);
+$dbh->{private_dbdpg}{version} = $oldversion;
+is ($odbcversion, '00.00.0000', $t);
+
 # Testing max connections is good as this info is dynamic
 $t='DB handle method "get_info" returns a number for SQL_MAX_DRIVER_CONNECTIONS';
 my $maxcon = $dbh->get_info('SQL_MAX_DRIVER_CONNECTIONS');
 like ($maxcon, qr{^\d+$}, $t);
+
+# Test the DBDVERSION
+$t='DB handle method "get_info" returns a number for SQL_DRIVER_VER';
+$result = $dbh->get_info(7);
+like ($result, qr{^[0-9]{2}\.[0-9]{2}\.[0-9]{4}$}, $t);
+
+# Test the SQL_KEYWORDS
+$t='DB handle method "get_info" returns expected items for SQL_KEYWORDS';
+$result = $dbh->get_info('SQL_KEYWORDS');
+like ($result, qr{CONCURRENTLY}, $t);
+
+$t='DB handle method "get_info" returns expected items for SQL_KEYWORDS via "89"';
+$result = $dbh->get_info(89);
+like ($result, qr{CONCURRENTLY}, $t);
+
+$t='DB handle method "get_info" returns expected result for SQL_DEFAULT_TXN_ISOLATION';
+$result = $dbh->get_info('SQL_DEFAULT_TXN_ISOLATION');
+is ($result, '2', $t);
 
 $t='DB handle method "get_info" returns correct string for SQL_DATA_SOURCE_READ_ONLY when "on"';
 $dbh->do(q{SET transaction_read_only = 'on'});
