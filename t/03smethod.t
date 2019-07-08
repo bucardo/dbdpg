@@ -21,7 +21,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 126;
+plan tests => 128;
 
 isnt ($dbh, undef, 'Connect to database for statement handle method testing');
 
@@ -249,6 +249,18 @@ is ($var2, 556, $t);
 
 $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, val) VALUES (?,?)');
 # Try with 1, 2, and 3 values. All should succeed
+
+$t='Statement handle method "bind_param_array" fails if second arg is a hashref';
+eval {
+	$sth->bind_param_array(1, {}, SQL_INTEGER);
+};
+like ($@, qr{must be a scalar or an arrayref}, $t);
+
+$t='Statement handle method "bind_param_array" fails if first arg is not a number';
+eval {
+	$sth->bind_param_array('bread pudding', 123, SQL_INTEGER);
+};
+like ($@, qr{named placeholders}, $t);
 
 $t='Statement handle method "bind_param_array" works binding three values to the first placeholder';
 eval {

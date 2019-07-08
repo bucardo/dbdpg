@@ -519,7 +519,7 @@ like ($odbcversion, qr{^([1-9]\d|\d[1-9])\.\d\d\.\d\d00$}, $t);
 $t='DB handle method "get_info" returns zeroes if the version cannot be parsed}';
 my $oldversion = $dbh->{private_dbdpg}{version};
 $dbh->{private_dbdpg}{version} = 'FOO';
-my $odbcversion = $dbh->get_info(18);
+$odbcversion = $dbh->get_info(18);
 $dbh->{private_dbdpg}{version} = $oldversion;
 is ($odbcversion, '00.00.0000', $t);
 
