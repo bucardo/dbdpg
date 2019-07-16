@@ -685,15 +685,8 @@ void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
 	dTHX;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_destroy\n", THEADER_slow);
- 
-	if ( imp_dbh->do_tmp_sth != NULL) {
-		imp_sth_t * imp_sth = imp_dbh->do_tmp_sth;
-		while ( imp_sth != NULL && imp_sth->do_tmp_owner == imp_dbh ) {
-			imp_sth->do_tmp_owner = NULL;
-			imp_sth = imp_sth->do_tmp_old_val;
-		}
-		imp_dbh->do_tmp_sth == NULL;
-	}
+
+	imp_dbh->do_tmp_sth = NULL;
 
 	if (DBIc_ACTIVE(imp_dbh))
 		(void)dbd_db_disconnect(dbh, imp_dbh);
@@ -3946,11 +3939,6 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 
 	if (NULL == imp_sth->seg) /* Already been destroyed! */
 		croak("dbd_st_destroy called twice!");
-
-	if ( imp_sth->do_tmp_owner != NULL && imp_sth->do_tmp_owner->do_tmp_sth == imp_sth) {
-		imp_sth->do_tmp_owner->do_tmp_sth = imp_sth->do_tmp_old_val;
-		imp_sth->do_tmp_owner = NULL;
-	}
 
 	/* If the AutoInactiveDestroy flag has been set, we go no further */
 	if ((DBIc_AIADESTROY(imp_dbh)) && ((U32)PerlProc_getpid() != imp_dbh->pid_number)) {

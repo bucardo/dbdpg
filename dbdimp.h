@@ -128,9 +128,6 @@ struct imp_sth_st {
 	bool   nocolons;         /* do not consider :1, :2 ... as valid placeholders */
 	bool   use_inout;        /* Any placeholders using inout? */
 	bool   all_bound;        /* Have all placeholders been bound? */
-
-	imp_dbh_t *do_tmp_owner;   /* if temporary, restore owner's do_tmp_sth on DESTROY */
-	imp_sth_t *do_tmp_old_val; /* to this value, if the current value points to ourselves */
 };
 
 
