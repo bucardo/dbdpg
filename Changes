@@ -2,7 +2,11 @@ Version 3.8.1
 
   - Fix E'' string escape handling on architectures with unsigned chars
     [Github issue #46]
-  - ShowErrorStatement works for "quickexec" do() calls (RT #120268 and Github #44)
+
+  - ShowErrorStatement works for "quickexec" do() calls
+    [Dmitry Karasik]
+    [RT #120268]
+    [Github issue #44]
 
 Version 3.8.0, released April 25, 2019
 

@@ -3109,6 +3109,15 @@ in the future, so it is highly recommended that you explicitly set it when
 calling L</connect>. For details see the notes about L</Transactions>
 elsewhere in this document.
 
+=head3 B<ParamValues> (hash ref, read-only)
+
+Ignored unless inside a C<do> method call. There it is temporarily aliased to
+the C<ParamValues> hash from the temporary statement handle inside an internal
+C<prepare / execute / fetch> routine, invisible from outside, and is treated
+correspondingly (see C<ParamValues> in L</Statement Handle Attributes>). This
+allows for correct reporting of values bound to placeholders to the caller,
+should the query fail (see C<ShowErrorStatement>).
+
 =head3 B<pg_bool_tf> (boolean)
 
 DBD::Pg specific attribute. If true, boolean values will be returned
