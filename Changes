@@ -1,12 +1,25 @@
-Version 3.8.1
-
-  - Fix E'' string escape handling on architectures with unsigned chars
-    [Github issue #46]
+Version 3.8.2
 
   - ShowErrorStatement works for "quickexec" do() calls
     [Dmitry Karasik]
     [RT #120268]
     [Github issue #44]
+
+Version 3.8.1, released July 6, 2019
+
+  - Fix encoding of SQL_VARBINARY type in $dbh->quote() function
+    [Pali]
+
+  - Fix E'' string escape handling on architectures with unsigned chars
+    [Github issue #46]
+
+  - Minor fix to allow DBD::Pg to connect to PGbouncer's internal 'pgbouncer' database.
+    [Greg Sabino Mullane]
+    [Github issue #47]
+
+  - Fix so table_info test works on non-empty databases
+    [Matt Buchanan]
+    [CPAN ticket #127906]
 
 Version 3.8.0, released April 25, 2019
 
