@@ -751,7 +751,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		}
 		break;
 
-	case 11: /* pg_INV_READ  pg_protocol ParamValues */
+	case 11: /* pg_INV_READ  pg_protocol  ParamValues */
 
 		if (strEQ("pg_INV_READ", key))
 			retsv = newSViv((IV)INV_READ);
