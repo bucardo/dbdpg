@@ -1,9 +1,11 @@
-Version 3.8.2
+
+Version 3.9.0
 
   - ShowErrorStatement works for "quickexec" do() calls
     [Dmitry Karasik]
     [RT #120268]
     [Github issue #44]
+
 
 Version 3.8.1, released July 6, 2019
 
