@@ -4,7 +4,7 @@
 ## At the moment, this basically means testing the UTF8 client_encoding
 ## and $dbh->{pg_enable_utf8} bits
 
-use 5.006;
+use 5.008001;
 use strict;
 use warnings;
 use utf8;

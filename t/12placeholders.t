@@ -813,7 +813,7 @@ for my $word (qw/auser userz/) {
 
 ## Test quoting of booleans
 
-my %booltest = ( ## no critic (Lax::ProhibitLeadingZeros::ExceptChmod, ValuesAndExpressions::ProhibitLeadingZeros)
+my %booltest = ( ## no critic (Lax::ProhibitLeadingZeros::ExceptChmod, ValuesAndExpressions::ProhibitLeadingZeros, ValuesAndExpressions::ProhibitDuplicateHashKeys)
 undef         => 'NULL',
 't'           => 'TRUE',
 'T'           => 'TRUE',

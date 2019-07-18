@@ -22,3 +22,4 @@ dbdpg.testing.*
 *.patch
 dbdpg_test_*
 *.tar.gz
+cover_db/

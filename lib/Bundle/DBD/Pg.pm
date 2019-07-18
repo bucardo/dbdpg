@@ -3,8 +3,9 @@ package Bundle::DBD::Pg;
 
 use strict;
 use warnings;
+use 5.008001;
 
-our $VERSION = '3.8.0';
+our $VERSION = '3.8.1';
 
 1;
 
@@ -36,4 +37,5 @@ ask for help or report any problems to dbd-pg@perl.org.
 
 Greg Sabino Mullane E<lt>F<greg@turnstep.com>E<gt>
 
+=cut
 
