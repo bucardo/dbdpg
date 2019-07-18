@@ -657,6 +657,8 @@ void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_destroy\n", THEADER_slow);
 
+	imp_dbh->do_tmp_sth = NULL;
+
 	if (DBIc_ACTIVE(imp_dbh))
 		(void)dbd_db_disconnect(dbh, imp_dbh);
 
@@ -686,7 +688,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 	STRLEN kl;
 	char * key = SvPV(keysv,kl);
 	SV *   retsv = Nullsv;
-	
+
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_FETCH (key: %s)\n", THEADER_slow, dbh ? key : key);
 
 	switch (kl) {
@@ -749,12 +751,14 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		}
 		break;
 
-	case 11: /* pg_INV_READ  pg_protocol */
+	case 11: /* pg_INV_READ  pg_protocol ParamValues */
 
 		if (strEQ("pg_INV_READ", key))
 			retsv = newSViv((IV)INV_READ);
 		else if (strEQ("pg_protocol", key))
 			retsv = newSViv((IV)imp_dbh->pg_protocol);
+		else if (strEQ("ParamValues", key) && imp_dbh->do_tmp_sth != NULL)
+			return dbd_st_FETCH_attrib (dbh, imp_dbh->do_tmp_sth, keysv);
 		break;
 
 	case 12: /* pg_INV_WRITE pg_utf8_flag */
@@ -885,7 +889,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 			retval = 1;
 		}
 		break;
-
+	
 	case 13: /* pg_errorlevel */
 
 		if (strEQ("pg_errorlevel", key)) {
@@ -1015,6 +1019,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 	int               fields, x;
 
 	if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_FETCH (key: %s)\n", THEADER_slow, key);
+	
 	
 	/* Some can be done before we have a result: */
 	switch (kl) {

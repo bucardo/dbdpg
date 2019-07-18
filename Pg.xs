@@ -356,6 +356,7 @@ void do(dbh, statement_sv, attr=Nullsv, ...)
 			if (!dbdxst_bind_params(sth, imp_sth, items-2, ax+2))
 				XSRETURN_UNDEF;
 			imp_sth->async_flag = asyncflag;
+			imp_dbh->do_tmp_sth = imp_sth;
 			retval = dbd_st_execute(sth, imp_sth);
 		}
 

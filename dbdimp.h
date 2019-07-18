@@ -45,6 +45,8 @@ struct imp_dbh_st {
 	int     pg_enable_utf8;    /* legacy utf8 flag: force utf8 flag on or off, regardless of client_encoding */
 	bool    pg_utf8_flag;      /* are we currently flipping the utf8 flag on? */
     bool    client_encoding_utf8; /* is the client_encoding utf8 last we checked? */
+    
+	imp_sth_t *do_tmp_sth;      /* temporary sth to refer inside a do() call */
 };
 
 

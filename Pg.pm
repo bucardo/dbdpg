@@ -2190,9 +2190,7 @@ by default.
 =head3 B<ShowErrorStatement> (boolean, inherited)
 
 Appends information about the current statement to error messages. If placeholder information 
-is available, adds that as well. (Note that calls to $dbh->do() create a very short-lived 
-statement handle internally and this will not be able to provide placeholder information).
-Defaults to false.
+is available, adds that as well. Defaults to false.
 
 =head3 B<Warn> (boolean, inherited)
 
@@ -3121,6 +3119,15 @@ immediately permanent. The default of AutoCommit is on, but this may change
 in the future, so it is highly recommended that you explicitly set it when
 calling L</connect>. For details see the notes about L</Transactions>
 elsewhere in this document.
+
+=head3 B<ParamValues> (hash ref, read-only)
+
+Ignored unless inside a C<do> method call. There it is temporarily aliased to
+the C<ParamValues> hash from the temporary statement handle inside an internal
+C<prepare / execute / fetch> routine, invisible from outside, and is treated
+correspondingly (see C<ParamValues> in L</Statement Handle Attributes>). This
+allows for correct reporting of values bound to placeholders to the caller,
+should the query fail (see C<ShowErrorStatement>).
 
 =head3 B<pg_bool_tf> (boolean)
 

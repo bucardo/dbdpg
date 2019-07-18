@@ -18,7 +18,7 @@ my ($helpconnect,$connerror,$dbh) = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 272;
+plan tests => 273;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -1341,11 +1341,18 @@ eval {
 };
 like ($@, qr{with ParamValues}, $t);
 
-$t='Database handle attribute "ShowErrorStatement" adds statement and placeholders to errors';
+$t='Statement handle attribute "ShowErrorStatement" adds statement and placeholders to errors';
 $SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class WHERE relname = ? AND reltuples = ?};
 eval {
 	$sth = $dbh->prepare($SQL);
 	$sth->execute(123,456);
+};
+like ($@, qr{with ParamValues: 1='123', 2='456'}, $t);
+
+$t='Database handle attribute "ShowErrorStatement" adds statement and placeholders to errors';
+$SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class WHERE relname = ? AND reltuples = ?};
+eval {
+	$dbh->do($SQL, {}, 123, 456);
 };
 like ($@, qr{with ParamValues: 1='123', 2='456'}, $t);
 
