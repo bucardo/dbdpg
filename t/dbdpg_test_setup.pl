@@ -295,7 +295,7 @@ version: $version
         if (! length $initdb or $initdb eq 'default') {
             $initdb = 'initdb';
         }
-        if (! -e $initdb) {
+        if ($initdb ne 'initdb' and ! -e $initdb) {
             die "Invalid initdb: $initdb\n";
         }
 
