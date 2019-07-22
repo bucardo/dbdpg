@@ -12,6 +12,10 @@ Version 3.8.1, released July 6, 2019
   - Fix encoding of SQL_VARBINARY type in $dbh->quote() function
     [Pali]
 
+  - Fix encoding in $dbh->do() function
+    [Pali]
+    [CPAN ticket #122991]
+
   - Fix E'' string escape handling on architectures with unsigned chars
     [Github issue #46]
 
