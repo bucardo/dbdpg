@@ -6,6 +6,10 @@ Version 3.9.0
     [RT #120268]
     [Github issue #44]
 
+  - Fix failing tests due to incorrect 'initdb' check
+    [Greg Sabino Mullane]
+    [Github issue #54]
+
 
 Version 3.8.1, released July 6, 2019
 
