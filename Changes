@@ -6,6 +6,10 @@ Version 3.9.0
     [RT #120268]
     [Github issue #44]
 
+  - Add :pg_limits to add constants such as PG_MAX_SMALLINT
+    [Greg Sabino Mullane]
+    [Github issue #51]
+
   - Fix failing tests due to incorrect 'initdb' check
     [Greg Sabino Mullane]
     [Github issue #54]

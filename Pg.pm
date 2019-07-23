@@ -24,10 +24,27 @@ use 5.008001;
     use vars qw(@ISA %EXPORT_TAGS $err $errstr $sqlstate $drh $dbh $DBDPG_DEFAULT @EXPORT);
     @ISA = qw(DynaLoader Exporter);
 
+    use constant {
+        PG_MIN_SMALLINT => -32768,
+        PG_MAX_SMALLINT => 32767,
+        PG_MIN_INTEGER  => -2147483648,
+        PG_MAX_INTEGER  => 2147483647,
+        PG_MIN_BIGINT => -9223372036854775808,
+        PG_MAX_BIGINT => 9223372036854775807,
+        PG_MIN_SMALLSERIAL => 1,
+        PG_MAX_SMALLSERIAL => 32767,
+        PG_MIN_SERIAL => 1,
+        PG_MAX_SERIAL => 2147483647,
+        PG_MIN_BIGSERIAL => 1,
+        PG_MAX_BIGSERIAL => 9223372036854775807,
+    };
 
     %EXPORT_TAGS =
         (
          async => [qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT)],
+         pg_limits => [qw($DBDPG_DEFAULT
+                       PG_MIN_SMALLINT PG_MAX_SMALLINT PG_MIN_INTEGER PG_MAX_INTEGER PG_MAX_BIGINT PG_MIN_BIGINT
+                       PG_MIN_SMALLSERIAL PG_MAX_SMALLSERIAL PG_MIN_SERIAL PG_MAX_SERIAL PG_MIN_BIGSERIAL PG_MAX_BIGSERIAL)],
          pg_types => [qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT
 			PG_ACLITEM PG_ACLITEMARRAY PG_ANY PG_ANYARRAY PG_ANYELEMENT
 			PG_ANYENUM PG_ANYNONARRAY PG_ANYRANGE PG_BIT PG_BITARRAY
@@ -70,7 +87,7 @@ use 5.008001;
         sub new { my $self = {}; return bless $self, shift; }
     }
     $DBDPG_DEFAULT = DBD::Pg::DefaultValue->new();
-    Exporter::export_ok_tags('pg_types', 'async');
+    Exporter::export_ok_tags('pg_types', 'async', 'pg_limits');
     @EXPORT = qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT PG_BYTEA);
 
     require_version DBI 1.614;
@@ -1685,9 +1702,6 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
   # For some advanced uses you may need PostgreSQL type values:
   use DBD::Pg qw(:pg_types);
-
-  # For asynchronous calls, import the async constants:
-  use DBD::Pg qw(:async);
 
   $dbh->do('INSERT INTO mytable(a) VALUES (1)');
 
@@ -3966,8 +3980,6 @@ It is possible to send a query to the backend and have your script do other work
 running on the backend. Both queries sent by the L</do> method, and by the L</execute> method can be 
 sent asynchronously. The basic usage is as follows:
 
-  use DBD::Pg ':async';
-
   print "Async do() example:\n";
   $dbh->do("SELECT long_running_query()", {pg_async => PG_ASYNC});
   do_something_else();
@@ -4003,15 +4015,7 @@ sent asynchronously. The basic usage is as follows:
 
 =head3 Asynchronous Constants
 
-There are currently three asynchronous constants exported by DBD::Pg. You can import all of them by putting 
-either of these at the top of your script:
-
-  use DBD::Pg;
-
-  use DBD::Pg ':async';
-
-You may also use the numbers instead of the constants, but using the constants is recommended as it 
-makes your script more readable.
+There are currently three asynchronous constants automatically exported by DBD::Pg.
 
 =over 4
 
@@ -4248,6 +4252,33 @@ the COPY statement. Returns a 1 on successful input. Examples:
 When you are finished with pg_putcopydata, call pg_putcopyend to let the server know 
 that you are done, and it will return to a normal, non-COPY state. Returns a 1 on 
 success. This method will fail if called when not in COPY IN mode.
+
+=head2 Postgres limits
+
+For convienence, DBD::Pg can export certain constants representing the limits of 
+Postgres data types. To use them, just add C<:pg_limits> when DBD::Pg is used:
+
+  use DBD::Pg qw/:pg_limits/;
+
+The constants and their values are:
+
+=pod
+
+  PG_MIN_SMALLINT    -32768
+  PG_MAX_SMALLINT     32767
+  PG_MIN_INTEGER     -2147483648
+  PG_MAX_INTEGER      2147483647
+  PG_MIN_BIGINT      -9223372036854775808
+  PG_MAX_BIGINT       9223372036854775807
+  PG_MIN_SMALLSERIAL  1
+  PG_MAX_SMALLSERIAL  32767
+  PG_MIN_SERIAL       1
+  PG_MAX_SERIAL       2147483647
+  PG_MIN_BIGSERIAL    1
+  PG_MAX_BIGSERIAL    9223372036854775807
+
+=cut
+
 
 =head2 Large Objects
 

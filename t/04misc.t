@@ -8,7 +8,7 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 use DBI;
-use DBD::Pg;
+use DBD::Pg qw/:pg_types :pg_limits/;
 use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 77;
+plan tests => 101;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -28,6 +28,93 @@ eval {
 	$num = DBD::Pg->parse_trace_flag('NONE');
 };
 is ($@, q{}, $t);
+
+$t = 'Constant PG_MIN_SMALLINT returns correct value';
+my $sth = $dbh->prepare('SELECT ?::smallint');
+$sth->execute(PG_MIN_SMALLINT);
+is ( $sth->fetch->[0], -32768, $t);
+
+eval { $sth->execute(PG_MIN_SMALLINT-1) };
+$dbh->rollback();
+like ($@, qr/ERROR/, $t);
+
+$sth->execute(PG_MIN_SMALLINT+1);
+is ( $sth->fetch->[0], -32767, $t);
+
+$t = 'Constant PG_MAX_SMALLINT returns correct value';
+$sth->execute(PG_MAX_SMALLINT);
+is ( $sth->fetch->[0], 32767, $t);
+
+eval { $sth->execute(PG_MAX_SMALLINT+1) };
+$dbh->rollback();
+like ($@, qr/ERROR/, $t);
+
+$sth->execute(PG_MAX_SMALLINT-1);
+is ( $sth->fetch->[0], 32766, $t);
+
+$t = 'Constant PG_MIN_INTEGER returns correct value';
+$sth = $dbh->prepare('SELECT ?::integer');
+$sth->execute(PG_MIN_INTEGER);
+is ( $sth->fetch->[0], -2147483648, $t);
+
+eval { $sth->execute(PG_MIN_INTEGER-1) };
+$dbh->rollback();
+like ($@, qr/ERROR/, $t);
+
+$sth->execute(PG_MIN_INTEGER+1);
+is ( $sth->fetch->[0], -2147483647, $t);
+
+$t = 'Constant PG_MAX_INTEGER returns correct value';
+$sth->execute(PG_MAX_INTEGER);
+is ( $sth->fetch->[0], 2147483647, $t);
+
+eval { $sth->execute(PG_MAX_INTEGER+1) };
+$dbh->rollback();
+like ($@, qr/ERROR/, $t);
+
+$sth->execute(PG_MAX_INTEGER-1);
+is ( $sth->fetch->[0], 2147483646, $t);
+
+$t = 'Constant PG_MIN_BIGINT returns correct value';
+$sth = $dbh->prepare('SELECT ?::bigint');
+$sth->execute(PG_MIN_BIGINT);
+is ( $sth->fetch->[0], -9223372036854775808, $t);
+
+eval { $sth->execute(PG_MIN_BIGINT-1) };
+$dbh->rollback();
+like ($@, qr/ERROR/, $t);
+
+$sth->execute(PG_MIN_BIGINT+1);
+is ( $sth->fetch->[0], -9223372036854775807, $t);
+
+$t = 'Constant PG_MAX_BIGINT returns correct value';
+$sth->execute(PG_MAX_BIGINT);
+is ( $sth->fetch->[0], 9223372036854775807, $t);
+
+eval { $sth->execute(PG_MAX_BIGINT+1) };
+$dbh->rollback();
+like ($@, qr/ERROR/, $t);
+
+$sth->execute(PG_MAX_BIGINT-1);
+is ( $sth->fetch->[0], 9223372036854775806, $t);
+
+$t = 'Constant PG_MIN_SMALLSERIAL returns correct value';
+is (PG_MIN_SMALLSERIAL, 1, $t);
+
+$t = 'Constant PG_MA_SMALLSERIAL returns correct value';
+is (PG_MAX_SMALLSERIAL, PG_MAX_SMALLINT, $t);
+
+$t = 'Constant PG_MIN_SERIAL returns correct value';
+is (PG_MIN_SERIAL, 1, $t);
+
+$t = 'Constant PG_MAX_SERIAL returns correct value';
+is (PG_MAX_SERIAL, PG_MAX_INTEGER, $t);
+
+$t = 'Constant PG_MIN_BIGSERIAL returns correct value';
+is (PG_MIN_BIGSERIAL, 1, $t);
+
+$t = 'Constant PG_MAX_BIGSERIAL returns correct value';
+is (PG_MAX_BIGSERIAL, PG_MAX_BIGINT, $t);
 
 $t='Method "server_trace_flag" returns undef on bogus argument';
 is ($num, undef, $t);
@@ -57,7 +144,7 @@ $num = $dbh->parse_trace_flags('SQL|pglibpq|pgstart');
 is ($num, 0x03000100, $t);
 
 my $flagexp = 24;
-my $sth = $dbh->prepare('SELECT 1');
+$sth = $dbh->prepare('SELECT 1');
 for my $flag (qw/pglibpq pgstart pgend pgprefix pglogin pgquote/) {
 
 	my $hex = 2**$flagexp++;
@@ -479,3 +566,4 @@ is( $result, '0301', $t);
 
 cleanup_database($dbh,'test');
 $dbh->disconnect();
+
