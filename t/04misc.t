@@ -263,7 +263,8 @@ SKIP: {
 	$dbh->trace(0);
 	seek $fh,0,0;
 	{ local $/; ($info = <$fh>) =~ s/\r//go; }
-	$expected = q{PQexec
+	$expected = q{PQclear
+PQexec
 PQresultStatus
 PQresultErrorField
 PQclear
@@ -271,14 +272,14 @@ PQexec
 PQresultStatus
 PQresultErrorField
 PQntuples
+PQtransactionStatus
+PQtransactionStatus
 PQclear
-PQtransactionStatus
-PQtransactionStatus
 PQexec
 PQresultStatus
 PQresultErrorField
-PQclear
 };
+
 	is ($info, $expected, $t);
 
 	$t=q{Trace flag 'pgstart' works as expected};

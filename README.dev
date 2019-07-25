@@ -173,6 +173,8 @@ t/08async.t - Tests asynchronous methods.
 
 t/09arrays.t - Tests array manipulation.
 
+t/10_pg_error_field.t - Tests $dbh->pg_error_field function
+
 t/12placeholders.t - Tests placeholders.
 
 t/20savepoints.t - Test savepoints.

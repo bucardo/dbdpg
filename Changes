@@ -10,6 +10,9 @@ Version 3.9.0
     [Greg Sabino Mullane]
     [Github issue #51]
 
+  - Add $dbh->pg_error_field() function
+    [Greg Sabino Mullane]
+
   - Fix failing tests due to incorrect 'initdb' check
     [Greg Sabino Mullane]
     [Github issue #54]
