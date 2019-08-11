@@ -16,6 +16,7 @@ Version 3.8.9_1
   - Fix failing tests due to incorrect 'initdb' check
     [Greg Sabino Mullane]
     [Github issue #54]
+    [RT #130279]
 
 
 Version 3.8.1, released July 6, 2019
