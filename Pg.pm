@@ -4315,7 +4315,7 @@ success. This method will fail if called when not in COPY IN mode.
 
 =head2 Postgres limits
 
-For convienence, DBD::Pg can export certain constants representing the limits of 
+For convenience, DBD::Pg can export certain constants representing the limits of 
 Postgres data types. To use them, just add C<:pg_limits> when DBD::Pg is used:
 
   use DBD::Pg qw/:pg_limits/;
