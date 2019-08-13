@@ -1,14 +1,4 @@
 
-===================================================
-WARNING!!
-
-THIS IS A TEST VERSION (3.8.9_1) AND SHOULD BE USED 
-FOR TESTING PURPOSES ONLY. PLEASE USE A STABLE 
-VERSION (no underscore) BY VISITING:
-
-http://search.cpan.org/dist/DBD-Pg/
-===================================================
-
 DBD::Pg is Copyright (C) 1994-2019, Greg Sabino Mullane
 
 DBD::Pg  --  the DBI PostgreSQL interface for Perl
@@ -16,7 +6,7 @@ DBD::Pg  --  the DBI PostgreSQL interface for Perl
 DESCRIPTION:
 ------------
 
-This is version 3.8.9_1 of DBD::Pg, the Perl interface to Postgres using DBI. 
+This is version 3.9.0 of DBD::Pg, the Perl interface to Postgres using DBI. 
 The web site for this interface, and the latest version, can be found at:
 
 	http://search.cpan.org/dist/DBD-Pg/
