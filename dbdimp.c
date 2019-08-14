@@ -4402,7 +4402,8 @@ SV * pg_db_error_field (SV *dbh, char * fieldname)
 		return &PL_sv_undef;
     }
 
-    return sv_2mortal(newSVpv(PQresultErrorField(imp_dbh->last_result, fieldcode), 0));
+    return NULL == PQresultErrorField(imp_dbh->last_result, fieldcode) ? Nullsv : 
+        sv_2mortal(newSVpv(PQresultErrorField(imp_dbh->last_result, fieldcode), 0));
 
 } /* end of pg_db_error_field */
 
