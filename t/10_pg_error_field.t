@@ -42,29 +42,30 @@ like ($@, qr{Invalid error field}, $t);
 my $test_table = 'dbdpg_error_field_test';
 
 my $fields = qq{
-pg_diag_severity_nonlocalized        | undef | ERROR             | ERROR | ERROR | ERROR
-pg_diag_severity                     | undef | ERROR             | ERROR | ERROR | ERROR
-pg_diag_sqlstate,state               | undef | 22012             | 42703 | 23514 | undef
-pg_diag_message_primary              | undef | division by zero  | column "foobar" does not exist | violates check constraint "rainbow" | undef
-pg_diag_message_detail,detail        | undef | undef             | undef | Failing row contains | undef
-pg_diag_message_hint,hint            | undef | undef             | undef | undef | undef
-pg_diag_statement_position           | undef | undef             | 8     | undef | undef
-pg_diag_internal_position            | undef | undef             | undef | undef | undef
-pg_diag_internal_query               | undef | undef             | undef | undef | undef
-pg_diag_context                      | undef | undef             | undef | undef | undef
-pg_diag_schema_name,schema           | undef | undef             | undef | dbd_pg_testschema | undef
-pg_diag_table_name,table             | undef | undef             | undef | $test_table | undef
-pg_diag_column_name,column           | undef | undef             | undef | undef | undef
-pg_diag_datatype_name,datatype,type  | undef | undef             | undef | undef | undef
-pg_diag_constraint_name,constraint   | undef | undef             | undef | rainbow | undef
-pg_diag_source_file                  | undef | int.c             | parse_relation.c | execMain.c | undef
-pg_diag_source_line                  | undef | number            | number | number | undef
-pg_diag_source_function              | undef | int4div           | errorMissingColumn | ExecConstraints | undef
+pg_diag_severity_nonlocalized        | 100001 | undef | ERROR             | ERROR | ERROR | ERROR
+pg_diag_severity                     | 70400  | undef | ERROR             | ERROR | ERROR | ERROR
+pg_diag_sqlstate,state               | 70400  | undef | 22012             | 42703 | 23514 | undef
+pg_diag_message_primary              | 70400  | undef | division by zero  | column "foobar" does not exist | violates check constraint "rainbow" | undef
+pg_diag_message_detail,detail        | 90200  | undef | undef             | undef | Failing row contains | undef
+pg_diag_message_hint,hint            | 70400  | undef | undef             | undef | undef | undef
+pg_diag_statement_position           | 70400  | undef | undef             | 8     | undef | undef
+pg_diag_internal_position            | 70400  | undef | undef             | undef | undef | undef
+pg_diag_internal_query               | 70400  | undef | undef             | undef | undef | undef
+pg_diag_context                      | 70400  | undef | undef             | undef | undef | undef
+pg_diag_schema_name,schema           | 90300  | undef | undef             | undef | dbd_pg_testschema | undef
+pg_diag_table_name,table             | 90300  | undef | undef             | undef | $test_table | undef
+pg_diag_column_name,column           | 90300  | undef | undef             | undef | undef | undef
+pg_diag_datatype_name,datatype,type  | 90300  | undef | undef             | undef | undef | undef
+pg_diag_constraint_name,constraint   | 90400  | undef | undef             | undef | rainbow | undef
+pg_diag_source_file                  | 70400  | undef | int.c             | parse_ | execMain.c | undef
+pg_diag_source_line                  | 70400  | undef | number            | number | number | undef
+pg_diag_source_function              | 70400  | undef | int4div           | Column | ExecConstraints | undef
 };
 
 $dbh->do("CREATE TABLE $test_table (id int, constraint rainbow check(id < 10) )");
 $dbh->commit();
 
+my $pgversion = $dbh->{pg_server_version};
 for my $loop (1..5) {
     if (2==$loop) { eval { $dbh->do('SELECT 1/0'); }; }
     if (3==$loop) { eval { $dbh->do('SELECT foobar FROM pg_class'); }; }
@@ -78,14 +79,14 @@ for my $loop (1..5) {
 
     for (split /\n/ => $fields) {
         next unless /pg/;
-        my ($lfields,@error) = split /\s+\|\s+/;
-        for my $field (split /,/ => $lfields) {
+        my ($lfields,$minversion,@error) = split /\s+\|\s+/;
+        next if $pgversion < $minversion;
+       for my $field (split /,/ => $lfields) {
             my $expected = $error[5==$loop ? 3 : $loop-1];
             $expected = undef if $expected eq 'undef';
             if (defined $expected) {
                 $expected = ($expected eq 'number') ? qr/^\d+$/ : qr/$expected/;
             }
-
             $t = "(query $loop) Calling pg_error_field returns expected value for field $field";
             my $actual = $dbh->pg_error_field($field);
             defined $expected ? like ($actual, $expected, $t) : is($actual, undef, $t);
