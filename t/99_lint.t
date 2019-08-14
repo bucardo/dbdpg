@@ -6,7 +6,6 @@ use 5.006;
 use strict;
 use warnings;
 use Test::More;
-use autodie;
 
 my (@testfiles,%fileslurp,$t);
 
@@ -129,7 +128,7 @@ for my $file (sort keys %fileslurp) {
 ##
 for my $file (@cfiles) {
     my $tabfail = 0;
-    open my $fh, '<', $file;
+    open my $fh, '<', $file or die "Could not open $file: $!\n";
     my $inquote = 0;
     while (<$fh>) {
         if ($inquote) {
