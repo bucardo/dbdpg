@@ -1,4 +1,11 @@
 
+Version 3.9.1
+
+    Bugfix for pg_error_field: make sure we do not feed null to newSVpv,
+    handle older versions of Postgres better.
+    [Greg Sabino Mullane]
+
+
 Version 3.9.0, released August 13, 2019
 
   - ShowErrorStatement works for "quickexec" do() calls

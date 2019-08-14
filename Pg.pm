@@ -16,7 +16,7 @@ use 5.008001;
 {
     package DBD::Pg;
 
-    use version; our $VERSION = qv('3.9.0');
+    use version; our $VERSION = qv('3.9.1');
 
     use DBI ();
     use DynaLoader ();
@@ -1711,7 +1711,7 @@ DBD::Pg - PostgreSQL database driver for the DBI module
 
 =head1 VERSION
 
-This documents version 3.9.0 of the DBD::Pg module
+This documents version 3.9.1 of the DBD::Pg module
 
 =head1 DESCRIPTION
 
@@ -2781,7 +2781,7 @@ server version 9.0 or higher.
 
 The C<ping> method determines if there is a working connection to an active 
 database server. It does this by sending a small query to the server, currently 
-B<'DBD::Pg ping test v3.9.0'>. It returns 0 (false) if the connection is not valid, 
+B<'DBD::Pg ping test v3.9.1'>. It returns 0 (false) if the connection is not valid, 
 otherwise it returns a positive number (true). The value returned indicates the 
 current state:
 
@@ -2835,13 +2835,13 @@ is accepted too, as well as the following abbreviated forms:
 
 =item severity
 
-=item severity_nonlocal
+=item severity_nonlocal (only for Postgres 10 and above)
 
 =item state
 
 =item primary
 
-=item detail
+=item detail (does not work well for Postgres < 9.2)
 
 =item hint
 
@@ -2853,15 +2853,15 @@ is accepted too, as well as the following abbreviated forms:
 
 =item context
 
-=item schema
+=item schema (only for Postgres 9.3 and above)
 
-=item table
+=item table (only for Postgres 9.3 and above)
 
-=item column
+=item column (only for Postgres 9.3 and above)
 
-=item type
+=item type (only for Postgres 9.3 and above)
 
-=item constraint
+=item constraint (only for Postgres 9.3 and above)
 
 =item source_file
 

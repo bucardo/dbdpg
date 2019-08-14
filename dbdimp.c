@@ -37,6 +37,18 @@ Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId) {
 
 #endif
 
+#ifndef PG_DIAG_SCHEMA_NAME
+#define PG_DIAG_SCHEMA_NAME     's'
+#define PG_DIAG_TABLE_NAME      't'
+#define PG_DIAG_COLUMN_NAME     'c'
+#define PG_DIAG_DATATYPE_NAME   'd'
+#define PG_DIAG_CONSTRAINT_NAME 'n'
+#endif
+
+#ifndef PG_DIAG_SEVERITY_NONLOCALIZED
+#define PG_DIAG_SEVERITY_NONLOCALIZED 'V'
+#endif
+
 #ifndef PGErrorVerbosity
 typedef enum
 	{
@@ -481,7 +493,7 @@ int dbd_db_ping (SV * dbh)
 	}
 
 	/* No matter what state we are in, send an empty query to the backend */
-	result = PQexec(imp_dbh->conn, "/* DBD::Pg ping test v3.9.0 */");
+	result = PQexec(imp_dbh->conn, "/* DBD::Pg ping test v3.9.1 */");
 	status = PQresultStatus(result);
 	PQclear(result);
 	if (PGRES_FATAL_ERROR == status) {
