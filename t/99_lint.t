@@ -118,6 +118,7 @@ for my $file (sort keys %fileslurp) {
             my $line = $fileslurp{$file}{$linenum}{$func};
 			## Must be at start of line (optional whitespace and comment), a space, a paren, and something interesting
             next if $line =~ /\w+ fail/;
+            next if $line =~ /defined \$expected \? like/;
 			like ($line, qr{^\s*#?$func \(['\S]}, $t);
 		}
 	}

@@ -69,7 +69,7 @@ for my $loop (1..5) {
     if (2==$loop) { eval { $dbh->do('SELECT 1/0'); }; }
     if (3==$loop) { eval { $dbh->do('SELECT foobar FROM pg_class'); }; }
     if (4==$loop) {
-        eval { $dbh->do("INSERT INTO $test_table VALUES (123)"); }
+        eval { $dbh->do("INSERT INTO $test_table VALUES (123)"); };
     }
     if (5==$loop) {
         my $sth = $dbh->prepare("INSERT INTO $test_table VALUES (?)");
@@ -78,9 +78,9 @@ for my $loop (1..5) {
 
     for (split /\n/ => $fields) {
         next unless /pg/;
-        my ($fields,@error) = split /\s+\|\s+/ => $_;
-        for my $field (split /,/ => $fields) {
-            my $expected = $error[$loop==5 ? 3 : $loop-1];
+        my ($lfields,@error) = split /\s+\|\s+/;
+        for my $field (split /,/ => $lfields) {
+            my $expected = $error[5==$loop ? 3 : $loop-1];
             $expected = undef if $expected eq 'undef';
             if (defined $expected) {
                 $expected = ($expected eq 'number') ? qr/^\d+$/ : qr/$expected/;

@@ -497,6 +497,7 @@ undef
 unicode
 unix
 UNKNOWNOID
+unowned
 userid
 username
 Username
