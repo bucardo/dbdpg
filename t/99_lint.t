@@ -13,7 +13,7 @@ if (! $ENV{AUTHOR_TESTING}) {
 	plan (skip_all =>  'Test skipped unless environment variable AUTHOR_TESTING is set');
 }
 
-my @cfiles = (qw/ dbdimp.c Pg.c quote.c types.c /);
+my @cfiles = (qw/ dbdimp.c quote.c types.c /);
 
 
 $ENV{LANG} = 'C';
