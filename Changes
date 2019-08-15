@@ -1,5 +1,5 @@
 
-Version 3.9.1
+Version 3.9.1, released August 15, 2019
 
     Bugfix for pg_error_field: make sure we do not feed null to newSVpv,
     handle older versions of Postgres better.
