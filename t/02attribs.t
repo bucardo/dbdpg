@@ -852,7 +852,7 @@ $attrib = $sth->{ParamTypes};
 $expected = {1 => {TYPE => SQL_INTEGER}, 2 => {TYPE => SQL_VARCHAR}, 3 => undef};
 is_deeply ($attrib, $expected, $t);
 
-$t='Statement handle attributes "ParamValues" and "ParamTypes" can be pased back to bind_param';
+$t='Statement handle attributes "ParamValues" and "ParamTypes" can be passed back to bind_param';
 eval {
 	my $vals = $sth->{ParamValues};
 	my $types = $sth->{ParamTypes};
