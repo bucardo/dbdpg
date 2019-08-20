@@ -376,6 +376,9 @@ static sql_type_info_t sql_types[] = {
  {SQL_TYPE_TIMESTAMP_WITH_TIMEZONE,"SQL_TYPE_TIMESTAMP_WITH_TIMEZONE",1,',', "none", quote_string, dequote_string, {PG_TIMESTAMPTZ}, 0},
  {SQL_TYPE_TIME_WITH_TIMEZONE,"SQL_TYPE_TIME_WITH_TIMEZONE",1,',', "none", quote_string, dequote_string, {PG_TIMESTAMPTZ}, 0},
  {SQL_VARCHAR,"SQL_VARCHAR",1,',', "none", quote_string, dequote_string, {PG_VARCHAR}, 0},
+ {SQL_BLOB,"SQL_BLOB",1,',', "none", quote_bytea, dequote_bytea, {PG_BYTEA}, 0},
+ {SQL_BINARY,"SQL_BINARY",1,',', "none", quote_bytea, dequote_bytea, {PG_BYTEA}, 0},
+ {SQL_LONGVARBINARY,"SQL_LONGVARBINARY",1,',', "none", quote_bytea, dequote_bytea, {PG_BYTEA}, 0},
 };
 
 sql_type_info_t* sql_type_data(int sql_type)
@@ -401,6 +404,9 @@ sql_type_info_t* sql_type_data(int sql_type)
 		case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE: return &sql_types[19];
 		case SQL_TYPE_TIME_WITH_TIMEZONE:      return &sql_types[20];
 		case SQL_VARCHAR:                      return &sql_types[21];
+		case SQL_BLOB:                         return &sql_types[22];
+		case SQL_BINARY:                       return &sql_types[23];
+		case SQL_LONGVARBINARY:                return &sql_types[24];
 		default: return NULL;
 	}
 }
