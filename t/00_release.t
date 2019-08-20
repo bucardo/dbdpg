@@ -1,6 +1,7 @@
 #!perl
 
 ## Make sure the version number is consistent in all places
+## Check on the format of the Changes file
 
 use 5.006;
 use strict;
@@ -12,7 +13,7 @@ use lib 't','.';
 if (! $ENV{RELEASE_TESTING}) {
 	plan (skip_all =>  'Test skipped unless environment variable RELEASE_TESTING is set');
 }
-plan tests => 2;
+plan tests => 3;
 
 my $vre = qr{(\d+\.\d+\.\d+\_?\d*)};
 
@@ -91,6 +92,52 @@ else {
 		}
 	}
 }
+
+my $changes_file_ok = 1;
+open my $fh, '<', 'Changes' or die "Could not find the 'Changes' file\n";
+my $month = '(January|February|March|April|May|June|July|August|September|October|November|December)';
+my ($lastline1, $lastline2, $lastline3) = ('','','');
+while (<$fh>) {
+    chomp;
+    if (/\bVersion/) {
+        next if /unreleased/;
+
+        if ($lastline1 =~ /\w/ or $lastline2 =~ /\w/ or $lastline3 !~ /\w/) {
+            diag "Changes file fails double spacing before: $_\n";
+            $changes_file_ok = 0;
+        }
+
+        if (! /^Version \d\.\d[\.\d]* /) {
+            diag "Changes file version failure: $_\n";
+            $changes_file_ok = 0;
+        }
+        if (! /^Version \d\.\d[\.\d]*  \S/) {
+            diag "Changes file spacing failure: $_\n";
+            $changes_file_ok = 0;
+        }
+        if (! /^Version \d\.\d[\.\d]*  \(released $month \d\d*, \d\d\d\d\)$/) {
+            diag "Changes file release date failure: $_\n";
+            $changes_file_ok = 0;
+        }
+    }
+    if (/\w/ and $lastline1 =~ /^Version (\d.\d[\.\d]+)/) {
+        diag "Changes file does not have space after version $1\n";
+        $changes_file_ok = 0;
+    }
+    $lastline3 = $lastline2;
+    $lastline2 = $lastline1;
+    $lastline1 = $_;
+}
+close $fh;
+
+if ($changes_file_ok) {
+    pass (q{The 'Changes' file is in the correct format});
+}
+else {
+    fail (q{The 'Changes' file does not have the correct format});
+}
+
+
 
 exit;
 
