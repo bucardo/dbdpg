@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
 	plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 18;
+plan tests => 36;
 
 isnt ($dbh, undef, 'Connect to database for bytea testing');
 
@@ -49,9 +49,33 @@ ok ($sth->execute(403, $binary_out), $t);
 $sth->{pg_server_prepare} = 1;
 ok ($sth->execute(404, $binary_out), $t);
 
+$t='store binary data in BYTEA column via SQL_BLOB';
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytetest,bytearray,testarray2) VALUES (?,?,'{1,2,3}','{5,6,7}')});
+$sth->bind_param(1, undef, { pg_type => PG_INT4 });
+$sth->bind_param(2, undef, SQL_BLOB);
+ok ($sth->execute(405, $binary_out), $t);
+
+$t='store binary data in BYTEA column via SQL_BINARY';
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytetest,bytearray,testarray2) VALUES (?,?,'{1,2,3}','{5,6,7}')});
+$sth->bind_param(1, undef, { pg_type => PG_INT4 });
+$sth->bind_param(2, undef, SQL_BINARY);
+ok ($sth->execute(406, $binary_out), $t);
+
+$t='store binary data in BYTEA column via SQL_VARBINARY';
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytetest,bytearray,testarray2) VALUES (?,?,'{1,2,3}','{5,6,7}')});
+$sth->bind_param(1, undef, { pg_type => PG_INT4 });
+$sth->bind_param(2, undef, SQL_VARBINARY);
+ok ($sth->execute(407, $binary_out), $t);
+
+$t='store binary data in BYTEA column via SQL_LONGVARBINARY';
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytetest,bytearray,testarray2) VALUES (?,?,'{1,2,3}','{5,6,7}')});
+$sth->bind_param(1, undef, { pg_type => PG_INT4 });
+$sth->bind_param(2, undef, SQL_LONGVARBINARY);
+ok ($sth->execute(408, $binary_out), $t);
+
 if ($pgversion < 90000) {
     test_outputs(undef);
-    SKIP: { skip 'No BYTEA output format setting before 9.0', 6 }
+    SKIP: { skip 'No BYTEA output format setting before 9.0', 13 }
 }
 else {
     test_outputs($_) for qw(hex escape);
@@ -87,6 +111,18 @@ sub test_outputs {
     $sth->execute(404);
     ($binary_in) = $sth->fetchrow_array();
     ok ($binary_in eq $binary_out, $t);
+    $sth->execute(405);
+    ($binary_in) = $sth->fetchrow_array();
+    cmp_ok ($binary_in, 'eq', $binary_out, $t);
+    $sth->execute(406);
+    ($binary_in) = $sth->fetchrow_array();
+    cmp_ok ($binary_in, 'eq', $binary_out, $t);
+    $sth->execute(407);
+    ($binary_in) = $sth->fetchrow_array();
+    cmp_ok ($binary_in, 'eq', $binary_out, $t);
+    $sth->execute(408);
+    ($binary_in) = $sth->fetchrow_array();
+    cmp_ok ($binary_in, 'eq', $binary_out, $t);
 
     $t='quote properly handles bytea strings';
     $t.=" ($output output)" if $output;
@@ -95,6 +131,9 @@ sub test_outputs {
     my $E = $pgversion >= 80100 ? q{E} : q{};
     my $expected = qq{${E}'abc\123\\\\\\\\def\\\\000ghi'};
     is ($result, $expected, $t);
+    is ($dbh->quote($string, SQL_BLOB), $expected);
+    is ($dbh->quote($string, SQL_BINARY), $expected);
     is ($dbh->quote($string, SQL_VARBINARY), $expected);
+    is ($dbh->quote($string, SQL_LONGVARBINARY), $expected);
 	return;
 }

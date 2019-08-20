@@ -283,7 +283,12 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 			}
 
 			/* At this point, type_info points to a valid struct, one way or another */
-			utf8 = imp_dbh->client_encoding_utf8 && PG_BYTEA != type_info->type_id && SQL_VARBINARY != type_info->type_id;
+			utf8 = imp_dbh->client_encoding_utf8
+				&& PG_BYTEA != type_info->type_id
+				&& SQL_BLOB != type_info->type_id
+				&& SQL_BINARY != type_info->type_id
+				&& SQL_VARBINARY != type_info->type_id
+				&& SQL_LONGVARBINARY != type_info->type_id;
 
 			if (SvMAGICAL(to_quote_sv))
 				(void)mg_get(to_quote_sv);
