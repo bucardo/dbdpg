@@ -334,6 +334,9 @@ void do(dbh, statement_sv, attr=Nullsv, ...)
 		char *statement;
 		D_imp_dbh(dbh);
 
+        /* Always reset the last stored sth */
+        imp_dbh->do_tmp_sth = NULL;
+
 		statement_sv = pg_rightgraded_sv(aTHX_ statement_sv, imp_dbh->pg_utf8_flag);
 		statement = SvPV_nolen(statement_sv);
 
