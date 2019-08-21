@@ -20,6 +20,25 @@ if (! $dbh) {
 }
 plan tests => 273;
 
+my $t='Database handle attribute "ShowErrorStatement" adds statement and placeholders to errors with a null argument';
+my $SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class WHERE relname = ? AND reltuples = ?};
+#my $SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class2};
+$dbh->{ShowErrorStatement} = 1;
+$dbh->commit();
+eval {
+	$dbh->do($SQL, {}, 123, 456);
+};
+like ($@, qr{with ParamValues: 1='123', 2='456'}, $t);
+$dbh->rollback();
+
+$SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class2};
+eval {
+	$dbh->do($SQL);
+};
+like ($@, qr{with ParamValues: 1='123', 2='333'}, $t);
+
+exit;
+
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
 my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
@@ -1356,7 +1375,15 @@ eval {
 };
 like ($@, qr{with ParamValues: 1='123', 2='456'}, $t);
 
+$t='Database handle attribute "ShowErrorStatement" adds statement and placeholders to errors with a null argument';
+eval {
+	$dbh->do($SQL, {}, 123, undef);
+};
+like ($@, qr{with ParamValues: 1='123', 2=undef}, $t);
+
 $dbh->commit();
+
+exit;
 
 #
 # Test of the handle attribute TraceLevel

@@ -56,7 +56,7 @@ are connecting to. The easiest way to gather all of this
 information is to run "make test", which outputs it all early in 
 the tests.
 
-View the archive at http://grokbase.com/g/perl/dbd-pg
+View the archive at http://www.nntp.perl.org/group/perl.dbd.pg/
 
 To subscribe, email dbd-pg-subscribe@perl.org
 To unsubscribe, email dbd-pg-unsubscribe@perl.org
