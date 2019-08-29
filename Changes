@@ -8,6 +8,11 @@ Version 3.10.0  (unreleased)
     and foreign_key_info (i.e. support pg_class.relkind = 'p')
     [Octavian R. Corlade]
 
+  - Possible fix for bug by making sure pg_error_field works properly when switching between 
+    do-with-params and do-without-params.
+    [Greg Sabino Mullane]
+    [Github issue #57]
+
 
 Version 3.9.1  (released August 15, 2019)
 
