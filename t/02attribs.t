@@ -1333,7 +1333,7 @@ eval {
 };
 like ($@, qr{for Statement "Testing}, $t);
 
-$t='Database handle attribute "ShowErrorStatement" adds statement and placeholders to errors';
+$t='Database handle attribute "ShowErrorStatement" adds statement and placeholders to errors via execute() with null args';
 $SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class WHERE relname = ? AND reltuples = ?};
 eval {
 	$sth = $dbh->prepare($SQL);
