@@ -78,25 +78,25 @@ is ( $sth->fetch->[0], 2147483646, $t);
 $t = 'Constant PG_MIN_BIGINT returns correct value';
 $sth = $dbh->prepare('SELECT ?::bigint');
 $sth->execute(PG_MIN_BIGINT);
-is ( $sth->fetch->[0], -9223372036854775808, $t);
+is ( $sth->fetch->[0], '-9223372036854775808', $t);
 
 eval { $sth->execute(PG_MIN_BIGINT-1) };
 $dbh->rollback();
 like ($@, qr/ERROR/, $t);
 
 $sth->execute(PG_MIN_BIGINT+1);
-is ( $sth->fetch->[0], -9223372036854775807, $t);
+is ( $sth->fetch->[0], '-9223372036854775807', $t);
 
 $t = 'Constant PG_MAX_BIGINT returns correct value';
 $sth->execute(PG_MAX_BIGINT);
-is ( $sth->fetch->[0], 9223372036854775807, $t);
+is ( $sth->fetch->[0], '9223372036854775807', $t);
 
 eval { $sth->execute(PG_MAX_BIGINT+1) };
 $dbh->rollback();
 like ($@, qr/ERROR/, $t);
 
 $sth->execute(PG_MAX_BIGINT-1);
-is ( $sth->fetch->[0], 9223372036854775806, $t);
+is ( $sth->fetch->[0], '9223372036854775806', $t);
 
 $t = 'Constant PG_MIN_SMALLSERIAL returns correct value';
 is (PG_MIN_SMALLSERIAL, 1, $t);
