@@ -4009,6 +4009,11 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
     /* We do not actually clear this as imp_dbh may need it (e.g. for pg_error_field) */
     imp_sth->result = NULL;
 
+	/* Tell everyone it is okay to recycle last_result if it belongs to us */
+	if ( (long int)imp_sth == imp_dbh->sth_result_owner ) {
+		imp_dbh->sth_result_owner = 0;
+	}
+
 	/* Free all the segments */
 	currseg = imp_sth->seg;
 	while (NULL != currseg) {
