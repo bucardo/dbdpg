@@ -357,6 +357,9 @@ static sql_type_info_t sql_types[] = {
  {SQL_BOOLEAN,"SQL_BOOLEAN",1,',', "none", quote_bool, dequote_bool, {PG_BOOL}, 3},
  {SQL_CHAR,"SQL_CHAR",1,',', "none", quote_string, dequote_char, {PG_BPCHAR}, 0},
  {SQL_VARBINARY,"SQL_VARBINARY",1,',', "none", quote_bytea, dequote_bytea, {PG_BYTEA}, 0},
+ {SQL_BLOB,"SQL_BLOB",1,',', "none", quote_bytea, dequote_bytea, {PG_BYTEA}, 0},
+ {SQL_BINARY,"SQL_BINARY",1,',', "none", quote_bytea, dequote_bytea, {PG_BYTEA}, 0},
+ {SQL_LONGVARBINARY,"SQL_LONGVARBINARY",1,',', "none", quote_bytea, dequote_bytea, {PG_BYTEA}, 0},
  {SQL_CHAR,"SQL_CHAR",1,',', "none", quote_string, dequote_char, {PG_CHAR}, 0},
  {SQL_TYPE_DATE,"SQL_TYPE_DATE",1,',', "none", quote_string, dequote_string, {PG_DATE}, 0},
  {SQL_FLOAT,"SQL_FLOAT",1,',', "none", quote_float, null_dequote, {PG_FLOAT8}, 2},
@@ -376,9 +379,6 @@ static sql_type_info_t sql_types[] = {
  {SQL_TYPE_TIMESTAMP_WITH_TIMEZONE,"SQL_TYPE_TIMESTAMP_WITH_TIMEZONE",1,',', "none", quote_string, dequote_string, {PG_TIMESTAMPTZ}, 0},
  {SQL_TYPE_TIME_WITH_TIMEZONE,"SQL_TYPE_TIME_WITH_TIMEZONE",1,',', "none", quote_string, dequote_string, {PG_TIMESTAMPTZ}, 0},
  {SQL_VARCHAR,"SQL_VARCHAR",1,',', "none", quote_string, dequote_string, {PG_VARCHAR}, 0},
- {SQL_BLOB,"SQL_BLOB",1,',', "none", quote_bytea, dequote_bytea, {PG_BYTEA}, 0},
- {SQL_BINARY,"SQL_BINARY",1,',', "none", quote_bytea, dequote_bytea, {PG_BYTEA}, 0},
- {SQL_LONGVARBINARY,"SQL_LONGVARBINARY",1,',', "none", quote_bytea, dequote_bytea, {PG_BYTEA}, 0},
 };
 
 sql_type_info_t* sql_type_data(int sql_type)
@@ -387,26 +387,26 @@ sql_type_info_t* sql_type_data(int sql_type)
 		case SQL_BOOLEAN:                      return &sql_types[0];
 		case SQL_CHAR:                         return &sql_types[1];
 		case SQL_VARBINARY:                    return &sql_types[2];
-		case SQL_TYPE_DATE:                    return &sql_types[4];
-		case SQL_FLOAT:                        return &sql_types[5];
-		case SQL_DOUBLE:                       return &sql_types[6];
-		case SQL_REAL:                         return &sql_types[7];
-		case SQL_SMALLINT:                     return &sql_types[8];
-		case SQL_TINYINT:                      return &sql_types[9];
-		case SQL_INTEGER:                      return &sql_types[10];
-		case SQL_BIGINT:                       return &sql_types[11];
-		case SQL_NUMERIC:                      return &sql_types[13];
-		case SQL_DECIMAL:                      return &sql_types[14];
-		case SQL_LONGVARCHAR:                  return &sql_types[15];
-		case SQL_TYPE_TIME:                    return &sql_types[16];
-		case SQL_TIMESTAMP:                    return &sql_types[17];
-		case SQL_TYPE_TIMESTAMP:               return &sql_types[18];
-		case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE: return &sql_types[19];
-		case SQL_TYPE_TIME_WITH_TIMEZONE:      return &sql_types[20];
-		case SQL_VARCHAR:                      return &sql_types[21];
-		case SQL_BLOB:                         return &sql_types[22];
-		case SQL_BINARY:                       return &sql_types[23];
-		case SQL_LONGVARBINARY:                return &sql_types[24];
+		case SQL_BLOB:                         return &sql_types[3];
+		case SQL_BINARY:                       return &sql_types[4];
+		case SQL_LONGVARBINARY:                return &sql_types[5];
+		case SQL_TYPE_DATE:                    return &sql_types[7];
+		case SQL_FLOAT:                        return &sql_types[8];
+		case SQL_DOUBLE:                       return &sql_types[9];
+		case SQL_REAL:                         return &sql_types[10];
+		case SQL_SMALLINT:                     return &sql_types[11];
+		case SQL_TINYINT:                      return &sql_types[12];
+		case SQL_INTEGER:                      return &sql_types[13];
+		case SQL_BIGINT:                       return &sql_types[14];
+		case SQL_NUMERIC:                      return &sql_types[16];
+		case SQL_DECIMAL:                      return &sql_types[17];
+		case SQL_LONGVARCHAR:                  return &sql_types[18];
+		case SQL_TYPE_TIME:                    return &sql_types[19];
+		case SQL_TIMESTAMP:                    return &sql_types[20];
+		case SQL_TYPE_TIMESTAMP:               return &sql_types[21];
+		case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE: return &sql_types[22];
+		case SQL_TYPE_TIME_WITH_TIMEZONE:      return &sql_types[23];
+		case SQL_VARCHAR:                      return &sql_types[24];
 		default: return NULL;
 	}
 }
@@ -823,7 +823,7 @@ circle   quote_circle  dequote_string  0                         0  0
 tid      quote_geom    dequote_string  0                         0  0
 
 ## Binary - very different quoting rules
-bytea    quote_bytea   dequote_bytea   SQL_VARBINARY             1  0
+bytea    quote_bytea   dequote_bytea   SQL_VARBINARY|SQL_BLOB|SQL_BINARY|SQL_LONGVARBINARY             1  0
 
 ## Time and date
 date        quote_string  dequote_string  SQL_TYPE_DATE                     1  0
