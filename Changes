@@ -1,12 +1,6 @@
 
 Version 3.10.0  (unreleased)
 
-  - Add DBI SQL_BLOB, SQL_BINARY and SQL_LONGVARBINARY types as alias for PG_BYTEA
-    [Pali]
-
-  - Treat partitioned tables same as regular tables for column_info, table_info, 
-    and foreign_key_info (i.e. support pg_class.relkind = 'p')
-    [Octavian R. Corlade]
 
   - Prevent memory leak related to pg_error_field
     [Greg Sabino Mullane]
@@ -16,6 +10,20 @@ Version 3.10.0  (unreleased)
     do-with-params and do-without-params.
     [Greg Sabino Mullane]
     [Github issue #57]
+
+  - If a commit or rollback fails, do not set BegunWork
+    [Github issue #40]
+
+  - Treat partitioned tables same as regular tables for column_info, table_info, 
+    and foreign_key_info (i.e. support pg_class.relkind = 'p')
+    [Octavian R. Corlade]
+
+  - Allow last_insert_id() to work against inherited tables
+    [Greg Sabino Mullane]
+    [RT #52441]
+
+  - Add DBI SQL_BLOB, SQL_BINARY and SQL_LONGVARBINARY types as alias for PG_BYTEA
+    [Pali]
 
 
 Version 3.9.1  (released August 15, 2019)
