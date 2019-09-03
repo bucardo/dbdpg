@@ -394,18 +394,37 @@ use 5.008001;
                 return undef;
             }
             my $info = $sth->fetchall_arrayref();
-
             ## We have at least one with a default value. See if we found any sequences
             my @def = grep { defined $_->[1] } @$info;
             if (!@def) {
-                $dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
-                return undef;
+                ## This may be an inherited table, in which case we can use the parent's info
+                $SQL = 'SELECT inhparent::regclass FROM pg_inherits WHERE inhrelid = ?::regclass::oid';
+                my $isth = $dbh->prepare($SQL);
+                $count = $isth->execute($table);
+                if ($count < 1) {
+                    $isth->finish();
+                    $dbh->set_err(1, qq{No1 suitable column found for last_insert_id of table "$table"\n});
+                    return undef;
+                }
+                my $parent = $isth->fetch->[0];
+                $args[0] = $parent;
+                $count = $sth->execute(@args);
+                if (1 == $count) {
+                    $info = $sth->fetchall_arrayref();
+                    @def = grep { defined $_->[1] } @$info;
+                }
+                if (!@def) {
+                    $sth->finish();
+                    $dbh->set_err(1, qq{No1 suitable column found for last_insert_id of table "$table"\n});
+                    return undef;
+                }
+                ## Fall through with inherited information
             }
             ## Tiebreaker goes to the primary keys
             if (@def > 1) {
                 my @pri = grep { $_->[0] } @def;
                 if (1 != @pri) {
-                    $dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
+                    $dbh->set_err(1, qq{No2 suitable column found for last_insert_id of table "$table"\n});
                     return undef;
                 }
                 @def = @pri;
