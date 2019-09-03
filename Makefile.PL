@@ -196,7 +196,7 @@ if ($ENV{DBDPG_GCCDEBUG}) {
     $comp_opts .= ' -Wunused'; ## contains -Wunused- function,label,parameter,variable,value
     $comp_opts .= ' -Wunknown-pragmas -Wstrict-aliasing';
     $comp_opts .= ' -Wall'; ## all of above, but we enumerate anyway
-    $comp_opts .= ' -Wextra -Wdeclaration-after-statement -Wendif-labels -Wpointer-arith';
+    $comp_opts .= ' -Wextra -Wendif-labels -Wpointer-arith';
     $comp_opts .= ' -Wbad-function-cast -Wcast-qual -Wcast-align -Wsign-compare -Waggregate-return';
     $comp_opts .= ' -Wmissing-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wpacked -Winline -Winvalid-pch';
     $comp_opts .= ' -Wdisabled-optimization';
@@ -206,7 +206,6 @@ if ($ENV{DBDPG_GCCDEBUG}) {
     $comp_opts .= " -Wsystem-headers";
     $comp_opts .= " -Wmissing-noreturn";
     $comp_opts .= " -Wfloat-equal"; ## Does not like SvTRUE() calls
-    $comp_opts .= " -Wpadded"; ## Use when adding/changing our structs
 }
 
 my %opts =

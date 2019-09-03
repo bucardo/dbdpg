@@ -241,7 +241,7 @@ $comp_opts .= " -Wmain -Wmissing-braces -Wparentheses -Wsequence-point -Wreturn-
 $comp_opts .= " -Wunused"; ## contains -Wunused- function,label,parameter,variable,value
 $comp_opts .= " -Wunknown-pragmas -Wstrict-aliasing";
 $comp_opts .= " -Wall"; ## all of above, but we enumerate anyway
-$comp_opts .= " -Wextra -Wdeclaration-after-statement -Wendif-labels -Wpointer-arith";
+$comp_opts .= " -Wextra -Wendif-labels -Wpointer-arith";
 $comp_opts .= " -Wbad-function-cast -Wcast-qual -Wcast-align -Wconversion -Wsign-compare -Waggregate-return";
 $comp_opts .= " -Wmissing-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wpacked -Winline -Winvalid-pch";
 $comp_opts .= " -Wdisabled-optimization";
@@ -251,9 +251,9 @@ $comp_opts .= " -Wswitch-default";
 $comp_opts .= " -Wsystem-headers";
 $comp_opts .= " -Wmissing-noreturn";
 $comp_opts .= " -Wfloat-equal"; ## Does not like SvTRUE() calls
-$comp_opts .= " -Wpadded"; ## Use when adding/changing our structs
 
 ## These options tend to produce lots of hits outside of our code, but may still be useful:
+$comp_opts .= " -Wpadded"; ## Use when adding/changing our structs
 $comp_opts .= " -pedantic"; ## Useful, but very verbose
 $comp_opts .= " -Wundef"; ## Complains of XSubPPtmpAAAA in Pg.c being defined/undefined but then checked raw
 $comp_opts .= " -Wshadow"; ## lots of bogus hits - not very useful Filter: grep warning wfile | grep -v "/usr"
