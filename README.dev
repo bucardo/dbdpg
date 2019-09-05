@@ -699,7 +699,7 @@ bugs with this new version, once it appears in the choices (takes a day or two f
 the version to appear as a choice in the pulldown on CPAN).
 
 * Check the CPAN testers report a few days after the PAUSE upload:
-http://www.cpantesters.org/distro/D/DBD-Pg.html
+http://matrix.cpantesters.org/?dist=DBD-Pg
 
 * Update this file based on your experiences!!
 
@@ -775,7 +775,8 @@ The canonical URL:
 http://search.cpan.org/dist/DBD-Pg/
 
 * CPAN::Reporter test results:
-http://cpantesters.perl.org/show/DBD-Pg.html
+http://matrix.cpantesters.org/?dist=DBD-Pg
+
 
 * DBI
 
