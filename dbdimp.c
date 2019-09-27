@@ -684,6 +684,8 @@ void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
 		if (imp_dbh->async_sth->result) {
 			TRACE_PQCLEAR;
 			PQclear(imp_dbh->async_sth->result);
+			if (imp_dbh->last_result == imp_dbh->async_sth->result)
+				imp_dbh->last_result = NULL;
 		}
 		imp_dbh->async_sth = NULL;
 	}
@@ -5169,8 +5171,13 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 
 		if (imp_dbh->async_sth) {
 			if (imp_dbh->async_sth->result) { /* For potential multi-result sets */
-				TRACE_PQCLEAR;
-				PQclear(imp_dbh->async_sth->result);
+				if (imp_dbh->sth_result_owner == (long int)imp_dbh->async_sth) {
+					imp_dbh->sth_result_owner = 0;
+				}
+				else {
+					TRACE_PQCLEAR;
+					PQclear(imp_dbh->async_sth->result);
+				}
 			}
 			imp_dbh->async_sth->result = result;
 		}
