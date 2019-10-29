@@ -3318,6 +3318,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		}
 	}
 	else { /* We are using a server that can handle PQexecParams/PQexecPrepared */
+
 		/* Put all values into an array to pass to one of the above */
 		if (NULL == imp_sth->PQvals) {
 			Newz(0, imp_sth->PQvals, (unsigned int)imp_sth->numphs, const char *); /* freed in dbd_st_destroy */
@@ -3346,10 +3347,13 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		}
 	}
 	
-	/* Run one of PQexec, PQexecParams, or PQexecPrepared */
-	if (PQTYPE_EXEC == pqtype) { /* PQexec */
+	/* Run one of PQexec (or PQsendQuery), PQexecParams (or PQsendQueryParams), PQexecPrepared (or PQsendQueryPrepared) */
 
-		if (TRACE5_slow) TRC(DBILOGFP, "%sPQexec\n", THEADER_slow);
+	if (PQTYPE_EXEC == pqtype) { /* PQexec or PQsendQuery */
+
+		if (TRACE4_slow) TRC(DBILOGFP, "%s%s\n",
+                             THEADER_slow,
+                             imp_sth->async_flag & PG_ASYNC ? "PQsendQuery" : "PQexec");
 
 		/* Go through and quote each value, then turn into a giant statement */
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
@@ -3357,7 +3361,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 				execsize += currseg->ph->quotedlen;
 		}
 
-		New(0, statement, execsize+1, char); /* freed below */
+		New(0, statement, execsize+1, char); /* freed below at end of this 'if' block */
 		statement[0] = '\0';
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 			if (currseg->segment != NULL)
@@ -3368,7 +3372,9 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		statement[execsize] = '\0';
 
 		if (TRACE5_slow) TRC(DBILOGFP, "%sRunning %s with (%s)\n", 
-							 THEADER_slow, imp_sth->async_flag & PG_ASYNC ? "PQsendQuery" : "PQexec", statement);
+							 THEADER_slow,
+                             imp_sth->async_flag & PG_ASYNC ? "PQsendQuery" : "PQexec",
+                             statement);
 			
 		if (TSQL)
 			TRC(DBILOGFP, "%s;\n\n", statement);
@@ -3396,8 +3402,11 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		Safefree(statement);
 
 	}
-	else if (PQTYPE_PARAMS == pqtype) { /* PQexecParams */
-		if (TRACE5_slow) TRC(DBILOGFP, "%sPQexecParams\n", THEADER_slow);
+	else if (PQTYPE_PARAMS == pqtype) { /* PQexecParams or PQsendQueryParams */
+
+		if (TRACE4_slow) TRC(DBILOGFP, "%s%s\n",
+                             THEADER_slow,
+                             imp_sth->async_flag & PG_ASYNC ? "PQsendQueryParams" : "PQexecParams");
 
 		/* Figure out how big the statement plus placeholders will be */
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
@@ -3415,7 +3424,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		}
 
 		/* Create the statement */
-		New(0, statement, execsize+1, char); /* freed below */
+		New(0, statement, execsize+1, char); /* freed below at end of this 'if' block */
 		statement[0] = '\0';
 		for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
 			if (currseg->segment != NULL)
@@ -3451,11 +3460,16 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			TRC(DBILOGFP, ");\n\n");
 		}
 
-		if (TRACE5_slow) TRC(DBILOGFP, "%sRunning PQexecParams with (%s)\n", THEADER_slow, statement);
+		if (TRACE5_slow) TRC(DBILOGFP, "%sRunning %s with (%s)\n",
+                             THEADER_slow,
+                             imp_sth->async_flag & PG_ASYNC ? "PQsendQueryParams" : "PQexecParams",
+                             statement);
+
 		if (imp_sth->async_flag & PG_ASYNC) {
 			TRACE_PQSENDQUERYPARAMS;
 			ret = PQsendQueryParams
-				(imp_dbh->conn, statement, imp_sth->numphs, imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+				(imp_dbh->conn, statement, imp_sth->numphs,
+                 imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
 		}
 		else {
 			/* Clear our old result */
@@ -3470,16 +3484,19 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			}
 			TRACE_PQEXECPARAMS;
 			imp_dbh->last_result = imp_sth->result = PQexecParams
-				(imp_dbh->conn, statement, imp_sth->numphs, imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+				(imp_dbh->conn, statement, imp_sth->numphs,
+                 imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
 			imp_dbh->sth_result_owner = (long int)imp_sth;
 		}
 
 		Safefree(statement);
 
 	}
-	else if (PQTYPE_PREPARED == pqtype) { /* PQexecPrepared */
+	else if (PQTYPE_PREPARED == pqtype) { /* PQexecPrepared or PQsendQueryPrepared */
 	
-		if (TRACE4_slow) TRC(DBILOGFP, "%sPQexecPrepared\n", THEADER_slow);
+		if (TRACE4_slow) TRC(DBILOGFP, "%s%s\n",
+                             THEADER_slow,
+                             imp_sth->async_flag & PG_ASYNC ? "PQsendQueryPrepared" : "PQexecPrepared");
 
 		/* Prepare if it has not already been prepared (or it needs repreparing) */
 		if (NULL == imp_sth->prepare_name) {
@@ -3507,8 +3524,10 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			}
 		}
 		
-		if (TRACE5_slow) TRC(DBILOGFP, "%sRunning PQexecPrepared with (%s)\n",
-						THEADER_slow, imp_sth->prepare_name);
+		if (TRACE5_slow) TRC(DBILOGFP, "%sRunning %s with (%s)\n", THEADER_slow,
+                             imp_sth->async_flag & PG_ASYNC ? "PQsendQueryPrepared" : "PQexecPrepared",
+                             imp_sth->prepare_name);
+
 		if (TSQL) {
 			TRC(DBILOGFP, "EXECUTE %s (\n", imp_sth->prepare_name);
 			for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
@@ -3520,7 +3539,8 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		if (imp_sth->async_flag & PG_ASYNC) {
 			TRACE_PQSENDQUERYPREPARED;
 			ret = PQsendQueryPrepared
-				(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+				(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs,
+                 imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
 		}
 		else {
 			/* Clear our old result */
@@ -3535,19 +3555,21 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			}
 			TRACE_PQEXECPREPARED;
 			imp_dbh->last_result = imp_sth->result = PQexecPrepared
-				(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+				(imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs,
+                 imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+
 			imp_dbh->sth_result_owner = (long int)imp_sth;
 		}
 	} /* end new-style prepare */
 		
-	/* Some form of PQexec* has been run at this point */
+	/* Some form of PQexec* or PQsend* has been run at this point */
 
 	/* If running asynchronously, we don't stick around for the result */
 	if (imp_sth->async_flag & PG_ASYNC) {
 		if (TRACEWARN_slow) TRC(DBILOGFP, "%sEarly return for async query", THEADER_slow);
-		imp_dbh->async_status = 1;
 		imp_sth->async_status = 1;
 		imp_dbh->async_sth = imp_sth;
+		imp_dbh->async_status = 1;
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (async)\n", THEADER_slow);
 		return 0;
 	}
@@ -3555,6 +3577,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 	status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
 
 	imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
+
 	if (PGRES_TUPLES_OK == status) {
 		TRACE_PQNFIELDS;
 		num_fields = PQnfields(imp_sth->result);
