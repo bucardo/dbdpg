@@ -5370,7 +5370,7 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
 	PGresult *result;
 	ExecStatusType status;
 
-	if (TSTART_slow) TRC(DBILOGFP, "%sBegin handle_old_sync (flag: %d)\n", THEADER_slow, asyncflag);
+	if (TSTART_slow) TRC(DBILOGFP, "%sBegin handle_old_async (flag: %d)\n", THEADER_slow, asyncflag);
 
 	if (asyncflag & PG_OLDQUERY_CANCEL) {
 		/* Cancel the outstanding query */
