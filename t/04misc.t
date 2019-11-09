@@ -5,6 +5,7 @@
 use 5.006;
 use strict;
 use warnings;
+use bignum;
 use Test::More;
 use Data::Dumper;
 use DBI;
