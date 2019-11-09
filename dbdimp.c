@@ -2482,23 +2482,25 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 			currph->iscurrent = DBDPG_TRUE;
 			imp_sth->has_current = DBDPG_TRUE;
 		}
-		else if (SvTYPE(SvRV(newvalue)) == SVt_PVAV) {
-			SV * quotedval;
-			quotedval = pg_stringify_array(newvalue,",",imp_dbh->pg_server_version,imp_dbh->pg_utf8_flag);
-			currph->valuelen = sv_len(quotedval);
-			Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
-			Copy(SvUTF8(quotedval) ? SvPVutf8_nolen(quotedval) : SvPV_nolen(quotedval),
-				 currph->value, currph->valuelen+1, char);
-			currph->bind_type = pg_type_data(PG_CSTRINGARRAY);
-			sv_2mortal(quotedval);
-			is_array = DBDPG_TRUE;
-		}
+		/*
+		  We want to allow magic scalars on through - but we cannot
+		  check above, because sometimes DBD::Pg::DefaultValue arrives
+		  as one!
+		*/
 		else if (!SvAMAGIC(newvalue)) {
-			/*
-			  We want to allow magic scalars on through - but we cannot check above,
-			  because sometimes DBD::Pg::DefaultValue arrives as one!
-			*/
-			croak("Cannot bind a reference\n");
+			if (SvTYPE(SvRV(newvalue)) == SVt_PVAV) {
+				SV * quotedval;
+				quotedval = pg_stringify_array(newvalue,",",imp_dbh->pg_server_version,imp_dbh->pg_utf8_flag);
+				currph->valuelen = sv_len(quotedval);
+				Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */ Copy(SvUTF8(quotedval) ? SvPVutf8_nolen(quotedval) : SvPV_nolen(quotedval),
+				currph->value, currph->valuelen+1, char);
+				currph->bind_type = pg_type_data(PG_CSTRINGARRAY);
+				sv_2mortal(quotedval);
+				is_array = DBDPG_TRUE;
+			}
+			else {
+				croak("Cannot bind a reference\n");
+			}
 		}
 	}
 	if (TRACE5_slow) {
