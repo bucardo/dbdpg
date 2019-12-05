@@ -3224,7 +3224,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			if (PGRES_COMMAND_OK != status) {
 				TRACE_PQERRORMESSAGE;
 				pg_error(aTHX_ sth, status, PQerrorMessage(imp_dbh->conn));
-				if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (error: set transaction read only failed)\n", THEADER_slow);
+				if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (error: set transaction read only failed)\n", THEADER_slow);
 				return -2;
 			}
 		}
