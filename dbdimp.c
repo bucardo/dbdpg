@@ -254,7 +254,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 	imp_dbh->pg_errorlevel     = 1; /* Default */
 	imp_dbh->async_status      = 0;
 	imp_dbh->async_sth         = NULL;
-    imp_dbh->last_result       = NULL;
+    imp_dbh->last_result       = NULL; /* NULL or a PGresult */
     imp_dbh->sth_result_owner  = 0;
 
 	/* Tell DBI that we should call destroy when the handle dies */
@@ -681,9 +681,10 @@ void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
 		(void)dbd_db_disconnect(dbh, imp_dbh);
 
 	if (NULL != imp_dbh->async_sth) { /* Just in case */
-		if (imp_dbh->async_sth->result) {
+		if (NULL != imp_dbh->async_sth->result) {
 			TRACE_PQCLEAR;
 			PQclear(imp_dbh->async_sth->result);
+            imp_dbh->async_sth->result = NULL;
 		}
 		imp_dbh->async_sth = NULL;
 	}
@@ -3388,6 +3389,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			if (NULL != imp_sth->result) {
 				TRACE_PQCLEAR;
 				PQclear(imp_sth->result);
+                imp_sth->result = NULL;
 			}
 			/* If the last_result is unowned, clear that too */
 			if (0 == imp_dbh->sth_result_owner && NULL != imp_dbh->last_result) {
@@ -3476,6 +3478,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			if (NULL != imp_sth->result) {
 				TRACE_PQCLEAR;
 				PQclear(imp_sth->result);
+                imp_sth->result = NULL;
 			}
 			/* If the last_result is unowned, clear that too */
 			if (0 == imp_dbh->sth_result_owner && NULL != imp_dbh->last_result) {
@@ -3547,6 +3550,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 			if (NULL != imp_sth->result) {
 				TRACE_PQCLEAR;
 				PQclear(imp_sth->result);
+                imp_sth->result = NULL;
 			}
 			/* If the last_result is unowned, clear that too */
 			if (0 == imp_dbh->sth_result_owner && NULL != imp_dbh->last_result) {
@@ -5191,7 +5195,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 		}
 
 		if (NULL != imp_dbh->async_sth) {
-			if (imp_dbh->async_sth->result) { /* For potential multi-result sets */
+			if (NULL != imp_dbh->async_sth->result) { /* For potential multi-result sets */
 				TRACE_PQCLEAR;
 				PQclear(imp_dbh->async_sth->result);
 			}
