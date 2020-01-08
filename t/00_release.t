@@ -97,10 +97,12 @@ my $changes_file_ok = 1;
 open my $fh, '<', 'Changes' or die "Could not find the 'Changes' file\n";
 my $month = '(January|February|March|April|May|June|July|August|September|October|November|December)';
 my ($lastline1, $lastline2, $lastline3) = ('','','');
+my $seen_a_version = 0;
 while (<$fh>) {
     chomp;
     if (/\bVersion/) {
         next if /unreleased/;
+        next if ! $seen_a_version++;
 
         if ($lastline1 =~ /\w/ or $lastline2 =~ /\w/ or $lastline3 !~ /\w/) {
             diag "Changes file fails double spacing before: $_\n";
