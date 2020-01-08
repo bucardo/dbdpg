@@ -680,7 +680,7 @@ void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
 	if (DBIc_ACTIVE(imp_dbh))
 		(void)dbd_db_disconnect(dbh, imp_dbh);
 
-	if (imp_dbh->async_sth) { /* Just in case */
+	if (NULL != imp_dbh->async_sth) { /* Just in case */
 		if (imp_dbh->async_sth->result) {
 			TRACE_PQCLEAR;
 			PQclear(imp_dbh->async_sth->result);
@@ -1202,7 +1202,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 		return sv_2mortal(retsv);
 	}
 
-	if (! imp_sth->result) {
+	if (NULL == imp_sth->result) {
 		if (TRACEWARN_slow)
 			TRC(DBILOGFP, "%sCannot fetch value of %s pre-execute\n", THEADER_slow, key);
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_FETCH_attrib\n", THEADER_slow);
@@ -3127,7 +3127,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 		break;
 	}
 
-	if (!imp_dbh->last_result) {
+	if (NULL == imp_dbh->last_result) {
 		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (no result)\n", THEADER_slow);
 		return -2;
 	}
@@ -3598,7 +3598,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 		if (TRACE5_slow)
 			TRC(DBILOGFP, "%sStatus was PGRES_COMMAND_OK\n", THEADER_slow);
 
-		if (imp_sth->result) {
+		if (NULL != imp_sth->result) {
 			TRACE_PQCMDSTATUS;
 			cmdStatus = PQcmdStatus(imp_sth->result);
 			if (0 == strncmp(cmdStatus, "INSERT", 6)) {
@@ -4064,7 +4064,7 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 	}
 	imp_sth->ph = NULL;
 
-	if (imp_dbh->async_sth)
+	if (NULL != imp_dbh->async_sth)
 		imp_dbh->async_sth = NULL;
 
 	DBIc_IMPSET_off(imp_sth); /* let DBI know we've done it */
@@ -5140,7 +5140,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 			TRACE_PQNTUPLES;
 			rows = PQntuples(result);
 
-			if (imp_dbh->async_sth) {
+			if (NULL != imp_dbh->async_sth) {
 				imp_dbh->async_sth->cur_tuple = 0;
 				TRACE_PQNFIELDS;
 				DBIc_NUM_FIELDS(imp_dbh->async_sth) = PQnfields(result);
@@ -5190,7 +5190,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 			break;
 		}
 
-		if (imp_dbh->async_sth) {
+		if (NULL != imp_dbh->async_sth) {
 			if (imp_dbh->async_sth->result) { /* For potential multi-result sets */
 				TRACE_PQCLEAR;
 				PQclear(imp_dbh->async_sth->result);
@@ -5203,7 +5203,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 		}
 	}
 
-	if (imp_dbh->async_sth) {
+	if (NULL != imp_dbh->async_sth) {
 		imp_dbh->async_sth->rows = rows;
 		imp_dbh->async_sth->async_status = 0;
 	}
@@ -5304,7 +5304,7 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
 
 	/* Whatever else happens, we should no longer be inside of an async query */
 	imp_dbh->async_status = -1;
-	if (imp_dbh->async_sth)
+	if (NULL != imp_dbh->async_sth)
 		imp_dbh->async_sth->async_status = -1;
 
 	/* Read in the result - assume only one */
@@ -5446,7 +5446,7 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
 
 	/* If we made it this far, safe to assume there is no running query */
 	imp_dbh->async_status = 0;
-	if (imp_dbh->async_sth)
+	if (NULL != imp_dbh->async_sth)
 		imp_dbh->async_sth->async_status = 0;
 
 	if (TEND_slow) TRC(DBILOGFP, "%sEnd handle_old_async\n", THEADER_slow);
