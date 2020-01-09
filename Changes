@@ -1,4 +1,15 @@
 
+Version 3.10.1  unreleased
+
+  - Prevent double-free memory errors
+    [Greg Sabino Mullane]
+    [RT #130681]
+
+  - Fix crash when pg_error_field is called
+    [Greg Sabino Mullane]
+    [RT #130721]
+
+
 Version 3.10.0  (released September 3, 2019)
 
   - Prevent memory leak related to pg_error_field
