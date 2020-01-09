@@ -4374,6 +4374,8 @@ SV * pg_db_error_field (SV *dbh, char * fieldname)
     int fieldcode = 0;
     char * startstring = fieldname;
 
+	if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_error_field\n", THEADER_slow);
+
     while (*fieldname) {
         if (*fieldname >= 'a' && *fieldname <= 'z')
             *fieldname += 'A' - 'a';
@@ -4461,11 +4463,14 @@ SV * pg_db_error_field (SV *dbh, char * fieldname)
     }
     else {
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, "Invalid error field");
+		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_error_field (error: invalid field)\n", THEADER_slow);
 		return &PL_sv_undef;
     }
 
-    return NULL == PQresultErrorField(imp_dbh->last_result, fieldcode) ? Nullsv : 
-        sv_2mortal(newSVpv(PQresultErrorField(imp_dbh->last_result, fieldcode), 0));
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_error_field (fieldcode: %d)\n", THEADER_slow, fieldcode);
+
+    return NULL == PQresultErrorField(imp_dbh->last_result, fieldcode) ? &PL_sv_undef : 
+      sv_2mortal(newSVpv(PQresultErrorField(imp_dbh->last_result, fieldcode), 0));
 
 } /* end of pg_db_error_field */
 
