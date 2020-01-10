@@ -709,7 +709,9 @@ version: $version
 		}
 		$@ and return $helpconnect, $@, undef;
 		$dbh->do("SET search_path TO $S");
-		$dbh->do('CREATE SEQUENCE dbd_pg_testsequence');
+		eval { $dbh->do('CREATE SEQUENCE dbd_pg_testsequence'); };
+        $@ and Test::More::BAIL_OUT('Failed to create test sequence');
+
 		# If you add columns to this, please do not use reserved words!
 		$SQL = q{
 CREATE TABLE dbd_pg_test (
@@ -731,11 +733,12 @@ CREATE TABLE dbd_pg_test (
 };
 
 		$dbh->{Warn} = 0;
-		$dbh->do($SQL);
+		eval { $dbh->do($SQL); };
+        $@ and Test::More::BAIL_OUT('Failed to create test sequence');
 		$dbh->{Warn} = 1;
 		$dbh->do(q{COMMENT ON COLUMN dbd_pg_test.id IS 'Bob is your uncle'});
 
-} ## end setup
+	} ## end setup
 
 $dbh->commit() unless $dbh->{AutoCommit};
 
