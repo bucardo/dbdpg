@@ -1,5 +1,5 @@
 
-Version 3.10.1  unreleased
+Version 3.10.1  (released January 13, 2020)
 
   - Prevent double-free memory errors
     [Greg Sabino Mullane]
