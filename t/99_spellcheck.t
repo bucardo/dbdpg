@@ -217,7 +217,7 @@ datetime
 DATETIME
 dbd
 DBD
-dbdip
+dbdimp
 dbdpg
 DBDPG
 dbgpg
