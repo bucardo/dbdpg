@@ -14,32 +14,32 @@ my @versions = qw/ 9.0 9.1 9.2 9.3 HEAD /;
 
 ## Sanity check:
 for my $lver (@versions) {
-	my $libdir = "$basedir/$lver/lib";
-	-d $libdir or warn qq{Could not find directory: $libdir\n};
+    my $libdir = "$basedir/$lver/lib";
+    -d $libdir or warn qq{Could not find directory: $libdir\n};
 }
 
 for my $lver (@versions) {
-	my $libdir = "$basedir/$lver/lib";
-	next if ! -d $libdir;
-	for my $tver (@versions) {
+    my $libdir = "$basedir/$lver/lib";
+    next if ! -d $libdir;
+    for my $tver (@versions) {
 
-		my $libdir2 = "$basedir/$tver/lib";
-		next if ! -d $libdir2;
+        my $libdir2 = "$basedir/$tver/lib";
+        next if ! -d $libdir2;
 
-		my $outfile = "dbdpg.testing.$lver.vs.$tver.log";
-		print "Testing library $lver against $tver: results stored in $outfile\n";
-		open my $fh, '>', $outfile or die qq{Could not open "$outfile": $!\n};
+        my $outfile = "dbdpg.testing.$lver.vs.$tver.log";
+        print "Testing library $lver against $tver: results stored in $outfile\n";
+        open my $fh, '>', $outfile or die qq{Could not open "$outfile": $!\n};
 
-		my $COM = "POSTGRES_LIB=/home/greg/code/postgres/$lver/lib perl Makefile.PL 2>&1";
-		print "$COM\n";
-		print $fh qx{$COM};
+        my $COM = "POSTGRES_LIB=/home/greg/code/postgres/$lver/lib perl Makefile.PL 2>&1";
+        print "$COM\n";
+        print $fh qx{$COM};
 
-		(my $port = $tver) =~ s/\.//;
-		$port = "5$port" . 0;
-		$port =~ /HEAD/ and $port = 5999;
+        (my $port = $tver) =~ s/\.//;
+        $port = "5$port" . 0;
+        $port =~ /HEAD/ and $port = 5999;
 
-		$COM = "PGPORT=$port make test";
-		print "$COM\n";
-		print $fh qx{$COM};
-	}
+        $COM = "PGPORT=$port make test";
+        print "$COM\n";
+        print $fh qx{$COM};
+    }
 }

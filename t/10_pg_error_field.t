@@ -13,7 +13,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if (! $dbh) {
-	plan skip_all => 'Connection to database failed, cannot continue testing';
+    plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 
 my $t='Connect to database for pg_error_field testing';

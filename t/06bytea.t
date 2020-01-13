@@ -15,7 +15,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if (! $dbh) {
-	plan skip_all => 'Connection to database failed, cannot continue testing';
+    plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 plan tests => 36;
 
@@ -23,7 +23,7 @@ isnt ($dbh, undef, 'Connect to database for bytea testing');
 
 my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 if ($pgversion >= 80100) {
-	$dbh->do('SET escape_string_warning = false');
+    $dbh->do('SET escape_string_warning = false');
 }
 
 my ($sth, $t);
@@ -135,5 +135,5 @@ sub test_outputs {
     is ($dbh->quote($string, SQL_BINARY), $expected);
     is ($dbh->quote($string, SQL_VARBINARY), $expected);
     is ($dbh->quote($string, SQL_LONGVARBINARY), $expected);
-	return;
+    return;
 }

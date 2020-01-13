@@ -20,7 +20,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if (! $dbh) {
-	plan skip_all => 'Connection to database failed, cannot continue testing';
+    plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 
 isnt ($dbh, undef, 'Connect to database for unicode testing');
@@ -113,8 +113,8 @@ foreach (@tests) {
         skip "Can't do $range tests with server_encoding='$server_encoding'", 1
             if $range !~ ($ranges{$server_encoding} || qr/\A(?:ascii)\z/);
 
-		skip 'Cannot perform range tests if client_encoding is not UTF8', 1
-			if $client_encoding ne 'UTF8';
+        skip 'Cannot perform range tests if client_encoding is not UTF8', 1
+            if $client_encoding ne 'UTF8';
 
         foreach my $enable_utf8 (1, 0, -1) {
             my $desc = "$state $range UTF-8 $test->{qtype} $type (pg_enable_utf8=$enable_utf8)";

@@ -19,7 +19,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if (! $dbh) {
-	plan skip_all => 'Connection to database failed, cannot continue testing';
+    plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 plan tests => 128;
 
@@ -65,33 +65,33 @@ is ($sth->{pg_switch_prepared}, 6, $t);
 
 $t='Running with statement attribute pg_switch_prepared at 6 works';
 for (1..10) {
-	$sth->execute(1);
-	my $it = "$t (run $_ of 10)";
-	ok ($sth->execute, $it);
+    $sth->execute(1);
+    my $it = "$t (run $_ of 10)";
+    ok ($sth->execute, $it);
 }
 
 $t='Running with statement attribute pg_switch_prepared at -1 works';
 $sth->{pg_switch_prepared} = -1;
 for (1..4) {
-	$sth->execute(1);
-	my $it = "$t (run $_ of 4)";
-	ok ($sth->execute, $it);
+    $sth->execute(1);
+    my $it = "$t (run $_ of 4)";
+    ok ($sth->execute, $it);
 }
 
 $t='Running with statement attribute pg_switch_prepared at 0 works';
 $sth->{pg_switch_prepared} = 0;
 for (1..4) {
-	$sth->execute(1);
-	my $it = "$t (run $_ of 4)";
-	ok ($sth->execute, $it);
+    $sth->execute(1);
+    my $it = "$t (run $_ of 4)";
+    ok ($sth->execute, $it);
 }
 
 $t='Running with statement attribute pg_switch_prepared at 1 works';
 $sth->{pg_switch_prepared} = 1;
 for (1..4) {
-	$sth->execute(1);
-	my $it = "$t (run $_ of 4)";
-	ok ($sth->execute, $it);
+    $sth->execute(1);
+    my $it = "$t (run $_ of 4)";
+    ok ($sth->execute, $it);
 }
 
 $t='Prepare/execute with pg_server_prepare on at database handle works';
@@ -103,7 +103,7 @@ ok ($sth->execute, $t);
 ## We must send a hashref as the final arg
 $t='Prepare failes when sent a non-hashref';
 eval {
-	$sth = $dbh->prepare('SELECT 123', ['I am not a hashref!']);
+    $sth = $dbh->prepare('SELECT 123', ['I am not a hashref!']);
 };
 like ($@, qr{not a hash}, $t);
 
@@ -252,43 +252,43 @@ $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, val) VALUES (?,?)');
 
 $t='Statement handle method "bind_param_array" fails if second arg is a hashref';
 eval {
-	$sth->bind_param_array(1, {}, SQL_INTEGER);
+    $sth->bind_param_array(1, {}, SQL_INTEGER);
 };
 like ($@, qr{must be a scalar or an arrayref}, $t);
 
 $t='Statement handle method "bind_param_array" fails if first arg is not a number';
 eval {
-	$sth->bind_param_array('bread pudding', 123, SQL_INTEGER);
+    $sth->bind_param_array('bread pudding', 123, SQL_INTEGER);
 };
 like ($@, qr{named placeholders}, $t);
 
 $t='Statement handle method "bind_param_array" works binding three values to the first placeholder';
 eval {
-	$sth->bind_param_array(1, [ 30, 31, 32 ], SQL_INTEGER);
+    $sth->bind_param_array(1, [ 30, 31, 32 ], SQL_INTEGER);
 };
 is ($@, q{}, $t);
 
 $t='Statement handle method "bind_param_array" works binding one scalar value to the second placeholder';
 eval {
-	$sth->bind_param_array(2, 'Mulberry');
+    $sth->bind_param_array(2, 'Mulberry');
 };
 is ($@, q{}, $t);
 
 $t='Statement handle method "bind_param_array" works binding three values to the second placeholder';
 eval {
-	$sth->bind_param_array(2, [ 'Mango', 'Strawberry', 'Gooseberry' ]);
+    $sth->bind_param_array(2, [ 'Mango', 'Strawberry', 'Gooseberry' ]);
 };
 is ($@, q{}, $t);
 
 $t='Statement handle method "bind_param_array" works when binding one value to the second placeholder';
 eval {
-	$sth->bind_param_array(2, [ 'Mangoz' ]);
+    $sth->bind_param_array(2, [ 'Mangoz' ]);
 };
 is ($@, q{}, $t);
 
 $t='Statement handle method "bind_param_array" works when binding two values to the second placeholder';
 eval {
-	$sth->bind_param_array(2, [ 'Plantain', 'Apple' ]);
+    $sth->bind_param_array(2, [ 'Plantain', 'Apple' ]);
 };
 is ($@, q{}, $t);
 
@@ -313,13 +313,13 @@ $sth->bind_param_array(2, 'fruit');
 
 my $counter=0;
 my @insertvals = (
-									[33 => 'Peach'],
-									[34 => 'Huckleberry'],
-									[35 => 'Guava'],
-									[36 => 'Lemon'],
-								 );
+                                    [33 => 'Peach'],
+                                    [34 => 'Huckleberry'],
+                                    [35 => 'Guava'],
+                                    [36 => 'Lemon'],
+                                 );
 sub getval {
-	return $insertvals[$counter++];
+    return $insertvals[$counter++];
 }
 
 $t='Statement method handle "execute_array" works with ArrayTupleFetch';
@@ -435,23 +435,23 @@ is_deeply ($result, $expected, $t);
 
 
 SKIP: {
-	if ($DBI::VERSION >= 1.603) {
-		skip ('fetchall_arrayref max rows broken in DBI 1.603', 2);
-	}
+    if ($DBI::VERSION >= 1.603) {
+        skip ('fetchall_arrayref max rows broken in DBI 1.603', 2);
+    }
 
-	# Test of the 'maxrows' argument
-	$t=q{Statement handle method "fetchall_arrayref" works with a 'maxrows' argument};
-	$sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id >= 33 ORDER BY id ASC LIMIT 10');
-	$sth->execute();
-	$result = $sth->fetchall_arrayref(undef,2);
-	$expected = [[33,'Peach'],[34,'Huckleberry']];
-	is_deeply ($result, $expected, $t);
+    # Test of the 'maxrows' argument
+    $t=q{Statement handle method "fetchall_arrayref" works with a 'maxrows' argument};
+    $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id >= 33 ORDER BY id ASC LIMIT 10');
+    $sth->execute();
+    $result = $sth->fetchall_arrayref(undef,2);
+    $expected = [[33,'Peach'],[34,'Huckleberry']];
+    is_deeply ($result, $expected, $t);
 
-	$t=q{Statement handle method "fetchall_arrayref" works with an arrayref slice and a 'maxrows' argument};
-	$result = $sth->fetchall_arrayref([1],2);
-	$expected = [['Guava'],['Lemon']];
-	$sth->finish();
-	is_deeply ($result, $expected, $t);
+    $t=q{Statement handle method "fetchall_arrayref" works with an arrayref slice and a 'maxrows' argument};
+    $result = $sth->fetchall_arrayref([1],2);
+    $expected = [['Guava'],['Lemon']];
+    $sth->finish();
+    is_deeply ($result, $expected, $t);
 }
 
 #
@@ -462,7 +462,7 @@ $t='Statement handle method "fetchall_hashref" gives an error when called with n
 $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (33,34)');
 $sth->execute();
 eval {
-	$sth->fetchall_hashref();
+    $sth->fetchall_hashref();
 };
 isnt ($@, q{}, $t);
 
@@ -542,7 +542,7 @@ $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (33,34) ORDER 
 $sth->execute();
 my $bindme2;
 eval {
-	$sth->bind_columns(1);
+    $sth->bind_columns(1);
 };
 isnt ($@, q{}, $t);
 
@@ -567,8 +567,8 @@ is ($result, q{}, $t);
 
 $t='Statement handle method "state" returns a five-character code on error';
 eval {
-	$sth = $dbh->prepare('SELECT dbdpg_throws_an_error');
-	$sth->execute();
+    $sth = $dbh->prepare('SELECT dbdpg_throws_an_error');
+    $sth->execute();
 };
 $result = $sth->state();
 like ($result, qr/^[A-Z0-9]{5}$/, $t);
@@ -585,23 +585,23 @@ is ($result, '42703', $t);
 #
 
 SKIP: {
-	if ($DBI::VERSION < 1.54) {
-		skip ('DBI must be at least version 1.54 to test private_attribute_info', 2);
-	}
+    if ($DBI::VERSION < 1.54) {
+        skip ('DBI must be at least version 1.54 to test private_attribute_info', 2);
+    }
 
 
-	$t='Statement handle method "private_attribute_info" returns at least one record';
-	$sth = $dbh->prepare('SELECT 123');
-	my $private = $sth->private_attribute_info();
-	my ($valid,$invalid) = (0,0);
-	for my $name (keys %$private) {
-		$name =~ /^pg_\w+/ ? $valid++ : $invalid++;
-	}
-	cmp_ok ($valid, '>=', 1, $t);
+    $t='Statement handle method "private_attribute_info" returns at least one record';
+    $sth = $dbh->prepare('SELECT 123');
+    my $private = $sth->private_attribute_info();
+    my ($valid,$invalid) = (0,0);
+    for my $name (keys %$private) {
+        $name =~ /^pg_\w+/ ? $valid++ : $invalid++;
+    }
+    cmp_ok ($valid, '>=', 1, $t);
 
-	$t='Statement handle method "private_attribute_info" returns only internal names';
-	$sth->finish();
-	is ($invalid, 0, $t);
+    $t='Statement handle method "private_attribute_info" returns only internal names';
+    $sth->finish();
+    is ($invalid, 0, $t);
 }
 
 
@@ -686,7 +686,7 @@ is ($sth->{pg_current_row}, 1, $t);
 $t=q{Statement handle attribute pg_current_row returns correct value while fetching};
 my $x = 2;
 while (defined $sth->fetch()) {
-	is ($sth->{pg_current_row}, $x++, $t);
+    is ($sth->{pg_current_row}, $x++, $t);
 }
 $t=q{Statement handle attribute pg_current_row returns 0 when done fetching};
 is ($sth->{pg_current_row}, 0, $t);
@@ -701,37 +701,37 @@ is ($sth->{pg_current_row}, 0, $t);
 #
 
 SKIP: {
-	if ($^O =~ /Win/) {
-		skip ('Cannot test POSIX signalling on Windows', 1);
-	}
+    if ($^O =~ /Win/) {
+        skip ('Cannot test POSIX signalling on Windows', 1);
+    }
 
-	$dbh->do('INSERT INTO dbd_pg_test (id) VALUES (?)',undef,1);
-	$dbh->commit;
-	$dbh->do('SELECT * FROM dbd_pg_test WHERE id = ? FOR UPDATE',undef,1);
+    $dbh->do('INSERT INTO dbd_pg_test (id) VALUES (?)',undef,1);
+    $dbh->commit;
+    $dbh->do('SELECT * FROM dbd_pg_test WHERE id = ? FOR UPDATE',undef,1);
 
-	my $dbh2 = $dbh->clone;
-	$dbh2->do('SET search_path TO ' . $dbh->selectrow_array('SHOW search_path'));
+    my $dbh2 = $dbh->clone;
+    $dbh2->do('SET search_path TO ' . $dbh->selectrow_array('SHOW search_path'));
 
-	my $oldaction;
-	eval {
-		# This statement will block indefinitely because of the 'FOR UPDATE' clause,
-		# so we set up an alarm to cancel it after 2 seconds.
-		my $sthl = $dbh2->prepare('SELECT * FROM dbd_pg_test WHERE id = ? FOR UPDATE');
-		$sthl->{RaiseError} = 1;
+    my $oldaction;
+    eval {
+        # This statement will block indefinitely because of the 'FOR UPDATE' clause,
+        # so we set up an alarm to cancel it after 2 seconds.
+        my $sthl = $dbh2->prepare('SELECT * FROM dbd_pg_test WHERE id = ? FOR UPDATE');
+        $sthl->{RaiseError} = 1;
 
-		my $action = POSIX::SigAction->new(
-			sub {$sthl->cancel},POSIX::SigSet->new(SIGALRM));
-		$oldaction = POSIX::SigAction->new;
-		POSIX::sigaction(SIGALRM,$action,$oldaction);
+        my $action = POSIX::SigAction->new(
+            sub {$sthl->cancel},POSIX::SigSet->new(SIGALRM));
+        $oldaction = POSIX::SigAction->new;
+        POSIX::sigaction(SIGALRM,$action,$oldaction);
 
-		alarm(2); # seconds before alarm
-		$sthl->execute(1);
-		alarm(0); # cancel alarm (if execute didn't block)
-	};
-	# restore original signal handler
-	POSIX::sigaction(SIGALRM,$oldaction);
-	like ($@, qr/execute failed/, 'cancel');
-	$dbh2->disconnect();
+        alarm(2); # seconds before alarm
+        $sthl->execute(1);
+        alarm(0); # cancel alarm (if execute didn't block)
+    };
+    # restore original signal handler
+    POSIX::sigaction(SIGALRM,$oldaction);
+    like ($@, qr/execute failed/, 'cancel');
+    $dbh2->disconnect();
 }
 
 #
