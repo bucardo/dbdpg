@@ -6,20 +6,18 @@ use 5.006;
 use strict;
 use warnings;
 use Test::More;
+use File::Find;
 
-my (@testfiles,%fileslurp,$t);
+my (@testfiles,@perlfiles,@cfiles,%fileslurp,$t);
 
 if (! $ENV{AUTHOR_TESTING}) {
-	plan (skip_all =>  'Test skipped unless environment variable AUTHOR_TESTING is set');
+    plan (skip_all =>  'Test skipped unless environment variable AUTHOR_TESTING is set');
 }
 
-my @cfiles = (qw/ dbdimp.c quote.c types.c /);
-
-
 $ENV{LANG} = 'C';
-opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
-@testfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
-closedir $dir or die qq{Could not closedir "$dir": $!\n};
+find (sub { push @cfiles    => $File::Find::name if /\.c$/ and $_ ne 'Pg.c'; }, '.');
+find (sub { push @testfiles => $File::Find::name if /\.(t|pl)$/; }, 't');
+find (sub { push @perlfiles => $File::Find::name if /\.(pm|pl|t)$/; }, '.');
 
 ##
 ## Load all Test::More calls into memory
@@ -51,20 +49,20 @@ open my $fh, '<', $file or die qq{Could not open "$file": $!\n};
 my $point = 1;
 my %devfile;
 while (<$fh>) {
-	chomp;
-	if (1 == $point) {
-		next unless /File List/;
-		$point = 2;
-		next;
-	}
-	last if /= Compiling/;
-	if (m{^([\w\./-]+) \- }) {
-		$devfile{$1} = $.;
-		next;
-	}
-	if (m{^(t/.+)}) {
-		$devfile{$1} = $.;
-	}
+    chomp;
+    if (1 == $point) {
+        next unless /File List/;
+        $point = 2;
+        next;
+    }
+    last if /= Compiling/;
+    if (m{^([\w\./-]+) \- }) {
+        $devfile{$1} = $.;
+        next;
+    }
+    if (m{^(t/.+)}) {
+        $devfile{$1} = $.;
+    }
 }
 close $fh or die qq{Could not close "$file": $!\n};
 
@@ -72,16 +70,16 @@ $file = 'MANIFEST';
 my %manfile;
 open $fh, '<', $file or die qq{Could not open "$file": $!\n};
 while (<$fh>) {
-	next unless /^(\S.+)/;
-	$manfile{$1} = $.;
+    next unless /^(\S.+)/;
+    $manfile{$1} = $.;
 }
 close $fh or die qq{Could not close "$file": $!\n};
 
 $file = 'MANIFEST.SKIP';
 open $fh, '<', $file or die qq{Could not open "$file": $!\n};
 while (<$fh>) {
-	next unless m{^(t/.*)};
-	$manfile{$1} = $.;
+    next unless m{^(t/.*)};
+    $manfile{$1} = $.;
 }
 close $fh or die qq{Could not close "$file": $!\n};
 
@@ -89,9 +87,9 @@ close $fh or die qq{Could not close "$file": $!\n};
 ## Everything in MANIFEST[.SKIP] should also be in README.dev
 ##
 for my $file (sort keys %manfile) {
-	if (!exists $devfile{$file}) {
-		fail qq{File "$file" is in MANIFEST but not in README.dev\n};
-	}
+    if (!exists $devfile{$file}) {
+        fail qq{File "$file" is in MANIFEST but not in README.dev\n};
+    }
 }
 
 ##
@@ -99,53 +97,38 @@ for my $file (sort keys %manfile) {
 ##
 my %derived = map { $_, 1 } qw/Makefile Pg.c README.testdatabase dbdpg_test_database/;
 for my $file (sort keys %devfile) {
-	if (!exists $manfile{$file} and !exists $derived{$file}) {
-		fail qq{File "$file" is in README.dev but not in MANIFEST\n};
-	}
-	if (exists $manfile{$file} and exists $derived{$file}) {
-		fail qq{File "$file" is derived and should not be in MANIFEST\n};
-	}
+    if (!exists $manfile{$file} and !exists $derived{$file}) {
+        fail qq{File "$file" is in README.dev but not in MANIFEST\n};
+    }
+    if (exists $manfile{$file} and exists $derived{$file}) {
+        fail qq{File "$file" is derived and should not be in MANIFEST\n};
+    }
 }
 
 ##
 ## Make sure all Test::More function calls are standardized
 ##
 for my $file (sort keys %fileslurp) {
-	for my $linenum (sort {$a <=> $b} keys %{$fileslurp{$file}}) {
-		for my $func (sort keys %{$fileslurp{$file}{$linenum}}) {
-			$t=qq{Test::More method "$func" is in standard format inside $file at line $linenum};
+    for my $linenum (sort {$a <=> $b} keys %{$fileslurp{$file}}) {
+        for my $func (sort keys %{$fileslurp{$file}{$linenum}}) {
+            $t=qq{Test::More method "$func" is in standard format inside $file at line $linenum};
             my $line = $fileslurp{$file}{$linenum}{$func};
-			## Must be at start of line (optional whitespace and comment), a space, a paren, and something interesting
+            ## Must be at start of line (optional whitespace and comment), a space, a paren, and something interesting
             next if $line =~ /\w+ fail/;
             next if $line =~ /defined \$expected \? like/;
-			like ($line, qr{^\s*#?$func \(['\S]}, $t);
-		}
-	}
+            like ($line, qr{^\s*#?$func \(['\S]}, $t);
+        }
+    }
 }
 
 ##
-## Check C files for consistent whitespace
+## Check C and Perl files for errant tabs
 ##
-for my $file (@cfiles) {
+for my $file (@cfiles, @perlfiles) {
     my $tabfail = 0;
     open my $fh, '<', $file or die "Could not open $file: $!\n";
-    my $inquote = 0;
     while (<$fh>) {
-        if ($inquote) {
-            if (m{^\Q*/}) {
-                $inquote = 0;
-            }
-            next;
-        }
-        if (m{^\Q/*}) {
-            $inquote = 1;
-            next;
-        }
-
-        next if ! /\t/;
-
-        $tabfail++;
-        warn $_;
+        $tabfail++ if /\t/;
     }
     close $fh;
     if ($tabfail) {
