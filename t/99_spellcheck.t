@@ -217,7 +217,7 @@ datetime
 DATETIME
 dbd
 DBD
-dbdimp
+dbdip
 dbdpg
 DBDPG
 dbgpg
@@ -397,7 +397,10 @@ PQexecPrepared
 PQprepare
 PQprotocolVersion
 PQresultErrorField
+PQsend
 PQsendQuery
+PQsendQueryParams
+PQsendQueryPrepared
 PQserverVersion
 PQsetErrorVerbosity
 pragma
