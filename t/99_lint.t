@@ -142,18 +142,17 @@ for my $file (@cfiles) {
             next;
         }
 
-        ## Special exception for types.c:
-        next if $file eq 'types.c' and /^ \{/;
+        next if ! /\t/;
 
-        $tabfail++ if /^ /;
-        warn $_ if /^ /;
+        $tabfail++;
+        warn $_;
     }
     close $fh;
     if ($tabfail) {
-        fail (qq{File "$file" contains leading tabs, not spaces: $tabfail});
+        fail (qq{File "$file" contains one or more tabs: $tabfail});
     }
     else {
-        pass (qq{File "$file" has no leading spaces});
+        pass (qq{File "$file" has no tabs});
     }
 }
 
