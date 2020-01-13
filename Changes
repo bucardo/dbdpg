@@ -9,6 +9,7 @@ Version 3.10.1  (released January 13, 2020)
     [Greg Sabino Mullane]
     [RT #130721]
 
+  - Update the list of Postgres reserved words in quote.c
 
 Version 3.10.0  (released September 3, 2019)
 
