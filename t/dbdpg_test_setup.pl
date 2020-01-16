@@ -461,7 +461,7 @@ version: $version
             $info = qx{netstat -na 2>&1};
             $evalok = 1;
         };
-        if (!$evalok) {
+        if (!$evalok or ! defined $info) {
             warn "netstat call failed, trying port $testport\n";
         }
         else {
