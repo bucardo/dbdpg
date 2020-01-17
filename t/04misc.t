@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 101;
+plan tests => 95;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -29,92 +29,88 @@ eval {
 };
 is ($@, q{}, $t);
 
-$t = 'Constant PG_MIN_SMALLINT returns correct value';
+$t = 'Constant PG_MIN_SMALLINT returns expected value of -32768';
 my $sth = $dbh->prepare('SELECT ?::smallint');
 $sth->execute(PG_MIN_SMALLINT);
 is ( $sth->fetch->[0], -32768, $t);
 
+$t = 'Trying to fit one less than PG_MIN_SMALLINT into a smallint returns expected error';
 eval { $sth->execute(PG_MIN_SMALLINT-1) };
+is ( $dbh->state, '22003', $t);
 $dbh->rollback();
-like ($@, qr/ERROR/, $t);
 
-$sth->execute(PG_MIN_SMALLINT+1);
-is ( $sth->fetch->[0], -32767, $t);
-
-$t = 'Constant PG_MAX_SMALLINT returns correct value';
+$t = 'Constant PG_MAX_SMALLINT returns expected value of 32767';
 $sth->execute(PG_MAX_SMALLINT);
 is ( $sth->fetch->[0], 32767, $t);
 
+$t = 'Trying to fit one more than PG_MAX_SMALLINT into a smallint returns expected error';
 eval { $sth->execute(PG_MAX_SMALLINT+1) };
+is ( $dbh->state, '22003', $t);
 $dbh->rollback();
-like ($@, qr/ERROR/, $t);
 
-$sth->execute(PG_MAX_SMALLINT-1);
-is ( $sth->fetch->[0], 32766, $t);
-
-$t = 'Constant PG_MIN_INTEGER returns correct value';
+$t = 'Constant PG_MIN_INTEGER returns expected value of -2147483648';
 $sth = $dbh->prepare('SELECT ?::integer');
 $sth->execute(PG_MIN_INTEGER);
 is ( $sth->fetch->[0], -2147483648, $t);
 
+$t = 'Trying to fit one less than PG_MIN_INTEGER into an int returns expected error';
 eval { $sth->execute(PG_MIN_INTEGER-1) };
+is ( $dbh->state, '22003', $t);
 $dbh->rollback();
-like ($@, qr/ERROR/, $t);
 
-$sth->execute(PG_MIN_INTEGER+1);
-is ( $sth->fetch->[0], -2147483647, $t);
-
-$t = 'Constant PG_MAX_INTEGER returns correct value';
+$t = 'Constant PG_MAX_INTEGER returns expected value of 2147483647';
 $sth->execute(PG_MAX_INTEGER);
 is ( $sth->fetch->[0], 2147483647, $t);
 
+$t = 'Trying to fit one more than PG_MAX_INTEGER into an int returns expected error';
 eval { $sth->execute(PG_MAX_INTEGER+1) };
+is ( $dbh->state, '22003', $t);
 $dbh->rollback();
-like ($@, qr/ERROR/, $t);
 
-$sth->execute(PG_MAX_INTEGER-1);
-is ( $sth->fetch->[0], 2147483646, $t);
-
-$t = 'Constant PG_MIN_BIGINT returns correct value';
+$t = 'Constant PG_MIN_BIGINT returns expected value of -9223372036854775808';
 $sth = $dbh->prepare('SELECT ?::bigint');
 $sth->execute(PG_MIN_BIGINT);
 is ( $sth->fetch->[0], '-9223372036854775808', $t);
 
-eval { $sth->execute(PG_MIN_BIGINT-1) };
+$t = 'Trying to fit one less than PG_MIN_BIGINT into a bigint returns expected error';
+## Unlike the others, we cannot modify Perl side in case of a 32-bit system
+$sth = $dbh->prepare('SELECT ?::bigint-1');
+eval { $sth->execute(PG_MIN_BIGINT) };
+is ( $dbh->state, '22003', $t);
 $dbh->rollback();
-like ($@, qr/ERROR/, $t);
 
-$sth->execute(PG_MIN_BIGINT+1);
-is ( $sth->fetch->[0], '-9223372036854775807', $t);
-
-$t = 'Constant PG_MAX_BIGINT returns correct value';
+$t = 'Constant PG_MAX_BIGINT returns expected value of 9223372036854775807';
+$sth = $dbh->prepare('SELECT ?::bigint');
 $sth->execute(PG_MAX_BIGINT);
 is ( $sth->fetch->[0], '9223372036854775807', $t);
 
-eval { $sth->execute(PG_MAX_BIGINT+1) };
+$t = 'Trying to fit one more than PG_MAX_BIGINT into a bigint returns expected error';
+$sth = $dbh->prepare('SELECT ?::bigint+1');
+eval { $sth->execute(PG_MAX_BIGINT) };
+is ( $dbh->state, '22003', $t);
 $dbh->rollback();
-like ($@, qr/ERROR/, $t);
 
-$sth->execute(PG_MAX_BIGINT-1);
-is ( $sth->fetch->[0], '9223372036854775806', $t);
-
-$t = 'Constant PG_MIN_SMALLSERIAL returns correct value';
+$t = 'Constant PG_MIN_SMALLSERIAL is set to 1';
 is (PG_MIN_SMALLSERIAL, 1, $t);
 
-$t = 'Constant PG_MA_SMALLSERIAL returns correct value';
-is (PG_MAX_SMALLSERIAL, PG_MAX_SMALLINT, $t);
+$t = 'Constant PG_MAX_SMALLSERIAL returns expected value of 32767 (same as PG_MAX_SMALLINT)';
+$sth = $dbh->prepare('SELECT ?::bigint');
+$sth->execute(PG_MAX_SMALLSERIAL);
+is ( $sth->fetch->[0], 32767, $t);
 
-$t = 'Constant PG_MIN_SERIAL returns correct value';
+$t = 'Constant PG_MIN_SERIAL is set to 1';
 is (PG_MIN_SERIAL, 1, $t);
 
-$t = 'Constant PG_MAX_SERIAL returns correct value';
-is (PG_MAX_SERIAL, PG_MAX_INTEGER, $t);
+$t = 'Constant PG_MAX_SERIAL returns expected value of 2147483647 (same as PG_MAX_INTEGER)';
+$sth->execute(PG_MAX_SERIAL);
+is ( $sth->fetch->[0], 2147483647, $t);
 
-$t = 'Constant PG_MIN_BIGSERIAL returns correct value';
+$t = 'Constant PG_MIN_BIGSERIAL is set to 1';
 is (PG_MIN_BIGSERIAL, 1, $t);
 
-$t = 'Constant PG_MAX_BIGSERIAL returns correct value';
-is (PG_MAX_BIGSERIAL, PG_MAX_BIGINT, $t);
+$t = 'Constant PG_MIN_BIGINT returns expected value of 9223372036854775807 (same as PG_MAX_BIGINT)';
+$sth->execute(PG_MAX_BIGSERIAL);
+is ( $sth->fetch->[0], '9223372036854775807', $t);
 
 $t='Method "server_trace_flag" returns undef on bogus argument';
 is ($num, undef, $t);
