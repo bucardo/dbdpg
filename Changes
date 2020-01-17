@@ -1,5 +1,5 @@
 
-Version ??
+Version 3.10.2  (unreleased)
 
   - Adjust tests to pass on 32-bit machines
     [Greg Sabino Mullane]
