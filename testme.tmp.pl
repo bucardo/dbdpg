@@ -35,6 +35,8 @@ $dbh->{RaiseError} = 0;
 $dbh->{PrintError} = 1;
 $dbh->{AutoCommit} = 1;
 
+update_rule_return();
+
 exit;
 
 #column_types_github_issue_24();
@@ -57,6 +59,133 @@ exit;
 
 #memory_leak_arrays();
 
+
+sub update_rule_return {
+
+my @statements = (
+    q[DROP TABLE IF EXISTS test CASCADE],
+    q[CREATE TABLE test(id int primary key, animal text, sound text)],
+    q[CREATE VIEW test_view AS SELECT * FROM test],
+    q[CREATE OR REPLACE RULE test_fallback AS ON UPDATE TO test_view
+        DO INSTEAD NOTHING],
+    q[CREATE RULE test_deny AS ON UPDATE TO test_view
+        WHERE NEW.animal = OLD.animal
+        DO INSTEAD (SELECT true)],
+    q[CREATE OR REPLACE RULE test_allow AS ON UPDATE TO test_view
+        WHERE NEW.animal <> OLD.animal
+        DO INSTEAD (
+            UPDATE test SET animal = NEW.animal,
+            sound = NEW.sound
+            WHERE id = OLD.id;
+            SELECT true;
+        )],
+    q[INSERT into test VALUES (1,'rabbit','purr'),(2,'fox','shriek')],
+);
+
+foreach my $statement (@statements) {
+    $dbh->do($statement);
+}
+
+sub is {
+my ($got, $expected, $name) = @_;
+
+warn "OK: $name\n" and return if $got eq $expected;
+warn "Failed test: got ($got) expected ($expected) for $name\n";
+}
+
+my ($found,$animal,$sound);
+my $sth_s = $dbh->prepare('SELECT animal,sound FROM test WHERE id = ?');
+my $sth_u = $dbh->prepare('UPDATE test_view SET animal = ?, sound = ? WHERE id = ?', {});
+#,{ pg_server_prepare => 0} makes a difference ???
+
+## PGRES_TUPLES_OK vs PGRES_COMMAND_OK
+
+## How does psql do the right thing?
+
+# Test update that will be allowed by rule
+print "Normal UPDATE\n";
+my ($rv2) = $sth_u->execute('bear','roar',1);
+$sth_s->execute(1);
+($animal,$sound) = $sth_s->fetchrow_array();
+$sth_s->finish;
+is($animal,'bear','animal ok');
+is($sound,'roar','sound was changed');
+is($sth_u->state,'','state ok');
+is($sth_u->rows,1,'1 rows');
+is($rv2,1,'rv is 1');
+is($sth_u->{Active},1,'Sth active');
+is($sth_u->fetch->[0],1,'Row was found: TWO');
+$sth_u->finish();
+
+exit;
+
+
+# Test update that will be denied by rule
+# psql> kalidb_test=# UPDATE test_view SET animal = 'rabbit', sound = 'roar' WHERE id = 1;
+# psql>  bool
+# psql> ------
+# psql>  t
+# psql> (1 row)
+# psql>
+# psql> UPDATE 0
+my ($rv1) = $sth_u->execute('rabbit','roar',1);
+
+#$sth_s->execute(1);
+#($animal,$sound) = $sth_s->fetchrow_array();
+#$sth_s->finish;is($animal,'rabbit','animal ok');
+#is($sound,'purr','sound was not changed');
+
+is($sth_u->state,'','state ok');
+is($sth_u->rows,0,'0 rows');
+is($rv1,'0E0','rv is 0E0');
+
+is($sth_u->{Active},1,'Sth active');
+is($sth_u->fetch->[0],1,'Row was found');
+# dies here
+# DBD::Pg::st fetch failed: no statement executing
+$sth_u->finish();
+#die "Made it past!\n";
+
+# Test update that will be acepted
+# psql> kalidb_test=# UPDATE test_view SET animal = 'bear', sound = 'roar' WHERE id = 1;
+# psql>  bool
+# psql> ------
+# psql>  t
+# psql> (1 row)
+# psql>
+# psql> UPDATE 1
+my ($rv2) = $sth_u->execute('bear','roar',1);
+$sth_s->execute(1);
+($animal,$sound) = $sth_s->fetchrow_array();
+$sth_s->finish;
+is($animal,'bear','animal ok');
+is($sound,'roar','sound was changed');
+is($sth_u->state,'','state ok');
+is($sth_u->rows,1,'1 rows');
+is($rv2,1,'rv is 1');
+is($sth_u->{Active},1,'Sth active');
+is($sth_u->fetch->[0],1,'Row was found: TWO');
+$sth_u->finish();
+exit;
+ 
+# Test update on non-existant record
+# psql> kalidb_test=# UPDATE test_view SET animal = 'wolf', sound = 'howl' WHERE id = 99;
+# psql>  bool
+# psql> ------
+# psql> (0 rows)
+# psql>
+# psql> UPDATE 0
+my ($rv3) = $sth_u->execute('wolf','howl',99);
+$sth_s->execute(3);
+($animal,$sound) = $sth_s->fetchrow_array();
+$sth_s->finish;
+is($animal,undef,'no animal');
+is($sth_u->state,'','state ok');
+is($sth_u->rows,0,'0 rows');
+is($rv3,'0E0','rv is 0E0');
+is($sth_u->{Active},'','Sth active');
+$sth_u->finish();
+}
 
 sub column_types_github_issue_24 {
 
