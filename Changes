@@ -1,4 +1,11 @@
 
+Version 3.10.3  (unreleased)
+
+    Set things cleared via PQclear to NULL as soon as possible, to remove race conditions.
+    [Greg Sabino Mullane]
+    [RT #131522]
+
+
 Version 3.10.2  (released January 17, 2020)
 
   - Adjust tests to pass on 32-bit machines
