@@ -371,6 +371,7 @@ static ExecStatusType _result(pTHX_ imp_dbh_t * imp_dbh, const char * sql)
     if (0 == imp_dbh->sth_result_owner && NULL != imp_dbh->last_result) {
         TRACE_PQCLEAR;
         PQclear(imp_dbh->last_result);
+        imp_dbh->last_result = NULL;
     }
 
     TRACE_PQEXEC;
@@ -2298,6 +2299,7 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     seg_t *      currseg;
     ph_t *       currph;
     long         power_of_ten;
+    bool         same_result;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_prepare_statement\n", THEADER_slow);
 
@@ -2362,16 +2364,18 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
         TRC(DBILOGFP, "PREPARE %s AS %s;\n\n", imp_sth->prepare_name, statement);
 
     /* If the last result is unclaimed, or if it belongs to us, free as needed */
+    same_result = imp_dbh->last_result == imp_sth->result ? 1 : 0;
     if ((0 == imp_dbh->sth_result_owner || (long int)imp_sth == imp_dbh->sth_result_owner)
         && NULL != imp_dbh->last_result) {
         TRACE_PQCLEAR;
         PQclear(imp_dbh->last_result);
+        imp_dbh->last_result = NULL;
     }
     /* If the above wasn't our result, free that too */
-    if (imp_dbh->last_result != imp_sth->result
-        && NULL != imp_sth->result) {
+    if (!same_result && NULL != imp_sth->result) {
         TRACE_PQCLEAR;
         PQclear(imp_sth->result);
+        imp_sth->result = NULL;
     }
 
     TRACE_PQPREPARE;
@@ -3077,6 +3081,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
     if (0 == imp_dbh->sth_result_owner && NULL != imp_dbh->last_result) {
         TRACE_PQCLEAR;
         PQclear(imp_dbh->last_result);
+        imp_dbh->last_result = NULL;
     }
     TRACE_PQEXEC;
     imp_dbh->last_result = PQexec(imp_dbh->conn, sql);
@@ -3176,6 +3181,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
     long          ret = -2;
     PQExecType    pqtype = PQTYPE_UNKNOWN;
     long          power_of_ten;
+    bool          same_result;
     
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_execute\n", THEADER_slow);
     
@@ -3394,16 +3400,18 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         else {
 
             /* If the last result is unclaimed, or if it belongs to us, free as needed */
+            same_result = imp_dbh->last_result == imp_sth->result ? 1 : 0;
             if ((0 == imp_dbh->sth_result_owner || (long int)imp_sth == imp_dbh->sth_result_owner)
                 && NULL != imp_dbh->last_result) {
                 TRACE_PQCLEAR;
                 PQclear(imp_dbh->last_result);
+                imp_dbh->last_result = NULL;
             }
             /* If the above wasn't our result, free that too */
-            if (imp_dbh->last_result != imp_sth->result
-                && NULL != imp_sth->result) {
+            if (!same_result && NULL != imp_sth->result) {
                 TRACE_PQCLEAR;
                 PQclear(imp_sth->result);
+                imp_sth->result = NULL;
             }
 
             TRACE_PQEXEC;
@@ -3486,16 +3494,18 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         else {
 
             /* If the last result is unclaimed, or if it belongs to us, free as needed */
+            same_result = imp_dbh->last_result == imp_sth->result ? 1 : 0;
             if ((0 == imp_dbh->sth_result_owner || (long int)imp_sth == imp_dbh->sth_result_owner)
                 && NULL != imp_dbh->last_result) {
                 TRACE_PQCLEAR;
                 PQclear(imp_dbh->last_result);
+                imp_dbh->last_result = NULL;
             }
             /* If the above wasn't our result, free that too */
-            if (imp_dbh->last_result != imp_sth->result
-                && NULL != imp_sth->result) {
+            if (!same_result && NULL != imp_sth->result) {
                 TRACE_PQCLEAR;
                 PQclear(imp_sth->result);
+                imp_sth->result = NULL;
             }
 
             TRACE_PQEXECPARAMS;
@@ -3561,16 +3571,18 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         else {
 
             /* If the last result is unclaimed, or if it belongs to us, free as needed */
+            same_result = imp_dbh->last_result == imp_sth->result ? 1 : 0;
             if ((0 == imp_dbh->sth_result_owner || (long int)imp_sth == imp_dbh->sth_result_owner)
                 && NULL != imp_dbh->last_result) {
                 TRACE_PQCLEAR;
                 PQclear(imp_dbh->last_result);
+                imp_dbh->last_result = NULL;
             }
             /* If the above wasn't our result, free that too */
-            if (imp_dbh->last_result != imp_sth->result
-                && NULL != imp_sth->result) {
+            if (!same_result && NULL != imp_sth->result) {
                 TRACE_PQCLEAR;
                 PQclear(imp_sth->result);
+                imp_sth->result = NULL;
             }
 
             TRACE_PQEXECPREPARED;
@@ -5144,6 +5156,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
     ExecStatusType status = PGRES_FATAL_ERROR;
     long rows = 0;
     char *cmdStatus = NULL;
+    bool same_result;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_result\n", THEADER_slow);
 
@@ -5215,17 +5228,19 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
         }
 
         if (NULL != imp_dbh->async_sth) {
+            same_result = imp_dbh->last_result == imp_dbh->async_sth->result ? 1 : 0;
             /* If the last result is unclaimed, or if it belongs to the async handle, free as needed */
             if ((0 == imp_dbh->sth_result_owner || (long int)imp_dbh->async_sth == imp_dbh->sth_result_owner)
                 && NULL != imp_dbh->last_result) {
                 TRACE_PQCLEAR;
-                PQclear(imp_dbh->last_result); /* Do not set to NULL yet */
+                PQclear(imp_dbh->last_result);
+                imp_dbh->last_result = NULL;
             }
             /* If the above wasn't the async handle's result, free that too */
-            if (imp_dbh->last_result != imp_dbh->async_sth->result
-                && NULL != imp_dbh->async_sth->result) {
+            if (!same_result && NULL != imp_dbh->async_sth->result) {
                 TRACE_PQCLEAR;
                 PQclear(imp_dbh->async_sth->result);
+                imp_dbh->async_sth->result = NULL;
             }
 
             imp_dbh->last_result = imp_dbh->async_sth->result = result;
