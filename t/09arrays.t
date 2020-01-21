@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 201;
+plan tests => 203;
 
 isnt ($dbh, undef, 'Connect to database for array testing');
 
@@ -621,6 +621,20 @@ is_deeply ($result, $expected, $t);
 $t=q{Empty text array is returned properly};
 $result = $dbh->selectall_arrayref(q{SELECT array(SELECT 'empty'::text WHERE 1=0)::text[]});
 is_deeply ($result, $expected, $t);
+
+SKIP: {
+    my $fancytime;
+    eval { require Time::Piece; $fancytime = Time::Piece->localtime;};
+    if ($@) {
+        skip ('Need Time::Piece for some tests', 2);
+    }
+
+    isa_ok($fancytime, 'Time::Piece');
+
+    $t=q{Objects send to be bound are unwrapped properly (e.g. Time::Piece)};
+    $dbh->do('SELECT ?::timestamptz', undef, $fancytime);
+    pass ($t);
+}
 
 cleanup_database($dbh,'test');
 $dbh->disconnect;
