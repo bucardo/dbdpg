@@ -2,15 +2,15 @@
 
 Version 3.10.4  (unreleased)
 
- - Allow localtime from Time::Piece to be used directly as a bind value again.
-   This applies to all "magical"" arrays.
-   [Greg Sabino Mullane]
-   [Github issue #63]
+  - Allow localtime from Time::Piece to be used directly as a bind value again.
+    This applies to all "magical"" arrays.
+    [Greg Sabino Mullane]
+    [Github issue #63]
 
 
 Version 3.10.3  (released January 20, 2020)
 
-    Set things cleared via PQclear to NULL as soon as possible, to remove race conditions.
+  - Set things cleared via PQclear to NULL as soon as possible, to remove race conditions.
     [Greg Sabino Mullane]
     [RT #131522]
 
