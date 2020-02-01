@@ -259,7 +259,7 @@ if ($Config{dlsrc} =~ /dl_none/) {
     sub MY::test { ## no critic
         my $string = shift->SUPER::test(@_);
         $string =~ s/(PERL_DL_NONLAZY=1)/PGINITDB="$initdb" $1/g;
-        return $string;
+        return "HARNESS_OPTIONS=j1\n$string";
     }
 }
 

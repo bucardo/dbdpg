@@ -2,6 +2,10 @@
 
 Version 3.10.4  (unreleased)
 
+  - Force tests to NOT run in parallel.
+    [Greg Sabino Mullane]
+    [RT #130834]
+
   - Allow localtime from Time::Piece to be used directly as a bind value again.
     This applies to all "magical"" arrays.
     [Greg Sabino Mullane]
