@@ -3,7 +3,7 @@
 Version 3.10.4  (unreleased)
 
   - Allow localtime from Time::Piece to be used directly as a bind value again.
-    This applies to all "magical"" arrays.
+    This applies to all "magical" arrays.
     [Greg Sabino Mullane]
     [Github issue #63]
 
