@@ -2,7 +2,7 @@
 
 ## Test of placeholders
 
-use 5.006;
+use 5.008001;
 use strict;
 use warnings;
 use Test::More;

@@ -2,7 +2,7 @@
 
 ## Test all handle attributes: database, statement, and generic ("any")
 
-use 5.006;
+use 5.008001;
 use strict;
 use warnings;
 use Data::Dumper;

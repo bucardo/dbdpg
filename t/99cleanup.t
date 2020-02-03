@@ -4,7 +4,7 @@
 ## Shutdown the test database if we created one
 ## Remove the entire directory if it was created as a tempdir
 
-use 5.006;
+use 5.008001;
 use strict;
 use warnings;
 use Test::More tests => 1;

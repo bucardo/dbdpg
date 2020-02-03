@@ -6,7 +6,7 @@ use warnings;
 use Data::Dumper;
 use DBI;
 use Cwd;
-use 5.006;
+use 5.008001;
 select(($|=1,select(STDERR),$|=1)[1]);
 
 my $superuser = 1;

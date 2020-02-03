@@ -3,7 +3,7 @@
 ## Simply test that we can load the DBI and DBD::Pg modules,
 ## and that the latter gives a good version
 
-use 5.006;
+use 5.008001;
 use strict;
 use warnings;
 use Test::More tests => 3;

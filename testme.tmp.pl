@@ -5,6 +5,7 @@ BEGIN {
     system 'make';
 }
 
+use 5.008001;
 use strict;
 use warnings;
 use DBI ':sql_types';

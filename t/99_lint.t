@@ -2,7 +2,7 @@
 
 ## Minor code cleanup checks
 
-use 5.006;
+use 5.008001;
 use strict;
 use warnings;
 use Test::More;
@@ -136,6 +136,46 @@ for my $file (@cfiles, @perlfiles) {
     }
     else {
         pass (qq{File "$file" has no tabs});
+    }
+}
+
+##
+## Make sure all Perl files request the same minimum version of Perl
+##
+my $firstversion = 0;
+my %ver;
+for my $file (@perlfiles) {
+
+    ## The App::Info items do not need this check
+    next if $file =~ m{/App/Info};
+
+    open my $fh, '<', $file or die "Could not open $file: $!\n";
+    my $minversion = 0;
+    while (<$fh>) {
+        if (/^use (\d+\.\d+);$/) {
+            $minversion = $1;
+            $firstversion ||= $minversion;
+            $ver{$file} = $minversion;
+            last;
+        }
+    }
+
+    close $fh;
+    if ($minversion) {
+        pass (qq{Found a minimum Perl version of $minversion for the file $file});
+    }
+    else {
+        fail (qq{Failed to fnd a minimum Perl version for the file $file});
+    }
+}
+
+for my $file (sort keys %ver) {
+    my $version = $ver{$file};
+    if ($version eq $firstversion) {
+        pass(qq{Correct minimum Perl version ($firstversion) for file $file});
+    }
+    else {
+        fail(qq{Wrong minimum Perl version ($version is not $firstversion) for file $file});
     }
 }
 

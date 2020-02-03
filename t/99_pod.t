@@ -3,7 +3,7 @@
 ## Check our Pod, requires Test::Pod
 ## Also done if available: Test::Pod::Coverage
 
-use 5.006;
+use 5.008001;
 use strict;
 use warnings;
 use Test::More;

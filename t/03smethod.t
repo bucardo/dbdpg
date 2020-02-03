@@ -6,7 +6,7 @@
 ## "finish"
 ## "dump_results"
 
-use 5.006;
+use 5.008001;
 use strict;
 use warnings;
 use POSIX qw(:signal_h);

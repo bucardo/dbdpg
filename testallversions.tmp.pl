@@ -3,6 +3,7 @@
 ## Quick script to test all available combinations of Postgres
 ## Usage: $0 <postgresdir>
 
+use 5.008001;
 use strict;
 use warnings;
 

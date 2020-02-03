@@ -10,7 +10,7 @@
 ## "pg_putline"  "pg_putcopydata"  "pg_putcopydata_async (see 07copy.t)
 ## "pg_cancel"  "pg_ready"  "pg_result" (see 08async.t)
 
-use 5.006;
+use 5.008001;
 use strict;
 use warnings;
 use Data::Dumper;
@@ -1389,7 +1389,7 @@ for (keys %quotetests) {
 ## Test timestamp - should quote as a string
 $t='DB handle method "quote" work on timestamp';
 my $tstype = 93;
-my $testtime = '2006-01-28 11:12:13';
+my $testtime = '2008001-01-28 11:12:13';
 is ($dbh->quote( $testtime, $tstype ), qq{'$testtime'}, $t);
 
 $t='DB handle method "quote" works with an undefined value';

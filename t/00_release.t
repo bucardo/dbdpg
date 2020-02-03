@@ -3,7 +3,7 @@
 ## Make sure the version number is consistent in all places
 ## Check on the format of the Changes file
 
-use 5.006;
+use 5.008001;
 use strict;
 use warnings;
 use Data::Dumper;
