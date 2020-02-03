@@ -1,6 +1,6 @@
 
 
-Version 3.10.4  (unreleased)
+Version 3.10.4  (released February 3, 2020)
 
   - Allow localtime from Time::Piece to be used directly as a bind value again.
     This applies to all "magical" arrays.
