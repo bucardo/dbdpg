@@ -106,6 +106,9 @@ for my $loop (1..5) {
     $dbh->rollback();
 }
 
+$dbh->do("DROP TABLE $test_table");
+$dbh->commit();
+$dbh->disconnect();
+
 done_testing();
 
-$dbh->disconnect();
