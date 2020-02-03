@@ -678,6 +678,7 @@ Hofmann
 BIGINT
 jsontable
 largeobjects
+localtime
 repo
 BMP
 NOSUCH
