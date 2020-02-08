@@ -2,9 +2,7 @@
 How to get a working DBD::Pg on Windows
 
 Warning! This information is outdated. Please ask on the mailing list for help 
-if you encounter any problems, or use the files here:
-
-http://pgfoundry.org/frs/?group_id=1000199
+if you encounter any problems.
 
 Also see the notes about Strawberry Perl in the README file.
 
