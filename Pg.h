@@ -11,7 +11,9 @@
 #include <wchar.h>
 
 #ifdef WIN32
+#if (!defined(_MSC_VER) || (_MSC_VER < 1900))
 static int errno;
+#endif
 #include <string.h>
 #define strcasecmp(s1,s2) stricmp((s1), (s2))
 #else
