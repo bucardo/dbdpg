@@ -1,5 +1,11 @@
 
 
+Version 3.10.5  unreleased
+
+ - Minor adjustment for Windows build
+   [RT #131752]
+
+
 Version 3.10.4  (released February 3, 2020)
 
   - Allow localtime from Time::Piece to be used directly as a bind value again.
