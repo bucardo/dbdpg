@@ -1,1922 +1,2560 @@
 
+Changes for the DBD::Pg module
+
+RT refers to rt.cpan.org
+
 
 Version 3.10.5  unreleased
 
  - Minor adjustment for Windows build
-   [RT #131752]
+   (RT ticket #131752)
 
 
 Version 3.10.4  (released February 3, 2020)
 
-  - Allow localtime from Time::Piece to be used directly as a bind value again.
-    This applies to all "magical" arrays.
-    [Greg Sabino Mullane]
-    [Github issue #63]
+ - Allow localtime from Time::Piece to be used directly as a bind value again.
+   This applies to all "magical" arrays.
+   [Greg Sabino Mullane]
+   (Github issue #63)
 
-  - Force tests to NOT run in parallel.
-    [Greg Sabino Mullane]
-    [RT #130834]
+ - Force tests to NOT run in parallel.
+   [Greg Sabino Mullane]
+   (RT ticket #130834)
 
 
 Version 3.10.3  (released January 20, 2020)
 
-  - Set things cleared via PQclear to NULL as soon as possible, to remove race conditions.
-    [Greg Sabino Mullane]
-    [RT #131522]
+ - Set things cleared via PQclear to NULL as soon as possible, to remove race conditions
+   [Greg Sabino Mullane]
+   (RT ticket #131522)
 
 
 Version 3.10.2  (released January 17, 2020)
 
-  - Adjust tests to pass on 32-bit machines
-    [Greg Sabino Mullane]
-    [RT #131482]
+ - Adjust tests to pass on 32-bit machines
+   [Greg Sabino Mullane]
+   (RT ticket #131482)
 
 
 Version 3.10.1  (released January 13, 2020)
 
-  - Prevent double-free memory errors
-    [Greg Sabino Mullane]
-    [RT #130681]
+ - Prevent double-free memory errors
+   [Greg Sabino Mullane]
+   (RT ticket #130681)
 
-  - Fix crash when pg_error_field is called
-    [Greg Sabino Mullane]
-    [RT #130721]
+ - Fix crash when pg_error_field is called
+   [Greg Sabino Mullane]
+   (RT ticket #130721)
 
-  - Update the list of Postgres reserved words in quote.c
+ - Update the list of Postgres reserved words in quote.c
 
 
 Version 3.10.0  (released September 3, 2019)
 
-  - Prevent memory leak related to pg_error_field
-    [Greg Sabino Mullane]
-    [RT #130430]
+ - Prevent memory leak related to pg_error_field
+   [Greg Sabino Mullane]
+   (RT ticket #130430)
 
-  - Fix for bug by making sure pg_error_field works properly when switching between 
-    do-with-params and do-without-params.
-    [Greg Sabino Mullane]
-    [Github issue #57]
+ - Fix for bug by making sure pg_error_field works properly when switching between 
+     do-with-params and do-without-params.
+   [Greg Sabino Mullane]
+   (Github issue #57)
 
-  - If a commit or rollback fails, do not set BegunWork
-    [Greg Sabino Mullane]
-    [Github issue #40]
+ - If a commit or rollback fails, do not set BegunWork
+   [Greg Sabino Mullane]
+   (Github issue #40)
 
-  - Treat partitioned tables same as regular tables for column_info, table_info, 
-    and foreign_key_info (i.e. support pg_class.relkind = 'p')
-    [Octavian R. Corlade]
-    [Github PR #55]
+ - Treat partitioned tables same as regular tables for column_info, table_info, 
+     and foreign_key_info (i.e. support pg_class.relkind = 'p')
+   [Octavian R. Corlade]
+   (Github pull request #55)
 
-  - Allow last_insert_id() to work against inherited tables
-    [Greg Sabino Mullane]
-    [RT #52441]
+ - Allow last_insert_id() to work against inherited tables
+   [Greg Sabino Mullane]
+   (RT ticket #52441)
 
-  - Add DBI SQL_BLOB, SQL_BINARY and SQL_LONGVARBINARY types as alias for PG_BYTEA
-    [Pali]
-    [Github PR #58]
+ - Add DBI SQL_BLOB, SQL_BINARY and SQL_LONGVARBINARY types as alias for PG_BYTEA
+   [Pali]
+   (Github pull request #58)
 
 
 Version 3.9.1  (released August 15, 2019)
 
-  - Bugfix for pg_error_field: make sure we do not feed null to newSVpv,
-    handle older versions of Postgres better.
-    [Greg Sabino Mullane]
+ - Bugfix for pg_error_field: make sure we do not feed null to newSVpv,
+     handle older versions of Postgres better.
+   [Greg Sabino Mullane]
 
 
 Version 3.9.0  (released August 13, 2019)
 
-  - ShowErrorStatement works for "quickexec" do() calls
-    [Dmitry Karasik]
-    [RT #120268]
-    [Github issue #44]
+ - ShowErrorStatement works for "quickexec" do() calls
+   [Dmitry Karasik]
+   (RT ticket #120268)
+   (Github issue #44)
 
-  - Add :pg_limits to add constants such as PG_MAX_SMALLINT
-    [Greg Sabino Mullane]
-    [Github issue #51]
+ - Add :pg_limits to add constants such as PG_MAX_SMALLINT
+   [Greg Sabino Mullane]
+   (Github issue #51)
 
-  - Add $dbh->pg_error_field() function
-    [Greg Sabino Mullane]
+ - Add $dbh->pg_error_field() function
+   [Greg Sabino Mullane]
 
-  - Fix failing tests due to incorrect 'initdb' check
-    [Greg Sabino Mullane]
-    [Github issue #54]
-    [RT #130279]
+ - Fix failing tests due to incorrect 'initdb' check
+   [Greg Sabino Mullane]
+   (Github issue #54)
+   (RT ticket #130279)
 
 
 Version 3.8.1  (released July 6, 2019)
 
-  - Fix encoding of SQL_VARBINARY type in $dbh->quote() function
-    [Pali]
+ - Fix encoding of SQL_VARBINARY type in $dbh->quote() function
+   [Pali]
 
-  - Fix encoding in $dbh->do() function
-    [Pali]
-    [CPAN ticket #122991]
+ - Fix encoding in $dbh->do() function
+   [Pali]
+   (RT ticket #122991)
 
-  - Fix E'' string escape handling on architectures with unsigned chars
-    [Github issue #46]
+ - Fix E'' string escape handling on architectures with unsigned chars
+   (Github issue #46)
 
-  - Minor fix to allow DBD::Pg to connect to PGbouncer's internal 'pgbouncer' database.
-    [Greg Sabino Mullane]
-    [Github issue #47]
+ - Minor fix to allow DBD::Pg to connect to PGbouncer's internal 'pgbouncer' database.
+   [Greg Sabino Mullane]
+   (Github issue #47)
 
-  - Fix so table_info test works on non-empty databases
-    [Matt Buchanan]
-    [CPAN ticket #127906]
+ - Fix so table_info test works on non-empty databases
+   [Matt Buchanan]
+   (RT ticket #127906)
 
 
 Version 3.8.0  (released April 25, 2019)
 
-  - Increase minimum supported PostgreSQL version to 8.0
-    [Dagfinn Ilmari Mannsåker]
+ - Increase minimum supported PostgreSQL version to 8.0
+   [Dagfinn Ilmari Mannsåker]
 
-  - Add support for foreign tables in table_info() and column_info()
-    [Dagfinn Ilmari Mannsåker]
+ - Add support for foreign tables in table_info() and column_info()
+   [Dagfinn Ilmari Mannsåker]
 
-  - Return the current database name as TABLE_CAT in info methods
-    [Dagfinn Ilmari Mannsåker]
+ - Return the current database name as TABLE_CAT in info methods
+   [Dagfinn Ilmari Mannsåker]
 
-  - Handle backslash-escaped quotes in E'' strings
-    [Dagfinn Ilmari Mannsåker]
+ - Handle backslash-escaped quotes in E'' strings
+   [Dagfinn Ilmari Mannsåker]
 
-  - Fix typo in Makefile.PL
-    [CPAN ticket #127097]
+ - Fix typo in Makefile.PL
+   (RT ticket #127097)
 
-  - Fix parsing of PostgreSQL versions >= 10 on Debian/Ubuntu
-    [Dagfinn Ilmari Mannsåker]
+ - Fix parsing of PostgreSQL versions >= 10 on Debian/Ubuntu
+   [Dagfinn Ilmari Mannsåker]
 
-  - Fix client_min_messages=FATAL test when PostgreSQL caps it to ERROR
-    [Dagfinn Ilmari Mannsåker]
-    [CPAN ticket #128529]
+ - Fix client_min_messages=FATAL test when PostgreSQL caps it to ERROR
+   [Dagfinn Ilmari Mannsåker]
+   (RT ticket #128529)
 
-  - Fix ->ping error detection on PostgreSQL 12
-    [Dagfinn Ilmari Mannsåker]
+ - Fix ->ping error detection on PostgreSQL 12
+   [Dagfinn Ilmari Mannsåker]
 
-  - Adjust tests for new pg_ctl output
-    [Erik Rijkers    er at xs4all.nl]
-    [CPAN ticket #128966]
+ - Adjust tests for new pg_ctl output
+   [Erik Rijkers    er at xs4all.nl]
+   (RT ticket #128966)
 
-  - Adjust tests for removal of WITH OIDS in PostgreSQL 12
-    [Dagfinn Ilmari Mannsåker]
+ - Adjust tests for removal of WITH OIDS in PostgreSQL 12
+   [Dagfinn Ilmari Mannsåker]
 
-  - Fix support for PostgreSQL versions back to 8.0
-    [Dagfinn Ilmari Mannsåker]
+ - Fix support for PostgreSQL versions back to 8.0
+   [Dagfinn Ilmari Mannsåker]
 
-  - Remove usage of deprecated pg_attrdef.adsrc and pg_constraint.consrc columns
-    [Dagfinn Ilmari Mannsåker]
+ - Remove usage of deprecated pg_attrdef.adsrc and pg_constraint.consrc columns
+   [Dagfinn Ilmari Mannsåker]
 
-  - Fix typo in pg_placeholder_colons example
-    (Github issue #41)
+ - Fix typo in pg_placeholder_colons example
+   (Github issue #41)
 
-  - Support GENERATED ... AS IDENTITY columns in last_insert_id()
-    [Dagfinn Ilmari Mannsåker]
+ - Support GENERATED ... AS IDENTITY columns in last_insert_id()
+   [Dagfinn Ilmari Mannsåker]
 
 
 Version 3.7.4  (released February 12, 2018)
 
-  - Fix typo in META.yml
-    [CPAN ticket #124405]
+ - Fix typo in META.yml
+   (RT ticket #124405)
 
 
 Version 3.7.3  (released February 12, 2018)
 
-  - Test tweak so we don't try to use jsonb on older versions.
-    [CPAN ticket #124934]
+ - Test tweak so we don't try to use jsonb on older versions.
+   (RT ticket #124934)
 
 
 Version 3.7.2  (released February 11, 2018)
 
-  - Remove Data::Peek dependency accidentally left in t/12placeholders.t
-    [CPAN ticket #124393]
+ - Remove Data::Peek dependency accidentally left in t/12placeholders.t
+   (RT ticket #124393)
 
 
 Version 3.7.1  (released February 11, 2018)
 
-  - Fixed problem when using placeholders and escaped question marks, the recopied string 
-    was not terminated correctly.
-    [Greg Sabino Mullane]
-    (Github issue #33, CPAN tickets #121630, #123187, #123999)
+ - Fixed problem when using placeholders and escaped question marks, the recopied string 
+     was not terminated correctly.
+   [Greg Sabino Mullane]
+   (Github issue #33)
+   (RT tickets #121630, #123187, #123999)
 
-  - Make sure nulls in our self-generated arrays are not set as read-only in some Perls.
-    [Greg Sabino Mullane]
-    (CPAN ticket #107556)
+ - Make sure nulls in our self-generated arrays are not set as read-only in some Perls.
+   [Greg Sabino Mullane]
+   (RT ticket #107556)
 
-  - If the server returns no error message, and an "unknown" code from libpq, supply a custom
-    message mentioning client_min_messages may be to blame.
-    [Greg Sabino Mullane]
-    (CPAN ticket #109591)
+ - If the server returns no error message, and an "unknown" code from libpq, supply a custom
+     message mentioning client_min_messages may be to blame.
+   [Greg Sabino Mullane]
+   (RT ticket #109591)
 
-  - Declare VERSION with 'our' in seldom-used Bundle module
-    (CPAN ticket #123218)
+ - Declare VERSION with 'our' in seldom-used Bundle module
+   (RT ticket #123218)
 
 
 Version 3.7.0  (released September 24, 2017)
 
-  - If no placeholders, use PQexec instead of PQexecParams
-    [Greg Sabino Mullane]
+ - If no placeholders, use PQexec instead of PQexecParams
+   [Greg Sabino Mullane]
 
-  - Fix running tests with non-UTF8 server_encoding
-    [Dagfinn Ilmari Mannsåker]
-    (Github issue #26)
+ - Fix running tests with non-UTF8 server_encoding
+   [Dagfinn Ilmari Mannsåker]
+   (Github issue #26)
 
-  - Fix crash with missing client_encoding
-    [David Christensen, reported by Marko Tiikkaja]
-    (Github issue #29)
+ - Fix crash with missing client_encoding
+   [David Christensen, reported by Marko Tiikkaja]
+   (Github issue #29)
 
-  - Fix crash with missing server_version
-    [David Christensen]
+ - Fix crash with missing server_version
+   [David Christensen]
 
-  - Fix leak in ->state methods
-    [Dagfinn Ilmari Mannsåker]
-    (Github issue #30)
+ - Fix leak in ->state methods
+   [Dagfinn Ilmari Mannsåker]
+   (Github issue #30)
 
-  - Add $sth->{pg_async_status} to determine async status of a statement handle.
-    Values can be 0 (no async), 1 (async), or -1 (cancelled)
-    [Greg Sabino Mullane, as requested by Dmytro Zagashev (ZDM)]
-    (CPAN ticket #116172)
+ - Add $sth->{pg_async_status} to determine async status of a statement handle.
+   Values can be 0 (no async), 1 (async), or -1 (cancelled)
+   [Greg Sabino Mullane, as requested by Dmytro Zagashev (ZDM)]
+   (RT ticket #116172)
 
 
 Version 3.6.2  (released May 23, 2017)
 
-  - Remove errant debugging aid from test suite
+ - Remove errant debugging aid from test suite
 
 
 Version 3.6.1  (released May 22, 2017)
 
-  - Various fixes to support testing against Postgres 10beta
-    [David Christensen]
+ - Various fixes to support testing against Postgres 10beta
+   [David Christensen]
 
 
 Version 3.6.0  (released April 17, 2017)
 
-  - Make sure we do not inadvertently modify the string passed to prepare() when 
-    doing the new backslash escape manipulation.
-    [Greg Sabino Mullane]
-    (CPAN ticket #114000)
+ - Make sure we do not inadvertently modify the string passed to prepare() when 
+     doing the new backslash escape manipulation.
+   [Greg Sabino Mullane]
+   (RT ticket #114000)
 
-  - Fix bug where $DBD::Pg::DBDPG_DEFAULT not picked up as a magic 
-    string first time it is used in a script.
-    [Greg Sabino Mullane]
-    (CPAN ticket #112309)
+ - Fix bug where $DBD::Pg::DBDPG_DEFAULT not picked up as a magic 
+     string first time it is used in a script.
+   [Greg Sabino Mullane]
+   (RT ticket #112309)
 
-  - Fix UTF8 flag handling in pg_(get|put)copydata
-    [Dagfinn Ilmari Mannsåker]
+ - Fix UTF8 flag handling in pg_(get|put)copydata
+   [Dagfinn Ilmari Mannsåker]
 
-  - Fix UTF8 double-encoding with pg_enable_utf8 = 0
-    [Serge Pushkin]
-    (CPAN ticket #103137)
+ - Fix UTF8 double-encoding with pg_enable_utf8 = 0
+   [Serge Pushkin]
+   (RT ticket #103137)
 
-  - Fix bug in quote_name which would fail to quote in some circumstances
-    (Github Issue #22)
+ - Fix bug in quote_name which would fail to quote in some circumstances
+   (Github issue #22)
 
-  - Allow clean parsing of new Postgres X.Y version format
-    [Erik Rijkers    er at xs4all.nl]
+ - Allow clean parsing of new Postgres X.Y version format
+   [Erik Rijkers    er at xs4all.nl]
 
-  - Add pg_canonical_ids() and pg_canonical_names(), which returns information 
-    about each column in the result set.
-    [Warstone    warstone at list.ru]
-    (CPAN ticket #106858)
+ - Add pg_canonical_ids() and pg_canonical_names(), which returns information 
+     about each column in the result set.
+   [Warstone    warstone at list.ru]
+   (RT ticket #106858)
 
-  - Map SQL_NUMERIC to PG_NUMERIC (instead of PG_FLOAT8)
-    [Alice Maz    alice at alizemaz.com]
-    (CPAN ticket #120358)
- 
-  - Force real, float, and double precision into SvNVs
-    [Greg Sabino Mullane]
-    (CPAN ticket #113683 and other places)
+ - Map SQL_NUMERIC to PG_NUMERIC (instead of PG_FLOAT8)
+   [Alice Maz    alice at alizemaz.com]
+   (RT ticket #120358)
 
-  - Support for number of rows greater than an "int". Requires support for same 
-    from a future version of libpq before it will work completely.
-    [Greg Sabino Mullane]
-    (CPAN ticket #102444)
+ - Force real, float, and double precision into SvNVs
+   [Greg Sabino Mullane]
+   (RT ticket #113683 and other places)
 
-  - Fix skipped test counts in Win32 builds
-    [Andy Grundman]
+ - Support for number of rows greater than an "int". Requires support for same 
+     from a future version of libpq before it will work completely.
+   [Greg Sabino Mullane]
+   (RT ticket #102444)
 
-  - Allow tests to work against Postgres 8.4 by tweaking client_encoding calls.
-    [Pavel Raiskup    praiskup at redhat.com]
-    (CPAN ticket #116179)
+ - Fix skipped test counts in Win32 builds
+   [Andy Grundman]
 
-  - Silence warnings in t/02attribs.t and t/04misc.t
-    [Dagfinn Ilmari Mannsåker]
+ - Allow tests to work against Postgres 8.4 by tweaking client_encoding calls.
+   [Pavel Raiskup    praiskup at redhat.com]
+   (RT ticket #116179)
 
-  - Support binary COPY format
-    [Dagfinn Ilmari Mannsåker]
+ - Silence warnings in t/02attribs.t and t/04misc.t
+   [Dagfinn Ilmari Mannsåker]
 
-  - Ensure tests do not use $ENV{PGSERVICE} or $ENV{PGDATABASE}
-    [Erik Rijkers]
+ - Support binary COPY format
+   [Dagfinn Ilmari Mannsåker]
 
-  - Switched canonical repo to git://github.com/bucardo/dbdpg.git
+ - Ensure tests do not use $ENV{PGSERVICE} or $ENV{PGDATABASE}
+   [Erik Rijkers]
+
+ - Switched canonical repo to git://github.com/bucardo/dbdpg.git
 
 
 Version 3.5.3  (released October 1, 2015)
 
-  - Minor fix in the test file t/03dbmethod.t
+ - Minor fix in the test file t/03dbmethod.t
 
 
 Version 3.5.2  (released September 29, 2015)
 
-  - Fix enum value ordering on Postgres servers 9.1 and greater
-    [Dagfinn Ilmari Mannsåker]
+ - Fix enum value ordering on Postgres servers 9.1 and greater
+   [Dagfinn Ilmari Mannsåker]
 
-  - Return bigint values as plain integer values when they fit
-    [Dagfinn Ilmari Mannsåker]
+ - Return bigint values as plain integer values when they fit
+   [Dagfinn Ilmari Mannsåker]
 
-  - Fix typo in sprintf for get_info() SQL_DATA_SOURCE_NAME
-    [Craig A. James]
-    (CPAN bug #106604)
+ - Fix typo in sprintf for get_info() SQL_DATA_SOURCE_NAME
+   [Craig A. James]
+   (RT ticket #106604)
 
-  - Set the repository in META.yml to github
+ - Set the repository in META.yml to github
 
 
 Version 3.5.1  (released February 17, 2015)
 
-  - Prevent core dump if the second argument to the quote() method 
-    is anything but a hashref
-    [Greg Sabino Mullane]
-    (CPAN bug #101980)
+ - Prevent core dump if the second argument to the quote() method is 
+     anything but a hashref
+   [Greg Sabino Mullane]
+   (RT ticket #101980)
 
-  - Better "support" for SQL_ASCII servers in the tests.
-    Allow env var DBDPG_TEST_ALWAYS_ENV to force use of DBI_DSN and DBI_USER in tests.
-    [Greg Sabino Mullane]
+ - Better "support" for SQL_ASCII servers in the tests.
+   Allow env var DBDPG_TEST_ALWAYS_ENV to force use of DBI_DSN and DBI_USER in tests.
+   [Greg Sabino Mullane]
 
-  - Fix client_encoding detection on pre-9.1 servers
-    [Dagfinn Ilmari Mannsåker]
+ - Fix client_encoding detection on pre-9.1 servers
+   [Dagfinn Ilmari Mannsåker]
 
-  - Fix operator existence check in tests on pre-8.3 servers
-    [Dagfinn Ilmari Mannsåker]
+ - Fix operator existence check in tests on pre-8.3 servers
+   [Dagfinn Ilmari Mannsåker]
 
-  - Documentation fix
-    [Stuart A Johnston]
+ - Documentation fix
+   [Stuart A Johnston]
 
-  - Fix pg_switch_prepared database handle documentation
-    [Dagfinn Ilmari Mannsåker]
+ - Fix pg_switch_prepared database handle documentation
+   [Dagfinn Ilmari Mannsåker]
 
 
 Version 3.5.0  (released January 6, 2015)
 
-  - Allow "placeholder escaping" by the use of a backslash directly before it, e.g.
-    "SELECT 1 FROM jsontable WHERE foo \\? ?"
-    will contain a single placeholder, and the first question mark will be sent directly 
-    to the backend to be parsed as an operator.
-    [Greg Sabino Mullane, Tim Bunce]
-    (CPAN bug #101030)
+ - Allow "placeholder escaping" by the use of a backslash directly before it, 
+     e.g. "SELECT 1 FROM jsontable WHERE foo \\? ?"
+     will contain a single placeholder, and the first question mark will be sent directly 
+     to the backend to be parsed as an operator.
+   [Greg Sabino Mullane, Tim Bunce]
+   (RT ticket #101030)
 
-  - Improve the workings of the ping() method, so it always tests for 
-    a valid database backend and returns the correct true/false.
-    [Greg Sabino Mullane, with help from Andrew Gierth and Tim Bunce]
-    (CPAN bug #100648)
+ - Improve the workings of the ping() method, so it always tests for 
+     a valid database backend and returns the correct true/false.
+   [Greg Sabino Mullane, with help from Andrew Gierth and Tim Bunce]
+   (RT ticket #100648)
 
-  - Add get_info(9000) => 1 to indicate driver can escape placeholders.
-    [Tim Bunce]
+ - Add get_info(9000) => 1 to indicate driver can escape placeholders.
+   [Tim Bunce]
 
-  - In tests, force the client_encoding to UTF8, skip tests that involve 
-    characters not supported by the server_encoding
-    [Dagfinn Ilmari Mannsåker]
+ - In tests, force the client_encoding to UTF8, skip tests that involve 
+     characters not supported by the server_encoding
+   [Dagfinn Ilmari Mannsåker]
 
-  - Fix memory leak when selecting from arrays
-    [Dagfinn Ilmari Mannsåker, reported by Krystian Samp]
+ - Fix memory leak when selecting from arrays
+   [Dagfinn Ilmari Mannsåker, reported by Krystian Samp]
 
-  - Make get_info much more efficient and slightly simpler.
-    [Tim Bunce]
+ - Make get_info much more efficient and slightly simpler.
+   [Tim Bunce]
 
 
 Version 3.4.2  (released September 25, 2014)
 
-  - Fix bug where single-quoted type arguments to the table_info()
-    method were causing a SQL error.
-    [Greg Sabino Mullane] (CPAN bug #99144)
+ - Fix bug where single-quoted type arguments to the table_info()
+     method were causing a SQL error.
+   [Greg Sabino Mullane]
+   (RT ticket #99144)
 
 
 Version 3.4.1  (released August 20, 2014)
 
-  - Allow '%' again for the type in table_info() and thus tables()
-    It's not documented or tested in DBI, but it used to work until
-    DBD::Pg 3.4.0, and the change broke DBIx::Class::Schema::Loader, which
-    uses type='%'.
-    [Dagfinn Ilmari Mannsåker]
+ - Allow '%' again for the type in table_info() and thus tables()
+   It's not documented or tested in DBI, but it used to work until DBD::Pg 3.4.0, 
+     and the change broke DBIx::Class::Schema::Loader, which uses type='%'.
+   [Dagfinn Ilmari Mannsåker]
 
 
 Version 3.4.0  (released August 16, 2014)
 
-  - Cleanup and improve table_info()
-    [Mike Pomraning <mjp@pilcrow.madison.wi.us>] (github issue #7)
+ - Cleanup and improve table_info()
+   [Mike Pomraning <mjp@pilcrow.madison.wi.us>]
+   (Github issue #7)
 
-    table_info() type searching now supports TABLE, VIEW, SYSTEM TABLE,
-      SYSTEM VIEW, and LOCAL TEMPORARY
+   Method table_info() type searching now supports TABLE, VIEW, SYSTEM TABLE,
+     SYSTEM VIEW, and LOCAL TEMPORARY
 
-    table_info() object searching fully supports the above types.
+   Method table_info() object searching fully supports the above types.
 
-    table_info() object searching no longer ignores invalid types - a filter 
-      of 'NOSUCH' will return no rows, and 'NOSUCH,LOCAL TEMPORARY' will
-      return only temp objects.
+   Method table_info() object searching no longer ignores invalid types - a filter 
+     of 'NOSUCH' will return no rows, and 'NOSUCH,LOCAL TEMPORARY' will
+     return only temp objects.
 
-    tableinfo() type filters are strictly matched now ... previously a 
-      search for SYSTEM TABLE would have fetched plain TABLE objects.
+   Method tableinfo() type filters are strictly matched now ... previously a 
+     search for SYSTEM TABLE would have fetched plain TABLE objects.
 
-    table_info() now treats temporary tables and temporary views as LOCAL TEMPORARY
+   Method table_info() now treats temporary tables and temporary views as LOCAL TEMPORARY
 
-  - Make sure column_info() and table_info() can handle materialized views.
-    [Greg Sabino Mullane] (CPAN bug #97032)
+ - Make sure column_info() and table_info() can handle materialized views.
+   [Greg Sabino Mullane]
+   (RT ticket #97032)
 
 
 Version 3.3.0  (released May 31, 2014)
 
-  - Major cleanup of UTF-8 support:
-      Fix quoting of UTF-8 values
-      Add support for UTF-8 statement strings
-      Fix UTF-8 support in placeholders and return values
-    [Dagfinn Ilmari Mannsåker] (CPAN bug #95214 and #91655)
-      Test that the Pg server agrees with us about the lengths of input strings.
-      Refactor Unicode test to use anon hashes to describe the tests to run.
-      Test pg_enable_utf8 of -1, in addition to 0 and 1.
-      Extend the Unicode round-trip tests to verify ASCII, BMP and non-BMP code points.
-      Test that characters created in the server reach the client correctly.
-    [Nicholas Clark]
+ - Major cleanup of UTF-8 support:
+   Fix quoting of UTF-8 values
+   Add support for UTF-8 statement strings
+   Fix UTF-8 support in placeholders and return values
+   [Dagfinn Ilmari Mannsåker]
+   (RT tickets #95214 and #91655)
 
-  - Rewrite foreign_key_info to be just one query
-    [Dagfinn Ilmari Mannsåker]
+ - Test that the Pg server agrees with us about the lengths of input strings.
+   Refactor Unicode test to use anon hashes to describe the tests to run.
+   Test pg_enable_utf8 of -1, in addition to 0 and 1.
+   Extend the Unicode round-trip tests to verify ASCII, BMP and non-BMP code points.
+   Test that characters created in the server reach the client correctly.
+   [Nicholas Clark]
 
-  - Remove ODBC support from foreign_key_info
-    [Dagfinn Ilmari Mannsåker]
+ - Rewrite foreign_key_info to be just one query
+   [Dagfinn Ilmari Mannsåker]
 
-  - Remove use of dTHX in functions in quote.c and types.c
-    [Nicholas Clark]
+ - Remove ODBC support from foreign_key_info
+   [Dagfinn Ilmari Mannsåker]
+
+ - Remove use of dTHX in functions in quote.c and types.c
+   [Nicholas Clark]
 
 
 Version 3.2.1  (released May 20, 2014)
 
-  - Stricter testing for array slices: disallow number-colon-number from being
-    parsed as a placeholder.
-    [Greg Sabino Mullane] (CPAN bug #95713)
+ - Stricter testing for array slices: disallow number-colon-number from being
+     parsed as a placeholder.
+   [Greg Sabino Mullane]
+   (RT ticket #95713)
 
-  - Fix for small leak with AutoInactiveDestroy
-    [David Dick] (CPAN bug #95505)
+ - Fix for small leak with AutoInactiveDestroy
+   [David Dick]
+   (RT ticket #95505)
 
-  - Adjust test regex to fix failing t/01_connect.t on some platforms
-    [Greg Sabino Mullane]
+ - Adjust test regex to fix failing t/01_connect.t on some platforms
+   [Greg Sabino Mullane]
 
-  - Further tweaks to get PGINITDB working for test suite.
-    [Nicholas Clark]
+ - Further tweaks to get PGINITDB working for test suite.
+   [Nicholas Clark]
 
 
 Version 3.2.0  (released May 15, 2014)
 
-  - Add new attribute pg_placeholder_nocolons to turn off all parsing of
-    colons into placeholders.
-    [Graham Ollis] (CPAN bug #95173)
+ - Add new attribute pg_placeholder_nocolons to turn off all parsing of
+     colons into placeholders.
+   [Graham Ollis]
+   (RT ticket #95173)
 
-  - Fix incorrect skip count for HandleSetErr
-    [Greg Sabino Mullane] (CPAN bug #94841)
+ - Fix incorrect skip count for HandleSetErr
+   [Greg Sabino Mullane]
+   (RT ticket #94841)
 
-  - Don't attempt to use the POSIX signalling stuff if the OS is Win
-    [Greg Sabino Mullane] (CPAN bug ##94841)
+ - Don't attempt to use the POSIX signalling stuff if the OS is Win
+   [Greg Sabino Mullane]
+   (RT ticket #94841)
 
-  - Fix missing check for PGINITDB in the test suite.
-    [Nicholas Clark]
+ - Fix missing check for PGINITDB in the test suite.
+   [Nicholas Clark]
 
 
 Version 3.1.1  (released April 6, 2014)
 
-  - Minor adjustments so tests pass in varying locales.
+ - Minor adjustments so tests pass in varying locales.
 
 
 Version 3.1.0  (released April 4, 2014)
 
-  - Make sure UTF-8 enabled notifications are handled correctly
-    [Greg Sabino Mullane]
+ - Make sure UTF-8 enabled notifications are handled correctly
+   [Greg Sabino Mullane]
 
-  - Allow "WITH" and "VALUES" as valid words starting a DML statement
-    [Greg Sabino Mullane] (CPAN bug #92724)
+ - Allow "WITH" and "VALUES" as valid words starting a DML statement
+   [Greg Sabino Mullane]
+   (RT ticket #92724)
 
 
 Version 3.0.0  (released February 3, 2014)
 
-  - Major change in UTF-8 handling. If client_encoding is set to UTF-8, 
-    always mark returned Perl strings as utf8. See the pg_enable_utf8 docs
-    for more information.
-    [Greg Sabino Mullane, David E. Wheeler, David Christensen]
+ - Major change in UTF-8 handling. If client_encoding is set to UTF-8, always 
+     mark returned Perl strings as utf8. See the pg_enable_utf8 docs for more information.
+   [Greg Sabino Mullane, David E. Wheeler, David Christensen]
 
-  - Bump DBI requirement to 1.614
+ - Bump DBI requirement to 1.614
 
-  - Bump Perl requirement to 5.8.1
+ - Bump Perl requirement to 5.8.1
 
-  - Add new handle attribute, switch_prepared, to control when we stop 
-    using PQexecParams and start using PQexecPrepared. The default is 2: 
-    in previous versions, the effective behavior was 1 (i.e. PQexecParams 
-    was never used).
-    [Greg Sabino Mullane]
+ - Add new handle attribute, switch_prepared, to control when we stop 
+     using PQexecParams and start using PQexecPrepared. The default is 2: 
+     in previous versions, the effective behavior was 1 (i.e. PQexecParams 
+     was never used).
+   [Greg Sabino Mullane]
 
-  - Better handling of items inside of arrays, particularly bytea arrays.
-    [Greg Sabino Mullane] (CPAN bug #91454)
+ - Better handling of items inside of arrays, particularly bytea arrays.
+   [Greg Sabino Mullane]
+   (RT ticket #91454)
 
-  - Map SQL_CHAR back to bpchar, not char
-    [Greg Sabino Mullane, reported by H.Merijn Brand]
+ - Map SQL_CHAR back to bpchar, not char
+   [Greg Sabino Mullane, reported by H.Merijn Brand]
 
-  - Do not force oids to Perl ints
-    [Greg Sabino Mullane] (CPAN bug #85836)
+ - Do not force oids to Perl ints
+   [Greg Sabino Mullane]
+   (RT ticket #85836)
 
-  - Return better sqlstate codes on fatal errors
-    [Rainer Weikusat]
+ - Return better sqlstate codes on fatal errors
+   [Rainer Weikusat]
 
-  - Better prepared statement names to avoid bug
-    [Spencer Sun] (CPAN bug #88827)
+ - Better prepared statement names to avoid bug
+   [Spencer Sun]
+   (RT ticket #88827)
 
-  - Add pg_expression field to statistics_info output to show 
-    functional index information
-    [Greg Sabino Mullane] (CPAN bug #76608)
+ - Add pg_expression field to statistics_info output to show 
+     functional index information
+   [Greg Sabino Mullane]
+   (RT ticket #76608)
 
-  - Adjust lo_import_with_oid check for 8.3
-    (CPAN bug #83145)
+ - Adjust lo_import_with_oid check for 8.3
+   (RT ticket #83145)
 
-  - Better handling of libpq errors to return SQLSTATE 08000
-    [Stephen Keller]
+ - Better handling of libpq errors to return SQLSTATE 08000
+   [Stephen Keller]
 
-  - Make sure CREATE TABLE .. AS SELECT returns rows in non do() cases
+ - Make sure CREATE TABLE .. AS SELECT returns rows in non do() cases
 
-  - Add support for AutoInactiveDestroy
-    [David Dick] (CPAN bug #68893)
+ - Add support for AutoInactiveDestroy
+   [David Dick]
+   (RT ticket #68893)
 
-  - Fix ORDINAL_POSITION in foreign_key_info
-    [Dagfinn Ilmari Mannsåker] (CPAN bug #88794)
+ - Fix ORDINAL_POSITION in foreign_key_info
+   [Dagfinn Ilmari Mannsåker]
+   (RT ticket #88794)
 
-  - Fix foreign_key_info with unspecified schema
-    [Dagfinn Ilmari Mannsåker] (CPAN bug #88787)
+ - Fix foreign_key_info with unspecified schema
+   [Dagfinn Ilmari Mannsåker]
+   (RT ticket #88787)
 
-  - Allow foreign_key_info to work when pg_expand_array is off
-    [Greg Sabino Mullane and Tim Bunce] (CPAN bug #51780)
+ - Allow foreign_key_info to work when pg_expand_array is off
+   [Greg Sabino Mullane and Tim Bunce]
+   (RT ticket #51780)
 
-  - Remove math.h linking, as we no longer need it
-    (CPAN bug #79256)
+ - Remove math.h linking, as we no longer need it
+   (RT ticket #79256)
 
-  - Spelling fixes
-    (CPAN bug #78168)
+ - Spelling fixes
+   (RT ticket #78168)
 
-  - Better wording for the AutoCommit docs
-    (CPAN bug #82536)
+ - Better wording for the AutoCommit docs
+   (RT ticket #82536)
 
-  - Change NOTICE to DEBUG1 in t/02attribs.t test for handle attribute "PrintWarn":
-    implicit index creation is now quieter in Postgres.
-    [Erik Rijkers]
+ - Change NOTICE to DEBUG1 in t/02attribs.t test for handle attribute "PrintWarn":
+     implicit index creation is now quieter in Postgres.
+   [Erik Rijkers]
 
-  - Use correct SQL_BIGINT constant for int8
-    [Dagfinn Ilmari Mannsåker]
+ - Use correct SQL_BIGINT constant for int8
+   [Dagfinn Ilmari Mannsåker]
 
-  - Fix assertion when binding array columns on debug perls >= 5.16
-    [Dagfinn Ilmari Mannsåker]
+ - Fix assertion when binding array columns on debug perls >= 5.16
+   [Dagfinn Ilmari Mannsåker]
 
-  - Adjust test to use 3 digit exponential values
-    [Greg Sabino Mullane] (CPAN bug #59449)
+ - Adjust test to use 3 digit exponential values
+   [Greg Sabino Mullane]
+   (RT ticket #59449)
 
-  - Avoid reinstalling driver methods in threads
-    [Dagfinn Ilmari Mannsåker] (CPAN bug #83638)
+ - Avoid reinstalling driver methods in threads
+   [Dagfinn Ilmari Mannsåker]
+   (RT ticket #83638)
 
-  - Make sure App::Info does not prompt for pg_config location 
-    if AUTOMATED_TESTING or PERL_MM_USE_DEFAULT is set
-    [David E. Wheeler] (CPAN bug #90799)
+ - Make sure App::Info does not prompt for pg_config location 
+     if AUTOMATED_TESTING or PERL_MM_USE_DEFAULT is set
+   [David E. Wheeler]
+   (RT ticket #90799)
 
-  - Fix typo in docs for pg_placeholder_dollaronly
-    [Bryan Carpenter] (CPAN bug #91400)
+ - Fix typo in docs for pg_placeholder_dollaronly
+   [Bryan Carpenter]
+   (RT ticket #91400)
 
-  - Cleanup dangling largeobjects in tests
-    [Fitz Elliott] (CPAN bug #92212)
+ - Cleanup dangling largeobjects in tests
+   [Fitz Elliott]
+   (RT ticket #92212)
 
-  - Fix skip test counting in t/09arrays.t
-    [Greg Sabino Mullane] (CPAN bug #79544)
+ - Fix skip test counting in t/09arrays.t
+   [Greg Sabino Mullane]
+   (RT ticket #79544)
 
-  - Explicitly specify en_US for spell checking
-    [Dagfinn Ilmari Mannsåker] (CPAN bug #91804)
+ - Explicitly specify en_US for spell checking
+   [Dagfinn Ilmari Mannsåker]
+   (RT ticket #91804)
 
 
 Version 2.19.3  (released August 21, 2012)
 
-  - Fix bug in pg_st_split_statement causing segfaults
-    (CPAN bug #79035)
+ - Fix bug in pg_st_split_statement causing segfaults
+   (RT ticket #79035)
 
-  - Make sure table_info() and other functions use pg_tablespace_location() 
-    instead of spclocation for Postgres servers 9.2 and greater. [Greg Sabino Mullane + others]
-    (CPAN bug #77042)
+ - Make sure table_info() and other functions use pg_tablespace_location() 
+     instead of spclocation for Postgres servers 9.2 and greater.
+   [Greg Sabino Mullane + others]
+   (RT ticket #77042)
 
 
 Version 2.19.2  (released March 12, 2012)
 
-  - Fix errors when multiple same-named placeholders are used. [Greg Sabino Mullane]
-    (CPAN bug #75713)
+ - Fix errors when multiple same-named placeholders are used.
+   [Greg Sabino Mullane]
+   (RT ticket #75713)
 
 
 Version 2.19.1  (released March 10, 2012)
 
-  - Fix crash when passing in an array with undefined elements. [Greg Sabino Mullane]
+ - Fix crash when passing in an array with undefined elements.
+   [Greg Sabino Mullane]
 
 
 Version 2.19.0  (released March 9, 2012)
 
-  - Use proper formatting for warn() and croak() (CPAN bug #75642)
-    [Niko Tyni]
+ - Use proper formatting for warn() and croak()
+   [Niko Tyni]
+   (RT ticket #75642)
 
-  - Fix localized regex in test (CPAN bug #70759)
+ - Fix localized regex in test
+   (RT ticket #70759)
 
-  - Fix for named placeholders (CPAN bug #70953) [Jan Pazdziora]
+ - Fix for named placeholders
+   [Jan Pazdziora]
+   (RT ticket #70953)
 
-  - Various fixes to the array-marshalling code [Noah Misch, Mark 
-    Stosberg, and David Christensen] (CPAN bug #58552)
+ - Various fixes to the array-marshalling code
+   [Noah Misch, Mark Stosberg, and David Christensen]
+   (RT ticket #58552)
 
-  - Allow hi-bit chars in dollar-quoted identifiers 
-    [David Christensen] (CPAN bug #73832)
+ - Allow hi-bit chars in dollar-quoted identifiers 
+   [David Christensen]
+   (RT ticket #73832)
 
-  - Have do() return count for things such as CREATE TABLE .. AS SELECT
-    Will only work on 9.0 or better. (CPAN bug #71073) [Pavel Stehule]
+ - Have do() return count for things such as CREATE TABLE .. AS SELECT
+   Will only work on 9.0 or better.
+   [Pavel Stehule]
+   (RT ticket #71073)
 
-  - Better error message when trying to do things post-disconnect [Greg Sabino Mullane]
+ - Better error message when trying to do things post-disconnect
+   [Greg Sabino Mullane]
 
-  - Always respect pg_server_prepare=0 by using PQexec not PQexecParams. [Greg Sabino Mullane]
+ - Always respect pg_server_prepare=0 by using PQexec not PQexecParams.
+   [Greg Sabino Mullane]
 
-  - Fix error in async docs (CPAN bug #72812)
+ - Fix error in async docs
+   (RT ticket #72812)
 
-  - Switch from subversion to git.
-    git clone git://bucardo.org/dbdpg.git [Greg Sabino Mullane]
+ - Switch from subversion to git
+   Install with: git clone git://bucardo.org/dbdpg.git
+   [Greg Sabino Mullane]
 
 
 Version 2.18.1  (released May 9, 2011)
 
-  - Fix LANG testing issue [Greg Sabino Mullane] (CPAN bug #56705)
+ - Fix LANG testing issue
+   [Greg Sabino Mullane]
+   (RT ticket #56705)
 
-  - Fix bug when async commands issued immediately after a COPY. [Greg Sabino Mullane] (CPAN bug #68041)
+ - Fix bug when async commands issued immediately after a COPY.
+   [Greg Sabino Mullane]
+   (RT ticket #68041)
 
 
 Version 2.18.0  (released March 28, 2011)
 
-  - Thanks to 123people.com for sponsoring work on this release [Greg Sabino Mullane]
+ - Thanks to 123people.com for sponsoring work on this release
+   [Greg Sabino Mullane]
 
-  - New cancel() method per DBI spec. [Eric Simon] (CPAN bug #63516)
+ - New cancel() method per DBI spec.
+   [Eric Simon]
+   (RT ticket #63516)
 
-  - Fix memory leak when binding arrays [Greg Sabino Mullane] (CPAN bug #65734)
+ - Fix memory leak when binding arrays
+   [Greg Sabino Mullane]
+   (RT ticket #65734)
 
-  - Fix memory leak with ParamValues. [Martin J. Evans] (CPAN bug #60863)
+ - Fix memory leak with ParamValues.
+   [Martin J. Evans]
+   (RT ticket #60863)
 
-  - Fix memory leak in handle_old_async (missing PQclear)
-    [Rainer Weikusat] (CPAN bug #63408)
+ - Fix memory leak in handle_old_async (missing PQclear)
+   [Rainer Weikusat]
+   (RT ticket #63408)
 
-  - Fix memory leak in pg_db_cancel (missing PQclear)
-    [Rainer Weikusat] (CPAN bug #63441)
+ - Fix memory leak in pg_db_cancel (missing PQclear)
+   [Rainer Weikusat]
+   (RT ticket #63441)
 
-  - Mark pg_getcopydata strings as UTF8 as needed (CPAN bug #66006)
+ - Mark pg_getcopydata strings as UTF8 as needed
+   (RT ticket #66006)
 
-  - Function dequote_bytea returning void should not try to return something
-    [Dagobert Michelsen] (CPAN bug #63497)
+ - Function dequote_bytea returning void should not try to return something
+   [Dagobert Michelsen]
+   (RT ticket #63497)
 
-  - Fix the number of tests to skip in t/01connect.t when the $DBI_DSN
-    environment variable lacks a database specification. [David E. Wheeler]
+ - Fix the number of tests to skip in t/01connect.t when the $DBI_DSN
+     environment variable lacks a database specification.
+   [David E. Wheeler]
 
-  - Fix algorithm for skipping tests in t/06bytea.t when running on a version
-    of PostgreSQL lower than 9.0. [David E. Wheeler]
+ - Fix algorithm for skipping tests in t/06bytea.t when running on a version
+     of PostgreSQL lower than 9.0.
+   [David E. Wheeler]
 
-  - Small tweaks to get tests working when compiled against Postgres 7.4
-    (CPAN bug #61713) [Greg Sabino Mullane]
+ - Small tweaks to get tests working when compiled against Postgres 7.4
+   [Greg Sabino Mullane]
+   (RT ticket #61713)
 
-  - Fix failing test when run as non-superuser [Greg Sabino Mullane] (CPAN bug #61534)
+ - Fix failing test when run as non-superuser
+   [Greg Sabino Mullane]
+   (RT ticket #61534)
 
 
 Version 2.17.2  (released November 21, 2010)
 
-  - Support dequoting of hex bytea format for 9.0.
-    [Dagfinn Ilmari Mannsåker] (CPAN bug #60200).
-  - Don't PQclear on execute() if there is an active async query
-    [rweikusat at mssgmbh.com] (CPAN bug #58376)
-  - Allow data_sources() to accept any case-variant of 'dbi:Pg' (CPAN bug #61574)
-  - Fix failing test in t/04misc.t on Perl 5.12. [Eric Simon]
-  - Fix for some 7.4 failing tests [Dagfinn Ilmari Mannsåker]
-  - Return bare instead of undef in test connections (CPAN bug #61574)
+ - Support dequoting of hex bytea format for 9.0.
+   [Dagfinn Ilmari Mannsåker]
+   (RT ticket #60200)
+
+ - Don't PQclear on execute() if there is an active async query
+   [rweikusat at mssgmbh.com]
+   (RT ticket #58376)
+
+ - Allow data_sources() to accept any case-variant of 'dbi:Pg'
+   (RT ticket #61574)
+
+ - Fix failing test in t/04misc.t on Perl 5.12.
+   [Eric Simon]
+
+ - Fix for some 7.4 failing tests
+   [Dagfinn Ilmari Mannsåker]
+
+ - Return bare instead of undef in test connections
+   (RT ticket #61574)
 
 
 Version 2.17.1  (released April 8, 2010)
 
-  - Only use lo_import_with_oid if Postgres libraries are 8.4 or better
-    [Greg Sabino Mullane] (CPAN bug #56363)
+ - Only use lo_import_with_oid if Postgres libraries are 8.4 or better
+   [Greg Sabino Mullane]
+   (RT ticket #56363)
 
 
 Version 2.17.0  (released April 6, 2010)
 
-  - Do not automatically ROLLBACK on a failed pg_cancel [Greg Sabino Mullane] (CPAN bug #55188)
-  - Added support for new lo_import_with_oid function.
-    [Greg Sabino Mullane] (CPAN bug #53835)
-  - Don't limit stored user name to \w in tests [Greg Sabino Mullane] (CPAN bug #54372)
-  - Allow tests to support versions back to Postgres 7.4 [Greg Sabino Mullane]
+ - Do not automatically ROLLBACK on a failed pg_cancel
+   [Greg Sabino Mullane]
+   (RT ticket #55188)
+
+ - Added support for new lo_import_with_oid function.
+   [Greg Sabino Mullane]
+   (RT ticket #53835)
+
+ - Don't limit stored user name to \w in tests
+   [Greg Sabino Mullane]
+   (RT ticket #54372)
+
+ - Allow tests to support versions back to Postgres 7.4
+   [Greg Sabino Mullane]
 
 
 Version 2.16.1  (released January 20, 2010)
 
-  - Output error messages in UTF-8 as needed. Reported by 
-    Michael Hofmann. [Greg Sabino Mullane] (CPAN bug #53854)
+ - Output error messages in UTF-8 as needed. Reported by Michael Hofmann.
+   [Greg Sabino Mullane]
+   (RT ticket #53854)
 
 
 Version 2.16.0  (released December 17, 2009)
 
  - Put in a test for high-bit characters in bytea handling.
-   [Bryce Nesbitt] (see also CPAN bug #39390)
+   [Bryce Nesbitt]
+   (RT ticket #39390)
 
- - Better SQLSTATE code on connection failure (CPAN bug #52863)
+ - Better SQLSTATE code on connection failure
    [Chris Travers with help from Andrew Gierth]
+   (RT ticket #52863)
 
- - Fixed POD escapes (CPAN bug #51856) [FWIE@cpan.org]
+ - Fixed POD escapes
+   [FWIE at cpan.org]
+   (RT ticket #51856)
 
 
 Version 2.15.1  (released August 7, 2009)
 
-  - Release to fix the SIGNATURE file. [Greg Sabino Mullane]
+ - Release to fix the SIGNATURE file.
+   [Greg Sabino Mullane]
 
 
 Version 2.15.0  (released August 4, 2009)
 
-  - Use PQexecPrepared even when no placeholders (CPAN bug #48155) [Greg Sabino Mullane]
-  - Allow execute_array and bind_param_array to take oddly numbered items, 
-    such that DBI will make missing entries undef/null (CPAN bug #39829) [Greg Sabino Mullane]
-  - Put single quotes around array literals when quoting arrays via
-    the quote() method. Per report from David Garamond (CPAN bug #48420) [Greg Sabino Mullane]
+ - Use PQexecPrepared even when no placeholders
+   [Greg Sabino Mullane]
+   (RT ticket #48155)
+
+ - Allow execute_array and bind_param_array to take oddly numbered items, 
+     such that DBI will make missing entries undef/null
+   [Greg Sabino Mullane]
+   (RT ticket #39829)
+
+ - Put single quotes around array literals when quoting arrays via
+     the quote() method. Per report from David Garamond
+   [Greg Sabino Mullane]
+   (RT ticket #48420)
 
 
 Version 2.14.1  (released July 28, 2009)
 
-  - Remove invalid bigint assignment [Tim Bunce]
+ - Remove invalid bigint assignment
+   [Tim Bunce]
 
 
 Version 2.14.0  (released July 27, 2009)
 
-  - Make quoting of int, floats, and names much safer. (CPAN bug #41565) [Greg Sabino Mullane]
-  - Make quoting of geometric types respect all valid chars (CPAN bug #41565) [Greg Sabino Mullane]
-  - Fix quoting of booleans to respect more Perlish variants (CPAN bug #41565) [Greg Sabino Mullane]
-  - Return ints and bools-cast-to-number from the db as true Perlish numbers.
-    (CPAN bug #47619) [Greg Sabino Mullane]
-  - Fix backslash quoting of arrays (CPAN bug #46732) [Greg Sabino Mullane]
-  - Fix error when destringifying array starting with '[x:y]='. Per report from 
-    Jeff Trout [Greg Sabino Mullane]
-  - Fix problem with foreign_key_info() and NAME_uc (CPAN bug #46109) [Greg Sabino Mullane]
-  - Make foreign_key_info() respect FetchHashKeyName (CPAN bug #46103) [Greg Sabino Mullane]
-  - Fix Makefile.PL to apply POSTGRES_INCLUDE in a saner way.
-    (CPAN bug #45769) [GAURAV@cpan.org]
-  - Improve Win32 README notes [Curtis Jewell]
-  - Fix spelling error in type_info (CPAN bug #47786) [justin.d.hunter@gmail.com]
-  - Add functions to support MS VC++ 7.0 (CPAN bug #47858) [Taro Nishino]
+ - Make quoting of int, floats, and names much safer.
+   [Greg Sabino Mullane]
+   (RT ticket #41565)
+
+ - Make quoting of geometric types respect all valid chars
+   [Greg Sabino Mullane]
+   (RT ticket #41565)
+
+ - Fix quoting of booleans to respect more Perlish variants
+   [Greg Sabino Mullane]
+   (RT ticket #41565)
+
+ - Return ints and bools-cast-to-number from the db as true Perlish numbers.
+   [Greg Sabino Mullane]
+   (RT ticket #47619)
+
+ - Fix backslash quoting of arrays
+   [Greg Sabino Mullane]
+   (RT ticket #46732)
+
+ - Fix error when destringifying array starting with '[x:y]='. Per report from Jeff Trout
+   [Greg Sabino Mullane]
+
+ - Fix problem with foreign_key_info() and NAME_uc
+   [Greg Sabino Mullane]
+   (RT ticket #46109)
+
+ - Make foreign_key_info() respect FetchHashKeyName
+   [Greg Sabino Mullane]
+   (RT ticket #46103)
+
+ - Fix Makefile.PL to apply POSTGRES_INCLUDE in a saner way.
+   [GAURAV at cpan.org]
+   (RT ticket #45769)
+
+ - Improve Win32 README notes
+   [Curtis Jewell]
+
+ - Fix spelling error in type_info
+   [justin.d.hunter at gmail.com]
+   (RT ticket #47786)
+
+ - Add functions to support MS VC++ 7.0
+   [Taro Nishino]
+   (RT ticket #47858)
 
 
 Version 2.13.1  (released April 23, 2009)
 
-  - Fix leak in pg_warn (CPAN bug #45163) [rweikusat@mssgmbh.com]
+ - Fix leak in pg_warn
+   [rweikusat at mssgmbh.com]
+   (RT ticket #45163)
 
 
 Version 2.13.0  (released April 13, 2009)
 
-  - Ensure we always set sqlstate inside of pg_st_prepare_statement
-    (CPAN bug #44732) [rweikusat@mssgmbh.com]
-  - When libpq has a connection error, return SQLSTATE 08000 ( "CONNECTION EXCEPTION" )
-    instead of the more generic 02000 ( "DATA EXCEPTION" ) (CPAN bug #44744)
-    [rweikusat@mssgmbh.com]
-  - Fix minor Perl::Critic nags (CPAN bug #44704) (Debian #bug 521969) [Greg Sabino Mullane]
-  - Clarify change of $dbh->{Name} behavior (CPAN bug 44985) [Greg Sabino Mullane]
+ - Ensure we always set sqlstate inside of pg_st_prepare_statement
+   [rweikusat at mssgmbh.com]
+   (RT ticket #44732)
+
+ - When libpq has a connection error, return SQLSTATE 08000 ( "CONNECTION EXCEPTION" )
+     instead of the more generic 02000 ( "DATA EXCEPTION" )
+   [rweikusat at mssgmbh.com]
+   (RT ticket #44744)
+
+ - Fix minor Perl::Critic nags
+   (RT ticket #44704)
+   (Debian bug #521969)
+   [Greg Sabino Mullane]
+
+ - Clarify change of $dbh->{Name} behavior
+   [Greg Sabino Mullane]
+   (RT ticket #44985)
 
 
 Version 2.12.0  (released March 28, 2009)
 
-  - Change large object interface from lo_* to pg_lo_* and make them accessible 
-    via direct $dbh calls (e.g. $dbh->pg_lo_import instead of $dbh->func(..,'pg_lo_import').
-    The use of $dbh->func(... 'lo_*') is deprecated. [Greg Sabino Mullane] (CPAN bug #44467)
-  - Throw an exception for large_object functions called when AutoCommit is on, 
-    but allow pg_lo_import and pg_lo_export to work. Reported by Kynn Jones.
-    [Greg Sabino Mullane] (CPAN bug #44461)
-  - Fix a memory leak when parsing returned arrays. Reported by Bálint Szilakszi.
-    [Greg Sabino Mullane] (CPAN bug #44225)
-  - Do proper dequoting of boolean arrays [Armando Santos, Greg Sabino Mullane] (CPAN bug #43768)
-  - Use pg_get_expr in column_info when available [Adam Sjøgren]
-  - Fix minor bugs in POD docs. [Frank Wiegand] (CPAN bug #44242)
-  - Fix minor bug in POD docs. [Tim Mattison]
+ - Change large object interface from lo_* to pg_lo_* and make them accessible 
+     via direct $dbh calls (e.g. $dbh->pg_lo_import instead of $dbh->func(..,'pg_lo_import').
+   The use of $dbh->func(... 'lo_*') is deprecated.
+   [Greg Sabino Mullane]
+   (RT ticket #44467)
+
+ - Throw an exception for large_object functions called when AutoCommit is on, 
+     but allow pg_lo_import and pg_lo_export to work. Reported by Kynn Jones.
+   [Greg Sabino Mullane]
+   (RT ticket #44461)
+
+ - Fix a memory leak when parsing returned arrays. Reported by Bálint Szilakszi.
+   [Greg Sabino Mullane]
+   (RT ticket #44225)
+
+ - Do proper dequoting of boolean arrays
+   [Armando Santos, Greg Sabino Mullane]
+   (RT ticket #43768)
+
+ - Use pg_get_expr in column_info when available
+   [Adam Sjøgren]
+
+ - Fix minor bugs in POD docs.
+   [Frank Wiegand]
+   (RT ticket #44242)
+
+ - Fix minor bug in POD docs.
+   [Tim Mattison]
 
 
 Version 2.11.8  (released December 28, 2008)
 
-  - Fix minor bug in t/12placeholders.t test (CPAN bug #41723)
+ - Fix minor bug in t/12placeholders.t test
+   (RT ticket #41723)
 
 
 Version 2.11.7  (released December 13, 2008)
 
-  - Fix placeholder parsing logic (CPAN bug #41582)
+ - Fix placeholder parsing logic
+   (RT ticket #41582)
 
 
 Version 2.11.6  (released November 30, 2008)
 
-  - Only set UTF8 flag on array items after UTF8 test. (CPAN bug #41253)
-    [Armando Santos]
+ - Only set UTF8 flag on array items after UTF8 test.
+   [Armando Santos]
+   (RT ticket #41253)
 
 
 Version 2.11.5  (released November 24, 2008)
 
-  - Clear prepared_statement name on failure to prepare: prevents 
-    the wrong error when using prepare_cached. [Greg Sabino Mullane]
+ - Clear prepared_statement name on failure to prepare: prevents 
+     the wrong error when using prepare_cached.
+   [Greg Sabino Mullane]
 
 
 Version 2.11.4  (released November 12, 2008)
 
-  - Don't set LC_MESSAGES unless superuser in tests. Remove all 
-    language-specific string checking for tests. (CPAN bug #40604)
+ - Don't set LC_MESSAGES unless superuser in tests. Remove all 
+     language-specific string checking for tests.
+   (RT ticket #40604)
 
 
 Version 2.11.3  (released November 3, 2008)
 
-  - Force LC_MESSAGES to 'C' inside tests (CPAN bug #40604)
-  - Minor compiler tweaks.
-  - Fix small POD error (CPAN bug #40209)
-  - Tweak Perl::Critic policy list (CPAN bug #40130)
+ - Force LC_MESSAGES to 'C' inside tests
+   (RT ticket #40604)
+
+ - Minor compiler tweaks.
+
+ - Fix small POD error
+   (RT ticket #40209)
+
+ - Tweak Perl::Critic policy list
+   (RT ticket #40130)
 
 
 Version 2.11.2  (released October 15, 2008)
 
-  - Fix core dump when invalid placeholders used. (CPAN bug #40075) [Greg Sabino Mullane]
+ - Fix core dump when invalid placeholders used.
+   [Greg Sabino Mullane]
+   (RT ticket #40075)
 
 
 Version 2.11.1  (released October 14, 2008)
 
-  - $sth->{ParamTypes} returns 'TYPE' when possible.
+ - Attribute $sth->{ParamTypes} returns 'TYPE' when possible.
 
 
 Version 2.11.0  (released October 13, 2008)
 
-  - $sth->{ParamTypes} now returns a hashref per the DBI docs. [Greg Sabino Mullane]
-  - Adjustment of Makefile.PL to fix problem with Strawberry Perl.
-    Thanks to Martin Evan (martin.evans@easysoft.com) and Brian 
-    (elspicyjack@gmail.com) on the dbi-users list.
+ - Attribute $sth->{ParamTypes} now returns a hashref per the DBI docs.
+   [Greg Sabino Mullane]
+
+ - Adjustment of Makefile.PL to fix problem with Strawberry Perl. Thanks 
+     to Martin Evan (martin.evans at easysoft.com)
+     and Brian (elspicyjack at gmail.com) on the dbi-users list.
 
 
 Version 2.10.7  (released September 22, 2008)
 
-  - Fix test issue when dbname contains dashes.
-    [Rainer Tammer]
-  - Revert META.yml to 1.0, until such time as tools 
-    can handle 1.1 (CPAN bug #39461) [Taro Nishino]
+ - Fix test issue when dbname contains dashes.
+   [Rainer Tammer]
+
+ - Revert META.yml to 1.0, until such time as tools can handle 1.1
+   [Taro Nishino]
+   (RT ticket #39461)
 
 
 Version 2.10.6  (released September 19, 2008)
 
-  - Correctly quote all bytea characters. (CPAN bug #39390) [Rod Taylor]
-  - Prevent core dump when checking $dbh->{standard_conforming_strings}
-    on older servers. [Greg Sabino Mullane]
-  - Skip unicode tests if server is set to 'LATIN1' [Greg Sabino Mullane]
+ - Correctly quote all bytea characters.
+   [Rod Taylor]
+   (RT ticket #39390)
+
+ - Prevent core dump when checking $dbh->{standard_conforming_strings}
+     on older servers.
+   [Greg Sabino Mullane]
+
+ - Skip unicode tests if server is set to 'LATIN1'
+   [Greg Sabino Mullane]
 
 
 Version 2.10.5  (released September 16, 2008)
 
-  - Fix SIGNATURE file
+ - Fix SIGNATURE file
 
 
 Version 2.10.4  (released September 16, 2008)
 
-  - Force use of math library when compiling. Per report 
-    of AIX problems by Rainer Tammer.
+ - Force use of math library when compiling. Per report 
+     of AIX problems by Rainer Tammer.
 
 
 Version 2.10.3  (released August 31, 2008)
 
-  - Previous version had wrong SIGNATURE file
+ - Previous version had wrong SIGNATURE file
 
 
 Version 2.10.2  (released August 31, 2008)
 
-  - Fix minor problem in t/99_yaml.t
+ - Fix minor problem in t/99_yaml.t
 
 
 Version 2.10.1  (released August 31, 2008)
 
-  - Minor testing fix.
+ - Minor testing fix.
 
 
 Version 2.10.0  (released August 26, 2008)
 
-  - Add the 'DBD' trace setting to output only non-DBI trace messages, 
-    and allow 'dbd_verbose' as a connection attribute for the same 
-    effect. [Greg Sabino Mullane]
-  - Fix a minor problem with testing against 7.4 databases [Greg Sabino Mullane]
-  - Allow multi-statement do() calls with parameters to work if pg_server_prepare
-    is set to 0 (CPAN bug #38623) [Greg Sabino Mullane]
+ - Add the 'DBD' trace setting to output only non-DBI trace messages, 
+     and allow 'dbd_verbose' as a connection attribute for the same effect.
+   [Greg Sabino Mullane]
+
+ - Fix a minor problem with testing against 7.4 databases
+   [Greg Sabino Mullane]
+
+ - Allow multi-statement do() calls with parameters to work if pg_server_prepare
+     is set to 0
+   [Greg Sabino Mullane]
+   (RT ticket #38623)
 
 
 Version 2.9.2  (released August 18, 2008)
 
-  - Empty Postgres arrays should return empty Perl arrays, not undef.
-    (CPAN bug #38552) [David E. Wheeler]
+ - Empty Postgres arrays should return empty Perl arrays, not undef.
+   [David E. Wheeler]
+   (RT ticket #38552)
 
 
 Version 2.9.1  (released August 17, 2008)
 
-  - Return undef when mapping Postgres array to Perl array and 
-    the array is empty '{}'. (CPAN bug #38552) [Greg Sabino Mullane]
-  - Minor documentation improvements. [Greg Sabino Mullane]
+ - Return undef when mapping Postgres array to Perl array and 
+     the array is empty '{}'
+   [Greg Sabino Mullane]
+   (RT ticket #38552)
+
+ - Minor documentation improvements.
+   [Greg Sabino Mullane]
 
 
 Version 2.9.0  (released August 3, 2008)
 
-  - Add support for database handle attribute "ReadOnly". This allows 
-    use of $dbh->{ReadOnly} = 1 to enforce read only mode at 
-    the server level. [Greg Sabino Mullane]
-  - Move PQexec structures to statement handle, to prevent 
-    excessive malloc and free within execute function. [Greg Sabino Mullane]
-  - Add more attribute tests, improve testing system. [Greg Sabino Mullane]
-  - Many documentation improvements. [Greg Sabino Mullane]
-  - Win32 build improvements [T.J. Ferraro]
+ - Add support for database handle attribute "ReadOnly". This allows use 
+     of $dbh->{ReadOnly} = 1 to enforce read only mode at the server level.
+   [Greg Sabino Mullane]
+
+ - Move PQexec structures to statement handle, to prevent 
+     excessive malloc and free within execute function.
+   [Greg Sabino Mullane]
+
+ - Add more attribute tests, improve testing system.
+   [Greg Sabino Mullane]
+
+ - Many documentation improvements.
+   [Greg Sabino Mullane]
+
+ - Win32 build improvements
+   [T.J. Ferraro]
 
 
 Version 2.8.8  (released December 17, 2009)
 
-  - Security release to fix high bit character problem in bytea
-    (CPAN bug #51153) (Debian bug #554489)
+ - Security release to fix high bit character problem in bytea
+   (RT ticket #51153)
+   (Debian bug #554489)
 
 
 Version 2.8.7  (released July 24, 2008)
 
-  - Modify test scripts to work better on FreeBSD boxes. [Greg Sabino Mullane]
-  - Much documentation improvement and POD tweaking. [Greg Sabino Mullane]
+ - Modify test scripts to work better on FreeBSD boxes.
+   [Greg Sabino Mullane]
+
+ - Much documentation improvement and POD tweaking.
+   [Greg Sabino Mullane]
 
 
 Version 2.8.6  (released July 21, 2008)
 
-  - More testing improvements to increase odds of all tests being
-    run, especially when testing as root. [Greg Sabino Mullane]
+ - More testing improvements to increase odds of all tests being
+     run, especially when testing as root.
+   [Greg Sabino Mullane]
 
 
 Version 2.8.5  (released July 13, 2008)
 
-  - Fix an obscure bug in which a coredump occurs if client_min_messages 
-    is set to DEBUG3 or greater, and we then exit without disconnecting 
-    while AutoCommit is off. The new behavior is to simply not attempt to 
-    output the debugging information about the final 'rollback'. [Greg Sabino Mullane]
-  - More documentation improvements. [Greg Sabino Mullane]
+ - Fix an obscure bug in which a coredump occurs if client_min_messages 
+     is set to DEBUG3 or greater, and we then exit without disconnecting 
+     while AutoCommit is off. The new behavior is to simply not attempt to 
+     output the debugging information about the final 'rollback'.
+   [Greg Sabino Mullane]
+
+ - More documentation improvements.
+   [Greg Sabino Mullane]
 
 
 Version 2.8.4  (released July 10, 2008)
 
-  - Minor Perl::Critic test adjustments. [Greg Sabino Mullane]
-  - Documentation enhancements. [Greg Sabino Mullane]
-  - Yet more minor testing tweaks. [Greg Sabino Mullane]
+ - Minor Perl::Critic test adjustments.
+   [Greg Sabino Mullane]
+
+ - Documentation enhancements.
+   [Greg Sabino Mullane]
+
+ - Yet more minor testing tweaks.
+   [Greg Sabino Mullane]
 
 
 Version 2.8.3  (released July 6, 2008)
 
-  - Minor testing functionality tweaks, lots of test cleanups, minor doc enhancements. [Greg Sabino Mullane]
+ - Minor testing functionality tweaks, lots of test cleanups, minor doc enhancements.
+   [Greg Sabino Mullane]
 
 
 Version 2.8.2  (released June 29, 2008)
 
-  - Minor testing tweaks, doc fixes. [Greg Sabino Mullane]
+ - Minor testing tweaks, doc fixes.
+   [Greg Sabino Mullane]
 
 
 Version 2.8.1  (released June 11, 2008)
 
-  - Force testing to use a custom socket dir, to avoid 
-    permission problems. Thanks to Frank Wiegand for 
-    help in uncovering this. [Greg Sabino Mullane]
+ - Force testing to use a custom socket dir, to avoid permission problems.
+   Thanks to Frank Wiegand for help in uncovering this.
+   [Greg Sabino Mullane]
 
 
 Version 2.8.0  (released June 1, 2008)
 
-  - Added in payload strings for LISTEN/NOTIFY in 8.4 
-    via $dbh->pg_notifies() [Greg Sabino Mullane]
-  - Fixed problem preventing some pg_type bind_arrays
-    from working [Greg Sabino Mullane]
-  - Fix tests in t.04misc.t to handle Windows newlines.
-    (CPAN bug #36237) [Ian Macdonald]
-  - Clean up get_info() information. [Greg Sabino Mullane]
+ - Added in payload strings for LISTEN/NOTIFY in 8.4 via $dbh->pg_notifies()
+   [Greg Sabino Mullane]
+ 
+ - Fixed problem preventing some pg_type bind_arrays from working
+   [Greg Sabino Mullane]
+
+ - Fix tests in t.04misc.t to handle Windows newlines.
+   [Ian Macdonald]
+   (RT ticket #36237)
+
+ - Clean up get_info() information.
+   [Greg Sabino Mullane]
 
 
 Version 2.7.2  (released May 14, 2008)
 
-  - Handle embedded commas in quotes properly when destringifying 
-    arrays. (CPAN bug #35862) [Greg Sabino Mullane]
-  - Fix typo in docs with trace_parser_flags() (Martin J. Evans)
-  - More testing tweaks [Greg Sabino Mullane]
+ - Handle embedded commas in quotes properly when destringifying arrays.
+   [Greg Sabino Mullane]
+   (RT ticket #35862)
+
+ - Fix typo in docs with trace_parser_flags()
+   [Martin J. Evans]
+
+ - More testing tweaks
+   [Greg Sabino Mullane]
 
 
 Version 2.7.1  (released May 11, 2008)
 
-  - Yet more minor testing tweaks. [Greg Sabino Mullane]
+ - Yet more minor testing tweaks.
+   [Greg Sabino Mullane]
 
 
 Version 2.7.0  (released May 10, 2008)
 
-  - Have $dbh->quote() return E'' when server is >= 8.1 and string contains 
-    backslashes. Fixes any problems with standard_conforming_strings.
-    (CPAN bug #27538) [Greg Sabino Mullane]
+ - Have $dbh->quote() return E'' when server is >= 8.1 and string contains 
+     backslashes. Fixes any problems with standard_conforming_strings.
+   [Greg Sabino Mullane]
+   (RT ticket #27538)
 
 
 Version 2.6.6  (released May 7, 2008)
 
-  - Fix minor problem in t/99_spellcheck.t [Greg Sabino Mullane]
+ - Fix minor problem in t/99_spellcheck.t
+   [Greg Sabino Mullane]
 
 
 Version 2.6.5  (released May 7, 2008)
 
-  - Add spell checker to tests. [Greg Sabino Mullane]
-  - More tweaks to the testing suite. [Greg Sabino Mullane]
+ - Add spell checker to tests.
+   [Greg Sabino Mullane]
+
+ - More tweaks to the testing suite.
+   [Greg Sabino Mullane]
 
 
 Version 2.6.4  (released May 2, 2008)
 
-  - More tweaks to the test suite. [Greg Sabino Mullane]
+ - More tweaks to the test suite.
+   [Greg Sabino Mullane]
 
 
 Version 2.6.3  (released May 1, 2008)
 
-  - Minor tweaks to the test suite. [Greg Sabino Mullane]
+ - Minor tweaks to the test suite.
+   [Greg Sabino Mullane]
 
 
 Version 2.6.2  (released April 30, 2008)
 
-  - Fix coredump when pg_getcopydata copies 0 rows into a 
-    freshly created var. (CPAN bug #35556) [David Harris]
-  - Allow 'make test' create a test database from scratch if
-    it cannot find an existing one to use. [Greg Sabino Mullane]
+ - Fix coredump when pg_getcopydata copies 0 rows into a freshly created var.
+   [David Harris]
+   (RT ticket #35556)
+
+ - Allow 'make test' create a test database from scratch if
+     it cannot find an existing one to use.
+   [Greg Sabino Mullane]
 
 
 Version 2.6.1  (released April 22, 2008)
 
-  - Don't free placeholder section, fixes problem when using 
-    more than one named placeholder with the same name.
-    (CPAN bug #35303) [Greg Sabino Mullane]
+ - Don't free placeholder section, fixes problem when using 
+     more than one named placeholder with the same name.
+   [Greg Sabino Mullane]
+   (RT ticket #35303)
 
 
 Version 2.6.0  (released April 16, 2008)
 
-  - Make pg_notifies a true function, so that you can now
-    use $dbh->pg_notifies instead of $dbh->func('pg_notifies') [Greg Sabino Mullane]
-  - Various performance improvements [Greg Sabino Mullane]
-  - Fix minor build and compilation issues with Strawberry Perl [Greg Sabino Mullane]
-  - Add Bundle::DBD::Pg [Greg Sabino Mullane]
+ - Make pg_notifies a true function, so that you can now
+     use $dbh->pg_notifies instead of $dbh->func('pg_notifies')
+   [Greg Sabino Mullane]
+
+ - Various performance improvements
+   [Greg Sabino Mullane]
+
+ - Fix minor build and compilation issues with Strawberry Perl
+   [Greg Sabino Mullane]
+
+ - Add Bundle::DBD::Pg
+   [Greg Sabino Mullane]
 
 
 Version 2.5.1  (released April 7, 2008)
 
-  - Correctly handle negative PID numbers on Win32 systems when
-    generating prepared statement names (CPAN bug # 34738) [Greg Sabino Mullane]
+ - Correctly handle negative PID numbers on Win32 systems when
+     generating prepared statement names
+   [Greg Sabino Mullane]
+   (RT ticket #34738)
 
 
 Version 2.5.0  (released March 23, 2008)
 
-  - Add pg_enum_values to $dbh->column_info()
-    [Dave Rolsky] (CPAN ticket #34351)
-  - Minor test fixes. [Greg Sabino Mullane]
+ - Add pg_enum_values to $dbh->column_info()
+   [Dave Rolsky]
+   (RT ticket #34351)
+
+ - Minor test fixes.
+   [Greg Sabino Mullane]
 
 
 Version 2.4.0  (released March 21, 2008)
 
-  - Remove problematic and unneeded Test::Warn test from 00basic.t.
-  - Add $sth->{pg_current_row} [Greg Sabino Mullane]
+ - Remove problematic and unneeded Test::Warn test from 00basic.t.
+
+ - Add $sth->{pg_current_row}
+   [Greg Sabino Mullane]
 
 
 Version 2.3.0  (released March 19, 2008)
 
-  - Add $sth->{pg_bound} and $sth->{pg_numbound} [Greg Sabino Mullane]
-  - Fix broken call to $sth->{pg_segments} [Greg Sabino Mullane]
+ - Add $sth->{pg_bound} and $sth->{pg_numbound}
+   [Greg Sabino Mullane]
+
+ - Fix broken call to $sth->{pg_segments}
+   [Greg Sabino Mullane]
 
 
 Version 2.2.2  (released March 3, 2008)
 
-  - Remove non-working tracing from types.c and quote.c [Greg Sabino Mullane]
-  - Add parse_trace_flag as statement handle method. [Greg Sabino Mullane]
+ - Remove non-working tracing from types.c and quote.c
+   [Greg Sabino Mullane]
+
+ - Add parse_trace_flag as statement handle method.
+   [Greg Sabino Mullane]
 
 
 Version 2.2.1  (released March 1, 2008)
 
-  - Fix memory leaks in dbdimp.c (CPAN bug #33743) [Alexey Tourbin]
-  - Fix strlen problems in dbdimp.c (CPAN bug #33737) [Alexey Tourbin]
-  - Fix char count in Renew() (CPAN bug #33738) [Alexey Tourbin]
-  - Change local trace_flags to lowercase. [Greg Sabino Mullane]
+ - Fix memory leaks in dbdimp.c
+   [Alexey Tourbin]
+   (RT ticket #33743)
+
+ - Fix strlen problems in dbdimp.c
+   [Alexey Tourbin]
+   (RT ticket #33737)
+
+ - Fix char count in Renew()
+   [Alexey Tourbin]
+   (RT ticket #33738)
+
+ - Change local trace_flags to lowercase.
+   [Greg Sabino Mullane]
 
 
 Version 2.2.0  (released February 27, 2008)
 
-  - Introduce enhanced trace flags. See the documentation 
-     on parse_trace_flags() for details. [Greg Sabino Mullane]
-  - Remove version.pm dependency from Makefile.PL (CPAN bug #33429)
+ - Introduce enhanced trace flags. See the documentation 
+     on parse_trace_flags() for details.
+   [Greg Sabino Mullane]
+
+ - Remove version.pm dependency from Makefile.PL
+   (RT ticket #33429)
 
 
 Version 2.1.3  (released February 20, 2008)
 
-  - Do not assume POSTGRES_LIB is a plain dirname, as it may have " -lssl".
+ - Do not assume POSTGRES_LIB is a plain dirname, as it may have " -lssl".
 
 
 Version 2.1.2  (released February 19, 2008)
 
-  - Do not build if environment variables POSTGRES_HOME, POSTGRES_LIB, 
-    or POSTGRES_INCLUDE are set but not valid.
-  - Fix dependency requirements, especially version.pm [Greg Sabino Mullane]
+ - Do not build if environment variables POSTGRES_HOME, POSTGRES_LIB, 
+     or POSTGRES_INCLUDE are set but not valid.
+
+ - Fix dependency requirements, especially version.pm
+   [Greg Sabino Mullane]
 
 
 Version 2.1.1  (released February 19, 2008)
 
-  - Better URLs to cpan.org resources. [Greg Sabino Mullane]
+ - Better URLs to cpan.org resources.
+   [Greg Sabino Mullane]
 
 
 Version 2.1.0  (released February 18, 2008)
 
-  - Use version.pm (CPAN bug #33206) [Greg Sabino Mullane]
-  - Add PERL_NO_GET_CONTEXT #define to improve performance on threaded Perls [Greg Sabino Mullane]
-  - Raise the minimum DBI version to 1.52. [Greg Sabino Mullane]
-  - Allow arrayrefs into bind_col (CPAN bug #33193) [Greg Sabino Mullane]
-  - Remove '//' style comments to make strict ANSI compilers happy.
-    [Trevor Inman] (CPAN bug #33089)
-  - Force client encoding of UTF8 for some tests. [Greg Sabino Mullane]
-  - Make 03dbmethod.t pass minor test for version 8.1.9 (CPAN bug #33282) [Greg Sabino Mullane]
-  - Add a local copy of dbivport.h [Greg Sabino Mullane]
+ - Use version.pm
+   [Greg Sabino Mullane]
+   (RT ticket #33206)
+
+ - Add PERL_NO_GET_CONTEXT #define to improve performance on threaded Perls
+   [Greg Sabino Mullane]
+
+ - Raise the minimum DBI version to 1.52.
+   [Greg Sabino Mullane]
+
+ - Allow arrayrefs into bind_col
+   [Greg Sabino Mullane]
+   (RT ticket #33193)
+
+ - Remove '//' style comments to make strict ANSI compilers happy.
+   [Trevor Inman]
+   (RT ticket #33089)
+
+ - Force client encoding of UTF8 for some tests.
+   [Greg Sabino Mullane]
+
+ - Make 03dbmethod.t pass minor test for version 8.1.9
+   (RT ticket #33282)
+   [Greg Sabino Mullane]
+
+ - Add a local copy of dbivport.h
+   [Greg Sabino Mullane]
 
 
 Version 2.0.0  (released February 10, 2008)
 
-Major changes:
+ - Make minimum supported server 7.4.
+   [Greg Sabino Mullane]
 
-  - Make minimum supported server 7.4. [Greg Sabino Mullane]
-  - Overhaul COPY functions: deprecate pg_getline, pg_putline, 
-    and pg_endcopy. The new functions are pg_getcopydata, 
-    pg_getcopydata_async, pg_putcopydata, and pg_putcopyend. [Greg Sabino Mullane]
-  - Add support for arrays: can pass in arrayrefs to execute, and 
-    they are automatically returned as arrays when fetching. [Greg Sabino Mullane]
-  - Add support for asynchronous queries. [Greg Sabino Mullane]
-  - Allow raw transaction statements through - in other words, 
-    do not croak if $dbh->prepare("COMMIT") is attempted. Not 
-    only was this a little too controlling, there is a growing 
-    host of other commands such as "COMMIT PREPARED" that we
-    need to allow. [Greg Sabino Mullane].
-  - Check transaction status after each command, to allow 
-    things such as 'PREPARE TRANSACTION' to work properly.
-    (CPAN bug #32423) [Greg Sabino Mullane]
-  - Overhauled the data type system. [Greg Sabino Mullane]
-  - Switch from cvs to subversion. Switch from gborg to perl.org. [Greg Sabino Mullane]
-  - Change versioning system to three numbered system. [Greg Sabino Mullane]
+ - Overhaul COPY functions: deprecate pg_getline, pg_putline, and pg_endcopy. The 
+     new functions are pg_getcopydata, pg_getcopydata_async, pg_putcopydata, and pg_putcopyend.
+   [Greg Sabino Mullane]
 
-Bug fixes:
+ - Add support for arrays: can pass in arrayrefs to execute, and 
+     they are automatically returned as arrays when fetching.
+   [Greg Sabino Mullane]
 
-  - Add $dbh->{pg_placeholder_dollaronly} to allow '?' and other symbols 
-    to be used in prepared statements without getting interpreted as 
-    placeholders, i.e. the geometric operator '?#' (CPAN bug #24124) [Greg Sabino Mullane]
-  - Fix memory leak in bytea quoting. (CPAN bug #21392). Fix memory leak 
-    in pg_notifies. [Stephen Marshall smarshall@wsi.com]
-  - Fix memory leak when using savepoints. (CPAN bug #29791) [airwave@cpan.org]
-  - Use adbin, not adsrc, when figuring out the sequence name for the 
-    last_insert_id() method. This allows the function to work properly 
-    if the sequence name is changed. Note that {pg_cache=>0} should be 
-    passed to the function if you expect this might happen.
-    (CPAN bug #30924) [Greg Sabino Mullane]
-  - Use unsigned chars when parsing passed-in queries, preventing UTF-8 
-    strings from ruining the prepare. UTF-16 may still cause problems.
-    (CPAN bug #31577) [Greg Sabino Mullane]
-  - Fix crash when executing query with two placeholders side by side.
-    Thanks to Daniel Browning for spotting this. [Greg Sabino Mullane]
-  - Skip item if no matching key in foreign_key_info.
-    (CPAN bug #32308) [Greg Sabino Mullane]
-  - Fix bug in last_insert_id. (CPAN bug #15918) [orentocy@gmail.com]
-  - Fix pg_description join in table_info(). [Max Cohan max@endpoint.com]
-  - Make sure arrays handle UTF-8 smoothly (CPAN bug #32479) [Greg Sabino Mullane]
-  - Force column names to respect utf8-ness. Per report from Ch Lamprect. [Greg Sabino Mullane]
-  - Make sure array items are marked as UTF as needed.
-    (CPAN bug #29656) [Greg Sabino Mullane]    
-  - Force SQL_REAL and SQL_NUMERIC to be float8 not float4.
-    (CPAN bug #30010) [Greg Sabino Mullane]
-  - Allow objects with stringification overloading to work with quote().
-    (CPAN bug #32868) [David E. Wheeler and Greg Sabino Mullane]
-  - Use prepare_cached in last_insert_id function. (CPAN bug #24313)
-  - Switch from pow to powf to support AIX compiler issue.
-    (CPAN bug #24579) [Greg Sabino Mullane]
+ - Add support for asynchronous queries.
+   [Greg Sabino Mullane]
 
-Enhancements and API changes:
+ - Allow raw transaction statements through - in other words, do not croak 
+     if $dbh->prepare("COMMIT") is attempted. Not only was this a little too controlling, 
+     there is a growing host of other commands such as "COMMIT PREPARED" that we
+     need to allow.
+   [Greg Sabino Mullane]
 
-  - Complain loudly and fail to proceed if Makefile.PL finds no -lpq [Greg Sabino Mullane]
-  - Add three new columns to column_info, to return unquoted 
-    version: pg_schema, pg_table, and pg_columns. Add all 
-    three to primary_key_info, and the first two to table_info
-    (CPAN bug #20282) [Greg Sabino Mullane]
-  - Change $dbh->{User} to $dbh->{Username} [Greg Sabino Mullane]
-  - Change $dbh->{Name} to return the entire DSN string, minus the 
-    'dbi:Pg:' part. Thanks to Mark Stosberg for the idea. [Greg Sabino Mullane]
-  - Allow data_sources to accept optional arguments. [Greg Sabino Mullane]
-  - Add private_attribute_info() method. [Greg Sabino Mullane]
-  - Add SQL_INTERVAL and others to types.c [Greg Sabino Mullane]
-  - Added statistics_info function [Brandon Black blblack@gmail.com]
-  - Be much more flexible in test connection options. [Greg Sabino Mullane]
-  - Overhaul test suite, allow tests to be run individually. [Greg Sabino Mullane]
+ - Check transaction status after each command, to allow 
+     things such as 'PREPARE TRANSACTION' to work properly.
+   [Greg Sabino Mullane]
+   (RT ticket #32423)
 
-New and experimental:
+ - Overhauled the data type system.
+   [Greg Sabino Mullane]
 
-  - Quick support for named trace level 'SQL' [Greg Sabino Mullane]
-  - Very experimental support for bind_param_inout, use with caution. [Greg Sabino Mullane]
+ - Switch from cvs to subversion. Switch from gborg to perl.org.
+   [Greg Sabino Mullane]
 
-Documentation fixes:
+ - Change versioning system to three numbered system.
+   [Greg Sabino Mullane]
 
-  - Fix bad PG_INTEGER example in docs, thanks to Xavi Drudis Ferran.
-    (CPAN bug #31545) [Greg Sabino Mullane]
-  - Fix META.yml file. (CPAN bug #25759) [Greg Sabino Mullane]
+ - Add $dbh->{pg_placeholder_dollaronly} to allow '?' and other symbols 
+     to be used in prepared statements without getting interpreted as 
+     placeholders, i.e. the geometric operator '?#'
+   [Greg Sabino Mullane]
+   (RT ticket #24124)
+
+ - Fix memory leaks in bytea quoting and in pg_notifies.
+   [Stephen Marshall smarshall at wsi.com]
+   (RT ticket #21392)
+
+ - Fix memory leak when using savepoints.
+   [airwave at cpan.org]
+   (RT ticket #29791)
+
+ - Use adbin, not adsrc, when figuring out the sequence name for the last_insert_id() 
+     method. This allows the function to work properly if the sequence name is changed.
+   Note that {pg_cache=>0} should be passed to the function if you expect this might happen.
+   [Greg Sabino Mullane]
+   (RT ticket #30924)
+
+ - Use unsigned chars when parsing passed-in queries, preventing UTF-8 
+     strings from ruining the prepare. UTF-16 may still cause problems.
+   [Greg Sabino Mullane]
+   (RT ticket #31577)
+
+ - Fix crash when executing query with two placeholders side by side.
+   Thanks to Daniel Browning for spotting this.
+   [Greg Sabino Mullane]
+
+ - Skip item if no matching key in foreign_key_info.
+   [Greg Sabino Mullane]
+   (RT ticket #32308)
+
+ - Fix bug in last_insert_id.
+   [orentocy at gmail.com]
+   (RT ticket #15918)
+
+ - Fix pg_description join in table_info().
+   [Max Cohan max at endpoint.com]
+
+ - Make sure arrays handle UTF-8 smoothly
+   [Greg Sabino Mullane]
+   (RT ticket #32479)
+
+ - Force column names to respect utf8-ness. Per report from Ch Lamprect.
+   [Greg Sabino Mullane]
+
+ - Make sure array items are marked as UTF as needed.
+   [Greg Sabino Mullane]
+   (RT ticket #29656)
+
+ - Force SQL_REAL and SQL_NUMERIC to be float8 not float4.
+   [Greg Sabino Mullane]
+   (RT ticket #30010)
+
+ - Allow objects with stringification overloading to work with quote().
+   [David E. Wheeler and Greg Sabino Mullane]
+   (RT ticket #32868)
+
+ - Use prepare_cached in last_insert_id function.
+   (RT ticket #24313)
+
+ - Switch from pow to powf to support AIX compiler issue.
+   [Greg Sabino Mullane]
+   (RT ticket #24579)
+
+ - Complain loudly and fail to proceed if Makefile.PL finds no -lpq
+   [Greg Sabino Mullane]
+
+ - Add three new columns to column_info, to return unquoted version: pg_schema, 
+     pg_table, and pg_columns. Add all three to primary_key_info, and the first two 
+     to table_info
+   [Greg Sabino Mullane]
+   (RT ticket #20282)
+
+ - Change $dbh->{User} to $dbh->{Username}
+   [Greg Sabino Mullane]
+
+ - Change $dbh->{Name} to return the entire DSN string, minus 
+     the 'dbi:Pg:' part. Thanks to Mark Stosberg for the idea.
+   [Greg Sabino Mullane]
+
+ - Allow data_sources to accept optional arguments.
+   [Greg Sabino Mullane]
+
+ - Add private_attribute_info() method.
+   [Greg Sabino Mullane]
+
+ - Add SQL_INTERVAL and others to types.c
+   [Greg Sabino Mullane]
+
+ - Added statistics_info function
+   [Brandon Black blblack at gmail.com]
+
+ - Be much more flexible in test connection options.
+   [Greg Sabino Mullane]
+
+ - Overhaul test suite, allow tests to be run individually.
+   [Greg Sabino Mullane]
+
+ - Support for named trace level 'SQL'
+   [Greg Sabino Mullane]
+
+ - Experimental support for bind_param_inout.
+   [Greg Sabino Mullane]
+
+ - Fix bad PG_INTEGER example in docs, thanks to Xavi Drudis Ferran.
+   [Greg Sabino Mullane]
+   (RT ticket #31545)
+
+ - Fix META.yml file.
+   [Greg Sabino Mullane]
+   (RT ticket #25759)
 
 
 Version 1.49  (released May 7, 2006)
 
-  - Thanks to Backcountry.com for sponsoring work on this release. [Greg Sabino Mullane]
+ - Thanks to Backcountry.com for sponsoring work on this release.
+   [Greg Sabino Mullane]
 
-  - Add the statement handle attribute ParamTypes, and fix an error 
-    in ParamValues. ParamTypes requires DBI 1.49 or better. [Greg Sabino Mullane]
-  - Strip the final newline from error messages, so that die can add 
-    in the line number. (CPAN bug #18900) [Greg Sabino Mullane]
-  - Make workaround for PQresultErrorField not returning proper 
-    result when an error is set and we are connecting via TCP/IP.
-    This allows correct $dbh->state() values. [Greg Sabino Mullane]
-  - Fix incorrect quoting preventing compiling. (CPAN bug #18640)
-  - Add support for quoting and binding of geometric types: POINT, 
-    LINE, LSEG, BOX, PATH, POLYGON, and CIRCLE. Also added the 
-    TID type. [Greg Sabino Mullane]
+ - Add the statement handle attribute ParamTypes, and fix an error 
+     in ParamValues. ParamTypes requires DBI 1.49 or better.
+   [Greg Sabino Mullane]
+
+ - Strip the final newline from error messages, so that die can add in the line number.
+   [Greg Sabino Mullane]
+   (RT ticket #18900)
+
+ - Make workaround for PQresultErrorField not returning proper result when an error 
+     is set and we are connecting via TCP/IP. This allows correct $dbh->state() values.
+   [Greg Sabino Mullane]
+
+ - Fix incorrect quoting preventing compiling.
+   (RT ticket #18640)
+
+ - Add support for quoting and binding of geometric 
+     types: POINT, LINE, LSEG, BOX, PATH, POLYGON, and CIRCLE.
+   Also added the TID type.
+   [Greg Sabino Mullane]
 
 
 Version 1.48  (released April 5, 2006)
 
-  - Bump minimum DBI version to 1.45 (CPAN bug #18260) (plus problems 
-    in versions 1.42 and 1.44) [Greg Sabino Mullane]
-  - Fix typo in Pg.pm code (CPAN bug #18537) [marc@sssonline.com]
-  - Ensure begin_work is properly set before err. (CPAN bug #18387) [Greg Sabino Mullane]
-  - Force PQexecParams to only run with DML. (CPAN bug #18258) [Greg Sabino Mullane]
-  - Fix bytea encoding problem (CPAN bug #18264) [Greg Sabino Mullane]
-  - Add documentation about connection service files (pg_service.conf). 
-    [David Fetter]
+ - Bump minimum DBI version to 1.45
+   [Greg Sabino Mullane]
+   (RT ticket #18260)
+
+ - Fix typo in Pg.pm code
+   [marc at sssonline.com]
+   (RT ticket #18537)
+
+ - Ensure begin_work is properly set before err.
+   [Greg Sabino Mullane]
+   (RT ticket #18387)
+
+ - Force PQexecParams to only run with DML.
+   [Greg Sabino Mullane]
+   (RT ticket #18258)
+
+ - Fix bytea encoding problem
+   [Greg Sabino Mullane]
+   (RT ticket #18264)
+
+ - Add documentation about connection service files (pg_service.conf). 
+   [David Fetter]
 
 
 Version 1.47  (released March 20, 2006)
 
-  - Fix problem with selecting arrays. (CPAN bugs #18128 and 
-    #18177) [Greg Sabino Mullane]
-  - Fix problem with dollar-sign placeholders. [Greg Sabino Mullane]
+ - Fix problem with selecting arrays.
+   [Greg Sabino Mullane]
+   (RT tickets #18128 and #18177)
+
+ - Fix problem with dollar-sign placeholders.
+   [Greg Sabino Mullane]
 
 
 Version 1.46  (released March 16, 2006)
 
-  - Fix problem with dollar-sign placeholders. (husseinp@gmail.com)
-    (CPAN bug #18209) [Greg Sabino Mullane]
+ - Fix problem with dollar-sign placeholders.
+   [husseinp at gmail.com]
+   (RT ticket #18209)
 
 
 Version 1.45  (released February 27, 2006)
 
-  - Fix bug preventing bytea values over 20 characters from showing.
-    Spotted by Igor Shevchenko. [Greg Sabino Mullane]
+ - Fix bug preventing bytea values over 20 characters from showing.
+   Spotted by Igor Shevchenko.
+   [Greg Sabino Mullane]
 
 
 Version 1.44  (released February 21, 2006)
 
-  - Make sure pg_warn does not warn if the database attribute
-    PrintWarn is off. (Tyler MacDonald tyler@yi.org) [Greg Sabino Mullane]
-  - Add SIGNATURE file for Module::Signature verification. [Greg Sabino Mullane]
-  - Fix error in documentation for pg_errorlevel. 
-    (CPAN bug #17434)
-  - Add experimental support for using DEFAULT values inside 
-    of execute with $DBDPG_DEFAULT. [Greg Sabino Mullane]
-  - Return the proper SQLSTATE codes on connection failures.
-    (CPAN bug #17115) [Greg Sabino Mullane]
-  - Fix parser to handle leading parens. (CPAN bug #15481) [Greg Sabino Mullane]
-  - Make statement handles destruction abort early if 
-    InactiveDestroy is set (CPAN bug #14978) [Greg Sabino Mullane]
-  - Make quote work properly for time/date types
-    (CPAN bug #15082) [Greg Sabino Mullane]
-  - Ensure all lo_ functions begin a transaction as needed 
-    if they are the first action in a script
-    (CPAN bug # 13810) [Greg Sabino Mullane]
-  - Fix memory leak in dbdimp.c (k@sawada.cc) [Kenchi Sawada]
-  - Fix memory leak in dbdimp.c (dmitri@karasik.eu.org)
-    (CPAN bug #16054)
-  - Move package declaration lines to fix RPM parser problems
-    (CPAN bug #14509) [Greg Sabino Mullane]
-  - Add support for dollar quoting (CPAN bug #13608) [Greg Sabino Mullane]
-  - Added $dbh->{pg_default_port} method [Greg Sabino Mullane]
-  - Overhaul get_info data, add many more values [Greg Sabino Mullane]
-  - Overhaul type_info data (CPAN bug #13806) [Greg Sabino Mullane]
-  - Rewrite some of the quoting functions, reduce dependence 
-    on libpq versions [Greg Sabino Mullane]
-  - Rewrite and optimize the do() method. Should be much faster 
-    when called without placeholders. Thanks to Tom Lane 
-    for suggesting this. [Greg Sabino Mullane]
-  - Double check PQserverVersion return and use alternate 
-    method if it returns 0 (CPAN bug #14302)
-  - Add support for specifying type in $dbh->quote(), 
-    such as $dbh->quote($var, {pg_type => DBD::Pg::PG_BYTEA})
-    Also support type => SQL_xx [Greg Sabino Mullane] (CPAN bug #13942)
-  - Fix pg_notifies() bug (CPAN bug #14232) [door@lcpi.ru] 
-  - Add pg_ping() method [Greg Sabino Mullane]
-  - Make sure ping returns true, even if in failed transaction state
-    [thanks to Bill Moseley] [Greg Sabino Mullane]
-  - Fix COPY-related core dump [Greg Sabino Mullane]
-  - Fix strncpy bug in quote.c [Jun Kuriyama] (CPAN bug #14897)
-  - Fix error in is_high_bit_set() [Alexey Tourbin] (CPAN bug #13406)
+ - Make sure pg_warn does not warn if the database attribute
+   PrintWarn is off.
+   [Tyler MacDonald tyler at yi.org]
+   [Greg Sabino Mullane]
+
+ - Add SIGNATURE file for Module::Signature verification.
+   [Greg Sabino Mullane]
+
+ - Fix error in documentation for pg_errorlevel. 
+   (RT ticket #17434)
+
+ - Add experimental support for using DEFAULT values inside 
+     of execute with $DBDPG_DEFAULT.
+   [Greg Sabino Mullane]
+
+ - Return the proper SQLSTATE codes on connection failures.
+   (RT ticket #17115)
+   [Greg Sabino Mullane]
+
+ - Fix parser to handle leading parens.
+   (RT ticket #15481)
+   [Greg Sabino Mullane]
+
+ - Make statement handles destruction abort early if InactiveDestroy is set
+   (RT ticket #14978)
+   [Greg Sabino Mullane]
+
+ - Make quote work properly for time/date types
+   (RT ticket #15082)
+   [Greg Sabino Mullane]
+
+ - Ensure all lo_ functions begin a transaction as needed 
+     if they are the first action in a script
+   (RT ticket #13810)
+   [Greg Sabino Mullane]
+
+ - Fix memory leak in dbdimp.c
+   [Kenchi Sawada]
+
+ - Fix memory leak in dbdimp.c
+   [dmitri at karasik.eu.org]
+   (RT ticket #16054)
+
+ - Move package declaration lines to fix RPM parser problems
+   [Greg Sabino Mullane]
+   (RT ticket #14509)
+
+ - Add support for dollar quoting
+   [Greg Sabino Mullane]
+   (RT ticket #13608)
+
+ - Added $dbh->{pg_default_port} method
+   [Greg Sabino Mullane]
+
+ - Overhaul get_info data, add many more values
+   [Greg Sabino Mullane]
+
+ - Overhaul type_info data
+   [Greg Sabino Mullane]
+   (RT ticket #13806)
+
+ - Rewrite some of the quoting functions, reduce dependence 
+     on libpq versions
+   [Greg Sabino Mullane]
+
+ - Rewrite and optimize the do() method. Should be much faster when called 
+     without placeholders. Thanks to Tom Lane for suggesting this.
+   [Greg Sabino Mullane]
+
+ - Double check PQserverVersion return and use alternate method if it returns 0
+   (RT ticket #14302)
+
+ - Add support for specifying type in $dbh->quote(), 
+     such as $dbh->quote($var, {pg_type => DBD::Pg::PG_BYTEA})
+   Also support type => SQL_xx
+   (RT ticket #13942)
+   [Greg Sabino Mullane]
+
+ - Fix pg_notifies() bug
+   [door at lcpi.ru]
+   (RT ticket #14232)
+
+ - Add pg_ping() method
+   [Greg Sabino Mullane]
+
+ - Make sure ping returns true, even if in failed transaction state (thanks to Bill Moseley)
+   [Greg Sabino Mullane]
+
+ - Fix COPY-related core dump
+   [Greg Sabino Mullane]
+
+ - Fix strncpy bug in quote.c
+   (RT ticket #14897)
+   [Jun Kuriyama]
+
+ - Fix error in is_high_bit_set()
+   (RT ticket #13406)
+   [Alexey Tourbin]
 
 
 Version 1.43  (released June 23, 2005)
 
-  - Added README.dev file. [Greg Sabino Mullane]
-  - Fix statement-name related core dump. [Greg Sabino Mullane]
-  - Ensure state() returns an empty string, not 00000 on success.
-    (CPAN bug #13237) [michael.bell@web.de of OpenCA] [Greg Sabino Mullane]
-  - Fix rare core dump when $sth still in scope after disconnect [Greg Sabino Mullane]
-  - Enhancements to README.win32 [fenlisesi@gmail.com]
-  - Fix incorrect sprintf calls (CPAN bug #12204) [Jakub Jelinek]
-  - Fix get_info(18) ("ODBCVERSION") (CPAN bug #12968)
-    [thanks to szinger@lanl.gov] [Greg Sabino Mullane]
+ - Added README.dev file.
+   [Greg Sabino Mullane]
+
+ - Fix statement-name related core dump.
+   [Greg Sabino Mullane]
+
+ - Ensure state() returns an empty string, not 00000 on success.
+   [michael.bell at web.de of OpenCA]
+   [Greg Sabino Mullane]
+   (RT ticket #13237)
+
+ - Fix rare core dump when $sth still in scope after disconnect
+   [Greg Sabino Mullane]
+
+ - Enhancements to README.win32
+   [fenlisesi at gmail.com]
+
+ - Fix incorrect sprintf calls
+   [Jakub Jelinek]
+   (RT ticket #12204)
+
+ - Fix get_info(18) ("ODBCVERSION")
+   [szinger at lanl.gov]
+   [Greg Sabino Mullane]
+   (RT ticket #12968)
 
 
 Version 1.42  (released May 21, 2005)
 
-  - Fix minor issues with copying and bytea quoting on older 
-    servers. Fix some other memory leaks. [Greg Sabino Mullane]
-  - Fix backslash parsing in statements (CPAN bug #12870)
-    [felix.klee@inka.de] [Greg Sabino Mullane]
-  - Make rollback/commit reset copy state (CPAN bug #12866)
-    [imb@rentrak.com] [Greg Sabino Mullane]
-  - Make sure lo_creat issues a begin if necessary [Greg Sabino Mullane]
-  - Fix incorrect behavior when AutoCommit switched on. (CPAN bug #12748)
-    [thanks to Vivek Khera] [Greg Sabino Mullane]
-  - Have last_insert_id use set_err, not die. (CPAN bug #12503)
-    [thanks to Alexandra Walford] [Greg Sabino Mullane]
-  - Fixed tests to correctly handle older DBI versions reporting 
-    failures on last_insert_id() (CPAN bug #12204)
-    [jpo@di.uminho.pt] [Greg Sabino Mullane]
-  - Re-enable REMARKS field on column_info (CPAN bug #12399)
-    [thanks to morni@cpan.org] [Greg Sabino Mullane]
-  - Many minor compiler optimizations and cleanups [Greg Sabino Mullane]
-  - Fix two separate memory leaks in dbdimp.c 
-    [hertzog@debian.org and richardg@eSentire.com]
-  - Change VARCHAROID to UNKNOWNOID, suggested by users on mailing 
-    list [Greg Sabino Mullane]
+ - Fix minor issues with copying and bytea quoting on older 
+     servers. Fix some other memory leaks.
+   [Greg Sabino Mullane]
+
+ - Fix backslash parsing in statements
+   [felix.klee at inka.de]
+   [Greg Sabino Mullane]
+   (RT ticket #12870)
+
+ - Make rollback/commit reset copy state
+   [imb at rentrak.com]
+   [Greg Sabino Mullane]
+   (RT ticket #12866)
+
+ - Make sure lo_creat issues a BEGIN if necessary
+   [Greg Sabino Mullane]
+
+ - Fix incorrect behavior when AutoCommit switched on (thanks to Vivek Khera)
+   [Greg Sabino Mullane]
+   (RT ticket #12748)
+
+ - Have last_insert_id use set_err, not die (thanks to Alexandra Walford)
+   [Greg Sabino Mullane]
+   (RT ticket #12503)
+  
+ - Fixed tests to correctly handle older DBI versions reporting 
+     failures on last_insert_id()
+   [jpo at di.uminho.pt]
+   [Greg Sabino Mullane]
+   (RT ticket #12204)
+
+ - Re-enable REMARKS field on column_info (thanks to morni at cpan.org)
+   (RT ticket #12399)
+   [Greg Sabino Mullane]
+
+ - Many minor compiler optimizations and cleanups
+   [Greg Sabino Mullane]
+
+ - Fix two separate memory leaks in dbdimp.c 
+   [hertzog at debian.org and richardg at eSentire.com]
+
+ - Change VARCHAROID to UNKNOWNOID, suggested by users on mailing list
+   [Greg Sabino Mullane]
 
 
 Version 1.41  (released April 6, 2005)
 
-  - Make sure tests remove all temporary tables.
-    [Frank Bax] [Greg Sabino Mullane]
-  - Preserve sqlstate if rolling back on deallocate, fix 
-    potential segfault. [Stephen Clouse]
-  - Fix CPAN bug #12004: commit and rollback now return true
-    [Greg Sabino Mullane] (thanks to ivan-dbdpg@420.am)
-  - Overhaul and update COPY support; use new protocol.
-    New dbh methods: pg_putline, pg_getline, pg_endcopy.
-    [Greg Sabino Mullane]
-  - Rewrote version detection code. Compiled version and target 
-    version are now available via $dbh->{pg_lib_version} and 
-    $dbh->{pg_server_version} [Greg Sabino Mullane]
-  - Set our default type_id to 0, not 1043 (VARCHAR) when possible.
-    Suggested by Abhijit Menon-Sen via David Wheeler. [Greg Sabino Mullane]
-  - Add $dbh methods pg_savepoint(), pg_rollback_to(), and pg_release()
-    [Stephen Clouse] [Greg Sabino Mullane]
+ - Make sure tests remove all temporary tables.
+   [Frank Bax]
+   [Greg Sabino Mullane]
+
+ - Preserve sqlstate if rolling back on deallocate, fix potential segfault.
+   [Stephen Clouse]
+
+ - Both commit and rollback now return true (thanks to ivan-dbdpg at 420.am)
+   [Greg Sabino Mullane]
+   (RT ticket #12004)
+
+ - Overhaul and update COPY support; use new protocol.
+   New dbh methods: pg_putline, pg_getline, pg_endcopy.
+   [Greg Sabino Mullane]
+
+ - Rewrote version detection code. Compiled version and target version are now 
+     available via $dbh->{pg_lib_version} and $dbh->{pg_server_version}
+   [Greg Sabino Mullane]
+
+ - Set our default type_id to 0, not 1043 (VARCHAR) when possible.
+   Suggested by Abhijit Menon-Sen via David Wheeler.
+   [Greg Sabino Mullane]
+
+ - Add $dbh methods pg_savepoint(), pg_rollback_to(), and pg_release()
+   [Stephen Clouse]
+   [Greg Sabino Mullane]
 
 
 Version 1.40  (released February 22, 2005)
 
-  - Raise required DBI version to 1.38
-  - Execute returns 0 (0E0) not -1 for successful DDL commands.
-    [Robert Treat] [Greg Sabino Mullane]
-  - Change all string lengths to use STRLEN [rink@stack.nl]
-  - Added $dbh->pg_server_trace($fh) [Greg Sabino Mullane]
-  - Added $dbh->{pg_errorlevel}. [Greg Sabino Mullane]
-  - Fix utf8 quote() support [Dominic Mitchell <dom@semantico.com>]
-  - Added explicit support for types SQL_BOOLEAN, DATE, TIME, 
-    TIMESTAMP, and TIMESTAMPTZ. Return correct values for 
-    DATEOID and TIMEOID. [Greg Sabino Mullane]
-  - Added tablespace support for table_info and primary_key_info. [Greg Sabino Mullane]
-  - Added new attributes to $dbh: pg_db, pg_user, pg_pass,
-    pg_host, pg_port, pg_options, pg_socket, pg_pid [Greg Sabino Mullane]
-  - Minor fixes in quote.c, dbdimp.c, and types.h
-    [Christophe Martin: schplurtz at free.fr]
-  - Added support for SQLSTATE via $dbh->state and $sth->state [Greg Sabino Mullane]
-  - Major overhaul of prepare/execute to handle new server-side 
-    prepare system. See Pg.pm for details. [Greg Sabino Mullane]
-  - Make the tests honor the DBD_SCHEMA variable instead of 
-    assuming that the "public" schema is available.
-    [Rainer Weikusat]
-  - dbdimp.c cleanups: better error messages, ensure commit
-    is only called once after a transaction fails.
-    [Alexey Slynko]
-  - primary_key() returns empty list not undef if no match. [Julian Mehnle]
-  - Added the pg_protocol database handle attribute [Greg Sabino Mullane]
-  - Changed "noprefix" to pg_noprefix
+ - Raise required DBI version to 1.38
+
+ - Execute returns 0 (0E0) not -1 for successful DDL commands.
+   [Robert Treat]
+   [Greg Sabino Mullane]
+
+ - Change all string lengths to use STRLEN
+   [rink at stack.nl]
+
+ - Added $dbh->pg_server_trace($fh)
+   [Greg Sabino Mullane]
+
+ - Added $dbh->{pg_errorlevel}.
+   [Greg Sabino Mullane]
+
+ - Fix utf8 quote() support
+   [Dominic Mitchell <dom at semantico.com>]
+
+ - Added explicit support for types SQL_BOOLEAN, DATE, TIME, TIMESTAMP, and TIMESTAMPTZ.
+   Return correct values for DATEOID and TIMEOID.
+   [Greg Sabino Mullane]
+
+ - Added tablespace support for table_info and primary_key_info.
+   [Greg Sabino Mullane]
+
+ - Added new attributes to $dbh: pg_db, pg_user, pg_pass,
+     pg_host, pg_port, pg_options, pg_socket, pg_pid
+   [Greg Sabino Mullane]
+
+ - Minor fixes in quote.c, dbdimp.c, and types.h
+   [Christophe Martin: schplurtz at free.fr]
+
+ - Added support for SQLSTATE via $dbh->state and $sth->state
+   [Greg Sabino Mullane]
+
+ - Major overhaul of prepare/execute to handle new server-side 
+     prepare system. See Pg.pm for details.
+   [Greg Sabino Mullane]
+
+ - Make the tests honor the DBD_SCHEMA variable instead of 
+     assuming that the "public" schema is available.
+   [Rainer Weikusat]
+
+ - Cleanup of dbdimp.c: better error messages, ensure commit 
+     is only called once after a transaction fails.
+   [Alexey Slynko]
+
+ - The primary_key() method returns empty list not undef if no match.
+   [Julian Mehnle]
+
+ - Added the pg_protocol database handle attribute
+   [Greg Sabino Mullane]
+
+ - Changed "noprefix" to pg_noprefix
 
 
 Version 1.32  (released February 25, 2004)
 
-  - Bug fix for memory allocation problems on win systems
-    [Rafael Kitover <caelum@debian.org>]
-  - Rewrote the foreign_key_info() method to handle 
-    multi-column keys. [Greg Sabino Mullane]
-  - Rewrote the primary_key_info() and primary_key() methods to 
-    cleanly handle multi-column primary keys. Also added a "pg_onerow" 
-    attribute to allow primary_key_info() to return a single 
-    row containing multiple-column information. [Greg Sabino Mullane]
-  - Switched commit behavior from commit->execute->begin 
-    to begin->execute->commit
-    [xelah-junk@xelah.com] [Greg Sabino Mullane]
-  - Made the _pg_use_catalog subroutine use {private_dbgpg}.
-    (CPAN bug #4841) [Greg Sabino Mullane]
-  - Changed strdup to safemalloc/strcpy in dbdimp.c
-    (CPAN bug #4578) [anonymous CPAN user]
-  - Made the data_sources method escape the database names as needed.
-    Added support for databases with spaces in their names. [Greg Sabino Mullane]
-  - Added the "noprefix" attribute to prevent the tables() method 
-    from prepending the schema name. [Greg Sabino Mullane]
-  - Rewrote the testing suite. Many more tests are performed.
-    Servers with a low client_min_messages are handled correctly. [Greg Sabino Mullane]
-  - Fixed bug causing '$\d' to be picked up as a placeholder. 
-    (CPAN bug #4799) [Greg Sabino Mullane]
-  - pg_notifies now catches and reports when PQconsumeInput fails.
-    (CPAN bug #4027) [nmueller@cs.wisc.edu]
-  - Enabled the "pg_bool_tf" database handle [Greg Sabino Mullane]
-  - Added required fields to the type_info() method:
-    SQL_DATA_TYPE, SQL_DATETIME_SUB, and INTERVAL PRECISION [Greg Sabino Mullane]
-  - Fixed bug where the table_attributes() method was incorrectly 
-    removing the NULLABLE column. [Greg Sabino Mullane]
-  - Fixed bug where case was not being preserved by the 
-    foreign_key_info() method [Greg Sabino Mullane]
-  - a fetch on any column that had a type that did not have an entry
-    in the type_info array would segfault DBD::Pg. 
-    (CPAN bugs #4818,4432) [Rudy Lippan]
-  - Duplicate rows bug with column_info() REMARKS has been fixed. However,
-    support for Postgres 7.1.x which worked briefly for 1.31 has now been
-    dropped for this feature. [Mark Stosberg]
-  - Bumped required Perl version to 5.6.1 in Makefile.PL. We were already
-    already requiring 5.6.1 for Pg.pm since 1.31.
-  - Removed extra "return" statement in quote.c to make Solaris happy
-    (CPAN bug #4419) [Rudy Lippan]
-  - Changed get_info(29) to return (") instead of (\")
-    (CPAN bug #4829) [Greg Sabino Mullane]
+ - Bug fix for memory allocation problems on win systems
+   [Rafael Kitover <caelum at debian.org>]
+
+ - Rewrote the foreign_key_info() method to handle multi-column keys.
+   [Greg Sabino Mullane]
+
+ - Rewrote the primary_key_info() and primary_key() methods to cleanly handle 
+     multi-column primary keys. Also added a "pg_onerow" attribute to allow 
+     primary_key_info() to return a single row containing multiple-column information.
+   [Greg Sabino Mullane]
+
+ - Switched commit behavior from commit->execute->begin to begin->execute->commit
+   [xelah-junk at xelah.com]
+   [Greg Sabino Mullane]
+
+ - Made the _pg_use_catalog subroutine use {private_dbgpg}.
+   [Greg Sabino Mullane]
+   (RT ticket #4841)
+
+ - Changed strdup to safemalloc/strcpy in dbdimp.c
+   (RT ticket #4578)
+
+ - Made the data_sources method escape the database names as needed.
+   Added support for databases with spaces in their names.
+   [Greg Sabino Mullane]
+
+ - Added the "noprefix" attribute to prevent the tables() method 
+     from prepending the schema name.
+   [Greg Sabino Mullane]
+
+ - Rewrote the testing suite. Many more tests are performed.
+   Servers with a low client_min_messages are handled correctly.
+   [Greg Sabino Mullane]
+
+ - Fixed bug causing '$\d' to be picked up as a placeholder. 
+   [Greg Sabino Mullane]
+   (RT ticket #4799)
+
+ - The pg_notifies() method now catches and reports when PQconsumeInput fails.
+   [nmueller at cs.wisc.edu]
+   (RT ticket #4027)
+
+ - Enabled the "pg_bool_tf" database handle
+   [Greg Sabino Mullane]
+
+ - Added required fields to the type_info() method:
+   SQL_DATA_TYPE, SQL_DATETIME_SUB, and INTERVAL PRECISION
+   [Greg Sabino Mullane]
+
+ - Fixed bug where the table_attributes() method was incorrectly 
+     removing the NULLABLE column.
+   [Greg Sabino Mullane]
+
+ - Fixed bug where case was not being preserved by the 
+     foreign_key_info() method
+   [Greg Sabino Mullane]
+
+ - Calling fetch on any column that had a type that did not have an entry
+     in the type_info array would segfault DBD::Pg. 
+   [Rudy Lippan]
+   (RT tickets #4818,4432)
+
+ - Duplicate rows bug with column_info() REMARKS has been fixed. However,
+     support for Postgres 7.1.x which worked briefly for 1.31 has now been
+     dropped for this feature.
+   [Mark Stosberg]
+
+ - Bumped required Perl version to 5.6.1 in Makefile.PL. We were already
+     already requiring 5.6.1 for Pg.pm since 1.31.
+
+ - Removed extra "return" statement in quote.c to make Solaris happy
+   (RT ticket #4419)
+   [Rudy Lippan]
+
+ - Changed get_info(29) to return (") instead of (\")
+   (RT ticket #4829)
+   [Greg Sabino Mullane]
 
 
 Version 1.31  (released November 17, 2003)
 
-  - $dbh->{TYPE} now returns SQL_TYPE_TIMESTAMP instead of 1114 for 
-    timestamp columns. (In 1.31_x {x| x<8} $sth->{TYPE} returned 0
-    but reported by ["Hirche, Joachim" <Joachim.Hirche@cimconcepts.com>]).
-  - Raised required versions to Perl 5.6.1 and DBI 1.35
-  - Fix syntax error related to pg_server_version (CPAN bugs #2492,2755,3121)
-  - Cache multiple calls to pg_server_version.
-  - Notice messages generated by the database now use the perl 
-    warning mechanism instead of going to stderr.
-    [Dominic Mitchell <dom@semantico.com>]
-  - $dbh->prepare() rewrites the SQL statement into an internal form,
-    striping out comments and whitespace, and if PostgreSQL > 7.3 takes the 
-    stripped statement and passes that to Postgres' PREPARE statement, 
-    then rewrites the statement as 'EXECUTE "DBD::PG::cached_query n"
-    ($1, $2, ... $n, $n+1)' for DBD::Pg's execute.
-    -- Currently disabled until PREPARE works a little better
-  - Allows the use of :n and :foo bind params. So: 
-    (SELECT * FROM foo WHERE 1 = :this and 2 = :that) will now work.
-  - Complains on execute when unbound bind params are submitted
-    (instead of defaulting to NULL)
-  - Switched over to use driver.xst.
-  - pg_error() removes \n's rather than truncating the message on the first \n.
-  - Fixed statement scan problem where the preparse of
-    "SELECT foo[3:33] from bar" was scanning :33 as a placeholder
-  - Moved the quoting of bind values out of execute() and into
-    bind -- as there is no need to requote the value every time execute 
-    is called.
-  - :veryverylongplaceholdername == Long walk, short pier -- fixed.
-  - quote() is now in C and uses same code as bind_param.
-  - Quoting and dequoting now use libpq quoting functions where available
-    (I still need to take the libpq functions swiped out of quote.c and move 
-    it into libpqswip.c with license info &c., and switch ifndefs to ifdefs)
-  - bind_param() will convert from 1,0 to TRUE/FALSE when pg_type
-    is PGBOOLOID.
-  - Fixed many heap buffer overruns.
-  - Added support for the get_info() method [Greg Sabino Mullane]
-  - Added tests for POD validation [Mark Stosberg]
-  - Several improvements to column_info, including:
-    - Fixed column_info so NULLABLE field shows correctly. [kevin@sysexperts.com]
-    - REMARKS field works now [Mark Stosberbg]
-    - COLUMN_DEF fixed
-    - COLUMN_SIZE fixed
-    - pg_constraint column added to display column constraints
-    - additional documentation and tests added
-  - make test is now more intelligent and will bail out early if
-    db connection fails. [Greg Sabino Mullane]
+ - Calling $dbh->{TYPE} now returns SQL_TYPE_TIMESTAMP instead of 1114 for 
+     timestamp columns. In 1.31_x {x| x<8} $sth->{TYPE} returned 0
+   [Joachim Hirche <Joachim.Hirche at cimconcepts.com>]
+
+ - Raised required versions to Perl 5.6.1 and DBI 1.35
+
+ - Fix syntax error related to pg_server_version
+   (RT tickets #2492,2755,3121)
+
+ - Cache multiple calls to pg_server_version.
+
+ - Notice messages generated by the database now use the perl 
+     warning mechanism instead of going to stderr.
+   [Dominic Mitchell <dom at semantico.com>]
+
+ - The $dbh->prepare() method now rewrites the SQL statement into an internal form, striping out 
+     comments and whitespace, and if PostgreSQL > 7.3 takes the stripped statement and passes 
+     that to Postgres' PREPARE statement, then rewrites the statement 
+     as 'EXECUTE "DBD::PG::cached_query n" ($1, $2, ... $n, $n+1)' for DBD::Pg's execute.
+
+ - Allows the use of :n and :foo bind params.
+   So (SELECT * FROM foo WHERE 1 = :this and 2 = :that) will now work.
+
+ - Complains on execute when unbound bind params are submitted (instead of defaulting to NULL)
+
+ - Switched over to use driver.xst.
+
+ - The pg_error() method removes \n's rather than truncating the message on the first \n.
+
+ - Fixed statement scan problem where the preparse 
+     of "SELECT foo[3:33] from bar" was scanning :33 as a placeholder
+
+ - Moved the quoting of bind values out of execute() and into bind -- as there 
+     is no need to requote the value every time execute is called.
+
+ - Fixed use of :veryverylongplaceholdername
+
+ - The quote() method is now in C and uses same code as bind_param.
+
+ - Quoting and dequoting now use libpq quoting functions where available
+
+ - The bind_param() method will convert from 1,0 to TRUE/FALSE when pg_type is PGBOOLOID.
+
+ - Fixed many heap buffer overruns.
+
+ - Added support for the get_info() method
+   [Greg Sabino Mullane]
+
+ - Added tests for POD validation
+   [Mark Stosberg]
+
+ - Several improvements to column_info, including:
+ - Fixed column_info so NULLABLE field shows correctly.
+   [kevin at sysexperts.com]
+
+ - Fixed column_info so REMARKS field works properly
+   [Mark Stosberbg]
+
+ - Various fixes to column_info: COLUMN_DEF, COLUMN_SIZE
+
+ - The pg_constraint column added to display column constraints
+
+ - The make test command is now more intelligent and will bail out early if
+     db connection fails.
+   [Greg Sabino Mullane]
 
 
 Version 1.22  (released March 26, 2003)
 
-  - Win32 compile fix for snprintf [Joe Spears]
-  - Fix memory allocation problem in bytea escaping [Barrie Slaymaker]
-  - Add utf8 support [Dominic Mitchell <dom@semantico.com>]
-  - Transform Perl arrays into PostgreSQL arrays [Alexey Slynko]
-  - Fix for foreign_key_info() [Keith Keller]
-  - Fix PG_TEXT parameter binding
-  - Doc cleanups [Greg Sabino Mullane]
-  - Fix warning from func($table, 'table_attributes') [Greg Sabino Mullane]
-  - Added support for schemas [Greg Sabino Mullane]
-  - Fix binary to a bytea field conversion [Chris Dunlop <chris@onthe.net.au>]
+ - Win32 compile fix for snprintf
+   [Joe Spears]
+
+ - Fix memory allocation problem in bytea escaping
+   [Barrie Slaymaker]
+
+ - Add utf8 support
+   [Dominic Mitchell <dom at semantico.com>]
+
+ - Transform Perl arrays into PostgreSQL arrays
+   [Alexey Slynko]
+
+ - Fix for foreign_key_info()
+   [Keith Keller]
+
+ - Fix PG_TEXT parameter binding
+
+ - Doc cleanups
+   [Greg Sabino Mullane]
+
+ - Fix warning from func($table, 'table_attributes')
+   [Greg Sabino Mullane]
+
+ - Added support for schemas
+   [Greg Sabino Mullane]
+
+ - Fix binary to a bytea field conversion
+   [Chris Dunlop <chris at onthe.net.au>]
 
 
 Version 1.21  (released January 12, 2003)
 
-  - System tables no longer returned by tables(). [Dave Rolsky]
-  - Fix table_attributes to handle removal of pg_relcheck in 7.3,
-    from Ian Barwick <barwick@gmx.net>
-  - Properly reset transaction status after failed transaction when
-    autocommit is off. Properly report transaction failure message.
-    Kai <kai@xs4all.nl>
-  - New pg_bool_tf database handle that when set to true booleans are
-    returned as 't'/'f' rather than 1/0.
+ - System tables no longer returned by tables()
+   [Dave Rolsky]
+
+ - Fix table_attributes to handle removal of pg_relcheck in 7.3
+   [Ian Barwick <barwick at gmx.net>]
+
+ - Properly reset transaction status after failed transaction when
+     autocommit is off. Properly report transaction failure message.
+   [Kai <kai at xs4all.nl>]
+
+ - New pg_bool_tf database handle that when set to true booleans are
+     returned as 't'/'f' rather than 1/0.
 
 
 Version 1.20  (released November 27, 2002)
 
-  - Maintenance transferred to GBorg,
-    http://gborg.postgresql.org/project/dbdpg/projdisplay.php. Incremented
-    version number to reflect new management. [Bruce Momjian]
-  - README cleaned up. [Bruce Momjian]
-  - Added t/15funct.t, a series of tests that determine if the meta data
-    is working. [Thomas Lowery]
-  - Added implementations of column_info() and table_info(), and
-    primary_key_info(). [Thomas Lowery]
-  - The POD formatting was cleaned up. [David Wheeler]
-  - The preparser was updated to better handle escaped characters.
-    [Rudy Lippan]
-  - Removed redundant use of strlen() in pg_error() (Jason E. Stewart).
-  - Test suite cleaned up, converted to use Test::More, and updated to use
-    standard DBI environment variables for connecting to a test database.
-    [Jason E. Stewart]
-  - Added eg/lotest.pl as a demonstration of using large objects in buffers
-    rather than files. Contributed by Garth Webb.
-  - Added LISTEN/NOTIFY functionality. Contributed by Alex Pilosov.
-  - Added constants for common PostgreSQL data types, plus simple tests to
-    make sure that they work. These are exportable via 
-    "use DBD::Pg qw(:pg_types);". [David Wheeler]
-  - Deprecated the undocumented (and invalid) use of SQL_BINARY in
-    bind_param() and documented the correct approach: "bind_param($num,
-    $val { pg_type => PG_BYTEA });". Use of SQL_BINARY in bind_param() will
-    now issue a warning if $h->{Warn} is true. [David Wheeler]
-  - Removed invalid (and broken) support for SQL_BINARY in quote().
-    [David Wheeler]
-  - Added App::Info::RDBMS::PostgreSQL to the distribution (but it won't
-    be installed) to help Makefile.PL find the PostgreSQL include and
-    library files. [David Wheeler]
-  - Fixed compile-time warnings. [David Wheeler and Jason E. Stewart]
+ - Maintenance transferred to GBorg,
+     http://gborg.postgresql.org/project/dbdpg/projdisplay.php. Incremented
+     version number to reflect new management
+   [Bruce Momjian]
+
+ - README cleaned up.
+   [Bruce Momjian]
+
+ - Added t/15funct.t, a series of tests that determine if the meta data is working.
+   [Thomas Lowery]
+
+ - Added implementations of column_info() and table_info(), and primary_key_info().
+   [Thomas Lowery]
+
+ - The POD formatting was cleaned up.
+   [David Wheeler]
+
+ - The preparser was updated to better handle escaped characters.
+   [Rudy Lippan]
+
+ - Removed redundant use of strlen() in pg_error()
+   [Jason E. Stewart]
+
+ - Test suite cleaned up, converted to use Test::More, and updated to use
+     standard DBI environment variables for connecting to a test database.
+   [Jason E. Stewart]
+
+ - Added eg/lotest.pl as a demonstration of using large objects in buffers rather than files.
+   [Garth Webb]
+
+ - Added LISTEN/NOTIFY functionality.
+   [Alex Pilosov]
+
+ - Added constants for common PostgreSQL data types, plus simple tests to make
+     sure that they work. These are exportable via "use DBD::Pg qw(:pg_types);".
+   [David Wheeler]
+
+ - Deprecated the undocumented (and invalid) use of SQL_BINARY in bind_param() and documented 
+     the correct approach: "bind_param($num, $val { pg_type => PG_BYTEA });". Use of SQL_BINARY 
+     in bind_param() will now issue a warning if $h->{Warn} is true.
+   [David Wheeler]
+
+ - Removed invalid (and broken) support for SQL_BINARY in quote().
+   [David Wheeler]
+
+ - Added App::Info::RDBMS::PostgreSQL to the distribution (but it won't be installed) 
+     to help Makefile.PL find the PostgreSQL include and library files.
+   [David Wheeler]
+
+ - Fixed compile-time warnings.
+   [David Wheeler and Jason E. Stewart]
 
 
 Version 1.15  (released April 27, 2002)
 
-  - dbdimp.c: Add default at end of switch statement for pg_type attrib.
-    [Jeffrey W. Baker]
-  - t/13pgtype.t: test for above.
-  
+ - Add default at end of switch statement for pg_type attrib, along with tests.
+   [Jeffrey W. Baker]
+
 
 Version 1.12  (released April 9, 2002)
 
-  - Pg.pm, dbdimp.c: Applied patch from
-    Thomas A. Lowery concerning metadata in
-    table_info and so forth.
-    [Jeffrey W. Baker]
+ - Applied patch from Thomas A. Lowery concerning metadata in table_info and so forth.
+   [Jeffrey W. Baker]
 
 
 Version 1.10  (released March 6, 2002)
 
-  - Pg.pm (quote): Applied patch from David Wheeler <david@wheeler.net>
-    to simplify and speed up quoting.
-    [Jeffrey W. Baker]
-  - t/11quoting.t: Tests for above patch.
-  - t/12placeholders.t: Tests for placeholder parsing in quoted strings.
+ - Applied patch from David Wheeler to simplify and speed up quoting.
+   [Jeffrey W. Baker]
+
+ - Added tests for quoting changes above.
+
+ - Added tests for placeholder parsing in quoted strings.
 
 
 Version 1.01  (released June 27, 2001)
 
-  - fixed core dump when trying to use a BYTEA value with
-    a byte outside 0..127. Thanks to Alex Pilosov <alex@pilosoft.com>
+ - Fixed core dump when trying to use a BYTEA value with a byte outside 0..127
+   [Alex Pilosov <alex at pilosoft.com>]
 
 
 Version 1.00  (released May 27, 2001)
 
-  - Fetching all records now resets Active flag as it should.
+ - Fetching all records now resets Active flag as it should.
 
 
 Version 0.99  (released May 24, 2001)
 
-  - fix the segmentation fault in pg_error.
+ - Fix the segmentation fault in pg_error.
 
 
 Version 0.98  (released April 25, 2001)
 
-  - bug fix for core-dump after any failed function call.
-  - applied patch from Alex Pilosov <alex@pilosoft.com> 
-    which adds support for the datatype bytea
+ - Bug fix for core-dump after any failed function call.
+
+ - Applied patch from Alex Pilosov <alex at pilosoft.com> which adds support for the datatype bytea
 
 
 Version 0.97  (released April 20, 2001)
 
-  - fix bug in connect method, which erroneously set the userid
-    and the password to the environment variables DBI_USER and
-    DBI_PASS.
-  - applied patch from Jan-Pieter Cornet <john@pc.xs4all.nl>,
-    which removed the special handling of a backslash when
-    used for octal presentation. Now a backslash always will
-    be escaped.
+ - Fix bug in connect method, which erroneously set the userid and the password to the 
+     environment variables DBI_USER and DBI_PASS.
+
+ - Applied patch from Jan-Pieter Cornet <john at pc.xs4all.nl>, which removed the special handling 
+     of a backslash when used for octal presentation. Now a backslash always will be escaped.
 
 
 Version 0.96  (released April 09, 2001)
 
-  - remove memory-leak in ping function, bug-fix
-    from Doug Perham <dperham@wgate.com>
-  - correct the recognition of primary keys in 
-    table_attributes(). Patch from Brian Powell <brian@nicklebys.com>.
-  - applied patch from David D. Kilzer <ddkilzer@lubricants-oil.com>
-    which fixes a segmentation fault in DBD::pg::blob_read() when 
-    reading LOBs that required perl to reallocate space for the 
-    variable holding the scalar value
-  - updated test.pl to create a test blob larger than 256 bytes 
-    (now 128 Kbytes)
-  - apply patch from Tom Lane, which fixes a segmentation fault when
-    inserting large amounts of text.
-  - apply patch from Peter Haworth <pmh@edison.ioppublishing.com>,
-    which removes the newlines from the error messages and which 
-    quotes date placeholders.
+ - Remove memory-leak in ping function
+   [Doug Perham <dperham at wgate.com>]
+
+ - Correct the recognition of primary keys in table_attributes().
+   [Brian Powell <brian at nicklebys.com>]
+
+ - Fix a segmentation fault in DBD::pg::blob_read() when reading LOBs that required perl to 
+     reallocate space for the variable holding the scalar value
+   [David D. Kilzer <ddkilzer at lubricants-oil.com>]
+
+ - Updated test.pl to create a test blob larger than 256 bytes (now 128 Kbytes)
+
+ - Fix a segmentation fault when inserting large amounts of text.
+   [Tom Lane]
+
+ - Removes the newlines from the error messages and which quotes date placeholders.
+   [Peter Haworth <pmh at edison.ioppublishing.com>]
 
 
 Version 0.95  (released July 10, 2000)
 
-  - add Win32 port from Bob Kline <bkline@rksystems.com>.
+ - Add Win32 port
+   [Bob Kline <bkline at rksystems.com>]
 
 
 Version 0.94  (released July 07, 2000)
 
-  - applied patch from Rudy Lippan <almighty@randomc.com>
-    which fixes a memory-leak with failed connections.
-  - applied patch from Hein Roehrig <hein@acm.org>
-    which fixes a bug with escaping a backslash except for 
-    octal presentation
-  - applied patch from Francis J. Lacoste <francis.lacoste@iNsu.COM
-    which fixes a segmentation fault when all bound parameters are NULL
-  - adapt test.pl to avoid warnings with postgresql-7.0
-  - added support for 'COPY FROM STDIN' and 'COPY TO STDOUT'
-  - added patch from Mark Stosberg <mark@summersault.com>
-    to enhance the table_attributes subroutine
+ - Fix a memory-leak with failed connections.
+   [Rudy Lippan <almighty at randomc.com>]
+
+ - Fix a bug with escaping a backslash except for octal presentation
+   [Hein Roehrig <hein at acm.org>]
+
+   Fix a segmentation fault when all bound parameters are NULL
+   [Francis J. Lacoste <francis.lacoste at iNsu.COM]
+
+ - Adapt test.pl to avoid warnings with postgresql-7.0
+
+ - Added support for 'COPY FROM STDIN' and 'COPY TO STDOUT'
+
+ - Enhance the table_attributes subroutine
+   [Mark Stosberg <mark at summersault.com>]
 
 
 Version 0.93  (released September 29, 1999)
 
-  - it is required now to set the environment variables POSTGRES_INCLUDE
-    and POSTGRES_LIB for compiling the module.
-  - add Win32 port from Bob Kline <bkline@rksystems.com>.
-  - support for all large-object functions via the func interface.
-  - fixed bug with placeholders and casts spotted bymschout@gkg.net
-  - replaced the method attributes by the method table_attributes,
-    from Scott Williams <scott@james.com>.
-  - fix type definitions for type_info_all().
-    bug spotted by "carlos" <emarcet@intramed.net.ar>.
-  - now the Pg-specific quote() method also evaluates the data-type parameter.
+ - It is required now to set the environment variables POSTGRES_INCLUDE
+     and POSTGRES_LIB for compiling the module.
+
+ - Add Win32 port
+   [Bob Kline <bkline at rksystems.com>]
+
+ - Support for all large-object functions via the func interface.
+
+ - Fixed bug with placeholders and casts
+   [spotted by bymschout at gkg.net]
+
+ - Replaced the method attributes by the method table_attributes,
+   [Scott Williams <scott at james.com>]
+
+ - Fix type definitions for type_info_all().
+   [spotted by "carlos" <emarcet at intramed.net.ar>]
+
+ - Now the Pg-specific quote() method also evaluates the data-type parameter.
 
 
 Version 0.92  (released June 16, 1999)
 
-  - proposal from Philip Warner <pjw@rhyme.com.au>:
-    increase BUFSIZE from 1024 to 32768 in order to improve I/O performance.
-  - bug-fix in Makefile.PL for $POSTGRES_HOME not defined
-    spotted by mdalphin@amgen.com [Mark Dalphin]
-  - bug-fix for data-type datetime in type_info_all
-    spotted by Alan Grover <awgrover@iconnect-inc.com>
-  - bug-fix for escaped 's spotted by Hankin <hankin@consultco.com>
-  - removed 'large objects' related tests from test.pl
+ - Increase BUFSIZE from 1024 to 32768 in order to improve I/O performance.
+   [Philip Warner <pjw at rhyme.com.au>]
+
+ - Fix in Makefile.PL for $POSTGRES_HOME not defined
+   [spotted by Mark Dalphin mdalphin at amgen.com]
+
+ - Fix for data-type datetime in type_info_all
+   [spotted by Alan Grover <awgrover at iconnect-inc.com>]
+
+ - Fix for escaped 's
+   [spotted by Hankin <hankin at consultco.com>]
+
+ - Removed 'large objects' related tests from test.pl
 
 
 Version 0.91  (released February 14, 1999)
 
-  - removed restriction for commercial use in copyright
-  - corrected DATA_TYPE in type_info_all()
+ - Removed restriction for commercial use in copyright
+
+ - Corrected DATA_TYPE in type_info_all()
 
 
 Version 0.90  (released January 15, 1998)
 
-  - discard parameter authtype from connect string
-  - remove work-around for bug in the large object interface of postgresql
+ - Discard parameter authtype from connect string
+
+ - Remove work-around for bug in the large object interface of postgresql
 
 
 Version 0.89  (released November 05, 1998)
 
-  - bug-fix from Jan Iven <j.iven@rz.uni-sb.de>:
-    fix problem with quoting Null in bind variables.
+ - Fix problem with quoting Null in bind variables.
+   [Jan Iven <j.iven at rz.uni-sb.de>]
 
 
 Version 0.88  (released October 10, 1998)
 
-  - fixed blob_read
-  - suppressed warning when testing DBI::errstr
+ - Fixed blob_read
+
+ - Suppressed warning when testing DBI::errstr
 
 
 Version 0.87  (released September 05, 1998)
 
-  - Pg.xs adapted to Driver.xst from DBI-1.0
-  - major rewrite of module documentation 
-  - major rewrite of the test script
-  - use built-in DBI method for $dbh->do 
-  - add macro dHTR in order to avoid compile errors 
-    with threaded perl5.005
-  - renamed attribute AutoEscape to pg_auto_escape
-  - renamed attribute SIZE to pg_size
-  - new attribute pg_type
-  - added support for DBI->data_sources($driver)
-  - added support for $dbh->table_info
-  - blob_read documented and added to test.pl 
-  - added support for attr parameter in bind_param()
+ - Pg.xs adapted to Driver.xst from DBI-1.0
+
+ - Major rewrite of module documentation 
+
+ - Major rewrite of the test script
+
+ - Use built-in DBI method for $dbh->do 
+
+ - Add macro dHTR in order to avoid compile errors with threaded perl5.005
+
+ - Renamed attribute AutoEscape to pg_auto_escape
+
+ - Renamed attribute SIZE to pg_size
+
+ - New attribute pg_type
+
+ - Added support for DBI->data_sources($driver)
+
+ - Added support for $dbh->table_info
+
+ - Documentation and tests added for blob_read
+
+ - Added support for attr parameter in bind_param()
 
 
 Version 0.86  (released August 21, 1998)
 
-  - added /usr/lib/ to search path for libpq.
-  - added ChopBlanks, patch from Victor Krasinsky <victor@rdovira.lviv.ua>
-  - changed test.pl to test multiple database handles
+ - Added /usr/lib/ to search path for libpq.
+
+ - Added ChopBlanks, patch from Victor Krasinsky <victor at rdovira.lviv.ua>
+
+ - Changed test.pl to test multiple database handles
 
 
 Version 0.85  (released July 19, 1998)
 
-  - non-printable characters in parameters will not be converted 
-    to '.'. They are passed unchanged to the database.
+ - Non-printable characters in parameters will not be converted to '.'.
+   They are passed unchanged to the database.
 
 
 Version 0.84  (released July 18, 1998)
 
-  - bug-fix from Max Cohan <mcohan@adnc.net>:
-    check for \xxx presentation before escaping backslash in parameters.
-  - introduce new database handle attribute AutoEscape, which 
-    controls escaping of quotes and backslashes in parameters. 
-    When set to on, all quotes except at the beginning and 
-    at the end of a line will be escaped and all backslashes 
-    except when used to indicate an octal presentation (\xxx) 
-    will be escaped. Default of AutoEscape is on. 
+ - Check for \xxx presentation before escaping backslash in parameters.
+   [Max Cohan <mcohan at adnc.net>]
+
+ - Introduce new database handle attribute AutoEscape, which controls escaping of quotes and backslashes in parameters. 
+   When set to on, all quotes except at the beginning and at the end of a line will be escaped and all backslashes 
+     except when used to indicate an octal presentation (\xxx) will be escaped. Default of AutoEscape is on. 
 
 
 Version 0.83  (released July 10, 1998)
 
-  - bug-fix from Max Cohan <mcohan@adnc.net>:
-    using traces together with undef in place-holders dumped core.
+ - Bug fix for core dump when using traces together with undef
+   [Max Cohan <mcohan at adnc.net>]
 
 
 Version 0.82  (released June 20, 1998)
 
-  - bug-fix from Matthew Lenz <matthew@nocturnal.org>:
-    corrected include path in Makefile.PL .
-  - added 'use strict;' to test.pl
+ - Corrected include path in Makefile.PL .
+   [Matthew Lenz <matthew at nocturnal.org>]
+
+ - Added 'use strict;' to test.pl
 
 
 Version 0.81  (released June 13, 1998)
 
-  - bug-fix from Rolf Grossmann <grossman@securitas.net>:
-    undefined parameters in an execute statement will be 
-    translated from 'undef' to 'NULL'. Also every parameter 
-    for bind_param() will be quoted by default (escape quote 
-    and backslash). Appropriate tests have been added to test.pl. 
-  - change ping method to use libpq-interface.
+ - Undefined parameters in an execute statement will be translated from 'undef' to 'NULL'. 
+   Also every parameter for bind_param() will be quoted by default (escape quote and backslash).
+   Appropriate tests have been added to test.pl.
+   [Rolf Grossmann <grossman at securitas.net>]
+
+ - Change ping method to use libpq-interface.
 
 
 Version 0.80  (released June 07, 1998)
 
-  - adapted to postgresql-6.4:
-    the backend protocol has changed, which needs an adapted
-    ping method. A ping-test has been added to the test-script.
-    Also some type identifiers have changed. 
+ - Adapted to postgresql-6.4: the backend protocol has changed, which needs an adapted
+     ping method. A ping-test has been added to the test-script.
+   Also some type identifiers have changed. 
 
 
 Version 0.73  (released June 03, 1998)
 
-  - changed include directives in Makefile.PL from 
-    archlib to installarchlib and from sitearch to
-    installsitearch (Tony.Curtis@vcpc.univie.ac.at).
-  - applied patch from Junio Hamano <junio@twinsun.com>
-    quote method also doubles backslash.
+ - Changed include directives in Makefile.PL from archlib to installarchlib and from 
+     sitearch to installsitearch
+   [Tony.Curtis at vcpc.univie.ac.at]
+
+   Quote method also doubles backslash.
+   [Junio Hamano <junio at twinsun.com>]
 
 
 Version 0.72  (released April 20, 1998)
 
-  - applied patch from Michael J Schout <mschout@gkg.net>
-    which fixed the bug with queries containing the cast operator.
-  - applied patch from Irving Reid <irving@tor.securecomputing.com>
-    which fixed a memory leak.
+ - Fix bug with queries containing the cast operator.
+   [Michael J Schout <mschout at gkg.net>]
+
+ - Fix memory leak
+   [Irving Reid <irving at tor.securecomputing.com>]
 
 
 Version 0.71  (released April 04, 1998)
 
-  - applied patch from Irving Reid
-    <irving@tor.securecomputing.com> which fixed the
-    the problem with the InactiveDestroy message.
+ - Fix problem with InactiveDestroy
+   [Irving Reid <irving at tor.securecomputing.com>]
 
 
 Version 0.70  (released March 28, 1998)
 
-  - linking again with the shared version of libpq 
-    due to problems on several operating systems.
+ - Linking again with the shared version of libpq due to problems on several operating systems.
 
 
 Version 0.69  (released March 6, 1998)
 
-  - expanded the search path for include files
-  - module is now linked with static libpq.a
+ - Expanded the search path for include files
+
+ - Module is now linked with static libpq.a
 
 
 Version 0.68  (released March 3, 1998)
 
-  - return to UNIX domain sockets in test-scripts
+ - Return to UNIX domain sockets in test-scripts
 
 
 Version 0.67  (released February 21, 1998)
 
-  - remove part of Driver.xst due to compile error on some systems.
+ - Remove part of Driver.xst due to compile error on some systems.
 
 
 Version 0.66  (released February 19, 1998)
 
-  - remove defines in Pg.h so that
-    it compiles also with postgresql-6.2.1
-  - changed ping method: set RaiseError=0
+ - Remove defines in Pg.h so that it compiles also with postgresql-6.2.1
+
+ - Changed ping method: set RaiseError=0
 
 
 Version 0.65  (released February 14, 1998)
 
-  - adapted to changes in DBI-0.91, so that the
-    default setting for AutoCommit and PrintError is 
-    again conformant to the DBI specs.
+ - Adapted to changes in DBI-0.91, so that the default setting for AutoCommit and PrintError is 
+     again conformant to the DBI specs.
 
 
 Version 0.64  (released February 01, 1998)
 
-  - changed syntax of data_source (ODBC-conformant): 
-    'dbi:Pg:dbname=dbname;host=host;port=port'
-    !!! PLEASE ADAPT YOUR SCRIPTS !!!
-  - implemented place-holders 
-  - implemented ping-method
-  - added support for $dbh->{RaiseError} and $dbh->{PrintError},
-    note: DBI-default for PrintError is on !
-  - allow commit and rollback only if AutoCommit = off
-  - added documentation for $dbh->tables;
-  - new method to get meta-information about a given table:
-    $dbh->DBD::Pg::db::attributes($table);
-  - host-parameter in test.pl is set explicitly to localhost
+ - Changed syntax of data_source (ODBC-conformant): 'dbi:Pg:dbname=dbname;host=host;port=port'
+
+ - Implemented place-holders 
+
+ - Implemented ping-method
+
+ - Added support for $dbh->{RaiseError} and $dbh->{PrintError},
+     note: DBI-default for PrintError is on !
+
+ - Allow commit and rollback only if AutoCommit = off
+
+ - Added documentation for $dbh->tables;
+
+ - New method to get meta-information about a given table: $dbh->DBD::Pg::db::attributes($table);
+
+ - Host-parameter in test.pl is set explicitly to localhost
 
 
 Version 0.63  (released October 05, 1997)
 
-  - adapted to PostgreSQL-6.2:
-    o $sth->rows as well as $sth->execute and $sth->do return the 
-      number of affected rows even for non-Select statements.
-    o support for password authorization added, 
-      please check the man-page for pg_passwd. 
-  - the data_source parameter of the connect 
-    method accepts two additional parameters 
-    which are treated as host and port:
-    DBI->connect("dbi:Pg:dbname:host:port", "uid", "pwd")
-    - support for AutoCommit, please read the 
-    module documentation for impacts on your 
-    scripts !
-  - more perl-ish handling of data type bool, 
-    please read the module documentation for 
-    impacts on your scripts !
+ - Adapted to PostgreSQL-6.2: $sth->rows as well as $sth->execute and $sth->do return the 
+     number of affected rows even for non-Select statements. Support for password 
+     authorization added, please check the man-page for pg_passwd.
+
+ - The data_source parameter of the connect method accepts two additional 
+     parameters which are treated as host and 
+     port: DBI->connect("dbi:Pg:dbname:host:port", "uid", "pwd")
+
+ - Support for AutoCommit, please read the module documentation for impacts on your scripts !
+
+ - More perl-ish handling of data type bool,  please read the module documentation for 
+     impacts on your scripts!
 
 
 Version 0.62  (released August 26, 1997)
 
-  - added blobs/README
+ - Added blobs/README
 
 
 Version 0.61  (released August 23, 1997)
 
-  - adapted to DBI-0.89/Driver.xst
-  - added support for blob_read
+ - Adapted to DBI-0.89/Driver.xst
+
+ - Added support for blob_read
 
 
 Version 0.52  (released August 15, 1997)
 
-  - added support for literal $sth->{'TYPE'}, pg_type.pl / pg_type.pm.
+ - Added support for literal $sth->{'TYPE'}, pg_type.pl / pg_type.pm.
 
 
 Version 0.51  (released August 12, 1997)
 
-  - changed attributes to be DBI conformant:
-    o OID_STATUS to pg_oid_status
-    o CMD_STATUS to pg_cmd_status
+ - Changed attributes to be DBI conformant: OID_STATUS 
+     to pg_oid_status, CMD_STATUS to pg_cmd_status
 
 
 Version 0.5  (released August 05, 1997)
 
-  - support for user authentication
-  - support for bind_columns
-  - added $dbh->tables
+ - Support for user authentication
+
+ - Support for bind_columns
+
+ - Added $dbh->tables
 
 
 Version 0.4  (released June 24, 1997)
 
-  - adapted to DBI-0.84:
-    o new syntax for DBI->connect !
-    o execute returns 0E0 -> n for SELECT statement
-      -1 for non SELECT statement
-      -2 on error
-  - new attribute $sth->{'OID_STATUS'}
-  - new attribute $sth->{'CMD_STATUS'}
+ - Adapted to DBI-0.84: new syntax for DBI->connect.
+   Method execute returns 0E0 -> n for SELECT statement, -1 for 
+     non SELECT statement, -2 on error
+   New attribute $sth->{'OID_STATUS'}
+   New attribute $sth->{'CMD_STATUS'}
 
 
 Version 0.3  (released April 24, 1997)
 
-  - bug fix release, ( still alpha ! )
+ - Bug fix release, ( still alpha ! )
 
 
 Version 0.2  (released March 13, 1997)
 
-  - complete rewrite, ( still alpha ! )
+ - Complete rewrite, ( still alpha ! )
 
 
 Version 0.1  (released February 15, 1997)
 
-  - creation, ( totally pre-alpha ! )
+ - Creation, ( totally pre-alpha ! )
 
