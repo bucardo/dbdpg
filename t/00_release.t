@@ -9,6 +9,7 @@ use warnings;
 use Data::Dumper;
 use Test::More;
 use lib 't','.';
+use feature 'unicode_strings';
 
 if (! $ENV{RELEASE_TESTING}) {
     plan (skip_all =>  'Test skipped unless environment variable RELEASE_TESTING is set');
@@ -130,6 +131,69 @@ while (<$fh>) {
     $lastline2 = $lastline1;
     $lastline1 = $_;
 }
+
+## Check for standardized entries
+seek $fh, 0, 0;
+$. = 0;
+while (<$fh>) {
+    chomp;
+    next if ! /\w/;
+    next if /^RT refers to/;
+    next if /^Version \d+\.\d+/;
+    next if /SYSTEM VIEW/;
+
+    my $extra = '(?: and other places)*';
+
+    ## RT tickets - three spaces, parens
+    next if /^   \(RT ticket \#\d+$extra\)$/;
+    ## Two tickets
+    next if /^   \(RT tickets \#\d+ and \#\d+\)$/;
+    ## Three or more tickets
+    next if /^   \(RT tickets \#\d+(?:[, \#\d+])*\)$/;
+
+    ## Github issues and pull requests - three spaces, parens
+    next if /^   \(Github (?:issue|pull request) #\d+\)$/;
+
+    ## Debian issue
+    next if /^   \(Debian bug \#\d+\)$/;
+
+    ## Should not have any bug tracking keywords now
+    if (/RT/ or /github/i or /cpan/i or /debian /i) {
+        ## Allow a few exceptions
+        if (! /dbdpg.git/ and ! /META.yml/ and ! /cpan\.org/) {
+            fail "Found mention of bug tracker at wrong place at line $.: $_\n";
+            next;
+        }
+    }
+
+    ## Authors - three spaces, bracketed names
+    next if /^   \[[A-Z][\w\. \P{IsLower}]+\]$/;
+
+    ## Authors - three spaces, email
+    next if /^   \[\w[\w\.\-]+ at \w+[\w \.]+\]$/;
+
+    ## Spotted by
+    next if /^   \[spotted by .*?\]$/;
+
+    if (/\[(?![x0-9])/ or /(?=[y0-9])\]/) {
+        fail "Found a brace at line $.: $_\n";
+        next;
+    }
+
+    ## Start of an item
+    next if /^ \- [A-Z]\w+/;
+
+    ## Continuation line - new sentence
+    next if /^   [A-Z][A-Za-z]/; ## Do not want to match RT or CPAN though
+
+    ## Continuation line - same sentence
+    next if /^     [a-z]/;
+
+    die "Unknown line at $. of Changes file: $_\n";
+    
+}
+
+
 close $fh;
 
 if ($changes_file_ok) {
