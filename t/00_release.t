@@ -162,7 +162,7 @@ while (<$fh>) {
     if (/RT/ or /github/i or /cpan/i or /debian /i) {
         ## Allow a few exceptions
         if (! /dbdpg.git/ and ! /META.yml/ and ! /cpan\.org/) {
-            fail "Found mention of bug tracker at wrong place at line $.: $_\n";
+            fail ("Found mention of bug tracker at wrong place at line $.: $_\n");
             next;
         }
     }
@@ -177,7 +177,7 @@ while (<$fh>) {
     next if /^   \[spotted by .*?\]$/;
 
     if (/\[(?![x0-9])/ or /(?=[y0-9])\]/) {
-        fail "Found a brace at line $.: $_\n";
+        fail ("Found a brace at line $.: $_\n");
         next;
     }
 
