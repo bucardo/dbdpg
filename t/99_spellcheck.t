@@ -153,9 +153,6 @@ __DATA__
 ## These words are okay
 
 ## Common:
-
-AutoInactiveDestroy
-grokbase
 ActiveKids
 adbin
 adsrc
@@ -173,6 +170,7 @@ authtype
 autocommit
 AutoCommit
 AutoEscape
+AutoInactiveDestroy
 backend
 backtrace
 bitmask
@@ -225,8 +223,8 @@ dbh
 dbi
 DBI
 DBI's
-DBIx
 dbivport
+DBIx
 DBIXS
 dbmethod
 dbname
@@ -278,9 +276,10 @@ gdb
 getcopydata
 getfd
 getline
-github
 GH
+github
 greg
+grokbase
 GSM
 HandleError
 HandleSetErr
@@ -300,6 +299,7 @@ installsitearch
 INSTALLVENDORBIN
 IP
 ish
+JSON
 Kbytes
 largeobject
 lcrypto
@@ -382,9 +382,9 @@ pid
 PID
 PlanetPostgresql
 POSIX
+postgres
 Postgres
 POSTGRES
-postgres
 postgresql
 PostgreSQL
 powf
@@ -403,6 +403,7 @@ PQsendQueryParams
 PQsendQueryPrepared
 PQserverVersion
 PQsetErrorVerbosity
+PQsetSingleRowMode
 pragma
 pragmas
 pre
@@ -418,6 +419,7 @@ putline
 pv
 pwd
 qual
+quickexec
 qw
 RaiseError
 RDBMS
@@ -568,46 +570,45 @@ XSUB
 yaml
 YAML
 yml
-JSON
-PQsetSingleRowMode
-quickexec
 
 ## TODO:
 ala
-hstore
+bucardo
 cpantesters
+github
 hashrefs
+hstore
+https
 rowtypes
 struct
-bucardo
-github
-https
 
 ## README.dev:
 abc
-pgp
-dbix
-shortid
 bucardo
 Conway's
 cpantesters
+dbix
 distro
 DProf
 dprofpp
 gpl
 GPL
+json
 leaktester
 mak
 mathinline
 MDevel
+MYMETA
 nCompiled
 nServer
 NYTProf
 nytprofhtml
+pgp
 profiler
 pulldown
 repo
 scsys
+shortid
 spellcheck
 SvTRUE
 testallversions
@@ -616,8 +617,6 @@ testme
 txt
 uk
 XSubPPtmpAAAA
-json
-MYMETA
 
 ## README:
 BOOTCHECK
@@ -661,58 +660,71 @@ turnstep
 Ubuntu
 
 ## Changes:
+alex
 Bálint
-Github
-Refactor
-SvNVs
-signalling
 bigint
+BIGINT
+BMP
 boolean
+bpchar
 bucardo
 destringifying
+dTHX
+easysoft
+elspicyjack
+evans
 expr
-ints
 Garamond
 gborg
+Github
+gmail
 Hofmann
-BIGINT
+ints
+ivan
 jsontable
+Kai
 largeobjects
 localtime
-repo
-BMP
-NOSUCH
-PGINITDB
-tableinfo
-dTHX
-bpchar
-oids
-perls
-reinstalling
-spclocation
-Kai
+lviv
 marshalling
+morni
+nl
+NOSUCH
 n's
+oids
 optimizations
+pc
 Perlish
+perls
+PGINITDB
 Pg's
 Pieter
+pilosoft
 qw
+rdovira
+Refactor
 regex
+reinstalling
+repo
+signalling
+spclocation
 spellcheck
+SvNVs
 Szilakszi
+tableinfo
+ua
 uc
 VC
 
 ## Pg.pm:
-onwards
-Oid
-pseudotype
-lseg
 afterwards
 hashrefs
-PGSYSCONFDIR
+lseg
+Oid
+onwards
 PGSERVICE
+PGSYSCONFDIR
+pseudotype
 
 ## Pg.xs:
 PQexec
@@ -720,65 +732,59 @@ stringifiable
 struct
 
 ## dbdimp.c:
-Bytea
-DefaultValue
-PQstatus
-SvPV
-SvUTF
-alphanum
-pos
-pqtype
-rescan
-resultset
 ABCD
+alphanum
 AvARRAY
-BegunWork
-COPYing
-DBIc
-Deallocate
-Deallocation
-ExecStatusType
-INV
-NULLs
-Oid
-PQoids
-PQvals
-PGRES
-ROK
-StartTransactionCommand
 backend's
 backslashed
+BegunWork
 boolean
+Bytea
 cancelling
+COPYing
 copypv
 copystate
 coredumps
 currph
 currpos
 dashdash
+DBIc
+Deallocate
 deallocating
+Deallocation
 defaultval
+DefaultValue
 dereference
 destringify
 dollarquote
 dollarstring
 encodings
+ExecStatusType
 fallthrough
 firstword
 getcom
 inerror
+INV
 login
 mortalize
 myval
 n'egative
 nullable
+NULLs
 numphs
 numrows
+Oid
 ok
-p'ositive
 paramTypes
 Perlish
+PGRES
 ph
+pos
+p'ositive
+PQoids
+PQstatus
+pqtype
+PQvals
 preparable
 proven
 quickexec
@@ -786,14 +792,20 @@ recv'd
 reprepare
 repreparing
 req
+rescan
+resultset
+ROK
 scs
 sectionstop
 slashslash
 slashstar
 sqlclient
 starslash
+StartTransactionCommand
 stringify
 sv
+SvPV
+SvUTF
 topav
 topdollar
 tuples
@@ -804,11 +816,11 @@ versa
 xPID
 
 ## dbdimp.h:
-PQ
-SSP
 funcs
 implementor
 ph
+PQ
+SSP
 
 ## quote.c:
 arg
@@ -831,26 +843,15 @@ SVs
 tempfile
 
 ## types.c:
+arg
+arrayout
 ASYNC
 Autogenerate
 basename
 BIGINT
-BOOLOID
-DESCR
-LONGVARCHAR
-OLDQUERY
-PASSBYVAL
-ParseData
-ParseHeader
-SMALLINT
-SV
-TINYINT
-VARBINARY
-ndone
-arg
-arrayout
 binin
 binout
+BOOLOID
 boolout
 bpchar
 chr
@@ -859,33 +860,43 @@ cmp
 dat
 delim
 descr
+DESCR
 dq
 elsif
+LONGVARCHAR
 lseg
 maxlen
 mv
+ndone
 newfh
 oct
 ok
 oldfh
+OLDQUERY
+ParseData
+ParseHeader
+PASSBYVAL
 pos
 printf
 qq
 slashstar
-starslash
+SMALLINT
 sqlc
 sqltype
 src
+starslash
 struct
+SV
 svtype
 tcase
-tdTHX
 tdefault
+tdTHX
 textin
 textout
 thisname
 tid
 timestamptz
+TINYINT
 tswitch
 typarray
 typdelim
@@ -899,20 +910,21 @@ typrecv
 typrelid
 typsend
 uc
+VARBINARY
 
 ## types.h:
 Nothing
 
 ## Pg.h:
+cpansearch
 DBILOGFP
 DBIS
-PGfooBar
-PYTHIAN
-THEADER
-cpansearch
 ocitrace
+PGfooBar
 preprocessors
+PYTHIAN
 src
+THEADER
 xxh
 
 ## Makefile.PL:
@@ -923,12 +935,12 @@ subdirectory
 copystate
 
 ## t/03dbmethod.t:
-CamelCase
-Multi
 arrayref
+CamelCase
 fk
 fktable
 intra
+Multi
 odbcversion
 pktable
 selectall
@@ -944,20 +956,20 @@ TSQUERY
 YAMLiciousness
 
 ## t/02attribs.t:
-INV
-NUM
-PARAMS
 encodings
+INV
 lc
 msg
+NUM
+PARAMS
 uc
 
 ## t/03smethod.t:
-ArrayTupleFetch
-SSP
 arg
+ArrayTupleFetch
 fetchall
 fetchrow
+SSP
 undefs
 
 ## t/12placeholders.t:
@@ -968,50 +980,50 @@ RIGHTARG
 
 ## t/99_spellcheck.t:
 gsm
+ol
 sm
 Spellcheck
-ol
 textfiles
 
 ## README.win32:
-DRV
-ITHREADS
-MSVC
-MULTI
-SYS
-VC
-Vc
 cd
+cd
+DRV
+exe
 exe
 frs
+Gf
+GF
 gz
+gz
+ITHREADS
+ITHREADS
+libpg
 libpg
 mak
+mak
 mkdir
-myperl
-pgfoundry
-nmake
-rc
-src
-vcvars
-xcopy
-GF
-Gf
-ITHREADS
+mkdir
+MSVC
 MSVC
 MULTI
-SYS
-VC
-Vc
-cd
-exe
-gz
-libpg
-mak
-mkdir
+MULTI
+myperl
 myperl
 nmake
+nmake
+pgfoundry
+rc
 rc
 src
+src
+SYS
+SYS
+Vc
+Vc
+VC
+VC
 vcvars
+vcvars
+xcopy
 xcopy
