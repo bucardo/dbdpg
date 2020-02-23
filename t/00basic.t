@@ -29,6 +29,9 @@ BEGIN {
                 }
             }
         }
+
+        diag 'If the error mentions libpq.so, please see the troubleshooting section of the README file';
+
         BAIL_OUT 'Cannot continue without DBD::Pg';
     }
 }
