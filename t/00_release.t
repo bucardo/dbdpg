@@ -141,6 +141,7 @@ while (<$fh>) {
     next if /^RT refers to/;
     next if /^Version \d+\.\d+/;
     next if /SYSTEM VIEW/;
+    next if /^Changes for/;
 
     my $extra = '(?: and other places)*';
 
@@ -190,7 +191,7 @@ while (<$fh>) {
     next if /^     [a-z]/;
 
     die "Unknown line at $. of Changes file: $_\n";
-    
+
 }
 
 
