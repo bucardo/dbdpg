@@ -3278,17 +3278,17 @@ being treated as a placeholder.
 =head3 B<pg_enable_utf8> (integer)
 
 DBD::Pg specific attribute. The behavior of DBD::Pg with regards to this flag has 
-changed as of version 3.0.0. The default value for this attribute, -1, indicates 
-that the internal Perl C<utf8> flag will be turned on for all strings coming back 
-from the database if the client_encoding is set to 'UTF8'. Use of this default 
+changed as of version 3.0.0. The default value for this attribute, -1, tells
+DBD::Pg to UTF8-decode all strings coming back
+from the database if the client_encoding is set to C<UTF8>. Use of this default 
 is highly encouraged. If your code was previously using pg_enable_utf8, you can 
 probably remove mention of it entirely.
 
-If this attribute is set to 0, then the internal C<utf8> flag will *never* be 
-turned on for returned data, regardless of the current client_encoding. 
+If this attribute is set to 0, then DBD::Pg will B<never> UTF8-decode
+returned data, regardless of the current client_encoding.
 
-If this attribute is set to 1, then the internal C<utf8> flag will *always* 
-be turned on for returned data, regardless of the current client_encoding 
+If this attribute is set to 1, then DBD::Pg will B<always> UTF8-decode
+returned data, regardless of the current client_encoding
 (with the exception of bytea data).
 
 Note that the value of client_encoding is only checked on connection time. If 
