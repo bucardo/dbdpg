@@ -4017,6 +4017,8 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
     ph_t *  currph;
     ph_t *  nextph;
 
+    imp_dbh->do_tmp_sth = NULL;
+
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_destroy\n", THEADER_slow);
 
     if (NULL == imp_sth->seg) /* Already been destroyed! */
