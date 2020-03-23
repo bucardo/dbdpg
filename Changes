@@ -12,6 +12,9 @@ Version 3.10.5  unreleased
    [H.Merijn Brand]
    (RT ticket #132203)
 
+ - Add small warning regarding ShowErrorStatement
+   (RT ticket #120268)
+
 
 Version 3.10.4  (released February 3, 2020)
 
