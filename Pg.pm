@@ -2226,6 +2226,8 @@ by default.
 Appends information about the current statement to error messages. If placeholder information 
 is available, adds that as well. Defaults to false.
 
+Note that this will not work when using L</do> without any arguments.
+
 =head3 B<Warn> (boolean, inherited)
 
 Enables warnings. This is on by default, and should only be turned off in a local block 
