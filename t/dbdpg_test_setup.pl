@@ -307,7 +307,7 @@ version: $version
         };
         last GETHANDLE if $@; ## Fail - initdb bad
         $version = 0;
-        if (!defined $info or ($info !~ /Postgres/i and $info !~ /run as root/)) {
+        if (!defined $info or ($info !~ /Postgres|EnterpriseDB/i and $info !~ /run as root/)) {
             if (defined $info) {
                 if ($info !~ /\w/) {
                     $@ = 'initdb not found: cannot run full tests without a Postgres database';
@@ -343,7 +343,7 @@ version: $version
             $info = qx{$pg_ctl --help 2>&1};
         };
         last GETHANDLE if $@; ## Fail - pg_ctl bad
-        if (!defined $info or ($info !~ /\@[a-z.-]*?postgresql\.org/ and $info !~ /run as root/)) {
+        if (!defined $info or ($info !~ /\@(?:[a-z.-]*?postgresql\.org|enterprisedb\.com)/ and $info !~ /run as root/)) {
             $@ = defined $initdb ? "Bad pg_ctl output: $info" : 'Bad pg_ctl output';
             last GETHANDLE; ## Fail - pg_ctl bad
         }
