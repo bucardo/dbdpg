@@ -41,8 +41,6 @@ like ($@, qr{Invalid error field}, $t);
 
 my $test_table = 'dbdpg_error_field_test';
 
-my $pgvstring   = $dbh->selectall_arrayref('SELECT VERSION()')->[0][0];
-my $source_file = $pgvstring =~ /EnterpriseDB/i ? "edb_redwood_casts.c" : "int.c";
 my $fields = qq{
 pg_diag_severity_nonlocalized        | 100001 | undef | ERROR             | ERROR | ERROR | ERROR
 pg_diag_severity                     | 70400  | undef | ERROR             | ERROR | ERROR | ERROR
@@ -59,7 +57,7 @@ pg_diag_table_name,table             | 90300  | undef | undef             | unde
 pg_diag_column_name,column           | 90300  | undef | undef             | undef | undef | undef
 pg_diag_datatype_name,datatype,type  | 90300  | undef | undef             | undef | undef | undef
 pg_diag_constraint_name,constraint   | 90400  | undef | undef             | undef | rainbow | undef
-pg_diag_source_file                  | 70400  | undef | $source_file      | parse_ | execMain.c | undef
+pg_diag_source_file                  | 70400  | undef | \\.c\\z      | parse_ | execMain.c | undef
 pg_diag_source_line                  | 70400  | undef | number            | number | number | undef
 pg_diag_source_function              | 70400  | undef | int4div           | Column | ExecConstraints | undef
 };
@@ -83,7 +81,7 @@ for my $loop (1..5) {
         next unless /pg/;
         my ($lfields,$minversion,@error) = split /\s+\|\s+/;
         next if $pgversion < $minversion;
-       for my $field (split /,/ => $lfields) {
+        for my $field (split /,/ => $lfields) {
             my $expected = $error[5==$loop ? 3 : $loop-1];
             $expected = undef if $expected eq 'undef';
             if (defined $expected) {
