@@ -8,6 +8,10 @@ Version 3.10.5  unreleased
  - Minor adjustment for Windows build
    (RT ticket #131752)
 
+ - Allow test suite to work on an EnterpriseDB server
+   [H.Merijn Brand]
+   (RT ticket #132203)
+
 
 Version 3.10.4  (released February 3, 2020)
 
