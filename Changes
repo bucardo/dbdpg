@@ -3,7 +3,7 @@ Changes for the DBD::Pg module
 RT refers to rt.cpan.org
 
 
-Version 3.10.5  unreleased
+Version 3.10.5  (released March 23, 2020)
 
  - Minor adjustment for Windows build
    (RT ticket #131752)
