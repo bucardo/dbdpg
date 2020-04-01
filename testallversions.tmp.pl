@@ -7,11 +7,11 @@ use 5.008001;
 use strict;
 use warnings;
 
-my $basedir = shift || "$ENV{HOME}/code/postgres";
+my $basedir = shift || "$ENV{HOME}/pg";
 
 -d $basedir or die qq{No such directory: $basedir\n};
 
-my @versions = qw/ 9.0 9.1 9.2 9.3 HEAD /;
+my @versions = qw/ 8.4 9.0 9.1 9.2 9.3 10 11 12 HEAD /;
 
 ## Sanity check:
 for my $lver (@versions) {
