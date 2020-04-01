@@ -1218,6 +1218,7 @@ use 5.008001;
     }
 
     sub table_attributes {
+
         my ($dbh, $table) = @_;
 
         my $sth = $dbh->column_info(undef,undef,$table,undef);
@@ -1667,7 +1668,7 @@ use 5.008001;
 
         ## Bail if the second arg is not undef or an arrayref
         return $sth->set_err(1, "Value for parameter $p_id must be a scalar or an arrayref, not a ".ref($value_array))
-            if defined $value_array and ref $value_array and ref $value_array ne 'ARRAY';
+            if ref $value_array ne 'ARRAY';
 
         ## Bail if the first arg is not a number
         return $sth->set_err(1, q{Can't use named placeholders for non-driver supported bind_param_array})
@@ -1680,6 +1681,7 @@ use 5.008001;
         return $sth->bind_param($p_id, '', $attr) if $attr; ## This is the big change so -w does not complain
 
         return 1;
+
     } ## end bind_param_array
 
      sub private_attribute_info {
