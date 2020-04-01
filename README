@@ -232,8 +232,21 @@ running the Makefile.PL, by running pexports and dlltool
 as shown below, within the C:\Program Files\PostgreSQL\8.3\bin
 directory:
 
-  pexports libpq.dll > libpq.def
-  dlltool -dllname libpq.dll --def libpq.def --output-lib ..\lib\libpq.a
+  C:\Windows\> C:\MinGW\bin\pexports libpq.dll > libpq.def
+  C:\Windows\> C:\MinGW\bin\dlltool -dllname libpq.dll --def libpq.def
+--output-lib "C:\Program
+Files\PostgreSQL\12\lib\libpq.a"
+
+pexports and dlltool are included with MinGW - Minimalist Gnu for Windows,
+found here:
+
+  https://osdn.net/projects/mingw/releases/
+
+Once you have installed MinGW you can install pexports and dlltool as
+follows:
+
+  C:\Windows\> C:\MinGW\bin\mingw-get.exe install pexports
+  C:\Windows\> C:\MinGW\bin\mingw-get.exe install dlltool
 
 Then you'll need to set the required environment:
 
@@ -248,7 +261,7 @@ Then you'll need to set the required environment:
 Note that the username and password are the ones for PostgreSQL, NOT the 
 ones for the Windows account that the PostgreSQL installer creates to run 
 the service safely.
-  
+
 (You may wish to set these variables on the system level, by going to
 Control Panel > System > Advanced tab > Environment Variables button and
 adding the environment variables there.)
