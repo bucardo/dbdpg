@@ -206,13 +206,13 @@ use 5.008001;
     sub data_sources {
 
         my $drh = shift;
-        my $attr = shift || '';
+        my $conninfo = shift || '';
         my $connstring = 'dbname=postgres';
         if ($ENV{DBI_DSN}) {
             ($connstring = $ENV{DBI_DSN}) =~ s/dbi:Pg://i;
         }
-        if (length $attr) {
-            $connstring .= ";$attr";
+        if (length $conninfo) {
+            $connstring .= ";$conninfo";
         }
 
         my $dbh = DBD::Pg::dr::connect($drh, $connstring) or return;
@@ -220,14 +220,15 @@ use 5.008001;
         my $SQL = 'SELECT pg_catalog.quote_ident(datname) FROM pg_catalog.pg_database ORDER BY 1';
         my $sth = $dbh->prepare($SQL);
         $sth->execute() or die $DBI::errstr;
-        $attr and $attr = ";$attr";
-        my @sources = map { "dbi:Pg:dbname=$_->[0]$attr" } @{$sth->fetchall_arrayref()};
+        $conninfo and $conninfo = ";$conninfo";
+        my @sources = map { "dbi:Pg:dbname=$_->[0]$conninfo" } @{$sth->fetchall_arrayref()};
         $dbh->disconnect;
         return @sources;
     }
 
 
     sub connect { ## no critic (ProhibitBuiltinHomonyms)
+
         my ($drh, $dbname, $user, $pass, $attr) = @_;
 
         ## Allow "db" and "database" as synonyms for "dbname"
@@ -613,9 +614,9 @@ use 5.008001;
     }
 
     sub _prepare_from_data {
-        my ($statement, $data, $names, %attr) = @_;
+        my ($statement, $data, $names, %attrinfo) = @_;
         my $sponge = DBI->connect('dbi:Sponge:', '', '', { RaiseError => 1 });
-        my $sth = $sponge->prepare($statement, { rows=>$data, NAME=>$names, %attr });
+        my $sth = $sponge->prepare($statement, { rows=>$data, NAME=>$names, %attrinfo });
         return $sth;
     }
 
@@ -754,9 +755,9 @@ use 5.008001;
             $sth_indexdef->execute($row->{indnatts}, $row->{indexrelid});
             my $expression = $sth_indexdef->fetchall_arrayref();
 
-            my $col_nums = $row->{indkey};
-            $col_nums =~ s/^\s+//;
-            my @col_nums = split(/\s+/, $col_nums);
+            my $colinfo = $row->{indkey};
+            $colinfo =~ s/^\s+//;
+            my @col_nums = split(/\s+/, $colinfo);
 
             my $ord_pos = 1;
             for my $col_num (@col_nums) {
@@ -833,7 +834,7 @@ use 5.008001;
         };
         $sth = $dbh->prepare($sql) or return undef;
         $sth->execute();
-        my $attribs = $sth->fetchall_hashref('attnum');
+        my $attribinfo = $sth->fetchall_hashref('attnum');
 
         my $pkinfo = [];
 
@@ -849,13 +850,13 @@ use 5.008001;
                 # TABLE_NAME
                 $pkinfo->[$x][2] = $info->[2];
                 # COLUMN_NAME
-                $pkinfo->[$x][3] = $attribs->{$_}{colname};
+                $pkinfo->[$x][3] = $attribinfo->{$_}{colname};
                 # KEY_SEQ
                 $pkinfo->[$x][4] = $_;
                 # PK_NAME
                 $pkinfo->[$x][5] = $info->[3];
                 # DATA_TYPE
-                $pkinfo->[$x][6] = $attribs->{$_}{typename};
+                $pkinfo->[$x][6] = $attribinfo->{$_}{typename};
                 $pkinfo->[$x][7] = $info->[5];
                 $pkinfo->[$x][8] = $info->[6];
                 $pkinfo->[$x][9] = $info->[7];
@@ -879,12 +880,12 @@ use 5.008001;
             $info->[5] = $info->[3];
             # COLUMN_NAME
             $info->[3] = 2==$attr->{'pg_onerow'} ?
-                [ map { $attribs->{$_}{colname} } split /\s+/, $info->[4] ] :
-                    join ', ', map { $attribs->{$_}{colname} } split /\s+/, $info->[4];
+                [ map { $attribinfo->{$_}{colname} } split /\s+/, $info->[4] ] :
+                    join ', ', map { $attribinfo->{$_}{colname} } split /\s+/, $info->[4];
             # DATA_TYPE
             $info->[6] = 2==$attr->{'pg_onerow'} ?
-                [ map { $attribs->{$_}{typename} } split /\s+/, $info->[4] ] :
-                    join ', ', map { $attribs->{$_}{typename} } split /\s+/, $info->[4];
+                [ map { $attribinfo->{$_}{typename} } split /\s+/, $info->[4] ] :
+                    join ', ', map { $attribinfo->{$_}{typename} } split /\s+/, $info->[4];
             # KEY_SEQ
             $info->[4] = 2==$attr->{'pg_onerow'} ?
                 [ split /\s+/, $info->[4] ] :
@@ -1211,9 +1212,9 @@ use 5.008001;
             my ($dbh, @args) = @_;
             my $attr = $args[4];
             my $sth = $dbh->table_info(@args) or return;
-            my $tables = $sth->fetchall_arrayref() or return;
+            my $tablelist = $sth->fetchall_arrayref() or return;
             my @tables = map { (! (ref $attr eq 'HASH' and $attr->{pg_noprefix})) ?
-                        "$_->[1].$_->[2]" : $_->[2] } @$tables;
+                        "$_->[1].$_->[2]" : $_->[2] } @$tablelist;
             return @tables;
     }
 
@@ -1575,7 +1576,7 @@ use 5.008001;
         }
         elsif ($ans eq 'ODBCVERSION') {
             my $version = $dbh->{private_dbdpg}{version};
-            return '00.00.0000' unless $version =~ /^(\d\d?)(\d\d)(\d\d)$/;
+            return '00.00.0000' unless $version =~ /^([0-9][0-9]?)([0-9][0-9])([0-9][0-9])$/;
             return sprintf '%02d.%02d.%.2d00', $1,$2,$3;
         }
         elsif ($ans eq 'DBDVERSION') {
