@@ -128,8 +128,10 @@ use 5.008001;
 
     my $methods_are_installed = 0;
     sub driver {
+
         return $drh if defined $drh;
-        my($class, $attr) = @_;
+
+        my $class = shift;
 
         $class .= '::dr';
 
@@ -280,8 +282,7 @@ use 5.008001;
     use strict;
 
     sub parse_trace_flag {
-        my ($h, $flag) = @_;
-        return DBD::Pg->parse_trace_flag($flag);
+        return DBD::Pg->parse_trace_flag($_[1]);
     }
 
     sub prepare {
@@ -301,7 +302,7 @@ use 5.008001;
 
     sub last_insert_id {
 
-        my ($dbh, $catalog, $schema, $table, $col, $attr) = @_;
+        my ($dbh, undef, $schema, $table, undef, $attr) = @_;
 
         ## Our ultimate goal is to get a sequence
         my ($sth, $count, $SQL, $sequence);
@@ -309,7 +310,7 @@ use 5.008001;
         ## Cache all of our table lookups? Default is yes
         my $cache = 1;
 
-        ## Catalog and col are not used
+        ## Catalog and col (arguments 2 and 5) are not used
         $schema = '' if ! defined $schema;
         $table = '' if ! defined $table;
         my $cachename = join("\0", 'lii', $schema, $table);
@@ -470,7 +471,7 @@ use 5.008001;
 
     sub column_info {
         my $dbh = shift;
-        my ($catalog, $schema, $table, $column) = @_;
+        my (undef, $schema, $table, $column) = @_;
 
         my @search;
         ## If the schema or table has an underscore or a %, use a LIKE comparison
@@ -621,7 +622,7 @@ use 5.008001;
     sub statistics_info {
 
         my $dbh = shift;
-        my ($catalog, $schema, $table, $unique_only, $quick, $attr) = @_;
+        my (undef, $schema, $table, $unique_only) = @_;
 
         ## Catalog is ignored, but table is mandatory
         return undef unless defined $table and length $table;
@@ -778,7 +779,7 @@ use 5.008001;
     sub primary_key_info {
 
         my $dbh = shift;
-        my ($catalog, $schema, $table, $attr) = @_;
+        my (undef, $schema, $table, $attr) = @_;
 
         ## Catalog is ignored, but table is mandatory
         return undef unless defined $table and length $table;
@@ -917,7 +918,6 @@ use 5.008001;
         my $ptable = $_[2] || '';
         my $fschema = $_[4] || '';
         my $ftable = $_[5] || '';
-        my $args = $_[6];
 
         ## Must have at least one named table
         return undef if !length($ptable) and !length($ftable);
@@ -1282,7 +1282,6 @@ use 5.008001;
 
 
     sub type_info_all {
-        my ($dbh) = @_;
 
         my $names =
             {
@@ -1368,18 +1367,6 @@ use 5.008001;
     ];
     return $ti;
     }
-
-
-    # Characters that need to be escaped by quote().
-    my %esc = (
-        q{'}  => '\\047', # '\\' . sprintf("%03o", ord("'")), # ISO SQL 2
-        '\\' => '\\134', # '\\' . sprintf("%03o", ord("\\")),
-    );
-
-    # Set up lookup for SQL types we don't want to escape.
-    my %no_escape = map { $_ => 1 }
-        DBI::SQL_INTEGER, DBI::SQL_SMALLINT, DBI::SQL_BIGINT, DBI::SQL_DECIMAL,
-        DBI::SQL_FLOAT, DBI::SQL_REAL, DBI::SQL_DOUBLE, DBI::SQL_NUMERIC;
 
     my %get_info_type = (
 
@@ -1654,8 +1641,7 @@ use 5.008001;
     package DBD::Pg::st;
 
     sub parse_trace_flag {
-        my ($h, $flag) = @_;
-        return DBD::Pg->parse_trace_flag($flag);
+        return DBD::Pg->parse_trace_flag($_[1]);
     }
 
     sub bind_param_array {
@@ -1668,7 +1654,7 @@ use 5.008001;
 
         ## Bail if the second arg is not undef or an arrayref
         return $sth->set_err(1, "Value for parameter $p_id must be a scalar or an arrayref, not a ".ref($value_array))
-            if ref $value_array ne 'ARRAY';
+            if ref $value_array and ref $value_array ne 'ARRAY';
 
         ## Bail if the first arg is not a number
         return $sth->set_err(1, q{Can't use named placeholders for non-driver supported bind_param_array})
