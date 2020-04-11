@@ -634,17 +634,15 @@ use 5.008001;
         my $input_schema = (defined $schema and length $schema) ? 1 : 0;
 
         if ($input_schema) {
-            $schema_where = 'AND n.nspname = ? AND n.oid = d.relnamespace';
+            $schema_where = 'AND n.nspname = ?';
             push(@exe_args, $schema);
-        }
-        else {
-            $schema_where = 'AND n.oid = d.relnamespace';
         }
 
         my $table_stats_sql = qq{
             SELECT d.relpages, d.reltuples, n.nspname,
                    pg_catalog.current_database() as catname
-            FROM   pg_catalog.pg_class d, pg_catalog.pg_namespace n
+            FROM   pg_catalog.pg_class d
+            JOIN   pg_catalog.pg_namespace n ON n.oid = d.relnamespace
             WHERE  d.relname = ? $schema_where
         };
 
@@ -652,9 +650,11 @@ use 5.008001;
             SELECT
                 a.attnum, a.attname
             FROM
-                pg_catalog.pg_attribute a, pg_catalog.pg_class d, pg_catalog.pg_namespace n
+                pg_catalog.pg_attribute a
+                JOIN pg_catalog.pg_class d ON a.attrelid = d.oid
+                JOIN pg_catalog.pg_namespace n ON n.oid = d.relnamespace
             WHERE
-                a.attrelid = d.oid AND d.relname = ? $schema_where
+                d.relname = ? $schema_where
         };
 
         my $stats_sql = qq{
@@ -665,12 +665,13 @@ use 5.008001;
                 pg_catalog.pg_get_expr(i.indpred,i.indrelid) as predicate,
                 pg_catalog.pg_get_expr(i.indexprs,i.indrelid, true) AS indexdef
             FROM
-                pg_catalog.pg_index i, pg_catalog.pg_class c,
-                pg_catalog.pg_class d, pg_catalog.pg_am a,
-                pg_catalog.pg_namespace n
+                pg_catalog.pg_index i
+                JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
+                JOIN pg_catalog.pg_class d ON d.oid = i.indrelid
+                JOIN pg_catalog.pg_am a ON a.oid = c.relam
+                JOIN pg_catalog.pg_namespace n ON n.oid = d.relnamespace
             WHERE
-                d.relname = ? $schema_where AND d.oid = i.indrelid
-                AND i.indexrelid = c.oid AND c.relam = a.oid
+                d.relname = ? $schema_where
             ORDER BY
                 i.indisunique desc, a.amname, c.relname
         };
