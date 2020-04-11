@@ -908,9 +908,11 @@ $sth = $dbh->statistics_info(undef,undef,'',undef,undef);
 is ($sth, undef, $t);
 
 ## Invalid table
-$t='DB handle method "statistics_info" returns undef: bad table';
+$t='DB handle method "statistics_info" returns no rows: bad table';
 $sth = $dbh->statistics_info(undef,undef,'dbd_pg_test9',undef,undef);
-is ($sth, undef, $t);
+$result = $sth->fetchall_arrayref;
+$expected = [];
+is_deeply ($result, $expected, $t);
 
 
 my $with_oids = $pgversion < 120000 ? 'WITH OIDS' : '';

@@ -638,11 +638,11 @@ use 5.008001;
             push(@exe_args, $schema);
         }
 
-        my @output_rows;
+        my $stats_sql;
 
         # Table-level stats
         if (!$unique_only) {
-            my $table_stats_sql = qq{
+            $stats_sql .= qq{
                 SELECT
                     pg_catalog.current_database() AS "TABLE_CAT",
                     n.nspname                     AS "TABLE_SCHEM",
@@ -661,15 +661,13 @@ use 5.008001;
                 FROM   pg_catalog.pg_class d
                 JOIN   pg_catalog.pg_namespace n ON n.oid = d.relnamespace
                 WHERE  d.relname = ? $schema_where
+                UNION ALL
             };
-
-            my $table_stats_sth = $dbh->prepare($table_stats_sql);
-            $table_stats_sth->execute(@exe_args) or return undef;
-            push(@output_rows, $table_stats_sth->fetchrow_arrayref || return undef);
+            push @exe_args, @exe_args;
         }
 
         # Fetch the index definitions
-        my $stats_sql = qq{
+        $stats_sql .= qq{
             SELECT
                 pg_catalog.current_database() AS "TABLE_CAT",
                 n.nspname                     AS "TABLE_SCHEM",
@@ -705,18 +703,13 @@ use 5.008001;
                 d.relname = ? $schema_where
                 AND (i.indisunique OR NOT(?)) -- unique_only
             ORDER BY
-                "NON_UNIQUE", "TYPE", "INDEX_QUALIFIER", "INDEX_NAME", "ORDINAL_POSITION"
+                -- NULLS FIRST to get the table level stats first
+                "NON_UNIQUE" NULLS FIRST, "TYPE", "INDEX_QUALIFIER", "INDEX_NAME", "ORDINAL_POSITION"
         };
 
         my $sth = $dbh->prepare($stats_sql);
         $sth->execute(@exe_args, 0+!!$unique_only) or return undef;
-        push(@output_rows, @{$sth->fetchall_arrayref});
-
-        my @output_colnames = qw/ TABLE_CAT TABLE_SCHEM TABLE_NAME NON_UNIQUE INDEX_QUALIFIER
-                    INDEX_NAME TYPE ORDINAL_POSITION COLUMN_NAME ASC_OR_DESC
-                    CARDINALITY PAGES FILTER_CONDITION pg_expression /;
-
-        return _prepare_from_data('statistics_info', \@output_rows, \@output_colnames);
+        return $sth;
     }
 
     sub primary_key_info {
