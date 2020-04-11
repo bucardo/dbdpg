@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 586;
+plan tests => 589;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -903,6 +903,10 @@ $t='DB handle method "statistics_info" returns undef: no table';
 $sth = $dbh->statistics_info(undef,undef,undef,undef,undef);
 is ($sth, undef, $t);
 
+$t='DB handle method "statistics_info" returns undef: empty table';
+$sth = $dbh->statistics_info(undef,undef,'',undef,undef);
+is ($sth, undef, $t);
+
 ## Invalid table
 $t='DB handle method "statistics_info" returns undef: bad table';
 $sth = $dbh->statistics_info(undef,undef,'dbd_pg_test9',undef,undef);
@@ -972,6 +976,12 @@ one => [
     ],
 };
 
+my @stats_columns = qw(
+    TABLE_CAT TABLE_SCHEM TABLE_NAME NON_UNIQUE INDEX_QUALIFIER INDEX_NAME TYPE
+    ORDINAL_POSITION COLUMN_NAME ASC_OR_DESC CARDINALITY PAGES FILTER_CONDITION
+    pg_expression
+);
+
 ## Make some per-version tweaks
 
 ## 8.5 changed the way foreign key names are generated
@@ -998,10 +1008,16 @@ $stats = $sth->fetchall_arrayref;
 $correct_stats->{three}[$hash_index_idx][11] = $stats->[$hash_index_idx][11] = 0;
 is_deeply ($stats, $correct_stats->{three}, $t);
 
+$t = "Correct stats column names";
+is_deeply ($sth->{NAME}, \@stats_columns, $t);
+
 $t="Correct stats output for $table3 (unique only)";
 $sth = $dbh->statistics_info(undef,$schema,$table3,1,undef);
 $stats = $sth->fetchall_arrayref;
 is_deeply ($stats, $correct_stats->{three_uo}, $t);
+
+$t = "Correct stats column names (unique only)";
+is_deeply ($sth->{NAME}, \@stats_columns, $t);
 
 {
     $t="Correct stats output for $table1";

@@ -643,8 +643,21 @@ use 5.008001;
         # Table-level stats
         if (!$unique_only) {
             my $table_stats_sql = qq{
-                SELECT d.relpages, d.reltuples, n.nspname,
-                       pg_catalog.current_database() as catname
+                SELECT
+                    pg_catalog.current_database() AS "TABLE_CAT",
+                    n.nspname                     AS "TABLE_SCHEM",
+                    d.relname                     AS "TABLE_NAME",
+                    NULL                          AS "NON_UNIQUE",
+                    NULL                          AS "INDEX_QUALIFIER",
+                    NULL                          AS "INDEX_NAME",
+                    'table'                       AS "TYPE",
+                    NULL                          AS "ORDINAL_POSITION",
+                    NULL                          AS "COLUMN_NAME",
+                    NULL                          AS "ASC_OR_DESC",
+                    d.reltuples                   AS "CARDINALITY",
+                    d.relpages                    AS "PAGES",
+                    NULL                          AS "FILTER_CONDITION",
+                    NULL                          AS "pg_expression"
                 FROM   pg_catalog.pg_class d
                 JOIN   pg_catalog.pg_namespace n ON n.oid = d.relnamespace
                 WHERE  d.relname = ? $schema_where
@@ -652,34 +665,32 @@ use 5.008001;
 
             my $table_stats_sth = $dbh->prepare($table_stats_sql);
             $table_stats_sth->execute(@exe_args) or return undef;
-            my $tst = $table_stats_sth->fetchrow_hashref or return undef;
-            push(@output_rows, [
-                $tst->{catname},  # TABLE_CAT
-                $tst->{nspname},  # TABLE_SCHEM
-                $table,           # TABLE_NAME
-                undef,            # NON_UNIQUE
-                undef,            # INDEX_QUALIFIER
-                undef,            # INDEX_NAME
-                'table',          # TYPE
-                undef,            # ORDINAL_POSITION
-                undef,            # COLUMN_NAME
-                undef,            # ASC_OR_DESC
-                $tst->{reltuples},# CARDINALITY
-                $tst->{relpages}, # PAGES
-                undef,            # FILTER_CONDITION
-                undef,            # pg_expression
-            ]);
+            push(@output_rows, $table_stats_sth->fetchrow_arrayref || return undef);
         }
 
         # Fetch the index definitions
         my $stats_sql = qq{
             SELECT
-                pg_catalog.current_database() as catname,
-                c.relname, i.indkey, i.indisunique, i.indisclustered, a.amname,
-                n.nspname, c.relpages, c.reltuples, i.indexprs, i.indnatts, i.indexrelid,
-                pg_catalog.pg_get_expr(i.indpred,i.indrelid) as predicate,
-                col.i as indcol, att.attname,
-                pg_catalog.pg_get_indexdef(i.indexrelid, col.i, true) AS indexdef
+                pg_catalog.current_database() AS "TABLE_CAT",
+                n.nspname                     AS "TABLE_SCHEM",
+                d.relname                     AS "TABLE_NAME",
+                NOT(i.indisunique)            AS "NON_UNIQUE",
+                NULL                          AS "INDEX_QUALIFIER",
+                c.relname                     AS "INDEX_NAME",
+                CASE WHEN i.indisclustered THEN 'clustered'
+                     WHEN a.amname = 'btree' THEN 'btree'
+                     WHEN a.amname = 'hash' THEN 'hashed'
+                     ELSE 'other'
+                END                           AS "TYPE",
+                col.i                         AS "ORDINAL_POSITION",
+                att.attname                   AS "COLUMN_NAME",
+                'A'                           AS "ASC_OR_DESC",
+                c.reltuples                   AS "CARDINALITY",
+                c.relpages                    AS "PAGES",
+                pg_catalog.pg_get_expr(i.indpred,i.indrelid)
+                                              AS "FILTER_CONDITION",
+                pg_catalog.pg_get_indexdef(i.indexrelid, col.i, true)
+                                              AS "pg_expression"
             FROM
                 pg_catalog.pg_index i
                 JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
@@ -692,44 +703,14 @@ use 5.008001;
                      ON att.attrelid = d.oid AND att.attnum = i.indkey[col.i - 1]
             WHERE
                 d.relname = ? $schema_where
+                AND (i.indisunique OR NOT(?)) -- unique_only
             ORDER BY
-                i.indisunique desc, a.amname, c.relname, col.i
+                "NON_UNIQUE", "TYPE", "INDEX_QUALIFIER", "INDEX_NAME", "ORDINAL_POSITION"
         };
 
         my $sth = $dbh->prepare($stats_sql);
-        $sth->execute(@exe_args) or return undef;
-
-        STAT_ROW:
-        while (my $row = $sth->fetchrow_hashref) {
-
-            next if $unique_only and !$row->{indisunique};
-
-            my $indtype = $row->{indisclustered}
-                ? 'clustered'
-                : ( $row->{amname} eq 'btree' )
-                    ? 'btree'
-                    : ($row->{amname} eq 'hash' )
-                        ? 'hashed' : 'other';
-
-            my $nonunique = $row->{indisunique} ? 0 : 1;
-
-            push(@output_rows, [
-                $row->{catname},   # TABLE_CAT         0
-                $row->{nspname},   # TABLE_SCHEM       1
-                $table,            # TABLE_NAME        2
-                $nonunique,        # NON_UNIQUE        3
-                undef,             # INDEX_QUALIFIER   4
-                $row->{relname},   # INDEX_NAME        5
-                $indtype,          # TYPE              6
-                $row->{indcol},    # ORDINAL_POSITION  7
-                $row->{attname},   # COLUMN_NAME       8
-                'A',               # ASC_OR_DESC       9
-                $row->{reltuples}, # CARDINALITY      10
-                $row->{relpages},  # PAGES            11
-                $row->{predicate}, # FILTER_CONDITION 12
-                $row->{indexdef},  # pg_expression    13
-            ]);
-        }
+        $sth->execute(@exe_args, 0+!!$unique_only) or return undef;
+        push(@output_rows, @{$sth->fetchall_arrayref});
 
         my @output_colnames = qw/ TABLE_CAT TABLE_SCHEM TABLE_NAME NON_UNIQUE INDEX_QUALIFIER
                     INDEX_NAME TYPE ORDINAL_POSITION COLUMN_NAME ASC_OR_DESC
