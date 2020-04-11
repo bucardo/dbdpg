@@ -646,44 +646,29 @@ use 5.008001;
             WHERE  d.relname = ? $schema_where
         };
 
-        my $colnames_sql = qq{
-            SELECT
-                a.attnum, a.attname
-            FROM
-                pg_catalog.pg_attribute a
-                JOIN pg_catalog.pg_class d ON a.attrelid = d.oid
-                JOIN pg_catalog.pg_namespace n ON n.oid = d.relnamespace
-            WHERE
-                d.relname = ? $schema_where
-        };
-
         my $stats_sql = qq{
             SELECT
                 pg_catalog.current_database() as catname,
                 c.relname, i.indkey, i.indisunique, i.indisclustered, a.amname,
                 n.nspname, c.relpages, c.reltuples, i.indexprs, i.indnatts, i.indexrelid,
                 pg_catalog.pg_get_expr(i.indpred,i.indrelid) as predicate,
-                pg_catalog.pg_get_expr(i.indexprs,i.indrelid, true) AS indexdef
+                col.i as indcol, att.attname,
+                pg_catalog.pg_get_indexdef(i.indexrelid, col.i, true) AS indexdef
             FROM
                 pg_catalog.pg_index i
                 JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
                 JOIN pg_catalog.pg_class d ON d.oid = i.indrelid
                 JOIN pg_catalog.pg_am a ON a.oid = c.relam
                 JOIN pg_catalog.pg_namespace n ON n.oid = d.relnamespace
+                JOIN pg_catalog.generate_series(1, pg_catalog.current_setting('max_index_keys')::integer) col(i)
+                     ON col.i <= i.indnatts
+                LEFT JOIN pg_catalog.pg_attribute att
+                     ON att.attrelid = d.oid AND att.attnum = i.indkey[col.i - 1]
             WHERE
                 d.relname = ? $schema_where
             ORDER BY
-                i.indisunique desc, a.amname, c.relname
+                i.indisunique desc, a.amname, c.relname, col.i
         };
-
-        my $indexdef_sql = q{
-            SELECT
-                pg_catalog.pg_get_indexdef(indexrelid,x,true)
-            FROM
-              pg_index
-            JOIN pg_catalog.generate_series(1,?) s(x) ON indexrelid = ?
-        };
-
         my @output_rows;
 
         # Table-level stats
@@ -709,14 +694,6 @@ use 5.008001;
             ]);
         }
 
-        # Fetch the column names for later use
-        my $colnames_sth = $dbh->prepare($colnames_sql);
-        $colnames_sth->execute(@exe_args) or return undef;
-        my $colnames = $colnames_sth->fetchall_hashref('attnum');
-
-        # Fetch the individual parts of the index
-        my $sth_indexdef = $dbh->prepare($indexdef_sql);
-
         # Fetch the index definitions
         my $sth = $dbh->prepare($stats_sql);
         $sth->execute(@exe_args) or return undef;
@@ -735,7 +712,7 @@ use 5.008001;
 
             my $nonunique = $row->{indisunique} ? 0 : 1;
 
-            my @index_row = (
+            push(@output_rows, [
                 $row->{catname},   # TABLE_CAT         0
                 $row->{nspname},   # TABLE_SCHEM       1
                 $table,            # TABLE_NAME        2
@@ -743,32 +720,14 @@ use 5.008001;
                 undef,             # INDEX_QUALIFIER   4
                 $row->{relname},   # INDEX_NAME        5
                 $indtype,          # TYPE              6
-                undef,             # ORDINAL_POSITION  7
-                undef,             # COLUMN_NAME       8
+                $row->{indcol},    # ORDINAL_POSITION  7
+                $row->{attname},   # COLUMN_NAME       8
                 'A',               # ASC_OR_DESC       9
                 $row->{reltuples}, # CARDINALITY      10
                 $row->{relpages},  # PAGES            11
                 $row->{predicate}, # FILTER_CONDITION 12
-                undef,             # pg_expression    13
-            );
-
-            ## Grab expression information
-            $sth_indexdef->execute($row->{indnatts}, $row->{indexrelid});
-            my $expression = $sth_indexdef->fetchall_arrayref();
-
-            my $colinfo = $row->{indkey};
-            $colinfo =~ s/^\s+//;
-            my @col_nums = split(/\s+/, $colinfo);
-
-            my $ord_pos = 1;
-            for my $col_num (@col_nums) {
-                my @copy = @index_row;
-                $copy[7] = $ord_pos; # ORDINAL_POSITION
-                $copy[8] = $colnames->{$col_num}->{attname}; # COLUMN_NAME
-                $copy[13] = $expression->[$ord_pos-1][0];
-                push(@output_rows, \@copy);
-                $ord_pos++;
-            }
+                $row->{indexdef},  # pg_expression    13
+            ]);
         }
 
         my @output_colnames = qw/ TABLE_CAT TABLE_SCHEM TABLE_NAME NON_UNIQUE INDEX_QUALIFIER
