@@ -638,14 +638,40 @@ use 5.008001;
             push(@exe_args, $schema);
         }
 
-        my $table_stats_sql = qq{
-            SELECT d.relpages, d.reltuples, n.nspname,
-                   pg_catalog.current_database() as catname
-            FROM   pg_catalog.pg_class d
-            JOIN   pg_catalog.pg_namespace n ON n.oid = d.relnamespace
-            WHERE  d.relname = ? $schema_where
-        };
+        my @output_rows;
 
+        # Table-level stats
+        if (!$unique_only) {
+            my $table_stats_sql = qq{
+                SELECT d.relpages, d.reltuples, n.nspname,
+                       pg_catalog.current_database() as catname
+                FROM   pg_catalog.pg_class d
+                JOIN   pg_catalog.pg_namespace n ON n.oid = d.relnamespace
+                WHERE  d.relname = ? $schema_where
+            };
+
+            my $table_stats_sth = $dbh->prepare($table_stats_sql);
+            $table_stats_sth->execute(@exe_args) or return undef;
+            my $tst = $table_stats_sth->fetchrow_hashref or return undef;
+            push(@output_rows, [
+                $tst->{catname},  # TABLE_CAT
+                $tst->{nspname},  # TABLE_SCHEM
+                $table,           # TABLE_NAME
+                undef,            # NON_UNIQUE
+                undef,            # INDEX_QUALIFIER
+                undef,            # INDEX_NAME
+                'table',          # TYPE
+                undef,            # ORDINAL_POSITION
+                undef,            # COLUMN_NAME
+                undef,            # ASC_OR_DESC
+                $tst->{reltuples},# CARDINALITY
+                $tst->{relpages}, # PAGES
+                undef,            # FILTER_CONDITION
+                undef,            # pg_expression
+            ]);
+        }
+
+        # Fetch the index definitions
         my $stats_sql = qq{
             SELECT
                 pg_catalog.current_database() as catname,
@@ -669,32 +695,7 @@ use 5.008001;
             ORDER BY
                 i.indisunique desc, a.amname, c.relname, col.i
         };
-        my @output_rows;
 
-        # Table-level stats
-        if (!$unique_only) {
-            my $table_stats_sth = $dbh->prepare($table_stats_sql);
-            $table_stats_sth->execute(@exe_args) or return undef;
-            my $tst = $table_stats_sth->fetchrow_hashref or return undef;
-            push(@output_rows, [
-                $tst->{catname},  # TABLE_CAT
-                $tst->{nspname},  # TABLE_SCHEM
-                $table,           # TABLE_NAME
-                undef,            # NON_UNIQUE
-                undef,            # INDEX_QUALIFIER
-                undef,            # INDEX_NAME
-                'table',          # TYPE
-                undef,            # ORDINAL_POSITION
-                undef,            # COLUMN_NAME
-                undef,            # ASC_OR_DESC
-                $tst->{reltuples},# CARDINALITY
-                $tst->{relpages}, # PAGES
-                undef,            # FILTER_CONDITION
-                undef,            # pg_expression
-            ]);
-        }
-
-        # Fetch the index definitions
         my $sth = $dbh->prepare($stats_sql);
         $sth->execute(@exe_args) or return undef;
 
