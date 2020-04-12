@@ -48,6 +48,9 @@ for my $filename (qw{Pg.pm Makefile.PL lib/Bundle/DBD/Pg.pm }) {
 
         next if $policy =~ /ProhibitInterpolationOfLiterals/; ## For now
 
+        ## This one does not respect perlcriticrc at all
+        next if $policy =~ /NamingConventions::Capitalization/;
+
         ## Export problems that really aren't:
         next if $d =~ /Subroutine "SQL_\w+" (?:not exported|is neither)/;
         next if $d =~ /Subroutine "pg_\w+" not exported/;
