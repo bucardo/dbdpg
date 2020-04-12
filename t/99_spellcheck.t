@@ -635,12 +635,14 @@ drnoble
 DynaLoader
 Eisentraut
 engsci
+exe
 EXTRALIBS
 fe
 freenode
 Gcc
 gmx
 hdf
+https
 irc
 jmore
 landgren
@@ -648,6 +650,9 @@ Landgren
 Lauterbach
 LDLOADLIBS
 MAKEFILE
+mingw
+MinGW
+osdn
 pc
 pexports
 PROGRA
