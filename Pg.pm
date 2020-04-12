@@ -638,6 +638,9 @@ use 5.008001;
             push(@exe_args, $schema);
         }
 
+        my $is_key_column = $dbh->{private_dbdpg}{version} >= 110000
+            ? 'col.i <= i.indnkeyatts' : 'true';
+
         my $stats_sql;
 
         # Table-level stats
@@ -657,7 +660,8 @@ use 5.008001;
                     d.reltuples                   AS "CARDINALITY",
                     d.relpages                    AS "PAGES",
                     NULL                          AS "FILTER_CONDITION",
-                    NULL                          AS "pg_expression"
+                    NULL                          AS "pg_expression",
+                    NULL                          AS "pg_is_key_column"
                 FROM   pg_catalog.pg_class d
                 JOIN   pg_catalog.pg_namespace n ON n.oid = d.relnamespace
                 WHERE  d.relname = ? $schema_where
@@ -688,7 +692,8 @@ use 5.008001;
                 pg_catalog.pg_get_expr(i.indpred,i.indrelid)
                                               AS "FILTER_CONDITION",
                 pg_catalog.pg_get_indexdef(i.indexrelid, col.i, true)
-                                              AS "pg_expression"
+                                              AS "pg_expression",
+                $is_key_column                AS "pg_is_key_column"
             FROM
                 pg_catalog.pg_index i
                 JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
@@ -3011,6 +3016,11 @@ In addition, the following Postgres specific columns are returned:
 Postgres allows indexes on functions and scalar expressions based on one or more columns. This field 
 will always be populated if an index, but the lack of an entry in the COLUMN_NAME should indicate 
 that this is an index expression.
+
+=item pg_is_key_column
+
+Postgres (since version 11) allows including non-key columns in indexes so they can be retrieved by
+index-only scans.  This field will be false for such columns, and true for normal index columns.
 
 =back
 
