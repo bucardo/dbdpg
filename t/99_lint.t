@@ -152,7 +152,7 @@ for my $file (@perlfiles) {
     open my $fh, '<', $file or die "Could not open $file: $!\n";
     my $minversion = 0;
     while (<$fh>) {
-        if (/^use (\d+\.\d+);$/) {
+        if (/^use ([0-9]+\.[0-9]+);$/) {
             $minversion = $1;
             $firstversion ||= $minversion;
             $ver{$file} = $minversion;

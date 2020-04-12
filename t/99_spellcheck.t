@@ -6,7 +6,7 @@ use 5.008001;
 use strict;
 use warnings;
 use Test::More;
-use utf8;
+use utf8; ## no critic (TooMuchCode::ProhibitUnnecessaryUTF8Pragma)
 select(($|=1,select(STDERR),$|=1)[1]);
 
 my (@testfiles, $fh);
@@ -115,7 +115,6 @@ SKIP: {
         our @ISA     = qw(File::Comments::Plugin::C);
 
         sub applicable {
-            my($self) = @_;
             return 1;
         }
     }

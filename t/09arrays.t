@@ -212,10 +212,10 @@ for my $test (split /\n\n/ => $array_tests) {
     my ($input,$expected,$msg) = split /\n/ => $test;
     my $perl_input = eval $input;
 
-    if ($msg =~ s/NEED (\d+):\s*//) {
+    if ($msg =~ s/NEED ([0-9]+):\s*//) {
         my $ver = $1;
         if ($pgversion < $ver) {
-            my ($maj, $min, $patch) = $ver =~ /\A(\d{1,2})(\d{2})(\d{2})\z/;
+            my ($maj, $min, $patch) = $ver =~ /\A([0-9]{1,2})([0-9]{2})([0-9]{2})\z/;
             $_ += 0 for $maj, $min, $patch;
           SKIP: {
                 my $count = $expected =~ /error:/ ? 2 : 5;
@@ -494,10 +494,10 @@ for my $test (split /\n\n/ => $array_tests_out) {
     if ($expected =~ s/\s*quote:\s*(.+)//) {
         $qexpected = $1;
     }
-    if ($msg =~ s/NEED (\d+):\s*//) {
+    if ($msg =~ s/NEED ([0-9]+):\s*//) {
         my $ver = $1;
         if ($pgversion < $ver) {
-            my ($maj, $min, $patch) = $ver =~ /\A(\d{1,2})(\d{2})(\d{2})\z/;
+            my ($maj, $min, $patch) = $ver =~ /\A([0-9]{1,2})([0-9]{2})([0-9]{2})\z/;
             $_ += 0 for $maj, $min, $patch;
           SKIP: {
                 skip ("$msg requires PostgreSQL $maj.$min.$patch or newer", 1);

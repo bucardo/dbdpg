@@ -25,7 +25,7 @@ plan tests => 128;
 
 isnt ($dbh, undef, 'Connect to database for statement handle method testing');
 
-my ($SQL, $sth, $sth2, $result, @result, $expected, $rows, $t);
+my ($SQL, $sth, $sth2, $result, @results, $expected, $rows, $t);
 
 #
 # Test of the prepare flags
@@ -147,7 +147,6 @@ ok ($sth->execute, $t);
 
 # Test using our own prepared statements
 $t='Prepare/execute works with pg_prepare_name';
-my $pgversion = $dbh->{pg_server_version};
 my $myname = 'dbdpg_test_1';
 $dbh->do("PREPARE $myname(int) AS SELECT COUNT(*) FROM pg_class WHERE reltuples > \$1", {pg_direct=> 1});
 $sth = $dbh->prepare('SELECT ?');
@@ -380,12 +379,12 @@ is_deeply ($result, undef, $t);
 
 $t='Statement handle method "fetchrow_array" returns first row correctly';
 $sth->execute();
-@result = $sth->fetchrow_array();
-is_deeply (\@result, $expected, $t);
+@results = $sth->fetchrow_array();
+is_deeply (\@results, $expected, $t);
 
 $t='Statement handle method "fetchrow_array" returns an empty list when done';
-@result = $sth->fetchrow_array();
-is_deeply (\@result, [], $t);
+@results = $sth->fetchrow_array();
+is_deeply (\@results, [], $t);
 
 #
 # Test of the "fetchrow_hashref" statement handle method

@@ -3,7 +3,7 @@
 ## Make sure the version number is consistent in all places
 ## Check on the format of the Changes file
 
-use 5.008001;
+use 5.010;
 use strict;
 use warnings;
 use Data::Dumper;
@@ -16,7 +16,7 @@ if (! $ENV{RELEASE_TESTING}) {
 }
 plan tests => 3;
 
-my $vre = qr{(\d+\.\d+\.\d+\_?\d*)};
+my $vre = qr{([0-9]+\.[0-9]+\.[0-9]+\_?[0-9]*)};
 
 my %filelist = (
     'dbdimp.c'             => [1, [ qr{ping test v$vre},        ]],
@@ -50,7 +50,7 @@ for my $file (sort keys %filelist) {
             if (/$regex/) {
                 my $foundversion = $1;
                 push @{$v{$file}} => [$foundversion, $.];
-                if ($lastversion =~ /\d/ and $foundversion ne $lastversion) {
+                if ($lastversion =~ /[0-9]/ and $foundversion ne $lastversion) {
                     $goodversion = 0;
                 }
                 $lastversion = $foundversion;
@@ -96,7 +96,7 @@ else {
 
 my $changes_file_ok = 1;
 open my $fh, '<', 'Changes' or die "Could not find the 'Changes' file\n";
-my $month = '(January|February|March|April|May|June|July|August|September|October|November|December)';
+my $month = '(January|February|March|April|May|June|July|August|September|October|November|December)'; ## no critic (Variables::ProhibitUnusedVarsStricter)
 my ($lastline1, $lastline2, $lastline3) = ('','','');
 my $seen_a_version = 0;
 while (<$fh>) {
@@ -110,20 +110,20 @@ while (<$fh>) {
             $changes_file_ok = 0;
         }
 
-        if (! /^Version \d\.\d[\.\d]* /) {
+        if (! /^Version [0-9]\.[0-9][\.0-9]* /) {
             diag "Changes file version failure: $_\n";
             $changes_file_ok = 0;
         }
-        if (! /^Version \d\.\d[\.\d]*  \S/) {
+        if (! /^Version [0-9]\.[0-9][\.0-9]*  \S/) {
             diag "Changes file spacing failure: $_\n";
             $changes_file_ok = 0;
         }
-        if (! /^Version \d\.\d[\.\d]*  \(released $month \d\d*, \d\d\d\d\)$/) {
+        if (! /^Version [0-9]\.[0-9][\.0-9]*  \(released $month [0-9][0-9]*, [0-9][0-9][0-9][0-9]\)$/) {
             diag "Changes file release date failure: $_\n";
             $changes_file_ok = 0;
         }
     }
-    if (/\w/ and $lastline1 =~ /^Version (\d.\d[\.\d]+)/) {
+    if (/\w/ and $lastline1 =~ /^Version ([0-9].[0-9][\.0-9]+)/) {
         diag "Changes file does not have space after version $1\n";
         $changes_file_ok = 0;
     }
@@ -139,24 +139,24 @@ while (<$fh>) {
     chomp;
     next if ! /\w/;
     next if /^RT refers to/;
-    next if /^Version \d+\.\d+/;
+    next if /^Version [0-9]+\.[0-9]+/;
     next if /SYSTEM VIEW/;
     next if /^Changes for/;
 
     my $extra = '(?: and other places)*';
 
     ## RT tickets - three spaces, parens
-    next if /^   \(RT ticket \#\d+$extra\)$/;
+    next if /^   \(RT ticket \#[0-9]+$extra\)$/;
     ## Two tickets
-    next if /^   \(RT tickets \#\d+ and \#\d+\)$/;
+    next if /^   \(RT tickets \#[0-9]+ and \#[0-9]+\)$/;
     ## Three or more tickets
-    next if /^   \(RT tickets \#\d+(?:[, \#\d+])*\)$/;
+    next if /^   \(RT tickets \#[0-9]+(?:[, \#[0-9]+])*\)$/;
 
     ## Github issues and pull requests - three spaces, parens
-    next if /^   \(Github (?:issue|pull request) #\d+\)$/;
+    next if /^   \(Github (?:issue|pull request) #[0-9]+\)$/;
 
     ## Debian issue
-    next if /^   \(Debian bug \#\d+\)$/;
+    next if /^   \(Debian bug \#[0-9]+\)$/;
 
     ## Should not have any bug tracking keywords now
     if (/RT/ or /github/i or /cpan/i or /debian /i) {

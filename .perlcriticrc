@@ -1,4 +1,4 @@
-verbose = %F [%p] %m at line %l, column %c.  (Severity: %s)\n
+verbose = %f [%p] %m at line %l, column %c.  (Severity: %s)\n
 profile-strictness = quiet
 
 [Documentation::PodSpelling]
@@ -55,6 +55,7 @@ stop_words = ActiveKids afterwards arrayref arrayrefs attr autocommit AutoCommit
 [-Lax::ProhibitStringyEval::ExceptForRequire]
 [-Lax::RequireEndWithTrueConst]
 [-Lax::RequireExplicitPackage::ExceptForPragmata]
+[-logicLAB::ProhibitShellDispatch]
 [-logicLAB::ProhibitUseLib]
 [-logicLAB::RequireParamsValidate]
 [-logicLAB::RequireSheBang]
@@ -77,6 +78,7 @@ stop_words = ActiveKids afterwards arrayref arrayrefs attr autocommit AutoCommit
 [-OTRS::RequireParensWithMethods]
 [-References::ProhibitDoubleSigils]
 [-RegularExpressions::ProhibitCaptureWithoutTest]
+[-RegularExpressions::ProhibitComplexRegexes]
 [-RegularExpressions::ProhibitEnumeratedClasses]
 [-RegularExpressions::ProhibitEscapedMetacharacters]
 [-RegularExpressions::ProhibitFixedStringMatches]
@@ -135,3 +137,7 @@ stop_words = ActiveKids afterwards arrayref arrayrefs attr autocommit AutoCommit
 
 ## Does not seem to work, but here anyway:
 [-NamingConventions::Capitalization]
+
+[Perlsecret]
+allow_secrets = Bang Bang
+

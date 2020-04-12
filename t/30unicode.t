@@ -7,7 +7,7 @@
 use 5.008001;
 use strict;
 use warnings;
-use utf8;
+use utf8; ## no critic (TooMuchCode::ProhibitUnnecessaryUTF8Pragma)
 use charnames ':full';
 use Encode qw(encode_utf8);
 use Data::Dumper;

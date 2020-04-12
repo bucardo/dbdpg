@@ -13,7 +13,7 @@ use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
-my ($helpconnect,$connerror,$dbh) = connect_database();
+my (undef,undef,$dbh) = connect_database();
 
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -22,9 +22,9 @@ plan tests => 273;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
-my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
+my $pgversion = $dbh->{pg_server_version};
 
-my $attributes_tested = q{
+=begin comment
 
 d = database handle specific
 s = statement handle specific
@@ -107,7 +107,7 @@ a ReadOnly
 d AutoInactiveDestroy (must be the last one tested)
 d InactiveDestroy (must be the last one tested)
 
-};
+=cut
 
 my ($attrib,$SQL,$sth,$warning,$result,$expected,$t);
 
@@ -290,16 +290,16 @@ $dbh->rollback();
 #
 
 $t='Database handle attribute "pg_INV_WRITE" returns a number';
-like ($dbh->{pg_INV_WRITE}, qr/^\d+$/, $t);
+like ($dbh->{pg_INV_WRITE}, qr/^[0-9]+$/, $t);
 $t='Database handle attribute "pg_INV_READ" returns a number';
-like ($dbh->{pg_INV_READ}, qr/^\d+$/, $t);
+like ($dbh->{pg_INV_READ}, qr/^[0-9]+$/, $t);
 
 #
 # Test of the database handle attribute "pg_protocol"
 #
 
 $t='Database handle attribute "pg_protocol" returns a number';
-like ($dbh->{pg_protocol}, qr/^\d+$/, $t);
+like ($dbh->{pg_protocol}, qr/^[0-9]+$/, $t);
 
 #
 # Test of the database handle attribute "pg_errorlevel"
@@ -348,7 +348,7 @@ is ($result, 'f', $t);
 
 $t='DB handle attribute "pg_db" returns at least one character';
 $result = $dbh->{pg_protocol};
-like ($result, qr/^\d+$/, $t);
+like ($result, qr/^[0-9]+$/, $t);
 
 $t='DB handle attribute "pg_db" returns at least one character';
 $result = $dbh->{pg_db};
@@ -364,11 +364,11 @@ ok (defined $result, $t);
 
 $t='DB handle attribute "pg_port" returns a number';
 $result = $dbh->{pg_port};
-like ($result, qr/^\d+$/, $t);
+like ($result, qr/^[0-9]+$/, $t);
 
 $t='DB handle attribute "pg_default_port" returns a number';
 $result = $dbh->{pg_default_port};
-like ($result, qr/^\d+$/, $t);
+like ($result, qr/^[0-9]+$/, $t);
 
 $t='DB handle attribute "pg_options" returns a value';
 $result = $dbh->{pg_options};
@@ -376,11 +376,11 @@ ok (defined $result, $t);
 
 $t='DB handle attribute "pg_socket" returns a value';
 $result = $dbh->{pg_socket};
-like ($result, qr/^\d+$/, $t);
+like ($result, qr/^[0-9]+$/, $t);
 
 $t='DB handle attribute "pg_pid" returns a value';
 $result = $dbh->{pg_pid};
-like ($result, qr/^\d+$/, $t);
+like ($result, qr/^[0-9]+$/, $t);
 
 SKIP: {
 
@@ -413,7 +413,7 @@ SKIP: {
     skip ('Cannot reliably test unicode without a UTF8 database', 5)
         if $server_encoding ne 'UTF8';
 
-    $SQL = 'SELECT id, pname FROM dbd_pg_test WHERE id = ?';
+    $SQL = 'SELECT pname FROM dbd_pg_test WHERE id = ?';
     $sth = $dbh->prepare($SQL);
     $sth->execute(1);
     local $dbh->{pg_enable_utf8} = 1;
@@ -428,7 +428,7 @@ SKIP: {
 
     $t='Able to read unicode (utf8) data from the database';
     $sth->execute(40);
-    my ($id, $name) = $sth->fetchrow_array();
+    my $name = $sth->fetchrow_array();
     ok (Encode::is_utf8($name), $t);
 
     $t='Unicode (utf8) data returned from database is not corrupted';
@@ -437,7 +437,7 @@ SKIP: {
     $t='ASCII text returned from database does have utf8 bit set';
     $sth->finish();
     $sth->execute(1);
-    my ($id2, $name2) = $sth->fetchrow_array();
+    my $name2 = $sth->fetchrow_array();
     ok (Encode::is_utf8($name2), $t);
     $sth->finish();
 }
@@ -933,7 +933,7 @@ $sth = $dbh->prepare($SQL);
 $sth->bind_param('$1','',SQL_INTEGER);
 $sth->execute(500);
 $result = $sth->{pg_oid_status};
-like ($result, qr/^\d+$/, $t);
+like ($result, qr/^[0-9]+$/, $t);
 
 #
 # Test of the statement handle attribute "pg_cmd_status"
@@ -1013,7 +1013,7 @@ $attrib = $sth->{Active};
 is ($attrib, 1, $t);
 
 $t='Statement handle attribute "Active" is true when rows remaining';
-my $row = $sth->fetchrow_arrayref();
+$sth->fetchrow_arrayref();
 $attrib = $sth->{Active};
 is ($attrib, 1, $t);
 
@@ -1282,7 +1282,7 @@ ok (!$attrib, $t);
 $t='Database handle attribute "HandleSetErr" works as expected';
 undef $warning;
 $dbh->{HandleSetErr} = sub {
-    my ($h,$err,$errstr,$state,$method) = @_;
+    #my ($h,$err,$errstr,$state,$method) = @_;
     $_[1] = 42;
     $_[2] = 'ERRSTR';
     $_[3] = '33133';
@@ -1364,7 +1364,7 @@ $dbh->commit();
 
 $t='Database handle attribute "TraceLevel" returns a number';
 $attrib = $dbh->{TraceLevel};
-like ($attrib, qr/^\d$/, $t);
+like ($attrib, qr/^[0-9]$/, $t);
 
 #
 # Test of the handle attribute FetchHashKeyName

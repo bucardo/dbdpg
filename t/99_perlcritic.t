@@ -9,8 +9,6 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 
-my (@testfiles,%fileslurp,$t);
-
 if (! $ENV{AUTHOR_TESTING}) {
     plan (skip_all =>  'Test skipped unless environment variable AUTHOR_TESTING is set');
 }
@@ -23,7 +21,7 @@ elsif ($Perl::Critic::VERSION < 0.23) {
 
 $ENV{LANG} = 'C';
 opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
-@testfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
+my @testfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
 closedir $dir or die qq{Could not closedir "$dir": $!\n};
 
 ## Check some non-test files
@@ -116,7 +114,6 @@ my $testmoreok = qr{Subroutine "$tm" is neither};
 ## Create a new critic for the tests
 $critic = Perl::Critic->new(-severity => 1);
 
-my $count = 1;
 for my $filename (sort @testfiles) {
     -e $filename or die qq{Could not find "$filename"!};
     my @vio = $critic->critique($filename);

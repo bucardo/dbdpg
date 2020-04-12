@@ -87,7 +87,7 @@ SKIP: {
     }
 
     $t=q{Connect with forced uppercase 'DBI:' works};
-    my ($testdsn,$testuser,$helpconnect,$su,$uid,$testdir,$pg_ctl,$initdb,$error,$version)
+    my ($testdsn,$testuser,$helpconnect,$su,$uid,$testdir,$pg_ctl,$initdb,$error,$version) ## no critic (Variables::ProhibitUnusedVarsStricter)
         = get_test_settings();
     $testdsn =~ s/^dbi/DBI/i;
     my $ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},

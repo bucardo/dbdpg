@@ -37,7 +37,7 @@ my ($schema,$schema2,$schema3) = ('dbd_pg_testschema', 'dbd_pg_testschema2', 'db
 my ($table1,$table2,$table3) = ('dbd_pg_test1','dbd_pg_test2','dbd_pg_test3');
 my ($sequence2,$sequence3,$sequence4) = ('dbd_pg_testsequence2','dbd_pg_testsequence3','dbd_pg_testsequence4');
 
-my ($SQL, $sth, $result, @result, $expected, $warning, $rows, $t, $info);
+my ($SQL, $sth, $result, @results, $expected, $warning, $rows, $t, $info);
 
 # Quick simple "tests"
 
@@ -176,7 +176,7 @@ eval {
 is ($@, q{}, $t);
 
 $t='DB handle method "last_insert_id" returns a numeric value';
-like ($result, qr{^\d+$}, $t);
+like ($result, qr{^[0-9]+$}, $t);
 
 $t='DB handle method "last_insert_id" works when given a valid sequence and an invalid table';
 eval {
@@ -185,7 +185,7 @@ eval {
 is ($@, q{}, $t);
 
 $t='DB handle method "last_insert_id" returns a numeric value';
-like ($result, qr{^\d+$}, $t);
+like ($result, qr{^[0-9]+$}, $t);
 
 $t='DB handle method "last_insert_id" works when given a valid table';
 eval {
@@ -325,9 +325,9 @@ $dbh->do("DROP SEQUENCE $sequence4");
 
 $t='DB handle method "selectrow_array" works';
 $SQL = 'SELECT id FROM dbd_pg_test ORDER BY id';
-@result = $dbh->selectrow_array($SQL);
+@results = $dbh->selectrow_array($SQL);
 $expected = [10];
-is_deeply (\@result, $expected, $t);
+is_deeply (\@results, $expected, $t);
 
 #
 # Test of the "selectrow_arrayref" database handle method
@@ -542,7 +542,7 @@ cmp_ok ($namedatalen, '>=', 63, $t);
 # Make sure odbcversion looks normal
 $t='DB handle method "get_info" returns a valid looking ODBCVERSION string}';
 my $odbcversion = $dbh->get_info(18);
-like ($odbcversion, qr{^([1-9]\d|\d[1-9])\.\d\d\.\d\d00$}, $t);
+like ($odbcversion, qr{^([1-9][0-9]|[0-9][1-9])\.[0-9][0-9]\.[0-9][0-9]00$}, $t);
 
 # Make sure odbcversion looks abnormal
 $t='DB handle method "get_info" returns zeroes if the version cannot be parsed}';
@@ -555,7 +555,7 @@ is ($odbcversion, '00.00.0000', $t);
 # Testing max connections is good as this info is dynamic
 $t='DB handle method "get_info" returns a number for SQL_MAX_DRIVER_CONNECTIONS';
 my $maxcon = $dbh->get_info('SQL_MAX_DRIVER_CONNECTIONS');
-like ($maxcon, qr{^\d+$}, $t);
+like ($maxcon, qr{^[0-9]+$}, $t);
 
 # Test the DBDVERSION
 $t='DB handle method "get_info" returns a number for SQL_DRIVER_VER';
@@ -700,7 +700,7 @@ ok ($sth, $t);
 
 { # Test listing table types
 
-my @expected = ('LOCAL TEMPORARY',
+$expected = ['LOCAL TEMPORARY',
                 'SYSTEM TABLE',
                 'SYSTEM VIEW',
                 'MATERIALIZED VIEW',
@@ -708,7 +708,7 @@ my @expected = ('LOCAL TEMPORARY',
                 'FOREIGN TABLE',
                 'SYSTEM FOREIGN TABLE',
                 'TABLE',
-                'VIEW',);
+                'VIEW',];
 
 $t='DB handle method "table_info" works when called with a type of %';
 $sth = $dbh->table_info('', '', '', '%');
@@ -716,7 +716,7 @@ ok ($sth, $t);
 
 $t='DB handle method "table_info" type list returns all expected types';
 my %advertised = map { $_->[0] => 1 } @{ $sth->fetchall_arrayref([3]) };
-is_deeply ([sort keys %advertised], [sort @expected], $t);
+is_deeply ([sort keys %advertised], [sort @$expected], $t);
 
 $t='DB handle method "table_info" object list returns no unadvertised types';
 $sth = $dbh->table_info('', '', '%');
@@ -845,14 +845,14 @@ is ($r->{KEY_SEQ},     1,                  'DB handle method "primary_key_info" 
 #
 
 $t='DB handle method "primary_key" works';
-@result = $dbh->primary_key('', '', 'dbd_pg_test');
+@results = $dbh->primary_key('', '', 'dbd_pg_test');
 $expected = ['id'];
-is_deeply (\@result, $expected, $t);
+is_deeply (\@results, $expected, $t);
 
 $t='DB handle method "primary_key" returns empty list for invalid table';
-@result = $dbh->primary_key('', '', 'dbd_pg_test_do_not_create_this_table');
+@results = $dbh->primary_key('', '', 'dbd_pg_test_do_not_create_this_table');
 $expected = [];
-is_deeply (\@result, $expected, $t);
+is_deeply (\@results, $expected, $t);
 
 #
 # Test of the "statistics_info" database handle method
@@ -1271,9 +1271,9 @@ my $fk5 = [
 # primary column name [3]
 # foreign column name [7]
 # ordinal position [8]
-my @fk6 = @$fk5; my $fk6 = \@fk6; $fk6->[3] = 'a'; $fk6->[7] = 'f3'; $fk6->[8] = 2;
-my @fk7 = @$fk5; my $fk7 = \@fk7; $fk7->[3] = 'b'; $fk7->[7] = 'f2'; $fk7->[8] = 3;
-$expected = [$fk3,$fk1,$fk2,$fk5,$fk6,$fk7];
+my @fk6 = @$fk5; my $fk6r = \@fk6; $fk6r->[3] = 'a'; $fk6r->[7] = 'f3'; $fk6r->[8] = 2;
+my @fk7 = @$fk5; my $fk7r = \@fk7; $fk7r->[3] = 'b'; $fk7r->[7] = 'f2'; $fk7r->[8] = 3;
+$expected = [$fk3,$fk1,$fk2,$fk5,$fk6r,$fk7r];
 is_deeply ($result, $expected, $t);
 
 $t='DB handle method "foreign_key_info" works with FetchHashKeyName NAME_lc';
@@ -1313,16 +1313,16 @@ $dbh->do("SET search_path = $schema");
 #
 
 $t='DB handle method "tables" works';
-@result = $dbh->tables('', '', 'dbd_pg_test', '');
-like ($result[0], qr/dbd_pg_test/, $t);
+@results = $dbh->tables('', '', 'dbd_pg_test', '');
+like ($results[0], qr/dbd_pg_test/, $t);
 
 $t='DB handle method "tables" works with a "pg_noprefix" attribute';
-@result = $dbh->tables('', '', 'dbd_pg_test', '', {pg_noprefix => 1});
-is ($result[0], 'dbd_pg_test', $t);
+@results = $dbh->tables('', '', 'dbd_pg_test', '', {pg_noprefix => 1});
+is ($results[0], 'dbd_pg_test', $t);
 
 $t='DB handle method "tables" works with type=\'%\'';
-@result = $dbh->tables('', '', 'dbd_pg_test', '%');
-like ($result[0], qr/dbd_pg_test/, $t);
+@results = $dbh->tables('', '', 'dbd_pg_test', '%');
+like ($results[0], qr/dbd_pg_test/, $t);
 
 #
 # Test of the "type_info_all" database handle method
@@ -1601,27 +1601,26 @@ $t='DB handle method "pg_lo_creat" returns a valid descriptor for reading';
 $dbh->{AutoCommit}=1; $dbh->{AutoCommit}=0; ## Catch error where not in begin
 
 my ($R,$W) = ($dbh->{pg_INV_READ}, $dbh->{pg_INV_WRITE});
-my $RW = $R|$W;
 my $object;
 
 $t='DB handle method "pg_lo_creat" works with old-school dbh->func() method';
 $object = $dbh->func($W, 'pg_lo_creat');
-like ($object, qr/^\d+$/o, $t);
+like ($object, qr/^[0-9]+$/o, $t);
 isnt ($object, 0, $t);
 
 $t='DB handle method "pg_lo_creat" works with deprecated dbh->func(...lo_creat) method';
 $object = $dbh->func($W, 'lo_creat');
-like ($object, qr/^\d+$/o, $t);
+like ($object, qr/^[0-9]+$/o, $t);
 isnt ($object, 0, $t);
 
 $t='DB handle method "pg_lo_creat" returns a valid descriptor for writing';
 $object = $dbh->pg_lo_creat($W);
-like ($object, qr/^\d+$/o, $t);
+like ($object, qr/^[0-9]+$/o, $t);
 isnt ($object, 0, $t);
 
 $t='DB handle method "pg_lo_open" returns a valid descriptor for writing';
 my $handle = $dbh->pg_lo_open($object, $W);
-like ($handle, qr/^\d+$/o, $t);
+like ($handle, qr/^[0-9]+$/o, $t);
 isnt ($object, -1, $t);
 
 $t='DB handle method "pg_lo_lseek" works when writing';
@@ -1642,7 +1641,7 @@ ok ($result, $t);
 # Reopen for reading
 $t='DB handle method "pg_lo_open" returns a valid descriptor for reading';
 $handle = $dbh->pg_lo_open($object, $R);
-like ($handle, qr/^\d+$/o, $t);
+like ($handle, qr/^[0-9]+$/o, $t);
 cmp_ok ($handle, 'eq', 0, $t);
 
 $t='DB handle method "pg_lo_lseek" works when reading';
@@ -1764,7 +1763,7 @@ SKIP: {
 
         $t='DB handle method "pg_lo_open" works after "pg_lo_insert"';
         $handle = $dbh->pg_lo_open($handle, $R);
-        like ($handle, qr/^\d+$/o, $t);
+        like ($handle, qr/^[0-9]+$/o, $t);
 
         $t='DB handle method "pg_lo_read" returns correct data after "pg_lo_import"';
         $data = '';
@@ -1977,7 +1976,7 @@ is_deeply ($info, [$notify_name, $pid, ''], $t);
 
 $t='DB handle method "getfd" returns a number';
 $result = $dbh->func('getfd');
-like ($result, qr/^\d+$/, $t);
+like ($result, qr/^[0-9]+$/, $t);
 
 #
 # Test of the "state" database handle method

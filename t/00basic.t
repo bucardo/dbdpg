@@ -20,9 +20,9 @@ BEGIN {
             $file = '../Makefile';
         }
         my $fh;
-        if (open $fh, '<', $file) {
+        if (open $fh, '<', $file) { ## no critic (CompileTime)
             { local $/; $_ = <$fh>; }
-            close $fh or die qq{Could not close file "$file" $!\n};
+            close $fh or die qq{Could not close file "$file" $!\n}; ## no critic (CompileTime) 
             for my $keyword (qw/ CCFLAGS INC LIBS /) {
                 if (/^#\s+$keyword => (.+)/m) {
                     diag "$keyword: $1";
@@ -36,4 +36,4 @@ BEGIN {
     }
 }
 use DBD::Pg;
-like ($DBD::Pg::VERSION, qr/^v?\d+\.\d+\.\d+(?:_\d+)?$/, qq{Found DBD::Pg::VERSION as "$DBD::Pg::VERSION"});
+like ($DBD::Pg::VERSION, qr/^v?[0-9]+\.[0-9]+\.[0-9]+(?:_[0-9]+)?$/, qq{Found DBD::Pg::VERSION as "$DBD::Pg::VERSION"});

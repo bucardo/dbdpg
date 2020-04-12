@@ -111,7 +111,7 @@ ok ($@, $t);
 
 $t='pg_getline returns a 1';
 $dbh->do("COPY $table TO STDOUT");
-my ($buffer,$badret,$badval) = ('',0,0);
+my $buffer = '';
 $result = $dbh->pg_getline($data[0], 100);
 is ($result, 1, $t);
 

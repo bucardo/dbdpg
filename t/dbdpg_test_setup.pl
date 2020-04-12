@@ -202,7 +202,7 @@ version: $version
                         $dbh = DBI->connect($testdsn, $testuser, '',
                                             {RaiseError => 1, PrintError => 0, AutoCommit => 1});
                     };
-                    if ($@ =~ /starting up/ or $@ =~ /PGSQL\.\d+/) {
+                    if ($@ =~ /starting up/ or $@ =~ /PGSQL\.[0-9]+/) {
                         if ($loop++ < 20) {
                             sleep 1;
                             redo STARTUP;
@@ -324,10 +324,10 @@ version: $version
             }
             last GETHANDLE; ## Fail - initdb bad
         }
-        elsif ($info =~ /(\d+\.\d+)/) {
+        elsif ($info =~ /([0-9]+\.[0-9]+)/) {
             $version = $1;
         }
-        elsif ($info =~ /(\d+)(?:devel|beta|rc|alpha)/) { ## Can be 10devel
+        elsif ($info =~ /([0-9]+)(?:devel|beta|rc|alpha)/) { ## Can be 10devel
             $version = $1;
         }
         else {
@@ -372,9 +372,9 @@ version: $version
 
             my $readme = "$testdir/README";
             if (open $fh, '>', $readme) {
-                print $fh "This is a test directory for DBD::Pg and may be removed\n";
-                print $fh "You may want to ensure the postmaster has been stopped first.\n";
-                print $fh "Check the data/postmaster.pid file\n";
+                print {$fh} "This is a test directory for DBD::Pg and may be removed\n";
+                print {$fh} "You may want to ensure the postmaster has been stopped first.\n";
+                print {$fh} "Check the data/postmaster.pid file\n";
                 close $fh or die qq{Could not close "$readme": $!\n};
             }
 
@@ -492,7 +492,7 @@ version: $version
             $debug and diag qq{File "$testdir/data/postmaster.pid" exists};
             open my $cfh, '<', $conf or die qq{Could not open "$conf": $!\n};
             while (<$cfh>) {
-                if (/^\s*port\s*=\s*(\d+)/) {
+                if (/^\s*port\s*=\s*([0-9]+)/) {
                     $testport = $1;
                     $debug and diag qq{Found port $testport inside conf file\n};
                 }
@@ -508,13 +508,13 @@ version: $version
                 last GETHANDLE; ## Fail - no conf file
             }
             $debug and diag qq{Writing to "$conf"};
-            print $cfh "\n\n## DBD::Pg testing parameters\n";
-            print $cfh "port=$testport\n";
-            print $cfh "max_connections=11\n";
-            print $cfh "log_statement = 'all'\n";
-            print $cfh "log_line_prefix = '%m [%p] '\n";
-            print $cfh "log_filename = 'postgres%Y-%m-%d.log'\n";
-            print $cfh "log_rotation_size = 0\n";
+            print {$cfh} "\n\n## DBD::Pg testing parameters\n";
+            print {$cfh} "port=$testport\n";
+            print {$cfh} "max_connections=11\n";
+            print {$cfh} "log_statement = 'all'\n";
+            print {$cfh} "log_line_prefix = '%m [%p] '\n";
+            print {$cfh} "log_filename = 'postgres%Y-%m-%d.log'\n";
+            print {$cfh} "log_rotation_size = 0\n";
             if (8.1 == $version) {
                 print {$cfh} "redirect_stderr = on\n";
             }
@@ -522,26 +522,26 @@ version: $version
             if ($version >= 8.3) {
                 print {$cfh} "logging_collector = on\n";
             }
-            print $cfh "log_min_messages = 'DEBUG1'\n";
+            print {$cfh} "log_min_messages = 'DEBUG1'\n";
 
             if ($version >= 9.4) {
-                print $cfh "wal_level = logical\n";
-                print $cfh "max_replication_slots = 1\n";
-                print $cfh "max_wal_senders = 1\n";
+                print {$cfh} "wal_level = logical\n";
+                print {$cfh} "max_replication_slots = 1\n";
+                print {$cfh} "max_wal_senders = 1\n";
 
                 open my $hba, '>>', "$testdir/data/pg_hba.conf"
                     or die qq{Could not open "$testdir/data/pg_hba.conf": $!\n};
 
-                print $hba "local\treplication\tall\ttrust\n";
-                print $hba "host\treplication\tall\t127.0.0.1/32\ttrust\n";
-                print $hba "host\treplication\tall\t::1/128\ttrust\n";
+                print {$hba} "local\treplication\tall\ttrust\n";
+                print {$hba} "host\treplication\tall\t127.0.0.1/32\ttrust\n";
+                print {$hba} "host\treplication\tall\t::1/128\ttrust\n";
 
                 close $hba or die qq{Could not close "$testdir/data/pg_hba.conf": $!\n};
             }
 
-            print $cfh "listen_addresses='127.0.0.1'\n" if $^O =~ /Win32/;
-            print $cfh "\n";
-            close $cfh or die qq{Could not close "$conf": $!\n};
+            print {$cfh} "listen_addresses='127.0.0.1'\n" if $^O =~ /Win32/;
+            print {$cfh} "\n";
+            close {$cfh} or die qq{Could not close "$conf": $!\n};
 
             ## Attempt to start up the test server
             $info = '';
@@ -643,23 +643,23 @@ version: $version
 
     my $connerror = $@;
     if (open $fh, '>', $helpfile) {
-        print $fh "## This is a temporary file created for testing DBD::Pg\n";
-        print $fh '## Created: ' . scalar localtime() . "\n";
-        print $fh "## Feel free to remove it!\n";
-        print $fh "## Helpconnect: $helpconnect\n";
-        print $fh "## pg_ctl: $pg_ctl\n";
-        print $fh "## initdb: $initdb\n";
-        print $fh "## Version: $version\n";
+        print {$fh} "## This is a temporary file created for testing DBD::Pg\n";
+        print {$fh} '## Created: ' . scalar localtime() . "\n";
+        print {$fh} "## Feel free to remove it!\n";
+        print {$fh} "## Helpconnect: $helpconnect\n";
+        print {$fh} "## pg_ctl: $pg_ctl\n";
+        print {$fh} "## initdb: $initdb\n";
+        print {$fh} "## Version: $version\n";
         if ($connerror) {
-            print $fh "## DSN: FAIL!\n";
-            print $fh "## ERROR: $connerror\n";
+            print {$fh} "## DSN: FAIL!\n";
+            print {$fh} "## ERROR: $connerror\n";
         }
         else {
-            print $fh "## DSN: $testdsn\n";
-            print $fh "## User: $testuser\n";
-            print $fh "## Testdir: $testdir\n" if 16 == $helpconnect;
-            print $fh "## Testowner: $su\n" if $su;
-            print $fh "## Testowneruid: $uid\n" if $uid;
+            print {$fh} "## DSN: $testdsn\n";
+            print {$fh} "## User: $testuser\n";
+            print {$fh} "## Testdir: $testdir\n" if 16 == $helpconnect;
+            print {$fh} "## Testowner: $su\n" if $su;
+            print {$fh} "## Testowneruid: $uid\n" if $uid;
         }
         close $fh or die qq{Could not close "$helpfile": $!\n};
     }
@@ -766,7 +766,6 @@ sub find_tempdir {
     }
 
     ## Who doesn't have File::Temp?! :)
-    my $found = 0;
     for my $num (1..100) {
         my $tempdir = "/tmp/dbdpg_testdatabase_ABCDEF$num";
         next if -e $tempdir;
@@ -806,16 +805,16 @@ sub get_test_settings {
             if ($inerror) {
                 $error .= "\n$_";
             }
-            /DSN: (.+)/           and $testdsn = $1;
-            /User: (\S+)/         and $testuser = $1;
-            /Helpconnect: (\d+)/  and $helpconnect = $1;
-            /Testowner: (\w+)/    and $su = $1;
-            /Testowneruid: (\d+)/ and $uid = $1;
-            /Testdir: (.+)/       and $testdir = $1;
-            /pg_ctl: (.+)/        and $pg_ctl = $1;
-            /initdb: (.+)/        and $initdb = $1;
-            /ERROR: (.+)/         and $error = $1 and $inerror = 1;
-            /Version: (.+)/       and $version = $1;
+            /DSN: (.+)/              and $testdsn = $1;
+            /User: (\S+)/            and $testuser = $1;
+            /Helpconnect: ([0-9]+)/  and $helpconnect = $1;
+            /Testowner: (\w+)/       and $su = $1;
+            /Testowneruid: ([0-9]+)/ and $uid = $1;
+            /Testdir: (.+)/          and $testdir = $1;
+            /pg_ctl: (.+)/           and $pg_ctl = $1;
+            /initdb: (.+)/           and $initdb = $1;
+            /ERROR: (.+)/            and $error = $1 and $inerror = 1;
+            /Version: (.+)/          and $version = $1;
         }
         close $fh or die qq{Could not close "$helpfile": $!\n};
     }
@@ -882,7 +881,6 @@ sub cleanup_database {
     ## Clear out any testing objects in the current database
 
     my $dbh = shift;
-    my $type = shift || 0;
 
     return unless defined $dbh and ref $dbh and $dbh->ping();
 
@@ -927,7 +925,7 @@ sub cleanup_database {
 
 sub shutdown_test_database {
 
-    my ($testdsn,$testuser,$helpconnect,$su,$uid,$testdir,$pg_ctl,$initdb) = get_test_settings();
+    my ($testdsn,$testuser,$helpconnect,$su,$uid,$testdir,$pg_ctl,$initdb) = get_test_settings(); ## no critic (Variables::ProhibitUnusedVarsStricter)
 
     if (-e $testdir and -e "$testdir/data/postmaster.pid") {
         my $COM = qq{$pg_ctl -D $testdir/data -m fast stop};

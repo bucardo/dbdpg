@@ -419,28 +419,28 @@ dbdpg: Begin _sqlstate
 #
 
 $t='The "data_sources" method did not throw an exception';
-my @result;
+my @sources;
 eval {
-    @result = DBI->data_sources('Pg');
+    @sources = DBI->data_sources('Pg');
 };
 is ($@, q{}, $t);
 
 $t='The "data_sources" method returns a template1 listing';
-if (! defined $result[0]) {
+if (! defined $sources[0]) {
     fail ('The data_sources() method returned an empty list');
 }
 else {
-    is (grep (/^dbi:Pg:dbname=template1$/, @result), '1', $t);
+    is (grep (/^dbi:Pg:dbname=template1$/, @sources), '1', $t);
 }
 
 $t='The "data_sources" method returns undef when fed a bogus second argument';
-@result = DBI->data_sources('Pg','foobar');
-is (scalar @result, 0, $t);
+@sources = DBI->data_sources('Pg','foobar');
+is (scalar @sources, 0, $t);
 
 $t='The "data_sources" method returns information when fed a valid port as the second arg';
 my $port = $dbh->{pg_port};
-@result = DBI->data_sources('Pg',"port=$port");
-isnt ($result[0], undef, $t);
+@sources = DBI->data_sources('Pg',"port=$port");
+isnt ($sources[0], undef, $t);
 
 SKIP: {
 
@@ -452,14 +452,14 @@ SKIP: {
 
     my $orig = $ENV{DBI_DSN};
     $ENV{DBI_DSN} =~ s/DBI:PG/DBI:PG/i;
-    @result = DBI->data_sources('Pg');
-    like ((join '' => @result), qr{template0}, $t);
+    @sources = DBI->data_sources('Pg');
+    like ((join '' => @sources), qr{template0}, $t);
 
     $t=q{The "data_sources" method returns information when 'DBI:' is mixed case};
 
     $ENV{DBI_DSN} =~ s/DBI:PG/dBi:pg/i;
-    @result = DBI->data_sources('Pg');
-    like ((join '' => @result), qr{template0}, $t);
+    @sources = DBI->data_sources('Pg');
+    like ((join '' => @sources), qr{template0}, $t);
 
     $ENV{DBI_DSN} = $orig;
 
