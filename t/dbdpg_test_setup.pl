@@ -541,7 +541,7 @@ version: $version
 
             print {$cfh} "listen_addresses='127.0.0.1'\n" if $^O =~ /Win32/;
             print {$cfh} "\n";
-            close {$cfh} or die qq{Could not close "$conf": $!\n};
+            close $cfh or die qq{Could not close "$conf": $!\n};
 
             ## Attempt to start up the test server
             $info = '';

@@ -12,7 +12,7 @@ my $VERSION = '3.10.5';
 my $lib;
 BEGIN {
     use vars qw/$sep/;
-    my %sep = (
+    my %seplist = (
                MacOS   => ':',
                MSWin32 => '\\',
                os2     => '\\',
@@ -20,7 +20,7 @@ BEGIN {
                NetWare => '\\',
                dos     => '\\',
                );
-    $sep = $sep{$^O} || '/';
+    $sep = $seplist{$^O} || '/';
     $lib = join $sep, 't', 'lib';
 }
 
@@ -97,7 +97,7 @@ my $defaultport = 0;
 
 if (defined $major_ver) {
     $serverversion = sprintf '%d%.02d%.02d', $major_ver, $minor_ver, $patch;
-    $defaultport = $conf =~ /with-pgport=(\d+)/ ? $1 : 5432;
+    $defaultport = $conf =~ /with-pgport=([0-9]+)/ ? $1 : 5432;
 }
 
 # We set POSTGRES_INCLUDE and POSTGRES_LIB from the first found of:
@@ -201,11 +201,11 @@ if ($ENV{DBDPG_GCCDEBUG}) {
     $comp_opts .= ' -Wmissing-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wpacked -Winline -Winvalid-pch';
     $comp_opts .= ' -Wdisabled-optimization';
     $comp_opts .= ' -Wnested-externs';
-    $comp_opts .= " -Wstrict-prototypes"; ## Still hits a couple places in types.h
-    $comp_opts .= " -Wswitch-default";
-    $comp_opts .= " -Wsystem-headers";
-    $comp_opts .= " -Wmissing-noreturn";
-    $comp_opts .= " -Wfloat-equal"; ## Does not like SvTRUE() calls
+    $comp_opts .= ' -Wstrict-prototypes'; ## Still hits a couple places in types.h
+    $comp_opts .= ' -Wswitch-default';
+    $comp_opts .= ' -Wsystem-headers';
+    $comp_opts .= ' -Wmissing-noreturn';
+    $comp_opts .= ' -Wfloat-equal'; ## Does not like SvTRUE() calls
 }
 
 my %opts =
@@ -213,7 +213,7 @@ my %opts =
      NAME           => 'DBD::Pg',
      VERSION_FROM   => 'Pg.pm',
      INC            => "-I$POSTGRES_INCLUDE -I$dbi_arch_dir",
-     OBJECT         => "Pg\$(OBJ_EXT) dbdimp\$(OBJ_EXT) quote\$(OBJ_EXT) types\$(OBJ_EXT)",
+     OBJECT         => 'Pg$(OBJ_EXT) dbdimp$(OBJ_EXT) quote$(OBJ_EXT) types$(OBJ_EXT)',
      LIBS           => ["-L$POSTGRES_LIB -lpq -lm"],
      AUTHOR         => 'Greg Sabino Mullane',
      ABSTRACT       => 'PostgreSQL database driver for the DBI module',

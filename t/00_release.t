@@ -150,7 +150,7 @@ while (<$fh>) {
     ## Two tickets
     next if /^   \(RT tickets \#[0-9]+ and \#[0-9]+\)$/;
     ## Three or more tickets
-    next if /^   \(RT tickets \#[0-9]+(?:[, \#[0-9]+])*\)$/;
+    next if /^   \(RT tickets \#[0-9]+(?:[, \#0-9])*\)$/;
 
     ## Github issues and pull requests - three spaces, parens
     next if /^   \(Github (?:issue|pull request) #[0-9]+\)$/;
