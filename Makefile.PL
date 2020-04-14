@@ -335,6 +335,15 @@ MAKE_SPLINT
 
     $string =~ s/SDEFINES = /SDEFINES =$defines/;
 
+	$string .= <<'MAKE_FULLTEST';
+
+fulltest: RELEASE_TESTING=1
+fulltest: AUTHOR_TESTING=1
+fulltest :: $(TEST_TYPE)
+	$(NOECHO) $(NOOP)
+
+MAKE_FULLTEST
+
     return $string;
 }
 
