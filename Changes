@@ -1492,7 +1492,7 @@ Version 2.0.0  (released February 10, 2008)
    (RT ticket #15918)
 
  - Fix pg_description join in table_info().
-   [Max Cohan max at endpoint.com]
+   [Max Cohan max at cohan.biz]
 
  - Make sure arrays handle UTF-8 smoothly
    [Greg Sabino Mullane]
@@ -2375,7 +2375,7 @@ Version 0.85  (released July 19, 1998)
 Version 0.84  (released July 18, 1998)
 
  - Check for \xxx presentation before escaping backslash in parameters.
-   [Max Cohan <mcohan at adnc.net>]
+   [Max Cohan max at cohan.biz]
 
  - Introduce new database handle attribute AutoEscape, which controls escaping of quotes and backslashes in parameters. 
    When set to on, all quotes except at the beginning and at the end of a line will be escaped and all backslashes 
@@ -2385,7 +2385,7 @@ Version 0.84  (released July 18, 1998)
 Version 0.83  (released July 10, 1998)
 
  - Bug fix for core dump when using traces together with undef
-   [Max Cohan <mcohan at adnc.net>]
+   [Max Cohan max at cohan.biz]
 
 
 Version 0.82  (released June 20, 1998)
