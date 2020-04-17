@@ -575,6 +575,7 @@ ala
 bucardo
 cpantesters
 github
+goto
 hashrefs
 hstore
 https
