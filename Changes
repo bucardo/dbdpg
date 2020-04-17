@@ -2,6 +2,12 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+ - Indicate non-key index columns (INCLUDE) in statistics_info
+   [Dagfinn Ilmari Mannsåker]
+
+ - Return an empty result set instead of undef from statistics_info
+   when the requested table doesn't exist and $unique_only is false.
+   [Dagfinn Ilmari Mannsåker]
 
 Version 3.10.5  (released March 23, 2020)
 
