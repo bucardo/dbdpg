@@ -12,6 +12,10 @@ Version 3.10.5  (released March 23, 2020)
    [H.Merijn Brand]
    (RT ticket #132203)
 
+ - Improve testing for table_info()
+   [Greg Sabino Mullane]
+   (Github issue #67)
+
  - Add small warning regarding ShowErrorStatement
    (RT ticket #120268)
 
