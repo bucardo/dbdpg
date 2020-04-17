@@ -12,12 +12,21 @@ Version 3.10.5  (released March 23, 2020)
    [H.Merijn Brand]
    (RT ticket #132203)
 
+ - Fix segfault during st destroy
+   [Gregory Oschwald]
+   (Github pull request #66)
+   (Github issue #57)
+
  - Improve testing for table_info()
    [Greg Sabino Mullane]
    (Github issue #67)
 
  - Add small warning regarding ShowErrorStatement
    (RT ticket #120268)
+
+ - Improve UTF-8 wording in docs
+   [Felipe Gasper]
+   (Github pull request #65)
 
 
 Version 3.10.4  (released February 3, 2020)
