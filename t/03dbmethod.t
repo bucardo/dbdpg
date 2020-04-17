@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 580;
+plan tests => 586;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -620,72 +620,113 @@ is ($result->{TABLE_CAT}, $dbh->{pg_db}, 'DB handle method "table_info" returns 
 is ($result->{TABLE_NAME}, 'dbd_pg_test', 'DB handle method "table_info" returns proper TABLE_NAME');
 is ($result->{TABLE_TYPE}, 'TABLE', 'DB handle method "table_info" returns proper TABLE_TYPE');
 
-$t=q{DB handle method "table_info" returns correct number of rows when given a 'TABLE,VIEW' type argument};
-$sth = $dbh->table_info(undef,undef,undef,'TABLE,VIEW');
-$number = $sth->rows();
-cmp_ok ($number, '>', 1, $t);
-
-$t=q{DB handle method "table_info" returns correct number of rows when given a 'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW' type argument};
-$sth = $dbh->table_info(undef,undef,undef,'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW');
-$number = $sth->rows();
-cmp_ok ($number, '>', 1, $t);
-
 $t='DB handle method "table_info" returns zero rows when given an invalid type argument';
 $sth = $dbh->table_info(undef,undef,undef,'DUMMY');
 $rows = $sth->rows();
 is ($rows, 0, $t);
 
-$t=q{DB handle method "table_info" returns correct number of rows when given a 'VIEW' type argument};
+$t=q{DB handle method "table_info" returns rows when given a 'VIEW' type argument};
 $sth = $dbh->table_info(undef,undef,undef,'VIEW');
-$rows = $sth->rows();
-cmp_ok ($rows, '<', $number, $t);
+my $count_views = $sth->rows();
+cmp_ok ($count_views, '>', 1, $t);
 
-$t=q{DB handle method "table_info" returns correct number of rows when given a 'TABLE' type argument};
-$sth = $dbh->table_info(undef,undef,undef,'TABLE');
-$rows = $sth->rows();
-cmp_ok ($rows, '<', $number, $t);
+$t=q{DB handle method "table_info" returns no rows when given a 'VIEW' type argument for the test schema};
+$sth = $dbh->table_info(undef,$schema,undef,'VIEW');
+is ($sth->rows, 0, $t);
+
+$t=q{DB handle method "table_info" returns one row when given a 'TABLE,VIEW' type argument for the test schema};
+$sth = $dbh->table_info(undef,$schema,undef,'TABLE,VIEW');
+is ($sth->rows, 1, $t);
+
+$dbh->do('CREATE VIEW testview AS SELECT sum(reltuples) AS tonsoftups FROM pg_class');
+
+$t=q{DB handle method "table_info" returns no rows when given a 'VIEW' type argument for the test schema};
+$sth = $dbh->table_info(undef,$schema,undef,'VIEW');
+is ($sth->rows, 1, $t);
+
+$t=q{DB handle method "table_info" returns one row when given a 'TABLE,VIEW' type argument for the test schema};
+$sth = $dbh->table_info(undef,$schema,undef,'TABLE,VIEW');
+is ($sth->rows, 2, $t);
+
+$t=q{DB handle method "table_info" returns same rows when given a 'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW' type argument};
+$sth = $dbh->table_info(undef,$schema,undef,'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW');
+is ($sth->rows, 2, $t);
+
+$t=q{DB handle method "table_info" returns more rows when given a 'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW' type argument};
+$sth = $dbh->table_info(undef,undef,undef,'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW');
+## Should be at least 100 system tables and views
+cmp_ok ($sth->rows(), '>', 100, $t);
 
 $dbh->do('CREATE TEMP TABLE dbd_pg_local_temp (i INT)');
 
-$t=q{DB handle method "table_info" returns correct number of rows when given a 'LOCAL TEMPORARY' type argument};
+$t=q{DB handle method "table_info" returns no 'LOCAL TEMPORARY' rows for specific schema};
+$sth = $dbh->table_info(undef,$schema,undef,'LOCAL TEMPORARY');
+is ($sth->rows(), 0, $t);
+
+$t=q{DB handle method "table_info" returns one 'LOCAL TEMPORARY' row for specific table};
+$sth = $dbh->table_info(undef,undef,'dbd_pg_local_temp','LOCAL TEMPORARY');
+is ($sth->rows(), 1, $t);
+
+$t=q{DB handle method "table_info" returns correct 'LOCAL TEMPORARY' rows across whole system};
 $sth = $dbh->table_info(undef,undef,undef,'LOCAL TEMPORARY');
-$rows = $sth->rows();
-cmp_ok ($rows, '<', $number, $t);
-cmp_ok ($rows, '>', 0, $t);
-
-$t=q{DB handle method "table_info" returns correct number of rows when given a 'MATERIALIZED VIEW' type argument};
-$sth = $dbh->table_info(undef,undef,undef,'MATERIALIZED VIEW');
-$rows = $sth->rows();
-is ($rows, 0, $t);
-
-$t=q{DB handle method "table_info" returns correct number of rows when given a 'FOREIGN TABLE' type argument};
-$sth = $dbh->table_info(undef,undef,undef,'FOREIGN TABLE');
-$rows = $sth->rows();
-is ($rows, 0, $t);
+my $total_temp = $sth->rows();
+$dbh->do('DROP TABLE dbd_pg_local_temp');
+$sth = $dbh->table_info(undef,undef,undef,'LOCAL TEMPORARY');
+is ($sth->rows(), $total_temp-1, $t);
 
 SKIP: {
+
     if ($pgversion < 90300) {
-        skip 'Postgres version 9.3 or better required to create materialized views', 1;
+        skip ('Cannot test table_info for materialized views unless database if 9.3 or higher', 3);
     }
-    $dbh->do('CREATE MATERIALIZED VIEW dbd_pg_matview (a) AS SELECT count(*) FROM pg_class');
-    $t=q{DB handle method "table_info" returns correct number of rows when given a 'MATERIALIZED VIEW' type argument};
+
     $sth = $dbh->table_info(undef,undef,undef,'MATERIALIZED VIEW');
-    $rows = $sth->rows();
-    is ($rows, 1, $t);
+    my $total_matviews = $sth->rows();
+
+    $t=q{DB handle method "table_info" returns zero 'MATERIALIZED VIEW' rows for test schema};
+    $sth = $dbh->table_info(undef,$schema,undef,'MATERIALIZED VIEW');
+    is ($sth->rows(), 0, $t);
+
+    $dbh->do("CREATE MATERIALIZED VIEW $schema.testmatview AS SELECT 123 WITH NO DATA");
+
+    $t=q{DB handle method "table_info" returns one 'MATERIALIZED VIEW' rows for test schema};
+    $sth = $dbh->table_info(undef,$schema,undef,'MATERIALIZED VIEW');
+    is ($sth->rows(), 1, $t);
+
+    $t=q{DB handle method "table_info" returns expected 'MATERIALIZED VIEW' rows};
+    $sth = $dbh->table_info(undef,undef,undef,'MATERIALIZED VIEW');
+    is ($sth->rows(), $total_matviews+1, $t);
+
 }
 
 SKIP: {
+
     if ($pgversion < 90100) {
-        skip 'Postgres version 9.1 or better required to create foreign tables', 1;
+        skip ('Cannot test table_info for foreign tables unless database is 9.1 or higher', 3);
     }
+
+    $sth = $dbh->table_info(undef,undef,undef,'FOREIGN TABLE');
+    my $total_ftables = $sth->rows();
+
+    $t=q{DB handle method "table_info" returns zero 'FOREIGN TABLE' rows for test schema};
+    $sth = $dbh->table_info(undef,$schema,undef,'FOREIGN TABLE');
+    is ($sth->rows(), 0, $t);
+
+    $dbh->do('DROP FOREIGN DATA WRAPPER IF EXISTS dbd_pg_testfdw CASCADE');
     $dbh->do('CREATE FOREIGN DATA WRAPPER dbd_pg_testfdw');
     $dbh->do('CREATE SERVER dbd_pg_testserver FOREIGN DATA WRAPPER dbd_pg_testfdw');
-    $dbh->do('CREATE FOREIGN TABLE dbd_pg_testforeign (c1 int) SERVER dbd_pg_testserver');
-    $t=q{DB handle method "table_info" returns correct number of rows when given a 'FOREIGN TABLE' type argument};
+    $dbh->do("CREATE FOREIGN TABLE $schema.dbd_pg_testforeign (c1 int) SERVER dbd_pg_testserver");
+
+    $t=q{DB handle method "table_info" returns one 'FOREIGN TABLE' rows for test schema};
+    $sth = $dbh->table_info(undef,$schema,undef,'FOREIGN TABLE');
+    is ($sth->rows(), 1, $t);
+
+    $t=q{DB handle method "table_info" returns expected 'FOREIGN TABLE' rows};
     $sth = $dbh->table_info(undef,undef,undef,'FOREIGN TABLE');
-    $rows = $sth->rows();
-    is ($rows, 1, $t);
+    is ($sth->rows(), $total_ftables+1, $t);
+
     $dbh->rollback();
+
 }
 
 # Test listing catalog names
