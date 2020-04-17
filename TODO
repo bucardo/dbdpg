@@ -8,6 +8,8 @@ https://github.com/bucardo/dbdpg
 (although we prefer using cpan.org)
 
 
+- Remove the "goto" calls in the tests
+- Force a test database rebuild when a git branch switch is detected
 - Make all tests work when server and/or client encoding is SQL_ASCII
 - Enable native JSON decoding, similar to arrays, perhaps with JSON::PP
 - Allow partial result sets, either via PQsetSingleRowMode or something better
