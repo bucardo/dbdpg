@@ -921,6 +921,8 @@ my $hash_index_idx = 3;
 $hash_index_idx += 1 if $with_oids;
 $hash_index_idx += 2 if $with_include;
 my ($desc, $d) = $pgversion >= 80300 ? ('DESC', 'D') : ('', 'A');
+my ($nulls_first, $nf) = $pgversion >= 80300 ? ('NULLS FIRST', 'first') : ('', 'last');
+my ($nulls_last, $nl) = $pgversion >= 80300 ? ('NULLS LAST', 'last') : ('', 'last');
 
 ## Create some tables with various indexes
 {
@@ -939,10 +941,10 @@ my ($desc, $d) = $pgversion >= 80300 ? ('DESC', 'D') : ('', 'A');
     $dbh->do("CREATE TABLE $table1 (a INT, b INT NOT NULL, c INT NOT NULL, ".
              'CONSTRAINT dbd_pg_test1_pk PRIMARY KEY (a))');
     $dbh->do("ALTER TABLE $table1 ADD CONSTRAINT dbd_pg_test1_uc1 UNIQUE (b)");
-    $dbh->do("CREATE UNIQUE INDEX dbd_pg_test1_index_c ON $table1(c)");
+    $dbh->do("CREATE UNIQUE INDEX dbd_pg_test1_index_c ON $table1(c $nulls_first)");
 
     $dbh->do("CREATE TABLE $table2 (a INT, b INT, c INT, PRIMARY KEY(a,b), UNIQUE(b,c))");
-    $dbh->do("CREATE INDEX dbd_pg_test2_expr ON $table2((a+b) $desc, c $desc)");
+    $dbh->do("CREATE INDEX dbd_pg_test2_expr ON $table2((a+b) $desc, c $desc $nulls_last)");
 
     $dbh->do("CREATE TABLE $table3 (a INT, b INT, c INT, PRIMARY KEY(a)) $with_oids");
     $dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_index_b ON $table3(b)");
@@ -956,47 +958,47 @@ my ($desc, $d) = $pgversion >= 80300 ? ('DESC', 'D') : ('', 'A');
 
 my $correct_stats = {
 one => [
-    [ $dbh->{pg_db}, $schema, $table1, '0', undef, 'dbd_pg_test1_index_c', 'btree',  1, 'c', 'A', '0', '1', undef, 'c', '1' ],
-    [ $dbh->{pg_db}, $schema, $table1, '0', undef, 'dbd_pg_test1_pk',      'btree',  1, 'a', 'A', '0', '1', undef, 'a', '1' ],
-    [ $dbh->{pg_db}, $schema, $table1, '0', undef, 'dbd_pg_test1_uc1',     'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1' ],
-    [ $dbh->{pg_db}, $schema, $table1, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef, undef ],
+    [ $dbh->{pg_db}, $schema, $table1, '0', undef, 'dbd_pg_test1_index_c', 'btree',  1, 'c', 'A', '0', '1', undef, 'c', '1', $nf ],
+    [ $dbh->{pg_db}, $schema, $table1, '0', undef, 'dbd_pg_test1_pk',      'btree',  1, 'a', 'A', '0', '1', undef, 'a', '1', 'last' ],
+    [ $dbh->{pg_db}, $schema, $table1, '0', undef, 'dbd_pg_test1_uc1',     'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1', 'last' ],
+    [ $dbh->{pg_db}, $schema, $table1, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef, undef, undef ],
     ],
     two => [
-    [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1' ],
-    [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  2, 'c', 'A', '0', '1', undef, 'c', '1' ],
-    [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a', '1' ],
-    [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  2, 'b', 'A', '0', '1', undef, 'b', '1' ],
-    [ $dbh->{pg_db}, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  1, undef, $d, '0', '1', undef, '(a + b)', '1' ],
-    [ $dbh->{pg_db}, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  2, 'c', $d, '0', '1', undef, 'c', '1' ],
-    [ $dbh->{pg_db}, $schema, $table2, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef, undef ],
+    [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1', 'last' ],
+    [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  2, 'c', 'A', '0', '1', undef, 'c', '1', 'last' ],
+    [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a', '1', 'last' ],
+    [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  2, 'b', 'A', '0', '1', undef, 'b', '1', 'last' ],
+    [ $dbh->{pg_db}, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  1, undef, $d, '0', '1', undef, '(a + b)', '1', $nf ],
+    [ $dbh->{pg_db}, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  2, 'c', $d, '0', '1', undef, 'c', '1', $nl ],
+    [ $dbh->{pg_db}, $schema, $table2, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef, undef, undef ],
     ],
     three => [
     ($with_include ? (
-        [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1' ],
-        [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  2, 'c', undef, '0', '1', undef, 'c', '0' ],
+        [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1', 'last' ],
+        [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  2, 'c', undef, '0', '1', undef, 'c', '0', undef ],
     ) :()),
-    [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1' ],
-    [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a', '1' ],
-    [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))', 'c', '1' ],
-    ($with_oids ? [ $dbh->{pg_db}, $schema, $table3, '1', undef, 'dbd_pg_test3_oid',     'btree',  1, 'oid', 'A', '0', '1', undef, 'oid', '1' ] : ()),
-    [ $dbh->{pg_db}, $schema, $table3, '1', undef, 'dbd_pg_test3_index_c', 'hashed', 1, 'c', undef, '0', '4', undef, 'c', '1' ],
-    [ $dbh->{pg_db}, $schema, $table3, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef, undef ],
+    [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1', 'last' ],
+    [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a', '1', 'last' ],
+    [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))', 'c', '1', 'last' ],
+    ($with_oids ? [ $dbh->{pg_db}, $schema, $table3, '1', undef, 'dbd_pg_test3_oid',     'btree',  1, 'oid', 'A', '0', '1', undef, 'oid', '1', 'last' ] : ()),
+    [ $dbh->{pg_db}, $schema, $table3, '1', undef, 'dbd_pg_test3_index_c', 'hashed', 1, 'c', undef, '0', '4', undef, 'c', '1', undef ],
+    [ $dbh->{pg_db}, $schema, $table3, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef, undef, undef ],
 ],
     three_uo => [
     ($with_include ? (
-        [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1' ],
-        [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  2, 'c', undef, '0', '1', undef, 'c', '0' ],
+        [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1', 'last' ],
+        [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  2, 'c', undef, '0', '1', undef, 'c', '0', undef ],
     ) :()),
-    [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1' ],
-    [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a', '1' ],
-    [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))', 'c', '1' ],
+    [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1', 'last' ],
+    [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a', '1', 'last' ],
+    [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))', 'c', '1', 'last' ],
     ],
 };
 
 my @stats_columns = qw(
     TABLE_CAT TABLE_SCHEM TABLE_NAME NON_UNIQUE INDEX_QUALIFIER INDEX_NAME TYPE
     ORDINAL_POSITION COLUMN_NAME ASC_OR_DESC CARDINALITY PAGES FILTER_CONDITION
-    pg_expression pg_is_key_column
+    pg_expression pg_is_key_column pg_null_ordering
 );
 
 ## Make some per-version tweaks
