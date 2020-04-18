@@ -710,8 +710,7 @@ use 5.008001;
                 d.relname = ? $schema_where
                 AND (i.indisunique OR NOT(?)) -- unique_only
             ORDER BY
-                -- NULLS FIRST to get the table level stats first
-                "NON_UNIQUE" NULLS FIRST, "TYPE", "INDEX_QUALIFIER", "INDEX_NAME", "ORDINAL_POSITION"
+                "NON_UNIQUE", "TYPE", "INDEX_QUALIFIER", "INDEX_NAME", "ORDINAL_POSITION"
         };
 
         my $sth = $dbh->prepare($stats_sql);
