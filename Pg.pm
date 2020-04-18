@@ -672,6 +672,23 @@ use 5.008001;
         my $is_key_column = $dbh->{private_dbdpg}{version} >= 110000
             ? 'col.i <= i.indnkeyatts' : 'true';
 
+        my $asc_or_desc;
+        if ($dbh->{private_dbdpg}{version} >= 90600) {
+            $asc_or_desc = q{
+                CASE WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'asc') THEN 'A'
+                     WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'desc') THEN 'D'
+                END};
+        }
+        elsif ($dbh->{private_dbdpg}{version} > 80300) {
+            $asc_or_desc = q{
+                CASE WHEN a.amcanorder THEN
+                     CASE WHEN i.indoption[col.i - 1] & 1 = 0 THEN 'A' ELSE 'D' END
+                END};
+        }
+        else {
+            $asc_or_desc = q{CASE WHEN a.amorderstrategy <> 0 THEN 'A' END};
+        }
+
         # Fetch the index definitions
         $stats_sql .= qq{
             SELECT
@@ -688,7 +705,7 @@ use 5.008001;
                 END                           AS "TYPE",
                 col.i                         AS "ORDINAL_POSITION",
                 att.attname                   AS "COLUMN_NAME",
-                'A'                           AS "ASC_OR_DESC",
+                $asc_or_desc                  AS "ASC_OR_DESC",
                 c.reltuples                   AS "CARDINALITY",
                 c.relpages                    AS "PAGES",
                 pg_catalog.pg_get_expr(i.indpred,i.indrelid)

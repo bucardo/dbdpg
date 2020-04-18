@@ -920,6 +920,8 @@ my $with_include = $pgversion >= 110000;
 my $hash_index_idx = 3;
 $hash_index_idx += 1 if $with_oids;
 $hash_index_idx += 2 if $with_include;
+my ($desc, $d) = $pgversion >= 80300 ? ('DESC', 'D') : ('', 'A');
+
 ## Create some tables with various indexes
 {
     local $SIG{__WARN__} = sub {};
@@ -940,7 +942,7 @@ $hash_index_idx += 2 if $with_include;
     $dbh->do("CREATE UNIQUE INDEX dbd_pg_test1_index_c ON $table1(c)");
 
     $dbh->do("CREATE TABLE $table2 (a INT, b INT, c INT, PRIMARY KEY(a,b), UNIQUE(b,c))");
-    $dbh->do("CREATE INDEX dbd_pg_test2_expr ON $table2((a+b),c)");
+    $dbh->do("CREATE INDEX dbd_pg_test2_expr ON $table2((a+b) $desc, c $desc)");
 
     $dbh->do("CREATE TABLE $table3 (a INT, b INT, c INT, PRIMARY KEY(a)) $with_oids");
     $dbh->do("CREATE UNIQUE INDEX dbd_pg_test3_index_b ON $table3(b)");
@@ -964,26 +966,26 @@ one => [
     [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  2, 'c', 'A', '0', '1', undef, 'c', '1' ],
     [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a', '1' ],
     [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  2, 'b', 'A', '0', '1', undef, 'b', '1' ],
-    [ $dbh->{pg_db}, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  1, undef, 'A', '0', '1', undef, '(a + b)', '1' ],
-    [ $dbh->{pg_db}, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  2, 'c', 'A', '0', '1', undef, 'c', '1' ],
+    [ $dbh->{pg_db}, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  1, undef, $d, '0', '1', undef, '(a + b)', '1' ],
+    [ $dbh->{pg_db}, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  2, 'c', $d, '0', '1', undef, 'c', '1' ],
     [ $dbh->{pg_db}, $schema, $table2, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef, undef ],
     ],
     three => [
     ($with_include ? (
         [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1' ],
-        [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  2, 'c', 'A', '0', '1', undef, 'c', '0' ],
+        [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  2, 'c', undef, '0', '1', undef, 'c', '0' ],
     ) :()),
     [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1' ],
     [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a', '1' ],
     [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pred',    'btree',  1, 'c', 'A', '0', '1', '((c > 0) AND (c < 45))', 'c', '1' ],
     ($with_oids ? [ $dbh->{pg_db}, $schema, $table3, '1', undef, 'dbd_pg_test3_oid',     'btree',  1, 'oid', 'A', '0', '1', undef, 'oid', '1' ] : ()),
-    [ $dbh->{pg_db}, $schema, $table3, '1', undef, 'dbd_pg_test3_index_c', 'hashed', 1, 'c', 'A', '0', '4', undef, 'c', '1' ],
+    [ $dbh->{pg_db}, $schema, $table3, '1', undef, 'dbd_pg_test3_index_c', 'hashed', 1, 'c', undef, '0', '4', undef, 'c', '1' ],
     [ $dbh->{pg_db}, $schema, $table3, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef, undef ],
 ],
     three_uo => [
     ($with_include ? (
         [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1' ],
-        [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  2, 'c', 'A', '0', '1', undef, 'c', '0' ],
+        [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  2, 'c', undef, '0', '1', undef, 'c', '0' ],
     ) :()),
     [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_index_b', 'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1' ],
     [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a', '1' ],

@@ -10,6 +10,9 @@ Version 3.11.2  (unrleased)
     This fixes statistics_info on pre-8.3 servers.
    [Dagfinn Ilmari Mannsåker]
 
+ - Fix ASC_OR_DESC field in statistics_info
+   [Dagfinn Ilmari Mannsåker]
+
 
 Version 3.11.1  (released April 28, 2020)
 
