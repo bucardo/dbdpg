@@ -8,6 +8,7 @@ https://github.com/bucardo/dbdpg
 (although we prefer using cpan.org)
 
 
+- Change license to Artistic 2
 - Remove the "goto" calls in the tests
 - Force a test database rebuild when a git branch switch is detected
 - Make all tests work when server and/or client encoding is SQL_ASCII
