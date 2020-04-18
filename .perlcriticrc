@@ -139,5 +139,4 @@ stop_words = ActiveKids afterwards arrayref arrayrefs attr autocommit AutoCommit
 [-NamingConventions::Capitalization]
 
 [Perlsecret]
-allow_secrets = Bang Bang
-
+allow_secrets = Bang Bang, Key of Truth
