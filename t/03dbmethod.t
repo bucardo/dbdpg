@@ -1023,7 +1023,7 @@ $stats = $sth->fetchall_arrayref;
 $correct_stats->{three}[$hash_index_idx][11] = $stats->[$hash_index_idx][11] = 0;
 is_deeply ($stats, $correct_stats->{three}, $t);
 
-$t = "Correct stats column names";
+$t = 'Correct stats column names';
 is_deeply ($sth->{NAME}, \@stats_columns, $t);
 
 $t="Correct stats output for $table3 (unique only)";
@@ -1031,7 +1031,7 @@ $sth = $dbh->statistics_info(undef,$schema,$table3,1,undef);
 $stats = $sth->fetchall_arrayref;
 is_deeply ($stats, $correct_stats->{three_uo}, $t);
 
-$t = "Correct stats column names (unique only)";
+$t = 'Correct stats column names (unique only)';
 is_deeply ($sth->{NAME}, \@stats_columns, $t);
 
 {
