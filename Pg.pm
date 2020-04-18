@@ -640,9 +640,6 @@ use 5.008001;
             push(@exe_args, $schema);
         }
 
-        my $is_key_column = $dbh->{private_dbdpg}{version} >= 110000
-            ? 'col.i <= i.indnkeyatts' : 'true';
-
         my $stats_sql;
 
         # Table-level stats
@@ -671,6 +668,9 @@ use 5.008001;
             };
             push @exe_args, @exe_args;
         }
+
+        my $is_key_column = $dbh->{private_dbdpg}{version} >= 110000
+            ? 'col.i <= i.indnkeyatts' : 'true';
 
         # Fetch the index definitions
         $stats_sql .= qq{
