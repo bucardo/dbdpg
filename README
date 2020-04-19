@@ -383,5 +383,3 @@ LICENSE INFORMATION:
 This module (DBD::Pg) is free software; you can redistribute it and/or modify it 
 under the same terms as Perl 5.10.0. For more details, see the full text of the 
 licenses in the directory LICENSES.
-
-https://www.perlfoundation.org/artistic-license-20.html
