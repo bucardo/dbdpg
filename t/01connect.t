@@ -135,10 +135,15 @@ END {
         }
     }
     for my $name (qw/DBI_DRIVER DBI_AUTOPROXY LANG/) {
-        if (exists $ENV{$name} and defined $ENV{$name}) {
+        if (exists $ENV{$name} and defined $ENV{$name} and $ENV{$name}) {
             $extra .= sprintf "\n%-*s $ENV{$name}", $offset, $name;
         }
     }
+
+    for my $name (grep { /^DBDPG/ } sort keys %ENV) {
+        $extra .= sprintf "\n%-*s $ENV{$name}", $offset, $name;
+    }
+
 
     ## More helpful stuff
     for (sort keys %set) {
