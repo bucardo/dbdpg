@@ -5,6 +5,7 @@ Pg.pm
 META.yml
 TODO
 Makefile.PL
+.dir-locals.el
 
 MANIFEST
 MANIFEST.SKIP
