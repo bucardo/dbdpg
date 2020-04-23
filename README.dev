@@ -76,6 +76,7 @@ LICENSES/artistic.txt - Artistic (Perl) license
 
 testme.tmp.pl - Quick helper file for testing individual bugs
 
+.dir-locals.el - Emacs helper file
 
 * Build files:
 
