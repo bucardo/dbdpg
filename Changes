@@ -2,7 +2,7 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.11.0  (unreleased)
+Version 3.11.0  (released April 23, 2020)
 
  - Indicate non-key index columns (INCLUDE) in statistics_info
    [Dagfinn Ilmari Mannsåker]
