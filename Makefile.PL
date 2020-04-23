@@ -339,7 +339,7 @@ MAKE_SPLINT
 
 fulltest: RELEASE_TESTING=1
 fulltest: AUTHOR_TESTING=1
-fulltest :: $(TEST_TYPE)
+fulltest: $(TEST_TYPE)
 	$(NOECHO) $(NOOP)
 
 MAKE_FULLTEST
