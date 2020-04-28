@@ -144,6 +144,11 @@ END {
         $extra .= sprintf "\n%-*s $ENV{$name}", $offset, $name;
     }
 
+    for my $name (qw/ RELEASE_TESTING AUTHOR_TESTING /) {
+        if (exists $ENV{$name} and defined $ENV{$name}) {
+            $extra .= sprintf "\n%-*s $ENV{$name}", $offset, $name;
+        }
+    }
 
     ## More helpful stuff
     for (sort keys %set) {
