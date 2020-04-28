@@ -61,6 +61,7 @@ stop_words = ActiveKids afterwards arrayref arrayrefs attr autocommit AutoCommit
 [-logicLAB::RequireSheBang]
 [-logicLAB::RequireVersionFormat]
 [-Miscellanea::ProhibitUnrestrictedNoCritic]
+[-Miscellanea::ProhibitUselessNoCritic]
 [-Miscellanea::RequireRcsKeywords]
 [-Modules::ProhibitAutomaticExportation] 
 [-Modules::ProhibitExcessMainComplexity]
