@@ -2,6 +2,11 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+Version 3.11.2  (unrleased)
+
+ - Add CONTRIBUTING.md file
+
+
 Version 3.11.1  (released April 28, 2020)
 
  - Adjust Makefile to fix failing 'fulltest' target on BSD systems
