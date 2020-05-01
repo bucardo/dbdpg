@@ -21,7 +21,7 @@ else {
     opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
     @testfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
     closedir $dir or die qq{Could not closedir "$dir": $!\n};
-    plan tests => 18+@testfiles;
+    plan tests => 19+@testfiles;
 }
 
 my %okword;
@@ -60,7 +60,7 @@ sub spellcheck {
 
 
 ## First, the plain ol' textfiles
-for my $file (qw/README Changes TODO README.dev README.win32/) {
+for my $file (qw/README Changes TODO README.dev README.win32 CONTRIBUTING.md/) {
     if (!open $fh, '<', $file) {
         fail (qq{Could not find the file "$file"!});
     }
@@ -178,6 +178,7 @@ bool
 booleans
 bools
 bt
+bucardo
 BUFSIZE
 Bunce
 bytea
@@ -286,6 +287,7 @@ hashref
 hba
 html
 http
+https
 ifdefs
 ifndefs
 InactiveDestroy
@@ -297,6 +299,7 @@ installarchlib
 installsitearch
 INSTALLVENDORBIN
 IP
+irc
 ish
 JSON
 Kbytes
@@ -572,19 +575,17 @@ yml
 
 ## TODO:
 ala
-bucardo
 cpantesters
+fulltest
 github
 goto
 hashrefs
 hstore
-https
 rowtypes
 struct
 
 ## README.dev:
 abc
-bucardo
 Conway's
 cpantesters
 dbix
@@ -621,7 +622,6 @@ XSubPPtmpAAAA
 
 ## README:
 BOOTCHECK
-bucardo
 cabrion
 CentOS
 conf
@@ -643,8 +643,6 @@ freenode
 Gcc
 gmx
 hdf
-https
-irc
 jmore
 landgren
 Landgren
@@ -673,7 +671,6 @@ BIGINT
 BMP
 boolean
 bpchar
-bucardo
 destringifying
 dTHX
 easysoft
@@ -980,7 +977,6 @@ undefs
 
 ## t/12placeholders.t:
 encodings
-https
 LEFTARG
 RIGHTARG
 
@@ -1033,3 +1029,7 @@ vcvars
 vcvars
 xcopy
 xcopy
+
+## CONTRIBUTING.md:
+freenode
+postgresteam
