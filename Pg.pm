@@ -640,9 +640,6 @@ use 5.008001;
             push(@exe_args, $schema);
         }
 
-        my $is_key_column = $dbh->{private_dbdpg}{version} >= 110000
-            ? 'col.i <= i.indnkeyatts' : 'true';
-
         my $stats_sql;
 
         # Table-level stats
@@ -663,13 +660,43 @@ use 5.008001;
                     d.relpages                    AS "PAGES",
                     NULL                          AS "FILTER_CONDITION",
                     NULL                          AS "pg_expression",
-                    NULL                          AS "pg_is_key_column"
+                    NULL                          AS "pg_is_key_column",
+                    NULL                          AS "pg_null_ordering"
                 FROM   pg_catalog.pg_class d
                 JOIN   pg_catalog.pg_namespace n ON n.oid = d.relnamespace
                 WHERE  d.relname = ? $schema_where
                 UNION ALL
             };
             push @exe_args, @exe_args;
+        }
+
+        my $is_key_column = $dbh->{private_dbdpg}{version} >= 110000
+            ? 'col.i <= i.indnkeyatts' : 'true';
+
+        my ($asc_or_desc, $null_ordering);
+        if ($dbh->{private_dbdpg}{version} >= 90600) {
+            $asc_or_desc = q{
+                CASE WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'asc') THEN 'A'
+                     WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'desc') THEN 'D'
+                END};
+            $null_ordering = q{
+                CASE WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'nulls_first') THEN 'first'
+                     WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'nulls_last') THEN 'last'
+                END};
+        }
+        elsif ($dbh->{private_dbdpg}{version} > 80300) {
+            $asc_or_desc = q{
+                CASE WHEN a.amcanorder THEN
+                     CASE WHEN i.indoption[col.i - 1] & 1 = 0 THEN 'A' ELSE 'D' END
+                END};
+            $null_ordering = q{
+                CASE WHEN a.amcanorder THEN
+                     CASE WHEN i.indoption[col.i - 1] & 2 = 0 THEN 'last' ELSE 'first' END
+                END};
+        }
+        else {
+            $asc_or_desc = q{CASE WHEN a.amorderstrategy <> 0 THEN 'A' END};
+            $null_ordering = q{CASE WHEN a.amorderstrategy <> 0 THEN 'last' END};
         }
 
         # Fetch the index definitions
@@ -688,14 +715,15 @@ use 5.008001;
                 END                           AS "TYPE",
                 col.i                         AS "ORDINAL_POSITION",
                 att.attname                   AS "COLUMN_NAME",
-                'A'                           AS "ASC_OR_DESC",
+                $asc_or_desc                  AS "ASC_OR_DESC",
                 c.reltuples                   AS "CARDINALITY",
                 c.relpages                    AS "PAGES",
                 pg_catalog.pg_get_expr(i.indpred,i.indrelid)
                                               AS "FILTER_CONDITION",
                 pg_catalog.pg_get_indexdef(i.indexrelid, col.i, true)
                                               AS "pg_expression",
-                $is_key_column                AS "pg_is_key_column"
+                $is_key_column                AS "pg_is_key_column",
+                $null_ordering                AS "pg_null_ordering"
             FROM
                 pg_catalog.pg_index i
                 JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
@@ -710,8 +738,7 @@ use 5.008001;
                 d.relname = ? $schema_where
                 AND (i.indisunique OR NOT(?)) -- unique_only
             ORDER BY
-                -- NULLS FIRST to get the table level stats first
-                "NON_UNIQUE" NULLS FIRST, "TYPE", "INDEX_QUALIFIER", "INDEX_NAME", "ORDINAL_POSITION"
+                "NON_UNIQUE", "TYPE", "INDEX_QUALIFIER", "INDEX_NAME", "ORDINAL_POSITION"
         };
 
         my $sth = $dbh->prepare($stats_sql);
@@ -3023,6 +3050,12 @@ that this is an index expression.
 
 Postgres (since version 11) allows including non-key columns in indexes so they can be retrieved by
 index-only scans.  This field will be false for such columns, and true for normal index columns.
+
+=item pg_null_ordering
+
+In addition to C<ASC> and C<DESC>, Postgres supports specifying C<NULLS FIRST> or C<NULLS LAST> for
+index columns.  For columns of indexes that support ordering, this field will be C<first> or
+C<last>, otherwise it will be C<undef>;
 
 =back
 
