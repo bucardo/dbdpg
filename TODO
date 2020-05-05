@@ -8,7 +8,7 @@ https://github.com/bucardo/dbdpg
 (although we prefer using cpan.org)
 
 
-- Get a lint checker for the spellcheck words: sorted, non-suplicated, valid, etc.
+- Get a lint checker for the spellcheck words: sorted, non-duplicated, valid, etc.
 - Get the "make fulltest" bit working properly
 - Change license to Artistic 2
 - Remove the "goto" calls in the tests
@@ -17,7 +17,7 @@ https://github.com/bucardo/dbdpg
 - Enable native JSON decoding, similar to arrays, perhaps with JSON::PP
 - Allow partial result sets, either via PQsetSingleRowMode or something better
 - Hack libpq to make user-defined number of rows returned
-- Map hstore to hashes ala array/array mapping
+- Map hstore to hashes similar to the array/array mapping
 - Fix ping problem: http://www.cpantesters.org/cpan/report/53c5cc72-6d39-11e1-8b9d-82c3d2d9ea9f
 - Use WITH HOLD for cursor work
 - Devise a way to automatically create ppm for Windows builds

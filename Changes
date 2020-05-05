@@ -2,7 +2,7 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.11.2  (unrleased)
+Version 3.11.2  (unreleased)
 
  - Add CONTRIBUTING.md file
 
@@ -13,7 +13,7 @@ Version 3.11.2  (unrleased)
  - Fix ASC_OR_DESC field in statistics_info
    [Dagfinn Ilmari Mannsåker]
 
- - Indicate NULL ordering in statitics_info
+ - Indicate NULL ordering in statistics_info
    [Dagfinn Ilmari Mannsåker]
 
 
@@ -130,7 +130,7 @@ Version 3.10.0  (released September 3, 2019)
 
 Version 3.9.1  (released August 15, 2019)
 
- - Bugfix for pg_error_field: make sure we do not feed null to newSVpv,
+ - Bug fix for pg_error_field: make sure we do not feed null to newSVpv,
      handle older versions of Postgres better.
    [Greg Sabino Mullane]
 
@@ -167,7 +167,8 @@ Version 3.8.1  (released July 6, 2019)
  - Fix E'' string escape handling on architectures with unsigned chars
    (Github issue #46)
 
- - Minor fix to allow DBD::Pg to connect to PGbouncer's internal 'pgbouncer' database.
+ - Minor fix to allow DBD::Pg to connect to internal 'pgbouncer' database
+     that is created by PgBouncer
    [Greg Sabino Mullane]
    (Github issue #47)
 
@@ -529,7 +530,7 @@ Version 3.2.0  (released May 15, 2014)
    [Greg Sabino Mullane]
    (RT ticket #94841)
 
- - Don't attempt to use the POSIX signalling stuff if the OS is Win
+ - Don't attempt to use the POSIX signaling stuff if the OS is Win
    [Greg Sabino Mullane]
    (RT ticket #94841)
 
@@ -701,7 +702,7 @@ Version 2.19.0  (released March 9, 2012)
    [Jan Pazdziora]
    (RT ticket #70953)
 
- - Various fixes to the array-marshalling code
+ - Various fixes to the array-marshaling code
    [Noah Misch, Mark Stosberg, and David Christensen]
    (RT ticket #58552)
 
@@ -1061,8 +1062,8 @@ Version 2.11.0  (released October 13, 2008)
    [Greg Sabino Mullane]
 
  - Adjustment of Makefile.PL to fix problem with Strawberry Perl. Thanks 
-     to Martin Evan (martin.evans at easysoft.com)
-     and Brian (elspicyjack at gmail.com) on the dbi-users list.
+     to Martin Evan <martin.evans at easysoft.com>
+     and Brian <elspicyjack at gmail.com> on the dbi-users list.
 
 
 Version 2.10.7  (released September 22, 2008)
@@ -2053,10 +2054,10 @@ Version 1.31  (released November 17, 2003)
      warning mechanism instead of going to stderr.
    [Dominic Mitchell <dom at semantico.com>]
 
- - The $dbh->prepare() method now rewrites the SQL statement into an internal form, striping out 
-     comments and whitespace, and if PostgreSQL > 7.3 takes the stripped statement and passes 
+ - The $dbh->prepare() method now rewrites the SQL statement into an internal form, stripping out 
+     comments and whitespace, and if PostgreSQL > 7.3 it takes the stripped statement and passes 
      that to Postgres' PREPARE statement, then rewrites the statement 
-     as 'EXECUTE "DBD::PG::cached_query n" ($1, $2, ... $n, $n+1)' for DBD::Pg's execute.
+     as 'EXECUTE "DBD::PG::cached_query n" ($1, $2, ... $n, $n+1)' for DBD::Pg::execute.
 
  - Allows the use of :n and :foo bind params.
    So (SELECT * FROM foo WHERE 1 = :this and 2 = :that) will now work.
@@ -2065,7 +2066,7 @@ Version 1.31  (released November 17, 2003)
 
  - Switched over to use driver.xst.
 
- - The pg_error() method removes \n's rather than truncating the message on the first \n.
+ - The pg_error() method removes newlines rather than truncating the message on the first \n.
 
  - Fixed statement scan problem where the preparse 
      of "SELECT foo[3:33] from bar" was scanning :33 as a placeholder

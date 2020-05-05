@@ -701,7 +701,7 @@ is ($sth->{pg_current_row}, 0, $t);
 
 SKIP: {
     if ($^O =~ /Win/) {
-        skip ('Cannot test POSIX signalling on Windows', 1);
+        skip ('Cannot test POSIX signaling on Windows', 1);
     }
 
     $dbh->do('INSERT INTO dbd_pg_test (id) VALUES (?)',undef,1);
