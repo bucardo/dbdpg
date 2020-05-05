@@ -8,6 +8,7 @@ https://github.com/bucardo/dbdpg
 (although we prefer using cpan.org)
 
 
+- Get a lint checker for the spellcheck words: sorted, non-suplicated, valid, etc.
 - Get the "make fulltest" bit working properly
 - Change license to Artistic 2
 - Remove the "goto" calls in the tests
