@@ -2,7 +2,7 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.12.0  (unreleased)
+Version 3.12.0  (released May 7, 2020)
 
  - Add CONTRIBUTING.md file
 
