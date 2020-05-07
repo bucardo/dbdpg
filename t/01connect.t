@@ -48,7 +48,13 @@ my @vals = qw/array_nulls backslash_quote server_encoding client_encoding standa
 my $SQL = 'SELECT name,setting FROM pg_settings WHERE name IN (' .
     (join ',' => map { qq{'$_'} } @vals) . ')';
 for (@{$dbh->selectall_arrayref($SQL)}) {
-    $set{$_->[0]} = $_->[1];
+    my ($name, $value) = @$_;
+    ## Skip 'normal' settings
+    next if $name eq 'array_nulls' and $value eq 'on';
+    next if $name eq 'standard_conforming_strings' and $value eq 'on';
+    next if $name eq 'backslash_quote' and $value ne 'off';
+    next if $name =~ /encoding/ and $value eq 'UTF8';
+    $set{$name} = $value;
 }
 
 my $dbh2 = connect_database();
