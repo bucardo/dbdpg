@@ -1,6 +1,6 @@
 #!perl
 
-## Spellcheck as much as we can
+## Spell check as much as we can
 
 use 5.008001;
 use strict;
@@ -19,7 +19,7 @@ elsif (!eval { require Text::SpellChecker; 1 }) {
 }
 else {
     opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
-    @testfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
+    @testfiles = map { "t/$_" } grep { ! /spellcheck|lint/ } grep { /^.+\.(t|pl)$/ } readdir $dir;
     closedir $dir or die qq{Could not closedir "$dir": $!\n};
     plan tests => 19+@testfiles;
 }
@@ -35,6 +35,7 @@ while (<DATA>) {
 
 sub spellcheck {
     my ($desc, $text, $filename) = @_;
+
     my $check = Text::SpellChecker->new(text => $text, lang => 'en_US');
     my %badword;
     while (my $word = $check->next_word) {
@@ -77,12 +78,6 @@ for my $file (qw/README Changes TODO README.dev README.win32 CONTRIBUTING.md/) {
             ## Emails are not going to be in dictionaries either:
             s{<.+?>}{}gs;
 
-            #s{\b(?:from|by) [A-Z][\w \.]+?[<\[\n]}{}gs;
-            #s{Abhijit Menon-Sen}{}gs;
-            #s{eg/lotest.pl}{};
-            #s{\S+\@\S+\.\S+}{}gs;
-            #s{git commit [a-f0-9]+}{git commit}gs;
-            #s{B.*lint Szilakszi}{}gs;
         }
         elsif ($file eq 'README.dev') {
             s/^\t\$.+//gsm;
@@ -165,7 +160,6 @@ adbin
 adsrc
 AIX
 alphanum
-API
 archlib
 arg
 arith
@@ -195,15 +189,12 @@ basename
 BegunWork
 bigint
 BIGINT
-binin
-binout
 bitmask
 blib
 BMP
 bool
 boolean
 booleans
-BOOLOID
 boolout
 bools
 BOOTCHECK
@@ -231,8 +222,8 @@ chopblanks
 ChopBlanks
 chr
 cid
-cmd
 CMD
+cmd
 cmp
 compat
 CompatMode
@@ -240,7 +231,6 @@ conf
 config
 conformant
 consrc
-Conway's
 copydata
 COPYing
 copypv
@@ -268,7 +258,6 @@ datatype
 Datatype
 DATEOID
 datetime
-DATETIME
 david
 dbd
 DBD
@@ -281,7 +270,6 @@ dbi
 DBI
 DBIc
 DBILOGFP
-DBI's
 DBIS
 dbivport
 dbix
@@ -315,7 +303,6 @@ dir
 dirname
 discon
 distcheck
-distro
 disttest
 dll
 dllname
@@ -343,7 +330,6 @@ Eisentraut
 el
 elsif
 emacs
-encodings
 endcopy
 engsci
 EnterpriseDB
@@ -372,7 +358,6 @@ fk
 fktable
 FreeBSD
 freenode
-frs
 fulltest
 func
 funcs
@@ -381,7 +366,6 @@ gborg
 GBorg
 gcc
 Gcc
-GCCDEBUG
 gdb
 getcom
 getcopydata
@@ -399,8 +383,6 @@ gpl
 GPL
 greg
 grokbase
-gsm
-GSM
 gz
 HandleError
 HandleSetErr
@@ -413,7 +395,6 @@ html
 http
 https
 ifdefs
-ifndefs
 implementor
 InactiveDestroy
 includedir
@@ -449,14 +430,12 @@ ld
 LD
 ldconfig
 LDDFLAGS
-LDLOADLIBS
 leaktester
 LEFTARG
 len
 lgcc
 libpg
 libpq
-libpqswip
 linux
 LOBs
 localhost
@@ -471,17 +450,14 @@ lseg
 LSEG
 lsegs
 lssl
-machack
 mak
 Makefile
 MAKEFILE
 MakeMaker
 malloc
-mathinline
 maxlen
 MCPAN
 md
-Mdevel
 MDevel
 Mergl
 metadata
@@ -515,7 +491,6 @@ noprefix
 noreturn
 nosetup
 NOSUCH
-notused
 nServer
 nullable
 NULLABLE
@@ -539,7 +514,6 @@ OID
 oids
 OIDS
 ok
-ol
 oldfh
 OLDQUERY
 onerow
@@ -548,7 +522,6 @@ osdn
 param
 params
 PARAMS
-paramTypes
 ParamTypes
 ParamValues
 parens
@@ -569,12 +542,10 @@ pexports
 PGBOOLOID
 pgbouncer
 PgBouncer
-pgbuiltin
 PGCLIENTENCODING
 PGDATABASE
 pgend
 PGfooBar
-pgfoundry
 PGINITDB
 pglibpq
 pglogin
@@ -595,7 +566,6 @@ php
 pid
 PID
 pktable
-PlanetPostgresql
 pos
 p'ositive
 POSIX
@@ -669,7 +639,6 @@ relkind
 repo
 reprepare
 repreparing
-req
 RequireUseWarnings
 requote
 rescan
@@ -680,7 +649,6 @@ RowCache
 RowCacheSize
 RowsInCache
 rowtypes
-runtime
 Sabino
 safemalloc
 sandia
@@ -697,7 +665,6 @@ sectionstop
 selectall
 selectcol
 selectrow
-Sep
 SGI
 sha
 shortid
@@ -705,16 +672,13 @@ ShowErrorStatement
 sitearch
 skipcheck
 sl
-slashslash
 slashstar
-sm
 SMALLINT
 smethod
 snprintf
 Solaris
 spclocation
 spellcheck
-Spellcheck
 sprintf
 sql
 SQL
@@ -726,7 +690,6 @@ sqltype
 src
 SSL
 sslmode
-SSP
 starslash
 StartTransactionCommand
 stderr
@@ -744,7 +707,6 @@ stringify
 strlen
 STRLEN
 strncpy
-strtof
 struct
 structs
 subdirectory
@@ -767,11 +729,7 @@ tablespaces
 TaintIn
 TaintOut
 Tammer
-tcase
 TCP
-tdefault
-tdTHX
-tempdir
 tempfile
 testallversions
 testdatabase
@@ -779,8 +737,6 @@ testdb
 testfile
 testme
 testname
-textfiles
-textin
 textout
 tf
 THEADER
@@ -800,7 +756,6 @@ topav
 topdollar
 TraceLevel
 TSQUERY
-tswitch
 tuple
 tuples
 TUPLES
@@ -827,15 +782,12 @@ undef
 undefs
 unescaped
 unicode
-unix
 UNKNOWNOID
-unowned
 untrace
 userid
 username
 Username
 usr
-UTC
 utf
 UTF
 Util
@@ -857,7 +809,6 @@ Wcast
 Wchar
 Wcomment
 Wconversion
-Wdeclaration
 Wdisabled
 weeklynews
 Wendif
