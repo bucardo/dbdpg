@@ -34,7 +34,7 @@ There is a sometimes complex interweaving of files needed for each method.
 
 Running "perl Makefile.PL" uses the ExtUtils::MakeMaker module to create a 
 true Makefile. Then the "make" command compiles everything, after creating 
-the Pg.c file from Pg.xs and DBI's Perl.xsi. The files Pg.pm and 
+the Pg.c file from Pg.xs and from the Perl.xsi file from DBI. The files Pg.pm and
 blib/arch/auto/DBD/Pg/Pg.so form the core of the module once installed.
 (The above is oversimplified).
 
