@@ -16,7 +16,7 @@ if (! $ENV{AUTHOR_TESTING}) {
 
 $ENV{LANG} = 'C';
 find (sub { push @cfiles    => $File::Find::name if /\.c$/ and $_ ne 'Pg.c'; }, '.');
-find (sub { push @testfiles => $File::Find::name if /\.(t|pl)$/; }, 't');
+find (sub { push @testfiles => $File::Find::name if /^[^.]\w+\.(t|pl)$/; }, 't');
 find (sub { push @perlfiles => $File::Find::name if /\.(pm|pl|t)$/; }, '.');
 
 ##
@@ -180,6 +180,45 @@ for my $file (sort keys %ver) {
     else {
         fail(qq{Wrong minimum Perl version ($version is not $firstversion) for file $file});
     }
+}
+
+##
+## Check for stale or duplicated spelling words
+##
+$file = 't/99_spellcheck.t';
+open $fh, '<', $file or die "Could not open $file: $!\n";
+1 while <$fh> !~ /__DATA__/;
+my %word;
+my $dupes = 0;
+while (<$fh>) {
+    next if /^#/ or /^\s*$/;
+    chomp;
+    $dupes++ if $word{$_}++;
+}
+
+$t = q{Number of duplicate spelling word entries is zero};
+is ($dupes, 0, $t);
+
+for my $file (qw{
+    README Changes TODO README.dev README.win32 CONTRIBUTING.md
+    Pg.pm Pg.xs dbdimp.c quote.c Makefile.PL Pg.h types.c dbdimp.h
+    t/03dbmethod.t t/03smethod.t t/12placeholders.t t/01constants.t t/99_yaml.t
+    testme.tmp.pl
+}) {
+    open $fh, '<', $file or die "Could not open $file: $!\n";
+    while (<$fh>) {
+        s!([A-Za-z][A-Za-z']+)!(my $x = $1) =~ s/'$//; delete $word{$x}; ' '!ge;
+    }
+}
+
+$t = q{Number of unused spelling words is zero};
+my $unused_words = keys %word;
+is ($unused_words, 0, $t);
+
+my $stop = 0;
+for my $x (sort keys %word) {
+    diag "Unused: $x\n";
+    last if $stop++ > 10;
 }
 
 
