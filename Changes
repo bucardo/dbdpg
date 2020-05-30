@@ -4,10 +4,10 @@ RT refers to rt.cpan.org
 
 Version 3.12.1  (unreleased)
 
-  - Fix tests so '(12,34)' is now a valid 'circle' type entry, 
-    per change in Postgres source on April 7, 2020
-    [Greg Sabino Mullane]
-    (RT ticket #132740)
+ - Remove test that assumed '(12,34)' is an invalid entry for type "circle",
+     as the Postgres source code changed this behavior on April 7, 2020
+   [Greg Sabino Mullane]
+   (RT ticket #132740)
 
 
 Version 3.12.0  (released May 7, 2020)
@@ -15,7 +15,7 @@ Version 3.12.0  (released May 7, 2020)
  - Add CONTRIBUTING.md file
 
  - Return the table info row last in statistics_info.
-    This fixes statistics_info on pre-8.3 servers.
+   This fixes statistics_info on pre-8.3 servers.
    [Dagfinn Ilmari Mannsåker]
 
  - Fix ASC_OR_DESC field in statistics_info
