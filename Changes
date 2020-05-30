@@ -2,6 +2,14 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+Version 3.12.1  (unreleased)
+
+  - Fix tests so '(12,34)' is now a valid 'circle' type entry, 
+    per change in Postgres source on April 7, 2020
+    [Greg Sabino Mullane]
+    (RT ticket #132740)
+
+
 Version 3.12.0  (released May 7, 2020)
 
  - Add CONTRIBUTING.md file

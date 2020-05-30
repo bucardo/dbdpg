@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 259;
+plan tests => 256;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -375,13 +375,6 @@ polygon datatype many elements
 polygon datatype fails with brackets
 [(1,2),(3,4)]
 ERROR: Invalid input for geometric type
-ERROR: any
-
-
-
-circle datatype invalid format
-(12,34)
-'(12,34)'
 ERROR: any
 
 circle datatype integers
