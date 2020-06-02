@@ -287,6 +287,7 @@ version: $version
         for my $key (qw/ DBDPG_INITDB PGINITDB /) {
             if (exists $ENV{$key} and length $ENV{$key}) {
                 $initdb = $ENV{$key};
+                ($pg_ctl = $initdb) =~ s/initdb/pg_ctl/;
                 last;
             }
         }
