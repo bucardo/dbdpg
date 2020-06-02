@@ -22,8 +22,8 @@ sql_type_info_t* sql_type_data(int);
 
 #define                 PG_ACLITEM  1033
 #define                     PG_ANY  2276
-#define           PG_ANYCOMPATIBLE  9550
-#define      PG_ANYCOMPATIBLERANGE  9553
+#define           PG_ANYCOMPATIBLE  5077
+#define      PG_ANYCOMPATIBLERANGE  5080
 #define              PG_ANYELEMENT  2283
 #define                 PG_ANYENUM  3500
 #define                PG_ANYRANGE  3831
@@ -78,7 +78,7 @@ sql_type_info_t* sql_type_data(int);
 #define            PG_PG_NDISTINCT  3361
 #define            PG_PG_NODE_TREE  194
 #define                 PG_PG_PROC  81
-#define             PG_PG_SNAPSHOT  8355
+#define             PG_PG_SNAPSHOT  5038
 #define                 PG_PG_TYPE  71
 #define                   PG_POINT  600
 #define                 PG_POLYGON  604
@@ -115,12 +115,12 @@ sql_type_info_t* sql_type_data(int);
 #define                 PG_VARCHAR  1043
 #define                    PG_VOID  2278
 #define                     PG_XID  28
-#define                    PG_XID8  9419
+#define                    PG_XID8  5069
 #define                     PG_XML  142
 #define            PG_ACLITEMARRAY  1034
 #define                PG_ANYARRAY  2277
-#define      PG_ANYCOMPATIBLEARRAY  9551
-#define   PG_ANYCOMPATIBLENONARRAY  9552
+#define      PG_ANYCOMPATIBLEARRAY  5078
+#define   PG_ANYCOMPATIBLENONARRAY  5079
 #define             PG_ANYNONARRAY  2776
 #define                PG_BITARRAY  1561
 #define               PG_BOOLARRAY  1000
@@ -160,7 +160,7 @@ sql_type_info_t* sql_type_data(int);
 #define          PG_OIDVECTORARRAY  1013
 #define               PG_PATHARRAY  1019
 #define             PG_PG_LSNARRAY  3221
-#define        PG_PG_SNAPSHOTARRAY  8356
+#define        PG_PG_SNAPSHOTARRAY  5039
 #define              PG_POINTARRAY  1017
 #define            PG_POLYGONARRAY  1027
 #define             PG_RECORDARRAY  2287
