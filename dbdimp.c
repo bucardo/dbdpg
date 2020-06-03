@@ -3829,6 +3829,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
                 else if (!SvROK(sv)) {
                     SvUTF8_on(sv);
                 }
+                SvSETMAGIC(sv);
             }
         }
     }
