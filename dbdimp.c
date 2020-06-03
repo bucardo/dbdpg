@@ -3796,7 +3796,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
                         sv_setnv(sv, strtod((char *)value, NULL));
                         break;
                     default:
-                        sv_setpvn(sv, (char *)value, value_len);
+                        sv_setpvn_mg(sv, (char *)value, value_len);
                     }
                 }
                 else {
