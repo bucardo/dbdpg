@@ -2,6 +2,12 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+Version 3.12.2  (released June 4, 2020)
+
+  - Revert overly aggresive testing shortcut as it can cause installs to fail
+    [Greg Sabino Mullane, with apologies]
+
+
 Version 3.12.1  (released June 3, 2020)
 
  - Remove test that assumed '(12,34)' is an invalid entry for type "circle",

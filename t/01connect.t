@@ -15,9 +15,8 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 ## Define this here in case we get to the END block before a connection is made.
 BEGIN {
-    use vars qw/$t $pgversion $pglibversion $pgvstring $pgdefport $helpconnect $dbh $connerror %set $testok/;
+    use vars qw/$t $pgversion $pglibversion $pgvstring $pgdefport $helpconnect $dbh $connerror %set/;
     ($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
-    $testok = 0;
 }
 
 ($helpconnect,$connerror,$dbh) = connect_database();
@@ -121,8 +120,6 @@ SKIP: {
 
 }
 
-$testok = 1;
-
 END {
     my $pv = sprintf('%vd', $^V);
     my $schema = 'dbd_pg_testschema';
@@ -202,7 +199,5 @@ END {
         "DBI_DSN                     $dsn\n".
         "DBI_USER                    $user\n".
         "Test schema                 $schema$extra\n";
-
-    $testok or BAIL_OUT 'Must pass 01connect.t to continue';
 
 }
