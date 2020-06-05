@@ -584,13 +584,7 @@ static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int actio
             TRC(DBILOGFP, "%sWarning: cannot determine transaction status\n", THEADER_slow);
     }
 
-    /* If begin_work has been called, turn AutoCommit back on and BegunWork off */
-    if (DBIc_has(imp_dbh, DBIcf_BegunWork)!=0) {
-        DBIc_set(imp_dbh, DBIcf_AutoCommit, 1);
-        DBIc_set(imp_dbh, DBIcf_BegunWork, 0);
-    }
-
-    if (!imp_dbh->done_begin) {
+    if (!imp_dbh->done_begin) { /* for example, inside a COPY */
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_rollback_commit (result: 1)\n", THEADER_slow);
         return 1;
     }
@@ -604,11 +598,16 @@ static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int actio
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_rollback_commit (error: status not OK)\n", THEADER_slow);
-        /* Because the commit or rollback has failed, we are still inside a transaction, so reset these: */
-        DBIc_set(imp_dbh, DBIcf_AutoCommit, 0);
-        DBIc_set(imp_dbh, DBIcf_BegunWork, 1);
         return 0;
     }
+
+    /* If begin_work has been called, turn AutoCommit back on and BegunWork off */
+    if (DBIc_has(imp_dbh, DBIcf_BegunWork)!=0) {
+        DBIc_set(imp_dbh, DBIcf_AutoCommit, 1);
+        DBIc_set(imp_dbh, DBIcf_BegunWork, 0);
+    }
+
+
     /* We just did a rollback or a commit, so savepoints are not relevant, and we cannot be in a PGRES_COPY state */
     av_undef(imp_dbh->savepoints);
     imp_dbh->copystate=0;
