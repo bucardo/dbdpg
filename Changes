@@ -2,10 +2,17 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+Version 3.12.3  (unreleased)
+
+ - Prevent DBI from flipping AutoCommit to on after a failed commit
+   [Greg Sabino Mullane]
+   (Github issue #57)
+
+
 Version 3.12.2  (released June 4, 2020)
 
-  - Revert overly aggresive testing shortcut as it can cause installs to fail
-    [Greg Sabino Mullane, with apologies]
+ - Revert overly aggressive testing shortcut as it can cause installs to fail
+   [Greg Sabino Mullane, with apologies]
 
 
 Version 3.12.1  (released June 3, 2020)
