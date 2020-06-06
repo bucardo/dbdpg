@@ -18,7 +18,7 @@ my (undef,undef,$dbh) = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 273;
+plan tests => 279;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -526,7 +526,17 @@ is ($sth->{'NUM_OF_FIELDS'}, 2, $t);
 
 $t='Statement handle attribute "NAME" works correctly for SELECT statements';
 my $colnames = ['Sheep', 'id'];
-is_deeply ($sth->{'NAME'}, $colnames, $t);
+my $actual = $sth->{'NAME'};
+is_deeply ($actual, $colnames, $t);
+
+$t='Statement handle attribute "NAME" returns correct string lengths';
+is (length($actual->[0]), 5, $t);
+is (length($actual->[1]), 2, $t);
+my $expected_length = 5;
+for my $x (@$actual) {
+    is (length($x), $expected_length, $t);
+    $expected_length -= 3;
+}
 
 $t='Statement handle attribute "NAME_lc" works correctly for SELECT statements';
 $colnames = ['sheep', 'id'];
@@ -1294,7 +1304,18 @@ like ($@, qr{ERRSTR}, $t);
 is ($dbh->errstr, 'ERRSTR', $t);
 is ($dbh->err, '42', $t);
 $dbh->{HandleSetErr} = 0;
+
+my $x = $dbh->errstr;
+$t='Database handle method "errstr" gives correct string length';
+is (length($x), 6, $t);
 $dbh->rollback();
+eval {
+    $dbh->do('SELECT 1/0');
+};
+$x = $dbh->errstr;
+ok (length($x) > 6, $t);
+$dbh->rollback();
+
 
 #
 # Test of the handle attribute "ErrCount"

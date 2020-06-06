@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 203;
+plan tests => 206;
 
 isnt ($dbh, undef, 'Connect to database for array testing');
 
@@ -610,7 +610,6 @@ SKIP: {
     $sth->finish();
 }
 
-
 ## Quick test of empty arrays
 my $expected = $pgversion >= 80300 ? [[[]]] : [[undef]];
 
@@ -621,6 +620,13 @@ is_deeply ($result, $expected, $t);
 $t=q{Empty text array is returned properly};
 $result = $dbh->selectall_arrayref(q{SELECT array(SELECT 'empty'::text WHERE 1=0)::text[]});
 is_deeply ($result, $expected, $t);
+
+$t=q{String lengths of returned arrays are correct};
+my @numbers = ('one', 'two', 'three');
+$result = $dbh->selectall_arrayref(q{SELECT array['one','two','three']});
+for my $col (@{$result->[0][0]}) {
+    is (length($col), length(shift @numbers), $t);
+}
 
 SKIP: {
     my $fancytime;
