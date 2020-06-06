@@ -2,6 +2,13 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+Version 3.12.4  (unreleased)
+
+ - Fix regression in Perl length() for returned query results
+   [Jon Jensen]
+   (Github issue #72)
+
+
 Version 3.12.3  (released June 5, 2020)
 
  - Prevent DBI from flipping AutoCommit to 'on' after a failed commit
