@@ -2,7 +2,7 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.12.3_1  (BETA!)
+Version 3.12.3_1  (BETA release on June 8, 2020)
 
  - Fix regression in Perl length() for returned query results
    [Jon Jensen]
