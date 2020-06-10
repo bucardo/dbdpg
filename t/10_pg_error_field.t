@@ -83,7 +83,7 @@ for my $loop (1..5) {
             my $expected = $error[5==$loop ? 3 : $loop-1];
             $expected = undef if $expected eq 'undef';
             if (defined $expected) {
-                $expected = ($expected eq 'number') ? qr/^[0-9]+$/ : qr/$expected/;
+                $expected = ($expected eq 'number') ? qr/^[0-9]+$/ : qr/$expected/i;
             }
             $t = "(query $loop) Calling pg_error_field returns expected value for field $field";
             my $actual = $dbh->pg_error_field($field);
