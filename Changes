@@ -8,6 +8,9 @@ Version 3.12.3_1  (BETA release on June 8, 2020)
    [Jon Jensen]
    (Github issue #72)
 
+ - Tweak tests so Windows boxes pass
+   [Greg Sabino Mullane]
+
 
 Version 3.12.3  (released June 5, 2020)
 
