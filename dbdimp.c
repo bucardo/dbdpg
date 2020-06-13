@@ -3915,7 +3915,7 @@ int dbd_st_finish (SV * sth, imp_sth_t * imp_sth)
             imp_dbh->sth_result_owner = 0;
         }
         else {
-            /* Ours it not the latest, so fine to clear it right here and now */
+            /* Ours is not the latest, so fine to clear it right here and now */
             TRACE_PQCLEAR;
             PQclear(imp_sth->result);
         }
