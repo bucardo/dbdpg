@@ -1315,6 +1315,8 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
                     result = PQexec(imp_dbh->conn, statement);
                     TRACE_PQRESULTSTATUS;
                     status = PQresultStatus(result);
+                    TRACE_PQCLEAR;
+                    PQclear(result);
                     if (PGRES_TUPLES_OK == status) {
                         TRACE_PQNTUPLES;
                         if (PQntuples(result)!=0) {
@@ -1330,8 +1332,6 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
                             }
                         }
                     }
-                    TRACE_PQCLEAR;
-                    PQclear(result);
                 }
                 (void)av_store(av, fields, newSViv(nullable));
             }
@@ -5634,6 +5634,8 @@ SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth)
                 result = PQexec(imp_dbh->conn, statement);
                 TRACE_PQRESULTSTATUS;
                 status = PQresultStatus(result);
+                TRACE_PQCLEAR;
+                PQclear(result);
                 if (PGRES_TUPLES_OK == status) {
                     TRACE_PQNTUPLES;
                     if (PQntuples(result)!=0) {
@@ -5657,8 +5659,6 @@ SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth)
                         stored = 1;
                     }
                 }
-                TRACE_PQCLEAR;
-                PQclear(result);
             }
         }
         if(!stored){
