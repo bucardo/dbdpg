@@ -2381,7 +2381,10 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     }
 
     TRACE_PQPREPARE;
-    imp_dbh->last_result = imp_dbh->sth_last_result = imp_sth->result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids);
+    imp_dbh->last_result = imp_dbh->sth_last_result = imp_sth->result
+        = PQprepare(
+                    imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids
+                    );
     imp_dbh->sth_result_owner = (long int)imp_sth;
     status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
     if (TRACE6_slow)
@@ -3514,9 +3517,10 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
             TRACE_PQEXECPARAMS;
             imp_dbh->last_result = imp_dbh->sth_last_result = imp_sth->result
-                = PQexecParams
-                (imp_dbh->conn, statement, imp_sth->numphs,
-                 imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+                = PQexecParams(
+                               imp_dbh->conn, statement, imp_sth->numphs,
+                               imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0
+                               );
             imp_dbh->sth_result_owner = (long int)imp_sth;
         }
 
@@ -3592,9 +3596,10 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
             TRACE_PQEXECPREPARED;
             imp_dbh->last_result = imp_dbh->sth_last_result = imp_sth->result
-                = PQexecPrepared
-                (imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs,
-                 imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+                = PQexecPrepared(
+                                 imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs,
+                                 imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0
+                                 );
             imp_dbh->sth_result_owner = (long int)imp_sth;
         }
     } /* end new-style prepare */
