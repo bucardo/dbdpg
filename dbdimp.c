@@ -368,7 +368,7 @@ static ExecStatusType _result(pTHX_ imp_dbh_t * imp_dbh, const char * sql)
 
     if (TSQL) TRC(DBILOGFP, "%s;\n\n", sql);
 
-    /* If we are clear to free the last result, do so now in anticipation of replacement below */
+    /* If we are free to clear the last result, do so now in anticipation of replacement below */
     if (NULL != imp_dbh->last_result &&
         (0 == imp_dbh->sth_result_owner || imp_dbh->last_result != imp_dbh->sth_last_result)
         ) {
