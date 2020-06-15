@@ -2089,21 +2089,29 @@ $dbh->commit();
 $info = $dbh->pg_notifies;
 is (length($info->[0]), 17, $t);
 
-$t='DB handle method "pg_notifies" returns correct string length for recycled var';
-$dbh->do("LISTEN abc$notify_name");
-$dbh->do(qq{NOTIFY abc$notify_name, 'Just some simple payload text'});
-$dbh->commit();
-$info = $dbh->pg_notifies;
-$name = $info->[0];
-is (length($name), 17+3, $t);
-$name = $info->[2];
-is (length($name), 29, $t);
-$dbh->do(qq{NOTIFY abc$notify_name, 'A shorter payload'});
-$dbh->commit();
-$info = $dbh->pg_notifies;
-is (length($info->[0]), 17+3, $t);
-$name = $info->[2];
-is (length($name), 17, $t);
+SKIP: {
+    $t='DB handle method "pg_notifies" returns correct string length for recycled var';
+
+    if ($pgversion < 90000) {
+        skip ('Cannot test notification payloads on pre-9.0 servers', 4);
+    }
+
+    $dbh->do("LISTEN abc$notify_name");
+    $dbh->do(qq{NOTIFY abc$notify_name, 'Just some simple payload text'});
+    $dbh->commit();
+    $info = $dbh->pg_notifies;
+    $name = $info->[0];
+    is (length($name), 17+3, $t);
+    $name = $info->[2];
+    is (length($name), 29, $t);
+    $dbh->do(qq{NOTIFY abc$notify_name, 'A shorter payload'});
+    $dbh->commit();
+    $info = $dbh->pg_notifies;
+    is (length($info->[0]), 17+3, $t);
+    $name = $info->[2];
+    is (length($name), 17, $t);
+}
+
 
 #
 # Test of the "getfd" database handle method
