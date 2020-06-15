@@ -21,7 +21,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 134;
+plan tests => 136;
 
 isnt ($dbh, undef, 'Connect to database for statement handle method testing');
 
@@ -738,6 +738,26 @@ SKIP: {
 #
 
 $t=q{Statement handle method "pg_canonical_names" returns expected values};
+$sth = $dbh->prepare('SELECT id, id AS not_id, id + 1 AS not_a_simple FROM dbd_pg_test LIMIT 1');
+$sth->execute;
+
+is_deeply ($sth->pg_canonical_names, [
+    'dbd_pg_testschema.dbd_pg_test.id',
+    'dbd_pg_testschema.dbd_pg_test.id',
+    undef
+], $t);
+
+$t=q{2Statement handle method "pg_canonical_names" returns expected values};
+$sth = $dbh->prepare('SELECT id, id AS not_id, id + 1 AS not_a_simple FROM dbd_pg_test LIMIT 1');
+$sth->execute;
+
+is_deeply ($sth->pg_canonical_names, [
+    'dbd_pg_testschema.dbd_pg_test.id',
+    'dbd_pg_testschema.dbd_pg_test.id',
+    undef
+], $t);
+
+$t=q{3Statement handle method "pg_canonical_names" returns expected values};
 $sth = $dbh->prepare('SELECT id, id AS not_id, id + 1 AS not_a_simple FROM dbd_pg_test LIMIT 1');
 $sth->execute;
 
