@@ -57,7 +57,7 @@ for my $lib_version (shuffle @versions) {
 
         my $target_dir = "$basedir/$target_version";
 
-        my $outfile = "alltest.dbdpg.$lib_version.vs.$target_version.log";
+        my $outfile = "tmp/alltest.dbdpg.$lib_version.vs.$target_version.log";
         note "Testing compile $lib_version against target $target_version: results stored in $outfile";
 
         open my $fh, '>', $outfile;
