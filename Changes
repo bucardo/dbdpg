@@ -2,7 +2,16 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.12.3_1  (BETA release on June 8, 2020)
+Version 3.12.3_2  (BETA release on June 15, 2020)
+
+ - Redo the "last_result" internals in dbdimp.c, which 
+   fixes some minor issues.
+   [Greg Sabino Mullane]
+
+ - Make $sth->finish() do a little less - notably, even 
+   after calling finish(), pg_error_field will still work
+   on the last action performed.
+   [Greg Sabino Mullane]
 
  - Fix regression in Perl length() for returned query results
    [Jon Jensen]
