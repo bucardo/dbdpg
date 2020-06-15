@@ -356,6 +356,7 @@ filename
 firstword
 fk
 fktable
+fprintf
 FreeBSD
 freenode
 fulltest
