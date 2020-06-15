@@ -47,8 +47,7 @@ struct imp_dbh_st {
     bool    client_encoding_utf8; /* is the client_encoding utf8 last we checked? */
 
     PGresult  *last_result;     /* PGresult structure from the last executed query (can be from imp_dbh or imp_sth) */
-    PGresult  *sth_last_result; /* PGresult structure from the last executed query (sth only) */
-    long sth_result_owner;      /* Unique address of the sth that created it the above */
+    bool      result_clearable; /* Is it alright to call PQclear on last_result? (statements handles set it to false */
 	imp_sth_t *do_tmp_sth;      /* temporary sth to refer inside a do() call */
 };
 
