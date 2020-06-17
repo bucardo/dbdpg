@@ -499,7 +499,7 @@ int dbd_db_ping (SV * dbh)
     }
 
     /* No matter what state we are in, send an empty query to the backend */
-    result = PQexec(imp_dbh->conn, "/* DBD::Pg ping test v3.12.3_2 */");
+    result = PQexec(imp_dbh->conn, "/* DBD::Pg ping test v3.13.0 */");
     status = PQresultStatus(result);
     PQclear(result);
     if (PGRES_FATAL_ERROR == status) {
@@ -686,7 +686,7 @@ void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
         (void)dbd_db_disconnect(dbh, imp_dbh);
 
     if (NULL != imp_dbh->async_sth) { /* Just in case */
-        if (NULL != imp_dbh->async_sth->result) {
+        if (imp_dbh->async_sth->result) {
             TRACE_PQCLEAR;
             PQclear(imp_dbh->async_sth->result);
             imp_dbh->async_sth->result = NULL;
@@ -3660,7 +3660,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         if (TRACE5_slow)
             TRC(DBILOGFP, "%sStatus was PGRES_COMMAND_OK\n", THEADER_slow);
 
-        if (NULL != imp_sth->result) {
+        if (imp_sth->result) {
             TRACE_PQCMDSTATUS;
             cmdStatus = PQcmdStatus(imp_sth->result);
             if (0 == strncmp(cmdStatus, "INSERT", 6)) {
