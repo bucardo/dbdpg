@@ -26,7 +26,7 @@ Version 3.12.3  (released June 5, 2020)
 
  - Prevent DBI from flipping AutoCommit to 'on' after a failed commit
    [Greg Sabino Mullane]
-   (Github issue #57)
+   (Github issue #71)
 
 
 Version 3.12.2  (released June 4, 2020)
