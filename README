@@ -207,6 +207,18 @@ build-time.  This should have caused 'make test' to fail; did you really
 run it and look at the output? 
 
 
+* Mac installation issues
+
+Modern Mac software has a feature called Software Integrity Protection that
+strips out all LD_* and DYLD_* environment variables when a program starts,
+which means DBD::Pg will no compile. One solution is to use the install_name_tool
+program to modify the relative paths to absolute ones. As an example:
+
+	sudo install_name_tool -change \
+	libpq.5.dylib /Library/PostgreSQL/11/lib/libpq.5.dylib \
+    ~/perl5/lib/perl5/darwin-thread-multi-2level/auto/DBD/Pg/Pg.bundle
+
+
 * Perl issues:
 
 Some Linux distributions have incomplete perl installations.  If you have
