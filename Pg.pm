@@ -3762,6 +3762,14 @@ Note that this method is quite slow because it need additional information from
 server for every column that is simple reference. Consider to use L</pg_canonical_ids>
 instead.
 
+=head3 B<last_insert_id>
+
+  $rv = $sth->last_insert_id(undef, $schema, $table, undef);
+  $rv = $sth->last_insert_id(undef, $schema, $table, undef, {sequence => $seqname});
+
+This is simply an alternative way to return the same information as
+C<< $dbh->last_insert_id >>.
+
 =head2 Statement Handle Attributes
 
 =head3 B<NUM_OF_FIELDS> (integer, read-only)
