@@ -587,7 +587,7 @@ is ($result, '42703', $t);
 
 SKIP: {
     if ($DBI::VERSION < 1.54) {
-        skip ('DBI must be at least version 1.54 to test private_attribute_info', 2);
+        skip ('DBI must be at least version 1.54 to test $sth->private_attribute_info', 2);
     }
 
 
@@ -819,7 +819,7 @@ $sth->finish;
 SKIP: {
 
     if ($DBI::VERSION < 1.642) {
-        skip ('DBI must be at least version 1.642 to test $sth->last_insert_id', 8);
+        skip ('DBI must be at least version 1.642 to test $sth->last_insert_id', 10);
     }
 
     $t='Statement handle method "last_insert_id" fails when no arguments are given';
