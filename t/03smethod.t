@@ -770,7 +770,7 @@ is_deeply ($sth->pg_canonical_names, [
 ], $t);
 
 #
-# Test of the statement handle methods "pg_canonical_ids"
+# Test of the statement handle method "pg_canonical_ids"
 #
 
 $t=q{Statement handle method "pg_canonical_ids" returns correct length};
@@ -813,85 +813,93 @@ $sth->finish;
 }
 
 #
-# Test of the statement handle methods "pg_canonical_ids"
+# Test of the statement handle method "last_insert_id"
 #
 
-$t='Statement handle method "last_insert_id" fails when no arguments are given';
-$dbh->rollback();
-$sth = $dbh->prepare('SELECT 1');
-eval {
-    $sth->last_insert_id(undef,undef,undef,undef);
-};
-like ($@, qr{last_insert_id.*least}, $t);
+SKIP: {
 
-$t='Statement handle method "last_insert_id" fails when given a non-existent sequence';
-eval {
-    $sth->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistentsequence_test'});
-};
-is ($dbh->state, '42P01', $t);
+    if ($DBI::VERSION < 1.642) {
+        skip ('DBI must be at least version 1.642 to test $sth->last_insert_id', 8);
+    }
 
-$t='Statement handle method "last_insert_id" fails when given a non-existent table';
-$dbh->rollback();
-$sth = $dbh->prepare('SELECT 1');
-eval {
-    $sth->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef);
-};
-like ($@, qr{not find}, $t);
+    $t='Statement handle method "last_insert_id" fails when no arguments are given';
+    $dbh->rollback();
+    $sth = $dbh->prepare('SELECT 1');
+    eval {
+        $sth->last_insert_id(undef,undef,undef,undef);
+    };
+    like ($@, qr{last_insert_id.*least}, $t);
 
-$t='Statement handle method "last_insert_id" fails when given an arrayref as last argument';
-$dbh->rollback();
-$sth = $dbh->prepare('SELECT 1');
-eval {
-    $sth->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef,[]);
-};
-like ($@, qr{last_insert_id.*hashref}, $t);
+    $t='Statement handle method "last_insert_id" fails when given a non-existent sequence';
+    eval {
+        $sth->last_insert_id(undef,undef,undef,undef,{sequence=>'dbd_pg_nonexistentsequence_test'});
+    };
+    is ($dbh->state, '42P01', $t);
 
-$t='Statement handle method "last_insert_id" works when given an empty sequence argument';
-$dbh->rollback();
-$sth = $dbh->prepare('SELECT 1');
-eval {
-    $sth->last_insert_id(undef,undef,'dbd_pg_test',undef,{sequence=>''});
-};
-is ($@, q{}, $t);
+    $t='Statement handle method "last_insert_id" fails when given a non-existent table';
+    $dbh->rollback();
+    $sth = $dbh->prepare('SELECT 1');
+    eval {
+        $sth->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef);
+    };
+    like ($@, qr{not find}, $t);
 
-$t='Statement handle method "last_insert_id" fails when given a table with no primary key';
-$dbh->rollback();
-$sth = $dbh->prepare('CREATE TEMP TABLE dbd_pg_test_temp(a int)');
-$sth->execute();
-eval {
-    $sth->last_insert_id(undef,undef,'dbd_pg_test_temp',undef);
-};
-like ($@, qr{last_insert_id}, $t);
+    $t='Statement handle method "last_insert_id" fails when given an arrayref as last argument';
+    $dbh->rollback();
+    $sth = $dbh->prepare('SELECT 1');
+    eval {
+        $sth->last_insert_id(undef,undef,'dbd_pg_nonexistenttable_test',undef,[]);
+    };
+    like ($@, qr{last_insert_id.*hashref}, $t);
 
-my $parent = 'dbd_pg_test_parent';
-my $kid = 'dbd_pg_test_inherit';
-$dbh->do("CREATE TABLE $schema.$parent(id SERIAL primary key)");
-$dbh->do("CREATE TABLE $schema.$kid (foo text) INHERITS ($parent)");
-$sth = $dbh->prepare("INSERT INTO $parent DEFAULT VALUES");
-$sth->execute();
+    $t='Statement handle method "last_insert_id" works when given an empty sequence argument';
+    $dbh->rollback();
+    $sth = $dbh->prepare('SELECT 1');
+    eval {
+        $sth->last_insert_id(undef,undef,'dbd_pg_test',undef,{sequence=>''});
+    };
+    is ($@, q{}, $t);
 
-$t='Statement handle method "last_insert_id" works for a normal table';
-$result = '';
-eval {
-    $result = $sth->last_insert_id(undef,undef,$parent,undef);
-};
-is ($@, q{}, $t);
+    $t='Statement handle method "last_insert_id" fails when given a table with no primary key';
+    $dbh->rollback();
+    $sth = $dbh->prepare('CREATE TEMP TABLE dbd_pg_test_temp(a int)');
+    $sth->execute();
+    eval {
+        $sth->last_insert_id(undef,undef,'dbd_pg_test_temp',undef);
+    };
+    like ($@, qr{last_insert_id}, $t);
 
-$t='Statement handle method "last_insert_id" returns correct value for a normal table';
-is ($result, 1, $t);
+    my $parent = 'dbd_pg_test_parent';
+    my $kid = 'dbd_pg_test_inherit';
+    $dbh->do("CREATE TABLE $schema.$parent(id SERIAL primary key)");
+    $dbh->do("CREATE TABLE $schema.$kid (foo text) INHERITS ($parent)");
+    $sth = $dbh->prepare("INSERT INTO $parent DEFAULT VALUES");
+    $sth->execute();
 
-$sth = $dbh->prepare("INSERT INTO $kid DEFAULT VALUES");
-$sth->execute();
+    $t='Statement handle method "last_insert_id" works for a normal table';
+    $result = '';
+    eval {
+        $result = $sth->last_insert_id(undef,undef,$parent,undef);
+    };
+    is ($@, q{}, $t);
 
-$t='Statement handle method "last_insert_id" works for an inherited table';
-$result = '';
-eval {
-    $result = $sth->last_insert_id(undef,undef,$kid,undef);
-};
-is ($@, q{}, $t);
+    $t='Statement handle method "last_insert_id" returns correct value for a normal table';
+    is ($result, 1, $t);
 
-$t='Statement handle method "last_insert_id" returns correct value for an inheriteda table';
-is ($result, 2, $t);
+    $sth = $dbh->prepare("INSERT INTO $kid DEFAULT VALUES");
+    $sth->execute();
+
+    $t='Statement handle method "last_insert_id" works for an inherited table';
+    $result = '';
+    eval {
+        $result = $sth->last_insert_id(undef,undef,$kid,undef);
+    };
+    is ($@, q{}, $t);
+
+    $t='Statement handle method "last_insert_id" returns correct value for an inheriteda table';
+    is ($result, 2, $t);
+
+}
 
 
 cleanup_database($dbh,'test');
