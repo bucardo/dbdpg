@@ -73,7 +73,7 @@ for my $filename (qw{Pg.pm Makefile.PL lib/Bundle/DBD/Pg.pm }) {
         fail (qq{Failed Perl::Critic tests for file "$filename": $vios});
     }
     else {
-        pass (qq{File "$filename" passed all Perl::Critic tests});
+        pass (qq{Passed all Perl::Critic tests for file "$filename"});
     }
 
 }
