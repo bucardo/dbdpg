@@ -32,6 +32,7 @@ stop_words = ActiveKids afterwards arrayref arrayrefs attr autocommit AutoCommit
 [-ControlStructures::ProhibitCascadingIfElse]
 [-ControlStructures::ProhibitCStyleForLoops]
 [-ControlStructures::ProhibitDeepNests]
+[-ControlStructures::ProhibitMultipleSubscripts]
 [-ControlStructures::ProhibitPostfixControls]
 [-Documentation::RequireLinkedURLs]
 [-Documentation::RequirePod]

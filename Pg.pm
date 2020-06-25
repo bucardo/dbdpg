@@ -607,12 +607,11 @@ use 5.008001;
         # Since we've processed the data in Perl, we have to jump through a hoop
         # To turn it back into a statement handle
         #
-        return _prepare_from_data
-            (
+        return _prepare_from_data(
              'column_info',
              $data,
              [ sort { $col_map{$a} <=> $col_map{$b} } keys %col_map],
-             );
+        );
     }
 
     sub _prepare_from_data {
