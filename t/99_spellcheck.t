@@ -231,6 +231,7 @@ conf
 config
 conformant
 consrc
+Conway's
 copydata
 COPYing
 copypv
@@ -252,6 +253,7 @@ CursorName
 cvs
 cx
 danla
+darwin
 dashdash
 dat
 datatype
@@ -324,6 +326,8 @@ DRV
 DSN
 dTHX
 dv
+DYLD
+dylib
 DynaLoader
 eg
 Eisentraut
@@ -410,6 +414,7 @@ intra
 ints
 INV
 IP
+IRC
 irc
 ish
 ITHREADS
@@ -519,6 +524,7 @@ oldfh
 OLDQUERY
 onerow
 onwards
+optimizations
 osdn
 param
 params
@@ -635,6 +641,9 @@ ReadOnly
 realclean
 recv'd
 RedHat
+Refactor
+regex
+reinstalling
 relcheck
 relkind
 repo
@@ -712,6 +721,7 @@ struct
 structs
 subdirectory
 submitnews
+sudo
 sv
 Sv
 SV
