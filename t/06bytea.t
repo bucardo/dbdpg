@@ -131,9 +131,9 @@ sub test_outputs {
     my $E = $pgversion >= 80100 ? q{E} : q{};
     my $expected = qq{${E}'abc\123\\\\\\\\def\\\\000ghi'};
     is ($result, $expected, $t);
-    is ($dbh->quote($string, SQL_BLOB), $expected);
-    is ($dbh->quote($string, SQL_BINARY), $expected);
-    is ($dbh->quote($string, SQL_VARBINARY), $expected);
-    is ($dbh->quote($string, SQL_LONGVARBINARY), $expected);
+    is ($dbh->quote($string, SQL_BLOB), $expected, "$t (SQL_BLOB)");
+    is ($dbh->quote($string, SQL_BINARY), $expected, "$t (SQL_BINARY)");
+    is ($dbh->quote($string, SQL_VARBINARY), $expected, "$t (SQL_VARBINARY)");
+    is ($dbh->quote($string, SQL_LONGVARBINARY), $expected, "$t (SQL_LONGVARBINARY)");
     return;
 }
