@@ -6,9 +6,9 @@
 use 5.010;
 use strict;
 use warnings;
+use lib 'blib/lib', 'blib/arch', 't';
 use Data::Dumper;
 use Test::More;
-use lib 't','.';
 use feature 'unicode_strings';
 
 if (! $ENV{RELEASE_TESTING}) {

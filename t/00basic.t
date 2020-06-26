@@ -6,6 +6,7 @@
 use 5.008001;
 use strict;
 use warnings;
+use lib 'blib/lib', 'blib/arch', 't';
 use Test::More tests => 3;
 select(($|=1,select(STDERR),$|=1)[1]);
 

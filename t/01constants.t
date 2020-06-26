@@ -4,6 +4,7 @@ use 5.008001;
 use strict;
 ## We cannot 'use warnings' here as PG_TSQUERY and others trip it up
 ## no critic (RequireUseWarnings)
+use lib 'blib/lib', 'blib/arch', 't';
 use Test::More;
 select(($|=1,select(STDERR),$|=1)[1]);
 

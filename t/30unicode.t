@@ -7,12 +7,12 @@
 use 5.008001;
 use strict;
 use warnings;
+use lib 'blib/lib', 'blib/arch', 't';
 use utf8; ## no critic (TooMuchCode::ProhibitUnnecessaryUTF8Pragma)
 use charnames ':full';
 use Encode qw(encode_utf8);
 use Data::Dumper;
 use Test::More;
-use lib 't','.';
 use open qw/ :std :encoding(utf8) /;
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);

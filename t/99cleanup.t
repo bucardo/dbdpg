@@ -7,8 +7,8 @@
 use 5.008001;
 use strict;
 use warnings;
+use lib 'blib/lib', 'blib/arch', 't';
 use Test::More tests => 1;
-use lib 't','.';
 
 if ($ENV{DBDPG_NOCLEANUP}) {
     pass (q{No cleaning up because ENV 'DBDPG_NOCLEANUP' is set});

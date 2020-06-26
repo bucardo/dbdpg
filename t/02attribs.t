@@ -5,11 +5,11 @@
 use 5.008001;
 use strict;
 use warnings;
+use lib 'blib/lib', 'blib/arch', 't';
 use Data::Dumper;
 use Test::More;
 use DBI     ':sql_types';
 use DBD::Pg qw/ :pg_types :async /;
-use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 

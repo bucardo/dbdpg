@@ -6,10 +6,10 @@
 use 5.008001;
 use strict;
 use warnings;
+use lib 'blib/lib', 'blib/arch', 't';
 use DBI;
 use DBD::Pg;
 use Test::More;
-use lib 't','.';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 

@@ -5,8 +5,8 @@
 use 5.008001;
 use strict;
 use warnings;
+use lib 'blib/lib', 'blib/arch', 't';
 use Test::More;
-use lib 't','.';
 use DBI qw/:sql_types/;
 use DBD::Pg qw/:pg_types/;
 require 'dbdpg_test_setup.pl';
