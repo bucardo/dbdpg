@@ -3,6 +3,7 @@
 
 use strict;
 use warnings;
+use lib 'blib/lib', 'blib/arch'; ## no critic
 use Data::Dumper;
 use DBI;
 use Cwd;
