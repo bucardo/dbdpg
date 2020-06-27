@@ -2,6 +2,11 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+Version 3.13.1  (unlreleased)
+
+ - Adjust tests to force loading proper version of DBD::Pg
+
+
 Version 3.13.0  (released June 17, 2020)
 
  - Redo the "last_result" internals in dbdimp.c, which 
