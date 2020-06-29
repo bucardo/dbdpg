@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 600;
+plan tests => 620;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -853,6 +853,102 @@ $t=q{DB handle method "column_info" works with non-lowercased columns};
 $sth = $dbh->column_info('','','dbd_pg_test','CaseTest');
 $result = $sth->fetchall_arrayref({})->[0];
 is ($result->{COLUMN_NAME}, q{"CaseTest"}, $t);
+
+$t=q{DB handle method "column_info" works when schema argument is undef};
+$sth = $dbh->column_info('',undef,'dbd_pg_test','CaseTest');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{TABLE_SCHEM}, 'dbd_pg_testschema', $t);
+
+$t=q{DB handle method "column_info" works when schema argument is empty};
+$sth = $dbh->column_info('','','dbd_pg_test','CaseTest');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{TABLE_SCHEM}, 'dbd_pg_testschema', $t);
+
+$t=q{DB handle method "column_info" returns undef when schema argument has no match};
+$sth = $dbh->column_info('','badschema','dbd_pg_test','CaseTest');
+is ($sth->fetch, undef, $t);
+
+$t=q{DB handle method "column_info" returns undef schema argument has non-matching regex};
+$sth = $dbh->column_info('','badschema%','dbd_pg_test','CaseTest');
+is ($sth->fetch, undef, $t);
+
+$t=q{DB handle method "column_info" works when schema argument matches exactly};
+$sth = $dbh->column_info('',$schema,'dbd_pg_test','CaseTest');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{pg_schema}, $schema, $t);
+
+$t=q{DB handle method "column_info" works when schema argument matches via regex};
+$sth = $dbh->column_info('','dbd%','dbd_pg_test','CaseTest');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{pg_schema}, $schema, $t);
+
+$t=q{DB handle method "column_info" works when table argument is undef};
+$sth = $dbh->column_info('','',undef,'CaseTest');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{COLUMN_SIZE}, 1, $t);
+
+$t=q{DB handle method "column_info" works when table argument is empty};
+$sth = $dbh->column_info('','','','CaseTest');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{IS_NULLABLE}, 'YES', $t);
+
+$t=q{DB handle method "column_info" returns undef when table argument has no match};
+$sth = $dbh->column_info('','','badtable','CaseTest');
+is ($sth->fetch, undef, $t);
+
+$t=q{DB handle method "column_info" returns undef when table argument has non-matching regex};
+$sth = $dbh->column_info('','','badtable%','CaseTest');
+is ($sth->fetch, undef, $t);
+
+$t=q{DB handle method "column_info" works when table argument matches exactly};
+$sth = $dbh->column_info('','','dbd_pg_test','CaseTest');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{NULLABLE}, 1, $t);
+
+$t=q{DB handle method "column_info" works when table argument has no underscore or percent};
+my $table = 'dbdpgtest';
+$dbh->do(qq{CREATE TABLE $schema.$table("id with a space" INT)});
+$sth = $dbh->column_info('',undef,$table,'id with a space');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{pg_column}, 'id with a space', $t);
+
+$t=q{DB handle method "column_info" works when column argument is undef};
+$sth = $dbh->column_info('',undef,$table,'id with a space');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{DATA_TYPE}, 4, $t);
+
+$t=q{DB handle method "column_info" works when column argument is empty};
+$sth = $dbh->column_info('',undef,$table,'id with a space');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{DATA_TYPE}, 4, $t);
+
+$t=q{DB handle method "column_info" returns undef when column argument has no match};
+$sth = $dbh->column_info('','',$table,'idfoobar');
+is ($sth->fetch, undef, $t);
+
+$t=q{DB handle method "column_info" returns undef when column argument has non-matching regex};
+$sth = $dbh->column_info('','',$table,'idfoo%');
+is ($sth->fetch, undef, $t);
+
+$dbh->{RaiseError} = 0;
+$t=q{DB handle method "column_info" returns undef when column argument has non-matching regex};
+$sth = $dbh->column_info('','',$table,'idfoo%');
+is ($sth->fetch, undef, $t);
+
+$t=q{DB handle method "column_info" works when column argument matches exactly};
+$sth = $dbh->column_info('','',$table,'id with a space');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{pg_schema}, $schema, $t);
+
+$t=q{DB handle method "column_info" works when column argument matches via regex};
+$sth = $dbh->column_info('','',$table,'id % a space');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{pg_table}, $table, $t);
+
+$t=q{DB handle method "column_info" works when column argument matches via regex and no explicit table};
+$sth = $dbh->column_info('','','','id % a space');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{pg_type}, 'integer', $t);
 
 SKIP: {
 
