@@ -535,7 +535,7 @@ use 5.008001;
             ORDER BY "TABLE_SCHEM", "TABLE_NAME", "ORDINAL_POSITION"
             !;
 
-        my $data = $dbh->selectall_arrayref($col_info_sql) or return undef;
+        my $data = $dbh->selectall_arrayref($col_info_sql);
 
         # To turn the data back into a statement handle, we need 
         # to fetch the data as an array of arrays, and also have a
