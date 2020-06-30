@@ -740,7 +740,7 @@ use 5.008001;
         };
 
         my $sth = $dbh->prepare($stats_sql);
-        $sth->execute(@exe_args, 0+!!$unique_only) or return undef;
+        $sth->execute(@exe_args, 0+!!$unique_only);
         return $sth;
     }
 
