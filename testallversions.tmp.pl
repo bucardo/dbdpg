@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 ## Quick script to test all available combinations of Postgres
-## Usage: $0 <postgresdir>
+## Usage: $0 <postgresdir> [-t specific_test_file] [-c compile_version] [-r run_version]
 
 use 5.008001;
 use strict;
@@ -21,7 +21,15 @@ GetOptions
      \%arg,
    'verbose',
    'quiet',
+   'testfile=s',
+   'compileversion=s',
+   'runversion=s',
+   'wipe',
 );
+
+my $testfile = $arg{testfile} || $ENV{DBDPG_TEST_FILE} || '';
+my $compileversion = $arg{compileversion} || $ENV{DBDPG_COMPILE_VERSION} || '';
+my $runversion = $arg{runversion} || $ENV{DBDPG_RUN_VERSION} || '';
 
 my $basedir = shift || "$ENV{HOME}/pg";
 
@@ -36,7 +44,14 @@ for my $lver (@versions) {
     -d $libdir or die qq{Could not find directory: $libdir\n};
 }
 
-my $summaryfile = 'summary.testallversions.log';
+if ($arg{wipe}) {
+    opendir $dh, 'tmp';
+    for my $file (grep { /^alltest\.dbdpg.+\.log$/ } readdir $dh) {
+        unlink "tmp/$file";
+    }
+}
+
+my $summaryfile = 'tmp/summary.testallversions.log';
 open my $sfh, '>>', $summaryfile;
 printf {$sfh} "\nSTARTED $0 at %s\n\n", scalar localtime;
 
@@ -51,9 +66,13 @@ sub note {
 my $debug_loop = 0;
 for my $lib_version (shuffle @versions) {
 
+    next if $compileversion and $lib_version ne $compileversion;
+
     my $lib_dir = "$basedir/$lib_version";
 
     for my $target_version (shuffle @versions) {
+
+        next if $runversion and $target_version ne $runversion;
 
         my $target_dir = "$basedir/$target_version";
 
@@ -72,6 +91,7 @@ for my $lib_version (shuffle @versions) {
         print {$fh} qx{$COM};
 
         $COM = "AUTHOR_TESTING=0 TEST_SIGNATURE=0 DBDPG_INITDB=$target_dir/bin/initdb make test TEST_VERBOSE=1 2>&1 >> $outfile";
+        $testfile and $COM =~ s/make test/make test TEST_FILES=$testfile/;
         note "--> $COM";
         print {$fh} "***\nRUN: $COM\n***\n\n\n";
         print {$fh} qx{$COM};
