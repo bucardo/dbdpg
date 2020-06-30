@@ -1021,21 +1021,19 @@ is_deeply (\@results, $expected, $t);
 # Test of the "statistics_info" database handle method
 #
 
-$t='DB handle method "statistics_info" returns undef: no table';
+$t='DB handle method "statistics_info" returns undef when table argument is undef';
 $sth = $dbh->statistics_info(undef,undef,undef,undef,undef);
 is ($sth, undef, $t);
 
-$t='DB handle method "statistics_info" returns undef: empty table';
+$t='DB handle method "statistics_info" returns undef when table argument is empty';
 $sth = $dbh->statistics_info(undef,undef,'',undef,undef);
 is ($sth, undef, $t);
 
-## Invalid table
-$t='DB handle method "statistics_info" returns no rows: bad table';
-$sth = $dbh->statistics_info(undef,undef,'dbd_pg_test9',undef,undef);
+$t='DB handle method "statistics_info" returns no rows when table arguments is invalid';
+$sth = $dbh->statistics_info(undef,'','dbd_pg_test9',undef,undef);
 $result = $sth->fetchall_arrayref;
 $expected = [];
 is_deeply ($result, $expected, $t);
-
 
 my $with_oids = $pgversion < 120000 ? 'WITH OIDS' : '';
 my $with_include = $pgversion >= 110000;
@@ -2278,64 +2276,72 @@ $dbh2->disconnect();
 
 my $mtvar; ## This is an implicit test of getcopydata: please leave this var undefined
 
-for my $type (qw/ ping pg_ping /) {
+SKIP: {
 
-    $t=qq{DB handle method "$type" returns 1 on an idle connection};
-    $dbh->commit();
-    is ($dbh->$type(), 1, $t);
+    if ($pgversion < 80300) {
+        skip ('Cannot test pg_ping via COPY on pre-8.3 servers', 18);
+    }
 
-    $t=qq{DB handle method "$type" returns 2 when in COPY IN state};
-    $dbh->do('COPY dbd_pg_test(id,pname) TO STDOUT');
-    $dbh->pg_getcopydata($mtvar);
-    is ($dbh->$type(), 2, $t);
-    ## the ping messes up the copy state, so all we can do is rollback
-    $dbh->rollback();
+    for my $type (qw/ ping pg_ping /) {
 
-    $t=qq{DB handle method "$type" returns 2 when in COPY IN state};
-    $dbh->do('COPY dbd_pg_test(id,pname) FROM STDIN');
-    $dbh->pg_putcopydata("123\tfoobar\n");
-    is ($dbh->$type(), 2, $t);
-    $dbh->rollback();
+        $t=qq{DB handle method "$type" returns 1 on an idle connection};
+        $dbh->commit();
+        is ($dbh->$type(), 1, $t);
 
-    $t=qq{DB handle method "$type" returns 3 for a good connection inside a transaction};
-    $dbh->do('SELECT 123');
-    is ($dbh->$type(), 3, $t);
+        $t=qq{DB handle method "$type" returns 2 when in COPY IN state};
+        $dbh->do('COPY dbd_pg_test(id,pname) TO STDOUT');
+        $dbh->pg_getcopydata($mtvar);
+        is ($dbh->$type(), 2, $t);
+        ## the ping messes up the copy state, so all we can do is rollback
+        $dbh->rollback();
 
-    $t=qq{DB handle method "$type" returns a 4 when inside a failed transaction};
-    eval {
-        $dbh->do('DBD::Pg creating an invalid command for testing');
-    };
-    is ($dbh->$type(), 4, $t);
-    $dbh->rollback();
+        $t=qq{DB handle method "$type" returns 2 when in COPY IN state};
+        $dbh->do('COPY dbd_pg_test(id,pname) FROM STDIN');
+        $dbh->pg_putcopydata("123\tfoobar\n");
+        is ($dbh->$type(), 2, $t);
+        $dbh->rollback();
 
-    my $val = $type eq 'ping' ? 0 : -1;
-    $t=qq{DB handle method "type" fails (returns $val) on a disconnected handle};
-    $dbh->disconnect();
-    is ($dbh->$type(), $val, $t);
+        $t=qq{DB handle method "$type" returns 3 for a good connection inside a transaction};
+        $dbh->do('SELECT 123');
+        is ($dbh->$type(), 3, $t);
 
-    $t='Able to reconnect to the database after disconnect';
-    $dbh = connect_database({nosetup => 1});
-    isnt ($dbh, undef, $t);
+        $t=qq{DB handle method "$type" returns a 4 when inside a failed transaction};
+        eval {
+            $dbh->do('DBD::Pg creating an invalid command for testing');
+        };
+        is ($dbh->$type(), 4, $t);
+        $dbh->rollback();
 
-  SKIP: {
+        my $val = $type eq 'ping' ? 0 : -1;
+        $t=qq{DB handle method "type" fails (returns $val) on a disconnected handle};
+        $dbh->disconnect();
+        is ($dbh->$type(), $val, $t);
+
+        $t='Able to reconnect to the database after disconnect';
+        $dbh = connect_database({nosetup => 1});
+        isnt ($dbh, undef, $t);
+
+      SKIP: {
 
         skip 'Cannot safely reopen sockets on Win32', 2 if $^O =~ /Win32/;
 
-    $val = $type eq 'ping' ? 0 : -3;
-    $t=qq{DB handle method "$type" returns $val after a lost network connection (outside transaction)};
-    socket_fail($dbh);
-    is ($dbh->$type(), $val, $t);
+        $val = $type eq 'ping' ? 0 : -3;
+        $t=qq{DB handle method "$type" returns $val after a lost network connection (outside transaction)};
+        socket_fail($dbh);
+        is ($dbh->$type(), $val, $t);
 
-    ## Reconnect, and try the same thing but inside a transaction
-    $val = $type eq 'ping' ? 0 : -3;
-    $t=qq{DB handle method "$type" returns $val after a lost network connection (inside transaction)};
-    $dbh = connect_database({nosetup => 1});
-    $dbh->do(q{SELECT 'DBD::Pg testing'});
-    socket_fail($dbh);
-    is ($dbh->$type(), $val, $t);
+        ## Reconnect, and try the same thing but inside a transaction
+        $val = $type eq 'ping' ? 0 : -3;
+        $t=qq{DB handle method "$type" returns $val after a lost network connection (inside transaction)};
+        $dbh = connect_database({nosetup => 1});
+        $dbh->do(q{SELECT 'DBD::Pg testing'});
+        socket_fail($dbh);
+        is ($dbh->$type(), $val, $t);
 
-    $type eq 'ping' and $dbh = connect_database({nosetup => 1});
-  }
+        $type eq 'ping' and $dbh = connect_database({nosetup => 1});
+    }
+    }
+
 }
 
 exit;
