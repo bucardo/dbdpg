@@ -749,8 +749,17 @@ use 5.008001;
         my $dbh = shift;
         my (undef, $schema, $table, $attr) = @_;
 
+        my @cols = (qw(TABLE_CAT TABLE_SCHEM TABLE_NAME
+                       COLUMN_NAME KEY_SEQ PK_NAME DATA_TYPE
+                       pg_tablespace_name pg_tablespace_location
+                       pg_schema pg_table pg_column
+                       )
+            );
+
         ## Catalog is ignored, but table is mandatory
-        return undef unless defined $table and length $table;
+        if (! defined $table or ! length $table) {
+            return _prepare_from_data('primary_key_info', [], \@cols);
+        }
 
         my $whereclause = 'AND c.relname = ' . $dbh->quote($table);
 
@@ -860,11 +869,6 @@ use 5.008001;
 
             $pkinfo = [$info];
         }
-
-        my @cols = (qw(TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME
-                                     KEY_SEQ PK_NAME DATA_TYPE));
-        push @cols, 'pg_tablespace_name', 'pg_tablespace_location';
-        push @cols, 'pg_schema', 'pg_table', 'pg_column';
 
         return _prepare_from_data('primary_key_info', $pkinfo, \@cols);
 
