@@ -793,10 +793,12 @@ use 5.008001;
             $pri_key_sql =~ s/t.spclocation/pg_catalog.pg_tablespace_location(t.oid)/;
         }
 
-        my $sth = $dbh->prepare($pri_key_sql) or return undef;
+        my $sth = $dbh->prepare($pri_key_sql);
         $sth->execute();
         my $info = $sth->fetchall_arrayref()->[0];
-        return undef if ! defined $info;
+        if (! defined $info) {
+            return _prepare_from_data('primary_key_info', [], \@cols);
+        }
 
         # Get the attribute information
         my $indkey = join ',', split /\s+/, $info->[4];
@@ -808,7 +810,7 @@ use 5.008001;
             AND a.atttypid = t.oid
             AND attnum IN ($indkey);
         };
-        $sth = $dbh->prepare($sql) or return undef;
+        $sth = $dbh->prepare($sql);
         $sth->execute();
         my $attribinfo = $sth->fetchall_hashref('attnum');
 
@@ -876,7 +878,8 @@ use 5.008001;
 
     sub primary_key {
         my $sth = primary_key_info(@_[0..3], {pg_onerow => 2});
-        return defined $sth ? @{$sth->fetchall_arrayref()->[0][3]} : ();
+        my $result = $sth->fetchall_arrayref();
+        return defined $result->[0] ? @{$result->[0][3]} : ();
     }
 
 
