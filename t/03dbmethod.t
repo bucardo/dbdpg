@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 624;
+plan tests => 628;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -1021,6 +1021,28 @@ is ($r->{PK_NAME},     'dbd_pg_test_pkey', 'DB handle method "primary_key_info" 
 is ($r->{DATA_TYPE},   'int4',             'DB handle method "primary_key_info" returns proper DATA_TYPE');
 is ($r->{KEY_SEQ},     1,                  'DB handle method "primary_key_info" returns proper KEY_SEQ');
 
+$t='DB handle method "primary_key_info" works when pg_onerow attribute set to 1';
+$sth = $dbh->primary_key_info('',$schema,'dbd_pg_test', {pg_onerow => 1});
+$result = $sth->fetchall_arrayref({});
+is ($result->[0]{KEY_SEQ}, 1, $t);
+
+$t='DB handle method "primary_key_info" works when pg_onerow attribute set to 2';
+$sth = $dbh->primary_key_info('',$schema,'dbd_pg_test', {pg_onerow => 2});
+$result = $sth->fetchall_arrayref({});
+is_deeply ($result->[0]{KEY_SEQ}, ['1'], $t);
+
+$t='DB handle method "primary_key_info" works when pg_onerow attribute set to 1 (multi-pk)';
+$table = 'dbd_pg_test_combo_pk';
+$dbh->do("CREATE TABLE $schema.$table(a INTEGER, b INTEGER, CONSTRAINT combo PRIMARY KEY (a,b))");
+$sth = $dbh->primary_key_info('',$schema,$table, {pg_onerow => 1});
+$result = $sth->fetchall_arrayref({});
+is ($result->[0]{KEY_SEQ}, '1, 2', $t);
+
+$t='DB handle method "primary_key_info" works when pg_onerow attribute set to 2 (multi-pk)';
+$sth = $dbh->primary_key_info('',$schema,$table, {pg_onerow => 2});
+$result = $sth->fetchall_arrayref({});
+is_deeply ($result->[0]{KEY_SEQ}, ['1','2'], $t);
+
 #
 # Test of the "primary_key" database handle method
 #
@@ -1047,7 +1069,7 @@ $t='DB handle method "statistics_info" returns undef when table argument is empt
 $sth = $dbh->statistics_info(undef,undef,'',undef,undef);
 is ($sth, undef, $t);
 
-$t='DB handle method "statistics_info" returns no rows when table arguments is invalid';
+$t='DB handle method "statistics_info" returns no rows when table argument is invalid';
 $sth = $dbh->statistics_info(undef,'','dbd_pg_test9',undef,undef);
 $result = $sth->fetchall_arrayref;
 $expected = [];
