@@ -2,9 +2,15 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.13.1  (unlreleased)
+Version 3.14.0  (unlreleased)
+
+ - The $dbh->primary_key_info and $dbh->foreign_key_info will always return 
+   a statement handle, even on no results. Previously, they returned undef directly.
+   Callers can check if the returned handle contains any rows.
+   [Greg Sabino Mullane]
 
  - Adjust tests to force loading proper version of DBD::Pg
+   [Greg Sabino Mullane]
 
 
 Version 3.13.0  (released June 17, 2020)
