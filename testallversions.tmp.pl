@@ -52,7 +52,7 @@ if ($arg{wipe}) {
 }
 
 my $summaryfile = 'tmp/summary.testallversions.log';
-open my $sfh, '>>', $summaryfile;
+open my $sfh, ($arg{wipe} ? '>' : '>>'), $summaryfile;
 printf {$sfh} "\nSTARTED $0 at %s\n\n", scalar localtime;
 
 sub note {
