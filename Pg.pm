@@ -894,8 +894,23 @@ use 5.008001;
         my $fschema = $_[4] || '';
         my $ftable = $_[5] || '';
 
+        my @cols = (qw(
+            UK_TABLE_CAT UK_TABLE_SCHEM UK_TABLE_NAME UK_COLUMN_NAME
+            FK_TABLE_CAT FK_TABLE_SCHEM FK_TABLE_NAME FK_COLUMN_NAME
+            ORDINAL_POSITION UPDATE_RULE DELETE_RULE FK_NAME UK_NAME
+            DEFERABILITY UNIQUE_OR_PRIMARY UK_DATA_TYPE FK_DATA_TYPE
+        ));
+
+        if ($dbh->{FetchHashKeyName} eq 'NAME_lc') {
+            for my $col (@cols) {
+                $col = lc $col;
+            }
+        }
+
         ## Must have at least one named table
-        return undef if !length($ptable) and !length($ftable);
+        if (!length($ptable) and !length($ftable)) {
+            return _prepare_from_data('foreign_key_info', [], \@cols);
+        }
 
         ## If only the primary table is given, we return only those columns
         ## that are used as foreign keys, even if that means that we return
@@ -1006,24 +1021,9 @@ use 5.008001;
         };
         my $fkinfo = $dbh->selectall_arrayref($SQL);
 
-        return undef unless $fkinfo && @{$fkinfo};
-
-        my @cols = (qw(
-            UK_TABLE_CAT UK_TABLE_SCHEM UK_TABLE_NAME UK_COLUMN_NAME
-            FK_TABLE_CAT FK_TABLE_SCHEM FK_TABLE_NAME FK_COLUMN_NAME
-            ORDINAL_POSITION UPDATE_RULE DELETE_RULE FK_NAME UK_NAME
-            DEFERABILITY UNIQUE_OR_PRIMARY UK_DATA_TYPE FK_DATA_TYPE
-        ));
-
-        if ($dbh->{FetchHashKeyName} eq 'NAME_lc') {
-            for my $col (@cols) {
-                $col = lc $col;
-            }
-        }
-
         return _prepare_from_data('foreign_key_info', $fkinfo, \@cols);
 
-    }
+    } ## end of foreign_key_info
 
 
     sub table_info {
@@ -1176,7 +1176,7 @@ use 5.008001;
                 $tbl_sql = qq{SELECT * FROM ($tbl_sql) ti WHERE "TABLE_TYPE" IN ($type_restrict)};
             }
         }
-        my $sth = $dbh->prepare( $tbl_sql ) or return undef;
+        my $sth = $dbh->prepare($tbl_sql);
         $sth->execute();
 
         return $sth;

@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 628;
+plan tests => 629;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -1232,10 +1232,13 @@ $dbh->do("DROP TABLE $table1");
 # Test of the "foreign_key_info" database handle method
 #
 
-## Neither pktable nor fktable specified
-$t='DB handle method "foreign_key_info" returns undef: no pk / no fk';
+$t='DB handle method "foreign_key_info" returns no rows when pk and fk are undef';
 $sth = $dbh->foreign_key_info(undef,undef,undef,undef,undef,undef);
-is ($sth, undef, $t);
+is ($sth->fetch, undef, $t);
+
+$t='DB handle method "foreign_key_info" returns no rows when pk and fk are empty';
+$sth = $dbh->foreign_key_info(undef,undef,'',undef,undef,'');
+is ($sth->fetch, undef, $t);
 
 # Drop any tables that may exist
 my $fktables = join ',' => map { "'dbd_pg_test$_'" } (1..3);
@@ -1247,19 +1250,19 @@ $SQL = "SELECT n.nspname||'.'||r.relname FROM pg_catalog.pg_class r, pg_catalog.
     }
 }
 ## Invalid primary table
-$t='DB handle method "foreign_key_info" returns undef: bad pk / no fk';
+$t='DB handle method "foreign_key_info" returns no rows: bad pk / no fk';
 $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test9',undef,undef,undef);
-is ($sth, undef, $t);
+is ($sth->fetch, undef, $t);
 
 ## Invalid foreign table
-$t='DB handle method "foreign_key_info" returns undef: no pk / bad fk';
+$t='DB handle method "foreign_key_info" returns no rows: no pk / bad fk';
 $sth = $dbh->foreign_key_info(undef,undef,undef,undef,undef,'dbd_pg_test9');
-is ($sth, undef, $t);
+is ($sth->fetch, undef, $t);
 
 ## Both primary and foreign are invalid
-$t='DB handle method "foreign_key_info" returns undef: bad fk / bad fk';
+$t='DB handle method "foreign_key_info" returns no rows: bad fk / bad fk';
 $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test9',undef,undef,'dbd_pg_test9');
-is ($sth, undef, $t);
+is ($sth->fetch, undef, $t);
 
 ## Create a pk table
 
@@ -1282,9 +1285,9 @@ for my $s ($schema3, $schema2) {
 $dbh->{pg_expand_array} = 0;
 
 ## Good primary with no foreign keys
-$t='DB handle method "foreign_key_info" returns undef: good pk (but unreferenced)';
+$t='DB handle method "foreign_key_info" returns no rows: good pk (but unreferenced)';
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
-is ($sth, undef, $t);
+is ($sth->fetch, undef, $t);
 
 ## Create a simple foreign key table
 for my $s ($schema3, $schema2) {
@@ -1295,19 +1298,19 @@ for my $s ($schema3, $schema2) {
 }
 
 ## Bad primary with good foreign
-$t='DB handle method "foreign_key_info" returns undef: bad pk / good fk';
+$t='DB handle method "foreign_key_info" returns no rows: bad pk / good fk';
 $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test9',undef,undef,$table2);
-is ($sth, undef, $t);
+is ($sth->fetch, undef, $t);
 
 ## Good primary, good foreign, bad schemas
-$t='DB handle method "foreign_key_info" returns undef: good pk / good fk / bad pk schema';
+$t='DB handle method "foreign_key_info" returns no rows: good pk / good fk / bad pk schema';
 my $testschema = 'dbd_pg_test_badschema11';
 $sth = $dbh->foreign_key_info(undef,$testschema,$table1,undef,undef,$table2);
-is ($sth, undef, $t);
+is ($sth->fetch, undef, $t);
 
-$t='DB handle method "foreign_key_info" returns undef: good pk / good fk / bad fk schema';
+$t='DB handle method "foreign_key_info" returns no rows: good pk / good fk / bad fk schema';
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,$testschema,$table2);
-is ($sth, undef, $t);
+is ($sth->fetch, undef, $t);
 
 ## Good primary
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,undef);
