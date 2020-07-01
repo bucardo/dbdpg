@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 620;
+plan tests => 624;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -981,9 +981,27 @@ SKIP: {
 # Test of the "primary_key_info" database handle method
 #
 
+$t=q{DB handle method "primary_key_info" returns undef when table argument is undef};
+$sth = $dbh->primary_key_info('',undef,undef);
+is ($sth->fetch, undef, $t);
+
+$t=q{DB handle method "primary_key_info" returns undef when table argument is empty};
+$sth = $dbh->primary_key_info('','','');
+is ($sth->fetch, undef, $t);
+
+$t=q{DB handle method "primary_key_info" works when schema argument is undef};
+$sth = $dbh->primary_key_info('',undef,'dbd_pg_test');
+$result = $sth->fetch;
+ok (defined $result->[0], $t);
+
+$t=q{DB handle method "primary_key_info" works when schema argument is empty};
+$sth = $dbh->primary_key_info('','','dbd_pg_test');
+$result = $sth->fetch;
+ok (defined $result->[0], $t);
+
 # Check required minimum fields
 $t='DB handle method "primary_key_info" returns required fields';
-$sth = $dbh->primary_key_info('','','dbd_pg_test');
+$sth = $dbh->primary_key_info('',$schema,'dbd_pg_test');
 $result = $sth->fetchall_arrayref({});
 @required = (qw(TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME KEY_SEQ PK_NAME DATA_TYPE));
 undef %missing;
@@ -1863,7 +1881,7 @@ $dbh->commit;
 
 SKIP: {
 
-    $pgversion < 80300 and skip ('Server version 8.3 or greater needed for pg_lo_truncate tests', 2);
+    $pgversion < 80300 and skip ('Server version 8.3 or greater needed for pg_lo_truncate tests', 3);
 
     $t='DB handle method "pg_lo_truncate" fails if opened in read mode only';
     $handle = $dbh->pg_lo_open($object, $R);
@@ -1900,13 +1918,12 @@ SKIP: {
 
     $super or skip ('Cannot run largeobject tests unless run as Postgres superuser', 38);
 
-
   SKIP: {
 
         eval {
             require File::Temp;
         };
-        $@ and skip ('Must have File::Temp to test pg_lo_import* and pg_lo_export', 8);
+        $@ and skip ('Must have File::Temp to test pg_lo_import* and pg_lo_export', 13);
 
         $t='DB handle method "pg_lo_import" works';
         my ($fh,$filename) = File::Temp::tmpnam();
@@ -2049,7 +2066,7 @@ SKIP: {
         eval {
             require File::Temp;
         };
-        $@ and skip ('Must have File::Temp to test pg_lo_import and pg_lo_export', 5);
+        $@ and skip ('Must have File::Temp to test pg_lo_import and pg_lo_export', 17);
 
         $t='DB handle method "pg_lo_import" works (AutoCommit on)';
         my ($fh,$filename) = File::Temp::tmpnam();
@@ -2354,4 +2371,3 @@ sub socket_fail {
     close DBH_PG_FH or die "Could not close socket: $!";
     return;
 }
-
