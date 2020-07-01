@@ -103,7 +103,7 @@ for my $lib_version (shuffle @versions) {
 
         my $final_line = qx{tail -1 $outfile};
         chomp $final_line;
-        note "--> $final_line\n\n";
+        note "--> $final_line $lib_version vs $target_version\n\n";
 
         if ($debug_loop++ > 300) {
             die "Leaving at loop $debug_loop\n";
