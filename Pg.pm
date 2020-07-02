@@ -1238,19 +1238,18 @@ use 5.008001;
         my $size = shift;
 
 
-        if ((defined $size) and ($size > 0)) {
+        if ($size > 0) {
             return $size;
-        } elsif ($mod > 0xffff) {
+        }
+        elsif ($mod > 0xffff) {
             my $prec = ($mod & 0xffff) - 4;
             $mod >>= 16;
             my $dig = $mod;
             return "$prec,$dig";
-        } elsif ($mod >= 4) {
+        }
+        elsif ($mod >= 4) {
             return $mod - 4;
-        } # else {
-            # $rtn = $mod;
-            # $rtn = undef;
-        # }
+        }
 
         return;
     }
