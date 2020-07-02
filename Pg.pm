@@ -447,20 +447,20 @@ use 5.008001;
 
     sub ping {
         my $dbh = shift;
-        local $SIG{__WARN__} = sub { } if $dbh->FETCH('PrintError');
+        local $SIG{__WARN__} if $dbh->FETCH('PrintError');
         my $ret = DBD::Pg::db::_ping($dbh);
         return $ret < 1 ? 0 : $ret;
     }
 
     sub pg_ping {
         my $dbh = shift;
-        local $SIG{__WARN__} = sub { } if $dbh->FETCH('PrintError');
+        local $SIG{__WARN__} if $dbh->FETCH('PrintError');
         return DBD::Pg::db::_ping($dbh);
     }
 
     sub pg_type_info {
         my($dbh,$pg_type) = @_;
-        local $SIG{__WARN__} = sub { } if $dbh->FETCH('PrintError');
+        local $SIG{__WARN__} if $dbh->FETCH('PrintError');
         return DBD::Pg::db::_pg_type_info($pg_type);
     }
 
