@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 95;
+plan tests => 97;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -561,6 +561,17 @@ my $result = $dbh->selectall_arrayref($SQL)->[0][0];
 
 $t = q{Using bind_param with type 1 yields a correct bpchar value};
 is( $result, '0301', $t);
+
+$dbh->{AutoCommit} = 1;
+$t = q{Cloned database handle inherits the changed AutoCommit value};
+my $clone = $dbh->clone();
+is ($clone->{AutoCommit}, 1, $t);
+
+$t = q{Cloned database handle is separate from its parent};
+$dbh->{AutoCommit} = 0;
+is ($clone->{AutoCommit}, 1, $t);
+
+
 
 cleanup_database($dbh,'test');
 $dbh->disconnect();
