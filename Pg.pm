@@ -1115,10 +1115,8 @@ use 5.008001;
             $extracols = q{,n.nspname AS pg_schema, c.relname AS pg_table};
             my @search = (q|c.relkind IN ('r', 'p', 'v', 'm', 'f')|, # No sequences, etc. for now
                           q|NOT (pg_catalog.quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' AND NOT pg_catalog.has_schema_privilege(n.nspname, 'USAGE'))|);   # No others' temp objects
-            my $showtablespace = ', pg_catalog.quote_ident(t.spcname) AS "pg_tablespace_name", pg_catalog.quote_ident(t.spclocation) AS "pg_tablespace_location"';
-            if ($dbh->{private_dbdpg}{version} >= 90200) {
-                $showtablespace = ', pg_catalog.quote_ident(t.spcname) AS "pg_tablespace_name", pg_catalog.quote_ident(pg_catalog.pg_tablespace_location(t.oid)) AS "pg_tablespace_location"';
-            }
+            my $showtablespace = sprintf q{pg_catalog.quote_ident(%s) AS "pg_tablespace_location"},
+                $dbh->{private_dbdpg}{version} < 90200 ? 't.spclocation' : 'pg_catalog.pg_tablespace_location(t.oid)';
 
             ## If the schema or table has an underscore or a %, use a LIKE comparison
             if (defined $schema and length $schema) {
@@ -1158,7 +1156,9 @@ use 5.008001;
                                   END
                             ELSE 'UNKNOWN'
                          END AS "TABLE_TYPE"
-                     , d.description AS "REMARKS" $showtablespace $extracols
+                     , d.description AS "REMARKS"
+                     , pg_catalog.quote_ident(t.spcname) AS "pg_tablespace_name"
+                     , $showtablespace $extracols
                   FROM pg_catalog.pg_class AS c
                   LEFT JOIN pg_catalog.pg_description AS d
                        ON (c.oid = d.objoid AND c.tableoid = d.classoid AND d.objsubid = 0)
