@@ -2,9 +2,10 @@
 
 ## Test of the database handle methods
 ## The following methods are *not* (explicitly) tested here:
-## "take_imp_data"  "pg_server_trace"  "pg_server_untrace"  "pg_type_info"
+## "take_imp_data"  "pg_server_trace"  "pg_server_untrace"
 ## "data_sources" (see 04misc.t)
 ## "disconnect" (see 01connect.t)
+
 ## "pg_savepoint"  "pg_release"  "pg_rollback_to" (see 20savepoints.t)
 ## "pg_getline"  "pg_endcopy"  "pg_getcopydata"  "pg_getcopydata_async" (see 07copy.t)
 ## "pg_putline"  "pg_putcopydata"  "pg_putcopydata_async (see 07copy.t)
@@ -25,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 633;
+plan tests => 637;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -926,20 +927,20 @@ is ($result->{DATA_TYPE}, 4, $t);
 $t=q{DB handle method "column_info" works when column argument is empty};
 $sth = $dbh->column_info('',undef,$table,'id with a space');
 $result = $sth->fetchall_arrayref({})->[0];
-is ($result->{DATA_TYPE}, 4, $t);
+is ($result->{TYPE_NAME}, 'integer', $t);
 
 $t=q{DB handle method "column_info" returns undef when column argument has no match};
-$sth = $dbh->column_info('','',$table,'idfoobar');
+$sth = $dbh->column_info('','',$table, 'idfoobar');
 is ($sth->fetch, undef, $t);
 
 $t=q{DB handle method "column_info" returns undef when column argument has non-matching regex};
-$sth = $dbh->column_info('','',$table,'idfoo%');
+$sth = $dbh->column_info('','',$table, 'idfoo%');
 is ($sth->fetch, undef, $t);
 
-$dbh->{RaiseError} = 0;
-$t=q{DB handle method "column_info" returns undef when column argument has non-matching regex};
-$sth = $dbh->column_info('','',$table,'idfoo%');
-is ($sth->fetch, undef, $t);
+$t=q{DB handle method "column_info" works when column argument is empty};
+$sth = $dbh->column_info('','',$table, '');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{IS_NULLABLE}, 'YES', $t);
 
 $t=q{DB handle method "column_info" works when column argument matches exactly};
 $sth = $dbh->column_info('','',$table,'id with a space');
@@ -2336,7 +2337,7 @@ my $mtvar; ## This is an implicit test of getcopydata: please leave this var und
 SKIP: {
 
     if ($pgversion < 80300) {
-        skip ('Cannot test pg_ping via COPY on pre-8.3 servers', 18);
+        skip ('Cannot test pg_ping via COPY on pre-8.3 servers', 20);
     }
 
     for my $type (qw/ ping pg_ping /) {
@@ -2344,6 +2345,12 @@ SKIP: {
         $t=qq{DB handle method "$type" returns 1 on an idle connection};
         $dbh->commit();
         is ($dbh->$type(), 1, $t);
+
+        $dbh->{PrintError} = 1;
+        $t=qq{DB handle method "$type" returns 1 on an idle connection (PrintError on)};
+        $dbh->commit();
+        is ($dbh->$type(), 1, $t);
+        $dbh->{PrintError} = 0;
 
         $t=qq{DB handle method "$type" returns 2 when in COPY IN state};
         $dbh->do('COPY dbd_pg_test(id,pname) TO STDOUT');
@@ -2400,6 +2407,19 @@ SKIP: {
     }
 
 }
+
+#
+# Test of the "pg_type_info" database handle method
+#
+
+$t=q{DB handle method "pg_type_info" returns 23 for type 4};
+is ($dbh->pg_type_info(23), 4, $t);
+
+$dbh->{PrintError} = 1;
+$t=q{DB handle method "pg_type_info" returns 12 for type 123 (PrintError on)};
+is ($dbh->pg_type_info(123), 12, $t);
+$dbh->{PrintError} = 0;
+
 
 exit;
 
