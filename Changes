@@ -15,6 +15,8 @@ Version 3.14.0  (unreleased)
  - Adjust tests to force loading proper version of DBD::Pg
    [Greg Sabino Mullane]
 
+ - Removed the long-deprecated _pg_use_catalog method
+
 
 Version 3.13.0  (released June 17, 2020)
 

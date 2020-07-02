@@ -123,11 +123,6 @@ use 5.008001;
         return;
     }
 
-    ## Deprecated
-    sub _pg_use_catalog { ## no critic (ProhibitUnusedPrivateSubroutines)
-        return 'pg_catalog.';
-    }
-
     my $methods_are_installed = 0;
     sub driver {
 
