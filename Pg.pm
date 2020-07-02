@@ -216,7 +216,7 @@ use 5.008001;
         $dbh->{AutoCommit}=1;
         my $SQL = 'SELECT pg_catalog.quote_ident(datname) FROM pg_catalog.pg_database ORDER BY 1';
         my $sth = $dbh->prepare($SQL);
-        $sth->execute() or die $DBI::errstr;
+        $sth->execute();
         $conninfo and $conninfo = ";$conninfo";
         my @sources = map { "dbi:Pg:dbname=$_->[0]$conninfo" } @{$sth->fetchall_arrayref()};
         $dbh->disconnect;
