@@ -1185,8 +1185,8 @@ use 5.008001;
     sub tables {
             my ($dbh, @args) = @_;
             my $attr = $args[4];
-            my $sth = $dbh->table_info(@args) or return;
-            my $tablelist = $sth->fetchall_arrayref() or return;
+            my $sth = $dbh->table_info(@args);
+            my $tablelist = $sth->fetchall_arrayref();
             my @tables = map { (! (ref $attr eq 'HASH' and $attr->{pg_noprefix})) ?
                         "$_->[1].$_->[2]" : $_->[2] } @$tablelist;
             return @tables;

@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 629;
+plan tests => 631;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -1547,13 +1547,23 @@ $dbh->do("DROP SCHEMA $schema2");
 $dbh->do("DROP SCHEMA $schema3");
 
 $dbh->do("SET search_path = $schema");
+
 #
 # Test of the "tables" database handle method
 #
 
+$t='DB handle method "tables" returns empty list when no matching rows';
+@results = $dbh->tables('', '', 'dbd_nosuch_table', '');
+is_deeply (\@results, [], $t);
+
 $t='DB handle method "tables" works';
 @results = $dbh->tables('', '', 'dbd_pg_test', '');
-like ($results[0], qr/dbd_pg_test/, $t);
+is ($results[0], 'dbd_pg_testschema.dbd_pg_test', $t);
+warn Dumper \@results;
+
+$t='DB handle method "tables" works with a "pg_foobar" attribute';
+@results = $dbh->tables('', '', 'dbd_pg_test', '', {pg_foobar => 1});
+is ($results[0], 'dbd_pg_test', $t);
 
 $t='DB handle method "tables" works with a "pg_noprefix" attribute';
 @results = $dbh->tables('', '', 'dbd_pg_test', '', {pg_noprefix => 1});
