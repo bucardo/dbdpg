@@ -359,7 +359,6 @@ fh
 filename
 firstword
 fk
-fktable
 fprintf
 FreeBSD
 freenode
@@ -572,7 +571,6 @@ ph
 php
 pid
 PID
-pktable
 pos
 p'ositive
 POSIX
