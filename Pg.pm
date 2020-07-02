@@ -1566,12 +1566,12 @@ use 5.008001;
          elsif ($ans eq 'READONLY') {
              my $SQL = q{SELECT CASE WHEN setting = 'on' THEN 'Y' ELSE 'N' END FROM pg_settings WHERE name = 'transaction_read_only'};
              my $info = $dbh->selectall_arrayref($SQL);
-             return defined $info->[0] ? $info->[0][0] : 'N';
+             return $info->[0][0];
          }
          elsif ($ans eq 'DEFAULTTXN') {
              my $SQL = q{SELECT CASE WHEN setting = 'read committed' THEN 2 ELSE 8 END FROM pg_settings WHERE name = 'default_transaction_isolation'};
              my $info = $dbh->selectall_arrayref($SQL);
-             return defined $info->[0] ? $info->[0][0] : 2;
+             return $info->[0][0];
          }
 
          return $ans;
