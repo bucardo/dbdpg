@@ -25,7 +25,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 631;
+plan tests => 633;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -617,13 +617,19 @@ is ($dbh->get_info(25), 'N', $t);
 
 $t='DB handle method "table_info" works when called with empty arguments';
 $sth = $dbh->table_info('', '', 'dbd_pg_test', '');
-my $number = $sth->rows();
-ok ($number, $t);
+is ($sth->fetch->[2], 'dbd_pg_test', $t);
 
 $t='DB handle method "table_info" works when called with \'%\' arguments';
 $sth = $dbh->table_info('%', '%', 'dbd_pg_test', '%');
-$number = $sth->rows();
-ok ($number, $t);
+is ($sth->fetch->[2], 'dbd_pg_test', $t);
+
+$t=q{DB handle method "table_info" works when called with a non-regex-containing schema};
+$sth = $dbh->table_info( '', 'dbdpgtest', '', '');
+is ($sth->rows(), 0, $t);
+
+$t=q{DB handle method "table_info" works when called with a non-regex-containing table};
+$sth = $dbh->table_info( '', '', 'dbdpgtest', '');
+is ($sth->rows(), 0, $t);
 
 $t=q{DB handle method "table_info" works when called with a 'TABLE' last argument};
 $sth = $dbh->table_info( '', $schema, '', q{'TABLE'});
@@ -1559,11 +1565,10 @@ is_deeply (\@results, [], $t);
 $t='DB handle method "tables" works';
 @results = $dbh->tables('', '', 'dbd_pg_test', '');
 is ($results[0], 'dbd_pg_testschema.dbd_pg_test', $t);
-warn Dumper \@results;
 
 $t='DB handle method "tables" works with a "pg_foobar" attribute';
 @results = $dbh->tables('', '', 'dbd_pg_test', '', {pg_foobar => 1});
-is ($results[0], 'dbd_pg_test', $t);
+is ($results[0], 'dbd_pg_testschema.dbd_pg_test', $t);
 
 $t='DB handle method "tables" works with a "pg_noprefix" attribute';
 @results = $dbh->tables('', '', 'dbd_pg_test', '', {pg_noprefix => 1});
