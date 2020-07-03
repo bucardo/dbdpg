@@ -802,7 +802,7 @@ $sth->finish;
         a
         abcdefghijklmnopqrstuvwxyz
     );
-    $SQL = join(q{ UNION ALL }, ('SELECT ?,?') x @strings) . q{ ORDER BY 1};
+    $SQL = join(q{ UNION ALL }, ('SELECT ?::text,?::text') x @strings) . q{ ORDER BY 1};
     $sth = $dbh->prepare($SQL);
     my $i = 0;
     $sth->execute(map { $i++, $_ } @strings);
