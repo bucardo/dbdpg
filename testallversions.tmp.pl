@@ -90,7 +90,7 @@ for my $lib_version (shuffle @versions) {
         print {$fh} "***\nRUN: $COM\n***\n\n\n";
         print {$fh} qx{$COM};
 
-        $COM = "AUTHOR_TESTING=0 TEST_SIGNATURE=0 DBDPG_INITDB=$target_dir/bin/initdb make test TEST_VERBOSE=1 2>&1 >> $outfile";
+        $COM = "DBDPG_TEST_ALWAYS_ENV=0 AUTHOR_TESTING=0 TEST_SIGNATURE=0 DBDPG_INITDB=$target_dir/bin/initdb make test TEST_VERBOSE=1 2>&1 >> $outfile";
         $testfile and $COM =~ s/make test/make test TEST_FILES=$testfile/;
         note "--> $COM";
         print {$fh} "***\nRUN: $COM\n***\n\n\n";
