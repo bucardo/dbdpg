@@ -46,7 +46,7 @@ pg_diag_sqlstate,state               | 70400  | undef | 22012             | 4270
 pg_diag_message_primary              | 70400  | undef | division by zero  | column "foobar" does not exist | violates check constraint "rainbow" | undef
 pg_diag_message_detail,detail        | 90200  | undef | undef             | undef | Failing row contains | undef
 pg_diag_message_hint,hint            | 70400  | undef | undef             | undef | undef | undef
-pg_diag_statement_position           | 70400  | undef | undef             | 8     | undef | undef
+pg_diag_statement_position           | 80200  | undef | undef             | 8     | undef | undef
 pg_diag_internal_position            | 70400  | undef | undef             | undef | undef | undef
 pg_diag_internal_query               | 70400  | undef | undef             | undef | undef | undef
 pg_diag_context                      | 70400  | undef | undef             | undef | undef | undef

@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 637;
+plan tests => 638;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -82,6 +82,12 @@ eval {
 };
 is ($dbh->state, '42P01', $t);
 
+$t='DB handle method "last_insert_id" fails when called in a failed transaction';
+eval {
+    $dbh->last_insert_id(undef,'someschema','dbd_pg_nonexistenttable_test',undef);
+};
+is ($dbh->state, '25P02', $t);
+
 $t='DB handle method "last_insert_id" fails when given a non-existent table';
 $dbh->rollback();
 eval {
@@ -112,9 +118,11 @@ eval {
 like ($@, qr{last_insert_id}, $t);
 
 my $parent = 'dbd_pg_test_parent';
+my $parent2 = 'dbd_pg_test_parent2';
 my $kid = 'dbd_pg_test_inherit';
 $dbh->do("CREATE TABLE $schema.$parent(id SERIAL primary key)");
-$dbh->do("CREATE TABLE $schema.$kid (foo text) INHERITS ($parent)");
+$dbh->do("CREATE TABLE $schema.$parent2(id2 SERIAL primary key)");
+$dbh->do("CREATE TABLE $schema.$kid (foo text) INHERITS ($parent,$parent2)");
 $dbh->do("INSERT INTO $parent DEFAULT VALUES");
 
 $t='DB handle method "last_insert_id" works for a normal table';
@@ -1922,7 +1930,9 @@ $dbh->commit;
 
 SKIP: {
 
-    $pglibversion < 80300 and skip ('Server version 8.3 or greater needed for pg_lo_truncate tests', 3);
+    if ($pglibversion < 80300 or $pgversion < 80300) {
+        skip ('Postgres version 8.3 or greater needed for pg_lo_truncate tests', 3);
+    }
 
     $t='DB handle method "pg_lo_truncate" fails if opened in read mode only';
     $handle = $dbh->pg_lo_open($object, $R);
