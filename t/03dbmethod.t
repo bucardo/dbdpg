@@ -1922,7 +1922,7 @@ $dbh->commit;
 
 SKIP: {
 
-    $pgversion < 80300 and skip ('Server version 8.3 or greater needed for pg_lo_truncate tests', 3);
+    $pglibversion < 80300 and skip ('Server version 8.3 or greater needed for pg_lo_truncate tests', 3);
 
     $t='DB handle method "pg_lo_truncate" fails if opened in read mode only';
     $handle = $dbh->pg_lo_open($object, $R);
