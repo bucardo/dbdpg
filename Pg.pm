@@ -402,7 +402,7 @@ use 5.008001;
                 $count = $isth->execute($table);
                 if ($count < 1) {
                     $isth->finish();
-                    $dbh->set_err(1, qq{No1 suitable column found for last_insert_id of table "$table"\n});
+                    $dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
                     return undef;
                 }
                 my $parent = $isth->fetch->[0];
@@ -414,7 +414,7 @@ use 5.008001;
                 }
                 if (!@def) {
                     $sth->finish();
-                    $dbh->set_err(1, qq{No1 suitable column found for last_insert_id of table "$table"\n});
+                    $dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
                     return undef;
                 }
                 ## Fall through with inherited information
@@ -423,7 +423,7 @@ use 5.008001;
             if (@def > 1) {
                 my @pri = grep { $_->[0] } @def;
                 if (1 != @pri) {
-                    $dbh->set_err(1, qq{No2 suitable column found for last_insert_id of table "$table"\n});
+                    $dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
                     return undef;
                 }
                 @def = @pri;
