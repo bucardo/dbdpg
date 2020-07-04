@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 97;
+plan tests => 99;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -139,6 +139,10 @@ $t=q{Database handle method 'server_trace_flags' returns 0x03000100 for 'SQL|pgl
 $num = $dbh->parse_trace_flags('SQL|pglibpq|pgstart');
 is ($num, 0x03000100, $t);
 
+$t = q{Method 'server_trace_flags' is available without a database handle};
+$num = DBD::Pg->parse_trace_flags('SQL|pglibpq|pgstart');
+is ($num, 0x03000100, $t);
+
 my $flagexp = 24;
 $sth = $dbh->prepare('SELECT 1');
 for my $flag (qw/pglibpq pgstart pgend pgprefix pglogin pgquote/) {
@@ -160,6 +164,10 @@ for my $flag (qw/pglibpq pgstart pgend pgprefix pglogin pgquote/) {
     $num = $sth->parse_trace_flag($flag);
     is ($num, $hex, $t);
 }
+
+$t = qq{Database handle method "server_trace_flag" returns all-but-pgprefix for flag 'DBD'};
+$num = $dbh->parse_trace_flag('DBD');
+is ($num, 0x7FFFFF00 - 0x08000000, $t);
 
 SKIP: {
 
