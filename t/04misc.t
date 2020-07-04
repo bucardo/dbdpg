@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 99;
+plan tests => 100;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -28,6 +28,10 @@ eval {
     $num = DBD::Pg->parse_trace_flag('NONE');
 };
 is ($@, q{}, $t);
+
+$t = q{Driver handle is obtainable directly from DBD::Pg};
+my $drh = DBD::Pg->driver;
+is (ref $drh, 'DBI::dr', $t);
 
 $t = 'Constant PG_MIN_SMALLINT returns expected value of -32768';
 my $sth = $dbh->prepare('SELECT ?::smallint');
