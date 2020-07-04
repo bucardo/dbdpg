@@ -169,7 +169,7 @@ for my $flag (qw/pglibpq pgstart pgend pgprefix pglogin pgquote/) {
     is ($num, $hex, $t);
 }
 
-$t = qq{Database handle method "server_trace_flag" returns all-but-pgprefix for flag 'DBD'};
+$t = q{Database handle method "server_trace_flag" returns all-but-pgprefix for flag 'DBD'};
 $num = $dbh->parse_trace_flag('DBD');
 is ($num, 0x7FFFFF00 - 0x08000000, $t);
 
