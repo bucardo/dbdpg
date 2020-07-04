@@ -965,6 +965,8 @@ $sth = $dbh->column_info('','','','id % a space');
 $result = $sth->fetchall_arrayref({})->[0];
 is ($result->{pg_type}, 'integer', $t);
 
+$dbh->do(qq{DROP TABLE $schema.$table});
+
 SKIP: {
 
     if ($pgversion < 80300) {
@@ -1057,6 +1059,8 @@ $t='DB handle method "primary_key_info" works when pg_onerow attribute set to 2 
 $sth = $dbh->primary_key_info('',$schema,$table, {pg_onerow => 2});
 $result = $sth->fetchall_arrayref({});
 is_deeply ($result->[0]{KEY_SEQ}, ['1','2'], $t);
+
+$dbh->do("DROP TABLE $schema.$table");
 
 #
 # Test of the "primary_key" database handle method

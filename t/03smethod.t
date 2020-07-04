@@ -871,6 +871,7 @@ SKIP: {
 
     my $parent = 'dbd_pg_test_parent';
     my $kid = 'dbd_pg_test_inherit';
+    $dbh->do(q{SET client_min_messages = 'ERROR'});
     $dbh->do("CREATE TABLE $schema.$parent(id SERIAL primary key)");
     $dbh->do("CREATE TABLE $schema.$kid (foo text) INHERITS ($parent)");
     $sth = $dbh->prepare("INSERT INTO $parent DEFAULT VALUES");
