@@ -108,7 +108,7 @@ is ( $sth->fetch->[0], 2147483647, $t);
 $t = 'Constant PG_MIN_BIGSERIAL is set to 1';
 is (PG_MIN_BIGSERIAL, 1, $t);
 
-$t = 'Constant PG_MIN_BIGINT returns expected value of 9223372036854775807 (same as PG_MAX_BIGINT)';
+$t = 'Constant PG_MAX_BIGSERIAL returns expected value of 9223372036854775807 (same as PG_MAX_BIGINT)';
 $sth->execute(PG_MAX_BIGSERIAL);
 is ( $sth->fetch->[0], '9223372036854775807', $t);
 
