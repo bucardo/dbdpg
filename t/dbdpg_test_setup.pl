@@ -678,6 +678,8 @@ version: $version
         ## non-ASCII parts of the tests assume UTF8
         $dbh->do('SET client_encoding = utf8');
         $dbh->{pg_enable_utf8} = -1;
+        ## Always want this on for consistent testing
+        $dbh->do('SET array_nulls = ON');
     }
 
     if ($arg->{quickreturn}) {
