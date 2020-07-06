@@ -118,6 +118,8 @@ use 5.008001;
         return DBI::parse_trace_flags($class, $flags);
     }
 
+    ## Both CLONE and driver are required by DBI, see perldoc DBI::DBD
+
     sub CLONE {
         $drh = undef;
         return;
