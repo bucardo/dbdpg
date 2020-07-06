@@ -16,6 +16,10 @@ Version 3.14.0  (unreleased)
    [Greg Sabino Mullane]
 
  - Removed the long-deprecated _pg_use_catalog method
+   [Greg Sabino Mullane]
+
+ - Many improvements and changes to the test suite
+   [Greg Sabino Mullane]
 
 
 Version 3.13.0  (released June 17, 2020)
