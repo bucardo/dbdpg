@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 100;
+plan tests => 102;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -238,6 +238,28 @@ $BC$
     $dbh->do('SET client_min_messages = NOTICE');
     $dbh->commit();
 
+}
+
+## Some funkier connection attempts
+SKIP: {
+
+    eval { require Test::Output; };
+    skip ('Test::Output is needed for some connection tests', 2) if $@;
+
+    $t=q{Connect with 'dbd_verbose' attrib sets debug output on};
+    my ($testdsn,$testuser,$helpconnect,$su,$uid,$testdir,$pg_ctl,$initdb,$error,$version)
+        = get_test_settings();
+    $testdsn =~ s/^dbi/DBI/i;
+    my $ldbh;
+    Test::Output::stderr_like( sub { $ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
+                                                          {RaiseError => 1, dbd_verbose => 1}); $ldbh->do('select 1');
+                                 }, qr/dbd_db_STORE/, $t);
+    ## DBI is way too sticky with tracing stuff, so we need to turn it off here
+    $ldbh->trace(0);
+
+    $t=q{Connect with no attributes at all works};
+    $ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS});
+    ok (ref $ldbh, $t);
 }
 
 SKIP: {
