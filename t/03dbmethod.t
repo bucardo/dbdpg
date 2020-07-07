@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 638;
+plan tests => 639;
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
@@ -144,9 +144,20 @@ eval {
 };
 is ($@, q{}, $t);
 
-$t='DB handle method "last_insert_id" returns correct value for an inheriteda table';
+$t='DB handle method "last_insert_id" returns correct value for an inherited table';
 is ($result, 2, $t);
 
+$t='DB handle method "last_insert_id" returns expected error for an inherited table with no PK';
+
+my $parent3 = 'dbd_pg_test_parent3';
+my $kid3 = 'dbd_pg_test_inherit3';
+$dbh->do("CREATE TABLE $schema.$parent3 (id INTEGER)");
+$dbh->do("CREATE TABLE $schema.$kid3 (foo text) INHERITS ($parent3)");
+$dbh->do("INSERT INTO $parent3 DEFAULT VALUES");
+eval {
+    $result = $dbh->last_insert_id(undef,undef,$kid3,undef);
+};
+like ($@, qr/No suitable column/, $t);
 
 $SQL = 'CREATE TEMP TABLE foobar AS SELECT * FROM pg_class LIMIT 3';
 
