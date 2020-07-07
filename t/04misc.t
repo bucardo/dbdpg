@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 104;
+plan tests => 109;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -483,6 +483,43 @@ $t='The "data_sources" method returns information when fed a valid port as the s
 my $port = $dbh->{pg_port};
 @sources = DBI->data_sources('Pg',"port=$port");
 isnt ($sources[0], undef, $t);
+
+$t='The "data_sources" method works when DBI_DSN is not set';
+{
+    local $ENV{DBI_DSN};
+    eval {
+        @sources = DBI->data_sources('Pg');
+    };
+    is ($@, q{}, $t);
+}
+
+$t='The "data_sources" method works when DBI_USER is not set or not set';
+{
+    local $ENV{DBI_USER} = 'alice';
+    eval {
+        @sources = DBI->data_sources('Pg');
+    };
+    is ($@, q{}, $t);
+    local $ENV{DBI_USER};
+    eval {
+        @sources = DBI->data_sources('Pg');
+    };
+    is ($@, q{}, $t);
+}
+
+$t='The "data_sources" method works when DBI_PASS is set or not set';
+{
+    local $ENV{DBI_PASS} = 'foo';
+    eval {
+        @sources = DBI->data_sources('Pg');
+    };
+    is ($@, q{}, $t);
+    local $ENV{DBI_PASS};
+    eval {
+        @sources = DBI->data_sources('Pg');
+    };
+    is ($@, q{}, $t);
+}
 
 SKIP: {
 
