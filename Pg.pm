@@ -295,7 +295,7 @@ use 5.008001;
             'Statement' => $statement,
         });
 
-        DBD::Pg::st::_prepare($sth, $statement, @attribs) || 0;
+        DBD::Pg::st::_prepare($sth, $statement, @attribs);
 
         return $sth;
     }
