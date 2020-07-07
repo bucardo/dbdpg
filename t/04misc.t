@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 102;
+plan tests => 103;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -32,6 +32,10 @@ is ($@, q{}, $t);
 $t = q{Driver handle is obtainable directly from DBD::Pg};
 my $drh = DBD::Pg->driver;
 is (ref $drh, 'DBI::dr', $t);
+
+$t = q{Method 'private_attribute_info' is available without a database handle and returns an empty hashref};
+my $result = $drh->private_attribute_info();
+is_deeply ($result, {}, $t);
 
 $t = 'Constant PG_MIN_SMALLINT returns expected value of -32768';
 my $sth = $dbh->prepare('SELECT ?::smallint');
