@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 103;
+plan tests => 104;
 
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
@@ -36,6 +36,10 @@ is (ref $drh, 'DBI::dr', $t);
 $t = q{Method 'private_attribute_info' is available without a database handle and returns an empty hashref};
 my $result = $drh->private_attribute_info();
 is_deeply ($result, {}, $t);
+
+$t = q{Internal method 'CLONE' returns undef};
+$result = DBD::Pg->CLONE();
+is ($result, undef, $t);
 
 $t = 'Constant PG_MIN_SMALLINT returns expected value of -32768';
 my $sth = $dbh->prepare('SELECT ?::smallint');
@@ -595,7 +599,7 @@ $sth->bind_param(2, undef, $stt[1]); ## 1 aka SQL_CHAR
 $sth->execute(2, '0301');
 
 my $SQL = 'SELECT char4 FROM tt';
-my $result = $dbh->selectall_arrayref($SQL)->[0][0];
+$result = $dbh->selectall_arrayref($SQL)->[0][0];
 
 $t = q{Using bind_param with type 1 yields a correct bpchar value};
 is( $result, '0301', $t);
