@@ -277,7 +277,7 @@ SKIP: {
     };
     $@ and skip ('Must have File::Temp to complete trace flag testing', 9);
 
-    my ($fh,$filename) = File::Temp::tempfile('dbdpg_test_XXXXXX', SUFFIX => 'tst', UNLINK => 1);
+    my ($fh,$filename) = File::Temp::tempfile('dbdpg_test_XXXXXX', SUFFIX => '.tst', UNLINK => 1);
     my ($flag, $info, $expected, $SQL);
 
     $t=q{Trace flag 'SQL' works as expected};
