@@ -680,7 +680,9 @@ version: $version
         $dbh->do('SET client_encoding = utf8');
         $dbh->{pg_enable_utf8} = -1;
         ## Always want this on for consistent testing
-        $dbh->do('SET array_nulls = ON');
+        if ($dbh->{pg_server_version} >= 80200) {
+            $dbh->do('SET array_nulls = ON');
+        }
     }
 
     if ($arg->{quickreturn}) {
