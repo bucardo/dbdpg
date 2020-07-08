@@ -12,6 +12,8 @@ use Data::Dumper;
 use Time::HiRes qw/ gettimeofday tv_interval /;
 use List::Util qw/ shuffle /;
 
+our $VERSION = 1.1;
+
 my %arg = (
     quiet => 0,
 );
@@ -75,6 +77,8 @@ for my $lib_version (shuffle @versions) {
         next if $runversion and $target_version ne $runversion;
 
         my $target_dir = "$basedir/$target_version";
+
+        unlink 'README.testdatabase';
 
         my $outfile = "tmp/alltest.dbdpg.$lib_version.vs.$target_version.log";
         note "Testing compile $lib_version against target $target_version: results stored in $outfile";
