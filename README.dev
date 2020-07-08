@@ -381,10 +381,7 @@ direct perl modules, it is good at giving Pg.pm the once-over. To use, install i
 
 cover -delete
 HARNESS_PERL_SWITCHES=-MDevel::Cover make test
-
-The tests will take much longer than usual. When done, run a simple
-
-cover
+cover -coverage statement,branch,condition,subroutine
 
 then check out the coverage.html file inside the cover_db directory.
 
