@@ -126,6 +126,7 @@ use 5.008001;
     }
 
     my $methods_are_installed = 0;
+
     sub driver {
 
         return $drh if defined $drh;
@@ -143,6 +144,7 @@ use 5.008001;
             'Attribution' => "DBD::Pg $VERSION by Greg Sabino Mullane and others",
         });
 
+        # uncoverable branch false
         if (!$methods_are_installed) {
             DBD::Pg::db->install_method('pg_cancel');
             DBD::Pg::db->install_method('pg_endcopy');
