@@ -78,7 +78,8 @@ for my $lib_version (shuffle @versions) {
 
         my $target_dir = "$basedir/$target_version";
 
-        unlink 'README.testdatabase';
+        my $readme = 'README.testdatabase';
+        unlink $readme if -e $readme;
 
         my $outfile = "tmp/alltest.dbdpg.$lib_version.vs.$target_version.log";
         note "Testing compile $lib_version against target $target_version: results stored in $outfile";
