@@ -20,6 +20,8 @@ if (! $dbh) {
 }
 plan tests => 109;
 
+my $superuser = is_super();
+
 isnt ($dbh, undef, 'Connect to database for miscellaneous tests');
 
 my $t = q{Method 'server_trace_flag' is available without a database handle};
@@ -608,7 +610,7 @@ else {
 # PostgreSQL 8.1 fails with "ERROR:  stack depth limit exceeded"
 # with the default value of 2048
 my $newdepth = $^O =~ /Win32/ ? 3000 : 4096;
-$dbh->do("set max_stack_depth = $newdepth");
+$superuser and $dbh->do("set max_stack_depth = $newdepth");
 ## Check for problems with insane number of placeholders
 for my $ph (1..13) {
     my $total = 2**$ph;

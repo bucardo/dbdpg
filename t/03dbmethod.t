@@ -28,6 +28,8 @@ if (! $dbh) {
 }
 plan tests => 639;
 
+my $superuser = is_super();
+
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
 # silence notices about implicitly created and dropped objects
@@ -756,6 +758,9 @@ SKIP: {
     if ($pgversion < 90100) {
         skip ('Cannot test table_info for foreign tables unless database is 9.1 or higher', 3);
     }
+
+    ## We can check for finer-grained access in more recent versions, but this is good enough:
+    $superuser or skip ('Cannot test foreign tables unless a superuser', 3);
 
     $sth = $dbh->table_info(undef,undef,undef,'FOREIGN TABLE');
     my $total_ftables = $sth->rows();
@@ -1980,9 +1985,7 @@ $dbh->rollback();
 
 SKIP: {
 
-    my $super = is_super();
-
-    $super or skip ('Cannot run largeobject tests unless run as Postgres superuser', 38);
+    $superuser or skip ('Cannot run largeobject tests unless run as Postgres superuser', 38);
 
   SKIP: {
 
