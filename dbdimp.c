@@ -39,6 +39,21 @@ Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId) {
 
 #endif
 
+#if PGLIBVERSION < 90300
+unsigned int lo_lseek64(PGconn *conn, int fd, unsigned int offset, int whence);
+unsigned int lo_lseek64(PGconn *conn, int fd, unsigned int offset, int whence) {
+    croak ("Cannot use lo_lseek64 unless compiled against Postgres 9.3 or later");
+}
+unsigned int lo_tell64(PGconn *conn, int fd);
+unsigned int lo_tell64(PGconn *conn, int fd) {
+    croak ("Cannot use lo_ltell64 unless compiled against Postgres 9.3 or later");
+}
+int lo_truncate64(PGconn *conn, int fd, unsigned int len);
+int lo_truncate64(PGconn *conn, int fd, unsigned int len) {
+    croak ("Cannot use lo_truncate64 unless compiled against Postgres 9.3 or later");
+}
+#endif
+
 #ifndef PG_DIAG_SCHEMA_NAME
 #define PG_DIAG_SCHEMA_NAME     's'
 #define PG_DIAG_TABLE_NAME      't'
@@ -4929,6 +4944,32 @@ int pg_db_lo_lseek (SV * dbh, int fd, int offset, int whence)
 
 
 /* ================================================================== */
+unsigned int pg_db_lo_lseek64 (SV * dbh, int fd, unsigned int offset, int whence)
+{
+
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_lo_lseek64 (fd: %d offset: %d whence: %d)\n",
+                    THEADER_slow, fd, offset, whence);
+
+    if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+        croak("Cannot call pg_lo_lseek64 when AutoCommit is on");
+    }
+
+    if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
+        return -1;
+
+    if (TLIBPQ_slow) {
+        TRC(DBILOGFP, "%slo_lseek64\n", THEADER_slow);
+    }
+
+    return lo_lseek64(imp_dbh->conn, fd, offset, whence); /* new position, -1 on error */
+
+}
+
+
+/* ================================================================== */
 int pg_db_lo_tell (SV * dbh, int fd)
 {
 
@@ -4949,6 +4990,30 @@ int pg_db_lo_tell (SV * dbh, int fd)
     }
 
     return lo_tell(imp_dbh->conn, fd); /* current position, <0 on error */
+
+}
+
+/* ================================================================== */
+unsigned int pg_db_lo_tell64 (SV * dbh, int fd)
+{
+
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_lo_tell64 (fd: %d)\n", THEADER_slow, fd);
+
+    if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+        croak("Cannot call pg_lo_tell64 when AutoCommit is on");
+    }
+
+    if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
+        return -1;
+
+    if (TLIBPQ_slow) {
+        TRC(DBILOGFP, "%slo_tell64\n", THEADER_slow);
+    }
+
+    return lo_tell64(imp_dbh->conn, fd); /* current position, <0 on error */
 
 }
 
@@ -4974,6 +5039,31 @@ int pg_db_lo_truncate (SV * dbh, int fd, size_t len)
     }
 
     return lo_truncate(imp_dbh->conn, fd, len); /* 0 success, <0 on error */
+
+}
+
+/* ================================================================== */
+int pg_db_lo_truncate64 (SV * dbh, int fd, unsigned int len)
+{
+
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_lo_truncate64 (fd: %d length: %d)\n",
+                         THEADER_slow, fd, (unsigned int)len);
+
+    if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+        croak("Cannot call pg_lo_truncate64 when AutoCommit is on");
+    }
+
+    if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
+        return -1;
+
+    if (TLIBPQ_slow) {
+        TRC(DBILOGFP, "%slo_truncate64\n", THEADER_slow);
+    }
+
+    return lo_truncate64(imp_dbh->conn, fd, len); /* 0 success, <0 on error */
 
 }
 

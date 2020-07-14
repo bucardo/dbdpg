@@ -12,6 +12,11 @@ Version 3.14.0  (unreleased)
  - The $dbh->tables method will always return a list, even if it is empty.
    [Greg Sabino Mullane]
 
+ - Add pg_lo_tell64, pg_lo_seek64, and pg_lo_truncate64, for anyone dealing 
+     with really, really large large objects. Requires Postgres 9.3 or better.
+   [Greg Sabino Mullane]
+   (RT ticket #123561)
+
  - Adjust tests to force loading proper version of DBD::Pg
    [Greg Sabino Mullane]
 

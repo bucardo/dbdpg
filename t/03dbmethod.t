@@ -26,7 +26,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 639;
+plan tests => 646;
 
 my $superuser = is_super();
 
@@ -1911,6 +1911,16 @@ $result = $dbh->pg_lo_lseek($handle, 0, 0);
 is ($result, 0, $t);
 isnt ($object, -1, $t);
 
+SKIP: {
+    if ($pgversion < 90300 or $pglibversion < 90300) {
+        skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 2;
+    }
+    $t='DB handle method "pg_lo_lseek64" works when writing';
+    $result = $dbh->pg_lo_lseek64($handle, 0, 0);
+    is ($result, 0, $t);
+    isnt ($object, -1, $t);
+}
+
 $t='DB handle method "pg_lo_write" works';
 my $buf = 'tangelo mulberry passionfruit raspberry plantain' x 500;
 $result = $dbh->pg_lo_write($handle, $buf, length($buf));
@@ -1931,9 +1941,27 @@ $t='DB handle method "pg_lo_lseek" works when reading';
 $result = $dbh->pg_lo_lseek($handle, 11, 0);
 is ($result, 11, $t);
 
+SKIP: {
+    if ($pgversion < 90300 or $pglibversion < 90300) {
+        skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
+    }
+    $t='DB handle method "pg_lo_lseek64" works when reading';
+    $result = $dbh->pg_lo_lseek($handle, 11, 0);
+    is ($result, 11, $t);
+}
+
 $t='DB handle method "pg_lo_tell" works';
 $result = $dbh->pg_lo_tell($handle);
 is ($result, 11, $t);
+
+SKIP: {
+    if ($pgversion < 90300 or $pglibversion < 90300) {
+        skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
+    }
+    $t='DB handle method "pg_lo_tell64" works';
+    $result = $dbh->pg_lo_tell64($handle);
+    is ($result, 11, $t);
+}
 
 $t='DB handle method "pg_lo_read" reads back the same data that was written';
 $dbh->pg_lo_lseek($handle, 0, 0);
@@ -1951,7 +1979,7 @@ $dbh->commit;
 SKIP: {
 
     if ($pglibversion < 80300 or $pgversion < 80300) {
-        skip ('Postgres version 8.3 or greater needed for pg_lo_truncate tests', 3);
+        skip ('Postgres version 8.3 or greater needed for pg_lo_truncate tests', 4);
     }
 
     $t='DB handle method "pg_lo_truncate" fails if opened in read mode only';
@@ -1962,7 +1990,7 @@ SKIP: {
 
     $t='DB handle method "pg_lo_truncate" works if opened in read/write mode';
     $handle = $dbh->pg_lo_open($object, $W);
-    $result = $dbh->pg_lo_truncate($handle, 4);
+    $result = $dbh->pg_lo_truncate($handle, 44);
     is ($result, 0, $t);
 
     $t='DB handle method "pg_lo_truncate" truncates to expected size';
@@ -1971,7 +1999,21 @@ SKIP: {
     while ($dbh->pg_lo_read($handle, $data, 100)) {
         $buf2 .= $data;
     }
-    is (length($buf2), 4, $t);
+    is (length($buf2), 44, $t);
+
+  SKIP: {
+        if ($pgversion < 90300 or $pglibversion < 90300) {
+            skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
+        }
+        $t='DB handle method "pg_lo_truncate64" truncates to expected size';
+        $dbh->pg_lo_lseek($handle, 0, 0);
+        $result = $dbh->pg_lo_truncate64($handle, 22);
+        ($buf2,$data) = ('','');
+        while ($dbh->pg_lo_read($handle, $data, 100)) {
+            $buf2 .= $data;
+        }
+        is (length($buf2), 22, $t);
+    }
 }
 
 $t='DB handle method "pg_lo_unlink" works';
@@ -1985,7 +2027,7 @@ $dbh->rollback();
 
 SKIP: {
 
-    $superuser or skip ('Cannot run largeobject tests unless run as Postgres superuser', 38);
+    $superuser or skip ('Cannot run largeobject tests unless run as Postgres superuser', 40);
 
   SKIP: {
 
@@ -2104,6 +2146,17 @@ SKIP: {
     };
     like ($@, qr{pg_lo_lseek when AutoCommit is on}, $t);
 
+  SKIP: {
+        if ($pgversion < 90300 or $pglibversion < 90300) {
+            skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
+        }
+        $t='DB handle method "pg_lo_lseek64" fails with AutoCommit on';
+        eval {
+            $dbh->pg_lo_lseek64($handle, 0, 0);
+        };
+        like ($@, qr{pg_lo_lseek64 when AutoCommit is on}, $t);
+    }
+
     $t='DB handle method "pg_lo_write" fails with AutoCommit on';
     $buf = 'tangelo mulberry passionfruit raspberry plantain' x 500;
     eval {
@@ -2122,6 +2175,17 @@ SKIP: {
         $dbh->pg_lo_tell($handle);
     };
     like ($@, qr{pg_lo_tell when AutoCommit is on}, $t);
+
+  SKIP: {
+        if ($pgversion < 90300 or $pglibversion < 90300) {
+            skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
+        }
+        $t='DB handle method "pg_lo_tell64" fails with AutoCommit on';
+        eval {
+            $dbh->pg_lo_tell64($handle);
+        };
+        like ($@, qr{pg_lo_tell64 when AutoCommit is on}, $t);
+    }
 
     $t='DB handle method "pg_lo_unlink" fails with AutoCommit on';
     eval {

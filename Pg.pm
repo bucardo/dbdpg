@@ -177,8 +177,11 @@ use 5.008001;
             DBD::Pg::db->install_method('pg_lo_write');
             DBD::Pg::db->install_method('pg_lo_read');
             DBD::Pg::db->install_method('pg_lo_lseek');
+            DBD::Pg::db->install_method('pg_lo_lseek64');
             DBD::Pg::db->install_method('pg_lo_tell');
+            DBD::Pg::db->install_method('pg_lo_tell64');
             DBD::Pg::db->install_method('pg_lo_truncate');
+            DBD::Pg::db->install_method('pg_lo_truncate64');
             DBD::Pg::db->install_method('pg_lo_close');
             DBD::Pg::db->install_method('pg_lo_unlink');
             DBD::Pg::db->install_method('pg_lo_import');
@@ -2080,6 +2083,12 @@ Changes the current read or write location on the large object
 C<$obj_id>. Currently C<$whence> can only be 0 (which is L_SET). Returns the current
 location and C<undef> upon failure. This function cannot be used if AutoCommit is enabled.
 
+=item pg_lo_lseek64
+
+  $loc = $dbh->pg_lo_lseek64($lobj_fd, $offset, $whence);
+
+Same as pg_lo_lseek, but can handle much larger offsets and returned values. Requires Postgres 9.3 or greater.
+
 =item pg_lo_tell
 
   $loc = $dbh->pg_lo_tell($lobj_fd);
@@ -2087,12 +2096,24 @@ location and C<undef> upon failure. This function cannot be used if AutoCommit i
 Returns the current read or write location on the large object C<$lobj_fd> and C<undef> upon failure.
 This function cannot be used if AutoCommit is enabled.
 
+=item pg_lo_tell64
+
+  $loc = $dbh->pg_lo_tell64($lobj_fd);
+
+Same as pg_lo_tell, but can return much larger values. Requires Postgres 9.3 or greater.
+
 =item pg_lo_truncate
 
   $loc = $dbh->pg_lo_truncate($lobj_fd, $len);
 
 Truncates the given large object to the new size. Returns C<undef> on failure, and 0 on success.
 This function cannot be used if AutoCommit is enabled.
+
+=item pg_lo_truncate64
+
+  $loc = $dbh->pg_lo_truncate64($lobj_fd, $len);
+
+Same as pg_lo_truncate, but can handle much larger lengths. Requires Postgres 9.3 or greater.
 
 =item pg_lo_close
 
