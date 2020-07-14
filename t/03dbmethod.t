@@ -692,7 +692,7 @@ $t=q{DB handle method "table_info" returns one row when given a 'TABLE,VIEW' typ
 $sth = $dbh->table_info(undef,$schema,undef,'TABLE,VIEW');
 is ($sth->rows, 1, $t);
 
-$dbh->do('CREATE VIEW testview AS SELECT sum(reltuples) AS tonsoftups FROM pg_class');
+$dbh->do('CREATE VIEW dbd_pg_view AS SELECT sum(reltuples) AS tonsoftups FROM pg_class');
 
 $t=q{DB handle method "table_info" returns no rows when given a 'VIEW' type argument for the test schema};
 $sth = $dbh->table_info(undef,$schema,undef,'VIEW');
@@ -741,7 +741,7 @@ SKIP: {
     $sth = $dbh->table_info(undef,$schema,undef,'MATERIALIZED VIEW');
     is ($sth->rows(), 0, $t);
 
-    $dbh->do("CREATE MATERIALIZED VIEW $schema.testmatview AS SELECT 123 WITH NO DATA");
+    $dbh->do("CREATE MATERIALIZED VIEW $schema.dbd_pg_matview AS SELECT 123 WITH NO DATA");
 
     $t=q{DB handle method "table_info" returns one 'MATERIALIZED VIEW' rows for test schema};
     $sth = $dbh->table_info(undef,$schema,undef,'MATERIALIZED VIEW');

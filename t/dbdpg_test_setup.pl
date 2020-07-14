@@ -20,6 +20,11 @@ if (exists $ENV{TEST_OUTPUT}) {
     Test::More->builder->todo_output($testfh);
 }
 
+my @views =
+    (
+     'dbd_pg_view',
+     );
+
 my @matviews =
     (
      'dbd_pg_matview',
@@ -898,6 +903,12 @@ sub cleanup_database {
         my $schema = ($name =~ s/(.+)\.(.+)/$2/) ? $1 : $S;
         next if ! relation_exists($dbh,$schema,$name);
         $dbh->do("DROP MATERIALIZED VIEW $schema.$name");
+    }
+
+    for my $name (@views) {
+        my $schema = ($name =~ s/(.+)\.(.+)/$2/) ? $1 : $S;
+        next if ! relation_exists($dbh,$schema,$name);
+        $dbh->do("DROP VIEW $schema.$name");
     }
 
     for my $name (@operators) {
