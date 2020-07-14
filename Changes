@@ -21,6 +21,10 @@ Version 3.14.0  (unreleased)
  - Many improvements and changes to the test suite
    [Greg Sabino Mullane]
 
+ - Allow test to run again when using a non-superuser to connect
+   [Greg Sabino Mullane]
+   (RT ticket #132865)
+
 
 Version 3.13.0  (released June 17, 2020)
 
