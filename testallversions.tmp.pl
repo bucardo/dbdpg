@@ -12,7 +12,7 @@ use Data::Dumper;
 use Time::HiRes qw/ gettimeofday tv_interval /;
 use List::Util qw/ shuffle /;
 
-our $VERSION = 1.1;
+our $VERSION = 1.2;
 
 my %arg = (
     quiet => 0,
@@ -68,13 +68,13 @@ sub note {
 my $debug_loop = 0;
 for my $lib_version (shuffle @versions) {
 
-    next if $compileversion and $lib_version ne $compileversion;
+    next if $compileversion and $compileversion !~ /\b$lib_version\b/;
 
     my $lib_dir = "$basedir/$lib_version";
 
     for my $target_version (shuffle @versions) {
 
-        next if $runversion and $target_version ne $runversion;
+        next if $runversion and $runversion !~ /\b$target_version\b/;
 
         my $target_dir = "$basedir/$target_version";
 
