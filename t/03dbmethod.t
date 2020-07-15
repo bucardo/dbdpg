@@ -708,8 +708,8 @@ is ($sth->rows, 2, $t);
 
 $t=q{DB handle method "table_info" returns more rows when given a 'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW' type argument};
 $sth = $dbh->table_info(undef,undef,undef,'TABLE,VIEW,SYSTEM TABLE,SYSTEM VIEW');
-## Should be at least 100 system tables and views
-cmp_ok ($sth->rows(), '>', 100, $t);
+## Should be at least 90 system tables and views
+cmp_ok ($sth->rows(), '>', 90, $t);
 
 $dbh->do('CREATE TEMP TABLE dbd_pg_local_temp (i INT)');
 
