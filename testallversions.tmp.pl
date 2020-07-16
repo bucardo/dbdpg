@@ -108,7 +108,8 @@ for my $lib_version (shuffle @versions) {
 
         my $final_line = qx{tail -1 $outfile};
         chomp $final_line;
-        note "--> $final_line $lib_version vs $target_version\n\n";
+        my $date = scalar localtime;
+        note "--> $final_line $lib_version vs $target_version ($date)\n\n";
 
         if ($debug_loop++ > 300) {
             die "Leaving at loop $debug_loop\n";
