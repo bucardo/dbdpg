@@ -609,7 +609,7 @@ else {
 
 # PostgreSQL 8.1 fails with "ERROR:  stack depth limit exceeded"
 # with the default value of 2048
-my $newdepth = $^O =~ /Win32/ ? 3000 : 4096;
+my $newdepth = $^O =~ /Win32/ ? 3000 : 8096;
 $superuser and $dbh->do("set max_stack_depth = $newdepth");
 ## Check for problems with insane number of placeholders
 for my $ph (1..13) {
