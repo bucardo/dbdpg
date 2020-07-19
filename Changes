@@ -2,10 +2,10 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.14.0  (unreleased)
+Version 3.14.0  (released Jul 19, 2020)
 
- - The $dbh->primary_key_info and $dbh->foreign_key_info methods will always return 
-     a statement handle, even on no results. Previously, they returned undef directly.
+ - The $dbh->primary_key_info and $dbh->foreign_key_info methods will now always return 
+     a statement handle, even with no matches. Previously, they returned undef directly.
    Callers can check if the returned handle contains any rows.
    [Greg Sabino Mullane]
 
@@ -13,22 +13,22 @@ Version 3.14.0  (unreleased)
    [Greg Sabino Mullane]
 
  - Add pg_lo_tell64, pg_lo_seek64, and pg_lo_truncate64, for anyone dealing 
-     with really, really large large objects. Requires Postgres 9.3 or better.
+     with really, really, really large 'large objects'. Requires Postgres 9.3 or better.
    [Greg Sabino Mullane]
    (RT ticket #123561)
-
- - Adjust tests to force loading proper version of DBD::Pg
-   [Greg Sabino Mullane]
-
- - Removed the long-deprecated _pg_use_catalog method
-   [Greg Sabino Mullane]
-
- - Many improvements and changes to the test suite
-   [Greg Sabino Mullane]
 
  - Allow test to run again when using a non-superuser to connect
    [Greg Sabino Mullane]
    (RT ticket #132865)
+
+ - Adjust tests to force loading proper version of DBD::Pg every time.
+   [Greg Sabino Mullane]
+
+ - Removed the long-deprecated _pg_use_catalog method.
+   [Greg Sabino Mullane]
+
+ - Many improvements and changes to the test suite.
+   [Greg Sabino Mullane]
 
 
 Version 3.13.0  (released June 17, 2020)
