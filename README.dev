@@ -579,6 +579,7 @@ other sections referenced herein (indicated with **)
 * Test on variety of versions (see ** Heavy Testing), including the optional tests.
 
 * Test modules that depend on DBD::Pg, in particular DBIx::Class and DBIx::Class::Schema::Loader
+  Do not forget to set DBICTEST_PG_DSN, DBICTEST_PG_USER, and DBICTEST_PG_PASS
 
 * Consider a pre-release announcement to dbix-class-devel@lists.scsys.co.uk
 
