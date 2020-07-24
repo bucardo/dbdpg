@@ -200,4 +200,7 @@ END {
         "DBI_USER                    $user\n".
         "Test schema                 $schema$extra\n";
 
+    if ($extra =~ /could not connect/ and $ENV{DBDPG_ININTDB}) {
+        BAIL_OUT "Cannot continue: connection failed\n";
+    }
 }

@@ -109,6 +109,9 @@ for my $lib_version (shuffle @versions) {
         my $final_line = qx{tail -1 $outfile};
         chomp $final_line;
         my $date = scalar localtime;
+        if ($final_line !~ /Result/) {
+            $final_line = "Result: FAIL $final_line";
+        }
         note "--> $final_line $lib_version vs $target_version ($date)\n\n";
 
         if ($debug_loop++ > 300) {
