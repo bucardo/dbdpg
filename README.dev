@@ -119,7 +119,7 @@ dbivport.h - DBI portability macros. This should be the latest version from the
 
 Pg.pm - The main Perl file, which contains DBD::Pg packages and code for the 
   methods. Often times code here calls code from Pg.xs and dbdimp.c.
-  This file contains a version number in two places (once in the code, once 
+  This file contains a version number in four places (twice in the code, twice 
   in the POD). The main documentation for the module lives here, as POD information.
 
 Pg.xs - The Perl "glue" file for DBD::Pg. This file basically tells Perl how 
