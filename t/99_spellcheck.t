@@ -21,7 +21,7 @@ else {
     opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
     @testfiles = map { "t/$_" } grep { ! /spellcheck|lint/ } grep { /^.+\.(t|pl)$/ } readdir $dir;
     closedir $dir or die qq{Could not closedir "$dir": $!\n};
-    plan tests => 19+@testfiles;
+    plan tests => 20+@testfiles;
 }
 
 my %okword;
@@ -104,7 +104,7 @@ SKIP: {
 ## Now the comments
 SKIP: {
     if (!eval { require File::Comments; 1 }) {
-        skip ('Need File::Comments to test the spelling inside comments', 11+@testfiles);
+        skip ('Need File::Comments to test the spelling inside comments', 12+@testfiles);
     }
     {
         ## For XS files...
@@ -131,7 +131,7 @@ SKIP: {
 
 
     for my $file (@testfiles, qw{Makefile.PL Pg.xs Pg.pm lib/Bundle/DBD/Pg.pm
-        dbdimp.c dbdimp.h types.c quote.c quote.h Pg.h types.h}) {
+        dbdimp.c dbdimp.h types.c quote.c quote.h Pg.h types.h testallversions.tmp.pl}) {
         ## Tests as well?
         if (! -e $file) {
             fail (qq{Could not find the file "$file"!});
@@ -271,6 +271,7 @@ dbh
 dbi
 DBI
 DBIc
+DBICTEST
 DBILOGFP
 DBIS
 dbivport
@@ -577,6 +578,7 @@ POSIX
 postgres
 Postgres
 POSTGRES
+postgresdir
 postgresql
 PostgreSQL
 postgresteam
