@@ -7,12 +7,14 @@ use 5.008001;
 use strict;
 use warnings;
 use autodie;
+use Cwd;
+use File::Spec::Functions;
 use Getopt::Long qw/ GetOptions /;
-use Data::Dumper;
+use Data::Dumper; $Data::Dumper::Sortkeys = 1;
 use Time::HiRes qw/ gettimeofday tv_interval /;
 use List::Util qw/ shuffle /;
 
-our $VERSION = 1.2;
+our $VERSION = 1.3;
 
 my %arg = (
     quiet => 0,
@@ -20,13 +22,14 @@ my %arg = (
 
 GetOptions
  (
-     \%arg,
+   \%arg,
    'verbose',
    'quiet',
    'testfile=s',
    'compileversion=s',
    'runversion=s',
    'wipe',
+   'setup=s',
 );
 
 my $testfile = $arg{testfile} || $ENV{DBDPG_TEST_FILE} || '';
@@ -34,6 +37,8 @@ my $compileversion = $arg{compileversion} || $ENV{DBDPG_COMPILE_VERSION} || '';
 my $runversion = $arg{runversion} || $ENV{DBDPG_RUN_VERSION} || '';
 
 my $basedir = shift || "$ENV{HOME}/pg";
+
+setup_postgres_dirs() if $arg{setup};
 
 my $dh;
 opendir $dh, $basedir;
@@ -90,12 +95,12 @@ for my $lib_version (shuffle @versions) {
 
         system "perl t/99cleanup.t >> $outfile";
 
-        my $COM = "POSTGRES_LIB= POSTGRES_INCLUDE= POSTGRES_HOME=$lib_dir perl Makefile.PL 2>&1 >> $outfile";
+        my $COM = "LD_LIBRARY_PATH=$lib_dir/lib POSTGRES_LIB= POSTGRES_INCLUDE= POSTGRES_HOME=$lib_dir perl Makefile.PL 2>&1 >> $outfile";
         note "--> $COM";
         print {$fh} "***\nRUN: $COM\n***\n\n\n";
         print {$fh} qx{$COM};
 
-        $COM = "DBDPG_TEST_ALWAYS_ENV=0 AUTHOR_TESTING=0 TEST_SIGNATURE=0 DBDPG_INITDB=$target_dir/bin/initdb make test TEST_VERBOSE=1 2>&1 >> $outfile";
+        $COM = "LD_LIBRARY_PATH=$lib_dir/lib DBDPG_TEST_ALWAYS_ENV=0 AUTHOR_TESTING=0 TEST_SIGNATURE=0 DBDPG_INITDB=$target_dir/bin/initdb make test TEST_VERBOSE=1 2>&1 >> $outfile";
         $testfile and $COM =~ s/make test/make test TEST_FILES=$testfile/;
         note "--> $COM";
         print {$fh} "***\nRUN: $COM\n***\n\n\n";
@@ -122,3 +127,60 @@ for my $lib_version (shuffle @versions) {
 
 close $sfh;
 exit;
+
+sub setup_postgres_dirs {
+
+    ## Create Postgres directories for one or more versions
+    my $versions = $arg{setup};
+
+    warn "Setup for version: $versions on dir $basedir\n";
+
+    ## Must have a head
+    my $giturl = 'https://github.com/postgres/postgres.git';
+    my $dir = catfile($basedir, 'pg_github');
+    if (-e $dir) {
+        system 'git checkout master';
+        system "git pull -X theirs origin master";
+    }
+    else {
+        system "git clone $giturl $dir";
+    }
+    ## Grab a list of all tags
+    my $old_dir = getcwd();
+    chdir($dir);
+    my @taglist = qx{git tag -l};
+    my %maxversion = (head => ['master','master']);
+    for my $entry (@taglist) {
+        chomp $entry;
+        if ($entry =~ /^REL_?(\d_\d)_(\d+)$/ or $entry =~ /^REL_?(\d\d)_(\d+)$/) {
+            my ($major,$revision) = ($1,$2);
+            $major =~ y/_/./;
+            $maxversion{$major} = [$entry,$revision] if ! exists $maxversion{$major}
+                or $maxversion{$major}->[1] < $revision;
+        }
+    }
+
+    for my $version (split /\s*,\s*/ => lc $arg{setup}) {
+        exists $maxversion{$version} or die "Cannot find a tag for Postgres version $version\n";
+        my $newdir = catfile($basedir, $version);
+        if (-e $newdir) {
+            print "Already there: $newdir\n";
+        }
+        else {
+            chdir($dir);
+            my $tag = $maxversion{$version}->[0];
+            system "git checkout $tag";
+            system 'git clean -fdx';
+            my $COM = "./configure --prefix=$newdir --quiet";
+            if ($version =~ /^\d/ and $version <= 9.0) {
+                $COM .= ' CFLAGS="-Wno-aggressive-loop-optimizations -O0"';
+            }
+            print "Running: $COM\n";
+            system $COM;
+            system 'make install';
+        }
+    }
+
+    exit;
+
+} ## end of setup_postgres_dirs
