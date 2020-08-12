@@ -3,7 +3,7 @@ Changes for the DBD::Pg module
 RT refers to rt.cpan.org
 
 
-Version 3.14.1
+Version 3.14.1  (released August 12, 2020)
 
  - Force the version string so undefined errors in the "driver" sub go away.
    [Greg Sabino Mullane]
