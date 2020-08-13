@@ -1,6 +1,6 @@
 #!perl
 
-## Minor code cleanup checks
+## Various code cleanup checks
 
 use 5.008001;
 use strict;
@@ -221,5 +221,31 @@ for my $x (sort keys %word) {
     last if $stop++ > 10;
 }
 
+##
+## Make sure all ENV calls in Perl files are known words
+##
+my $good_var_names = '
+DBI_DSN DBI_USER DBI_PASS
+DBDPG_INITDB DBDPG_DEBUG DBDPG_NOCLEANUP DBDPG_TESTINITDB DBDPG_TEST_ALWAYS_ENV
+POSTGRES_HOME PGDATABASE PGINITDB
+LANG USER
+AUTHOR_TESTING RELEASE_TESTING TEST_CRITIC_SKIPNONTEST TEST_OUTPUT TEST_SIGNATURE
+';
+my %valid_env = map { $_=>1 } split /\s+/ => $good_var_names;
+my %bad_env;
+for my $file (@testfiles) {
+    open my $fh, '<', $file or die qq{Could not open "$file": $!\n};
+    while (<$fh>) {
+        while (/\$ENV\{([^\$].*?)\}/g) {
+            $bad_env{$1}++ if ! exists $valid_env{$1};
+        }
+    }
+}
+
+$t = q{All ENV{} calls are to known words};
+%bad_env ? fail($t) : pass($t);
+for my $word (sort keys %bad_env) {
+    diag "Invalid ENV: $word\n";
+}
 
 done_testing();
