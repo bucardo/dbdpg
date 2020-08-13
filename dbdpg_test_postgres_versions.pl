@@ -25,7 +25,7 @@ use Data::Dumper; $Data::Dumper::Sortkeys = 1;
 use Time::HiRes qw/ gettimeofday tv_interval /;
 use List::Util qw/ shuffle /;
 
-our $VERSION = 1.3;
+our $VERSION = 1.4;
 
 my %arg = (
     quiet => 0,
@@ -150,8 +150,9 @@ sub setup_postgres_dirs {
     my $giturl = 'https://github.com/postgres/postgres.git';
     my $dir = catfile($basedir, 'pg_github');
     if (-e $dir) {
-        system 'git checkout master';
-        system "git pull -X theirs origin master";
+        chdir $dir;
+        system 'git checkout --quiet master';
+        system "git pull --quiet -X theirs origin master";
     }
     else {
         system "git clone $giturl $dir";
@@ -174,10 +175,25 @@ sub setup_postgres_dirs {
     for my $version (split /\s*,\s*/ => lc $arg{setup}) {
         exists $maxversion{$version} or die "Cannot find a tag for Postgres version $version\n";
         my $newdir = catfile($basedir, $version);
+        my $install = 0;
         if (-e $newdir) {
-            print "Already there: $newdir\n";
+            print "Directory already exists: $newdir\n";
+            ## However, there may be a newer version!
+            my ($existing_revision) = qx{$newdir/bin/psql --version} =~ /\.(\d+)$/;
+            if ($existing_revision < $maxversion{$version}->[1]) {
+                printf "For version %s, have revision %d but need %s\n",
+                    $version, $existing_revision, $maxversion{$version}->[1];
+                $install = 1;
+            }
+            else {
+                print "We appear to have the latest revision: $existing_revision\n";
+            }
         }
         else {
+            $install = 1;
+        }
+
+        if ($install) {
             chdir($dir);
             my $tag = $maxversion{$version}->[0];
             system "git checkout $tag";
