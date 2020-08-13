@@ -1,7 +1,18 @@
 #!/usr/bin/env perl
 
 ## Quick script to test all available combinations of Postgres
-## Usage: $0 <postgresdir> [-t specific_test_file] [-c compile_version] [-r run_version]
+## Usage: $0 <postgresdir> [-t specific_test_file] [-c compile_version] [-r run_version] [--setup versions]
+
+## Usage:
+## Create Postgres 10,11, and 12 directories in $ENV{HOME}/pg/:
+## perl dbdpg_test_postgres_versions.pl --setup 10,11,12
+## Test all combinations of the same:
+## perl dbdpg_test_postgres_versions.pl
+## Add in the current HEAD branch, recreating if already there:
+## perl dbdpg_test_postgres_versions.pl --setup head --force
+## Test DBD::Pg compiled against head and run against Postgres 11:
+## perl dbdpg_test_postgres_versions.pl -c head -r 11
+
 
 use 5.008001;
 use strict;
