@@ -607,9 +607,7 @@ else {
     pass ('pg_st_split_statement gave no problems with various lengths');
 }
 
-# PostgreSQL 8.1 fails with "ERROR:  stack depth limit exceeded"
-# with the default value of 2048
-my $newdepth = $^O =~ /Win32/ ? 3000 : 7600;
+my $newdepth = $^O =~ /win/i ? 3000 : 7600;
 $superuser and $dbh->do("set max_stack_depth = $newdepth");
 ## Check for problems with insane number of placeholders
 for my $ph (1..13) {
