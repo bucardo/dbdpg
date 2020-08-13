@@ -93,9 +93,9 @@ for my $file (sort keys %manfile) {
 }
 
 ##
-## Everything in README.dev should also be in MANIFEST, except derived files
+## Everything in README.dev should also be in MANIFEST, except special files
 ##
-my %derived = map { $_, 1 } qw/Makefile Pg.c README.testdatabase dbdpg_test_database/;
+my %derived = map { $_, 1 } qw/Makefile Pg.c README.testdatabase dbdpg_test_database dbdpg_test_postgres_versions.pl/;
 for my $file (sort keys %devfile) {
     if (!exists $manfile{$file} and !exists $derived{$file}) {
         fail qq{File "$file" is in README.dev but not in MANIFEST\n};
@@ -203,7 +203,7 @@ for my $file (qw{
     README Changes TODO README.dev README.win32 CONTRIBUTING.md
     Pg.pm Pg.xs dbdimp.c quote.c Makefile.PL Pg.h types.c dbdimp.h
     t/03dbmethod.t t/03smethod.t t/12placeholders.t t/01constants.t t/99_yaml.t
-    testme.tmp.pl
+    testme.tmp.pl dbdpg_test_postgres_versions.pl
 }) {
     open $fh, '<', $file or die "Could not open $file: $!\n";
     while (<$fh>) {

@@ -145,6 +145,12 @@ types.h - Header file for types.c
 
 * Test files:
 
+dbdpg_test_postgres_versions.pl - Run the test suite against multiple versions of
+  Postgres, both for compilation and target. Run with "--setup head,9.4,12" etc.
+  to create Postgres directories in ~/pg, then run with no arguments to test all
+  combinations. Specify one or more compilation versions with "-c" and one or more
+  target versions with "-r". For example, "-c 9.4,11 -r head"
+
 t/dbdpg_test_setup.pl - Common connection, schema creation, and schema destruction subs.
   Goes through a lot of trouble to try and get a database to test with.
 
@@ -334,7 +340,7 @@ etc...
 It's also a good idea to test the current HEAD version of Postgres in your tests: 
 this can detect changes nice and early.
 
-See the testallversions.tmp.pl file for one way to automate this.
+See the dbdpg_test_postgres_versions.pl file for one way to automate this.
 
 In addition to different versions of Postgres, it's a good idea to test a few versions of 
 DBI: this has caught problems in the past. You'll basically need to install the different 
