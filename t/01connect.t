@@ -200,7 +200,7 @@ END {
         "DBI_USER                    $user\n".
         "Test schema                 $schema$extra\n";
 
-    if ($extra =~ /Error was/) {
+    if ($extra =~ /Error was/ and $extra !~ /probably not available/) {
         BAIL_OUT "Cannot continue: connection failed\n";
     }
 }
