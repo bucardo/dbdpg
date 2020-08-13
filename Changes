@@ -2,10 +2,13 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.14.2  (unreleased)
+Version 3.14.2  (released August 13, 2020)
 
  - Fix ENV typo in the test suite
    [Gregor Herrmann]
+
+ - Renamed and enhanced test helper script: dbdpg_test_postgres_versions.pl
+   [Greg Sabino Mullane]
 
 
 Version 3.14.1  (released August 12, 2020)
