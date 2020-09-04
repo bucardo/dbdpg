@@ -810,7 +810,7 @@ sub get_test_settings {
     my ($testdsn, $testuser, $testdir, $error) = ('','','','?');
     my ($helpconnect, $su, $uid, $version) = (0,'','',0);
     my $inerror = 0;
-    if (-e $helpfile) {
+    if (-e $helpfile and ! $ENV{DBDPG_TEST_NOHELPFILE}) {
         open $fh, '<', $helpfile or die qq{Could not open "$helpfile": $!\n};
         while (<$fh>) {
             if ($inerror) {
