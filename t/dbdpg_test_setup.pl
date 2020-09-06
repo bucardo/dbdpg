@@ -372,10 +372,7 @@ version: $version
             $su = $testuser = '';
 
             ## Figure out a valid directory - returns empty if nothing available
-            $testdir = find_tempdir();
-            if (!$testdir) {
-                return $helpconnect, 'Unable to create a temp directory', undef;
-            }
+            $testdir = File::Temp::tempdir('dbdpg_testdatabase_XXXXXX', TMPDIR => 1, CLEANUP => 0);
 
             my $readme = "$testdir/README";
             if (open $fh, '>', $readme) {
@@ -769,23 +766,6 @@ sub is_super {
     return $superuser;
 
 }
-
-sub find_tempdir {
-
-    if (eval { require File::Temp; 1; }) {
-        return File::Temp::tempdir('dbdpg_testdatabase_XXXXXX', TMPDIR => 1, CLEANUP => 0);
-    }
-
-    ## Who doesn't have File::Temp?! :)
-    for my $num (1..100) {
-        my $tempdir = "/tmp/dbdpg_testdatabase_ABCDEF$num";
-        next if -e $tempdir;
-        mkdir $tempdir or return '';
-        return $tempdir;
-    }
-    return '';
-
-} ## end of find_tempdir
 
 
 sub get_test_settings {
