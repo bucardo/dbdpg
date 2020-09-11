@@ -240,8 +240,14 @@ is ($attrib, undef, $t);
 #
 
 $t='DB handle attribute "Username" returns the same value as DBI_USER';
-$attrib = $dbh->{Username};
-is ($attrib, $testuser, $t);
+SKIP: {
+    if (! length $testuser) {
+        skip ('Cannot test $dbh->{Username} unless DBI_USER is set', 1);
+    }
+
+    $attrib = $dbh->{Username};
+    is ($attrib, $testuser, $t);
+}
 
 #
 # Test of the "PrintWarn" database handle attribute
