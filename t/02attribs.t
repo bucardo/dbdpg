@@ -1009,7 +1009,7 @@ $dbh->pg_cancel();
 is ($sth->{pg_async_status}, -1, $t);
 $t=q{Database handle attribute "pg_async_status" returns a -1 after a cancel};
 is ($dbh->{pg_async_status}, -1, $t);
-sleep 2;
+sleep 3;
 
 #
 # Test of the handle attribute "Active"
