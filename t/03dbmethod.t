@@ -1198,9 +1198,14 @@ my @stats_columns = qw(
 
 ## Make some per-version tweaks
 
-## 8.5 changed the way foreign key names are generated
+## Postgres 8.5 changed the way foreign key names are generated
 if ($pgversion >= 80500) {
     $correct_stats->{two}[0][5] = $correct_stats->{two}[1][5] = 'dbd_pg_test2_b_c_key';
+}
+
+## Postgres 13 changed unknown reltuples from 0 to -1
+if ($pgversion >= 130000) {
+    $correct_stats->{one}[3][10] = $correct_stats->{two}[6][10] = $correct_stats->{three}[6][10] = -1;
 }
 
 my $stats;
