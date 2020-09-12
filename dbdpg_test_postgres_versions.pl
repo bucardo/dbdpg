@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-## Quick script to test all available combinations of Postgres
+## Test combinations of Postgres for DBD::Pg
 ## Usage: $0 <postgresdir> [-t specific_test_file] [-c compile_version] [-r run_version] [--setup versions]
 
 ## Usage:
@@ -117,8 +117,7 @@ for my $lib_version (shuffle @versions) {
         print {$fh} "***\nRUN: $COM\n***\n\n\n";
         print {$fh} qx{$COM};
 
-        my $final_time = tv_interval($start_time);
-        note "Time: $final_time";
+        my $final_time = sprintf '%d seconds', tv_interval($start_time);
         print {$fh} "\nTIME: $final_time\n";
         close $fh;
 
@@ -128,7 +127,7 @@ for my $lib_version (shuffle @versions) {
         if ($final_line !~ /Result/) {
             $final_line = "Result: FAIL $final_line";
         }
-        note "--> $final_line $lib_version vs $target_version ($date)\n\n";
+        note "--> $final_line $lib_version vs $target_version ($date) ($final_time)\n\n";
 
         if ($debug_loop++ > 300) {
             die "Leaving at loop $debug_loop\n";
