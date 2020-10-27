@@ -45,9 +45,8 @@ class offers methods that simplify those tasks.
 use strict;
 use File::Spec ();
 use Config;
-use vars qw(@ISA $VERSION);
-@ISA = qw(File::Spec);
-$VERSION = '0.57';
+our @ISA = qw(File::Spec);
+our $VERSION = '0.57';
 
 my %path_dems = (
     MacOS   => qr',',

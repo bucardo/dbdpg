@@ -2,9 +2,8 @@ package App::Info::RDBMS;
 
 use strict;
 use App::Info;
-use vars qw(@ISA $VERSION);
-@ISA = qw(App::Info);
-$VERSION = '0.57';
+our @ISA = qw(App::Info);
+our $VERSION = '0.57';
 
 1;
 __END__
@@ -53,6 +52,3 @@ This module is free software; you can redistribute it and/or modify it under the
 same terms as Perl itself.
 
 =cut
-
-
-

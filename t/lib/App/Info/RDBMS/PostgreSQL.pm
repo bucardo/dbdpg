@@ -40,9 +40,8 @@ triggered once, by whichever of those four methods is called first.
 use strict;
 use App::Info::RDBMS;
 use App::Info::Util;
-use vars qw(@ISA $VERSION);
-@ISA = qw(App::Info::RDBMS);
-$VERSION = '0.57';
+our @ISA = qw(App::Info::RDBMS);
+our $VERSION = '0.57';
 use constant WIN32 => $^O eq 'MSWin32';
 
 my $u = App::Info::Util->new;

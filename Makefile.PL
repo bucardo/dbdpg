@@ -10,8 +10,8 @@ my $VERSION = '3.15.0';
 ## App::Info is stored inside t/lib
 ## Create a proper path so we can use it below
 my $lib;
+my $sep;
 BEGIN {
-    use vars qw/$sep/;
     my %seplist = (
                MacOS   => ':',
                MSWin32 => '\\',

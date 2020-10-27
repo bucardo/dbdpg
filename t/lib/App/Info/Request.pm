@@ -41,9 +41,8 @@ to handle the request appropriately.
 =cut
 
 use strict;
-use vars qw($VERSION);
 use Carp;
-$VERSION = '0.57';
+our $VERSION = '0.57';
 
 ##############################################################################
 

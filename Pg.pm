@@ -21,8 +21,8 @@ use 5.008001;
     use DBI ();
     use DynaLoader ();
     use Exporter ();
-    use vars qw(@ISA %EXPORT_TAGS $err $errstr $sqlstate $drh $dbh $DBDPG_DEFAULT @EXPORT);
-    @ISA = qw(DynaLoader Exporter);
+    our $dbh;
+    our @ISA = qw(DynaLoader Exporter);
 
     use constant {
         PG_MIN_SMALLINT => -32768,
@@ -39,7 +39,7 @@ use 5.008001;
         PG_MAX_BIGSERIAL => '9223372036854775807',
     };
 
-    %EXPORT_TAGS =
+    our %EXPORT_TAGS =
         (
          async => [qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT)],
          pg_limits => [qw($DBDPG_DEFAULT
@@ -92,18 +92,18 @@ use 5.008001;
         package DBD::Pg::DefaultValue;
         sub new { my $self = {}; return bless $self, shift; }
     }
-    $DBDPG_DEFAULT = DBD::Pg::DefaultValue->new();
+    our $DBDPG_DEFAULT = DBD::Pg::DefaultValue->new();
     Exporter::export_ok_tags('pg_types', 'async', 'pg_limits');
-    @EXPORT = qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT PG_BYTEA);
+    our @EXPORT = qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT PG_BYTEA);
 
     require_version DBI 1.614;
 
     bootstrap DBD::Pg $VERSION;
 
-    $err = 0;       # holds error code for DBI::err
-    $errstr = '';   # holds error string for DBI::errstr
-    $sqlstate = ''; # holds five character SQLSTATE code
-    $drh = undef;   # holds driver handle once initialized
+    our $err = 0;       # holds error code for DBI::err
+    our $errstr = '';   # holds error string for DBI::errstr
+    our $sqlstate = ''; # holds five character SQLSTATE code
+    our $drh = undef;   # holds driver handle once initialized
 
     ## These two methods are here to allow calling before connect()
     sub parse_trace_flag {

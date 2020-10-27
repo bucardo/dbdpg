@@ -69,7 +69,7 @@ my $S = 'dbd_pg_testschema';
 ## File written so we don't have to retry connections:
 my $helpfile = 'README.testdatabase';
 
-use vars qw/$fh/;
+our $fh;
 
 sub connect_database {
 

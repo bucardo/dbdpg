@@ -19,7 +19,7 @@ use Data::Peek;
 use Devel::Leak;
 use Time::HiRes qw/ sleep /;
 
-use vars qw/$sth $info $count $SQL/;
+our ($sth, $info, $count, $SQL);
 
 my $tracelevel = shift || 0;
 $ENV{DBI_TRACE} = $tracelevel;

@@ -32,8 +32,7 @@ handlers, read on!
 =cut
 
 use strict;
-use vars qw($VERSION);
-$VERSION = '0.57';
+our $VERSION = '0.57';
 
 my %handlers;
 
@@ -191,8 +190,7 @@ this:
 
   use strict;
   use App::Info::Handler;
-  use vars qw(@ISA);
-  @ISA = qw(App::Info::Handler);
+  our @ISA = qw(App::Info::Handler);
 
   foreach my $c (qw(foo bar)) {
       App::Info::Handler->register_handler

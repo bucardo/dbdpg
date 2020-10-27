@@ -14,8 +14,8 @@ require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
 ## Define this here in case we get to the END block before a connection is made.
+our ($t, $pgversion, $pglibversion, $pgvstring, $pgdefport, $helpconnect, $dbh, $connerror, %setting);
 BEGIN {
-    use vars qw/$t $pgversion $pglibversion $pgvstring $pgdefport $helpconnect $dbh $connerror %set/;
     ($pgversion,$pglibversion,$pgvstring,$pgdefport) = ('?','?','?','?');
 }
 
@@ -54,7 +54,7 @@ for (@{$dbh->selectall_arrayref($SQL)}) {
     next if $name eq 'standard_conforming_strings' and $value eq 'on';
     next if $name eq 'backslash_quote' and $value ne 'off';
     next if $name =~ /encoding/ and $value eq 'UTF8';
-    $set{$name} = $value;
+    $setting{$name} = $value;
 }
 
 my $dbh2 = connect_database();
@@ -93,7 +93,7 @@ SKIP: {
     }
 
     $t=q{Connect with forced uppercase 'DBI:' works};
-    my ($testdsn,$testuser,$helpconnect,$su,$uid,$testdir,$pg_ctl,$initdb,$error,$version) ## no critic (Variables::ProhibitUnusedVarsStricter)
+    my ($testdsn,$testuser,undef,$su,$uid,$testdir,$pg_ctl,$initdb,$error,$version) ## no critic (Variables::ProhibitUnusedVarsStricter)
         = get_test_settings();
     $testdsn =~ s/^dbi/DBI/i;
     my $ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
@@ -158,8 +158,8 @@ END {
     }
 
     ## More helpful stuff
-    for (sort keys %set) {
-        $extra .= sprintf "\n%-*s %s", $offset, $_, $set{$_};
+    for (sort keys %setting) {
+        $extra .= sprintf "\n%-*s %s", $offset, $_, $setting{$_};
     }
 
     if ($helpconnect) {

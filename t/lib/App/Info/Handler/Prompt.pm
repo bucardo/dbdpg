@@ -42,9 +42,8 @@ events.
 
 use strict;
 use App::Info::Handler;
-use vars qw($VERSION @ISA);
-$VERSION = '0.57';
-@ISA = qw(App::Info::Handler);
+our $VERSION = '0.57';
+our @ISA = qw(App::Info::Handler);
 
 # Register ourselves.
 App::Info::Handler->register_handler
