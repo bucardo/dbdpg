@@ -110,7 +110,7 @@ initdb: $initdb
 error: $error
 version: $version
 ";
-        for my $key ( grep { /^DBDPG/ } keys %ENV ) {
+        for my $key ( grep { /^DBDPG/ } sort keys %ENV ) {
             Test::More::diag "ENV $key = $ENV{$key}\n";
         }
     }
