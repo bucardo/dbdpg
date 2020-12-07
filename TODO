@@ -1,12 +1,7 @@
 Possible items to do, in no particular order
 
 Feature requests can be entered at 
-http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
-
-or on github:
-
-https://github.com/bucardo/dbdpg
-
+https://github.com/bucardo/dbdpg/issues
 
 - Get the "make fulltest" bit working properly
 - Change license to Artistic 2

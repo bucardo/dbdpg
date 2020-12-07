@@ -10,10 +10,6 @@ Bugs and problems can be reported at:
 
 https://github.com/bucardo/dbdpg/issues
 
-You can also report them here if you wish:
-
-https://rt.cpan.org/Dist/Display.html?Name=DBD-Pg
-
 
 ## Questions
 

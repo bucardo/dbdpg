@@ -4441,11 +4441,11 @@ L<The B<DBI> module|DBI>
 =head1 BUGS
 
 To report a bug, or view the current list of bugs, please visit 
-http://rt.cpan.org/Public/Dist/Display.html?Name=DBD-Pg
+https://github.com/bucardo/dbdpg/issues
 
 =head1 DEVELOPMENT
 
-Patches can be submitted to rt.cpan.org. Detailed information on how to 
+Pull requests can be submitted to github. Detailed information on how to 
 help out with this module can be found in the README.dev file. The latest 
 development version can be obtained via: git clone git://github.com/bucardo/dbdpg.git
 
