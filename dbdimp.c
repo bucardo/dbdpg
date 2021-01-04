@@ -3995,7 +3995,7 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
                 if (TRACE4_slow)
                     TRC(DBILOGFP, "%sRolling back to savepoint %s\n", THEADER_slow, SvPV_nolen(sp));
                 sprintf(cmd, "rollback to %s", SvPV_nolen(sp));
-                strncpy(tempsqlstate, imp_dbh->sqlstate, strlen(imp_dbh->sqlstate)+1);
+                strncpy(tempsqlstate, imp_dbh->sqlstate, 6);
                 status = _result(aTHX_ imp_dbh, cmd);
                 Safefree(cmd);
             }
@@ -4031,7 +4031,7 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     Safefree(imp_sth->prepare_name);
     imp_sth->prepare_name = NULL;
     if (tempsqlstate[0]) {
-        strncpy(imp_dbh->sqlstate, tempsqlstate, strlen(tempsqlstate)+1);
+        strncpy(imp_dbh->sqlstate, tempsqlstate, 6);
     }
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_deallocate_statement\n", THEADER_slow);
