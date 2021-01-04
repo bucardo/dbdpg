@@ -20,7 +20,7 @@ Sections:
 * Making a New Release
 * Tips and Tricks
 * Resources
-
+* Ongoing maintenance
 
 ==============
 == Overview ==
@@ -858,4 +858,22 @@ perldoc DBI::Profile
 
 
 Also see perldoc DBI::DBD. It's fairly old and incomplete, but still useful.
+
+
+=======================
+= Ongoing maintenance =
+=======================
+
+Keeping a project healthy requires regular maintenance. Here are some things 
+that need to be done regularly:
+
+* Update the copyright years (yearly in January)
+
+* Copy over dbivport.h from DBI and recompile (check monthly, or when a change is noticed)
+
+* Run `perl -x types.c` against Postgres HEAD (often as possible, but once a month is fine)
+
+* Check the bug reports from github, mailing lists, etc. (monthly)
+
+* Test against latest version of DBI (upon new release, but also as often as possible)
 
