@@ -211,6 +211,7 @@ CachedKids
 CamelCase
 cancelled
 cancelling
+CARDINALITY
 carlos
 cd
 CentOS
@@ -646,6 +647,7 @@ regex
 reinstalling
 relcheck
 relkind
+reltuples
 repo
 reprepare
 repreparing
@@ -717,6 +719,7 @@ stringify
 strlen
 STRLEN
 strncpy
+strtod
 struct
 structs
 subdirectory
