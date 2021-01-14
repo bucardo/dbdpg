@@ -67,10 +67,10 @@ DBISTATE_DECLARE;
 #include "dbdimp.h"
 #include "quote.h"
 
-#define TLEVEL_slow	     (DBIS->debug & DBIc_TRACE_LEVEL_MASK)
-#define TFLAGS_slow	     (DBIS->debug & DBIc_TRACE_FLAGS_MASK)
+#define TLEVEL_slow     (DBIS->debug & DBIc_TRACE_LEVEL_MASK)
+#define TFLAGS_slow     (DBIS->debug & DBIc_TRACE_FLAGS_MASK)
 
-#define TSQL	     (TFLAGS_slow & 256) /* Defined in DBI */
+#define TSQL            (TFLAGS_slow & 256) /* Defined in DBI */
 
 #define FLAGS_LIBPQ    0x01000000
 #define FLAGS_START    0x02000000
