@@ -8,16 +8,17 @@ use warnings;
 use Test::More;
 use File::Find;
 
-my (@testfiles,@perlfiles,@cfiles,%fileslurp,$t);
+my (@testfiles,@perlfiles,@cfiles,@headerfiles,%fileslurp,$t);
 
 if (! $ENV{AUTHOR_TESTING}) {
     plan (skip_all =>  'Test skipped unless environment variable AUTHOR_TESTING is set');
 }
 
 $ENV{LANG} = 'C';
-find (sub { push @cfiles    => $File::Find::name if /^[^.].+\.c$/ and $_ ne 'Pg.c' and $File::Find::dir !~ /tmp/; }, '.');
-find (sub { push @testfiles => $File::Find::name if /^[^.]\w+\.(t|pl)$/; }, 't');
-find (sub { push @perlfiles => $File::Find::name if /^[^.].+\.(pm|pl|t)$/ and $File::Find::dir !~ /tmp/; }, '.');
+find (sub { push @cfiles      => $File::Find::name if /^[^.].+\.c$/ and $_ ne 'Pg.c' and $File::Find::dir !~ /tmp/; }, '.');
+find (sub { push @headerfiles => $File::Find::name if /^[^.].+\.h$/ and $_ ne 'dbivport.h' and $File::Find::dir !~ /tmp/; }, '.');
+find (sub { push @testfiles   => $File::Find::name if /^[^.]\w+\.(t|pl)$/; }, 't');
+find (sub { push @perlfiles   => $File::Find::name if /^[^.].+\.(pm|pl|t)$/ and $File::Find::dir !~ /tmp/; }, '.');
 
 ##
 ## Load all Test::More calls into memory
@@ -124,7 +125,7 @@ for my $file (sort keys %fileslurp) {
 ##
 ## Check C and Perl files for errant tabs
 ##
-for my $file (@cfiles, @perlfiles) {
+for my $file (@cfiles, @headerfiles, @perlfiles) {
     my $tabfail = 0;
     open my $fh, '<', $file or die "Could not open $file: $!\n";
     while (<$fh>) {
