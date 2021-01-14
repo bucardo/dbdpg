@@ -27,7 +27,7 @@ struct imp_dbh_st {
 	int     switch_prepared;   /* how many executes until we switch to PQexecPrepared */
 	int     async_status;      /* 0=no async 1=async started -1=async has been cancelled */
 
-    imp_sth_t *async_sth;      /* current async statement handle */
+	imp_sth_t *async_sth;      /* current async statement handle */
 	AV      *savepoints;       /* list of savepoints */
 	PGconn  *conn;             /* connection structure */
 	char    *sqlstate;         /* from the last result */
@@ -44,10 +44,10 @@ struct imp_dbh_st {
 
 	int     pg_enable_utf8;    /* legacy utf8 flag: force utf8 flag on or off, regardless of client_encoding */
 	bool    pg_utf8_flag;      /* are we currently flipping the utf8 flag on? */
-    bool    client_encoding_utf8; /* is the client_encoding utf8 last we checked? */
+	bool    client_encoding_utf8; /* is the client_encoding utf8 last we checked? */
 
-    PGresult  *last_result;     /* PGresult structure from the last executed query (can be from imp_dbh or imp_sth) */
-    bool      result_clearable; /* Is it alright to call PQclear on last_result? (statements handles set it to false */
+	PGresult  *last_result;     /* PGresult structure from the last executed query (can be from imp_dbh or imp_sth) */
+	bool      result_clearable; /* Is it alright to call PQclear on last_result? (statements handles set it to false */
 	imp_sth_t *do_tmp_sth;      /* temporary sth to refer inside a do() call */
 };
 
@@ -94,7 +94,7 @@ struct imp_sth_st {
 
 	bool   server_prepare;    /* inherited from dbh */
 	int    switch_prepared;   /* inherited from dbh */
-    int    number_iterations; /* how many times has the statement been executed? Used by switch_prepared */
+	int    number_iterations; /* how many times has the statement been executed? Used by switch_prepared */
 	PGPlaceholderType placeholder_type;  /* which style is being used 1=? 2=$1 3=:foo */
 	int    numsegs;           /* how many segments this statement has */
 	int    numphs;            /* how many placeholders this statement has */
