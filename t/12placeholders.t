@@ -863,7 +863,7 @@ $sth = $dbh->prepare($SQL);
 eval {
     $sth->execute(101,'','Boolean empty string attempt number one');
 };
-ok( $@, $t);
+ok ($@, $t);
 $dbh->rollback();
 
 $t = q{Inserting into a boolean column with an empty string works if we call bind_param first};
@@ -878,7 +878,7 @@ $sth = $dbh->prepare($SQL);
 eval {
     $sth->execute(103,'','Boolean empty string attempt number three');
 };
-ok( $@, $t);
+ok ($@, $t);
 $dbh->rollback();
 
 $t = q{Inserting into a boolean column with an empty string works if we call bind_param first (pg_bool_tf on)};
