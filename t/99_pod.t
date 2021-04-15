@@ -163,6 +163,8 @@ SKIP: {
          qr{PG_PATHARRAY},
          qr{PG_PG_ATTRIBUTE},
          qr{PG_PG_ATTRIBUTEARRAY},
+         qr{PG_PG_BRIN_BLOOM_SUMMARY},
+         qr{PG_PG_BRIN_MINMAX_MULTI_SUMMARY},
          qr{PG_PG_CLASS},
          qr{PG_PG_CLASSARRAY},
          qr{PG_PG_DDL_COMMAND},
