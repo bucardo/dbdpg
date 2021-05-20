@@ -5,7 +5,6 @@ https://github.com/bucardo/dbdpg/issues
 
 - Evaluate if we really need strtod in the code
 - Have docs describe various ways to set client_encoding
-- Get the "make fulltest" bit working properly
 - Change license to Artistic 2
 - Remove the "goto" calls in the tests
 - Force a test database rebuild when a git branch switch is detected
