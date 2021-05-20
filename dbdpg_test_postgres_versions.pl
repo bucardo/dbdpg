@@ -4,8 +4,8 @@
 ## Usage: $0 <postgresdir> [-t specific_test_file] [-c compile_version] [-r run_version] [--setup versions]
 
 ## Usage:
-## Create Postgres 10,11, and 12 directories in $ENV{HOME}/pg/:
-## perl dbdpg_test_postgres_versions.pl --setup 10,11,12
+## Create Postgres 10,11,12,13, and 14 directories in $ENV{HOME}/pg/:
+## perl dbdpg_test_postgres_versions.pl --setup 10,11,12,13,14
 ## Test all combinations of the same:
 ## perl dbdpg_test_postgres_versions.pl
 ## Add in the current HEAD branch, recreating if already there:
