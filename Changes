@@ -10,7 +10,7 @@ Version 3.15.0 (unreleased)
    [Greg Sabino Mullane]
 
  - Correctly pull back pg_async status from statement handle.
-     Previously, $dbh->{pg_async} would return undef.
+   Previously, $dbh->{pg_async} would return undef.
    [Greg Sabino Mullane]
    (RT ticket #136553)
 
