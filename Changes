@@ -9,6 +9,11 @@ Version 3.15.0 (unreleased)
      column for $dbh->statistics_info.
    [Greg Sabino Mullane]
 
+ - Correctly pull back pg_async status from statement handle.
+     Previously, $dbh->{pg_async} would return undef.
+   [Greg Sabino Mullane]
+   (RT ticket #136553)
+
 
 Version 3.14.2  (released August 13, 2020)
 
