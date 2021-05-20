@@ -1068,8 +1068,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
     int               fields, x;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_FETCH (key: %s)\n", THEADER_slow, key);
-    
-    
+
     /* Some can be done before we have a result: */
     switch (kl) {
 
@@ -1089,6 +1088,9 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
                 SvREFCNT_dec(key);
             }
             retsv = newRV_noinc((SV*)pvhv);
+        }
+        else if (strEQ("pg_async", key)) {
+            retsv = newSViv((IV)imp_sth->async_flag);
         }
         break;
 
@@ -1309,11 +1311,9 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
         }
         break;
 
-    case 8: /* pg_async  NULLABLE */
+    case 8: /* NULLABLE */
 
-        if (strEQ("pg_async", key))
-            retsv = newSViv((IV)imp_sth->async_flag);
-        else if (strEQ("NULLABLE", key)) {
+        if (strEQ("NULLABLE", key)) {
             AV *av = newAV();
             PGresult *result;
             int status = -1;

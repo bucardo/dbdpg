@@ -13,6 +13,7 @@ use lib 'blib/lib', 'blib/arch', 't';
 use POSIX qw(:signal_h);
 use Test::More;
 use DBI ':sql_types';
+use DBD::Pg qw/ :async /;
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
@@ -21,7 +22,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 146;
+plan tests => 150;
 
 isnt ($dbh, undef, 'Connect to database for statement handle method testing');
 
@@ -634,6 +635,26 @@ $t=q{Statement handle attribute pg_numbound returns 1 if one placeholders bound 
 $sth = $dbh->prepare('SELECT 123 WHERE 1 > ? AND 2 > ?');
 $sth->bind_param(1, undef);
 is ($sth->{pg_numbound}, 1, $t);
+
+#
+# Test of the statement handle method "pg_async"
+#
+
+$t=q{Statement handle attribute pg_async returns 0 if not set yet};
+$sth = $dbh->prepare('SELECT 123');
+is ($sth->{pg_async}, 0, $t);
+
+$t=q{Statement handle attribute pg_async returns 0 if not set yet (post-execute)};
+$sth->execute();
+is ($sth->{pg_async}, 0, $t);
+
+$t=q{Statement handle attribute pg_async returns correct value when set true};
+$sth = $dbh->prepare('SELECT 123', { pg_async => PG_ASYNC });
+is ($sth->{pg_async}, 1, $t);
+
+$t=q{Statement handle attribute pg_async returns correct value when set false};
+$sth = $dbh->prepare('SELECT 123', { pg_async => 0 });
+is ($sth->{pg_async}, 0, $t);
 
 #
 # Test of the statement handle method "pg_bound"
