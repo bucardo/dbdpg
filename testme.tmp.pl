@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+## This is a test file, used by the DBD::Pg developers to duplicate and debug issues
+
 BEGIN {
     use lib '.', 'blib/lib', 'blib/arch';
     system 'make';
