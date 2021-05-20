@@ -53,7 +53,7 @@ setup_postgres_dirs() if $arg{setup};
 
 my $dh;
 opendir $dh, $basedir;
-my @versions = grep { /^[1-9][\.0-9]+$/ or /^head$/i } readdir $dh;
+my @versions = grep { /^[1-9][0-9]$/ or /^head$/i } readdir $dh;
 closedir $dh;
 
 ## Sanity check:
@@ -97,6 +97,11 @@ for my $lib_version (shuffle @versions) {
         my $readme = 'README.testdatabase';
         unlink $readme if -e $readme;
 
+        my $testdbdir = 'dbdpg_test_database';
+        if (-d $testdbdir) {
+            system("/bin/rm -fr $testdbdir");
+        }
+
         my $outfile = "tmp/alltest.dbdpg.$lib_version.vs.$target_version.log";
         note "Testing compile $lib_version against target $target_version: results stored in $outfile";
 
@@ -132,6 +137,13 @@ for my $lib_version (shuffle @versions) {
         if ($debug_loop++ > 300) {
             die "Leaving at loop $debug_loop\n";
         }
+
+        ## Just in case we want to catch something
+        if ($final_line =~ /FAIL/) {
+            warn "Got a failure. Hit Enter to continue, or break out to examine it\n";
+            <STDIN>;
+        }
+
     }
 }
 
