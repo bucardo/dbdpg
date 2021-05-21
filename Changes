@@ -2,7 +2,7 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.15.0 (unreleased)
+Version 3.15.0 (released May 21, 2021)
 
  - Adjust tests for the fact that reltuples can be -1 in Postgres
      version 13 and later. This is mostly reflected in the CARDINALITY 
