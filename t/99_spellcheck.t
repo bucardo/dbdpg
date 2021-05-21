@@ -363,7 +363,6 @@ firstword
 fk
 fprintf
 FreeBSD
-freenode
 fulltest
 func
 funcs
