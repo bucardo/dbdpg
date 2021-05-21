@@ -1204,7 +1204,7 @@ if ($pgversion >= 80500) {
 }
 
 ## Postgres 13 changed unknown reltuples from 0 to -1
-if ($pgversion >= 130000) {
+if ($pgversion >= 140000) {
     $correct_stats->{one}[3][10] = $correct_stats->{two}[6][10] = $correct_stats->{three}[6][10] = -1;
 }
 
