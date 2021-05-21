@@ -4,15 +4,15 @@ RT refers to rt.cpan.org
 
 Version 3.15.0 (released May 21, 2021)
 
- - Adjust tests for the fact that reltuples can be -1 in Postgres
-     version 13 and later. This is mostly reflected in the CARDINALITY 
-     column for $dbh->statistics_info.
-   [Greg Sabino Mullane]
-
  - Correctly pull back pg_async status from statement handle.
    Previously, $dbh->{pg_async} would return undef.
    [Greg Sabino Mullane]
    (RT ticket #136553)
+
+ - Adjust tests for the fact that reltuples can be -1 in Postgres
+     version 14 and later. This is mostly reflected in the CARDINALITY
+     column for $dbh->statistics_info.
+   [Greg Sabino Mullane]
 
  - Remove the experimental 'fulltest' Makefile target.
    [Greg Sabino Mullane]

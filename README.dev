@@ -646,6 +646,7 @@ You may also want to remove the directory it creates later by using "make realcl
 
 * Make a new git tag: git tag -u 01234abc 1.2.3 -m "Version 1.2.3, released April 1, 2015"
 In the example above, 01234abc is your pgp shortid and 1.2.3 is the new version number.
+You might need: export GPG_TTY=$(tty)
 
 * Make checksums
 
