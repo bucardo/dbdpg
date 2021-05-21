@@ -48,7 +48,7 @@ resources:
   bugtracker                : https://github.com/bucardo/dbdpg/issues
   repository                : https://github.com/bucardo/dbdpg
   MailingList               : http://www.nntp.perl.org/group/perl.dbd.pg/
-  IRC                       : irc://irc.freenode.net/#postgresql
+  IRC                       : irc://irc.libera.chat/#postgresql
 
 meta-spec:
   version                   : 1.4

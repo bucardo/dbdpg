@@ -441,6 +441,7 @@ leaktester
 LEFTARG
 len
 lgcc
+libera
 libpg
 libpq
 linux
