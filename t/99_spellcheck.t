@@ -384,6 +384,7 @@ Github
 gmx
 gotlist
 goto
+GPG
 gpl
 GPL
 greg
@@ -769,6 +770,7 @@ topav
 topdollar
 TraceLevel
 TSQUERY
+tty
 tuple
 tuples
 TUPLES
@@ -864,6 +866,7 @@ xcopy
 xPID
 xs
 xsi
+XSLoader
 xst
 XSUB
 XSubPPtmpAAAA
