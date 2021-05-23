@@ -2,6 +2,15 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+Version 3.?? (not released yet)
+
+ - Replace use of "vars" with "our"
+   [James Raspass <jraspass@gmail.com>]
+   (Github pull request #75)
+
+
+
+
 Version 3.15.0 (released May 21, 2021)
 
  - Correctly pull back pg_async status from statement handle.
