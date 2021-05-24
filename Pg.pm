@@ -18,7 +18,7 @@ use 5.008001;
 
     use version; our $VERSION = qv('3.15.0');
 
-    use DBI ();
+    use DBI 1.614 ();
     use Exporter ();
     our $dbh;
     our @ISA = qw(Exporter);
@@ -94,8 +94,6 @@ use 5.008001;
     our $DBDPG_DEFAULT = DBD::Pg::DefaultValue->new();
     Exporter::export_ok_tags('pg_types', 'async', 'pg_limits');
     our @EXPORT = qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT PG_BYTEA);
-
-    require_version DBI 1.614;
 
     eval {
         require XSLoader;
