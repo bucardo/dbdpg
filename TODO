@@ -3,7 +3,6 @@ Possible items to do, in no particular order
 Feature requests can be entered at 
 https://github.com/bucardo/dbdpg/issues
 
-- Consider switching from DynaLoader to XSLoader (see https://github.com/bucardo/dbdpg/pull/76)
 - Evaluate if we really need strtod in the code
 - Have docs describe various ways to set client_encoding
 - Change license to Artistic 2

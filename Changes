@@ -8,6 +8,10 @@ Version ?? (unreleased)
    [James Raspass <jraspass@gmail.com>]
    (Github pull request #75)
 
+ - Switch from Dynaloader to XSLoader when possible
+   [Todd Rinaldo <toddr@cpan.org>]
+   (Github pull request #76)
+
 
 Version 3.15.0 (released May 21, 2021)
 
