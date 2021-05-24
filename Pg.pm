@@ -19,10 +19,9 @@ use 5.008001;
     use version; our $VERSION = qv('3.15.0');
 
     use DBI ();
-    use DynaLoader ();
     use Exporter ();
     our $dbh;
-    our @ISA = qw(DynaLoader Exporter);
+    our @ISA = qw(Exporter);
 
     use constant {
         PG_MIN_SMALLINT => -32768,
@@ -98,7 +97,15 @@ use 5.008001;
 
     require_version DBI 1.614;
 
-    bootstrap DBD::Pg $VERSION;
+    eval {
+        require XSLoader;
+        XSLoader::load(__PACKAGE__, $VERSION);
+        1;
+    } or do {
+        require DynaLoader;
+        push @ISA, 'DynaLoader';
+        __PACKAGE__->bootstrap($VERSION);
+    };
 
     our $err = 0;       # holds error code for DBI::err
     our $errstr = '';   # holds error string for DBI::errstr
