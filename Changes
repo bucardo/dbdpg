@@ -8,7 +8,7 @@ Version ?? (unreleased)
    [James Raspass <jraspass@gmail.com>]
    (Github pull request #75)
 
- - Switch from Dynaloader to XSLoader when possible
+ - Switch from DynaLoader to XSLoader when possible
    [Todd Rinaldo <toddr@cpan.org>]
    (Github pull request #76)
 
