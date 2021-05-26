@@ -2077,14 +2077,14 @@ object descriptor! This function cannot be used if AutoCommit is enabled.
 
   $nbytes = $dbh->pg_lo_write($lobj_fd, $buffer, $len);
 
-Writes C<$len> bytes of c<$buffer> into the large object C<$lobj_fd>. Returns the number
+Writes C<$len> bytes of C<$buffer> into the large object C<$lobj_fd>. Returns the number
 of bytes written and C<undef> upon failure. This function cannot be used if AutoCommit is enabled.
 
 =item pg_lo_read
 
   $nbytes = $dbh->pg_lo_read($lobj_fd, $buffer, $len);
 
-Reads C<$len> bytes into c<$buffer> from large object C<$lobj_fd>. Returns the number of
+Reads C<$len> bytes into C<$buffer> from large object C<$lobj_fd>. Returns the number of
 bytes read and C<undef> upon failure. This function cannot be used if AutoCommit is enabled.
 
 =item pg_lo_lseek
@@ -2768,7 +2768,7 @@ Looks for any asynchronous notifications received and returns either C<undef>
 or a reference to a three-element array consisting of an event name, the PID 
 of the backend that sent the NOTIFY command, and the optional payload string. 
 Note that this does not check if the connection to the database is still valid first - 
-for that, use the c<ping> method. You may need to commit if not in autocommit mode - 
+for that, use the C<ping> method. You may need to commit if not in autocommit mode -
 new notices will not be picked up while in the middle of a transaction. An example:
 
   $dbh->do("LISTEN abc");
