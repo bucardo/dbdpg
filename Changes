@@ -8,6 +8,9 @@ Version ?? (unreleased)
    [James Raspass <jraspass@gmail.com>]
    (Github pull request #75)
 
+ - Allow use of $ENV{DBDPG_TEMPDIR} to shorten test directory paths.
+   (Github issue #78)
+
  - Switch from DynaLoader to XSLoader when possible
    [Todd Rinaldo <toddr@cpan.org>]
    (Github pull request #76)
