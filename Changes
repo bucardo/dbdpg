@@ -12,6 +12,13 @@ Version ?? (unreleased)
    [Todd Rinaldo <toddr@cpan.org>]
    (Github pull request #76)
 
+ - Fix missing "use File::Temp"
+   [Greg Sabino Mullane]
+   (Github issue #79)
+
+ - Use non-root user when calling pg_resetwal
+   [Greg Sabino Mullane]
+
 
 Version 3.15.0 (released May 21, 2021)
 
