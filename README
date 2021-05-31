@@ -137,7 +137,7 @@ The first available port starting at 5440 will be used.
 
 If your directory path is long, Postgres may fail to start as there is a
 maximum length to socket directory paths. If this happens, please set
-the environment variable DBDPG_TEMPDIR to something short, such as "/tmp"
+the environment variable DBDPG_TEMPDIR to something short, such as "/tmp".
 
 You can increase the verbosity of the tests by setting the 
 environment variable TEST_VERBOSE. You can also enable tracing 
