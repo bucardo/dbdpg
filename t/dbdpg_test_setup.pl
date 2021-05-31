@@ -373,8 +373,9 @@ version: $version
             my $founduser = 0;
             $su = $testuser = '';
 
-            ## Figure out a valid directory - returns empty if nothing available
-            $testdir = File::Temp::tempdir('dbdpg_testdatabase_XXXXXX', TMPDIR => 1, CLEANUP => 0);
+            $testdir = exists $ENV{DBDPG_TEMPDIR} ?
+                File::Temp::tempdir("$ENV{DBDPG_TEMPDIR}/dbdpg_testdatabase_XXXXXX", TMPDIR => 1, CLEANUP => 0) :
+                File::Temp::tempdir('dbdpg_testdatabase_XXXXXX', TMPDIR => 1, CLEANUP => 0);
 
             my $readme = "$testdir/README";
             if (open $fh, '>', $readme) {
@@ -824,7 +825,9 @@ sub get_test_settings {
 
     if (!$testdir) {
         my $dir = getcwd();
-        $testdir = "$dir/dbdpg_test_database";
+        $testdir = exists $ENV{DBDPG_TEMPDIR} ?
+            File::Temp::tempdir("$ENV{DBDPG_TEMPDIR}/dbdpg_testdatabase_XXXXXX", TMPDIR => 1, CLEANUP => 0) :
+            "$dir/dbdpg_test_database";
     }
 
     ## Allow forcing of ENV variables
