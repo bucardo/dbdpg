@@ -6,6 +6,7 @@ use warnings;
 use lib 'blib/lib', 'blib/arch'; ## no critic
 use Data::Dumper;
 use DBI;
+use File::Temp;
 use Cwd;
 use Test::More qw//;
 use 5.008001;
@@ -446,12 +447,12 @@ version: $version
             $resetxlog =~ s/pg_resetxlog/pg_resetwal/;
         }
         eval {
-            $info = qx{$resetxlog --help};
+            $info = qx{su -m "$testuser" -c "$resetxlog --help"};
         };
         if (! $@ and $info =~ /XID/) {
             if (! -e "$testdir/data/postmaster.pid") {
                 eval {
-                    $info = qx{ $resetxlog -o 2222333344 $testdir/data };
+                    $info = qx{ su -m "$testuser" -c "$resetxlog -o 2222333344 $testdir/data" };
                 };
                 ## We don't really care if it worked or not!
             }
