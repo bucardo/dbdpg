@@ -447,12 +447,22 @@ version: $version
             $resetxlog =~ s/pg_resetxlog/pg_resetwal/;
         }
         eval {
-            $info = qx{su -m "$testuser" -c "$resetxlog --help"};
+            if ($su) {
+                $info = qx{su -m "$testuser" -c "$resetxlog --help"};
+            }
+            else {
+                $info = qx{$resetxlog --help};
+            }
         };
         if (! $@ and $info =~ /XID/) {
             if (! -e "$testdir/data/postmaster.pid") {
                 eval {
-                    $info = qx{ su -m "$testuser" -c "$resetxlog -o 2222333344 $testdir/data" };
+                    if ($su) {
+                        $info = qx{ su -m "$testuser" -c "$resetxlog -o 2222333344 $testdir/data" };
+                    }
+                    else {
+                        $info = qx{ $resetxlog -o 2222333344 $testdir/data };
+                    }
                 };
                 ## We don't really care if it worked or not!
             }
