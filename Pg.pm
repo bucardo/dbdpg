@@ -20,6 +20,7 @@ use 5.008001;
 
     use DBI 1.614 ();
     use Exporter ();
+    use XSLoader;
     our $dbh;
     our @ISA = qw(Exporter);
 
@@ -94,16 +95,7 @@ use 5.008001;
     our $DBDPG_DEFAULT = DBD::Pg::DefaultValue->new();
     Exporter::export_ok_tags('pg_types', 'async', 'pg_limits');
     our @EXPORT = qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT PG_BYTEA);
-
-    eval {
-        require XSLoader;
-        XSLoader::load(__PACKAGE__, $VERSION);
-        1;
-    } or do {
-        require DynaLoader;
-        push @ISA, 'DynaLoader';
-        __PACKAGE__->bootstrap($VERSION);
-    };
+    XSLoader::load(__PACKAGE__, $VERSION);
 
     our $err = 0;       # holds error code for DBI::err
     our $errstr = '';   # holds error string for DBI::errstr
