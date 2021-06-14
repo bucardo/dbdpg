@@ -2556,7 +2556,7 @@ the L</pg_placeholder_nocolons> attribute in the same way. Examples:
   $sth = $dbh->prepare(q{SELECT array[1:2] FROM mytable WHERE id = ?});
   $sth->execute(1);
 
-Again, you may set it param time as well:
+Again, you may set it at prepare time as well:
 
   $sth = $dbh->prepare(q{SELECT array[1:2] FROM mytable WHERE id = ?},
     {pg_placeholder_nocolons => 1});
