@@ -19,10 +19,6 @@
 
 #define DEBUG_LAST_RESULT 0
 
-#define sword signed int
-#define sb2 signed short
-#define ub2 unsigned short
-
 #if PGLIBVERSION < 80300
 Oid lo_truncate (PGconn *conn, int fd, size_t len);
 Oid lo_truncate (PGconn *conn, int fd, size_t len) {
