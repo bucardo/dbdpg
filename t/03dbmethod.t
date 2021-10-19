@@ -1942,30 +1942,73 @@ $handle = $dbh->pg_lo_open($object, $R);
 like ($handle, qr/^[0-9]+$/o, $t);
 cmp_ok ($handle, 'eq', 0, $t);
 
-$t='DB handle method "pg_lo_lseek" works when reading';
+$t='DB handle method "pg_lo_lseek(SEEK_SET)" works when reading';
 $result = $dbh->pg_lo_lseek($handle, 11, SEEK_SET);
 is ($result, 11, $t);
 
-SKIP: {
-    if ($pgversion < 90300 or $pglibversion < 90300) {
-        skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
-    }
-    $t='DB handle method "pg_lo_lseek64" works when reading';
-    $result = $dbh->pg_lo_lseek($handle, 11, SEEK_SET);
-    is ($result, 11, $t);
-}
+$t='DB handle method "pg_lo_tell" works';
+my $tell_result = $dbh->pg_lo_tell($handle);
+is ($tell_result, $result, $t);
+
+$t='DB handle method "pg_lo_lseek(SEEK_CUR)" forward works when reading';
+$result = $dbh->pg_lo_lseek($handle, 11, SEEK_CUR);
+is ($result, 22, $t);
 
 $t='DB handle method "pg_lo_tell" works';
-$result = $dbh->pg_lo_tell($handle);
-is ($result, 11, $t);
+$tell_result = $dbh->pg_lo_tell($handle);
+is ($tell_result, $result, $t);
+
+$t='DB handle method "pg_lo_lseek(SEEK_CUR)" backward works when reading';
+$result = $dbh->pg_lo_lseek($handle, -10, SEEK_CUR);
+is ($result, 12, $t);
+
+$t='DB handle method "pg_lo_tell" works';
+$tell_result = $dbh->pg_lo_tell($handle);
+is ($tell_result, $result, $t);
+
+$t='DB handle method "pg_lo_lseek(SEEK_END)" works when reading';
+$result = $dbh->pg_lo_lseek($handle, -11, SEEK_END);
+is ($result, length($buf)-11, $t);
+
+$t='DB handle method "pg_lo_tell" works';
+$tell_result = $dbh->pg_lo_tell($handle);
+is ($tell_result, $result, $t);
 
 SKIP: {
     if ($pgversion < 90300 or $pglibversion < 90300) {
         skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
     }
-    $t='DB handle method "pg_lo_tell64" works';
-    $result = $dbh->pg_lo_tell64($handle);
+    $t='DB handle method "pg_lo_lseek64(SEEK_SET)" works when reading';
+    $result = $dbh->pg_lo_lseek64($handle, 11, SEEK_SET);
     is ($result, 11, $t);
+
+    $t='DB handle method "pg_lo_tell64" works';
+    $tell_result = $dbh->pg_lo_tell64($handle);
+    is ($tell_result, $result, $t);
+
+    $t='DB handle method "pg_lo_lseek64(SEEK_CUR)" forward works when reading';
+    $result = $dbh->pg_lo_lseek64($handle, 11, SEEK_CUR);
+    is ($result, 22, $t);
+
+    $t='DB handle method "pg_lo_tell64" works';
+    $tell_result = $dbh->pg_lo_tell64($handle);
+    is ($tell_result, $result, $t);
+
+    $t='DB handle method "pg_lo_lseek64(SEEK_CUR)" backward works when reading';
+    $result = $dbh->pg_lo_lseek64($handle, -10, SEEK_CUR);
+    is ($result, 12, $t);
+
+    $t='DB handle method "pg_lo_tell64" works';
+    $tell_result = $dbh->pg_lo_tell64($handle);
+    is ($tell_result, $result, $t);
+
+    $t='DB handle method "pg_lo_lseek64(SEEK_END)" works when reading';
+    $result = $dbh->pg_lo_lseek64($handle, -11, SEEK_END);
+    is ($result, length($buf)-11, $t);
+
+    $t='DB handle method "pg_lo_tell64" works';
+    $tell_result = $dbh->pg_lo_tell64($handle);
+    is ($tell_result, $result, $t);
 }
 
 $t='DB handle method "pg_lo_read" reads back the same data that was written';
