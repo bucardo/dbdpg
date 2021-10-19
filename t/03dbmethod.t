@@ -19,6 +19,7 @@ use Data::Dumper;
 use Test::More;
 use DBI     ':sql_types';
 use DBD::Pg ':pg_types';
+use Fcntl   ':seek';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
@@ -1911,7 +1912,7 @@ like ($handle, qr/^[0-9]+$/o, $t);
 isnt ($object, -1, $t);
 
 $t='DB handle method "pg_lo_lseek" works when writing';
-$result = $dbh->pg_lo_lseek($handle, 0, 0);
+$result = $dbh->pg_lo_lseek($handle, 0, SEEK_SET);
 is ($result, 0, $t);
 isnt ($object, -1, $t);
 
@@ -1920,7 +1921,7 @@ SKIP: {
         skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 2;
     }
     $t='DB handle method "pg_lo_lseek64" works when writing';
-    $result = $dbh->pg_lo_lseek64($handle, 0, 0);
+    $result = $dbh->pg_lo_lseek64($handle, 0, SEEK_SET);
     is ($result, 0, $t);
     isnt ($object, -1, $t);
 }
@@ -1942,7 +1943,7 @@ like ($handle, qr/^[0-9]+$/o, $t);
 cmp_ok ($handle, 'eq', 0, $t);
 
 $t='DB handle method "pg_lo_lseek" works when reading';
-$result = $dbh->pg_lo_lseek($handle, 11, 0);
+$result = $dbh->pg_lo_lseek($handle, 11, SEEK_SET);
 is ($result, 11, $t);
 
 SKIP: {
@@ -1950,7 +1951,7 @@ SKIP: {
         skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
     }
     $t='DB handle method "pg_lo_lseek64" works when reading';
-    $result = $dbh->pg_lo_lseek($handle, 11, 0);
+    $result = $dbh->pg_lo_lseek($handle, 11, SEEK_SET);
     is ($result, 11, $t);
 }
 
@@ -1968,7 +1969,7 @@ SKIP: {
 }
 
 $t='DB handle method "pg_lo_read" reads back the same data that was written';
-$dbh->pg_lo_lseek($handle, 0, 0);
+$dbh->pg_lo_lseek($handle, 0, SEEK_SET);
 my ($buf2,$data) = ('','');
 while ($dbh->pg_lo_read($handle, $data, 513)) {
     $buf2 .= $data;
@@ -1998,7 +1999,7 @@ SKIP: {
     is ($result, 0, $t);
 
     $t='DB handle method "pg_lo_truncate" truncates to expected size';
-    $dbh->pg_lo_lseek($handle, 0, 0);
+    $dbh->pg_lo_lseek($handle, 0, SEEK_SET);
     ($buf2,$data) = ('','');
     while ($dbh->pg_lo_read($handle, $data, 100)) {
         $buf2 .= $data;
@@ -2010,7 +2011,7 @@ SKIP: {
             skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
         }
         $t='DB handle method "pg_lo_truncate64" truncates to expected size';
-        $dbh->pg_lo_lseek($handle, 0, 0);
+        $dbh->pg_lo_lseek($handle, 0, SEEK_SET);
         $result = $dbh->pg_lo_truncate64($handle, 22);
         ($buf2,$data) = ('','');
         while ($dbh->pg_lo_read($handle, $data, 100)) {
@@ -2146,7 +2147,7 @@ SKIP: {
 
     $t='DB handle method "pg_lo_lseek" fails with AutoCommit on';
     eval {
-        $dbh->pg_lo_lseek($handle, 0, 0);
+        $dbh->pg_lo_lseek($handle, 0, SEEK_SET);
     };
     like ($@, qr{pg_lo_lseek when AutoCommit is on}, $t);
 
@@ -2156,7 +2157,7 @@ SKIP: {
         }
         $t='DB handle method "pg_lo_lseek64" fails with AutoCommit on';
         eval {
-            $dbh->pg_lo_lseek64($handle, 0, 0);
+            $dbh->pg_lo_lseek64($handle, 0, SEEK_SET);
         };
         like ($@, qr{pg_lo_lseek64 when AutoCommit is on}, $t);
     }
