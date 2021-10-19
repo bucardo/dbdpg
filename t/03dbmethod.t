@@ -26,7 +26,6 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 646;
 
 my $superuser = is_super();
 
@@ -283,7 +282,7 @@ SKIP: {
     if ($pgversion < 80300) {
         $dbh->do("DROP TABLE $schema2.$table2");
         $dbh->do("DROP SEQUENCE $schema2.$sequence2");
-        skip ('Cannot test sequence rename on pre-8.3 servers', 2);
+        skip ('Cannot test sequence rename on pre-8.3 servers', 1);
     }
     $dbh->do("ALTER SEQUENCE $schema2.$sequence2 RENAME TO $sequence3");
     $dbh->commit();
@@ -304,7 +303,7 @@ SKIP: {
 }
 
 SKIP: {
-    skip('Cannot test GENERATED AS IDENTITY columns on pre-10 servers', 4)
+    skip('Cannot test GENERATED AS IDENTITY columns on pre-10 servers', 1)
         if $pgversion < 100000;
 
     for my $WHEN ('BY DEFAULT', 'ALWAYS') {
@@ -731,7 +730,7 @@ is ($sth->rows(), $total_temp-1, $t);
 SKIP: {
 
     if ($pgversion < 90300) {
-        skip ('Cannot test table_info for materialized views unless database if 9.3 or higher', 3);
+        skip ('Cannot test table_info for materialized views unless database if 9.3 or higher', 1);
     }
 
     $sth = $dbh->table_info(undef,undef,undef,'MATERIALIZED VIEW');
@@ -756,11 +755,11 @@ SKIP: {
 SKIP: {
 
     if ($pgversion < 90100) {
-        skip ('Cannot test table_info for foreign tables unless database is 9.1 or higher', 3);
+        skip ('Cannot test table_info for foreign tables unless database is 9.1 or higher', 1);
     }
 
     ## We can check for finer-grained access in more recent versions, but this is good enough:
-    $superuser or skip ('Cannot test foreign tables unless a superuser', 3);
+    $superuser or skip ('Cannot test foreign tables unless a superuser', 1);
 
     $sth = $dbh->table_info(undef,undef,undef,'FOREIGN TABLE');
     my $total_ftables = $sth->rows();
@@ -986,7 +985,7 @@ $dbh->do(qq{DROP TABLE $schema.$table});
 SKIP: {
 
     if ($pgversion < 80300) {
-        skip ('DB handle method column_info attribute "pg_enum_values" requires at least Postgres 8.3', 2);
+        skip ('DB handle method column_info attribute "pg_enum_values" requires at least Postgres 8.3', 1);
     }
 
     my @enumvalues = qw( foo bar baz buz );
@@ -1984,7 +1983,7 @@ $dbh->commit;
 SKIP: {
 
     if ($pglibversion < 80300 or $pgversion < 80300) {
-        skip ('Postgres version 8.3 or greater needed for pg_lo_truncate tests', 4);
+        skip ('Postgres version 8.3 or greater needed for pg_lo_truncate tests', 1);
     }
 
     $t='DB handle method "pg_lo_truncate" fails if opened in read mode only';
@@ -2032,14 +2031,14 @@ $dbh->rollback();
 
 SKIP: {
 
-    $superuser or skip ('Cannot run largeobject tests unless run as Postgres superuser', 40);
+    $superuser or skip ('Cannot run largeobject tests unless run as Postgres superuser', 1);
 
   SKIP: {
 
         eval {
             require File::Temp;
         };
-        $@ and skip ('Must have File::Temp to test pg_lo_import* and pg_lo_export', 13);
+        $@ and skip ('Must have File::Temp to test pg_lo_import* and pg_lo_export', 1);
 
         $t='DB handle method "pg_lo_import" works';
         my ($fh,$filename) = File::Temp::tmpnam();
@@ -2057,10 +2056,10 @@ SKIP: {
 
       SKIP: {
             if ($pglibversion < 80400) {
-                skip ('Cannot test pg_lo_import_with_oid unless compiled against 8.4 or better server', 5);
+                skip ('Cannot test pg_lo_import_with_oid unless compiled against 8.4 or better server', 1);
             }
             if ($pgversion < 80100) {
-                skip ('Cannot test pg_lo_import_with_oid against old versions of Postgres', 5);
+                skip ('Cannot test pg_lo_import_with_oid against old versions of Postgres', 1);
             }
 
             $t='DB handle method "pg_lo_import_with_oid" works with high number';
@@ -2070,7 +2069,7 @@ SKIP: {
             my $thandle;
           SKIP: {
 
-                skip ('Known bug: pg_log_import_with_oid throws an error. See RT #90448', 3);
+                skip ('Known bug: pg_log_import_with_oid throws an error. See RT #90448', 1);
 
                 $thandle = $dbh->pg_lo_import_with_oid($filename, $highnumber);
                 is ($thandle, $highnumber, $t);
@@ -2204,7 +2203,7 @@ SKIP: {
         eval {
             require File::Temp;
         };
-        $@ and skip ('Must have File::Temp to test pg_lo_import and pg_lo_export', 17);
+        $@ and skip ('Must have File::Temp to test pg_lo_import and pg_lo_export', 1);
 
         $t='DB handle method "pg_lo_import" works (AutoCommit on)';
         my ($fh,$filename) = File::Temp::tmpnam();
@@ -2342,7 +2341,7 @@ SKIP: {
     $t='DB handle method "pg_notifies" returns correct string length for recycled var';
 
     if ($pgversion < 90000) {
-        skip ('Cannot test notification payloads on pre-9.0 servers', 4);
+        skip ('Cannot test notification payloads on pre-9.0 servers', 1);
     }
 
     $dbh->do("LISTEN abc$notify_name");
@@ -2392,7 +2391,7 @@ $dbh->rollback();
 
 SKIP: {
     if ($DBI::VERSION < 1.54) {
-        skip ('DBI must be at least version 1.54 to test private_attribute_info', 2);
+        skip ('DBI must be at least version 1.54 to test private_attribute_info', 1);
     }
 
     $t='DB handle method "private_attribute_info" returns at least one record';
@@ -2434,7 +2433,7 @@ my $mtvar; ## This is an implicit test of getcopydata: please leave this var und
 SKIP: {
 
     if ($pgversion < 80300) {
-        skip ('Cannot test pg_ping via COPY on pre-8.3 servers', 20);
+        skip ('Cannot test pg_ping via COPY on pre-8.3 servers', 1);
     }
 
     for my $type (qw/ ping pg_ping /) {
@@ -2484,7 +2483,7 @@ SKIP: {
 
       SKIP: {
 
-        skip 'Cannot safely reopen sockets on Win32', 2 if $^O =~ /Win32/;
+        skip 'Cannot safely reopen sockets on Win32', 1 if $^O =~ /Win32/;
 
         $val = $type eq 'ping' ? 0 : -3;
         $t=qq{DB handle method "$type" returns $val after a lost network connection (outside transaction)};
@@ -2517,6 +2516,7 @@ $t=q{DB handle method "pg_type_info" returns 12 for type 123 (PrintError on)};
 is ($dbh->pg_type_info(123), 12, $t);
 $dbh->{PrintError} = 0;
 
+done_testing();
 
 exit;
 
