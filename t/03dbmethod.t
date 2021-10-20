@@ -17,6 +17,7 @@ use warnings;
 use lib 'blib/lib', 'blib/arch', 't';
 use Data::Dumper;
 use Test::More;
+use Config;
 use DBI     ':sql_types';
 use DBD::Pg ':pg_types';
 use Fcntl   ':seek';
@@ -1916,21 +1917,24 @@ $result = $dbh->pg_lo_lseek($handle, 0, SEEK_SET);
 is ($result, 0, $t);
 isnt ($object, -1, $t);
 
-SKIP: {
-    if ($pgversion < 90300 or $pglibversion < 90300) {
-        skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 2;
-    }
-    $t='DB handle method "pg_lo_lseek64" works when writing';
-    $result = $dbh->pg_lo_lseek64($handle, 0, SEEK_SET);
-    is ($result, 0, $t);
-    isnt ($object, -1, $t);
-}
-
 $t='DB handle method "pg_lo_write" works';
 my $buf = 'tangelo mulberry passionfruit raspberry plantain' x 500;
 $result = $dbh->pg_lo_write($handle, $buf, length($buf));
 is ($result, length($buf), $t);
 cmp_ok ($object, '>', 0, $t);
+
+$t='DB handle method "pg_lo_tell" works when writing';
+$result = $dbh->pg_lo_tell($handle);
+is ($result, length($buf), $t);
+
+$t='DB handle method "pg_lo_lseek(SEEK_END)" works when writing';
+$result = $dbh->pg_lo_lseek($handle, 0, SEEK_END);
+is ($result, length($buf), $t);
+isnt ($object, -1, $t);
+
+$t='DB handle method "pg_lo_tell" works after seek when writing';
+$result = $dbh->pg_lo_tell($handle);
+is ($result, length($buf), $t);
 
 $t='DB handle method "pg_lo_close" works after write';
 $result = $dbh->pg_lo_close($handle);
@@ -1974,43 +1978,6 @@ $t='DB handle method "pg_lo_tell" works';
 $tell_result = $dbh->pg_lo_tell($handle);
 is ($tell_result, $result, $t);
 
-SKIP: {
-    if ($pgversion < 90300 or $pglibversion < 90300) {
-        skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
-    }
-    $t='DB handle method "pg_lo_lseek64(SEEK_SET)" works when reading';
-    $result = $dbh->pg_lo_lseek64($handle, 11, SEEK_SET);
-    is ($result, 11, $t);
-
-    $t='DB handle method "pg_lo_tell64" works';
-    $tell_result = $dbh->pg_lo_tell64($handle);
-    is ($tell_result, $result, $t);
-
-    $t='DB handle method "pg_lo_lseek64(SEEK_CUR)" forward works when reading';
-    $result = $dbh->pg_lo_lseek64($handle, 11, SEEK_CUR);
-    is ($result, 22, $t);
-
-    $t='DB handle method "pg_lo_tell64" works';
-    $tell_result = $dbh->pg_lo_tell64($handle);
-    is ($tell_result, $result, $t);
-
-    $t='DB handle method "pg_lo_lseek64(SEEK_CUR)" backward works when reading';
-    $result = $dbh->pg_lo_lseek64($handle, -10, SEEK_CUR);
-    is ($result, 12, $t);
-
-    $t='DB handle method "pg_lo_tell64" works';
-    $tell_result = $dbh->pg_lo_tell64($handle);
-    is ($tell_result, $result, $t);
-
-    $t='DB handle method "pg_lo_lseek64(SEEK_END)" works when reading';
-    $result = $dbh->pg_lo_lseek64($handle, -11, SEEK_END);
-    is ($result, length($buf)-11, $t);
-
-    $t='DB handle method "pg_lo_tell64" works';
-    $tell_result = $dbh->pg_lo_tell64($handle);
-    is ($tell_result, $result, $t);
-}
-
 $t='DB handle method "pg_lo_read" reads back the same data that was written';
 $dbh->pg_lo_lseek($handle, 0, SEEK_SET);
 my ($buf2,$data) = ('','');
@@ -2049,18 +2016,45 @@ SKIP: {
     }
     is (length($buf2), 44, $t);
 
+    $t='DB handle method "pg_lo_truncate(INT_MAX)" works';
+    my $INT_MAX = (1<<31)-1;
+    $result = $dbh->pg_lo_truncate($handle, $INT_MAX);
+    is ($result, 0, $t);
+
+    $t='DB handle method "pg_lo_seek(SEEK_END)" after "pg_lo_truncate(INT_MAX)" works';
+    $result = $dbh->pg_lo_lseek($handle, 0, SEEK_END);
+    is ($result, $INT_MAX, $t);
+
+    $t='DB handle method "pg_lo_tell" after "pg_lo_truncate(INT_MAX)" works';
+    $result = $dbh->pg_lo_tell($handle);
+    is ($result, $INT_MAX, $t);
+
   SKIP: {
-        if ($pgversion < 90300 or $pglibversion < 90300) {
-            skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
+        if ($Config{ivsize} < 8 or $pgversion < 90300 or $pglibversion < 90300) {
+            skip 'Cannot test 64-bit offsets for largeobject functions without 64-bit integers and Postgres 9.3 or higher', 1;
         }
-        $t='DB handle method "pg_lo_truncate64" truncates to expected size';
-        $dbh->pg_lo_lseek($handle, 0, SEEK_SET);
-        $result = $dbh->pg_lo_truncate64($handle, 22);
-        ($buf2,$data) = ('','');
-        while ($dbh->pg_lo_read($handle, $data, 100)) {
-            $buf2 .= $data;
-        }
-        is (length($buf2), 22, $t);
+
+        # large objects are stored in chunks of BLOCKSZ/4 with an
+        # integer chunk number column.  only chunks with data in them
+        # are stored, so this doesn't actually require 4TiB of space
+        my $BLOCK_SIZE = $dbh->selectrow_array('show block_size');
+        my $LO_MAX = $INT_MAX * $BLOCK_SIZE / 4;
+
+        $t='DB handle method "pg_lo_truncate(LO_MAX) works';
+        $result = $dbh->pg_lo_truncate($handle, $LO_MAX);
+        is ($result, 0, $t);
+
+        $t='DB handle method "pg_lo_seek(SEEK_END)" after "pg_lo_truncate(LO_MAX) works';
+        $result = $dbh->pg_lo_lseek($handle, 0, SEEK_END);
+        is ($result, $LO_MAX, $t);
+
+        $t='DB handle method "pg_lo_tell" after "pg_lo_truncate(LO_MAX)" works';
+        $result = $dbh->pg_lo_tell($handle);
+        is ($result, $LO_MAX, $t);
+
+        $t='DB handle method "pg_lo_lseek(SEEK_END)" to start works';
+        $result = $dbh->pg_lo_lseek($handle, -$LO_MAX, SEEK_END);
+        is ($result, 0, $t);
     }
 }
 
@@ -2194,17 +2188,6 @@ SKIP: {
     };
     like ($@, qr{pg_lo_lseek when AutoCommit is on}, $t);
 
-  SKIP: {
-        if ($pgversion < 90300 or $pglibversion < 90300) {
-            skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
-        }
-        $t='DB handle method "pg_lo_lseek64" fails with AutoCommit on';
-        eval {
-            $dbh->pg_lo_lseek64($handle, 0, SEEK_SET);
-        };
-        like ($@, qr{pg_lo_lseek64 when AutoCommit is on}, $t);
-    }
-
     $t='DB handle method "pg_lo_write" fails with AutoCommit on';
     $buf = 'tangelo mulberry passionfruit raspberry plantain' x 500;
     eval {
@@ -2223,17 +2206,6 @@ SKIP: {
         $dbh->pg_lo_tell($handle);
     };
     like ($@, qr{pg_lo_tell when AutoCommit is on}, $t);
-
-  SKIP: {
-        if ($pgversion < 90300 or $pglibversion < 90300) {
-            skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
-        }
-        $t='DB handle method "pg_lo_tell64" fails with AutoCommit on';
-        eval {
-            $dbh->pg_lo_tell64($handle);
-        };
-        like ($@, qr{pg_lo_tell64 when AutoCommit is on}, $t);
-    }
 
     $t='DB handle method "pg_lo_unlink" fails with AutoCommit on';
     eval {
