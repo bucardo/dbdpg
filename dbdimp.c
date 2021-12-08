@@ -1146,7 +1146,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
                     }
                 }
                 else {
-                    val = newSVpv(currph->value,0);
+                    val = newSVpv(currph->value,currph->valuelen);
                     if (!hv_store_ent(pvhv, key, val, 0)) {
                         SvREFCNT_dec(val);
                     }

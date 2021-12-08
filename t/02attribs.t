@@ -18,7 +18,7 @@ my (undef,undef,$dbh) = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 284;
+plan tests => 285;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -855,6 +855,14 @@ $t='Statement handle attribute "ParamValues" works after execute';
 $sth->execute();
 $attrib = $sth->{ParamValues};
 is_deeply ($attrib, $expected, $t);
+
+$t='Statement handle attribute "ParamValues" works with NULL-embedded strings';
+my $tvalue = "aaa\000bbb"; # binary data with \0
+$sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, val, pname) VALUES (?, ?, "")');
+$sth->bind_param(1, 1234);
+$sth->bind_param(2, $tvalue, {pg_type => PG_BYTEA});
+$attrib = $sth->{ParamValues};
+is ($attrib->{2}, $tvalue);
 
 #
 # Test of the statement handle attribute "ParamTypes"
