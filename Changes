@@ -2,28 +2,32 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version ?? (unreleased)
-
- - Replace use of "vars" with "our"
-   [James Raspass <jraspass@gmail.com>]
-   (Github pull request #75)
-
- - Allow use of $ENV{DBDPG_TEMPDIR} to shorten test directory paths.
-   (Github issue #78)
-
- - Switch from DynaLoader to XSLoader
-   [Todd Rinaldo <toddr@cpan.org>]
-   (Github pull request #76)
+Version 3.15.1  (released February 13, 2022)
 
  - Fix missing "use File::Temp"
    [Greg Sabino Mullane]
    (Github issue #79)
 
+ - Switch from DynaLoader to XSLoader
+   [Todd Rinaldo <toddr@cpan.org>]
+   (Github pull request #76)
+
+ - Replace use of "vars" with "our"
+   [James Raspass <jraspass@gmail.com>]
+   (Github pull request #75)
+
+ - Documentation improvements
+   [Ed Sabol]
+   [Nicholas Clark <nick@ccl4.org>]
+
  - Use non-root user when calling pg_resetwal
    [Greg Sabino Mullane]
 
+ - Allow use of $ENV{DBDPG_TEMPDIR} to shorten test directory paths.
+   (Github issue #78)
 
-Version 3.15.0 (released May 21, 2021)
+
+Version 3.15.0  (released May 21, 2021)
 
  - Correctly pull back pg_async status from statement handle.
    Previously, $dbh->{pg_async} would return undef.
