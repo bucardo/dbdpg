@@ -640,7 +640,7 @@ extension for any miscellaneous files you have that use often (e.g. libpq-fe.h.t
 release tarball. Make sure there is nothing important here.
 
 * Update the SIGNATURE file with Module::Signature (e.g. make signature)
-You may need to add this your login script: export GPG_TTY=$(tt)
+You may need to add this your login script: export GPG_TTY=$(tty)
 
 * Run "make disttest". This unpacks the tarball, then runs "make" and "make test" on it.
 You may also want to remove the directory it creates later by using "make realclean"
