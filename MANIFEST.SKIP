@@ -2,7 +2,6 @@
 ^Build$
 ^Makefile$
 ^Makefile.old$
-^MANIFEST\.SKIP$
 README.testdatabase
 ^Pg.c$
 ^Pg.bs$
