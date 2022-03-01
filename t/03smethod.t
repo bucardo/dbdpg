@@ -22,7 +22,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 150;
+plan tests => 152;
 
 isnt ($dbh, undef, 'Connect to database for statement handle method testing');
 
@@ -920,6 +920,23 @@ SKIP: {
 
     $t='Statement handle method "last_insert_id" returns correct value for an inherited table';
     is ($result, 2, $t);
+
+    my $doublename1 = q{dbdpg_test_table""full-o'quotes};
+    my $doublename2 = q{dbdpg_test_table"full-o'quotes};
+
+    $dbh->do("CREATE TABLE $schema.\"$doublename1\" (id SERIAL primary key)");
+    $sth = $dbh->prepare("INSERT INTO \"$doublename1\" DEFAULT VALUES");
+    $sth->execute();
+
+    $t='Statement handle method "last_insert_id" works for table name containing double quotes';
+    $result = '';
+    eval {
+        $result = $sth->last_insert_id(undef,undef,$doublename2,undef);
+    };
+    is ($@, q{}, $t);
+
+    $t='Statement handle method "last_insert_id" returns correct value for table name containing double quotes';
+    is ($result, 1, $t);
 
 }
 
