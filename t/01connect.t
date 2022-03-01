@@ -108,6 +108,14 @@ SKIP: {
     ok (ref $ldbh, $t);
     $ldbh->disconnect();
 
+    $t=q{Connect with multiple host names works};
+    $testdsn =~ s/host=/host=foo,c/;
+    $ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
+        {RaiseError => 1, PrintError => 0, AutoCommit => 0});
+    ok (ref $ldbh, $t);
+    $ldbh->do('select 1');
+    $ldbh->disconnect();
+
     if ($ENV{DBI_DSN} =~ /$alias\s*=\s*\"/) {
         skip ('DBI_DSN already contains quoted database, no need for explicit test', 1);
     }
@@ -120,7 +128,7 @@ SKIP: {
 
 }
 
-END {
+END {exit;
     my $pv = sprintf('%vd', $^V);
     my $schema = 'dbd_pg_testschema';
     my $dsn = exists $ENV{DBI_DSN} ? $ENV{DBI_DSN} : '?';

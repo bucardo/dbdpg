@@ -918,7 +918,7 @@ SKIP: {
     };
     is ($@, q{}, $t);
 
-    $t='Statement handle method "last_insert_id" returns correct value for an inheriteda table';
+    $t='Statement handle method "last_insert_id" returns correct value for an inherited table';
     is ($result, 2, $t);
 
 }
