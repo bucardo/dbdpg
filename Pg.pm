@@ -4199,14 +4199,14 @@ long-running query.
   print "Result: $result\n";
   my $info = $sth->fetchall_arrayref();
 
-Without asynchronous queries, the above script would take about 8 seconds to run: five seconds waiting 
-for the execute to finish, then three for the check_on_the_kids() function to return. With asynchronous 
-queries, the script takes about 6 seconds to run, and gets in two iterations of check_on_the_kids in 
+Without asynchronous queries, the above script would take about 8 seconds to run: five seconds waiting
+for the execute to finish, then three for the check_on_the_kids() function to return. With asynchronous
+queries, the script takes about 6 seconds to run, and gets in two iterations of check_on_the_kids in
 the process.
 
-Here's an example showing the ability to cancel a long-running query. Imagine two slave databases in 
-different geographic locations over a slow network. You need information as quickly as possible, so 
-you query both at once. When you get an answer, you tell the other one to stop working on your query, 
+Here's an example showing the ability to cancel a long-running query. Imagine two replica databases in
+different geographic locations over a slow network. You need information as quickly as possible, so
+you query both at once. When you get an answer, you tell the other one to stop working on your query,
 as you don't need it anymore.
 
   use strict;
@@ -4214,13 +4214,13 @@ as you don't need it anymore.
   use Time::HiRes 'sleep';
   use DBD::Pg ':async';
 
-  my $dbhslave1 = DBI->connect('dbi:Pg:dbname=postgres;host=slave1', 'postgres', '', {AutoCommit=>0,RaiseError=>1});
-  my $dbhslave2 = DBI->connect('dbi:Pg:dbname=postgres;host=slave2', 'postgres', '', {AutoCommit=>0,RaiseError=>1});
+  my $dbhrep1 = DBI->connect('dbi:Pg:dbname=postgres;host=replica1', 'postgres', '', {AutoCommit=>0,RaiseError=>1});
+  my $dbhrep2 = DBI->connect('dbi:Pg:dbname=postgres;host=replica2', 'postgres', '', {AutoCommit=>0,RaiseError=>1});
 
   $SQL = "SELECT count(*) FROM largetable WHERE flavor='blueberry'";
 
-  my $sth1 = $dbhslave1->prepare($SQL, {pg_async => PG_ASYNC});
-  my $sth2 = $dbhslave2->prepare($SQL, {pg_async => PG_ASYNC});
+  my $sth1 = $dbhrep1->prepare($SQL, {pg_async => PG_ASYNC});
+  my $sth2 = $dbhrep2->prepare($SQL, {pg_async => PG_ASYNC});
 
   $sth1->execute();
   $sth2->execute();
