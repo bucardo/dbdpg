@@ -4296,12 +4296,15 @@ pg_putcopyend methods.
 
 Used to retrieve data from a table after the server has been put into a 
 COPY OUT mode by calling "COPY tablename TO STDOUT". Data is always returned 
-one data row at a time. The first argument to pg_getcopydata 
-is the variable into which the data will be stored (this variable should not 
-be undefined, or it may throw a warning, although it may be a reference). The 
-pg_getcopydata method returns a number greater than 1 indicating the new size of 
-the variable, or a -1 when the COPY has finished. Once a -1 has been returned, no 
-other action is necessary, as COPY mode will have already terminated. Example:
+one data row at a time. Note that the server will add a newline to 
+each returned row.
+
+The first argument to pg_getcopydata is the variable into which the data will 
+be stored (this variable should not be undefined, or it may throw a warning, 
+although it may be a reference). The pg_getcopydata method returns a number 
+greater than 1 indicating the new size of the variable, or a -1 when the 
+COPY has finished. Once a -1 has been returned, no other action is necessary, 
+as COPY mode will have already terminated. Example:
 
   $dbh->do("COPY mytable TO STDOUT");
   my @data;
