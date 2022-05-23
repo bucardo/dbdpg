@@ -132,7 +132,7 @@ SKIP: {
 
 }
 
-END {exit;
+END {
     my $pv = sprintf('%vd', $^V);
     my $schema = 'dbd_pg_testschema';
     my $dsn = exists $ENV{DBI_DSN} ? $ENV{DBI_DSN} : '?';
