@@ -7,9 +7,14 @@ Version 3.16.0 (unreleased)
  - Automatically use 64-bit versions of large object functions when available
    [Dagfinn Ilmari Mannsåker, David Christensen]
 
- - Set UTF8 flag as needed for error messages.
+ - Set UTF8 flag as needed for error messages
    [Github user olafgw]
    (Github issue #97)
+
+ - In tests, do not assume what the default transaction isolation level will be
+   [Rene Schickbauer]
+   (Github issue #94)
+
 
 Version 3.15.1  (released February 13, 2022)
 
