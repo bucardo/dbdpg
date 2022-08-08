@@ -2,7 +2,7 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.16.0 (unreleased)
+Version 3.16.0 (August 8, 2022)
 
  - Automatically use 64-bit versions of large object functions when available
    [Dagfinn Ilmari Mannsåker, David Christensen]
