@@ -163,7 +163,7 @@ while (<$fh>) {
     ## Should not have any bug tracking keywords now
     if (/RT/ or /github/i or /cpan/i or /debian /i) {
         ## Allow a few exceptions
-        if (! /dbdpg.git/ and ! /META.yml/ and ! /cpan\.org/) {
+        if (! /dbdpg.git/ and ! /META.yml/ and ! /cpan\.org/ and ! /Github user/) {
             fail ("Found mention of bug tracker at wrong place at line $.: $_\n");
             next;
         }
