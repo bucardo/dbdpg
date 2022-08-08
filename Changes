@@ -15,6 +15,10 @@ Version 3.16.0 (unreleased)
    [Rene Schickbauer]
    (Github issue #94)
 
+ - Make tests smarter about detecting pg_ctl results in different locales
+   [Greg Sabino Mullane]
+   (Github issue #95)
+
 
 Version 3.15.1  (released February 13, 2022)
 

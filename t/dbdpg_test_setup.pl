@@ -585,7 +585,7 @@ version: $version
             };
             my $err = $@;
             $su and chdir $olddir;
-            if ($err or $info !~ /\w/) {
+            if ($err or $info !~ /\.\.\./) {
                 $@ = "Could not startup new database ($COM) ($err) ($info)";
                 last GETHANDLE; ## Fail - startup failed
             }
