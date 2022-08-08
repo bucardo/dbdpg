@@ -4511,8 +4511,16 @@ SV * pg_db_error_field (SV *dbh, char * fieldname)
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_error_field (fieldcode: %d)\n", THEADER_slow, fieldcode);
 
-    return NULL == PQresultErrorField(imp_dbh->last_result, fieldcode) ? &PL_sv_undef : 
-      sv_2mortal(newSVpv(PQresultErrorField(imp_dbh->last_result, fieldcode), 0));
+    char *pq_err_field = PQresultErrorField(imp_dbh->last_result, fieldcode);
+    if (NULL == pq_err_field) {
+        return &PL_sv_undef;
+    }
+    else {
+        SV *sv_err_field = newSVpv(pq_err_field, 0);
+        if (imp_dbh->pg_utf8_flag)
+            SvUTF8_on(sv_err_field);
+        return sv_2mortal(sv_err_field);
+    }
 
 } /* end of pg_db_error_field */
 
