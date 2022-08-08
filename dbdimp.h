@@ -258,17 +258,11 @@ int pg_db_lo_read (SV *dbh, int fd, char *buf, size_t len);
 
 int pg_db_lo_write (SV *dbh, int fd, char *buf, size_t len);
 
-int pg_db_lo_lseek (SV *dbh, int fd, int offset, int whence);
+IV pg_db_lo_lseek (SV *dbh, int fd, IV offset, int whence);
 
-unsigned int pg_db_lo_lseek64 (SV *dbh, int fd, unsigned int offset, int whence);
+IV pg_db_lo_tell (SV *dbh, int fd);
 
-int pg_db_lo_tell (SV *dbh, int fd);
-
-unsigned int pg_db_lo_tell64 (SV *dbh, int fd);
-
-int pg_db_lo_truncate (SV *dbh, int fd, size_t len);
-
-int pg_db_lo_truncate64 (SV *dbh, int fd, unsigned int len);
+int pg_db_lo_truncate (SV *dbh, int fd, IV len);
 
 int pg_db_lo_unlink (SV *dbh, unsigned int lobjId);
 

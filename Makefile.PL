@@ -183,6 +183,9 @@ my $dbi_arch_dir;
 }
 
 my $defines = " -DPGLIBVERSION=$serverversion -DPGDEFPORT=$defaultport";
+if ($Config{ivsize} >= 8 && $serverversion >= 90300) {
+    $defines .= ' -DHAS64BITLO';
+}
 my $comp_opts = $Config{q{ccflags}} . $defines;
 
 if ($ENV{DBDPG_GCCDEBUG}) {

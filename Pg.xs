@@ -533,54 +533,33 @@ void
 pg_lo_lseek(dbh, fd, offset, whence)
     SV * dbh
     int fd
-    int offset
+    IV offset
     int whence
+    ALIAS:
+        pg_lo_lseek64 = 1
     CODE:
-        const int ret = pg_db_lo_lseek(dbh, fd, offset, whence);
+        const IV ret = pg_db_lo_lseek(dbh, fd, offset, whence);
         ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
-
-void
-pg_lo_lseek64(dbh, fd, offset, whence)
-    SV * dbh
-    int fd
-    unsigned int offset
-    int whence
-    CODE:
-        const unsigned int ret = pg_db_lo_lseek64(dbh, fd, offset, whence);
-        ST(0) = (ret >= 0) ? sv_2mortal(newSVuv(ret)) : &PL_sv_undef;
 
 void
 pg_lo_tell(dbh, fd)
     SV * dbh
     int fd
+    ALIAS:
+        pg_lo_tell64 = 1
     CODE:
-        const int ret = pg_db_lo_tell(dbh, fd);
+        const IV ret = pg_db_lo_tell(dbh, fd);
         ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
-
-void
-pg_lo_tell64(dbh, fd)
-    SV * dbh
-    int fd
-    CODE:
-        const unsigned int ret = pg_db_lo_tell64(dbh, fd);
-        ST(0) = (ret >= 0) ? sv_2mortal(newSVuv(ret)) : &PL_sv_undef;
 
 void
 pg_lo_truncate(dbh, fd, len)
     SV * dbh
     int fd
-    size_t len
+    UV len
+    ALIAS:
+        pg_lo_truncate64 = 1
     CODE:
-        const int ret = pg_db_lo_truncate(dbh, fd, len);
-        ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
-
-void
-pg_lo_truncate64(dbh, fd, len)
-    SV * dbh
-    int fd
-    unsigned int len
-    CODE:
-        const int ret = pg_db_lo_truncate64(dbh, fd, len);
+        const IV ret = pg_db_lo_truncate(dbh, fd, len);
         ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
 void

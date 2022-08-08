@@ -2089,9 +2089,9 @@ location and C<undef> upon failure. This function cannot be used if AutoCommit i
 
 =item pg_lo_lseek64
 
-  $loc = $dbh->pg_lo_lseek64($lobj_fd, $offset, $whence);
-
-Same as pg_lo_lseek, but can handle much larger offsets and returned values. Requires Postgres 9.3 or greater.
+Backwards-compatibility alias for L</pg_lo_lseek>. Since DBD::Pg 3.16, that
+method handles 64-bit offsets if supported by the Perl and PostgreSQL versions
+in use.
 
 =item pg_lo_tell
 
@@ -2102,9 +2102,9 @@ This function cannot be used if AutoCommit is enabled.
 
 =item pg_lo_tell64
 
-  $loc = $dbh->pg_lo_tell64($lobj_fd);
-
-Same as pg_lo_tell, but can return much larger values. Requires Postgres 9.3 or greater.
+Backwards-compatibility alias for L</pg_lo_tell>. Since DBD::Pg 3.16, that
+method handles 64-bit offsets if supported by the Perl and PostgreSQL versions
+in use.
 
 =item pg_lo_truncate
 
@@ -2115,9 +2115,9 @@ This function cannot be used if AutoCommit is enabled.
 
 =item pg_lo_truncate64
 
-  $loc = $dbh->pg_lo_truncate64($lobj_fd, $len);
-
-Same as pg_lo_truncate, but can handle much larger lengths. Requires Postgres 9.3 or greater.
+Backwards-compatibility alias L</for pg_lo_truncate>. Since DBD::Pg 3.16, that
+method handles 64-bit offsets if supported by the Perl and PostgreSQL versions
+in use.
 
 =item pg_lo_close
 
@@ -4379,6 +4379,10 @@ The constants and their values are:
 DBD::Pg supports all largeobject functions provided by libpq via the
 C<< $dbh->pg_lo* >> methods. Please note that access to a large object, even read-only 
 large objects, must be put into a transaction.
+
+If DBD::Pg is compiled against and connected to PostgreSQL 9.3 or newer, and
+your Perl has 64-bit integers, it will use the 64-bit variants of the seek,
+tell and truncate methods.
 
 =head2 Cursors
 

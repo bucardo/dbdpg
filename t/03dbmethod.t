@@ -17,8 +17,10 @@ use warnings;
 use lib 'blib/lib', 'blib/arch', 't';
 use Data::Dumper;
 use Test::More;
+use Config;
 use DBI     ':sql_types';
 use DBD::Pg ':pg_types';
+use Fcntl   ':seek';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
@@ -26,7 +28,6 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 646;
 
 my $superuser = is_super();
 
@@ -283,7 +284,7 @@ SKIP: {
     if ($pgversion < 80300) {
         $dbh->do("DROP TABLE $schema2.$table2");
         $dbh->do("DROP SEQUENCE $schema2.$sequence2");
-        skip ('Cannot test sequence rename on pre-8.3 servers', 2);
+        skip ('Cannot test sequence rename on pre-8.3 servers', 1);
     }
     $dbh->do("ALTER SEQUENCE $schema2.$sequence2 RENAME TO $sequence3");
     $dbh->commit();
@@ -304,7 +305,7 @@ SKIP: {
 }
 
 SKIP: {
-    skip('Cannot test GENERATED AS IDENTITY columns on pre-10 servers', 4)
+    skip('Cannot test GENERATED AS IDENTITY columns on pre-10 servers', 1)
         if $pgversion < 100000;
 
     for my $WHEN ('BY DEFAULT', 'ALWAYS') {
@@ -731,7 +732,7 @@ is ($sth->rows(), $total_temp-1, $t);
 SKIP: {
 
     if ($pgversion < 90300) {
-        skip ('Cannot test table_info for materialized views unless database if 9.3 or higher', 3);
+        skip ('Cannot test table_info for materialized views unless database if 9.3 or higher', 1);
     }
 
     $sth = $dbh->table_info(undef,undef,undef,'MATERIALIZED VIEW');
@@ -756,11 +757,11 @@ SKIP: {
 SKIP: {
 
     if ($pgversion < 90100) {
-        skip ('Cannot test table_info for foreign tables unless database is 9.1 or higher', 3);
+        skip ('Cannot test table_info for foreign tables unless database is 9.1 or higher', 1);
     }
 
     ## We can check for finer-grained access in more recent versions, but this is good enough:
-    $superuser or skip ('Cannot test foreign tables unless a superuser', 3);
+    $superuser or skip ('Cannot test foreign tables unless a superuser', 1);
 
     $sth = $dbh->table_info(undef,undef,undef,'FOREIGN TABLE');
     my $total_ftables = $sth->rows();
@@ -986,7 +987,7 @@ $dbh->do(qq{DROP TABLE $schema.$table});
 SKIP: {
 
     if ($pgversion < 80300) {
-        skip ('DB handle method column_info attribute "pg_enum_values" requires at least Postgres 8.3', 2);
+        skip ('DB handle method column_info attribute "pg_enum_values" requires at least Postgres 8.3', 1);
     }
 
     my @enumvalues = qw( foo bar baz buz );
@@ -1912,25 +1913,28 @@ like ($handle, qr/^[0-9]+$/o, $t);
 isnt ($object, -1, $t);
 
 $t='DB handle method "pg_lo_lseek" works when writing';
-$result = $dbh->pg_lo_lseek($handle, 0, 0);
+$result = $dbh->pg_lo_lseek($handle, 0, SEEK_SET);
 is ($result, 0, $t);
 isnt ($object, -1, $t);
-
-SKIP: {
-    if ($pgversion < 90300 or $pglibversion < 90300) {
-        skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 2;
-    }
-    $t='DB handle method "pg_lo_lseek64" works when writing';
-    $result = $dbh->pg_lo_lseek64($handle, 0, 0);
-    is ($result, 0, $t);
-    isnt ($object, -1, $t);
-}
 
 $t='DB handle method "pg_lo_write" works';
 my $buf = 'tangelo mulberry passionfruit raspberry plantain' x 500;
 $result = $dbh->pg_lo_write($handle, $buf, length($buf));
 is ($result, length($buf), $t);
 cmp_ok ($object, '>', 0, $t);
+
+$t='DB handle method "pg_lo_tell" works when writing';
+$result = $dbh->pg_lo_tell($handle);
+is ($result, length($buf), $t);
+
+$t='DB handle method "pg_lo_lseek(SEEK_END)" works when writing';
+$result = $dbh->pg_lo_lseek($handle, 0, SEEK_END);
+is ($result, length($buf), $t);
+isnt ($object, -1, $t);
+
+$t='DB handle method "pg_lo_tell" works after seek when writing';
+$result = $dbh->pg_lo_tell($handle);
+is ($result, length($buf), $t);
 
 $t='DB handle method "pg_lo_close" works after write';
 $result = $dbh->pg_lo_close($handle);
@@ -1942,34 +1946,40 @@ $handle = $dbh->pg_lo_open($object, $R);
 like ($handle, qr/^[0-9]+$/o, $t);
 cmp_ok ($handle, 'eq', 0, $t);
 
-$t='DB handle method "pg_lo_lseek" works when reading';
-$result = $dbh->pg_lo_lseek($handle, 11, 0);
+$t='DB handle method "pg_lo_lseek(SEEK_SET)" works when reading';
+$result = $dbh->pg_lo_lseek($handle, 11, SEEK_SET);
 is ($result, 11, $t);
-
-SKIP: {
-    if ($pgversion < 90300 or $pglibversion < 90300) {
-        skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
-    }
-    $t='DB handle method "pg_lo_lseek64" works when reading';
-    $result = $dbh->pg_lo_lseek($handle, 11, 0);
-    is ($result, 11, $t);
-}
 
 $t='DB handle method "pg_lo_tell" works';
-$result = $dbh->pg_lo_tell($handle);
-is ($result, 11, $t);
+my $tell_result = $dbh->pg_lo_tell($handle);
+is ($tell_result, $result, $t);
 
-SKIP: {
-    if ($pgversion < 90300 or $pglibversion < 90300) {
-        skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
-    }
-    $t='DB handle method "pg_lo_tell64" works';
-    $result = $dbh->pg_lo_tell64($handle);
-    is ($result, 11, $t);
-}
+$t='DB handle method "pg_lo_lseek(SEEK_CUR)" forward works when reading';
+$result = $dbh->pg_lo_lseek($handle, 11, SEEK_CUR);
+is ($result, 22, $t);
+
+$t='DB handle method "pg_lo_tell" works';
+$tell_result = $dbh->pg_lo_tell($handle);
+is ($tell_result, $result, $t);
+
+$t='DB handle method "pg_lo_lseek(SEEK_CUR)" backward works when reading';
+$result = $dbh->pg_lo_lseek($handle, -10, SEEK_CUR);
+is ($result, 12, $t);
+
+$t='DB handle method "pg_lo_tell" works';
+$tell_result = $dbh->pg_lo_tell($handle);
+is ($tell_result, $result, $t);
+
+$t='DB handle method "pg_lo_lseek(SEEK_END)" works when reading';
+$result = $dbh->pg_lo_lseek($handle, -11, SEEK_END);
+is ($result, length($buf)-11, $t);
+
+$t='DB handle method "pg_lo_tell" works';
+$tell_result = $dbh->pg_lo_tell($handle);
+is ($tell_result, $result, $t);
 
 $t='DB handle method "pg_lo_read" reads back the same data that was written';
-$dbh->pg_lo_lseek($handle, 0, 0);
+$dbh->pg_lo_lseek($handle, 0, SEEK_SET);
 my ($buf2,$data) = ('','');
 while ($dbh->pg_lo_read($handle, $data, 513)) {
     $buf2 .= $data;
@@ -1984,7 +1994,7 @@ $dbh->commit;
 SKIP: {
 
     if ($pglibversion < 80300 or $pgversion < 80300) {
-        skip ('Postgres version 8.3 or greater needed for pg_lo_truncate tests', 4);
+        skip ('Postgres version 8.3 or greater needed for pg_lo_truncate tests', 1);
     }
 
     $t='DB handle method "pg_lo_truncate" fails if opened in read mode only';
@@ -1999,25 +2009,52 @@ SKIP: {
     is ($result, 0, $t);
 
     $t='DB handle method "pg_lo_truncate" truncates to expected size';
-    $dbh->pg_lo_lseek($handle, 0, 0);
+    $dbh->pg_lo_lseek($handle, 0, SEEK_SET);
     ($buf2,$data) = ('','');
     while ($dbh->pg_lo_read($handle, $data, 100)) {
         $buf2 .= $data;
     }
     is (length($buf2), 44, $t);
 
+    $t='DB handle method "pg_lo_truncate(INT_MAX)" works';
+    my $INT_MAX = (1<<31)-1;
+    $result = $dbh->pg_lo_truncate($handle, $INT_MAX);
+    is ($result, 0, $t);
+
+    $t='DB handle method "pg_lo_seek(SEEK_END)" after "pg_lo_truncate(INT_MAX)" works';
+    $result = $dbh->pg_lo_lseek($handle, 0, SEEK_END);
+    is ($result, $INT_MAX, $t);
+
+    $t='DB handle method "pg_lo_tell" after "pg_lo_truncate(INT_MAX)" works';
+    $result = $dbh->pg_lo_tell($handle);
+    is ($result, $INT_MAX, $t);
+
   SKIP: {
-        if ($pgversion < 90300 or $pglibversion < 90300) {
-            skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
+        if ($Config{ivsize} < 8 or $pgversion < 90300 or $pglibversion < 90300) {
+            skip 'Cannot test 64-bit offsets for largeobject functions without 64-bit integers and Postgres 9.3 or higher', 1;
         }
-        $t='DB handle method "pg_lo_truncate64" truncates to expected size';
-        $dbh->pg_lo_lseek($handle, 0, 0);
-        $result = $dbh->pg_lo_truncate64($handle, 22);
-        ($buf2,$data) = ('','');
-        while ($dbh->pg_lo_read($handle, $data, 100)) {
-            $buf2 .= $data;
-        }
-        is (length($buf2), 22, $t);
+
+        # large objects are stored in chunks of BLOCKSZ/4 with an
+        # integer chunk number column.  only chunks with data in them
+        # are stored, so this doesn't actually require 4TiB of space
+        my $BLOCK_SIZE = $dbh->selectrow_array('show block_size');
+        my $LO_MAX = $INT_MAX * $BLOCK_SIZE / 4;
+
+        $t='DB handle method "pg_lo_truncate(LO_MAX) works';
+        $result = $dbh->pg_lo_truncate($handle, $LO_MAX);
+        is ($result, 0, $t);
+
+        $t='DB handle method "pg_lo_seek(SEEK_END)" after "pg_lo_truncate(LO_MAX) works';
+        $result = $dbh->pg_lo_lseek($handle, 0, SEEK_END);
+        is ($result, $LO_MAX, $t);
+
+        $t='DB handle method "pg_lo_tell" after "pg_lo_truncate(LO_MAX)" works';
+        $result = $dbh->pg_lo_tell($handle);
+        is ($result, $LO_MAX, $t);
+
+        $t='DB handle method "pg_lo_lseek(SEEK_END)" to start works';
+        $result = $dbh->pg_lo_lseek($handle, -$LO_MAX, SEEK_END);
+        is ($result, 0, $t);
     }
 }
 
@@ -2032,14 +2069,14 @@ $dbh->rollback();
 
 SKIP: {
 
-    $superuser or skip ('Cannot run largeobject tests unless run as Postgres superuser', 40);
+    $superuser or skip ('Cannot run largeobject tests unless run as Postgres superuser', 1);
 
   SKIP: {
 
         eval {
             require File::Temp;
         };
-        $@ and skip ('Must have File::Temp to test pg_lo_import* and pg_lo_export', 13);
+        $@ and skip ('Must have File::Temp to test pg_lo_import* and pg_lo_export', 1);
 
         $t='DB handle method "pg_lo_import" works';
         my ($fh,$filename) = File::Temp::tmpnam();
@@ -2057,10 +2094,10 @@ SKIP: {
 
       SKIP: {
             if ($pglibversion < 80400) {
-                skip ('Cannot test pg_lo_import_with_oid unless compiled against 8.4 or better server', 5);
+                skip ('Cannot test pg_lo_import_with_oid unless compiled against 8.4 or better server', 1);
             }
             if ($pgversion < 80100) {
-                skip ('Cannot test pg_lo_import_with_oid against old versions of Postgres', 5);
+                skip ('Cannot test pg_lo_import_with_oid against old versions of Postgres', 1);
             }
 
             $t='DB handle method "pg_lo_import_with_oid" works with high number';
@@ -2070,7 +2107,7 @@ SKIP: {
             my $thandle;
           SKIP: {
 
-                skip ('Known bug: pg_log_import_with_oid throws an error. See RT #90448', 3);
+                skip ('Known bug: pg_log_import_with_oid throws an error. See RT #90448', 1);
 
                 $thandle = $dbh->pg_lo_import_with_oid($filename, $highnumber);
                 is ($thandle, $highnumber, $t);
@@ -2147,20 +2184,9 @@ SKIP: {
 
     $t='DB handle method "pg_lo_lseek" fails with AutoCommit on';
     eval {
-        $dbh->pg_lo_lseek($handle, 0, 0);
+        $dbh->pg_lo_lseek($handle, 0, SEEK_SET);
     };
     like ($@, qr{pg_lo_lseek when AutoCommit is on}, $t);
-
-  SKIP: {
-        if ($pgversion < 90300 or $pglibversion < 90300) {
-            skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
-        }
-        $t='DB handle method "pg_lo_lseek64" fails with AutoCommit on';
-        eval {
-            $dbh->pg_lo_lseek64($handle, 0, 0);
-        };
-        like ($@, qr{pg_lo_lseek64 when AutoCommit is on}, $t);
-    }
 
     $t='DB handle method "pg_lo_write" fails with AutoCommit on';
     $buf = 'tangelo mulberry passionfruit raspberry plantain' x 500;
@@ -2181,17 +2207,6 @@ SKIP: {
     };
     like ($@, qr{pg_lo_tell when AutoCommit is on}, $t);
 
-  SKIP: {
-        if ($pgversion < 90300 or $pglibversion < 90300) {
-            skip 'Cannot test 64-bit version of largeobject functions unless Postgres is 9.3 or higher', 1;
-        }
-        $t='DB handle method "pg_lo_tell64" fails with AutoCommit on';
-        eval {
-            $dbh->pg_lo_tell64($handle);
-        };
-        like ($@, qr{pg_lo_tell64 when AutoCommit is on}, $t);
-    }
-
     $t='DB handle method "pg_lo_unlink" fails with AutoCommit on';
     eval {
         $dbh->pg_lo_unlink($object);
@@ -2204,7 +2219,7 @@ SKIP: {
         eval {
             require File::Temp;
         };
-        $@ and skip ('Must have File::Temp to test pg_lo_import and pg_lo_export', 17);
+        $@ and skip ('Must have File::Temp to test pg_lo_import and pg_lo_export', 1);
 
         $t='DB handle method "pg_lo_import" works (AutoCommit on)';
         my ($fh,$filename) = File::Temp::tmpnam();
@@ -2342,7 +2357,7 @@ SKIP: {
     $t='DB handle method "pg_notifies" returns correct string length for recycled var';
 
     if ($pgversion < 90000) {
-        skip ('Cannot test notification payloads on pre-9.0 servers', 4);
+        skip ('Cannot test notification payloads on pre-9.0 servers', 1);
     }
 
     $dbh->do("LISTEN abc$notify_name");
@@ -2392,7 +2407,7 @@ $dbh->rollback();
 
 SKIP: {
     if ($DBI::VERSION < 1.54) {
-        skip ('DBI must be at least version 1.54 to test private_attribute_info', 2);
+        skip ('DBI must be at least version 1.54 to test private_attribute_info', 1);
     }
 
     $t='DB handle method "private_attribute_info" returns at least one record';
@@ -2434,7 +2449,7 @@ my $mtvar; ## This is an implicit test of getcopydata: please leave this var und
 SKIP: {
 
     if ($pgversion < 80300) {
-        skip ('Cannot test pg_ping via COPY on pre-8.3 servers', 20);
+        skip ('Cannot test pg_ping via COPY on pre-8.3 servers', 1);
     }
 
     for my $type (qw/ ping pg_ping /) {
@@ -2484,7 +2499,7 @@ SKIP: {
 
       SKIP: {
 
-        skip 'Cannot safely reopen sockets on Win32', 2 if $^O =~ /Win32/;
+        skip 'Cannot safely reopen sockets on Win32', 1 if $^O =~ /Win32/;
 
         $val = $type eq 'ping' ? 0 : -3;
         $t=qq{DB handle method "$type" returns $val after a lost network connection (outside transaction)};
@@ -2517,6 +2532,7 @@ $t=q{DB handle method "pg_type_info" returns 12 for type 123 (PrintError on)};
 is ($dbh->pg_type_info(123), 12, $t);
 $dbh->{PrintError} = 0;
 
+done_testing();
 
 exit;
 
