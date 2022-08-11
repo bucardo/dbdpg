@@ -686,6 +686,8 @@ Short note of changes, link to CPAN directory.
 
 Checksums for the file.
 
+See past announcements in the z_announcements directory.
+
 * Post to pgsql-announce@postgresql.org if this is a major or important version.
 
 * Post to the "PostgreSQL news"
