@@ -76,7 +76,7 @@ $ENV{DBI_DSN} ||= '';
 SKIP: {
     my $alias = qr{(database|db|dbname)};
     if ($ENV{DBI_DSN} !~ /$alias\s*=\s*\S+/) {
-        skip ('DBI_DSN contains no database option, so skipping connection tests', 7);
+        skip ('DBI_DSN contains no database option, so skipping connection tests', 8);
     }
 
     $t=q{Connect with invalid option fails};

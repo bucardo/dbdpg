@@ -238,7 +238,7 @@ version: $version
 
     if (! $testdsn) {
         $helpconnect = 1;
-        $testdsn = $^O =~ /Win32/ ? 'dbi:Pg:host=localhost' : 'dbi:Pg:';
+        $testdsn = $^O =~ /Win32/ ? 'dbi:Pg:host=localhost' : 'dbi:Pg:dbname=postgres';
     }
     if (! $testuser) {
         $testuser = 'postgres';
