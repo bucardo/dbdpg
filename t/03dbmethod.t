@@ -622,7 +622,7 @@ like ($result, qr{CONCURRENTLY}, $t);
 
 $t='DB handle method "get_info" returns expected result for SQL_DEFAULT_TXN_ISOLATION';
 $result = $dbh->get_info('SQL_DEFAULT_TXN_ISOLATION');
-ok (($result==2 or $result==8), $t);
+ok ((2==$result or 8==$result), $t);
 
 $t='DB handle method "get_info" returns correct string for SQL_DATA_SOURCE_READ_ONLY when "on"';
 $dbh->do(q{SET transaction_read_only = 'on'});
