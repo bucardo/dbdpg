@@ -237,7 +237,7 @@ my %opts =
                         'Pg.pm' => '$(INST_LIBDIR)/Pg.pm',
                         'lib/Bundle/DBD/Pg.pm' => '$(INST_LIB)/Bundle/DBD/Pg.pm',
                        },
-     clean          => { FILES => 'trace Pg.xsi README.testdatabase cover_db' },
+     clean          => { FILES => 'trace Pg.xsi README.testdatabase cover_db *.tst' },
      realclean      => { FILES => 'dbdpg_test_database/' },
 );
 
