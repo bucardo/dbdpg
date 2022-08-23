@@ -1,0 +1,62 @@
+{
+   "generated_by" : "emacs",
+   "dynamic_config" : "1",
+   "recommends" : {
+      "Encode" : "0",
+      "Module::Signature" : "0.50",
+      "Cwd" : "0"
+   },
+   "name" : "DBD-Pg",
+   "resources" : {
+      "homepage" : "http://search.cpan.org/dist/DBD-Pg/",
+      "MailingList" : "http://www.nntp.perl.org/group/perl.dbd.pg/",
+      "repository" : "https://github.com/bucardo/dbdpg",
+      "bugtracker" : "https://github.com/bucardo/dbdpg/issues",
+      "license" : "http://dev.perl.org/licenses/",
+      "IRC" : "irc://irc.libera.chat/#postgresql"
+   },
+   "provides" : {
+      "DBD::Pg" : {
+         "file" : "Pg.pm",
+         "version" : "3.16.0"
+      },
+      "Bundle::DBD::Pg" : {
+         "version" : "3.16.0",
+         "file" : "lib/Bundle/DBD/Pg.pm"
+      }
+   },
+   "version" : "3.16.0",
+   "requires" : {
+      "perl" : "5.008001",
+      "DBI" : "1.614",
+      "version" : "0"
+   },
+   "keywords" : [
+      "Postgres",
+      "PostgreSQL",
+      "DBI",
+      "libpq",
+      "dbdpg"
+   ],
+   "meta-spec" : {
+      "url" : "http://module-build.sourceforge.net/META-spec-v1.4.html",
+      "version" : "1.4"
+   },
+   "author" : [
+      "Greg Sabino Mullane <greg@turnstep.com>"
+   ],
+   "configure_requires" : {
+      "DBI" : "1.614",
+      "version" : "0"
+   },
+   "license" : "perl",
+   "distribution_type" : "module",
+   "build_requires" : {
+      "File::Temp" : "0",
+      "version" : "0",
+      "Time::HiRes" : "0",
+      "DBI" : "1.614",
+      "Test::More" : "0.88"
+   },
+   "abstract" : "DBI PostgreSQL interface"
+}

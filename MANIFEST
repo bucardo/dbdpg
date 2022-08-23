@@ -4,6 +4,7 @@ CONTRIBUTING.md
 SIGNATURE
 Pg.pm
 META.yml
+META.json
 TODO
 Makefile.PL
 .dir-locals.el

@@ -21,6 +21,7 @@ my $vre = qr{([0-9]+\.[0-9]+\.[0-9]+\_?[0-9]*)};
 my %filelist = (
     'dbdimp.c'             => [1, [ qr{ping test v$vre},        ]],
     'META.yml'             => [3, [ qr{version\s*:\s*$vre},     ]],
+    'META.json'            => [3, [ qr{"version" : "$vre"},     ]],
     'Pg.pm'                => [4, [ qr{VERSION = qv\('$vre'},
                                     qr{realversion = qv\('$vre'},
                                     qr{documents version $vre},
@@ -163,7 +164,7 @@ while (<$fh>) {
     ## Should not have any bug tracking keywords now
     if (/RT/ or /github/i or /cpan/i or /debian /i) {
         ## Allow a few exceptions
-        if (! /dbdpg.git/ and ! /META.yml/ and ! /cpan\.org/ and ! /Github user/) {
+        if (! /dbdpg.git/ and ! /META/ and ! /cpan\.org/ and ! /Github user/) {
             fail ("Found mention of bug tracker at wrong place at line $.: $_\n");
             next;
         }
