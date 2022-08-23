@@ -5,7 +5,7 @@ RT refers to rt.cpan.org
 
 Version 3.16.1 (unreleased)
 
- - Add a META.json file
+ - Add a META.json file; rename META.yml to META.yaml
 
 
 Version 3.16.0 (August 8, 2022)

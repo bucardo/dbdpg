@@ -20,7 +20,7 @@ my $vre = qr{([0-9]+\.[0-9]+\.[0-9]+\_?[0-9]*)};
 
 my %filelist = (
     'dbdimp.c'             => [1, [ qr{ping test v$vre},        ]],
-    'META.yml'             => [3, [ qr{version\s*:\s*$vre},     ]],
+    'META.yaml'            => [3, [ qr{version\s*:\s*$vre},     ]],
     'META.json'            => [3, [ qr{"version" : "$vre"},     ]],
     'Pg.pm'                => [4, [ qr{VERSION = qv\('$vre'},
                                     qr{realversion = qv\('$vre'},
