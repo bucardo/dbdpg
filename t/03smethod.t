@@ -840,7 +840,7 @@ $sth->finish;
 SKIP: {
 
     if ($DBI::VERSION < 1.642) {
-        skip ('DBI must be at least version 1.642 to test $sth->last_insert_id', 10);
+        skip ('DBI must be at least version 1.642 to test $sth->last_insert_id', 12);
     }
 
     $t='Statement handle method "last_insert_id" fails when no arguments are given';
