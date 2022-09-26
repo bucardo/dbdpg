@@ -2,6 +2,12 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+Version 3.16.4 (unreleased)
+
+ - Fix to handle escaped quotes in connection string
+   [Dagfinn Ilmari Mannsåker]
+
+
 Version 3.16.3  (released April 4, 2023)
 
  - Fix to remove MYMETA files added by mistake to tarball

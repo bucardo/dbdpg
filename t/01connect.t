@@ -24,7 +24,7 @@ BEGIN {
 if (! defined $dbh or $connerror) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 16;
+plan tests => 30;
 
 pass ('Established a connection to the database');
 
@@ -130,6 +130,25 @@ SKIP: {
     };
     is ($@, q{}, $t);
 
+  SKIP: {
+        my @names = ('foo', 'foo bar', ';foo;bar;', 'foo\'bar', 'foo\\\'bar',
+                     'foo\';bar\';', '\\foo\\');
+        if ($pgversion < 90000) {
+            skip ('applicaiton_name requires PostgreSQL >= 9.0', @names * 2);
+        }
+
+        for my $application_name (@names) {
+            $t=qq{Connect with application_name=$application_name};
+            (my $escaped_name = $application_name) =~ s/(['\\])/\\$1/g;
+            my $adbh = DBI->connect("$testdsn;application_name='$escaped_name'", $testuser, $ENV{DBI_PASS},
+                                    {RaiseError => 0, PrintError => 0});
+            ok (ref $adbh, $t) or diag $DBI::errstr;
+            my $returned_name = $adbh && $adbh->selectrow_array('show application_name');
+            $t=q{application_name roundtrip};
+            is ($returned_name, $application_name, $t);
+            $adbh && $adbh->disconnect;
+        }
+    }
 }
 
 END {
