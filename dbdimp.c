@@ -767,14 +767,12 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
         }
         break;
 
-    case 10: /* AutoCommit  pg_bool_tf  pg_pid_number  pg_options */
+    case 10: /* AutoCommit  pg_bool_tf  pg_options */
 
         if (strEQ("AutoCommit", key))
             retsv = boolSV(DBIc_has(imp_dbh, DBIcf_AutoCommit));
         else if (strEQ("pg_bool_tf", key))
             retsv = newSViv((IV)imp_dbh->pg_bool_tf);
-        else if (strEQ("pg_pid_number", key)) /* Undocumented on purpose */
-            retsv = newSViv((IV)imp_dbh->pid_number);
         else if (strEQ("pg_options", key)) {
             TRACE_PQOPTIONS;
             retsv = newSVpv(PQoptions(imp_dbh->conn),0);
@@ -799,10 +797,12 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
             retsv = newSViv((IV)imp_dbh->pg_utf8_flag);
         break;
 
-    case 13: /* pg_errorlevel */
+    case 13: /* pg_errorlevel  pg_pid_number */
 
         if (strEQ("pg_errorlevel", key))
             retsv = newSViv((IV)imp_dbh->pg_errorlevel);
+        else if (strEQ("pg_pid_number", key)) /* Undocumented on purpose */
+            retsv = newSViv((IV)imp_dbh->pid_number);
         break;
 
     case 14: /* pg_lib_version  pg_prepare_now  pg_enable_utf8 */
