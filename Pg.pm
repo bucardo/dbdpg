@@ -1587,6 +1587,7 @@ use 5.008001;
         return {
                 pg_async_status                => undef,
                 pg_bool_tf                     => undef,
+                pg_int8_as_string              => undef,
                 pg_db                          => undef,
                 pg_default_port                => undef,
                 pg_enable_utf8                 => undef,
@@ -3294,6 +3295,15 @@ Note that the value of client_encoding is only checked on connection time. If
 you change the client_encoding to/from 'UTF8' after connecting, you can set 
 pg_enable_utf8 to -1 to force DBD::Pg to read in the new client_encoding and 
 act accordingly.
+
+=head3 B<pg_int8_as_string> (integer)
+
+DBD::Pg specific attribute. Since version 3.0.0 the processing of SQL_INT8 has
+changed, before that 64 bit values were returned as strings, starting from
+version 3.0.0 64 bit values are returned as numbers. This flag makes it
+possible to return the old behavior. The old behavior is useful when encoding
+the results of a call in JSON format and passing it to JavaScript for
+processing, where integer values have a precision of no more than 53 bits.
 
 =head3 B<pg_errorlevel> (integer)
 
