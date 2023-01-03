@@ -1,6 +1,6 @@
 /*
 
-   Copyright (c) 2003-2022 Greg Sabino Mullane and others: see the Changes file
+   Copyright (c) 2003-2023 Greg Sabino Mullane and others: see the Changes file
    
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.
@@ -737,7 +737,7 @@ open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
 
 print $newfh qq{$slashstar
 
-   Copyright (c) 2003-2022 Greg Sabino Mullane and others: see the Changes file
+   Copyright (c) 2003-2023 Greg Sabino Mullane and others: see the Changes file
    
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2000-2022 Greg Sabino Mullane and others: see the Changes file
+    Copyright (c) 2000-2023 Greg Sabino Mullane and others: see the Changes file
     Portions Copyright (c) 1997-2000 Edmund Mergl
     Portions Copyright (c) 1994-1997 Tim Bunce
     
