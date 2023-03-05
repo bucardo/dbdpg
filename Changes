@@ -3,7 +3,7 @@ Changes for the DBD::Pg module
 RT refers to rt.cpan.org
 
 
-Version 3.16.1 (unreleased)
+Version 3.16.1 (released March 5, 2023)
 
  - Add new attribute "pg_int8_as_string", for backwards compatibility.
    [Alexander Gorlov]
