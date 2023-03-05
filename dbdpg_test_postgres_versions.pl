@@ -158,6 +158,8 @@ for my $lib_version (shuffle @versions) {
             <STDIN>;
         }
 
+        sleep 1;
+
     }
 }
 
