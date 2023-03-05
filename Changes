@@ -5,6 +5,10 @@ RT refers to rt.cpan.org
 
 Version 3.16.1 (unreleased)
 
+ - Add new attribute "pg_int8_as_string", for backwards compatibility.
+   [Alexander Gorlov]
+   (Github pul request #100)
+
  - Add a META.json file; rename META.yml to META.yaml
 
  - Fix 03smethod.t $sth->last_insert_id skip count for DBI < 1.642
