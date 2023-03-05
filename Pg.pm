@@ -1761,8 +1761,15 @@ If the username and password values passed via C<connect()> are undefined (as op
 to merely being empty strings), DBI will use the environment variables I<DBI_USER> 
 and I<DBI_PASS> if they exist.
 
-You can also connect by using a service connection file, which is named 
-F<pg_service.conf>. The location of this file can be controlled by 
+You can also connect by using a service connection file.
+Service names can be defined in either a per-user service file or a system-wide
+file. If the same service name exists in both the user and the system file,
+the user file takes precedence. By default, the per-user service file is
+named ~/.pg_service.conf. On Microsoft Windows, it is named %APPDATA%
+\postgresql\.pg_service.conf (where %APPDATA% refers to the Application Data
+subdirectory in the user's profile). A different file name can be specified
+by setting the environment variable PGSERVICEFILE. The system-wide file is
+named F<pg_service.conf>. The location of this file can be controlled by 
 setting the I<PGSYSCONFDIR> environment variable. To use one of the named 
 services within the file, set the name by using either the I<service> parameter 
 or the environment variable I<PGSERVICE>. Note that when connecting this way, 
