@@ -254,6 +254,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     imp_dbh->async_sth         = NULL;
     imp_dbh->last_result       = NULL; /* NULL or the last PGresult returned by a database or statement handle */
     imp_dbh->result_clearable  = DBDPG_TRUE;
+    imp_dbh->pg_int8_as_string = DBDPG_FALSE;
 
     /* Tell DBI that we should call destroy when the handle dies */
     DBIc_IMPSET_on(imp_dbh);
@@ -825,12 +826,15 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
             retsv = newSViv((IV)imp_dbh->expand_array);
         break;
 
-    case 17: /* pg_server_prepare  pg_server_version */
+    case 17: /* pg_server_prepare  pg_server_version  pg_int8_as_string */
 
         if (strEQ("pg_server_prepare", key))
             retsv = newSViv((IV)imp_dbh->server_prepare);
         else if (strEQ("pg_server_version", key))
             retsv = newSViv((IV)imp_dbh->pg_server_version);
+        else if (strEQ("pg_int8_as_string", key)) {
+              retsv = newSViv((IV)imp_dbh->pg_int8_as_string);
+        }
         break;
 
     case 18: /* pg_switch_prepared */
@@ -984,10 +988,14 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
         }
         break;
 
-    case 17: /* pg_server_prepare */
+    case 17: /* pg_server_prepare  pg_int8_as_string */
 
         if (strEQ("pg_server_prepare", key)) {
             imp_dbh->server_prepare = newval ? DBDPG_TRUE : DBDPG_FALSE;
+            retval = 1;
+        }
+        else if (strEQ("pg_int8_as_string", key)) {
+            imp_dbh->pg_int8_as_string = newval!=0 ? DBDPG_TRUE : DBDPG_FALSE;
             retval = 1;
         }
         break;
@@ -3811,11 +3819,15 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
                         else
                             sv_setiv(sv, '1' == *value ? 1 : 0);
                         break;
-                    case PG_INT2:
-                    case PG_INT4:
 #if IVSIZE >= 8 && LONGSIZE >= 8
                     case PG_INT8:
+                        if (imp_dbh->pg_int8_as_string) {
+                            sv_setpvn(sv, (char *)value, value_len);
+                            break;
+                        }
 #endif
+                    case PG_INT2:
+                    case PG_INT4:
                         sv_setiv(sv, atol((char *)value));
                         break;
                     case PG_FLOAT4:
