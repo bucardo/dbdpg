@@ -471,6 +471,7 @@ Mergl
 metadata
 mingw
 MinGW
+minversion
 mis
 mkdir
 Momjian
@@ -494,6 +495,7 @@ newSVpv
 Newz
 nmake
 nntp
+nohead
 nonliteral
 noprefix
 noreturn
@@ -565,6 +567,7 @@ pgprefix
 PGRES
 PGresult
 PGSERVICE
+PGSERVICEFILE
 pgsql
 pgstart
 PGSYSCONFDIR
