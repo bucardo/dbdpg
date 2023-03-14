@@ -232,7 +232,6 @@ my %opts =
      PERL_MALLOC_OK => 1,
      NEEDS_LINKING  => 1,
      NO_META        => 1,
-     NO_MYMETA      => 0,
      NORECURS       => 1,
      PM             => {
                         'Pg.pm' => '$(INST_LIBDIR)/Pg.pm',
