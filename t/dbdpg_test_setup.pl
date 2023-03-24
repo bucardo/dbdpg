@@ -407,7 +407,7 @@ version: $version
                 $olddir = getcwd;
                 eval {
                     chdir $testdir;
-                    $info = qx{su -m $testuser -c "$initdb --locale=C -E UTF8 -D $testdir/data 2>&1"};
+                    $info = qx{su -m $testuser -c "/bin/sh -c '$initdb --locale=C -E UTF8 -D $testdir/data 2>&1'"};
                 };
                 my $err = $@;
                 chdir $olddir;
