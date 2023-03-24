@@ -18,14 +18,14 @@
    "provides" : {
       "DBD::Pg" : {
          "file" : "Pg.pm",
-         "version" : "3.16.1"
+         "version" : "3.16.2"
       },
       "Bundle::DBD::Pg" : {
-         "version" : "3.16.1",
+         "version" : "3.16.2",
          "file" : "lib/Bundle/DBD/Pg.pm"
       }
    },
-   "version" : "3.16.1",
+   "version" : "3.16.2",
    "requires" : {
       "perl" : "5.008001",
       "DBI" : "1.614",
