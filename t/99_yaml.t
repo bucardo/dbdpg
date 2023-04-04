@@ -1,6 +1,6 @@
 #!perl
 
-## Test META.yaml for YAMLiciousness, requires Test::YAML::Meta
+## Test META.yml for YAMLiciousness, requires Test::YAML::Meta
 
 use 5.008001;
 use strict;
@@ -30,5 +30,5 @@ elsif ($Test::YAML::Meta::VERSION < $V) {
     }
 }
 else {
-    meta_spec_ok ('META.yaml', 1.4);
+    meta_spec_ok ('META.yml', 1.4);
 }

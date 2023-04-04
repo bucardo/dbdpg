@@ -91,7 +91,7 @@ Makefile.PL - The main file that starts everything off. Used by ExtUtils::MakeMa
 
 Makefile - Generated automatically by Makefile.PL. Not part of the distribution.
 
-META.yaml - YAML description file. Updated by hand and contains a version number in three places.
+META.yml - YAML description file. Updated by hand and contains a version number in three places.
 
 META.json - JSON description file. Updated by hand and contains a version number in three places.
 
@@ -209,7 +209,7 @@ t/99_perlcritic.t - Uses Perl::Critic to check Pg.pm and all of the test files.
 t/99_pod.t - Verifies the POD of Pg.pm. Requires Test::POD version 0.95, and 
   Test::Pod::Coverage 1.04.
 
-t/99_yaml.t - Uses Test::YAML::Meta to verify the META.yaml file.
+t/99_yaml.t - Uses Test::YAML::Meta to verify the META.yml file.
 
 t/99_spellcheck.t - Checks the spelling of everything it can.
 
@@ -548,7 +548,7 @@ README (one place, two if a beta version)
 Pg.pm (three places)
 Changes
 Makefile.PL
-META.yaml (three places)
+META.yml (three places)
 META.json (three places)
 lib/Bundle/DBD/Pg.pm
 
@@ -599,7 +599,7 @@ other sections referenced herein (indicated with **)
 * Make sure everything is up to date in git (git status)
 
 * Update the versions (see ** Version Numbers) in README, Pg.pm (3 places!), Makefile.PL, 
-  lib/Bundle/DBD/Pg.pm, META.yaml and META.json (3 places each), and Changes. Run the t/00_release.t file 
+  lib/Bundle/DBD/Pg.pm, META.yml and META.json (3 places each), and Changes. Run the t/00_release.t file 
   to double check you got everything.
 
 * If a final version, put the release date into the Changes file.
