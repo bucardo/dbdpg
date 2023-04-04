@@ -5,6 +5,8 @@ SIGNATURE
 Pg.pm
 META.yml
 META.json
+MYMETA.yml
+MYMETA.json
 TODO
 Makefile.PL
 .dir-locals.el
