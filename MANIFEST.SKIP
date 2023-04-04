@@ -8,7 +8,6 @@ README.testdatabase
 ^Pg.xsi$
 ^pm_to_blib$
 dbdpg_test_postgres_versions.pl
-^MYMETA
 
 ^_build
 ^DBD-Pg
