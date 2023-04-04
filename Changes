@@ -3,14 +3,18 @@ Changes for the DBD::Pg module
 RT refers to rt.cpan.org
 
 
-Version 3.16.2 (unreleased)
+Version 3.16.2  (released April 4, 2023)
 
  - Force test suite to use a specific shell for the initdb command
    [Ed Sabol]
    (Github issue #104)
 
+ - Revert to using META.yml, and generate MYMETA.* files
+   (Github issue #111)
+   (Github issue #113)
 
-Version 3.16.1 (released March 5, 2023)
+
+Version 3.16.1  (released March 5, 2023)
 
  - Add new attribute "pg_int8_as_string", for backwards compatibility.
    [Alexander Gorlov]
@@ -26,7 +30,7 @@ Version 3.16.1 (released March 5, 2023)
    [Erik Rijkers]
 
 
-Version 3.16.0 (August 8, 2022)
+Version 3.16.0  (released August 8, 2022)
 
  - Automatically use 64-bit versions of large object functions when available
    [Dagfinn Ilmari Mannsåker, David Christensen]
