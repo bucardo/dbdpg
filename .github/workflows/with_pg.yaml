@@ -48,6 +48,7 @@ jobs:
       run: |
         cpanm -v
         cpanm --installdeps --notest .
+        cpanm --notest Perl::Critic Text::SpellChecker
 
     - name: Show Errors on Ubuntu
       if:  ${{ failure() && startsWith( matrix.runner, 'ubuntu-')}}
