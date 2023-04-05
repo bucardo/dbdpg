@@ -1,0 +1,72 @@
+name: CI in Docker container
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+#  schedule:
+#    - cron: '42 5 * * *'
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        perl: [ '5.36' ]
+        postgres: [ 'latest' ]
+
+    services:
+      postgreshost:
+        image: postgres:${{matrix.postgres}}
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_secret
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+
+    runs-on: ubuntu-latest
+    container: perl:${{ matrix.perl }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Show Perl Version
+      run: |
+        perl -v
+
+    - name: Install non-perl dependencies
+      run: |
+        apt-get update
+        apt-get install -y libaspell-dev
+
+    - name: Install Modules
+      run: |
+        cpanm -v
+        cpanm --installdeps --notest .
+
+    - name: Show Errors on Ubuntu
+      if:  ${{ failure() && startsWith( matrix.runner, 'ubuntu-')}}
+      run: |
+         cat /home/runner/.cpanm/work/*/build.log
+
+    - name: Run make
+      run: |
+        perl Makefile.PL
+        make
+
+    - name: Run tests
+      env:
+        AUTHOR_TESTING: 1
+        RELEASE_TESTING: 1
+        DBI_DSN: "dbi:Pg:dbname=test_db;host=postgreshost"
+        DBI_PASS: test_secret
+        DBI_USER: test_user
+      run: |
+        make test
+
+
