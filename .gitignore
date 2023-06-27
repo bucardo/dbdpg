@@ -21,6 +21,7 @@ dbdpg.testing.*
 *.asc
 *.patch
 dbdpg_test_*
+!dbdpg_test_setup.pl
 *.tar.gz
 cover_db/
 tarballs/
