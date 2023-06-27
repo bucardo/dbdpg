@@ -333,10 +333,10 @@ version: $version
             }
             last GETHANDLE; ## Fail - initdb bad
         }
-        elsif ($info =~ /([0-9]+\.[0-9]+)/) {
+        elsif ($info =~ /([0-9]+)(?:devel|beta|rc|alpha)/) { ## Can be 10devel
             $version = $1;
         }
-        elsif ($info =~ /([0-9]+)(?:devel|beta|rc|alpha)/) { ## Can be 10devel
+        elsif ($info =~ /([0-9]+\.[0-9]+)/) {
             $version = $1;
         }
         else {
