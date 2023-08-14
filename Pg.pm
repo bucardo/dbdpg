@@ -3520,6 +3520,9 @@ The current list of Postgres data types exported is:
  PG_VOID PG_XID PG_XID8 PG_XID8ARRAY PG_XIDARRAY PG_XML
  PG_XMLARRAY
 
+Be warned that PG_CHAR is probably not what you think it is. When in doubt, use PG_TEXT
+for anything storing a non-numeric string.
+
 Data types are "sticky," in that once a data type is set to a certain placeholder,
 it will remain for that placeholder, unless it is explicitly set to something
 else afterwards. If the statement has already been prepared, and you switch the
