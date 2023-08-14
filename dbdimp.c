@@ -1687,6 +1687,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
             0 == strcasecmp(imp_sth->firstword, "INSERT") ||
             0 == strcasecmp(imp_sth->firstword, "UPDATE") ||
             0 == strcasecmp(imp_sth->firstword, "DELETE") ||
+            0 == strcasecmp(imp_sth->firstword, "MERGE")  ||
             0 == strcasecmp(imp_sth->firstword, "VALUES") ||
             0 == strcasecmp(imp_sth->firstword, "TABLE")  ||
             0 == strcasecmp(imp_sth->firstword, "WITH")
@@ -3138,6 +3139,9 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
                || 0 == strncmp(cmdStatus, "SELECT", 6)) {
             rows = atol(cmdStatus + 7);
         }
+        else if (0 == strncmp(cmdStatus, "MERGE", 5)) {
+            rows = atol(cmdStatus + 6);
+        }
         break;
     case PGRES_COPY_OUT:
     case PGRES_COPY_IN:
@@ -3682,6 +3686,10 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
                      || 0 == strncmp(cmdStatus, "UPDATE", 6)
                      || 0 == strncmp(cmdStatus, "SELECT", 6)) {
                 ret = atol(cmdStatus + 7);
+                gotrows = DBDPG_TRUE;
+            }
+            else if (0 == strncmp(cmdStatus, "MERGE", 5)) {
+                ret = atol(cmdStatus + 6);
                 gotrows = DBDPG_TRUE;
             }
         }
@@ -5278,6 +5286,9 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
                      || 0 == strncmp(cmdStatus, "UPDATE", 6)
                      || 0 == strncmp(cmdStatus, "SELECT", 6)) {
                 rows = atol(cmdStatus + 7);
+            }
+            else if (0 == strncmp(cmdStatus, "MERGE", 5)) {
+                rows = atol(cmdStatus + 6);
             }
             break;
         case PGRES_COPY_OUT:

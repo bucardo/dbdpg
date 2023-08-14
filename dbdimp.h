@@ -123,7 +123,7 @@ struct imp_sth_st {
     bool   prepare_now;      /* prepare this statement right away, even if it has placeholders */
     bool   prepared_by_us;   /* false if {prepare_name} set directly */
     bool   direct;           /* allow bypassing of the statement parsing */
-    bool   is_dml;           /* is this SELECT/INSERT/UPDATE/DELETE? */
+    bool   is_dml;           /* is this SELECT/INSERT/UPDATE/DELETE/MERGE/VALUES/TABLE/WITH? */
     bool   has_binary;       /* does it have one or more binary placeholders? */
     bool   has_default;      /* does it have one or more 'DEFAULT' values? */
     bool   has_current;      /* does it have one or more 'DEFAULT' values? */

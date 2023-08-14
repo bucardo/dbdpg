@@ -18,7 +18,7 @@ my (undef,undef,$dbh) = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 288;
+plan tests => 289;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -388,17 +388,28 @@ $t='DB handle attribute "pg_pid" returns a value';
 $result = $dbh->{pg_pid};
 like ($result, qr/^[0-9]+$/, $t);
 
-    $t='Using INSERT returns correct number of rows affected';
-    $SQL = "INSERT INTO dbd_pg_test (id) VALUES (444),(445),(446)";
-    is ($dbh->do($SQL), '3', $t);
+$t='Using INSERT returns correct number of rows affected';
+$SQL = "INSERT INTO dbd_pg_test (id) VALUES (444),(445),(446)";
+is ($dbh->do($SQL), '3', $t);
 
-    $t='Using UPDATE returns correct number of rows affected';
-    $SQL = "UPDATE dbd_pg_test SET pname = 'update_test' WHERE id IN (444,445,446)";
-    is ($dbh->do($SQL), '3', $t);
+$t='Using UPDATE returns correct number of rows affected';
+$SQL = "UPDATE dbd_pg_test SET pname = 'update_test' WHERE id IN (444,445,446)";
+is ($dbh->do($SQL), '3', $t);
 
-    $t='Using DELETE returns correct number of rows affected';
-    $SQL = "DELETE from dbd_pg_test WHERE id IN (444,445,446)";
+SKIP: {
+
+    if ($pgversion < 150000) {
+        skip ('Cannot test MERGE return value on pre 15 servers', 1);
+    }
+
+    $t='Using MERGE returns correct number of rows affected';
+    $SQL = "MERGE into dbd_pg_test d using (select 1) as f on (d.id between 444 and 446) when matched then update set pname=''";
     is ($dbh->do($SQL), '3', $t);
+}
+
+$t='Using DELETE returns correct number of rows affected';
+$SQL = "DELETE from dbd_pg_test WHERE id IN (444,445,446)";
+is ($dbh->do($SQL), '3', $t);
 
 SKIP: {
 
