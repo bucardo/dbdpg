@@ -7,6 +7,18 @@ Version 3.16.4 (unreleased)
  - Fix to handle escaped quotes in connection string
    [Dagfinn Ilmari Mannsåker]
 
+ - Return number of affected rows from a MERGE command
+   [Greg Sabino Mullane]
+   (Github issue #118)
+
+ - Remove undocumented internal-only pg_pid_number attribute
+   [Greg Sabino Mullane]
+   (Github issue #102)
+
+ - Small warning in docs about PG_CHAR
+   [Greg Sabino Mullane]
+   (Github issue #103)
+
 
 Version 3.16.3  (released April 4, 2023)
 
