@@ -529,7 +529,7 @@ if (-e "$dir/pg_type.dat") {
 }
 else {
     $typefile = "$dir/pg_type.h";
-    open my $fh, '<', $typefile or die qq{Could not open file "$typefile": $!\n};
+    open my $fh, '<', $typefile;
 
     while (<$fh>) {
         s/FLOAT8PASSBYVAL/t/;
@@ -561,7 +561,7 @@ else {
             die "Bad line at $. ->$_\n";
         }
     }
-    close $fh or die qq{Could not close "$typefile": $!\n};
+    close $fh;
 }
 
 for my $name (keys %pgtype) {
@@ -585,7 +585,7 @@ my ($oldfh,$newfh);
 
 ## Rewrite types.h
 my $file = 'types.h';
-open $newfh, '>', "$file.tmp" or die qq{Could not create "$file.tmp": $!\n};
+open $newfh, '>', "$file.tmp";
 
 my $slashstar = '/' . '*';
 my $starslash = '*' . '/';
@@ -622,14 +622,14 @@ for (sort {
 }
 
 print $newfh "\n";
-close $newfh or die qq{Could not close "$file.tmp": $!\n};
+close $newfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 
 ## Rewrite Pg.xs
 $file = 'Pg.xs';
-open $oldfh, '<', $file or die qq{Could not open "$file": $!\n};
-open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
+open $oldfh, '<', $file;
+open $newfh, '>', "$file.tmp";
 my $step = 0;
 while (<$oldfh>) {
     if (0 == $step) {
@@ -651,16 +651,16 @@ while (<$oldfh>) {
     }
     print $newfh $_;
 }
-close $newfh or die qq{Could not close "$file.tmp": $!\n};
-close $oldfh  or die qq{Could not close "$file": $!\n};
+close $newfh;
+close $oldfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 
 
 ## Rewrite Pg.pm
 $file = 'Pg.pm';
-open $oldfh, '<', $file or die qq{Could not open "$file": $!\n};
-open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
+open $oldfh, '<', $file;
+open $newfh, '>', "$file.tmp";
 $step = 0;
 while (<$oldfh>) {
     if (0 == $step) {
@@ -698,15 +698,15 @@ while (<$oldfh>) {
     }
     print $newfh $_;
 }
-close $newfh or die qq{Could not close "$file.tmp": $!\n};
-close $oldfh or die qq{Could not close "$file": $!\n};
+close $newfh;
+close $oldfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 
 ## Rewrite 01constants.t
 $file = 't/01constants.t';
-open $oldfh, '<', $file or die qq{Could not open "$file": $!\n};
-open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
+open $oldfh, '<', $file;
+open $newfh, '>', "$file.tmp";
 $step = 0;
 while (<$oldfh>) {
     if (0 == $step) {
@@ -722,15 +722,15 @@ while (<$oldfh>) {
     }
     print $newfh $_;
 }
-close $newfh or die qq{Could not close "$file.tmp": $!\n};
-close $oldfh or die qq{Could not close "$file": $!\n};
+close $newfh;
+close $oldfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 
 ## Rewrite 99_pod.t
 $file = 't/99_pod.t';
-open $oldfh, '<', $file or die qq{Could not open "$file": $!\n};
-open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
+open $oldfh, '<', $file;
+open $newfh, '>', "$file.tmp";
 $step = 0;
 while (<$oldfh>) {
     if (0 == $step) {
@@ -750,15 +750,15 @@ while (<$oldfh>) {
     }
     print $newfh $_;
 }
-close $newfh or die qq{Could not close "$file.tmp": $!\n};
-close $oldfh or die qq{Could not close "$file": $!\n};
+close $newfh;
+close $oldfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 
 
 ## Rewrite types.c
 $file = 'types.c';
-open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
+open $newfh, '>', "$file.tmp";
 
 print $newfh qq{$slashstar
 
@@ -858,7 +858,7 @@ seek(DATA,0,0);
 1 while <DATA> !~ /!perl/;
 print $newfh "#!perl\n";
 while (<DATA>) { print $newfh $_; }
-close($newfh) or die qq{Could not close "$file.tmp": $!\n};
+close $newfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 
