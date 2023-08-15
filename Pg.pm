@@ -1738,7 +1738,7 @@ The following connect statement shows almost all possible parameters:
                      );
 
 Parameters containing unusual characters such as spaces can be wrapped in single quotes 
-around the value, and single quotes and backslashes can be scaped with a backslash,
+around the value, and single quotes and backslashes can be escaped with a backslash,
 e.g. C<dbi:Pg:dbname='\'spacey\' name';host=$host>.
 
 If a parameter is not given, the connect() method will first look for 
