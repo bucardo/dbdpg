@@ -389,11 +389,11 @@ $result = $dbh->{pg_pid};
 like ($result, qr/^[0-9]+$/, $t);
 
 $t='Using INSERT returns correct number of rows affected';
-$SQL = "INSERT INTO dbd_pg_test (id) VALUES (444),(445),(446)";
+$SQL = q{INSERT INTO dbd_pg_test (id) VALUES (444),(445),(446)};
 is ($dbh->do($SQL), '3', $t);
 
 $t='Using UPDATE returns correct number of rows affected';
-$SQL = "UPDATE dbd_pg_test SET pname = 'update_test' WHERE id IN (444,445,446)";
+$SQL = q{UPDATE dbd_pg_test SET pname = 'update_test' WHERE id IN (444,445,446)};
 is ($dbh->do($SQL), '3', $t);
 
 SKIP: {
@@ -403,12 +403,12 @@ SKIP: {
     }
 
     $t='Using MERGE returns correct number of rows affected';
-    $SQL = "MERGE into dbd_pg_test d using (select 1) as f on (d.id between 444 and 446) when matched then update set pname=''";
+    $SQL = q{MERGE into dbd_pg_test d using (select 1) as f on (d.id between 444 and 446) when matched then update set pname=''};
     is ($dbh->do($SQL), '3', $t);
 }
 
 $t='Using DELETE returns correct number of rows affected';
-$SQL = "DELETE from dbd_pg_test WHERE id IN (444,445,446)";
+$SQL = q{DELETE from dbd_pg_test WHERE id IN (444,445,446)};
 is ($dbh->do($SQL), '3', $t);
 
 SKIP: {
