@@ -472,23 +472,48 @@ sql_type_info_t* sql_type_data(int sql_type)
 /*
 #!perl
 
-## Autogenerate all type information and populate 
+## Autogenerate all type information and populate
 ## all files referencing type information.
 
-## You should only run this if you are developing DBD::Pg and 
+## You should only run this if you are developing DBD::Pg and
 ## understand what this script does
 
 ## Usage: perl -x $0 "path-to-pgsql-source"
 
 use strict;
 use warnings;
+use autodie;
 
 my $arg = shift || die "Usage: $0 path-to-pgsql-source\n";
 
 -d $arg or die qq{Sorry, but "$arg" is not a directory!\n};
 
-my $dir = "$arg/src/include/catalog/";
+my $tagfile = "$arg/src/include/tcop/cmdtaglist.h";
+open my $fh, '<', $tagfile;
+my $tf = '(true|false)';
+my %tag;
+while (<$fh>) {
+    chomp;
+    next unless /^PG_CMDTAG/;
+    if (! /^PG_CMDTAG\(([A-Z]+)(_[A-Z]+)+, "([A-Z? ]+)", $tf, $tf, $tf\)$/) {
+        die "Could not parse PG_CMDTAG line at $. of $tagfile: >>$_<<\n";
+    }
+    next if $6 ne 'true';
+    $tag{$3}++;
+}
+close $fh;
 
+my %knowntag = map { $_, 1 } split / / =>
+  'COPY DELETE FETCH INSERT MERGE MOVE SELECT UPDATE';
+
+for my $t (sort keys %knowntag) {
+    exists $tag{$t} or die "Did not find known tag inside $tagfile: $t\n";
+}
+for my $t (sort keys %tag) {
+    exists $knowntag{$t} or die "Found a new tag inside $tagfile: $t\n";
+}
+
+my $dir = "$arg/src/include/catalog/";
 my $maxlen = 1;
 my %pgtype;
 my $thisname = 0;
@@ -668,7 +693,7 @@ while (<$oldfh>) {
         }
     }
     elsif (3 == $step) {
-        next unless /sticky/;
+        next unless /Be warned/;
         $step = 4;
     }
     print $newfh $_;
