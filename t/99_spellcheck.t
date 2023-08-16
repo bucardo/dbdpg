@@ -176,6 +176,7 @@ attribs
 authtype
 autocommit
 AutoCommit
+autodie
 AutoEscape
 Autogenerate
 AutoInactiveDestroy
@@ -225,6 +226,7 @@ chr
 cid
 CMD
 cmd
+cmdtaglist
 cmp
 compat
 CompatMode
@@ -246,7 +248,6 @@ cpansearch
 cpansign
 cpantesters
 cperl
-creat
 cryptographically
 currph
 currpos
@@ -486,9 +487,9 @@ mv
 MYMETA
 myperl
 myval
-nCompiled
+Compiled
 ndone
-n'egative
+ne
 ness
 newfh
 newSVpv
@@ -501,7 +502,7 @@ noprefix
 noreturn
 nosetup
 NOSUCH
-nServer
+Server
 nullable
 NULLABLE
 NULLs
@@ -578,7 +579,6 @@ php
 pid
 PID
 pos
-p'ositive
 POSIX
 postgres
 Postgres
@@ -747,6 +747,7 @@ tablespaces
 TaintIn
 TaintOut
 Tammer
+tcop
 TCP
 tempfile
 testdatabase

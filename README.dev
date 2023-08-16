@@ -458,7 +458,9 @@ my $pv = $DBD::Pg::VERSION; print "DBD::Pg version: $pv\n";
 my $DSN = $ENV{DBI_DSN};
 $dbh = DBI->connect($DSN, $ENV{DBI_USER}, '', {AutoCommit=>0, RaiseError=>1, PrintError=>1});
 my $VER = $dbh->{pg_server_version}; my $pgver = $dbh->{pg_lib_version};
-print "Connected to $DSN\nServer version: $VER\nCompiled version: $pgver\n";
+print "Connected to $DSN\n";
+print "Server version: $VER\n";
+print "Compiled version: $pgver\n";
 $dbh->trace($trace);
 
 __END__

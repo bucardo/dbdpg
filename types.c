@@ -488,29 +488,29 @@ my $arg = shift || die "Usage: $0 path-to-pgsql-source\n";
 
 -d $arg or die qq{Sorry, but "$arg" is not a directory!\n};
 
-my $tagfile = "$arg/src/include/tcop/cmdtaglist.h";
-open my $fh, '<', $tagfile;
+my $tag_file = "$arg/src/include/tcop/cmdtaglist.h";
+open my $fh, '<', $tag_file;
 my $tf = '(true|false)';
 my %tag;
 while (<$fh>) {
     chomp;
     next unless /^PG_CMDTAG/;
     if (! /^PG_CMDTAG\(([A-Z]+)(_[A-Z]+)+, "([A-Z? ]+)", $tf, $tf, $tf\)$/) {
-        die "Could not parse PG_CMDTAG line at $. of $tagfile: >>$_<<\n";
+        die "Could not parse PG_CMDTAG line at $. of $tag_file: >>$_<<\n";
     }
     next if $6 ne 'true';
     $tag{$3}++;
 }
 close $fh;
 
-my %knowntag = map { $_, 1 } split / / =>
+my %known_tag = map { $_, 1 } split / / =>
   'COPY DELETE FETCH INSERT MERGE MOVE SELECT UPDATE';
 
-for my $t (sort keys %knowntag) {
-    exists $tag{$t} or die "Did not find known tag inside $tagfile: $t\n";
+for my $t (sort keys %known_tag) {
+    exists $tag{$t} or die "Did not find known tag inside $tag_file: $t\n";
 }
 for my $t (sort keys %tag) {
-    exists $knowntag{$t} or die "Found a new tag inside $tagfile: $t\n";
+    exists $known_tag{$t} or die "Found a new tag inside $tag_file: $t\n";
 }
 
 my $dir = "$arg/src/include/catalog/";

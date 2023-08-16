@@ -360,7 +360,7 @@ is ($result, 0, $t);
 
 $t=q{DB handle method "pg_skip_deallocate" dellocates prepare statements when off};
 ## pg_prepared_statements added in 8.2, so we don't bother with a skip block
-$SQL = "SELECT count(*) from pg_prepared_statements";
+$SQL = 'SELECT count(*) from pg_prepared_statements';
 my $tempsth = $dbh->prepare('select * FROM pg_class WHERE reltuples = 42', {pg_prepare_now => 1});
 my $initial_count = $dbh->selectall_arrayref($SQL)->[0][0];
 $tempsth = $dbh->prepare('select * FROM pg_class WHERE relpages = 42', {pg_prepare_now => 0});
@@ -373,7 +373,6 @@ $result = $dbh->{pg_skip_deallocate};
 is ($result, 1, $t);
 
 $t=q{DB handle method "pg_skip_deallocate" dellocates prepare statements when off};
-$SQL = "SELECT count(*) from pg_prepared_statements";
 $tempsth = $dbh->prepare('select * FROM pg_class WHERE reltuples = 42', {pg_prepare_now => 1});
 $initial_count = $dbh->selectall_arrayref($SQL)->[0][0];
 $tempsth = $dbh->prepare('select * FROM pg_class WHERE relpages = 42', {pg_prepare_now => 0});
