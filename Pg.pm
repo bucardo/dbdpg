@@ -1609,6 +1609,7 @@ use 5.008001;
                 pg_protocol                    => undef,
                 pg_server_prepare              => undef,
                 pg_server_version              => undef,
+                pg_skip_deallocate             => undef,
                 pg_socket                      => undef,
                 pg_standard_conforming_strings => undef,
                 pg_switch_prepared             => undef,
@@ -3312,6 +3313,13 @@ version 3.0.0 64 bit values are returned as numbers. This flag makes it
 possible to return the old behavior. The old behavior is useful when encoding
 the results of a call in JSON format and passing it to JavaScript for
 processing, where integer values have a precision of no more than 53 bits.
+
+=head3 B<pg_skip_deallocate> (integer)
+
+DBD::Pg specific attribute. By default this is false, and causes prepared statements
+created by us to be deallocated when no longer needed (i.e. when the handle is destroyed).
+By setting this to true, this deallocation is skipped entirely. This is useful when
+there is something else taking over responsibility for prepared statements.
 
 =head3 B<pg_errorlevel> (integer)
 

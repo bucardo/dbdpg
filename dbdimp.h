@@ -35,6 +35,7 @@ struct imp_dbh_st {
 
     bool    pg_bool_tf;        /* do bools return 't'/'f'? Set by user, default is 0 */
     bool    pg_int8_as_string; /* Return bigint values as string values always, default is 0 */
+    bool    skip_deallocate;   /* Do not deallocate our named prepare statements; default is 0 */
     bool    prepare_now;       /* force immediate prepares, even with placeholders. Set by user, default is 0 */
     bool    done_begin;        /* have we done a begin? (e.g. are we in a transaction?) */
     bool    dollaronly;        /* only consider $1, $2 ... as valid placeholders */

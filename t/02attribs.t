@@ -18,7 +18,7 @@ my (undef,undef,$dbh) = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 289;
+plan tests => 293;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -47,6 +47,7 @@ d pg_INV_WRITE
 d pg_protocol
 d pg_errorlevel
 d pg_bool_tf
+d pg_skip_deallocate
 d pg_db
 d pg_user
 d pg_pass
@@ -349,6 +350,36 @@ $sth->execute(0);
 $result = $sth->fetchall_arrayref()->[0][0];
 is ($result, 'f', $t);
 
+#
+# Test of the database handle attribute "pg_skip_deallocate"
+#
+
+$t='DB handle method "pg_skip_deallocate" starts as 0';
+$result = $dbh->{pg_skip_deallocate};
+is ($result, 0, $t);
+
+$t=q{DB handle method "pg_skip_deallocate" dellocates prepare statements when off};
+## pg_prepared_statements added in 8.2, so we don't bother with a skip block
+$SQL = "SELECT count(*) from pg_prepared_statements";
+my $tempsth = $dbh->prepare('select * FROM pg_class WHERE reltuples = 42', {pg_prepare_now => 1});
+my $initial_count = $dbh->selectall_arrayref($SQL)->[0][0];
+$tempsth = $dbh->prepare('select * FROM pg_class WHERE relpages = 42', {pg_prepare_now => 0});
+my $new_count = $dbh->selectall_arrayref($SQL)->[0][0];
+is ($new_count, $initial_count-1, $t);
+
+$t=q{DB handle method "pg_skip_deallocate" returns '1' for true when enabled};
+$dbh->{pg_skip_deallocate} = 1;
+$result = $dbh->{pg_skip_deallocate};
+is ($result, 1, $t);
+
+$t=q{DB handle method "pg_skip_deallocate" dellocates prepare statements when off};
+$SQL = "SELECT count(*) from pg_prepared_statements";
+$tempsth = $dbh->prepare('select * FROM pg_class WHERE reltuples = 42', {pg_prepare_now => 1});
+$initial_count = $dbh->selectall_arrayref($SQL)->[0][0];
+$tempsth = $dbh->prepare('select * FROM pg_class WHERE relpages = 42', {pg_prepare_now => 0});
+$new_count = $dbh->selectall_arrayref($SQL)->[0][0];
+is ($new_count, $initial_count, $t);
+$dbh->{pg_skip_deallocate} = 0;
 
 ## Test of all the informational pg_* database handle attributes
 

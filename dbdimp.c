@@ -257,6 +257,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     imp_dbh->last_result       = NULL; /* NULL or the last PGresult returned by a database or statement handle */
     imp_dbh->result_clearable  = DBDPG_TRUE;
     imp_dbh->pg_int8_as_string = DBDPG_FALSE;
+    imp_dbh->skip_deallocate   = DBDPG_FALSE;
 
     /* Tell DBI that we should call destroy when the handle dies */
     DBIc_IMPSET_on(imp_dbh);
@@ -837,10 +838,12 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
         }
         break;
 
-    case 18: /* pg_switch_prepared */
+    case 18: /* pg_switch_prepared  pg_skip_deallocate */
 
         if (strEQ("pg_switch_prepared", key))
             retsv = newSViv((IV)imp_dbh->switch_prepared);
+        else if (strEQ("pg_skip_deallocate", key))
+            retsv = newSViv((IV)imp_dbh->skip_deallocate);
         break;
 
     case 23: /* pg_placeholder_nocolons */
@@ -1000,11 +1003,17 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
         }
         break;
 
-    case 18: /* pg_switch_prepared */
+    case 18: /* pg_switch_prepared  pg_skip_deallocate */
 
         if (strEQ("pg_switch_prepared", key)) {
             if (SvOK(valuesv)) {
                 imp_dbh->switch_prepared = (unsigned)SvIV(valuesv);
+                retval = 1;
+            }
+        }
+        else if (strEQ("pg_skip_deallocate", key)) {
+            if (SvOK(valuesv)) {
+                imp_dbh->skip_deallocate = (unsigned)SvIV(valuesv);
                 retval = 1;
             }
         }
@@ -3969,6 +3978,11 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     PGTransactionStatusType tstatus;
     
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_deallocate_statement\n", THEADER_slow);
+
+    if (imp_dbh->skip_deallocate) {
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_deallocate_statement (skipped)\n", THEADER_slow);
+        return 0;
+    }
 
     if (NULL == imp_dbh->conn || NULL == imp_sth->prepare_name) {
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_deallocate_statement (0)\n", THEADER_slow);
