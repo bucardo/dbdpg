@@ -3,6 +3,7 @@ Possible items to do, in no particular order
 Feature requests can be entered at 
 https://github.com/bucardo/dbdpg/issues
 
+- Add support for PQclose to replace manual DEALLOCATE
 - Support pipeline mode: https://www.postgresql.org/docs/14/libpq-pipeline-mode.html
 - Consider adding pg_application_name
 - Evaluate if we really need strtod in the code
