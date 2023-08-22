@@ -285,7 +285,9 @@ dbname
 DDL
 deallocate
 Deallocate
+DEALLOCATE
 deallocating
+deallocation
 Deallocation
 Debian
 decls
@@ -554,6 +556,7 @@ pexports
 PGBOOLOID
 pgbouncer
 PgBouncer
+pgBouncer
 PGCLIENTENCODING
 PGDATABASE
 pgend
@@ -590,6 +593,7 @@ postgresteam
 powf
 PQ
 PQclear
+PQclose
 PQconnectdb
 PQconsumeInput
 PQexec

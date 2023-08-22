@@ -2,7 +2,12 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.16.4 (unreleased)
+Version 3.17.0 (unreleased)
+
+ - New database handle attribute pg_skip_deallocate
+   Prevents any deallocation of automatically prepared 
+     statements to support new pgBouncer feature
+   [Greg Sabino Mullane]
 
  - Fix to handle escaped quotes in connection string
    [Dagfinn Ilmari Mannsåker]
@@ -10,6 +15,10 @@ Version 3.16.4 (unreleased)
  - Return number of affected rows from a MERGE command
    [Greg Sabino Mullane]
    (Github issue #118)
+
+ - Add support for Github CI actions
+   [Gábor Szabó]
+   (Github pull request #115)
 
  - Remove undocumented internal-only pg_pid_number attribute
    [Greg Sabino Mullane]
