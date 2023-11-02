@@ -4027,6 +4027,16 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
         }
     }
 
+#if PGLIBVERSION >= 170000
+
+    if (TRACE5_slow)
+        TRC(DBILOGFP, "%sUsing PQclosePrepared: %s\n", THEADER_slow, imp_sth->prepare_name);
+
+    imp_dbh->last_result = imp_sth->result
+        = PQclosePrepared(imp_dbh->conn, imp_sth->prepare_name);
+    imp_dbh->result_clearable = DBDPG_FALSE;
+    status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
+#else
     New(0, stmt, strlen("DEALLOCATE ") + strlen(imp_sth->prepare_name) + 1, char); /* freed below */
 
     sprintf(stmt, "DEALLOCATE %s", imp_sth->prepare_name);
@@ -4036,6 +4046,8 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 
     status = _result(aTHX_ imp_dbh, stmt);
     Safefree(stmt);
+#endif
+
     if (PGRES_COMMAND_OK != status) {
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ sth, status, PQerrorMessage(imp_dbh->conn));
