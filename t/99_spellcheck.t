@@ -593,7 +593,7 @@ postgresteam
 powf
 PQ
 PQclear
-PQclose
+PQclosePrepared
 PQconnectdb
 PQconsumeInput
 PQexec
