@@ -7,6 +7,9 @@ Version 3.18.0 (unreleased)
  - Support new PQclosePrepared function, added in Postgres 17
    [Greg Sabino Mullane]
 
+ - Better docs aroud ping
+   (Github issue #121)
+
 
 Version 3.17.0  (released August 23, 2023)
 
