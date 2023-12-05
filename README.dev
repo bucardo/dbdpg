@@ -784,8 +784,11 @@ while (1)
 == Resources ==
 ===============
 
-The primary resource is the mailing list, where the developers live. Other 
-resources depend on the subject:
+The primary resource is the mailing list, where the developers live.
+
+Subscribe with an email to dbd-pg-subscribe@perl.org
+
+Other resources depend on the subject:
 
 * DBD::Pg
 
@@ -800,12 +803,16 @@ http://matrix.cpantesters.org/?dist=DBD-Pg
 
 The DBI developers list:
 http://lists.perl.org/showlist.cgi?name=dbi-dev
+Subscribe: dbi-dev-subscribe@perl.org
 
 The DBI users list:
 http://lists.perl.org/showlist.cgi?name=dbi-users
+Subscribe: dbi-users-subscribe@perl.org
 
 The DBI announcement list:
 http://lists.perl.org/showlist.cgi?name=dbi-announce
+Subscribe: dbi-announce-subscribe@perl.org
+
 
 The latest DBI:
 http://search.cpan.org/dist/DBI/
