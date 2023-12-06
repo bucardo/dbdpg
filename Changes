@@ -2,12 +2,12 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.18.0 (released December 4, 2023)
+Version 3.18.0 (released December 6, 2023)
 
  - Support new PQclosePrepared function, added in Postgres 17
    [Greg Sabino Mullane]
 
- - Better docs aroud ping
+ - Better docs about ping always returning a value
    (Github issue #121)
 
 
