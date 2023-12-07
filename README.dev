@@ -667,6 +667,8 @@ Download the tarball to a completely different system, unpack and test it.
 dbd-pg@perl.org
 pgsql-interfaces@postgresql.org
 
+Possible subject line: Version 3.18.0 of DBD::Pg released (Perl DBI driver for Postgres)
+
 * Upload to CPAN and test.
 
 You'll need the pause account password. The interface is fairly straightforward. Once it 
