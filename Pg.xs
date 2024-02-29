@@ -334,7 +334,14 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
     }
     OUTPUT:
         RETVAL
-    
+
+# Primarily for unit test...
+bool
+_is_keyword(const char *str)
+	CODE:
+		RETVAL = is_keyword(str);
+	OUTPUT:
+		RETVAL
 
 # ------------------------------------------------------------
 # database level interface PG specific

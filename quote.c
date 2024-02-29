@@ -2093,6 +2093,26 @@ close $fh2 or die qq{Could not close "$tempfile": $!\n};
 my $ofile = 'quote.c';
 system("mv $tempfile $ofile");
 print "Wrote $ofile\n";
+
+my $testfile= "t/01keywords.t";
+open my $fh3, '<', $testfile or die "open($testfile): $!";
+my @lines = <$fh3>;
+my ($start, $end);
+for (0..$#lines) {
+  $start = $_ if $lines[$_] =~ /BEGIN GENERATED KEYWORDS/;
+  $end = $_ if $lines[$_] =~ /END GENERATED KEYWORDS/;
+}
+if ($start && $end) {
+  splice(@lines, $start+1, $end-$start-1, map "  $_\n", 'qw(', @word, ')');
+} else {
+  die "Can't find keyword comment markers in $testfile";
+}
+open my $fh4, '>', "$testfile.tmp" or die "open($testfile.tmp): $!";
+print $fh4 @lines;
+close $fh4 or die "close: $!";
+system("mv $testfile.tmp $testfile");
+print "Wrote $testfile\n";
+
 exit;
 
 sub generate_binary_search {
