@@ -572,1449 +572,1403 @@ bool is_keyword(const char *string)
     /* Check for each reserved word */
     switch (keyword_len) {
     case 2:
-      if (word[1] < 'r') {
-         if (word[1] < 'o') {
-            if (word[1] < 'n') {
-               if (word[0] < 'o') {
-                  test_str= "if";
+      if (word[0] < 'n') {
+         if (word[0] < 'd') {
+            if (word[0] < 'b') {
+               if (word[1] < 't') {
+                  test_str = "as";
                } else {
-                  test_str= "of";
+                  test_str = "at";
                }
-            } else if (word[0] < 'o') {
-               test_str= "in";
             } else {
-               test_str= "on";
+               test_str = "by";
             }
-         } else if (word[0] < 'n') {
-            test_str= "do";
-         } else if (word[0] < 't') {
-            test_str= "no";
-         } else {
-            test_str= "to";
-         }
-      } else if (word[1] < 't') {
-         if (word[1] < 's') {
-            test_str= "or";
+         } else if (word[1] < 'o') {
+            if (word[1] < 'n') {
+               test_str = "if";
+            } else {
+               test_str = "in";
+            }
          } else if (word[0] < 'i') {
-            test_str= "as";
+            test_str = "do";
          } else {
-            test_str= "is";
+            test_str = "is";
          }
-      } else if (word[1] < 'y') {
-         test_str= "at";
+      } else if (word[1] < 'o') {
+         if (word[1] < 'n') {
+            test_str = "of";
+         } else {
+            test_str = "on";
+         }
+      } else if (word[0] < 'o') {
+         test_str = "no";
+      } else if (word[0] < 't') {
+         test_str = "or";
       } else {
-         test_str= "by";
+         test_str = "to";
       }
       break;
     case 3:
-      if (word[2] < 'r') {
-         if (word[1] < 'l') {
-            if (word[1] < 'f') {
-               if (word[2] < 'd') {
-                  test_str= "dec";
-               } else if (word[2] < 'f') {
-                  test_str= "add";
+      if (word[0] < 'n') {
+         if (word[0] < 'c') {
+            if (word[1] < 'n') {
+               if (word[0] < 'b') {
+                  if (word[1] < 'l') {
+                     test_str = "add";
+                  } else {
+                     test_str = "all";
+                  }
                } else {
-                  test_str= "ref";
+                  test_str = "bit";
                }
-            } else if (word[2] < 'd') {
-               test_str= "nfc";
-            } else if (word[2] < 'f') {
-               test_str= "nfd";
-            } else {
-               test_str= "off";
-            }
-         } else if (word[2] < 'l') {
-            if (word[0] < 'e') {
-               if (word[2] < 'd') {
-                  test_str= "asc";
+            } else if (word[1] < 's') {
+               if (word[2] < 'y') {
+                  test_str = "and";
                } else {
-                  test_str= "and";
+                  test_str = "any";
                }
-            } else if (word[1] < 'n') {
-               test_str= "old";
             } else {
-               test_str= "end";
+               test_str = "asc";
             }
-         } else if (word[1] < 'q') {
-            if (word[1] < 'm') {
-               test_str= "all";
+         } else if (word[0] < 'e') {
+            if (word[0] < 'd') {
+               test_str = "csv";
+            } else if (word[1] < 'e') {
+               test_str = "day";
             } else {
-               test_str= "xml";
+               test_str = "dec";
             }
+         } else if (word[0] < 'i') {
+            if (word[0] < 'f') {
+               test_str = "end";
+            } else {
+               test_str = "for";
+            }
+         } else if (word[0] < 'k') {
+            test_str = "int";
          } else {
-            test_str= "sql";
+            test_str = "key";
          }
-      } else if (word[2] < 'v') {
-         if (word[1] < 'o') {
-            if (word[1] < 'i') {
-               if (word[2] < 't') {
-                  test_str= "yes";
+      } else if (word[0] < 'r') {
+         if (word[0] < 'o') {
+            if (word[2] < 't') {
+               if (word[2] < 'd') {
+                  test_str = "nfc";
                } else {
-                  test_str= "set";
+                  test_str = "nfd";
                }
-            } else if (word[1] < 'n') {
-               test_str= "bit";
+            } else if (word[1] < 'o') {
+               test_str = "new";
             } else {
-               test_str= "int";
+               test_str = "not";
             }
-         } else if (word[2] < 't') {
-            test_str= "for";
+         } else if (word[1] < 'l') {
+            test_str = "off";
          } else if (word[1] < 'u') {
-            test_str= "not";
+            test_str = "old";
          } else {
-            test_str= "out";
+            test_str = "out";
          }
-      } else if (word[2] < 'y') {
-         if (word[2] < 'w') {
-            test_str= "csv";
-         } else if (word[1] < 'o') {
-            test_str= "new";
+      } else if (word[1] < 'm') {
+         if (word[0] < 's') {
+            test_str = "ref";
+         } else if (word[0] < 'y') {
+            test_str = "set";
          } else {
-            test_str= "row";
+            test_str = "yes";
          }
-      } else if (word[1] < 'n') {
-         if (word[1] < 'e') {
-            test_str= "day";
-         } else {
-            test_str= "key";
-         }
+      } else if (word[0] < 's') {
+         test_str = "row";
+      } else if (word[0] < 'x') {
+         test_str = "sql";
       } else {
-         test_str= "any";
+         test_str = "xml";
       }
       break;
     case 4:
-      if (word[3] < 'm') {
+      if (word[1] < 'n') {
          if (word[2] < 'm') {
-            if (word[0] < 'm') {
-               if (word[3] < 'h') {
-                  if (word[3] < 'e') {
-                     if (word[2] < 'l') {
-                        test_str= "load";
-                     } else {
-                        test_str= "hold";
-                     }
-                  } else if (word[2] < 'k') {
-                     test_str= "cube";
-                  } else {
-                     test_str= "like";
-                  }
-               } else if (word[3] < 'l') {
-                  if (word[3] < 'k') {
-                     test_str= "each";
-                  } else {
-                     test_str= "lock";
-                  }
-               } else if (word[1] < 'u') {
-                  test_str= "call";
-               } else {
-                  test_str= "full";
-               }
-            } else if (word[1] < 'o') {
+            if (word[0] < 'r') {
                if (word[2] < 'k') {
-                  if (word[3] < 'l') {
-                     test_str= "read";
+                  if (word[0] < 'l') {
+                     if (word[0] < 'e') {
+                        test_str = "char";
+                     } else {
+                        test_str = "each";
+                     }
+                  } else if (word[0] < 'o') {
+                     test_str = "left";
                   } else {
-                     test_str= "real";
+                     test_str = "oids";
+                  }
+               } else if (word[0] < 'n') {
+                  if (word[0] < 'l') {
+                     test_str = "call";
+                  } else {
+                     test_str = "like";
                   }
                } else if (word[3] < 'd') {
-                  test_str= "nfkc";
+                  test_str = "nfkc";
                } else {
-                  test_str= "nfkd";
+                  test_str = "nfkd";
                }
-            } else if (word[1] < 'u') {
-               if (word[2] < 'l') {
-                  test_str= "mode";
-               } else {
-                  test_str= "role";
-               }
-            } else if (word[3] < 'l') {
-               test_str= "rule";
-            } else {
-               test_str= "null";
-            }
-         } else if (word[2] < 's') {
-            if (word[2] < 'n') {
-               if (word[1] < 'o') {
-                  if (word[1] < 'i') {
-                     test_str= "name";
+            } else if (word[3] < 'p') {
+               if (word[0] < 't') {
+                  if (word[3] < 'l') {
+                     test_str = "read";
                   } else {
-                     test_str= "time";
+                     test_str = "real";
                   }
+               } else if (word[0] < 'w') {
+                  test_str = "then";
                } else {
-                  test_str= "some";
+                  test_str = "when";
                }
-            } else if (word[2] < 'p') {
-               if (word[0] < 'z') {
-                  test_str= "none";
+            } else if (word[0] < 'v') {
+               if (word[0] < 't') {
+                  test_str = "skip";
                } else {
-                  test_str= "zone";
+                  test_str = "ties";
                }
-            } else if (word[3] < 'k') {
-               test_str= "type";
+            } else if (word[0] < 'y') {
+               test_str = "view";
             } else {
-               test_str= "work";
+               test_str = "year";
             }
-         } else if (word[1] < 'l') {
-            if (word[3] < 'e') {
-               if (word[3] < 'c') {
-                  test_str= "data";
-               } else {
-                  test_str= "desc";
-               }
-            } else if (word[3] < 'h') {
-               test_str= "case";
-            } else {
-               test_str= "with";
-            }
-         } else if (word[2] < 'u') {
-            if (word[3] < 'h') {
-               test_str= "else";
-            } else {
-               test_str= "both";
-            }
-         } else if (word[2] < 'v') {
-            test_str= "true";
-         } else {
-            test_str= "move";
-         }
-      } else if (word[1] < 'k') {
-         if (word[2] < 'm') {
-            if (word[3] < 's') {
-               if (word[3] < 'r') {
-                  if (word[0] < 'w') {
-                     test_str= "then";
+         } else if (word[0] < 'n') {
+            if (word[1] < 'e') {
+               if (word[0] < 'd') {
+                  if (word[3] < 't') {
+                     test_str = "case";
                   } else {
-                     test_str= "when";
+                     test_str = "cast";
                   }
-               } else if (word[1] < 'h') {
-                  test_str= "year";
+               } else if (word[0] < 'l') {
+                  test_str = "data";
                } else {
-                  test_str= "char";
+                  test_str = "last";
                }
-            } else if (word[3] < 't') {
-               if (word[2] < 'e') {
-                  test_str= "oids";
+            } else if (word[0] < 'e') {
+               if (word[0] < 'd') {
+                  test_str = "also";
                } else {
-                  test_str= "ties";
+                  test_str = "desc";
                }
-            } else if (word[3] < 'w') {
-               test_str= "left";
+            } else if (word[0] < 'k') {
+               test_str = "else";
             } else {
-               test_str= "view";
-            }
-         } else if (word[2] < 't') {
-            if (word[2] < 's') {
-               if (word[3] < 'w') {
-                  test_str= "temp";
-               } else {
-                  test_str= "show";
-               }
-            } else if (word[0] < 'l') {
-               test_str= "cast";
-            } else {
-               test_str= "last";
-            }
-         } else if (word[3] < 't') {
-            if (word[2] < 'y') {
-               test_str= "sets";
-            } else {
-               test_str= "keys";
+               test_str = "keys";
             }
          } else if (word[0] < 't') {
-            test_str= "next";
-         } else {
-            test_str= "text";
-         }
-      } else if (word[0] < 'j') {
-         if (word[3] < 'p') {
-            if (word[3] < 'o') {
-               if (word[2] < 'u') {
-                  test_str= "from";
+            if (word[0] < 's') {
+               if (word[1] < 'e') {
+                  test_str = "name";
                } else {
-                  test_str= "enum";
+                  test_str = "next";
                }
-            } else if (word[2] < 't') {
-               test_str= "also";
+            } else if (word[1] < 'h') {
+               test_str = "sets";
             } else {
-               test_str= "into";
+               test_str = "show";
             }
-         } else if (word[3] < 't') {
-            if (word[3] < 'r') {
-               test_str= "drop";
+         } else if (word[1] < 'i') {
+            if (word[2] < 'x') {
+               test_str = "temp";
             } else {
-               test_str= "hour";
+               test_str = "text";
             }
-         } else if (word[3] < 'y') {
-            test_str= "cost";
+         } else if (word[0] < 'w') {
+            test_str = "time";
          } else {
-            test_str= "copy";
+            test_str = "with";
          }
-      } else if (word[3] < 'r') {
-         if (word[1] < 'r') {
-            if (word[3] < 'p') {
-               test_str= "join";
+      } else if (word[0] < 'm') {
+         if (word[0] < 'h') {
+            if (word[0] < 'd') {
+               if (word[2] < 's') {
+                  if (word[1] < 'u') {
+                     test_str = "copy";
+                  } else {
+                     test_str = "cube";
+                  }
+               } else if (word[0] < 'c') {
+                  test_str = "both";
+               } else {
+                  test_str = "cost";
+               }
+            } else if (word[0] < 'f') {
+               if (word[0] < 'e') {
+                  test_str = "drop";
+               } else {
+                  test_str = "enum";
+               }
+            } else if (word[1] < 'u') {
+               test_str = "from";
             } else {
-               test_str= "skip";
+               test_str = "full";
             }
-         } else if (word[3] < 'n') {
-            test_str= "trim";
+         } else if (word[0] < 'j') {
+            if (word[0] < 'i') {
+               if (word[2] < 'u') {
+                  test_str = "hold";
+               } else {
+                  test_str = "hour";
+               }
+            } else {
+               test_str = "into";
+            }
+         } else if (word[0] < 'l') {
+            if (word[1] < 's') {
+               test_str = "join";
+            } else {
+               test_str = "json";
+            }
+         } else if (word[2] < 'c') {
+            test_str = "load";
          } else {
-            test_str= "json";
+            test_str = "lock";
          }
-      } else if (word[3] < 's') {
-         if (word[1] < 'v') {
-            test_str= "user";
+      } else if (word[2] < 'm') {
+         if (word[0] < 'r') {
+            if (word[0] < 'o') {
+               if (word[0] < 'n') {
+                  test_str = "mode";
+               } else {
+                  test_str = "null";
+               }
+            } else if (word[1] < 'v') {
+               test_str = "only";
+            } else {
+               test_str = "over";
+            }
+         } else if (word[0] < 't') {
+            if (word[1] < 'u') {
+               test_str = "role";
+            } else {
+               test_str = "rule";
+            }
+         } else if (word[0] < 'u') {
+            test_str = "trim";
          } else {
-            test_str= "over";
+            test_str = "user";
          }
-      } else if (word[3] < 'y') {
-         test_str= "rows";
+      } else if (word[0] < 't') {
+         if (word[0] < 'r') {
+            if (word[0] < 'n') {
+               test_str = "move";
+            } else {
+               test_str = "none";
+            }
+         } else if (word[0] < 's') {
+            test_str = "rows";
+         } else {
+            test_str = "some";
+         }
+      } else if (word[0] < 'w') {
+         if (word[1] < 'y') {
+            test_str = "true";
+         } else {
+            test_str = "type";
+         }
+      } else if (word[0] < 'z') {
+         test_str = "work";
       } else {
-         test_str= "only";
+         test_str = "zone";
       }
       break;
     case 5:
-      if (word[2] < 'm') {
-         if (word[3] < 'n') {
-            if (word[4] < 'n') {
-               if (word[3] < 'i') {
-                  if (word[4] < 'l') {
-                     if (word[4] < 'k') {
-                        test_str= "cache";
+      if (word[0] < 'm') {
+         if (word[1] < 'l') {
+            if (word[0] < 'f') {
+               if (word[0] < 'c') {
+                  if (word[1] < 'e') {
+                     if (word[1] < 'd') {
+                        test_str = "abort";
                      } else {
-                        test_str= "check";
+                        test_str = "admin";
                      }
-                  } else if (word[3] < 'e') {
-                     test_str= "local";
+                  } else if (word[0] < 'b') {
+                     test_str = "after";
                   } else {
-                     test_str= "label";
+                     test_str = "begin";
                   }
-               } else if (word[3] < 'l') {
-                  if (word[4] < 'e') {
-                     test_str= "valid";
+               } else if (word[1] < 'h') {
+                  if (word[0] < 'd') {
+                     test_str = "cache";
                   } else {
-                     test_str= "ilike";
+                     test_str = "depth";
                   }
-               } else if (word[2] < 'c') {
-                  test_str= "table";
+               } else if (word[2] < 'e') {
+                  test_str = "chain";
                } else {
-                  test_str= "cycle";
+                  test_str = "check";
                }
-            } else if (word[4] < 's') {
-               if (word[4] < 'r') {
-                  if (word[2] < 'g') {
-                     if (word[2] < 'd') {
-                        test_str= "chain";
-                     } else {
-                        test_str= "stdin";
-                     }
+            } else if (word[2] < 'r') {
+               if (word[1] < 'e') {
+                  if (word[0] < 'l') {
+                     test_str = "false";
                   } else {
-                     test_str= "begin";
+                     test_str = "label";
                   }
-               } else if (word[3] < 'e') {
-                  test_str= "nchar";
+               } else if (word[1] < 'i') {
+                  test_str = "least";
                } else {
-                  test_str= "order";
+                  test_str = "limit";
                }
-            } else if (word[3] < 'h') {
-               if (word[4] < 'x') {
-                  test_str= "treat";
+            } else if (word[0] < 'l') {
+               if (word[1] < 'i') {
+                  test_str = "fetch";
                } else {
-                  test_str= "index";
+                  test_str = "first";
                }
-            } else if (word[4] < 't') {
-               test_str= "nulls";
+            } else if (word[1] < 'e') {
+               test_str = "large";
             } else {
-               test_str= "right";
+               test_str = "level";
             }
-         } else if (word[4] < 'r') {
-            if (word[1] < 'm') {
-               if (word[3] < 's') {
-                  if (word[2] < 'e') {
-                     test_str= "share";
+         } else if (word[0] < 'g') {
+            if (word[1] < 'r') {
+               if (word[0] < 'f') {
+                  if (word[0] < 'c') {
+                     test_str = "alter";
+                  } else if (word[2] < 'o') {
+                     test_str = "class";
                   } else {
-                     test_str= "where";
+                     test_str = "close";
                   }
-               } else if (word[3] < 'u') {
-                  test_str= "false";
+               } else if (word[1] < 'o') {
+                  test_str = "float";
                } else {
-                  test_str= "value";
+                  test_str = "force";
                }
-            } else if (word[4] < 'i') {
-               if (word[4] < 'g') {
-                  test_str= "write";
+            } else if (word[1] < 'v') {
+               if (word[0] < 'c') {
+                  test_str = "array";
                } else {
-                  test_str= "using";
+                  test_str = "cross";
                }
-            } else if (word[4] < 'n') {
-               test_str= "xmlpi";
+            } else if (word[0] < 'e') {
+               test_str = "cycle";
             } else {
-               test_str= "union";
+               test_str = "event";
+            }
+         } else if (word[2] < 'n') {
+            if (word[1] < 'o') {
+               if (word[1] < 'n') {
+                  test_str = "ilike";
+               } else {
+                  test_str = "index";
+               }
+            } else if (word[0] < 'l') {
+               test_str = "grant";
+            } else {
+               test_str = "local";
             }
          } else if (word[4] < 't') {
-            if (word[3] < 's') {
-               if (word[4] < 's') {
-                  test_str= "prior";
-               } else {
-                  test_str= "plans";
-               }
-            } else if (word[3] < 'w') {
-               test_str= "class";
+            if (word[0] < 'i') {
+               test_str = "group";
             } else {
-               test_str= "views";
+               test_str = "inner";
             }
-         } else if (word[3] < 'r') {
-            if (word[2] < 'e') {
-               test_str= "grant";
-            } else {
-               test_str= "event";
-            }
-         } else if (word[3] < 's') {
-            test_str= "start";
+         } else if (word[2] < 'p') {
+            test_str = "inout";
          } else {
-            test_str= "least";
+            test_str = "input";
          }
-      } else if (word[4] < 'r') {
-         if (word[4] < 'h') {
-            if (word[3] < 'i') {
-               if (word[3] < 'g') {
-                  if (word[4] < 'e') {
-                     test_str= "owned";
+      } else if (word[4] < 'n') {
+         if (word[0] < 't') {
+            if (word[0] < 'q') {
+               if (word[1] < 'o') {
+                  if (word[1] < 'e') {
+                     test_str = "match";
                   } else {
-                     test_str= "force";
+                     test_str = "merge";
                   }
-               } else if (word[2] < 'r') {
-                  test_str= "range";
-               } else if (word[1] < 'e') {
-                  test_str= "large";
+               } else if (word[0] < 'o') {
+                  test_str = "month";
                } else {
-                  test_str= "merge";
+                  test_str = "owned";
                }
-            } else if (word[3] < 's') {
-               if (word[4] < 'f') {
-                  test_str= "sysid";
+            } else if (word[0] < 's') {
+               if (word[0] < 'r') {
+                  test_str = "quote";
                } else {
-                  test_str= "setof";
+                  test_str = "range";
                }
-            } else if (word[3] < 't') {
-               test_str= "close";
+            } else if (word[1] < 'h') {
+               test_str = "setof";
+            } else if (word[1] < 'y') {
+               test_str = "share";
             } else {
-               test_str= "quote";
+               test_str = "sysid";
             }
-         } else if (word[4] < 'l') {
-            if (word[3] < 't') {
-               if (word[1] < 'e') {
-                  test_str= "match";
+         } else if (word[1] < 'm') {
+            if (word[2] < 'l') {
+               if (word[0] < 'w') {
+                  test_str = "table";
                } else {
-                  test_str= "fetch";
+                  test_str = "where";
                }
-            } else if (word[2] < 'p') {
-               test_str= "month";
+            } else if (word[3] < 'u') {
+               test_str = "valid";
             } else {
-               test_str= "depth";
+               test_str = "value";
             }
-         } else if (word[4] < 'n') {
-            if (word[3] < 'i') {
-               test_str= "level";
+         } else if (word[0] < 'w') {
+            if (word[1] < 's') {
+               test_str = "until";
             } else {
-               test_str= "until";
+               test_str = "using";
             }
-         } else if (word[4] < 'p') {
-            test_str= "admin";
-         } else if (word[3] < 'u') {
-            test_str= "strip";
+         } else if (word[0] < 'x') {
+            test_str = "write";
          } else {
-            test_str= "group";
+            test_str = "xmlpi";
          }
-      } else if (word[4] < 't') {
-         if (word[2] < 'p') {
-            if (word[4] < 's') {
-               if (word[1] < 'w') {
-                  test_str= "inner";
+      } else if (word[0] < 'r') {
+         if (word[2] < 'l') {
+            if (word[0] < 'p') {
+               if (word[0] < 'o') {
+                  test_str = "nchar";
                } else {
-                  test_str= "owner";
+                  test_str = "order";
                }
-            } else if (word[3] < 's') {
-               test_str= "names";
+            } else if (word[1] < 'r') {
+               test_str = "plans";
             } else {
-               test_str= "cross";
+               test_str = "prior";
             }
-         } else if (word[1] < 'u') {
-            if (word[1] < 'l') {
-               test_str= "after";
+         } else if (word[0] < 'o') {
+            if (word[1] < 'u') {
+               test_str = "names";
             } else {
-               test_str= "alter";
+               test_str = "nulls";
             }
-         } else if (word[4] < 's') {
-            test_str= "outer";
+         } else if (word[1] < 'w') {
+            test_str = "outer";
          } else {
-            test_str= "types";
+            test_str = "owner";
          }
-      } else if (word[3] < 'r') {
-         if (word[3] < 'e') {
-            if (word[4] < 'y') {
-               test_str= "float";
+      } else if (word[0] < 't') {
+         if (word[0] < 's') {
+            if (word[1] < 'i') {
+               test_str = "reset";
             } else {
-               test_str= "array";
+               test_str = "right";
             }
-         } else if (word[3] < 'i') {
-            test_str= "reset";
+         } else if (word[2] < 'd') {
+            test_str = "start";
+         } else if (word[2] < 'r') {
+            test_str = "stdin";
          } else {
-            test_str= "limit";
+            test_str = "strip";
          }
-      } else if (word[3] < 'u') {
-         if (word[3] < 's') {
-            test_str= "abort";
+      } else if (word[0] < 'u') {
+         if (word[1] < 'y') {
+            test_str = "treat";
          } else {
-            test_str= "first";
+            test_str = "types";
          }
-      } else if (word[2] < 'p') {
-         test_str= "inout";
+      } else if (word[0] < 'v') {
+         test_str = "union";
       } else {
-         test_str= "input";
+         test_str = "views";
       }
       break;
     case 6:
-      if (word[2] < 'm') {
-         if (word[5] < 'n') {
+      if (word[1] < 'm') {
+         if (word[0] < 'o') {
             if (word[3] < 'i') {
-               if (word[4] < 't') {
-                  if (word[5] < 'e') {
-                     if (word[5] < 'd') {
-                        test_str= "schema";
+               if (word[0] < 'd') {
+                  if (word[1] < 'i') {
+                     if (word[1] < 'c') {
+                        test_str = "absent";
                      } else {
-                        test_str= "logged";
+                        test_str = "access";
                      }
-                  } else if (word[4] < 'p') {
-                     if (word[1] < 't') {
-                        test_str= "enable";
-                     } else {
-                        test_str= "stable";
-                     }
+                  } else if (word[0] < 'b') {
+                     test_str = "always";
                   } else {
-                     test_str= "escape";
+                     test_str = "binary";
                   }
-               } else if (word[3] < 'e') {
-                  if (word[2] < 'e') {
-                     test_str= "update";
+               } else if (word[0] < 'g') {
+                  if (word[2] < 't') {
+                     test_str = "delete";
                   } else {
-                     test_str= "create";
+                     test_str = "detach";
                   }
-               } else if (word[4] < 'z') {
-                  test_str= "delete";
+               } else if (word[0] < 'h') {
+                  test_str = "global";
+               } else if (word[0] < 'm') {
+                  test_str = "header";
                } else {
-                  test_str= "freeze";
+                  test_str = "method";
                }
-            } else if (word[4] < 'n') {
-               if (word[5] < 'f') {
-                  if (word[3] < 'l') {
-                     test_str= "locked";
+            } else if (word[0] < 'f') {
+               if (word[1] < 'e') {
+                  if (word[0] < 'c') {
+                     test_str = "action";
                   } else {
-                     test_str= "called";
+                     test_str = "called";
                   }
-               } else if (word[5] < 'h') {
-                  test_str= "nullif";
+               } else if (word[1] < 'i') {
+                  test_str = "before";
                } else {
-                  test_str= "search";
+                  test_str = "bigint";
                }
-            } else if (word[4] < 'r') {
-               if (word[5] < 'e') {
-                  test_str= "second";
+            } else if (word[0] < 'h') {
+               if (word[1] < 'i') {
+                  test_str = "family";
                } else {
-                  test_str= "inline";
+                  test_str = "filter";
                }
-            } else if (word[5] < 'm') {
-               if (word[4] < 'u') {
-                  test_str= "before";
+            } else if (word[0] < 'l') {
+               test_str = "having";
+            } else if (word[0] < 'm') {
+               test_str = "listen";
+            } else {
+               test_str = "minute";
+            }
+         } else if (word[2] < 'm') {
+            if (word[2] < 'f') {
+               if (word[0] < 't') {
+                  if (word[1] < 'e') {
+                     test_str = "scalar";
+                  } else if (word[2] < 'c') {
+                     test_str = "search";
+                  } else {
+                     test_str = "second";
+                  }
+               } else if (word[0] < 'v') {
+                  test_str = "tables";
                } else {
-                  test_str= "unique";
+                  test_str = "vacuum";
+               }
+            } else if (word[0] < 's') {
+               if (word[1] < 'f') {
+                  test_str = "object";
+               } else {
+                  test_str = "offset";
+               }
+            } else if (word[0] < 'v') {
+               if (word[1] < 'e') {
+                  test_str = "schema";
+               } else {
+                  test_str = "select";
                }
             } else {
-               test_str= "vacuum";
+               test_str = "values";
             }
-         } else if (word[4] < 'm') {
-            if (word[5] < 't') {
-               if (word[5] < 's') {
-                  if (word[4] < 'e') {
-                     test_str= "scalar";
-                  } else if (word[3] < 't') {
-                     test_str= "header";
-                  } else {
-                     test_str= "filter";
-                  }
-               } else if (word[3] < 'u') {
-                  test_str= "tables";
+         } else if (word[0] < 's') {
+            if (word[2] < 't') {
+               if (word[0] < 'r') {
+                  test_str = "parser";
                } else {
-                  test_str= "values";
+                  test_str = "rename";
                }
-            } else if (word[3] < 'i') {
-               if (word[2] < 'l') {
-                  test_str= "object";
-               } else {
-                  test_str= "select";
-               }
-            } else if (word[5] < 'y') {
-               test_str= "offset";
+            } else if (word[2] < 'v') {
+               test_str = "return";
             } else {
-               test_str= "policy";
+               test_str = "revoke";
             }
-         } else if (word[5] < 't') {
-            if (word[5] < 's') {
-               if (word[5] < 'p') {
-                  test_str= "column";
-               } else {
-                  test_str= "rollup";
-               }
-            } else if (word[4] < 's') {
-               test_str= "others";
-            } else if (word[4] < 't') {
-               test_str= "access";
+         } else if (word[0] < 'w') {
+            if (word[1] < 'e') {
+               test_str = "scroll";
+            } else if (word[1] < 'i') {
+               test_str = "server";
             } else {
-               test_str= "exists";
+               test_str = "simple";
             }
-         } else if (word[4] < 'p') {
-            if (word[3] < 'i') {
-               test_str= "indent";
-            } else {
-               test_str= "bigint";
-            }
-         } else if (word[4] < 'u') {
-            test_str= "except";
+         } else if (word[2] < 't') {
+            test_str = "window";
          } else {
-            test_str= "stdout";
+            test_str = "within";
          }
-      } else if (word[1] < 'l') {
-         if (word[4] < 'm') {
-            if (word[5] < 'n') {
-               if (word[5] < 'h') {
-                  if (word[4] < 'l') {
-                     test_str= "revoke";
+      } else if (word[4] < 'm') {
+         if (word[2] < 'o') {
+            if (word[0] < 'l') {
+               if (word[0] < 'e') {
+                  if (word[0] < 'd') {
+                     test_str = "commit";
                   } else {
-                     test_str= "simple";
+                     test_str = "domain";
                   }
-               } else if (word[5] < 'l') {
-                  test_str= "detach";
+               } else if (word[0] < 'i') {
+                  test_str = "enable";
                } else {
-                  test_str= "scroll";
+                  test_str = "isnull";
                }
-            } else if (word[5] < 'r') {
-               if (word[4] < 'i') {
-                  test_str= "listen";
+            } else if (word[0] < 'n') {
+               if (word[2] < 'g') {
+                  test_str = "locked";
                } else {
-                  test_str= "within";
+                  test_str = "logged";
                }
-            } else if (word[5] < 'y') {
-               if (word[3] < 'v') {
-                  test_str= "parser";
-               } else {
-                  test_str= "server";
-               }
+            } else if (word[0] < 'p') {
+               test_str = "nullif";
+            } else if (word[0] < 's') {
+               test_str = "policy";
             } else {
-               test_str= "family";
+               test_str = "stable";
             }
-         } else if (word[5] < 'n') {
-            if (word[4] < 'o') {
-               if (word[5] < 'g') {
-                  test_str= "rename";
+         } else if (word[0] < 'n') {
+            if (word[0] < 'd') {
+               if (word[2] < 't') {
+                  test_str = "atomic";
                } else {
-                  test_str= "having";
+                  test_str = "attach";
                }
-            } else if (word[5] < 'e') {
-               test_str= "method";
+            } else if (word[0] < 'f') {
+               test_str = "double";
             } else {
-               test_str= "minute";
+               test_str = "format";
             }
-         } else if (word[5] < 't') {
-            if (word[4] < 'r') {
-               test_str= "action";
+         } else if (word[0] < 's') {
+            if (word[2] < 'w') {
+               test_str = "notify";
             } else {
-               test_str= "return";
+               test_str = "nowait";
             }
-         } else if (word[5] < 'y') {
-            if (word[5] < 'w') {
-               test_str= "absent";
+         } else if (word[1] < 'y') {
+            if (word[2] < 'r') {
+               test_str = "stored";
             } else {
-               test_str= "window";
+               test_str = "strict";
             }
          } else {
-            test_str= "binary";
+            test_str = "system";
          }
-      } else if (word[5] < 's') {
-         if (word[3] < 'm') {
-            if (word[5] < 'n') {
-               if (word[5] < 'h') {
-                  test_str= "double";
-               } else if (word[5] < 'l') {
-                  test_str= "attach";
+      } else if (word[1] < 'r') {
+         if (word[0] < 'o') {
+            if (word[2] < 'p') {
+               if (word[0] < 'i') {
+                  test_str = "column";
+               } else if (word[2] < 'l') {
+                  test_str = "indent";
                } else {
-                  test_str= "global";
+                  test_str = "inline";
                }
-            } else if (word[4] < 'o') {
-               test_str= "domain";
+            } else if (word[1] < 'n') {
+               test_str = "import";
             } else {
-               test_str= "option";
+               test_str = "insert";
             }
-         } else if (word[5] < 'l') {
-            if (word[5] < 'd') {
-               test_str= "atomic";
+         } else if (word[0] < 'u') {
+            if (word[0] < 'r') {
+               test_str = "option";
             } else {
-               test_str= "stored";
+               test_str = "rollup";
             }
-         } else if (word[5] < 'r') {
-            if (word[5] < 'm') {
-               test_str= "isnull";
-            } else {
-               test_str= "system";
-            }
+         } else if (word[1] < 'p') {
+            test_str = "unique";
          } else {
-            test_str= "cursor";
+            test_str = "update";
          }
-      } else if (word[4] < 'p') {
-         if (word[4] < 'i') {
-            if (word[5] < 'y') {
-               if (word[4] < 'c') {
-                  test_str= "format";
-               } else {
-                  test_str= "strict";
-               }
+      } else if (word[0] < 'f') {
+         if (word[0] < 'e') {
+            if (word[1] < 'u') {
+               test_str = "create";
             } else {
-               test_str= "notify";
+               test_str = "cursor";
             }
-         } else if (word[3] < 'm') {
-            test_str= "nowait";
+         } else if (word[1] < 'x') {
+            test_str = "escape";
+         } else if (word[2] < 'i') {
+            test_str = "except";
          } else {
-            test_str= "commit";
+            test_str = "exists";
          }
-      } else if (word[5] < 't') {
-         if (word[4] < 'y') {
-            test_str= "groups";
+      } else if (word[0] < 'o') {
+         if (word[0] < 'g') {
+            test_str = "freeze";
          } else {
-            test_str= "always";
+            test_str = "groups";
          }
-      } else if (word[3] < 'o') {
-         test_str= "insert";
+      } else if (word[0] < 's') {
+         test_str = "others";
       } else {
-         test_str= "import";
+         test_str = "stdout";
       }
       break;
     case 7:
-      if (word[5] < 'l') {
-         if (word[5] < 'e') {
-            if (word[4] < 'l') {
-               if (word[6] < 'l') {
-                  if (word[6] < 'e') {
-                     if (word[6] < 'd') {
-                        test_str= "replica";
+      if (word[0] < 'n') {
+         if (word[2] < 'o') {
+            if (word[2] < 'e') {
+               if (word[0] < 'e') {
+                  if (word[0] < 'd') {
+                     if (word[5] < 'z') {
+                        test_str = "analyse";
                      } else {
-                        test_str= "instead";
+                        test_str = "analyze";
                      }
-                  } else if (word[6] < 'k') {
-                     if (word[5] < 'd') {
-                        test_str= "replace";
-                     } else {
-                        test_str= "cascade";
-                     }
+                  } else if (word[3] < 'l') {
+                     test_str = "decimal";
                   } else {
-                     test_str= "recheck";
+                     test_str = "declare";
                   }
-               } else if (word[6] < 'r') {
-                  if (word[6] < 'n') {
-                     test_str= "partial";
+               } else if (word[0] < 'i') {
+                  if (word[0] < 'g') {
+                     test_str = "exclude";
                   } else {
-                     test_str= "boolean";
+                     test_str = "granted";
                   }
-               } else if (word[6] < 't') {
-                  test_str= "varchar";
-               } else {
-                  test_str= "extract";
-               }
-            } else if (word[6] < 'm') {
-               if (word[6] < 'l') {
-                  if (word[1] < 'x') {
-                     test_str= "include";
+               } else if (word[0] < 'l') {
+                  if (word[2] < 'd') {
+                     test_str = "include";
                   } else {
-                     test_str= "exclude";
+                     test_str = "indexes";
                   }
-               } else if (word[4] < 'r') {
-                  test_str= "decimal";
-               } else if (word[3] < 'u') {
-                  test_str= "lateral";
                } else {
-                  test_str= "natural";
+                  test_str = "leading";
                }
-            } else if (word[6] < 's') {
-               if (word[6] < 'r') {
-                  test_str= "program";
+            } else if (word[0] < 'd') {
+               if (word[2] < 'm') {
+                  if (word[0] < 'c') {
+                     test_str = "breadth";
+                  } else if (word[3] < 'u') {
+                     test_str = "collate";
+                  } else {
+                     test_str = "columns";
+                  }
+               } else if (word[2] < 'n') {
+                  test_str = "comment";
                } else {
-                  test_str= "similar";
+                  test_str = "content";
                }
-            } else if (word[6] < 'y') {
-               if (word[5] < 'd') {
-                  test_str= "schemas";
+            } else if (word[0] < 'e') {
+               if (word[3] < 'i') {
+                  test_str = "default";
                } else {
-                  test_str= "depends";
+                  test_str = "definer";
                }
+            } else if (word[0] < 'h') {
+               test_str = "execute";
+            } else if (word[0] < 'i') {
+               test_str = "handler";
             } else {
-               test_str= "overlay";
+               test_str = "inherit";
             }
-         } else if (word[4] < 'l') {
-            if (word[6] < 'r') {
-               if (word[6] < 'n') {
-                  if (word[6] < 'e') {
-                     test_str= "matched";
+         } else if (word[0] < 'e') {
+            if (word[1] < 'i') {
+               if (word[1] < 'e') {
+                  if (word[2] < 't') {
+                     test_str = "cascade";
                   } else {
-                     test_str= "storage";
+                     test_str = "catalog";
                   }
-               } else if (word[5] < 'i') {
-                  if (word[5] < 'g') {
-                     test_str= "between";
-                  } else {
-                     test_str= "foreign";
-                  }
+               } else if (word[0] < 'd') {
+                  test_str = "between";
                } else {
-                  test_str= "explain";
+                  test_str = "depends";
                }
-            } else if (word[3] < 'n') {
-               if (word[3] < 'g') {
-                  test_str= "integer";
+            } else if (word[0] < 'd') {
+               if (word[0] < 'c') {
+                  test_str = "boolean";
+               } else if (word[1] < 'u') {
+                  test_str = "cluster";
                } else {
-                  test_str= "trigger";
+                  test_str = "current";
                }
-            } else if (word[6] < 'x') {
-               test_str= "invoker";
+            } else if (word[3] < 'c') {
+               test_str = "disable";
             } else {
-               test_str= "reindex";
+               test_str = "discard";
             }
-         } else if (word[4] < 't') {
-            if (word[5] < 'i') {
-               if (word[4] < 'n') {
-                  test_str= "handler";
-               } else if (word[4] < 'p') {
-                  test_str= "definer";
+         } else if (word[2] < 't') {
+            if (word[0] < 'i') {
+               if (word[0] < 'f') {
+                  test_str = "explain";
+               } else if (word[3] < 'w') {
+                  test_str = "foreign";
                } else {
-                  test_str= "wrapper";
+                  test_str = "forward";
                }
-            } else if (word[6] < 't') {
-               test_str= "numeric";
+            } else if (word[0] < 'm') {
+               test_str = "instead";
             } else {
-               test_str= "inherit";
+               test_str = "mapping";
             }
-         } else if (word[6] < 'r') {
-            if (word[3] < 's') {
-               test_str= "granted";
+         } else if (word[0] < 'l') {
+            if (word[0] < 'i') {
+               test_str = "extract";
+            } else if (word[2] < 'v') {
+               test_str = "integer";
             } else {
-               test_str= "trusted";
+               test_str = "invoker";
             }
-         } else if (word[6] < 's') {
-            test_str= "cluster";
+         } else if (word[0] < 'm') {
+            test_str = "lateral";
          } else {
-            test_str= "indexes";
+            test_str = "matched";
          }
-      } else if (word[1] < 'm') {
-         if (word[3] < 'l') {
-            if (word[6] < 'g') {
-               if (word[5] < 'r') {
-                  if (word[5] < 'p') {
-                     test_str= "disable";
+      } else if (word[1] < 'i') {
+         if (word[3] < 'r') {
+            if (word[0] < 's') {
+               if (word[2] < 'l') {
+                  if (word[2] < 'i') {
+                     test_str = "recheck";
                   } else {
-                     test_str= "uescape";
+                     test_str = "reindex";
                   }
-               } else if (word[6] < 'e') {
-                  test_str= "discard";
-               } else if (word[4] < 'o') {
-                  test_str= "release";
+               } else if (word[2] < 'p') {
+                  test_str = "release";
+               } else if (word[4] < 'i') {
+                  test_str = "replace";
                } else {
-                  test_str= "verbose";
+                  test_str = "replica";
                }
-            } else if (word[6] < 't') {
-               if (word[5] < 'o') {
-                  if (word[3] < 'd') {
-                     test_str= "placing";
+            } else if (word[0] < 'v') {
+               if (word[0] < 'u') {
+                  test_str = "schemas";
+               } else {
+                  test_str = "uescape";
+               }
+            } else if (word[1] < 'e') {
+               test_str = "varchar";
+            } else {
+               test_str = "verbose";
+            }
+         } else if (word[1] < 'e') {
+            if (word[2] < 's') {
+               if (word[0] < 'v') {
+                  test_str = "partial";
+               } else {
+                  test_str = "varying";
+               }
+            } else if (word[0] < 'p') {
+               test_str = "natural";
+            } else {
+               test_str = "passing";
+            }
+         } else if (word[0] < 's') {
+            if (word[2] < 's') {
+               test_str = "refresh";
+            } else if (word[2] < 't') {
+               test_str = "restart";
+            } else {
+               test_str = "returns";
+            }
+         } else if (word[0] < 'v') {
+            test_str = "session";
+         } else {
+            test_str = "version";
+         }
+      } else if (word[0] < 'r') {
+         if (word[0] < 'p') {
+            if (word[0] < 'o') {
+               if (word[1] < 'u') {
+                  if (word[3] < 'n') {
+                     test_str = "nothing";
                   } else {
-                     test_str= "leading";
+                     test_str = "notnull";
                   }
                } else {
-                  test_str= "catalog";
+                  test_str = "numeric";
                }
-            } else if (word[5] < 'u') {
-               test_str= "default";
+            } else if (word[1] < 'v') {
+               test_str = "options";
             } else {
-               test_str= "without";
+               test_str = "overlay";
             }
-         } else if (word[6] < 'h') {
-            if (word[3] < 's') {
-               if (word[6] < 'g') {
-                  test_str= "declare";
-               } else {
-                  test_str= "mapping";
-               }
-            } else if (word[3] < 'y') {
-               test_str= "passing";
+         } else if (word[2] < 'i') {
+            if (word[1] < 'r') {
+               test_str = "placing";
             } else {
-               test_str= "varying";
+               test_str = "prepare";
             }
-         } else if (word[6] < 's') {
-            if (word[6] < 'n') {
-               test_str= "refresh";
-            } else if (word[2] < 's') {
-               test_str= "version";
-            } else {
-               test_str= "session";
-            }
-         } else if (word[6] < 't') {
-            test_str= "returns";
+         } else if (word[2] < 'o') {
+            test_str = "primary";
          } else {
-            test_str= "restart";
+            test_str = "program";
          }
-      } else if (word[6] < 'l') {
-         if (word[5] < 's') {
-            if (word[5] < 'r') {
-               if (word[6] < 'g') {
-                  test_str= "routine";
-               } else {
-                  test_str= "nothing";
-               }
-            } else if (word[6] < 'e') {
-               test_str= "forward";
+      } else if (word[1] < 'r') {
+         if (word[0] < 'u') {
+            if (word[0] < 's') {
+               test_str = "routine";
             } else {
-               test_str= "prepare";
+               test_str = "similar";
             }
-         } else if (word[4] < 'y') {
-            if (word[6] < 'h') {
-               if (word[4] < 'u') {
-                  test_str= "collate";
-               } else {
-                  test_str= "execute";
-               }
-            } else {
-               test_str= "breadth";
-            }
-         } else if (word[5] < 'z') {
-            test_str= "analyse";
+         } else if (word[0] < 'w') {
+            test_str = "unknown";
+         } else if (word[0] < 'x') {
+            test_str = "without";
          } else {
-            test_str= "analyze";
+            test_str = "xmlroot";
          }
-      } else if (word[4] < 'o') {
-         if (word[3] < 't') {
-            if (word[6] < 'y') {
-               if (word[3] < 'r') {
-                  test_str= "comment";
-               } else {
-                  test_str= "current";
-               }
-            } else {
-               test_str= "primary";
-            }
-         } else if (word[6] < 't') {
-            test_str= "columns";
+      } else if (word[0] < 't') {
+         if (word[1] < 'u') {
+            test_str = "storage";
          } else {
-            test_str= "content";
+            test_str = "support";
          }
-      } else if (word[6] < 's') {
-         if (word[6] < 'n') {
-            test_str= "notnull";
+      } else if (word[0] < 'w') {
+         if (word[2] < 'u') {
+            test_str = "trigger";
          } else {
-            test_str= "unknown";
+            test_str = "trusted";
          }
-      } else if (word[6] < 't') {
-         test_str= "options";
-      } else if (word[5] < 'r') {
-         test_str= "xmlroot";
       } else {
-         test_str= "support";
+         test_str = "wrapper";
       }
       break;
     case 8:
-      if (word[7] < 'k') {
-         if (word[6] < 'r') {
-            if (word[6] < 'g') {
-               if (word[5] < 'r') {
-                  if (word[7] < 'e') {
-                     if (word[5] < 'g') {
-                        test_str= "cascaded";
-                     } else {
-                        test_str= "unlogged";
-                     }
+      if (word[0] < 'n') {
+         if (word[1] < 'n') {
+            if (word[0] < 'f') {
+               if (word[0] < 'd') {
+                  if (word[0] < 'b') {
+                     test_str = "absolute";
+                  } else if (word[0] < 'c') {
+                     test_str = "backward";
                   } else {
-                     test_str= "sequence";
+                     test_str = "cascaded";
                   }
-               } else if (word[7] < 'e') {
-                  if (word[4] < 'r') {
-                     test_str= "prepared";
+               } else if (word[2] < 's') {
+                  if (word[3] < 'e') {
+                     test_str = "defaults";
                   } else {
-                     test_str= "deferred";
+                     test_str = "deferred";
                   }
+               } else if (word[1] < 'i') {
+                  test_str = "database";
                } else {
-                  test_str= "coalesce";
+                  test_str = "distinct";
                }
-            } else if (word[7] < 'g') {
-               if (word[6] < 'l') {
-                  if (word[7] < 'e') {
-                     test_str= "variadic";
+            } else if (word[0] < 'l') {
+               if (word[0] < 'i') {
+                  test_str = "finalize";
+               } else if (word[1] < 'm') {
+                  test_str = "identity";
+               } else {
+                  test_str = "implicit";
+               }
+            } else if (word[0] < 'm') {
+               test_str = "language";
+            } else if (word[1] < 'i') {
+               test_str = "maxvalue";
+            } else {
+               test_str = "minvalue";
+            }
+         } else if (word[0] < 'f') {
+            if (word[0] < 'd') {
+               if (word[2] < 'n') {
+                  if (word[2] < 'm') {
+                     test_str = "coalesce";
                   } else {
-                     test_str= "language";
+                     test_str = "comments";
                   }
-               } else if (word[5] < 'i') {
-                  test_str= "xmltable";
+               } else if (word[3] < 't') {
+                  test_str = "conflict";
                } else {
-                  test_str= "volatile";
+                  test_str = "continue";
                }
-            } else if (word[4] < 'p') {
-               if (word[4] < 'l') {
-                  test_str= "encoding";
-               } else {
-                  test_str= "trailing";
-               }
+            } else if (word[0] < 'e') {
+               test_str = "document";
+            } else if (word[1] < 'x') {
+               test_str = "encoding";
             } else {
-               test_str= "grouping";
+               test_str = "external";
             }
-         } else if (word[5] < 'l') {
-            if (word[4] < 'l') {
-               if (word[6] < 't') {
-                  test_str= "database";
-               } else if (word[4] < 'd') {
-                  test_str= "truncate";
-               } else {
-                  test_str= "validate";
-               }
-            } else if (word[6] < 'v') {
-               if (word[7] < 'e') {
-                  test_str= "backward";
-               } else {
-                  test_str= "template";
-               }
-            } else if (word[6] < 'z') {
-               test_str= "relative";
+         } else if (word[0] < 'i') {
+            if (word[0] < 'g') {
+               test_str = "function";
+            } else if (word[2] < 'o') {
+               test_str = "greatest";
             } else {
-               test_str= "finalize";
+               test_str = "grouping";
             }
-         } else if (word[6] < 'u') {
-            if (word[7] < 'e') {
-               test_str= "password";
-            } else if (word[6] < 't') {
-               test_str= "xmlparse";
+         } else if (word[0] < 'l') {
+            if (word[2] < 't') {
+               test_str = "inherits";
             } else {
-               test_str= "absolute";
-            }
-         } else if (word[5] < 'n') {
-            if (word[2] < 'x') {
-               test_str= "minvalue";
-            } else {
-               test_str= "maxvalue";
-            }
-         } else if (word[6] < 'v') {
-            test_str= "continue";
-         } else {
-            test_str= "preserve";
-         }
-      } else if (word[0] < 'n') {
-         if (word[7] < 't') {
-            if (word[7] < 's') {
-               if (word[7] < 'n') {
-                  if (word[5] < 'v') {
-                     test_str= "external";
-                  } else {
-                     test_str= "interval";
-                  }
-               } else if (word[3] < 'c') {
-                  test_str= "location";
-               } else {
-                  test_str= "function";
-               }
-            } else if (word[5] < 'n') {
-               if (word[5] < 'l') {
-                  test_str= "inherits";
-               } else {
-                  test_str= "defaults";
-               }
-            } else {
-               test_str= "comments";
-            }
-         } else if (word[6] < 'n') {
-            if (word[6] < 'i') {
-               if (word[5] < 'n') {
-                  test_str= "conflict";
-               } else {
-                  test_str= "distinct";
-               }
-            } else {
-               test_str= "implicit";
-            }
-         } else if (word[7] < 'y') {
-            if (word[6] < 's') {
-               test_str= "document";
-            } else {
-               test_str= "greatest";
+               test_str = "interval";
             }
          } else {
-            test_str= "identity";
+            test_str = "location";
          }
-      } else if (word[7] < 'r') {
-         if (word[7] < 'n') {
-            if (word[7] < 'l') {
-               test_str= "rollback";
-            } else if (word[6] < 'e') {
-               test_str= "national";
+      } else if (word[0] < 's') {
+         if (word[1] < 'o') {
+            if (word[0] < 'r') {
+               if (word[0] < 'p') {
+                  test_str = "national";
+               } else if (word[2] < 's') {
+                  test_str = "parallel";
+               } else {
+                  test_str = "password";
+               }
+            } else if (word[2] < 'l') {
+               test_str = "reassign";
+            } else if (word[2] < 's') {
+               test_str = "relative";
             } else {
-               test_str= "parallel";
+               test_str = "restrict";
             }
-         } else if (word[6] < 'o') {
-            if (word[6] < 'g') {
-               test_str= "unlisten";
+         } else if (word[1] < 'p') {
+            if (word[0] < 'r') {
+               test_str = "position";
+            } else if (word[2] < 'u') {
+               test_str = "rollback";
             } else {
-               test_str= "reassign";
+               test_str = "routines";
             }
+         } else if (word[0] < 'p') {
+            if (word[1] < 'v') {
+               test_str = "operator";
+            } else {
+               test_str = "overlaps";
+            }
+         } else if (word[3] < 's') {
+            test_str = "prepared";
          } else {
-            test_str= "position";
+            test_str = "preserve";
          }
-      } else if (word[7] < 't') {
-         if (word[7] < 's') {
-            test_str= "operator";
-         } else if (word[6] < 'p') {
-            test_str= "routines";
+      } else if (word[0] < 'u') {
+         if (word[0] < 't') {
+            if (word[1] < 'm') {
+               if (word[2] < 'q') {
+                  test_str = "security";
+               } else {
+                  test_str = "sequence";
+               }
+            } else if (word[1] < 'n') {
+               test_str = "smallint";
+            } else {
+               test_str = "snapshot";
+            }
+         } else if (word[1] < 'r') {
+            test_str = "template";
+         } else if (word[2] < 'u') {
+            test_str = "trailing";
          } else {
-            test_str= "overlaps";
+            test_str = "truncate";
          }
-      } else if (word[6] < 'o') {
-         if (word[6] < 'n') {
-            test_str= "restrict";
+      } else if (word[1] < 'n') {
+         if (word[0] < 'x') {
+            if (word[2] < 'r') {
+               test_str = "validate";
+            } else {
+               test_str = "variadic";
+            }
+         } else if (word[3] < 't') {
+            test_str = "xmlparse";
          } else {
-            test_str= "smallint";
+            test_str = "xmltable";
          }
-      } else if (word[7] < 'y') {
-         test_str= "snapshot";
+      } else if (word[0] < 'v') {
+         if (word[3] < 'o') {
+            test_str = "unlisten";
+         } else {
+            test_str = "unlogged";
+         }
       } else {
-         test_str= "security";
+         test_str = "volatile";
       }
       break;
     case 9:
-      if (word[8] < 'n') {
-         if (word[5] < 'n') {
-            if (word[7] < 'r') {
-               if (word[8] < 'g') {
-                  if (word[8] < 'e') {
-                     test_str= "generated";
+      if (word[4] < 'o') {
+         if (word[0] < 'l') {
+            if (word[0] < 'd') {
+               if (word[0] < 'c') {
+                  if (word[1] < 't') {
+                     test_str = "aggregate";
                   } else {
-                     test_str= "immutable";
+                     test_str = "attribute";
                   }
-               } else if (word[4] < 'u') {
-                  test_str= "preceding";
-               } else if (word[1] < 'x') {
-                  test_str= "including";
+               } else if (word[1] < 'o') {
+                  test_str = "character";
+               } else if (word[2] < 'm') {
+                  test_str = "collation";
                } else {
-                  test_str= "excluding";
+                  test_str = "committed";
                }
-            } else if (word[6] < 'o') {
-               if (word[7] < 'z') {
-                  if (word[5] < 'i') {
-                     test_str= "aggregate";
+            } else if (word[2] < 'm') {
+               if (word[0] < 'i') {
+                  test_str = "delimiter";
+               } else if (word[2] < 'i') {
+                  test_str = "increment";
+               } else {
+                  test_str = "initially";
+               }
+            } else if (word[0] < 'i') {
+               test_str = "extension";
+            } else if (word[1] < 's') {
+               test_str = "immediate";
+            } else {
+               test_str = "isolation";
+            }
+         } else if (word[1] < 'r') {
+            if (word[1] < 'e') {
+               if (word[0] < 'v') {
+                  if (word[3] < 't') {
+                     test_str = "parameter";
                   } else {
-                     test_str= "immediate";
-                  }
-               } else {
-                  test_str= "normalize";
-               }
-            } else if (word[8] < 'm') {
-               if (word[7] < 't') {
-                  test_str= "procedure";
-               } else {
-                  test_str= "attribute";
-               }
-            } else {
-               test_str= "transform";
-            }
-         } else if (word[7] < 'n') {
-            if (word[7] < 'i') {
-               if (word[6] < 't') {
-                  test_str= "unbounded";
-               } else if (word[5] < 't') {
-                  test_str= "encrypted";
-               } else {
-                  test_str= "committed";
-               }
-            } else if (word[8] < 'e') {
-               test_str= "symmetric";
-            } else {
-               test_str= "localtime";
-            }
-         } else if (word[8] < 'g') {
-            if (word[8] < 'f') {
-               if (word[4] < 'u') {
-                  test_str= "recursive";
-               } else {
-                  test_str= "exclusive";
-               }
-            } else {
-               test_str= "leakproof";
-            }
-         } else if (word[5] < 'w') {
-            if (word[5] < 'r') {
-               test_str= "returning";
-            } else {
-               test_str= "substring";
-            }
-         } else {
-            test_str= "following";
-         }
-      } else if (word[8] < 's') {
-         if (word[8] < 'p') {
-            if (word[3] < 'l') {
-               if (word[5] < 't') {
-                  if (word[4] < 'n') {
-                     test_str= "precision";
-                  } else {
-                     test_str= "extension";
+                     test_str = "partition";
                   }
                } else {
-                  test_str= "assertion";
+                  test_str = "validator";
                }
-            } else if (word[4] < 'i') {
-               if (word[2] < 'o') {
-                  test_str= "collation";
+            } else if (word[0] < 'n') {
+               test_str = "localtime";
+            } else if (word[0] < 's') {
+               test_str = "normalize";
+            } else {
+               test_str = "sequences";
+            }
+         } else if (word[0] < 's') {
+            if (word[2] < 'o') {
+               if (word[4] < 'i') {
+                  test_str = "preceding";
                } else {
-                  test_str= "isolation";
+                  test_str = "precision";
                }
             } else {
-               test_str= "partition";
+               test_str = "procedure";
             }
-         } else if (word[7] < 'm') {
-            if (word[5] < 'i') {
-               if (word[5] < 'e') {
-                  test_str= "character";
+         } else if (word[1] < 'y') {
+            test_str = "statement";
+         } else {
+            test_str = "symmetric";
+         }
+      } else if (word[0] < 'r') {
+         if (word[0] < 'g') {
+            if (word[1] < 'u') {
+               if (word[0] < 'e') {
+                  test_str = "assertion";
+               } else if (word[0] < 'f') {
+                  test_str = "encrypted";
                } else {
-                  test_str= "parameter";
+                  test_str = "following";
+               }
+            } else if (word[0] < 'f') {
+               if (word[5] < 's') {
+                  test_str = "excluding";
+               } else {
+                  test_str = "exclusive";
                }
             } else {
-               test_str= "delimiter";
+               test_str = "functions";
             }
-         } else if (word[8] < 'r') {
-            test_str= "timestamp";
-         } else {
-            test_str= "validator";
-         }
-      } else if (word[5] < 'n') {
-         if (word[8] < 't') {
-            if (word[7] < 't') {
-               test_str= "functions";
+         } else if (word[1] < 'm') {
+            if (word[0] < 'l') {
+               test_str = "generated";
             } else {
-               test_str= "xmlexists";
+               test_str = "leakproof";
             }
-         } else if (word[8] < 'y') {
-            if (word[3] < 't') {
-               test_str= "increment";
+         } else if (word[1] < 'n') {
+            test_str = "immutable";
+         } else if (word[2] < 't') {
+            test_str = "including";
+         } else {
+            test_str = "intersect";
+         }
+      } else if (word[1] < 'm') {
+         if (word[0] < 's') {
+            if (word[2] < 't') {
+               test_str = "recursive";
             } else {
-               test_str= "statement";
+               test_str = "returning";
             }
+         } else if (word[0] < 't') {
+            test_str = "savepoint";
+         } else if (word[1] < 'i') {
+            test_str = "temporary";
          } else {
-            test_str= "initially";
+            test_str = "timestamp";
          }
-      } else if (word[7] < 'n') {
-         if (word[8] < 't') {
-            test_str= "sequences";
-         } else if (word[7] < 'c') {
-            test_str= "xmlconcat";
+      } else if (word[0] < 'x') {
+         if (word[0] < 't') {
+            test_str = "substring";
+         } else if (word[0] < 'u') {
+            test_str = "transform";
          } else {
-            test_str= "intersect";
+            test_str = "unbounded";
          }
-      } else if (word[8] < 'y') {
-         if (word[7] < 's') {
-            test_str= "savepoint";
-         } else {
-            test_str= "xmlforest";
-         }
+      } else if (word[3] < 'e') {
+         test_str = "xmlconcat";
+      } else if (word[3] < 'f') {
+         test_str = "xmlexists";
       } else {
-         test_str= "temporary";
+         test_str = "xmlforest";
       }
       break;
     case 10:
-      if (word[6] < 'o') {
-         if (word[9] < 's') {
-            if (word[8] < 'n') {
-               if (word[9] < 'e') {
-                  test_str= "normalized";
-               } else if (word[5] < 't') {
-                  test_str= "deferrable";
+      if (word[0] < 'n') {
+         if (word[0] < 'd') {
+            if (word[0] < 'c') {
+               if (word[2] < 's') {
+                  test_str = "asensitive";
+               } else if (word[2] < 'y') {
+                  test_str = "assignment";
                } else {
-                  test_str= "repeatable";
+                  test_str = "asymmetric";
                }
-            } else if (word[9] < 'g') {
-               if (word[8] < 't') {
-                  test_str= "standalone";
+            } else if (word[3] < 's') {
+               if (word[1] < 'o') {
+                  test_str = "checkpoint";
                } else {
-                  test_str= "deallocate";
+                  test_str = "connection";
                }
+            } else if (word[3] < 'v') {
+               test_str = "constraint";
             } else {
-               test_str= "overriding";
+               test_str = "conversion";
             }
-         } else if (word[7] < 'g') {
-            if (word[7] < 'e') {
-               if (word[9] < 'y') {
-                  test_str= "references";
-               } else {
-                  test_str= "dictionary";
-               }
-            } else if (word[5] < 'n') {
-               test_str= "xmlelement";
+         } else if (word[1] < 'i') {
+            if (word[2] < 'f') {
+               test_str = "deallocate";
+            } else if (word[2] < 'l') {
+               test_str = "deferrable";
             } else {
-               test_str= "assignment";
+               test_str = "delimiters";
             }
-         } else if (word[9] < 't') {
-            test_str= "privileges";
-         } else if (word[9] < 'y') {
-            test_str= "constraint";
+         } else if (word[0] < 'e') {
+            test_str = "dictionary";
+         } else if (word[0] < 'j') {
+            test_str = "expression";
          } else {
-            test_str= "ordinality";
+            test_str = "json_array";
          }
-      } else if (word[8] < 'i') {
-         if (word[9] < 's') {
-            if (word[9] < 'l') {
-               if (word[3] < 't') {
-                  test_str= "tablespace";
-               } else {
-                  test_str= "whitespace";
-               }
+      } else if (word[0] < 'r') {
+         if (word[0] < 'p') {
+            if (word[0] < 'o') {
+               test_str = "normalized";
+            } else if (word[1] < 'v') {
+               test_str = "ordinality";
             } else {
-               test_str= "procedural";
+               test_str = "overriding";
             }
-         } else if (word[9] < 'y') {
-            if (word[8] < 'e') {
-               test_str= "statistics";
+         } else if (word[2] < 'o') {
+            test_str = "privileges";
+         } else if (word[8] < 'e') {
+            test_str = "procedural";
+         } else {
+            test_str = "procedures";
+         }
+      } else if (word[0] < 't') {
+         if (word[0] < 's') {
+            if (word[2] < 'p') {
+               test_str = "references";
             } else {
-               test_str= "procedures";
+               test_str = "repeatable";
             }
+         } else if (word[3] < 't') {
+            test_str = "standalone";
          } else {
-            test_str= "json_array";
+            test_str = "statistics";
          }
-      } else if (word[6] < 't') {
-         if (word[9] < 't') {
-            if (word[5] < 's') {
-               test_str= "conversion";
-            } else {
-               test_str= "expression";
-            }
-         } else {
-            test_str= "checkpoint";
-         }
-      } else if (word[9] < 'n') {
-         if (word[9] < 'e') {
-            test_str= "asymmetric";
-         } else {
-            test_str= "asensitive";
-         }
-      } else if (word[9] < 's') {
-         test_str= "connection";
+      } else if (word[0] < 'w') {
+         test_str = "tablespace";
+      } else if (word[0] < 'x') {
+         test_str = "whitespace";
       } else {
-         test_str= "delimiters";
+         test_str = "xmlelement";
       }
       break;
     case 11:
-      if (word[9] < 'n') {
-         if (word[10] < 'r') {
-            if (word[10] < 'e') {
-               if (word[7] < 't') {
-                  test_str= "unencrypted";
+      if (word[0] < 'r') {
+         if (word[0] < 'j') {
+            if (word[0] < 'i') {
+               if (word[2] < 'n') {
+                  test_str = "compression";
                } else {
-                  test_str= "uncommitted";
+                  test_str = "constraints";
                }
             } else {
-               test_str= "tablesample";
+               test_str = "insensitive";
             }
-         } else if (word[10] < 't') {
-            if (word[9] < 'e') {
-               test_str= "json_scalar";
+         } else if (word[0] < 'p') {
+            if (word[5] < 's') {
+               test_str = "json_object";
             } else {
-               test_str= "system_user";
+               test_str = "json_scalar";
             }
          } else {
-            test_str= "json_object";
+            test_str = "publication";
          }
-      } else if (word[7] < 't') {
-         if (word[10] < 'n') {
-            test_str= "referencing";
-         } else if (word[10] < 's') {
-            test_str= "compression";
+      } else if (word[2] < 'e') {
+         if (word[0] < 'u') {
+            if (word[1] < 'r') {
+               test_str = "tablesample";
+            } else {
+               test_str = "transaction";
+            }
          } else {
-            test_str= "constraints";
+            test_str = "uncommitted";
          }
-      } else if (word[10] < 'n') {
-         test_str= "insensitive";
-      } else if (word[6] < 'c') {
-         test_str= "publication";
+      } else if (word[0] < 's') {
+         test_str = "referencing";
+      } else if (word[0] < 'u') {
+         test_str = "system_user";
       } else {
-         test_str= "transaction";
+         test_str = "unencrypted";
       }
       break;
     case 12:
-      if (word[9] < 'o') {
-         if (word[10] < 't') {
-            if (word[11] < 'n') {
-               if (word[10] < 'm') {
-                  test_str= "serializable";
-               } else {
-                  test_str= "current_time";
-               }
+      if (word[0] < 'm') {
+         if (word[8] < 'r') {
+            if (word[1] < 'u') {
+               test_str = "concurrently";
             } else {
-               test_str= "subscription";
+               test_str = "current_date";
             }
-         } else if (word[10] < 'z') {
-            test_str= "current_date";
+         } else if (word[8] < 't') {
+            test_str = "current_role";
+         } else if (word[8] < 'u') {
+            test_str = "current_time";
          } else {
-            test_str= "xmlserialize";
+            test_str = "current_user";
          }
-      } else if (word[11] < 'r') {
-         if (word[11] < 'e') {
-            test_str= "materialized";
+      } else if (word[1] < 'm') {
+         if (word[0] < 's') {
+            test_str = "materialized";
+         } else if (word[2] < 's') {
+            test_str = "serializable";
          } else {
-            test_str= "current_role";
+            test_str = "session_user";
          }
-      } else if (word[11] < 'y') {
-         if (word[6] < 't') {
-            test_str= "session_user";
-         } else {
-            test_str= "current_user";
-         }
+      } else if (word[0] < 'x') {
+         test_str = "subscription";
       } else {
-         test_str= "concurrently";
+         test_str = "xmlserialize";
       }
       break;
     case 13:
-      if (word[12] < 's') {
-         if (word[12] < 'n') {
-            test_str= "json_arrayagg";
-         } else if (word[7] < 'z') {
-            test_str= "configuration";
+      if (word[0] < 'j') {
+         if (word[0] < 'c') {
+            test_str = "authorization";
          } else {
-            test_str= "authorization";
+            test_str = "configuration";
          }
-      } else if (word[10] < 't') {
-         test_str= "xmlnamespaces";
+      } else if (word[0] < 'x') {
+         test_str = "json_arrayagg";
+      } else if (word[3] < 'n') {
+         test_str = "xmlattributes";
       } else {
-         test_str= "xmlattributes";
+         test_str = "xmlnamespaces";
       }
       break;
     case 14:
-      if (word[13] < 'g') {
-         if (word[13] < 'e') {
-            test_str= "current_schema";
+      if (word[4] < 'e') {
+         if (word[5] < 's') {
+            test_str = "json_objectagg";
          } else {
-            test_str= "json_serialize";
+            test_str = "json_serialize";
          }
-      } else if (word[13] < 'p') {
-         test_str= "json_objectagg";
+      } else if (word[0] < 'l') {
+         test_str = "current_schema";
       } else {
-         test_str= "localtimestamp";
+         test_str = "localtimestamp";
       }
       break;
     case 15:
-      if (word[14] < 's') {
-         test_str= "current_catalog";
+      if (word[1] < 'u') {
+         test_str = "characteristics";
       } else {
-         test_str= "characteristics";
+         test_str = "current_catalog";
       }
       break;
     case 17:
-      test_str= "current_timestamp";
+      test_str = "current_timestamp";
       break;
     default:
         return DBDPG_FALSE;
@@ -2130,7 +2084,7 @@ sub generate_binary_search {
     # Find a character comparison that splits the list roughly in half.
     my ($best_i, $best_ch, $best_less);
     my $goal = .5 * scalar @$vals;
-    for (my $i = length $vals->[0]; $i >= 0; --$i) {
+    for (my $i = 0; $i < length $vals->[0]; ++$i) {
       my %seen;
       for my $ch (grep !$seen{$_}++, map substr($_, $i, 1), @$vals) {
         my @less= grep substr($_, $i, 1) lt $ch, @$vals;
