@@ -592,6 +592,7 @@ PostgreSQL
 postgresteam
 powf
 PQ
+PQchangePassword
 PQclear
 PQclosePrepared
 PQconnectdb
