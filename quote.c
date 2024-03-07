@@ -2057,7 +2057,7 @@ for (0..$#lines) {
   $end = $_ if $lines[$_] =~ /END GENERATED KEYWORDS/;
 }
 if ($start && $end) {
-  splice(@lines, $start+1, $end-$start-1, map "  $_\n", 'qw(', @word, ')');
+  splice(@lines, $start+1, $end-$start-1, map "  '$_',\n", @word);
 } else {
   die "Can't find keyword comment markers in $testfile";
 }

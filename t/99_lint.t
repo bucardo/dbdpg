@@ -33,6 +33,7 @@ for my $file (@testfiles) {
             next if $line !~ /\b$func\b/;
             next if $line =~ /$func \w/; ## e.g. 'skip these tests'
             next if $line =~ /[\$\%]$func/; ## e.g. $ok %ok
+            next if $line =~ /['"][^'"]*$func/; ## e.g. 'like' in quotes
             $fileslurp{$file}{$.}{$func} = $line;
             $testmore++;
         }
