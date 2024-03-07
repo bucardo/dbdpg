@@ -553,6 +553,7 @@ bool is_keyword(const char *string)
     int keyword_len;
     int i;
     char word[64];
+    const char *test_str;
 
     keyword_len = (int)strlen(string);
     if (keyword_len > max_keyword_length || keyword_len > 64) {
@@ -569,448 +570,1411 @@ bool is_keyword(const char *string)
     word[keyword_len] = '\0';
 
     /* Check for each reserved word */
-    if (0==strcmp(word, "abort")) return DBDPG_TRUE;
-    if (0==strcmp(word, "absolute")) return DBDPG_TRUE;
-    if (0==strcmp(word, "access")) return DBDPG_TRUE;
-    if (0==strcmp(word, "action")) return DBDPG_TRUE;
-    if (0==strcmp(word, "add")) return DBDPG_TRUE;
-    if (0==strcmp(word, "admin")) return DBDPG_TRUE;
-    if (0==strcmp(word, "after")) return DBDPG_TRUE;
-    if (0==strcmp(word, "aggregate")) return DBDPG_TRUE;
-    if (0==strcmp(word, "all")) return DBDPG_TRUE;
-    if (0==strcmp(word, "also")) return DBDPG_TRUE;
-    if (0==strcmp(word, "alter")) return DBDPG_TRUE;
-    if (0==strcmp(word, "always")) return DBDPG_TRUE;
-    if (0==strcmp(word, "analyse")) return DBDPG_TRUE;
-    if (0==strcmp(word, "analyze")) return DBDPG_TRUE;
-    if (0==strcmp(word, "and")) return DBDPG_TRUE;
-    if (0==strcmp(word, "any")) return DBDPG_TRUE;
-    if (0==strcmp(word, "array")) return DBDPG_TRUE;
-    if (0==strcmp(word, "as")) return DBDPG_TRUE;
-    if (0==strcmp(word, "asc")) return DBDPG_TRUE;
-    if (0==strcmp(word, "assertion")) return DBDPG_TRUE;
-    if (0==strcmp(word, "assignment")) return DBDPG_TRUE;
-    if (0==strcmp(word, "asymmetric")) return DBDPG_TRUE;
-    if (0==strcmp(word, "at")) return DBDPG_TRUE;
-    if (0==strcmp(word, "attach")) return DBDPG_TRUE;
-    if (0==strcmp(word, "attribute")) return DBDPG_TRUE;
-    if (0==strcmp(word, "authorization")) return DBDPG_TRUE;
-    if (0==strcmp(word, "backward")) return DBDPG_TRUE;
-    if (0==strcmp(word, "before")) return DBDPG_TRUE;
-    if (0==strcmp(word, "begin")) return DBDPG_TRUE;
-    if (0==strcmp(word, "between")) return DBDPG_TRUE;
-    if (0==strcmp(word, "bigint")) return DBDPG_TRUE;
-    if (0==strcmp(word, "binary")) return DBDPG_TRUE;
-    if (0==strcmp(word, "bit")) return DBDPG_TRUE;
-    if (0==strcmp(word, "boolean")) return DBDPG_TRUE;
-    if (0==strcmp(word, "both")) return DBDPG_TRUE;
-    if (0==strcmp(word, "by")) return DBDPG_TRUE;
-    if (0==strcmp(word, "cache")) return DBDPG_TRUE;
-    if (0==strcmp(word, "call")) return DBDPG_TRUE;
-    if (0==strcmp(word, "called")) return DBDPG_TRUE;
-    if (0==strcmp(word, "cascade")) return DBDPG_TRUE;
-    if (0==strcmp(word, "cascaded")) return DBDPG_TRUE;
-    if (0==strcmp(word, "case")) return DBDPG_TRUE;
-    if (0==strcmp(word, "cast")) return DBDPG_TRUE;
-    if (0==strcmp(word, "catalog")) return DBDPG_TRUE;
-    if (0==strcmp(word, "chain")) return DBDPG_TRUE;
-    if (0==strcmp(word, "char")) return DBDPG_TRUE;
-    if (0==strcmp(word, "character")) return DBDPG_TRUE;
-    if (0==strcmp(word, "characteristics")) return DBDPG_TRUE;
-    if (0==strcmp(word, "check")) return DBDPG_TRUE;
-    if (0==strcmp(word, "checkpoint")) return DBDPG_TRUE;
-    if (0==strcmp(word, "class")) return DBDPG_TRUE;
-    if (0==strcmp(word, "close")) return DBDPG_TRUE;
-    if (0==strcmp(word, "cluster")) return DBDPG_TRUE;
-    if (0==strcmp(word, "coalesce")) return DBDPG_TRUE;
-    if (0==strcmp(word, "collate")) return DBDPG_TRUE;
-    if (0==strcmp(word, "collation")) return DBDPG_TRUE;
-    if (0==strcmp(word, "column")) return DBDPG_TRUE;
-    if (0==strcmp(word, "columns")) return DBDPG_TRUE;
-    if (0==strcmp(word, "comment")) return DBDPG_TRUE;
-    if (0==strcmp(word, "comments")) return DBDPG_TRUE;
-    if (0==strcmp(word, "commit")) return DBDPG_TRUE;
-    if (0==strcmp(word, "committed")) return DBDPG_TRUE;
-    if (0==strcmp(word, "concurrently")) return DBDPG_TRUE;
-    if (0==strcmp(word, "configuration")) return DBDPG_TRUE;
-    if (0==strcmp(word, "conflict")) return DBDPG_TRUE;
-    if (0==strcmp(word, "connection")) return DBDPG_TRUE;
-    if (0==strcmp(word, "constraint")) return DBDPG_TRUE;
-    if (0==strcmp(word, "constraints")) return DBDPG_TRUE;
-    if (0==strcmp(word, "content")) return DBDPG_TRUE;
-    if (0==strcmp(word, "continue")) return DBDPG_TRUE;
-    if (0==strcmp(word, "conversion")) return DBDPG_TRUE;
-    if (0==strcmp(word, "copy")) return DBDPG_TRUE;
-    if (0==strcmp(word, "cost")) return DBDPG_TRUE;
-    if (0==strcmp(word, "create")) return DBDPG_TRUE;
-    if (0==strcmp(word, "cross")) return DBDPG_TRUE;
-    if (0==strcmp(word, "csv")) return DBDPG_TRUE;
-    if (0==strcmp(word, "cube")) return DBDPG_TRUE;
-    if (0==strcmp(word, "current")) return DBDPG_TRUE;
-    if (0==strcmp(word, "current_catalog")) return DBDPG_TRUE;
-    if (0==strcmp(word, "current_date")) return DBDPG_TRUE;
-    if (0==strcmp(word, "current_role")) return DBDPG_TRUE;
-    if (0==strcmp(word, "current_schema")) return DBDPG_TRUE;
-    if (0==strcmp(word, "current_time")) return DBDPG_TRUE;
-    if (0==strcmp(word, "current_timestamp")) return DBDPG_TRUE;
-    if (0==strcmp(word, "current_user")) return DBDPG_TRUE;
-    if (0==strcmp(word, "cursor")) return DBDPG_TRUE;
-    if (0==strcmp(word, "cycle")) return DBDPG_TRUE;
-    if (0==strcmp(word, "data")) return DBDPG_TRUE;
-    if (0==strcmp(word, "database")) return DBDPG_TRUE;
-    if (0==strcmp(word, "day")) return DBDPG_TRUE;
-    if (0==strcmp(word, "deallocate")) return DBDPG_TRUE;
-    if (0==strcmp(word, "dec")) return DBDPG_TRUE;
-    if (0==strcmp(word, "decimal")) return DBDPG_TRUE;
-    if (0==strcmp(word, "declare")) return DBDPG_TRUE;
-    if (0==strcmp(word, "default")) return DBDPG_TRUE;
-    if (0==strcmp(word, "defaults")) return DBDPG_TRUE;
-    if (0==strcmp(word, "deferrable")) return DBDPG_TRUE;
-    if (0==strcmp(word, "deferred")) return DBDPG_TRUE;
-    if (0==strcmp(word, "definer")) return DBDPG_TRUE;
-    if (0==strcmp(word, "delete")) return DBDPG_TRUE;
-    if (0==strcmp(word, "delimiter")) return DBDPG_TRUE;
-    if (0==strcmp(word, "delimiters")) return DBDPG_TRUE;
-    if (0==strcmp(word, "depends")) return DBDPG_TRUE;
-    if (0==strcmp(word, "desc")) return DBDPG_TRUE;
-    if (0==strcmp(word, "detach")) return DBDPG_TRUE;
-    if (0==strcmp(word, "dictionary")) return DBDPG_TRUE;
-    if (0==strcmp(word, "disable")) return DBDPG_TRUE;
-    if (0==strcmp(word, "discard")) return DBDPG_TRUE;
-    if (0==strcmp(word, "distinct")) return DBDPG_TRUE;
-    if (0==strcmp(word, "do")) return DBDPG_TRUE;
-    if (0==strcmp(word, "document")) return DBDPG_TRUE;
-    if (0==strcmp(word, "domain")) return DBDPG_TRUE;
-    if (0==strcmp(word, "double")) return DBDPG_TRUE;
-    if (0==strcmp(word, "drop")) return DBDPG_TRUE;
-    if (0==strcmp(word, "each")) return DBDPG_TRUE;
-    if (0==strcmp(word, "else")) return DBDPG_TRUE;
-    if (0==strcmp(word, "enable")) return DBDPG_TRUE;
-    if (0==strcmp(word, "encoding")) return DBDPG_TRUE;
-    if (0==strcmp(word, "encrypted")) return DBDPG_TRUE;
-    if (0==strcmp(word, "end")) return DBDPG_TRUE;
-    if (0==strcmp(word, "enum")) return DBDPG_TRUE;
-    if (0==strcmp(word, "escape")) return DBDPG_TRUE;
-    if (0==strcmp(word, "event")) return DBDPG_TRUE;
-    if (0==strcmp(word, "except")) return DBDPG_TRUE;
-    if (0==strcmp(word, "exclude")) return DBDPG_TRUE;
-    if (0==strcmp(word, "excluding")) return DBDPG_TRUE;
-    if (0==strcmp(word, "exclusive")) return DBDPG_TRUE;
-    if (0==strcmp(word, "execute")) return DBDPG_TRUE;
-    if (0==strcmp(word, "exists")) return DBDPG_TRUE;
-    if (0==strcmp(word, "explain")) return DBDPG_TRUE;
-    if (0==strcmp(word, "extension")) return DBDPG_TRUE;
-    if (0==strcmp(word, "external")) return DBDPG_TRUE;
-    if (0==strcmp(word, "extract")) return DBDPG_TRUE;
-    if (0==strcmp(word, "false")) return DBDPG_TRUE;
-    if (0==strcmp(word, "family")) return DBDPG_TRUE;
-    if (0==strcmp(word, "fetch")) return DBDPG_TRUE;
-    if (0==strcmp(word, "filter")) return DBDPG_TRUE;
-    if (0==strcmp(word, "first")) return DBDPG_TRUE;
-    if (0==strcmp(word, "float")) return DBDPG_TRUE;
-    if (0==strcmp(word, "following")) return DBDPG_TRUE;
-    if (0==strcmp(word, "for")) return DBDPG_TRUE;
-    if (0==strcmp(word, "force")) return DBDPG_TRUE;
-    if (0==strcmp(word, "foreign")) return DBDPG_TRUE;
-    if (0==strcmp(word, "forward")) return DBDPG_TRUE;
-    if (0==strcmp(word, "freeze")) return DBDPG_TRUE;
-    if (0==strcmp(word, "from")) return DBDPG_TRUE;
-    if (0==strcmp(word, "full")) return DBDPG_TRUE;
-    if (0==strcmp(word, "function")) return DBDPG_TRUE;
-    if (0==strcmp(word, "functions")) return DBDPG_TRUE;
-    if (0==strcmp(word, "generated")) return DBDPG_TRUE;
-    if (0==strcmp(word, "global")) return DBDPG_TRUE;
-    if (0==strcmp(word, "grant")) return DBDPG_TRUE;
-    if (0==strcmp(word, "granted")) return DBDPG_TRUE;
-    if (0==strcmp(word, "greatest")) return DBDPG_TRUE;
-    if (0==strcmp(word, "group")) return DBDPG_TRUE;
-    if (0==strcmp(word, "grouping")) return DBDPG_TRUE;
-    if (0==strcmp(word, "groups")) return DBDPG_TRUE;
-    if (0==strcmp(word, "handler")) return DBDPG_TRUE;
-    if (0==strcmp(word, "having")) return DBDPG_TRUE;
-    if (0==strcmp(word, "header")) return DBDPG_TRUE;
-    if (0==strcmp(word, "hold")) return DBDPG_TRUE;
-    if (0==strcmp(word, "hour")) return DBDPG_TRUE;
-    if (0==strcmp(word, "identity")) return DBDPG_TRUE;
-    if (0==strcmp(word, "if")) return DBDPG_TRUE;
-    if (0==strcmp(word, "ilike")) return DBDPG_TRUE;
-    if (0==strcmp(word, "immediate")) return DBDPG_TRUE;
-    if (0==strcmp(word, "immutable")) return DBDPG_TRUE;
-    if (0==strcmp(word, "implicit")) return DBDPG_TRUE;
-    if (0==strcmp(word, "import")) return DBDPG_TRUE;
-    if (0==strcmp(word, "in")) return DBDPG_TRUE;
-    if (0==strcmp(word, "include")) return DBDPG_TRUE;
-    if (0==strcmp(word, "including")) return DBDPG_TRUE;
-    if (0==strcmp(word, "increment")) return DBDPG_TRUE;
-    if (0==strcmp(word, "index")) return DBDPG_TRUE;
-    if (0==strcmp(word, "indexes")) return DBDPG_TRUE;
-    if (0==strcmp(word, "inherit")) return DBDPG_TRUE;
-    if (0==strcmp(word, "inherits")) return DBDPG_TRUE;
-    if (0==strcmp(word, "initially")) return DBDPG_TRUE;
-    if (0==strcmp(word, "inline")) return DBDPG_TRUE;
-    if (0==strcmp(word, "inner")) return DBDPG_TRUE;
-    if (0==strcmp(word, "inout")) return DBDPG_TRUE;
-    if (0==strcmp(word, "input")) return DBDPG_TRUE;
-    if (0==strcmp(word, "insensitive")) return DBDPG_TRUE;
-    if (0==strcmp(word, "insert")) return DBDPG_TRUE;
-    if (0==strcmp(word, "instead")) return DBDPG_TRUE;
-    if (0==strcmp(word, "int")) return DBDPG_TRUE;
-    if (0==strcmp(word, "integer")) return DBDPG_TRUE;
-    if (0==strcmp(word, "intersect")) return DBDPG_TRUE;
-    if (0==strcmp(word, "interval")) return DBDPG_TRUE;
-    if (0==strcmp(word, "into")) return DBDPG_TRUE;
-    if (0==strcmp(word, "invoker")) return DBDPG_TRUE;
-    if (0==strcmp(word, "is")) return DBDPG_TRUE;
-    if (0==strcmp(word, "isnull")) return DBDPG_TRUE;
-    if (0==strcmp(word, "isolation")) return DBDPG_TRUE;
-    if (0==strcmp(word, "join")) return DBDPG_TRUE;
-    if (0==strcmp(word, "key")) return DBDPG_TRUE;
-    if (0==strcmp(word, "label")) return DBDPG_TRUE;
-    if (0==strcmp(word, "language")) return DBDPG_TRUE;
-    if (0==strcmp(word, "large")) return DBDPG_TRUE;
-    if (0==strcmp(word, "last")) return DBDPG_TRUE;
-    if (0==strcmp(word, "lateral")) return DBDPG_TRUE;
-    if (0==strcmp(word, "leading")) return DBDPG_TRUE;
-    if (0==strcmp(word, "leakproof")) return DBDPG_TRUE;
-    if (0==strcmp(word, "least")) return DBDPG_TRUE;
-    if (0==strcmp(word, "left")) return DBDPG_TRUE;
-    if (0==strcmp(word, "level")) return DBDPG_TRUE;
-    if (0==strcmp(word, "like")) return DBDPG_TRUE;
-    if (0==strcmp(word, "limit")) return DBDPG_TRUE;
-    if (0==strcmp(word, "listen")) return DBDPG_TRUE;
-    if (0==strcmp(word, "load")) return DBDPG_TRUE;
-    if (0==strcmp(word, "local")) return DBDPG_TRUE;
-    if (0==strcmp(word, "localtime")) return DBDPG_TRUE;
-    if (0==strcmp(word, "localtimestamp")) return DBDPG_TRUE;
-    if (0==strcmp(word, "location")) return DBDPG_TRUE;
-    if (0==strcmp(word, "lock")) return DBDPG_TRUE;
-    if (0==strcmp(word, "locked")) return DBDPG_TRUE;
-    if (0==strcmp(word, "logged")) return DBDPG_TRUE;
-    if (0==strcmp(word, "mapping")) return DBDPG_TRUE;
-    if (0==strcmp(word, "match")) return DBDPG_TRUE;
-    if (0==strcmp(word, "materialized")) return DBDPG_TRUE;
-    if (0==strcmp(word, "maxvalue")) return DBDPG_TRUE;
-    if (0==strcmp(word, "method")) return DBDPG_TRUE;
-    if (0==strcmp(word, "minute")) return DBDPG_TRUE;
-    if (0==strcmp(word, "minvalue")) return DBDPG_TRUE;
-    if (0==strcmp(word, "mode")) return DBDPG_TRUE;
-    if (0==strcmp(word, "month")) return DBDPG_TRUE;
-    if (0==strcmp(word, "move")) return DBDPG_TRUE;
-    if (0==strcmp(word, "name")) return DBDPG_TRUE;
-    if (0==strcmp(word, "names")) return DBDPG_TRUE;
-    if (0==strcmp(word, "national")) return DBDPG_TRUE;
-    if (0==strcmp(word, "natural")) return DBDPG_TRUE;
-    if (0==strcmp(word, "nchar")) return DBDPG_TRUE;
-    if (0==strcmp(word, "new")) return DBDPG_TRUE;
-    if (0==strcmp(word, "next")) return DBDPG_TRUE;
-    if (0==strcmp(word, "no")) return DBDPG_TRUE;
-    if (0==strcmp(word, "none")) return DBDPG_TRUE;
-    if (0==strcmp(word, "not")) return DBDPG_TRUE;
-    if (0==strcmp(word, "nothing")) return DBDPG_TRUE;
-    if (0==strcmp(word, "notify")) return DBDPG_TRUE;
-    if (0==strcmp(word, "notnull")) return DBDPG_TRUE;
-    if (0==strcmp(word, "nowait")) return DBDPG_TRUE;
-    if (0==strcmp(word, "null")) return DBDPG_TRUE;
-    if (0==strcmp(word, "nullif")) return DBDPG_TRUE;
-    if (0==strcmp(word, "nulls")) return DBDPG_TRUE;
-    if (0==strcmp(word, "numeric")) return DBDPG_TRUE;
-    if (0==strcmp(word, "object")) return DBDPG_TRUE;
-    if (0==strcmp(word, "of")) return DBDPG_TRUE;
-    if (0==strcmp(word, "off")) return DBDPG_TRUE;
-    if (0==strcmp(word, "offset")) return DBDPG_TRUE;
-    if (0==strcmp(word, "oids")) return DBDPG_TRUE;
-    if (0==strcmp(word, "old")) return DBDPG_TRUE;
-    if (0==strcmp(word, "on")) return DBDPG_TRUE;
-    if (0==strcmp(word, "only")) return DBDPG_TRUE;
-    if (0==strcmp(word, "operator")) return DBDPG_TRUE;
-    if (0==strcmp(word, "option")) return DBDPG_TRUE;
-    if (0==strcmp(word, "options")) return DBDPG_TRUE;
-    if (0==strcmp(word, "or")) return DBDPG_TRUE;
-    if (0==strcmp(word, "order")) return DBDPG_TRUE;
-    if (0==strcmp(word, "ordinality")) return DBDPG_TRUE;
-    if (0==strcmp(word, "others")) return DBDPG_TRUE;
-    if (0==strcmp(word, "out")) return DBDPG_TRUE;
-    if (0==strcmp(word, "outer")) return DBDPG_TRUE;
-    if (0==strcmp(word, "over")) return DBDPG_TRUE;
-    if (0==strcmp(word, "overlaps")) return DBDPG_TRUE;
-    if (0==strcmp(word, "overlay")) return DBDPG_TRUE;
-    if (0==strcmp(word, "overriding")) return DBDPG_TRUE;
-    if (0==strcmp(word, "owned")) return DBDPG_TRUE;
-    if (0==strcmp(word, "owner")) return DBDPG_TRUE;
-    if (0==strcmp(word, "parallel")) return DBDPG_TRUE;
-    if (0==strcmp(word, "parser")) return DBDPG_TRUE;
-    if (0==strcmp(word, "partial")) return DBDPG_TRUE;
-    if (0==strcmp(word, "partition")) return DBDPG_TRUE;
-    if (0==strcmp(word, "passing")) return DBDPG_TRUE;
-    if (0==strcmp(word, "password")) return DBDPG_TRUE;
-    if (0==strcmp(word, "placing")) return DBDPG_TRUE;
-    if (0==strcmp(word, "plans")) return DBDPG_TRUE;
-    if (0==strcmp(word, "policy")) return DBDPG_TRUE;
-    if (0==strcmp(word, "position")) return DBDPG_TRUE;
-    if (0==strcmp(word, "preceding")) return DBDPG_TRUE;
-    if (0==strcmp(word, "precision")) return DBDPG_TRUE;
-    if (0==strcmp(word, "prepare")) return DBDPG_TRUE;
-    if (0==strcmp(word, "prepared")) return DBDPG_TRUE;
-    if (0==strcmp(word, "preserve")) return DBDPG_TRUE;
-    if (0==strcmp(word, "primary")) return DBDPG_TRUE;
-    if (0==strcmp(word, "prior")) return DBDPG_TRUE;
-    if (0==strcmp(word, "privileges")) return DBDPG_TRUE;
-    if (0==strcmp(word, "procedural")) return DBDPG_TRUE;
-    if (0==strcmp(word, "procedure")) return DBDPG_TRUE;
-    if (0==strcmp(word, "procedures")) return DBDPG_TRUE;
-    if (0==strcmp(word, "program")) return DBDPG_TRUE;
-    if (0==strcmp(word, "publication")) return DBDPG_TRUE;
-    if (0==strcmp(word, "quote")) return DBDPG_TRUE;
-    if (0==strcmp(word, "range")) return DBDPG_TRUE;
-    if (0==strcmp(word, "read")) return DBDPG_TRUE;
-    if (0==strcmp(word, "real")) return DBDPG_TRUE;
-    if (0==strcmp(word, "reassign")) return DBDPG_TRUE;
-    if (0==strcmp(word, "recheck")) return DBDPG_TRUE;
-    if (0==strcmp(word, "recursive")) return DBDPG_TRUE;
-    if (0==strcmp(word, "ref")) return DBDPG_TRUE;
-    if (0==strcmp(word, "references")) return DBDPG_TRUE;
-    if (0==strcmp(word, "referencing")) return DBDPG_TRUE;
-    if (0==strcmp(word, "refresh")) return DBDPG_TRUE;
-    if (0==strcmp(word, "reindex")) return DBDPG_TRUE;
-    if (0==strcmp(word, "relative")) return DBDPG_TRUE;
-    if (0==strcmp(word, "release")) return DBDPG_TRUE;
-    if (0==strcmp(word, "rename")) return DBDPG_TRUE;
-    if (0==strcmp(word, "repeatable")) return DBDPG_TRUE;
-    if (0==strcmp(word, "replace")) return DBDPG_TRUE;
-    if (0==strcmp(word, "replica")) return DBDPG_TRUE;
-    if (0==strcmp(word, "reset")) return DBDPG_TRUE;
-    if (0==strcmp(word, "restart")) return DBDPG_TRUE;
-    if (0==strcmp(word, "restrict")) return DBDPG_TRUE;
-    if (0==strcmp(word, "returning")) return DBDPG_TRUE;
-    if (0==strcmp(word, "returns")) return DBDPG_TRUE;
-    if (0==strcmp(word, "revoke")) return DBDPG_TRUE;
-    if (0==strcmp(word, "right")) return DBDPG_TRUE;
-    if (0==strcmp(word, "role")) return DBDPG_TRUE;
-    if (0==strcmp(word, "rollback")) return DBDPG_TRUE;
-    if (0==strcmp(word, "rollup")) return DBDPG_TRUE;
-    if (0==strcmp(word, "routine")) return DBDPG_TRUE;
-    if (0==strcmp(word, "routines")) return DBDPG_TRUE;
-    if (0==strcmp(word, "row")) return DBDPG_TRUE;
-    if (0==strcmp(word, "rows")) return DBDPG_TRUE;
-    if (0==strcmp(word, "rule")) return DBDPG_TRUE;
-    if (0==strcmp(word, "savepoint")) return DBDPG_TRUE;
-    if (0==strcmp(word, "schema")) return DBDPG_TRUE;
-    if (0==strcmp(word, "schemas")) return DBDPG_TRUE;
-    if (0==strcmp(word, "scroll")) return DBDPG_TRUE;
-    if (0==strcmp(word, "search")) return DBDPG_TRUE;
-    if (0==strcmp(word, "second")) return DBDPG_TRUE;
-    if (0==strcmp(word, "security")) return DBDPG_TRUE;
-    if (0==strcmp(word, "select")) return DBDPG_TRUE;
-    if (0==strcmp(word, "sequence")) return DBDPG_TRUE;
-    if (0==strcmp(word, "sequences")) return DBDPG_TRUE;
-    if (0==strcmp(word, "serializable")) return DBDPG_TRUE;
-    if (0==strcmp(word, "server")) return DBDPG_TRUE;
-    if (0==strcmp(word, "session")) return DBDPG_TRUE;
-    if (0==strcmp(word, "session_user")) return DBDPG_TRUE;
-    if (0==strcmp(word, "set")) return DBDPG_TRUE;
-    if (0==strcmp(word, "setof")) return DBDPG_TRUE;
-    if (0==strcmp(word, "sets")) return DBDPG_TRUE;
-    if (0==strcmp(word, "share")) return DBDPG_TRUE;
-    if (0==strcmp(word, "show")) return DBDPG_TRUE;
-    if (0==strcmp(word, "similar")) return DBDPG_TRUE;
-    if (0==strcmp(word, "simple")) return DBDPG_TRUE;
-    if (0==strcmp(word, "skip")) return DBDPG_TRUE;
-    if (0==strcmp(word, "smallint")) return DBDPG_TRUE;
-    if (0==strcmp(word, "snapshot")) return DBDPG_TRUE;
-    if (0==strcmp(word, "some")) return DBDPG_TRUE;
-    if (0==strcmp(word, "sql")) return DBDPG_TRUE;
-    if (0==strcmp(word, "stable")) return DBDPG_TRUE;
-    if (0==strcmp(word, "standalone")) return DBDPG_TRUE;
-    if (0==strcmp(word, "start")) return DBDPG_TRUE;
-    if (0==strcmp(word, "statement")) return DBDPG_TRUE;
-    if (0==strcmp(word, "statistics")) return DBDPG_TRUE;
-    if (0==strcmp(word, "stdin")) return DBDPG_TRUE;
-    if (0==strcmp(word, "stdout")) return DBDPG_TRUE;
-    if (0==strcmp(word, "storage")) return DBDPG_TRUE;
-    if (0==strcmp(word, "stored")) return DBDPG_TRUE;
-    if (0==strcmp(word, "strict")) return DBDPG_TRUE;
-    if (0==strcmp(word, "strip")) return DBDPG_TRUE;
-    if (0==strcmp(word, "subscription")) return DBDPG_TRUE;
-    if (0==strcmp(word, "substring")) return DBDPG_TRUE;
-    if (0==strcmp(word, "support")) return DBDPG_TRUE;
-    if (0==strcmp(word, "symmetric")) return DBDPG_TRUE;
-    if (0==strcmp(word, "sysid")) return DBDPG_TRUE;
-    if (0==strcmp(word, "system")) return DBDPG_TRUE;
-    if (0==strcmp(word, "table")) return DBDPG_TRUE;
-    if (0==strcmp(word, "tables")) return DBDPG_TRUE;
-    if (0==strcmp(word, "tablesample")) return DBDPG_TRUE;
-    if (0==strcmp(word, "tablespace")) return DBDPG_TRUE;
-    if (0==strcmp(word, "temp")) return DBDPG_TRUE;
-    if (0==strcmp(word, "template")) return DBDPG_TRUE;
-    if (0==strcmp(word, "temporary")) return DBDPG_TRUE;
-    if (0==strcmp(word, "text")) return DBDPG_TRUE;
-    if (0==strcmp(word, "then")) return DBDPG_TRUE;
-    if (0==strcmp(word, "ties")) return DBDPG_TRUE;
-    if (0==strcmp(word, "time")) return DBDPG_TRUE;
-    if (0==strcmp(word, "timestamp")) return DBDPG_TRUE;
-    if (0==strcmp(word, "to")) return DBDPG_TRUE;
-    if (0==strcmp(word, "trailing")) return DBDPG_TRUE;
-    if (0==strcmp(word, "transaction")) return DBDPG_TRUE;
-    if (0==strcmp(word, "transform")) return DBDPG_TRUE;
-    if (0==strcmp(word, "treat")) return DBDPG_TRUE;
-    if (0==strcmp(word, "trigger")) return DBDPG_TRUE;
-    if (0==strcmp(word, "trim")) return DBDPG_TRUE;
-    if (0==strcmp(word, "true")) return DBDPG_TRUE;
-    if (0==strcmp(word, "truncate")) return DBDPG_TRUE;
-    if (0==strcmp(word, "trusted")) return DBDPG_TRUE;
-    if (0==strcmp(word, "type")) return DBDPG_TRUE;
-    if (0==strcmp(word, "types")) return DBDPG_TRUE;
-    if (0==strcmp(word, "unbounded")) return DBDPG_TRUE;
-    if (0==strcmp(word, "uncommitted")) return DBDPG_TRUE;
-    if (0==strcmp(word, "unencrypted")) return DBDPG_TRUE;
-    if (0==strcmp(word, "union")) return DBDPG_TRUE;
-    if (0==strcmp(word, "unique")) return DBDPG_TRUE;
-    if (0==strcmp(word, "unknown")) return DBDPG_TRUE;
-    if (0==strcmp(word, "unlisten")) return DBDPG_TRUE;
-    if (0==strcmp(word, "unlogged")) return DBDPG_TRUE;
-    if (0==strcmp(word, "until")) return DBDPG_TRUE;
-    if (0==strcmp(word, "update")) return DBDPG_TRUE;
-    if (0==strcmp(word, "user")) return DBDPG_TRUE;
-    if (0==strcmp(word, "using")) return DBDPG_TRUE;
-    if (0==strcmp(word, "vacuum")) return DBDPG_TRUE;
-    if (0==strcmp(word, "valid")) return DBDPG_TRUE;
-    if (0==strcmp(word, "validate")) return DBDPG_TRUE;
-    if (0==strcmp(word, "validator")) return DBDPG_TRUE;
-    if (0==strcmp(word, "value")) return DBDPG_TRUE;
-    if (0==strcmp(word, "values")) return DBDPG_TRUE;
-    if (0==strcmp(word, "varchar")) return DBDPG_TRUE;
-    if (0==strcmp(word, "variadic")) return DBDPG_TRUE;
-    if (0==strcmp(word, "varying")) return DBDPG_TRUE;
-    if (0==strcmp(word, "verbose")) return DBDPG_TRUE;
-    if (0==strcmp(word, "version")) return DBDPG_TRUE;
-    if (0==strcmp(word, "view")) return DBDPG_TRUE;
-    if (0==strcmp(word, "views")) return DBDPG_TRUE;
-    if (0==strcmp(word, "volatile")) return DBDPG_TRUE;
-    if (0==strcmp(word, "when")) return DBDPG_TRUE;
-    if (0==strcmp(word, "where")) return DBDPG_TRUE;
-    if (0==strcmp(word, "whitespace")) return DBDPG_TRUE;
-    if (0==strcmp(word, "window")) return DBDPG_TRUE;
-    if (0==strcmp(word, "with")) return DBDPG_TRUE;
-    if (0==strcmp(word, "within")) return DBDPG_TRUE;
-    if (0==strcmp(word, "without")) return DBDPG_TRUE;
-    if (0==strcmp(word, "work")) return DBDPG_TRUE;
-    if (0==strcmp(word, "wrapper")) return DBDPG_TRUE;
-    if (0==strcmp(word, "write")) return DBDPG_TRUE;
-    if (0==strcmp(word, "xml")) return DBDPG_TRUE;
-    if (0==strcmp(word, "xmlattributes")) return DBDPG_TRUE;
-    if (0==strcmp(word, "xmlconcat")) return DBDPG_TRUE;
-    if (0==strcmp(word, "xmlelement")) return DBDPG_TRUE;
-    if (0==strcmp(word, "xmlexists")) return DBDPG_TRUE;
-    if (0==strcmp(word, "xmlforest")) return DBDPG_TRUE;
-    if (0==strcmp(word, "xmlnamespaces")) return DBDPG_TRUE;
-    if (0==strcmp(word, "xmlparse")) return DBDPG_TRUE;
-    if (0==strcmp(word, "xmlpi")) return DBDPG_TRUE;
-    if (0==strcmp(word, "xmlroot")) return DBDPG_TRUE;
-    if (0==strcmp(word, "xmlserialize")) return DBDPG_TRUE;
-    if (0==strcmp(word, "xmltable")) return DBDPG_TRUE;
-    if (0==strcmp(word, "year")) return DBDPG_TRUE;
-    if (0==strcmp(word, "yes")) return DBDPG_TRUE;
-    if (0==strcmp(word, "zone")) return DBDPG_TRUE;
+    switch (keyword_len) {
+    case 2:
+      if (word[0] < 'n') {
+         if (word[0] < 'd') {
+            if (word[0] < 'b') {
+               if (word[1] < 't') {
+                  test_str = "as";
+               } else {
+                  test_str = "at";
+               }
+            } else {
+               test_str = "by";
+            }
+         } else if (word[1] < 'o') {
+            if (word[1] < 'n') {
+               test_str = "if";
+            } else {
+               test_str = "in";
+            }
+         } else if (word[0] < 'i') {
+            test_str = "do";
+         } else {
+            test_str = "is";
+         }
+      } else if (word[1] < 'o') {
+         if (word[1] < 'n') {
+            test_str = "of";
+         } else {
+            test_str = "on";
+         }
+      } else if (word[0] < 'o') {
+         test_str = "no";
+      } else if (word[0] < 't') {
+         test_str = "or";
+      } else {
+         test_str = "to";
+      }
+      break;
+    case 3:
+      if (word[0] < 'n') {
+         if (word[0] < 'c') {
+            if (word[1] < 'n') {
+               if (word[0] < 'b') {
+                  if (word[1] < 'l') {
+                     test_str = "add";
+                  } else {
+                     test_str = "all";
+                  }
+               } else {
+                  test_str = "bit";
+               }
+            } else if (word[1] < 's') {
+               if (word[2] < 'y') {
+                  test_str = "and";
+               } else {
+                  test_str = "any";
+               }
+            } else {
+               test_str = "asc";
+            }
+         } else if (word[0] < 'e') {
+            if (word[0] < 'd') {
+               test_str = "csv";
+            } else if (word[1] < 'e') {
+               test_str = "day";
+            } else {
+               test_str = "dec";
+            }
+         } else if (word[0] < 'i') {
+            if (word[0] < 'f') {
+               test_str = "end";
+            } else {
+               test_str = "for";
+            }
+         } else if (word[0] < 'k') {
+            test_str = "int";
+         } else {
+            test_str = "key";
+         }
+      } else if (word[0] < 'r') {
+         if (word[0] < 'o') {
+            if (word[2] < 't') {
+               if (word[2] < 'd') {
+                  test_str = "nfc";
+               } else {
+                  test_str = "nfd";
+               }
+            } else if (word[1] < 'o') {
+               test_str = "new";
+            } else {
+               test_str = "not";
+            }
+         } else if (word[1] < 'l') {
+            test_str = "off";
+         } else if (word[1] < 'u') {
+            test_str = "old";
+         } else {
+            test_str = "out";
+         }
+      } else if (word[1] < 'm') {
+         if (word[0] < 's') {
+            test_str = "ref";
+         } else if (word[0] < 'y') {
+            test_str = "set";
+         } else {
+            test_str = "yes";
+         }
+      } else if (word[0] < 's') {
+         test_str = "row";
+      } else if (word[0] < 'x') {
+         test_str = "sql";
+      } else {
+         test_str = "xml";
+      }
+      break;
+    case 4:
+      if (word[1] < 'n') {
+         if (word[2] < 'm') {
+            if (word[0] < 'r') {
+               if (word[2] < 'k') {
+                  if (word[0] < 'l') {
+                     if (word[0] < 'e') {
+                        test_str = "char";
+                     } else {
+                        test_str = "each";
+                     }
+                  } else if (word[0] < 'o') {
+                     test_str = "left";
+                  } else {
+                     test_str = "oids";
+                  }
+               } else if (word[0] < 'n') {
+                  if (word[0] < 'l') {
+                     test_str = "call";
+                  } else {
+                     test_str = "like";
+                  }
+               } else if (word[3] < 'd') {
+                  test_str = "nfkc";
+               } else {
+                  test_str = "nfkd";
+               }
+            } else if (word[3] < 'p') {
+               if (word[0] < 't') {
+                  if (word[3] < 'l') {
+                     test_str = "read";
+                  } else {
+                     test_str = "real";
+                  }
+               } else if (word[0] < 'w') {
+                  test_str = "then";
+               } else {
+                  test_str = "when";
+               }
+            } else if (word[0] < 'v') {
+               if (word[0] < 't') {
+                  test_str = "skip";
+               } else {
+                  test_str = "ties";
+               }
+            } else if (word[0] < 'y') {
+               test_str = "view";
+            } else {
+               test_str = "year";
+            }
+         } else if (word[0] < 'n') {
+            if (word[1] < 'e') {
+               if (word[0] < 'd') {
+                  if (word[3] < 't') {
+                     test_str = "case";
+                  } else {
+                     test_str = "cast";
+                  }
+               } else if (word[0] < 'l') {
+                  test_str = "data";
+               } else {
+                  test_str = "last";
+               }
+            } else if (word[0] < 'e') {
+               if (word[0] < 'd') {
+                  test_str = "also";
+               } else {
+                  test_str = "desc";
+               }
+            } else if (word[0] < 'k') {
+               test_str = "else";
+            } else {
+               test_str = "keys";
+            }
+         } else if (word[0] < 't') {
+            if (word[0] < 's') {
+               if (word[1] < 'e') {
+                  test_str = "name";
+               } else {
+                  test_str = "next";
+               }
+            } else if (word[1] < 'h') {
+               test_str = "sets";
+            } else {
+               test_str = "show";
+            }
+         } else if (word[1] < 'i') {
+            if (word[2] < 'x') {
+               test_str = "temp";
+            } else {
+               test_str = "text";
+            }
+         } else if (word[0] < 'w') {
+            test_str = "time";
+         } else {
+            test_str = "with";
+         }
+      } else if (word[0] < 'm') {
+         if (word[0] < 'h') {
+            if (word[0] < 'd') {
+               if (word[2] < 's') {
+                  if (word[1] < 'u') {
+                     test_str = "copy";
+                  } else {
+                     test_str = "cube";
+                  }
+               } else if (word[0] < 'c') {
+                  test_str = "both";
+               } else {
+                  test_str = "cost";
+               }
+            } else if (word[0] < 'f') {
+               if (word[0] < 'e') {
+                  test_str = "drop";
+               } else {
+                  test_str = "enum";
+               }
+            } else if (word[1] < 'u') {
+               test_str = "from";
+            } else {
+               test_str = "full";
+            }
+         } else if (word[0] < 'j') {
+            if (word[0] < 'i') {
+               if (word[2] < 'u') {
+                  test_str = "hold";
+               } else {
+                  test_str = "hour";
+               }
+            } else {
+               test_str = "into";
+            }
+         } else if (word[0] < 'l') {
+            if (word[1] < 's') {
+               test_str = "join";
+            } else {
+               test_str = "json";
+            }
+         } else if (word[2] < 'c') {
+            test_str = "load";
+         } else {
+            test_str = "lock";
+         }
+      } else if (word[2] < 'm') {
+         if (word[0] < 'r') {
+            if (word[0] < 'o') {
+               if (word[0] < 'n') {
+                  test_str = "mode";
+               } else {
+                  test_str = "null";
+               }
+            } else if (word[1] < 'v') {
+               test_str = "only";
+            } else {
+               test_str = "over";
+            }
+         } else if (word[0] < 't') {
+            if (word[1] < 'u') {
+               test_str = "role";
+            } else {
+               test_str = "rule";
+            }
+         } else if (word[0] < 'u') {
+            test_str = "trim";
+         } else {
+            test_str = "user";
+         }
+      } else if (word[0] < 't') {
+         if (word[0] < 'r') {
+            if (word[0] < 'n') {
+               test_str = "move";
+            } else {
+               test_str = "none";
+            }
+         } else if (word[0] < 's') {
+            test_str = "rows";
+         } else {
+            test_str = "some";
+         }
+      } else if (word[0] < 'w') {
+         if (word[1] < 'y') {
+            test_str = "true";
+         } else {
+            test_str = "type";
+         }
+      } else if (word[0] < 'z') {
+         test_str = "work";
+      } else {
+         test_str = "zone";
+      }
+      break;
+    case 5:
+      if (word[0] < 'm') {
+         if (word[1] < 'l') {
+            if (word[0] < 'f') {
+               if (word[0] < 'c') {
+                  if (word[1] < 'e') {
+                     if (word[1] < 'd') {
+                        test_str = "abort";
+                     } else {
+                        test_str = "admin";
+                     }
+                  } else if (word[0] < 'b') {
+                     test_str = "after";
+                  } else {
+                     test_str = "begin";
+                  }
+               } else if (word[1] < 'h') {
+                  if (word[0] < 'd') {
+                     test_str = "cache";
+                  } else {
+                     test_str = "depth";
+                  }
+               } else if (word[2] < 'e') {
+                  test_str = "chain";
+               } else {
+                  test_str = "check";
+               }
+            } else if (word[2] < 'r') {
+               if (word[1] < 'e') {
+                  if (word[0] < 'l') {
+                     test_str = "false";
+                  } else {
+                     test_str = "label";
+                  }
+               } else if (word[1] < 'i') {
+                  test_str = "least";
+               } else {
+                  test_str = "limit";
+               }
+            } else if (word[0] < 'l') {
+               if (word[1] < 'i') {
+                  test_str = "fetch";
+               } else {
+                  test_str = "first";
+               }
+            } else if (word[1] < 'e') {
+               test_str = "large";
+            } else {
+               test_str = "level";
+            }
+         } else if (word[0] < 'g') {
+            if (word[1] < 'r') {
+               if (word[0] < 'f') {
+                  if (word[0] < 'c') {
+                     test_str = "alter";
+                  } else if (word[2] < 'o') {
+                     test_str = "class";
+                  } else {
+                     test_str = "close";
+                  }
+               } else if (word[1] < 'o') {
+                  test_str = "float";
+               } else {
+                  test_str = "force";
+               }
+            } else if (word[1] < 'v') {
+               if (word[0] < 'c') {
+                  test_str = "array";
+               } else {
+                  test_str = "cross";
+               }
+            } else if (word[0] < 'e') {
+               test_str = "cycle";
+            } else {
+               test_str = "event";
+            }
+         } else if (word[2] < 'n') {
+            if (word[1] < 'o') {
+               if (word[1] < 'n') {
+                  test_str = "ilike";
+               } else {
+                  test_str = "index";
+               }
+            } else if (word[0] < 'l') {
+               test_str = "grant";
+            } else {
+               test_str = "local";
+            }
+         } else if (word[4] < 't') {
+            if (word[0] < 'i') {
+               test_str = "group";
+            } else {
+               test_str = "inner";
+            }
+         } else if (word[2] < 'p') {
+            test_str = "inout";
+         } else {
+            test_str = "input";
+         }
+      } else if (word[4] < 'n') {
+         if (word[0] < 't') {
+            if (word[0] < 'q') {
+               if (word[1] < 'o') {
+                  if (word[1] < 'e') {
+                     test_str = "match";
+                  } else {
+                     test_str = "merge";
+                  }
+               } else if (word[0] < 'o') {
+                  test_str = "month";
+               } else {
+                  test_str = "owned";
+               }
+            } else if (word[0] < 's') {
+               if (word[0] < 'r') {
+                  test_str = "quote";
+               } else {
+                  test_str = "range";
+               }
+            } else if (word[1] < 'h') {
+               test_str = "setof";
+            } else if (word[1] < 'y') {
+               test_str = "share";
+            } else {
+               test_str = "sysid";
+            }
+         } else if (word[1] < 'm') {
+            if (word[2] < 'l') {
+               if (word[0] < 'w') {
+                  test_str = "table";
+               } else {
+                  test_str = "where";
+               }
+            } else if (word[3] < 'u') {
+               test_str = "valid";
+            } else {
+               test_str = "value";
+            }
+         } else if (word[0] < 'w') {
+            if (word[1] < 's') {
+               test_str = "until";
+            } else {
+               test_str = "using";
+            }
+         } else if (word[0] < 'x') {
+            test_str = "write";
+         } else {
+            test_str = "xmlpi";
+         }
+      } else if (word[0] < 'r') {
+         if (word[2] < 'l') {
+            if (word[0] < 'p') {
+               if (word[0] < 'o') {
+                  test_str = "nchar";
+               } else {
+                  test_str = "order";
+               }
+            } else if (word[1] < 'r') {
+               test_str = "plans";
+            } else {
+               test_str = "prior";
+            }
+         } else if (word[0] < 'o') {
+            if (word[1] < 'u') {
+               test_str = "names";
+            } else {
+               test_str = "nulls";
+            }
+         } else if (word[1] < 'w') {
+            test_str = "outer";
+         } else {
+            test_str = "owner";
+         }
+      } else if (word[0] < 't') {
+         if (word[0] < 's') {
+            if (word[1] < 'i') {
+               test_str = "reset";
+            } else {
+               test_str = "right";
+            }
+         } else if (word[2] < 'd') {
+            test_str = "start";
+         } else if (word[2] < 'r') {
+            test_str = "stdin";
+         } else {
+            test_str = "strip";
+         }
+      } else if (word[0] < 'u') {
+         if (word[1] < 'y') {
+            test_str = "treat";
+         } else {
+            test_str = "types";
+         }
+      } else if (word[0] < 'v') {
+         test_str = "union";
+      } else {
+         test_str = "views";
+      }
+      break;
+    case 6:
+      if (word[1] < 'm') {
+         if (word[0] < 'o') {
+            if (word[3] < 'i') {
+               if (word[0] < 'd') {
+                  if (word[1] < 'i') {
+                     if (word[1] < 'c') {
+                        test_str = "absent";
+                     } else {
+                        test_str = "access";
+                     }
+                  } else if (word[0] < 'b') {
+                     test_str = "always";
+                  } else {
+                     test_str = "binary";
+                  }
+               } else if (word[0] < 'g') {
+                  if (word[2] < 't') {
+                     test_str = "delete";
+                  } else {
+                     test_str = "detach";
+                  }
+               } else if (word[0] < 'h') {
+                  test_str = "global";
+               } else if (word[0] < 'm') {
+                  test_str = "header";
+               } else {
+                  test_str = "method";
+               }
+            } else if (word[0] < 'f') {
+               if (word[1] < 'e') {
+                  if (word[0] < 'c') {
+                     test_str = "action";
+                  } else {
+                     test_str = "called";
+                  }
+               } else if (word[1] < 'i') {
+                  test_str = "before";
+               } else {
+                  test_str = "bigint";
+               }
+            } else if (word[0] < 'h') {
+               if (word[1] < 'i') {
+                  test_str = "family";
+               } else {
+                  test_str = "filter";
+               }
+            } else if (word[0] < 'l') {
+               test_str = "having";
+            } else if (word[0] < 'm') {
+               test_str = "listen";
+            } else {
+               test_str = "minute";
+            }
+         } else if (word[2] < 'm') {
+            if (word[2] < 'f') {
+               if (word[0] < 't') {
+                  if (word[1] < 'e') {
+                     test_str = "scalar";
+                  } else if (word[2] < 'c') {
+                     test_str = "search";
+                  } else {
+                     test_str = "second";
+                  }
+               } else if (word[0] < 'v') {
+                  test_str = "tables";
+               } else {
+                  test_str = "vacuum";
+               }
+            } else if (word[0] < 's') {
+               if (word[1] < 'f') {
+                  test_str = "object";
+               } else {
+                  test_str = "offset";
+               }
+            } else if (word[0] < 'v') {
+               if (word[1] < 'e') {
+                  test_str = "schema";
+               } else {
+                  test_str = "select";
+               }
+            } else {
+               test_str = "values";
+            }
+         } else if (word[0] < 's') {
+            if (word[2] < 't') {
+               if (word[0] < 'r') {
+                  test_str = "parser";
+               } else {
+                  test_str = "rename";
+               }
+            } else if (word[2] < 'v') {
+               test_str = "return";
+            } else {
+               test_str = "revoke";
+            }
+         } else if (word[0] < 'w') {
+            if (word[1] < 'e') {
+               test_str = "scroll";
+            } else if (word[1] < 'i') {
+               test_str = "server";
+            } else {
+               test_str = "simple";
+            }
+         } else if (word[2] < 't') {
+            test_str = "window";
+         } else {
+            test_str = "within";
+         }
+      } else if (word[4] < 'm') {
+         if (word[2] < 'o') {
+            if (word[0] < 'l') {
+               if (word[0] < 'e') {
+                  if (word[0] < 'd') {
+                     test_str = "commit";
+                  } else {
+                     test_str = "domain";
+                  }
+               } else if (word[0] < 'i') {
+                  test_str = "enable";
+               } else {
+                  test_str = "isnull";
+               }
+            } else if (word[0] < 'n') {
+               if (word[2] < 'g') {
+                  test_str = "locked";
+               } else {
+                  test_str = "logged";
+               }
+            } else if (word[0] < 'p') {
+               test_str = "nullif";
+            } else if (word[0] < 's') {
+               test_str = "policy";
+            } else {
+               test_str = "stable";
+            }
+         } else if (word[0] < 'n') {
+            if (word[0] < 'd') {
+               if (word[2] < 't') {
+                  test_str = "atomic";
+               } else {
+                  test_str = "attach";
+               }
+            } else if (word[0] < 'f') {
+               test_str = "double";
+            } else {
+               test_str = "format";
+            }
+         } else if (word[0] < 's') {
+            if (word[2] < 'w') {
+               test_str = "notify";
+            } else {
+               test_str = "nowait";
+            }
+         } else if (word[1] < 'y') {
+            if (word[2] < 'r') {
+               test_str = "stored";
+            } else {
+               test_str = "strict";
+            }
+         } else {
+            test_str = "system";
+         }
+      } else if (word[1] < 'r') {
+         if (word[0] < 'o') {
+            if (word[2] < 'p') {
+               if (word[0] < 'i') {
+                  test_str = "column";
+               } else if (word[2] < 'l') {
+                  test_str = "indent";
+               } else {
+                  test_str = "inline";
+               }
+            } else if (word[1] < 'n') {
+               test_str = "import";
+            } else {
+               test_str = "insert";
+            }
+         } else if (word[0] < 'u') {
+            if (word[0] < 'r') {
+               test_str = "option";
+            } else {
+               test_str = "rollup";
+            }
+         } else if (word[1] < 'p') {
+            test_str = "unique";
+         } else {
+            test_str = "update";
+         }
+      } else if (word[0] < 'f') {
+         if (word[0] < 'e') {
+            if (word[1] < 'u') {
+               test_str = "create";
+            } else {
+               test_str = "cursor";
+            }
+         } else if (word[1] < 'x') {
+            test_str = "escape";
+         } else if (word[2] < 'i') {
+            test_str = "except";
+         } else {
+            test_str = "exists";
+         }
+      } else if (word[0] < 'o') {
+         if (word[0] < 'g') {
+            test_str = "freeze";
+         } else {
+            test_str = "groups";
+         }
+      } else if (word[0] < 's') {
+         test_str = "others";
+      } else {
+         test_str = "stdout";
+      }
+      break;
+    case 7:
+      if (word[0] < 'n') {
+         if (word[2] < 'o') {
+            if (word[2] < 'e') {
+               if (word[0] < 'e') {
+                  if (word[0] < 'd') {
+                     if (word[5] < 'z') {
+                        test_str = "analyse";
+                     } else {
+                        test_str = "analyze";
+                     }
+                  } else if (word[3] < 'l') {
+                     test_str = "decimal";
+                  } else {
+                     test_str = "declare";
+                  }
+               } else if (word[0] < 'i') {
+                  if (word[0] < 'g') {
+                     test_str = "exclude";
+                  } else {
+                     test_str = "granted";
+                  }
+               } else if (word[0] < 'l') {
+                  if (word[2] < 'd') {
+                     test_str = "include";
+                  } else {
+                     test_str = "indexes";
+                  }
+               } else {
+                  test_str = "leading";
+               }
+            } else if (word[0] < 'd') {
+               if (word[2] < 'm') {
+                  if (word[0] < 'c') {
+                     test_str = "breadth";
+                  } else if (word[3] < 'u') {
+                     test_str = "collate";
+                  } else {
+                     test_str = "columns";
+                  }
+               } else if (word[2] < 'n') {
+                  test_str = "comment";
+               } else {
+                  test_str = "content";
+               }
+            } else if (word[0] < 'e') {
+               if (word[3] < 'i') {
+                  test_str = "default";
+               } else {
+                  test_str = "definer";
+               }
+            } else if (word[0] < 'h') {
+               test_str = "execute";
+            } else if (word[0] < 'i') {
+               test_str = "handler";
+            } else {
+               test_str = "inherit";
+            }
+         } else if (word[0] < 'e') {
+            if (word[1] < 'i') {
+               if (word[1] < 'e') {
+                  if (word[2] < 't') {
+                     test_str = "cascade";
+                  } else {
+                     test_str = "catalog";
+                  }
+               } else if (word[0] < 'd') {
+                  test_str = "between";
+               } else {
+                  test_str = "depends";
+               }
+            } else if (word[0] < 'd') {
+               if (word[0] < 'c') {
+                  test_str = "boolean";
+               } else if (word[1] < 'u') {
+                  test_str = "cluster";
+               } else {
+                  test_str = "current";
+               }
+            } else if (word[3] < 'c') {
+               test_str = "disable";
+            } else {
+               test_str = "discard";
+            }
+         } else if (word[2] < 't') {
+            if (word[0] < 'i') {
+               if (word[0] < 'f') {
+                  test_str = "explain";
+               } else if (word[3] < 'w') {
+                  test_str = "foreign";
+               } else {
+                  test_str = "forward";
+               }
+            } else if (word[0] < 'm') {
+               test_str = "instead";
+            } else {
+               test_str = "mapping";
+            }
+         } else if (word[0] < 'l') {
+            if (word[0] < 'i') {
+               test_str = "extract";
+            } else if (word[2] < 'v') {
+               test_str = "integer";
+            } else {
+               test_str = "invoker";
+            }
+         } else if (word[0] < 'm') {
+            test_str = "lateral";
+         } else {
+            test_str = "matched";
+         }
+      } else if (word[1] < 'i') {
+         if (word[3] < 'r') {
+            if (word[0] < 's') {
+               if (word[2] < 'l') {
+                  if (word[2] < 'i') {
+                     test_str = "recheck";
+                  } else {
+                     test_str = "reindex";
+                  }
+               } else if (word[2] < 'p') {
+                  test_str = "release";
+               } else if (word[4] < 'i') {
+                  test_str = "replace";
+               } else {
+                  test_str = "replica";
+               }
+            } else if (word[0] < 'v') {
+               if (word[0] < 'u') {
+                  test_str = "schemas";
+               } else {
+                  test_str = "uescape";
+               }
+            } else if (word[1] < 'e') {
+               test_str = "varchar";
+            } else {
+               test_str = "verbose";
+            }
+         } else if (word[1] < 'e') {
+            if (word[2] < 's') {
+               if (word[0] < 'v') {
+                  test_str = "partial";
+               } else {
+                  test_str = "varying";
+               }
+            } else if (word[0] < 'p') {
+               test_str = "natural";
+            } else {
+               test_str = "passing";
+            }
+         } else if (word[0] < 's') {
+            if (word[2] < 's') {
+               test_str = "refresh";
+            } else if (word[2] < 't') {
+               test_str = "restart";
+            } else {
+               test_str = "returns";
+            }
+         } else if (word[0] < 'v') {
+            test_str = "session";
+         } else {
+            test_str = "version";
+         }
+      } else if (word[0] < 'r') {
+         if (word[0] < 'p') {
+            if (word[0] < 'o') {
+               if (word[1] < 'u') {
+                  if (word[3] < 'n') {
+                     test_str = "nothing";
+                  } else {
+                     test_str = "notnull";
+                  }
+               } else {
+                  test_str = "numeric";
+               }
+            } else if (word[1] < 'v') {
+               test_str = "options";
+            } else {
+               test_str = "overlay";
+            }
+         } else if (word[2] < 'i') {
+            if (word[1] < 'r') {
+               test_str = "placing";
+            } else {
+               test_str = "prepare";
+            }
+         } else if (word[2] < 'o') {
+            test_str = "primary";
+         } else {
+            test_str = "program";
+         }
+      } else if (word[1] < 'r') {
+         if (word[0] < 'u') {
+            if (word[0] < 's') {
+               test_str = "routine";
+            } else {
+               test_str = "similar";
+            }
+         } else if (word[0] < 'w') {
+            test_str = "unknown";
+         } else if (word[0] < 'x') {
+            test_str = "without";
+         } else {
+            test_str = "xmlroot";
+         }
+      } else if (word[0] < 't') {
+         if (word[1] < 'u') {
+            test_str = "storage";
+         } else {
+            test_str = "support";
+         }
+      } else if (word[0] < 'w') {
+         if (word[2] < 'u') {
+            test_str = "trigger";
+         } else {
+            test_str = "trusted";
+         }
+      } else {
+         test_str = "wrapper";
+      }
+      break;
+    case 8:
+      if (word[0] < 'n') {
+         if (word[1] < 'n') {
+            if (word[0] < 'f') {
+               if (word[0] < 'd') {
+                  if (word[0] < 'b') {
+                     test_str = "absolute";
+                  } else if (word[0] < 'c') {
+                     test_str = "backward";
+                  } else {
+                     test_str = "cascaded";
+                  }
+               } else if (word[2] < 's') {
+                  if (word[3] < 'e') {
+                     test_str = "defaults";
+                  } else {
+                     test_str = "deferred";
+                  }
+               } else if (word[1] < 'i') {
+                  test_str = "database";
+               } else {
+                  test_str = "distinct";
+               }
+            } else if (word[0] < 'l') {
+               if (word[0] < 'i') {
+                  test_str = "finalize";
+               } else if (word[1] < 'm') {
+                  test_str = "identity";
+               } else {
+                  test_str = "implicit";
+               }
+            } else if (word[0] < 'm') {
+               test_str = "language";
+            } else if (word[1] < 'i') {
+               test_str = "maxvalue";
+            } else {
+               test_str = "minvalue";
+            }
+         } else if (word[0] < 'f') {
+            if (word[0] < 'd') {
+               if (word[2] < 'n') {
+                  if (word[2] < 'm') {
+                     test_str = "coalesce";
+                  } else {
+                     test_str = "comments";
+                  }
+               } else if (word[3] < 't') {
+                  test_str = "conflict";
+               } else {
+                  test_str = "continue";
+               }
+            } else if (word[0] < 'e') {
+               test_str = "document";
+            } else if (word[1] < 'x') {
+               test_str = "encoding";
+            } else {
+               test_str = "external";
+            }
+         } else if (word[0] < 'i') {
+            if (word[0] < 'g') {
+               test_str = "function";
+            } else if (word[2] < 'o') {
+               test_str = "greatest";
+            } else {
+               test_str = "grouping";
+            }
+         } else if (word[0] < 'l') {
+            if (word[2] < 't') {
+               test_str = "inherits";
+            } else {
+               test_str = "interval";
+            }
+         } else {
+            test_str = "location";
+         }
+      } else if (word[0] < 's') {
+         if (word[1] < 'o') {
+            if (word[0] < 'r') {
+               if (word[0] < 'p') {
+                  test_str = "national";
+               } else if (word[2] < 's') {
+                  test_str = "parallel";
+               } else {
+                  test_str = "password";
+               }
+            } else if (word[2] < 'l') {
+               test_str = "reassign";
+            } else if (word[2] < 's') {
+               test_str = "relative";
+            } else {
+               test_str = "restrict";
+            }
+         } else if (word[1] < 'p') {
+            if (word[0] < 'r') {
+               test_str = "position";
+            } else if (word[2] < 'u') {
+               test_str = "rollback";
+            } else {
+               test_str = "routines";
+            }
+         } else if (word[0] < 'p') {
+            if (word[1] < 'v') {
+               test_str = "operator";
+            } else {
+               test_str = "overlaps";
+            }
+         } else if (word[3] < 's') {
+            test_str = "prepared";
+         } else {
+            test_str = "preserve";
+         }
+      } else if (word[0] < 'u') {
+         if (word[0] < 't') {
+            if (word[1] < 'm') {
+               if (word[2] < 'q') {
+                  test_str = "security";
+               } else {
+                  test_str = "sequence";
+               }
+            } else if (word[1] < 'n') {
+               test_str = "smallint";
+            } else {
+               test_str = "snapshot";
+            }
+         } else if (word[1] < 'r') {
+            test_str = "template";
+         } else if (word[2] < 'u') {
+            test_str = "trailing";
+         } else {
+            test_str = "truncate";
+         }
+      } else if (word[1] < 'n') {
+         if (word[0] < 'x') {
+            if (word[2] < 'r') {
+               test_str = "validate";
+            } else {
+               test_str = "variadic";
+            }
+         } else if (word[3] < 't') {
+            test_str = "xmlparse";
+         } else {
+            test_str = "xmltable";
+         }
+      } else if (word[0] < 'v') {
+         if (word[3] < 'o') {
+            test_str = "unlisten";
+         } else {
+            test_str = "unlogged";
+         }
+      } else {
+         test_str = "volatile";
+      }
+      break;
+    case 9:
+      if (word[4] < 'o') {
+         if (word[0] < 'l') {
+            if (word[0] < 'd') {
+               if (word[0] < 'c') {
+                  if (word[1] < 't') {
+                     test_str = "aggregate";
+                  } else {
+                     test_str = "attribute";
+                  }
+               } else if (word[1] < 'o') {
+                  test_str = "character";
+               } else if (word[2] < 'm') {
+                  test_str = "collation";
+               } else {
+                  test_str = "committed";
+               }
+            } else if (word[2] < 'm') {
+               if (word[0] < 'i') {
+                  test_str = "delimiter";
+               } else if (word[2] < 'i') {
+                  test_str = "increment";
+               } else {
+                  test_str = "initially";
+               }
+            } else if (word[0] < 'i') {
+               test_str = "extension";
+            } else if (word[1] < 's') {
+               test_str = "immediate";
+            } else {
+               test_str = "isolation";
+            }
+         } else if (word[1] < 'r') {
+            if (word[1] < 'e') {
+               if (word[0] < 'v') {
+                  if (word[3] < 't') {
+                     test_str = "parameter";
+                  } else {
+                     test_str = "partition";
+                  }
+               } else {
+                  test_str = "validator";
+               }
+            } else if (word[0] < 'n') {
+               test_str = "localtime";
+            } else if (word[0] < 's') {
+               test_str = "normalize";
+            } else {
+               test_str = "sequences";
+            }
+         } else if (word[0] < 's') {
+            if (word[2] < 'o') {
+               if (word[4] < 'i') {
+                  test_str = "preceding";
+               } else {
+                  test_str = "precision";
+               }
+            } else {
+               test_str = "procedure";
+            }
+         } else if (word[1] < 'y') {
+            test_str = "statement";
+         } else {
+            test_str = "symmetric";
+         }
+      } else if (word[0] < 'r') {
+         if (word[0] < 'g') {
+            if (word[1] < 'u') {
+               if (word[0] < 'e') {
+                  test_str = "assertion";
+               } else if (word[0] < 'f') {
+                  test_str = "encrypted";
+               } else {
+                  test_str = "following";
+               }
+            } else if (word[0] < 'f') {
+               if (word[5] < 's') {
+                  test_str = "excluding";
+               } else {
+                  test_str = "exclusive";
+               }
+            } else {
+               test_str = "functions";
+            }
+         } else if (word[1] < 'm') {
+            if (word[0] < 'l') {
+               test_str = "generated";
+            } else {
+               test_str = "leakproof";
+            }
+         } else if (word[1] < 'n') {
+            test_str = "immutable";
+         } else if (word[2] < 't') {
+            test_str = "including";
+         } else {
+            test_str = "intersect";
+         }
+      } else if (word[1] < 'm') {
+         if (word[0] < 's') {
+            if (word[2] < 't') {
+               test_str = "recursive";
+            } else {
+               test_str = "returning";
+            }
+         } else if (word[0] < 't') {
+            test_str = "savepoint";
+         } else if (word[1] < 'i') {
+            test_str = "temporary";
+         } else {
+            test_str = "timestamp";
+         }
+      } else if (word[0] < 'x') {
+         if (word[0] < 't') {
+            test_str = "substring";
+         } else if (word[0] < 'u') {
+            test_str = "transform";
+         } else {
+            test_str = "unbounded";
+         }
+      } else if (word[3] < 'e') {
+         test_str = "xmlconcat";
+      } else if (word[3] < 'f') {
+         test_str = "xmlexists";
+      } else {
+         test_str = "xmlforest";
+      }
+      break;
+    case 10:
+      if (word[0] < 'n') {
+         if (word[0] < 'd') {
+            if (word[0] < 'c') {
+               if (word[2] < 's') {
+                  test_str = "asensitive";
+               } else if (word[2] < 'y') {
+                  test_str = "assignment";
+               } else {
+                  test_str = "asymmetric";
+               }
+            } else if (word[3] < 's') {
+               if (word[1] < 'o') {
+                  test_str = "checkpoint";
+               } else {
+                  test_str = "connection";
+               }
+            } else if (word[3] < 'v') {
+               test_str = "constraint";
+            } else {
+               test_str = "conversion";
+            }
+         } else if (word[1] < 'i') {
+            if (word[2] < 'f') {
+               test_str = "deallocate";
+            } else if (word[2] < 'l') {
+               test_str = "deferrable";
+            } else {
+               test_str = "delimiters";
+            }
+         } else if (word[0] < 'e') {
+            test_str = "dictionary";
+         } else if (word[0] < 'j') {
+            test_str = "expression";
+         } else {
+            test_str = "json_array";
+         }
+      } else if (word[0] < 'r') {
+         if (word[0] < 'p') {
+            if (word[0] < 'o') {
+               test_str = "normalized";
+            } else if (word[1] < 'v') {
+               test_str = "ordinality";
+            } else {
+               test_str = "overriding";
+            }
+         } else if (word[2] < 'o') {
+            test_str = "privileges";
+         } else if (word[8] < 'e') {
+            test_str = "procedural";
+         } else {
+            test_str = "procedures";
+         }
+      } else if (word[0] < 't') {
+         if (word[0] < 's') {
+            if (word[2] < 'p') {
+               test_str = "references";
+            } else {
+               test_str = "repeatable";
+            }
+         } else if (word[3] < 't') {
+            test_str = "standalone";
+         } else {
+            test_str = "statistics";
+         }
+      } else if (word[0] < 'w') {
+         test_str = "tablespace";
+      } else if (word[0] < 'x') {
+         test_str = "whitespace";
+      } else {
+         test_str = "xmlelement";
+      }
+      break;
+    case 11:
+      if (word[0] < 'r') {
+         if (word[0] < 'j') {
+            if (word[0] < 'i') {
+               if (word[2] < 'n') {
+                  test_str = "compression";
+               } else {
+                  test_str = "constraints";
+               }
+            } else {
+               test_str = "insensitive";
+            }
+         } else if (word[0] < 'p') {
+            if (word[5] < 's') {
+               test_str = "json_object";
+            } else {
+               test_str = "json_scalar";
+            }
+         } else {
+            test_str = "publication";
+         }
+      } else if (word[2] < 'e') {
+         if (word[0] < 'u') {
+            if (word[1] < 'r') {
+               test_str = "tablesample";
+            } else {
+               test_str = "transaction";
+            }
+         } else {
+            test_str = "uncommitted";
+         }
+      } else if (word[0] < 's') {
+         test_str = "referencing";
+      } else if (word[0] < 'u') {
+         test_str = "system_user";
+      } else {
+         test_str = "unencrypted";
+      }
+      break;
+    case 12:
+      if (word[0] < 'm') {
+         if (word[8] < 'r') {
+            if (word[1] < 'u') {
+               test_str = "concurrently";
+            } else {
+               test_str = "current_date";
+            }
+         } else if (word[8] < 't') {
+            test_str = "current_role";
+         } else if (word[8] < 'u') {
+            test_str = "current_time";
+         } else {
+            test_str = "current_user";
+         }
+      } else if (word[1] < 'm') {
+         if (word[0] < 's') {
+            test_str = "materialized";
+         } else if (word[2] < 's') {
+            test_str = "serializable";
+         } else {
+            test_str = "session_user";
+         }
+      } else if (word[0] < 'x') {
+         test_str = "subscription";
+      } else {
+         test_str = "xmlserialize";
+      }
+      break;
+    case 13:
+      if (word[0] < 'j') {
+         if (word[0] < 'c') {
+            test_str = "authorization";
+         } else {
+            test_str = "configuration";
+         }
+      } else if (word[0] < 'x') {
+         test_str = "json_arrayagg";
+      } else if (word[3] < 'n') {
+         test_str = "xmlattributes";
+      } else {
+         test_str = "xmlnamespaces";
+      }
+      break;
+    case 14:
+      if (word[4] < 'e') {
+         if (word[5] < 's') {
+            test_str = "json_objectagg";
+         } else {
+            test_str = "json_serialize";
+         }
+      } else if (word[0] < 'l') {
+         test_str = "current_schema";
+      } else {
+         test_str = "localtimestamp";
+      }
+      break;
+    case 15:
+      if (word[1] < 'u') {
+         test_str = "characteristics";
+      } else {
+         test_str = "current_catalog";
+      }
+      break;
+    case 17:
+      test_str = "current_timestamp";
+      break;
+    default:
+        return DBDPG_FALSE;
+    }
+    if (0 == strcmp(word, test_str))
+        return DBDPG_TRUE;
 
     /* We made it! */
 
@@ -1061,9 +2025,7 @@ while (<DATA>) {
     if (/Check for each reserved word/) {
       $gotlist = 1;
       print $fh2 $_;
-      for my $word (@word) {
-        print $fh2 qq{    if (0==strcmp(word, "$word")) return DBDPG_TRUE;\n};
-      }
+      print $fh2 generate_binary_search(\@word);
       print $fh2 "\n";
       next;
     }
@@ -1077,7 +2039,6 @@ while (<DATA>) {
     }
   }
 
-
   print $fh2 $_;
 }
 
@@ -1086,7 +2047,85 @@ close $fh2 or die qq{Could not close "$tempfile": $!\n};
 my $ofile = 'quote.c';
 system("mv $tempfile $ofile");
 print "Wrote $ofile\n";
+
+my $testfile= "t/01keywords.t";
+open my $fh3, '<', $testfile or die "open($testfile): $!";
+my @lines = <$fh3>;
+my ($start, $end);
+for (0..$#lines) {
+  $start = $_ if $lines[$_] =~ /BEGIN GENERATED KEYWORDS/;
+  $end = $_ if $lines[$_] =~ /END GENERATED KEYWORDS/;
+}
+if ($start && $end) {
+  splice(@lines, $start+1, $end-$start-1, map "  '$_',\n", @word);
+} else {
+  die "Can't find keyword comment markers in $testfile";
+}
+open my $fh4, '>', "$testfile.tmp" or die "open($testfile.tmp): $!";
+print $fh4 @lines;
+close $fh4 or die "close: $!";
+system("mv $testfile.tmp $testfile");
+print "Wrote $testfile\n";
+
 exit;
+
+sub generate_binary_search {
+  my $words = shift;
+  my $code = "    switch (keyword_len) {\n";
+  my %len_map;
+  for (@$words) {
+    push @{$len_map{length $_}}, $_;
+  }
+  sub _binary_split {
+    my $vals = shift;
+    # Stop at length 1
+    return qq{test_str = "$vals->[0]";}
+      if @$vals == 1;
+    # Find a character comparison that splits the list roughly in half.
+    my ($best_i, $best_ch, $best_less);
+    my $goal = .5 * scalar @$vals;
+    for (my $i = 0; $i < length $vals->[0]; ++$i) {
+      my %seen;
+      for my $ch (grep !$seen{$_}++, map substr($_, $i, 1), @$vals) {
+        my @less= grep substr($_, $i, 1) lt $ch, @$vals;
+        ($best_i, $best_ch, $best_less) = ($i, $ch, \@less)
+          if !defined $best_i || abs($goal - @less) < abs($goal - @$best_less);
+      }
+    }
+    my %less = map +($_ => 1), @$best_less;
+    my @less_src = _binary_split($best_less);
+    my @ge_src = _binary_split([ grep !$less{$_}, @$vals ]);
+    if (@ge_src > 1) {
+      # combine "else { if"
+      $ge_src[0] = '} else '.$ge_src[0];
+    }
+    return (
+      "if (word[$best_i] < '$best_ch') {",
+      (map "   $_", @less_src),
+      (@ge_src > 1
+        ? @ge_src
+        : ( '} else {', (map "   $_", @ge_src), '}' )
+      )
+    );
+  }
+  for (sort { $a <=> $b } keys %len_map) {
+    my @split_expr = _binary_split($len_map{$_});
+    local $" = "\n      ";
+    $code .= <<~C;
+        case $_:
+          @split_expr
+          break;
+    C
+  }
+  $code .= <<~C;
+      default:
+          return DBDPG_FALSE;
+      }
+      if (0 == strcmp(word, test_str))
+          return DBDPG_TRUE;
+  C
+  return $code;
+}
 
 __END__
 
