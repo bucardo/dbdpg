@@ -2125,7 +2125,7 @@ This function cannot be used if AutoCommit is enabled.
 
 =item pg_lo_truncate64
 
-Backwards compatible alias L</for pg_lo_truncate>. Since DBD::Pg 3.16, that
+Backwards compatible alias for L</pg_lo_truncate>. Since DBD::Pg 3.16, that
 method handles 64-bit offsets if supported by the Perl and PostgreSQL versions
 in use.
 
