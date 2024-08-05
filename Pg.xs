@@ -1,6 +1,6 @@
 /*
 
-  Copyright (c) 2000-2022 Greg Sabino Mullane and others: see the Changes file
+  Copyright (c) 2000-2024 Greg Sabino Mullane and others: see the Changes file
   Portions Copyright (c) 1997-2000 Edmund Mergl
   Portions Copyright (c) 1994-1997 Tim Bunce
 
@@ -334,7 +334,14 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
     }
     OUTPUT:
         RETVAL
-    
+
+# Primarily for unit test...
+bool
+_is_keyword(const char *str)
+	CODE:
+		RETVAL = is_keyword(str);
+	OUTPUT:
+		RETVAL
 
 # ------------------------------------------------------------
 # database level interface PG specific

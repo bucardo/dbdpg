@@ -1,6 +1,6 @@
 /*
 
-  Copyright (c) 2002-2022 Greg Sabino Mullane and others: see the Changes file
+  Copyright (c) 2002-2024 Greg Sabino Mullane and others: see the Changes file
   Portions Copyright (c) 2002 Jeffrey W. Baker
   Portions Copyright (c) 1997-2000 Edmund Mergl
   Portions Copyright (c) 1994-1997 Tim Bunce
@@ -122,7 +122,9 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
         if (';' == *dbname && !inquote)
             *dest++ = ' ';
         else {
-            if ('\'' == *dbname)
+            if ('\\' == *dbname && *(dbname+1) != '\0')
+                *dest++ = *dbname++;
+            else if ('\'' == *dbname)
                 inquote = !inquote;
             *dest++ = *dbname;
         }
@@ -254,6 +256,8 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     imp_dbh->async_sth         = NULL;
     imp_dbh->last_result       = NULL; /* NULL or the last PGresult returned by a database or statement handle */
     imp_dbh->result_clearable  = DBDPG_TRUE;
+    imp_dbh->pg_int8_as_string = DBDPG_FALSE;
+    imp_dbh->skip_deallocate   = DBDPG_FALSE;
 
     /* Tell DBI that we should call destroy when the handle dies */
     DBIc_IMPSET_on(imp_dbh);
@@ -495,7 +499,7 @@ int dbd_db_ping (SV * dbh)
     }
 
     /* No matter what state we are in, send an empty query to the backend */
-    result = PQexec(imp_dbh->conn, "/* DBD::Pg ping test v3.16.1 */");
+    result = PQexec(imp_dbh->conn, "/* DBD::Pg ping test v3.18.0 */");
     status = PQresultStatus(result);
     PQclear(result);
     if (PGRES_FATAL_ERROR == status) {
@@ -767,14 +771,12 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
         }
         break;
 
-    case 10: /* AutoCommit  pg_bool_tf  pg_pid_number  pg_options */
+    case 10: /* AutoCommit  pg_bool_tf  pg_options */
 
         if (strEQ("AutoCommit", key))
             retsv = boolSV(DBIc_has(imp_dbh, DBIcf_AutoCommit));
         else if (strEQ("pg_bool_tf", key))
             retsv = newSViv((IV)imp_dbh->pg_bool_tf);
-        else if (strEQ("pg_pid_number", key)) /* Undocumented on purpose */
-            retsv = newSViv((IV)imp_dbh->pid_number);
         else if (strEQ("pg_options", key)) {
             TRACE_PQOPTIONS;
             retsv = newSVpv(PQoptions(imp_dbh->conn),0);
@@ -825,18 +827,23 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
             retsv = newSViv((IV)imp_dbh->expand_array);
         break;
 
-    case 17: /* pg_server_prepare  pg_server_version */
+    case 17: /* pg_server_prepare  pg_server_version  pg_int8_as_string */
 
         if (strEQ("pg_server_prepare", key))
             retsv = newSViv((IV)imp_dbh->server_prepare);
         else if (strEQ("pg_server_version", key))
             retsv = newSViv((IV)imp_dbh->pg_server_version);
+        else if (strEQ("pg_int8_as_string", key)) {
+              retsv = newSViv((IV)imp_dbh->pg_int8_as_string);
+        }
         break;
 
-    case 18: /* pg_switch_prepared */
+    case 18: /* pg_switch_prepared  pg_skip_deallocate */
 
         if (strEQ("pg_switch_prepared", key))
             retsv = newSViv((IV)imp_dbh->switch_prepared);
+        else if (strEQ("pg_skip_deallocate", key))
+            retsv = newSViv((IV)imp_dbh->skip_deallocate);
         break;
 
     case 23: /* pg_placeholder_nocolons */
@@ -984,19 +991,29 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
         }
         break;
 
-    case 17: /* pg_server_prepare */
+    case 17: /* pg_server_prepare  pg_int8_as_string */
 
         if (strEQ("pg_server_prepare", key)) {
             imp_dbh->server_prepare = newval ? DBDPG_TRUE : DBDPG_FALSE;
             retval = 1;
         }
+        else if (strEQ("pg_int8_as_string", key)) {
+            imp_dbh->pg_int8_as_string = newval!=0 ? DBDPG_TRUE : DBDPG_FALSE;
+            retval = 1;
+        }
         break;
 
-    case 18: /* pg_switch_prepared */
+    case 18: /* pg_switch_prepared  pg_skip_deallocate */
 
         if (strEQ("pg_switch_prepared", key)) {
             if (SvOK(valuesv)) {
                 imp_dbh->switch_prepared = (unsigned)SvIV(valuesv);
+                retval = 1;
+            }
+        }
+        else if (strEQ("pg_skip_deallocate", key)) {
+            if (SvOK(valuesv)) {
+                imp_dbh->skip_deallocate = (unsigned)SvIV(valuesv);
                 retval = 1;
             }
         }
@@ -1679,6 +1696,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
             0 == strcasecmp(imp_sth->firstword, "INSERT") ||
             0 == strcasecmp(imp_sth->firstword, "UPDATE") ||
             0 == strcasecmp(imp_sth->firstword, "DELETE") ||
+            0 == strcasecmp(imp_sth->firstword, "MERGE")  ||
             0 == strcasecmp(imp_sth->firstword, "VALUES") ||
             0 == strcasecmp(imp_sth->firstword, "TABLE")  ||
             0 == strcasecmp(imp_sth->firstword, "WITH")
@@ -2307,7 +2325,7 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 
     Renew(imp_sth->prepare_name, 25, char); /* freed in dbd_st_destroy */
 
-    /* Name is "dbdpg_xPID_#", where x is 'p'ositive or 'n'egative */
+    /* Name is "dbdpg_xPID_#", where x is p for positive or n for negative */
     sprintf(imp_sth->prepare_name,"dbdpg_%c%d_%x",
             (imp_dbh->pid_number < 0 ? 'n' : 'p'),
             abs(imp_dbh->pid_number),
@@ -3130,6 +3148,9 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
                || 0 == strncmp(cmdStatus, "SELECT", 6)) {
             rows = atol(cmdStatus + 7);
         }
+        else if (0 == strncmp(cmdStatus, "MERGE", 5)) {
+            rows = atol(cmdStatus + 6);
+        }
         break;
     case PGRES_COPY_OUT:
     case PGRES_COPY_IN:
@@ -3676,6 +3697,10 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
                 ret = atol(cmdStatus + 7);
                 gotrows = DBDPG_TRUE;
             }
+            else if (0 == strncmp(cmdStatus, "MERGE", 5)) {
+                ret = atol(cmdStatus + 6);
+                gotrows = DBDPG_TRUE;
+            }
         }
         if (!gotrows) {
             /* No rows affected, but check for change of state */
@@ -3811,11 +3836,15 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
                         else
                             sv_setiv(sv, '1' == *value ? 1 : 0);
                         break;
-                    case PG_INT2:
-                    case PG_INT4:
 #if IVSIZE >= 8 && LONGSIZE >= 8
                     case PG_INT8:
+                        if (imp_dbh->pg_int8_as_string) {
+                            sv_setpvn(sv, (char *)value, value_len);
+                            break;
+                        }
 #endif
+                    case PG_INT2:
+                    case PG_INT4:
                         sv_setiv(sv, atol((char *)value));
                         break;
                     case PG_FLOAT4:
@@ -3950,6 +3979,11 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_deallocate_statement\n", THEADER_slow);
 
+    if (imp_dbh->skip_deallocate) {
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_deallocate_statement (skipped)\n", THEADER_slow);
+        return 0;
+    }
+
     if (NULL == imp_dbh->conn || NULL == imp_sth->prepare_name) {
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_deallocate_statement (0)\n", THEADER_slow);
         return 0;
@@ -3993,6 +4027,16 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
         }
     }
 
+#if PGLIBVERSION >= 170000
+
+    if (TRACE5_slow)
+        TRC(DBILOGFP, "%sUsing PQclosePrepared: %s\n", THEADER_slow, imp_sth->prepare_name);
+
+    imp_dbh->last_result = imp_sth->result
+        = PQclosePrepared(imp_dbh->conn, imp_sth->prepare_name);
+    imp_dbh->result_clearable = DBDPG_FALSE;
+    status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
+#else
     New(0, stmt, strlen("DEALLOCATE ") + strlen(imp_sth->prepare_name) + 1, char); /* freed below */
 
     sprintf(stmt, "DEALLOCATE %s", imp_sth->prepare_name);
@@ -4002,6 +4046,8 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 
     status = _result(aTHX_ imp_dbh, stmt);
     Safefree(stmt);
+#endif
+
     if (PGRES_COMMAND_OK != status) {
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ sth, status, PQerrorMessage(imp_dbh->conn));
@@ -5266,6 +5312,9 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
                      || 0 == strncmp(cmdStatus, "UPDATE", 6)
                      || 0 == strncmp(cmdStatus, "SELECT", 6)) {
                 rows = atol(cmdStatus + 7);
+            }
+            else if (0 == strncmp(cmdStatus, "MERGE", 5)) {
+                rows = atol(cmdStatus + 6);
             }
             break;
         case PGRES_COPY_OUT:

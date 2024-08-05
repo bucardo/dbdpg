@@ -333,10 +333,10 @@ version: $version
             }
             last GETHANDLE; ## Fail - initdb bad
         }
-        elsif ($info =~ /([0-9]+\.[0-9]+)/) {
+        elsif ($info =~ /([0-9]+)(?:devel|beta|rc|alpha)/) { ## Can be 10devel
             $version = $1;
         }
-        elsif ($info =~ /([0-9]+)(?:devel|beta|rc|alpha)/) { ## Can be 10devel
+        elsif ($info =~ /([0-9]+\.[0-9]+)/) {
             $version = $1;
         }
         else {
@@ -407,7 +407,7 @@ version: $version
                 $olddir = getcwd;
                 eval {
                     chdir $testdir;
-                    $info = qx{su -m $testuser -c "$initdb --locale=C -E UTF8 -D $testdir/data 2>&1"};
+                    $info = qx{su -m $testuser -c "/bin/sh -c '$initdb --locale=C -E UTF8 -D $testdir/data 2>&1'"};
                 };
                 my $err = $@;
                 chdir $olddir;

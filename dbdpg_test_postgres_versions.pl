@@ -4,10 +4,14 @@
 ## Usage: $0 <postgresdir> [-t specific_test_file] [-c compile_version] [-r run_version] [--setup versions]
 
 ## Usage:
-## Create Postgres 10,11,12,13, and 14 directories in $ENV{HOME}/pg/:
-## perl dbdpg_test_postgres_versions.pl --setup 10,11,12,13,14
+## Create Postgres 11,12,13,14, and 15 directories in $ENV{HOME}/pg/:
+## perl dbdpg_test_postgres_versions.pl --setup 11,12,13,14,15
 ## Test all combinations of the same:
 ## perl dbdpg_test_postgres_versions.pl
+## Only run for versions 12 and up:
+## perl dbdpg_test_postgres_versions.pl --minversion 11
+## Same, but do not run head
+## perl dbdpg_test_postgres_versions.pl --minversion 11 --nohead
 ## Add in the current HEAD branch, recreating if already there:
 ## perl dbdpg_test_postgres_versions.pl --setup head --force
 ## Test DBD::Pg compiled against head and run against Postgres 11:
@@ -25,10 +29,12 @@ use Data::Dumper; $Data::Dumper::Sortkeys = 1;
 use Time::HiRes qw/ gettimeofday tv_interval /;
 use List::Util qw/ shuffle /;
 
-our $VERSION = 1.4;
+our $VERSION = 1.5;
 
 my %arg = (
     quiet => 0,
+    minversion => '',
+    nohead => 0,
 );
 
 GetOptions
@@ -41,6 +47,8 @@ GetOptions
    'runversion=s',
    'wipe',
    'setup=s',
+   'minversion=s',
+   'nohead',
 );
 
 my $testfile = $arg{testfile} || $ENV{DBDPG_TEST_FILE} || '';
@@ -55,6 +63,12 @@ my $dh;
 opendir $dh, $basedir;
 my @versions = grep { /^[1-9][0-9]$/ or /^head$/i } readdir $dh;
 closedir $dh;
+if ($arg{minversion} =~ /^[0-9]+$/) {
+    @versions = grep { ! /^[0-9]+$/ or $_ >= $arg{minversion} } @versions;
+}
+if ($arg{nohead}) {
+    @versions = grep { ! /head/ } @versions;
+}
 
 ## Sanity check:
 for my $lver (@versions) {
@@ -143,6 +157,8 @@ for my $lib_version (shuffle @versions) {
             warn "Got a failure. Hit Enter to continue, or break out to examine it\n";
             <STDIN>;
         }
+
+        sleep 1;
 
     }
 }

@@ -33,6 +33,7 @@ for my $file (@testfiles) {
             next if $line !~ /\b$func\b/;
             next if $line =~ /$func \w/; ## e.g. 'skip these tests'
             next if $line =~ /[\$\%]$func/; ## e.g. $ok %ok
+            next if $line =~ /['"][^'"]*$func/; ## e.g. 'like' in quotes
             $fileslurp{$file}{$.}{$func} = $line;
             $testmore++;
         }
@@ -248,5 +249,21 @@ $t = q{All ENV{} calls are to known words};
 for my $word (sort keys %bad_env) {
     diag "Invalid ENV: $word\n";
 }
+
+$t = q{Verify the copyright year is up to date};
+my $current_year = 1900 +(localtime)[5];
+
+for my $file (qw{README Pg.pm Pg.xs Pg.h dbdimp.c dbdimp.h quote.c types.c}) {
+    open $fh, '<', $file or die "Could not open $file: $!\n";
+    while (<$fh>) {
+        next unless /Copyright(.+)Greg/;
+        my $years = $1;
+        if ($years !~ /\b$current_year\b/) {
+            fail qq{File "$file" has the wrong copyright year: expected $current_year};
+        }
+    }
+}
+pass $t;
+
 
 done_testing();

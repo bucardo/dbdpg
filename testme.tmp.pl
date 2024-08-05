@@ -19,18 +19,22 @@ use Data::Peek;
 use Devel::Leak;
 use Time::HiRes qw/ sleep /;
 
+my $DBPORT = shift || 6432;
+
 our ($sth, $info, $count, $SQL);
 
 my $tracelevel = shift || 0;
 $ENV{DBI_TRACE} = $tracelevel;
 
-my $DSN = 'DBI:Pg:dbname=postgres';
+my $DSN = "DBI:Pg:dbname=postgres;port=$DBPORT";
 my $dbh = DBI->connect($DSN, '', '', {AutoCommit=>0,RaiseError=>1,PrintError=>0})
   or die "Connection failed!\n";
 
 my $me = $dbh->{Driver}{Name};
 my $sversion = $dbh->{pg_server_version};
 print "DBI is version $DBI::VERSION, I am $me, version of DBD::Pg is $DBD::Pg::VERSION, server is $sversion\n";
+my $port = $dbh->{pg_port};
+print "Port: $port\n";
 
 print "Name: $dbh->{Name}\n";
 

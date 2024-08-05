@@ -2,8 +2,63 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+Version 3.18.0 (released December 6, 2023)
 
-Version 3.16.1 (unreleased)
+ - Support new PQclosePrepared function, added in Postgres 17
+   [Greg Sabino Mullane]
+
+ - Better docs about ping always returning a value
+   (Github issue #121)
+
+
+Version 3.17.0  (released August 23, 2023)
+
+ - New database handle attribute pg_skip_deallocate
+   Prevents any deallocation of automatically prepared 
+     statements to support new pgBouncer feature
+   [Greg Sabino Mullane]
+
+ - Fix to handle escaped quotes in connection string
+   [Dagfinn Ilmari Mannsåker]
+
+ - Return number of affected rows from a MERGE command
+   [Greg Sabino Mullane]
+   (Github issue #118)
+
+ - Add support for Github CI actions
+   [Gábor Szabó]
+   (Github pull request #115)
+
+ - Remove undocumented internal-only pg_pid_number attribute
+   [Greg Sabino Mullane]
+   (Github issue #102)
+
+ - Small warning in docs about PG_CHAR
+   [Greg Sabino Mullane]
+   (Github issue #103)
+
+
+Version 3.16.3  (released April 4, 2023)
+
+ - Fix to remove MYMETA files added by mistake to tarball
+
+
+Version 3.16.2  (released April 4, 2023)
+
+ - Force test suite to use a specific shell for the initdb command
+   [Ed Sabol]
+   (Github issue #104)
+
+ - Revert to using META.yml, and generate MYMETA.* files
+   (Github issue #111)
+   (Github issue #113)
+
+
+Version 3.16.1  (released March 5, 2023)
+
+ - Add new attribute "pg_int8_as_string", for backwards compatibility.
+   [Alexander Gorlov]
+   (Github pull request #100)
 
  - Add a META.json file; rename META.yml to META.yaml
 
@@ -11,7 +66,11 @@ Version 3.16.1 (unreleased)
    [Dagfinn Ilmari Mannsåker]
    (Github issue #99)
 
-Version 3.16.0 (August 8, 2022)
+ - Documentation improvements for service files
+   [Erik Rijkers]
+
+
+Version 3.16.0  (released August 8, 2022)
 
  - Automatically use 64-bit versions of large object functions when available
    [Dagfinn Ilmari Mannsåker, David Christensen]

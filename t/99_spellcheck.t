@@ -176,6 +176,7 @@ attribs
 authtype
 autocommit
 AutoCommit
+autodie
 AutoEscape
 Autogenerate
 AutoInactiveDestroy
@@ -225,6 +226,7 @@ chr
 cid
 CMD
 cmd
+cmdtaglist
 cmp
 compat
 CompatMode
@@ -246,7 +248,6 @@ cpansearch
 cpansign
 cpantesters
 cperl
-creat
 cryptographically
 currph
 currpos
@@ -284,7 +285,9 @@ dbname
 DDL
 deallocate
 Deallocate
+DEALLOCATE
 deallocating
+deallocation
 Deallocation
 Debian
 decls
@@ -471,6 +474,7 @@ Mergl
 metadata
 mingw
 MinGW
+minversion
 mis
 mkdir
 Momjian
@@ -485,21 +489,22 @@ mv
 MYMETA
 myperl
 myval
-nCompiled
+Compiled
 ndone
-n'egative
+ne
 ness
 newfh
 newSVpv
 Newz
 nmake
 nntp
+nohead
 nonliteral
 noprefix
 noreturn
 nosetup
 NOSUCH
-nServer
+Server
 nullable
 NULLABLE
 NULLs
@@ -551,6 +556,7 @@ pexports
 PGBOOLOID
 pgbouncer
 PgBouncer
+pgBouncer
 PGCLIENTENCODING
 PGDATABASE
 pgend
@@ -565,6 +571,7 @@ pgprefix
 PGRES
 PGresult
 PGSERVICE
+PGSERVICEFILE
 pgsql
 pgstart
 PGSYSCONFDIR
@@ -575,7 +582,6 @@ php
 pid
 PID
 pos
-p'ositive
 POSIX
 postgres
 Postgres
@@ -586,7 +592,9 @@ PostgreSQL
 postgresteam
 powf
 PQ
+PQchangePassword
 PQclear
+PQclosePrepared
 PQconnectdb
 PQconsumeInput
 PQexec
@@ -744,6 +752,7 @@ tablespaces
 TaintIn
 TaintOut
 Tammer
+tcop
 TCP
 tempfile
 testdatabase

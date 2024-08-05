@@ -1,6 +1,6 @@
 /*
 
-   Copyright (c) 2003-2022 Greg Sabino Mullane and others: see the Changes file
+   Copyright (c) 2003-2024 Greg Sabino Mullane and others: see the Changes file
    
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.
@@ -472,23 +472,48 @@ sql_type_info_t* sql_type_data(int sql_type)
 /*
 #!perl
 
-## Autogenerate all type information and populate 
+## Autogenerate all type information and populate
 ## all files referencing type information.
 
-## You should only run this if you are developing DBD::Pg and 
+## You should only run this if you are developing DBD::Pg and
 ## understand what this script does
 
 ## Usage: perl -x $0 "path-to-pgsql-source"
 
 use strict;
 use warnings;
+use autodie;
 
 my $arg = shift || die "Usage: $0 path-to-pgsql-source\n";
 
 -d $arg or die qq{Sorry, but "$arg" is not a directory!\n};
 
-my $dir = "$arg/src/include/catalog/";
+my $tag_file = "$arg/src/include/tcop/cmdtaglist.h";
+open my $fh, '<', $tag_file;
+my $tf = '(true|false)';
+my %tag;
+while (<$fh>) {
+    chomp;
+    next unless /^PG_CMDTAG/;
+    if (! /^PG_CMDTAG\(([A-Z]+)(_[A-Z]+)+, "([A-Z? ]+)", $tf, $tf, $tf\)$/) {
+        die "Could not parse PG_CMDTAG line at $. of $tag_file: >>$_<<\n";
+    }
+    next if $6 ne 'true';
+    $tag{$3}++;
+}
+close $fh;
 
+my %known_tag = map { $_, 1 } split / / =>
+  'COPY DELETE FETCH INSERT MERGE MOVE SELECT UPDATE';
+
+for my $t (sort keys %known_tag) {
+    exists $tag{$t} or die "Did not find known tag inside $tag_file: $t\n";
+}
+for my $t (sort keys %tag) {
+    exists $known_tag{$t} or die "Found a new tag inside $tag_file: $t\n";
+}
+
+my $dir = "$arg/src/include/catalog/";
 my $maxlen = 1;
 my %pgtype;
 my $thisname = 0;
@@ -504,7 +529,7 @@ if (-e "$dir/pg_type.dat") {
 }
 else {
     $typefile = "$dir/pg_type.h";
-    open my $fh, '<', $typefile or die qq{Could not open file "$typefile": $!\n};
+    open my $fh, '<', $typefile;
 
     while (<$fh>) {
         s/FLOAT8PASSBYVAL/t/;
@@ -536,7 +561,7 @@ else {
             die "Bad line at $. ->$_\n";
         }
     }
-    close $fh or die qq{Could not close "$typefile": $!\n};
+    close $fh;
 }
 
 for my $name (keys %pgtype) {
@@ -560,7 +585,7 @@ my ($oldfh,$newfh);
 
 ## Rewrite types.h
 my $file = 'types.h';
-open $newfh, '>', "$file.tmp" or die qq{Could not create "$file.tmp": $!\n};
+open $newfh, '>', "$file.tmp";
 
 my $slashstar = '/' . '*';
 my $starslash = '*' . '/';
@@ -597,14 +622,14 @@ for (sort {
 }
 
 print $newfh "\n";
-close $newfh or die qq{Could not close "$file.tmp": $!\n};
+close $newfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 
 ## Rewrite Pg.xs
 $file = 'Pg.xs';
-open $oldfh, '<', $file or die qq{Could not open "$file": $!\n};
-open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
+open $oldfh, '<', $file;
+open $newfh, '>', "$file.tmp";
 my $step = 0;
 while (<$oldfh>) {
     if (0 == $step) {
@@ -626,16 +651,16 @@ while (<$oldfh>) {
     }
     print $newfh $_;
 }
-close $newfh or die qq{Could not close "$file.tmp": $!\n};
-close $oldfh  or die qq{Could not close "$file": $!\n};
+close $newfh;
+close $oldfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 
 
 ## Rewrite Pg.pm
 $file = 'Pg.pm';
-open $oldfh, '<', $file or die qq{Could not open "$file": $!\n};
-open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
+open $oldfh, '<', $file;
+open $newfh, '>', "$file.tmp";
 $step = 0;
 while (<$oldfh>) {
     if (0 == $step) {
@@ -668,20 +693,20 @@ while (<$oldfh>) {
         }
     }
     elsif (3 == $step) {
-        next unless /sticky/;
+        next unless /Be warned/;
         $step = 4;
     }
     print $newfh $_;
 }
-close $newfh or die qq{Could not close "$file.tmp": $!\n};
-close $oldfh or die qq{Could not close "$file": $!\n};
+close $newfh;
+close $oldfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 
 ## Rewrite 01constants.t
 $file = 't/01constants.t';
-open $oldfh, '<', $file or die qq{Could not open "$file": $!\n};
-open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
+open $oldfh, '<', $file;
+open $newfh, '>', "$file.tmp";
 $step = 0;
 while (<$oldfh>) {
     if (0 == $step) {
@@ -697,15 +722,15 @@ while (<$oldfh>) {
     }
     print $newfh $_;
 }
-close $newfh or die qq{Could not close "$file.tmp": $!\n};
-close $oldfh or die qq{Could not close "$file": $!\n};
+close $newfh;
+close $oldfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 
 ## Rewrite 99_pod.t
 $file = 't/99_pod.t';
-open $oldfh, '<', $file or die qq{Could not open "$file": $!\n};
-open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
+open $oldfh, '<', $file;
+open $newfh, '>', "$file.tmp";
 $step = 0;
 while (<$oldfh>) {
     if (0 == $step) {
@@ -725,19 +750,19 @@ while (<$oldfh>) {
     }
     print $newfh $_;
 }
-close $newfh or die qq{Could not close "$file.tmp": $!\n};
-close $oldfh or die qq{Could not close "$file": $!\n};
+close $newfh;
+close $oldfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 
 
 ## Rewrite types.c
 $file = 'types.c';
-open $newfh, '>', "$file.tmp" or die qq{Could not write to "$file.tmp": $!\n};
+open $newfh, '>', "$file.tmp";
 
 print $newfh qq{$slashstar
 
-   Copyright (c) 2003-2022 Greg Sabino Mullane and others: see the Changes file
+   Copyright (c) 2003-2024 Greg Sabino Mullane and others: see the Changes file
    
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.
@@ -833,7 +858,7 @@ seek(DATA,0,0);
 1 while <DATA> !~ /!perl/;
 print $newfh "#!perl\n";
 while (<DATA>) { print $newfh $_; }
-close($newfh) or die qq{Could not close "$file.tmp": $!\n};
+close $newfh;
 system("mv $file.tmp $file");
 print "Wrote $file\n";
 

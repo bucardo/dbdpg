@@ -91,7 +91,7 @@ Makefile.PL - The main file that starts everything off. Used by ExtUtils::MakeMa
 
 Makefile - Generated automatically by Makefile.PL. Not part of the distribution.
 
-META.yaml - YAML description file. Updated by hand and contains a version number in three places.
+META.yml - YAML description file. Updated by hand and contains a version number in three places.
 
 META.json - JSON description file. Updated by hand and contains a version number in three places.
 
@@ -209,7 +209,7 @@ t/99_perlcritic.t - Uses Perl::Critic to check Pg.pm and all of the test files.
 t/99_pod.t - Verifies the POD of Pg.pm. Requires Test::POD version 0.95, and 
   Test::Pod::Coverage 1.04.
 
-t/99_yaml.t - Uses Test::YAML::Meta to verify the META.yaml file.
+t/99_yaml.t - Uses Test::YAML::Meta to verify the META.yml file.
 
 t/99_spellcheck.t - Checks the spelling of everything it can.
 
@@ -458,7 +458,9 @@ my $pv = $DBD::Pg::VERSION; print "DBD::Pg version: $pv\n";
 my $DSN = $ENV{DBI_DSN};
 $dbh = DBI->connect($DSN, $ENV{DBI_USER}, '', {AutoCommit=>0, RaiseError=>1, PrintError=>1});
 my $VER = $dbh->{pg_server_version}; my $pgver = $dbh->{pg_lib_version};
-print "Connected to $DSN\nServer version: $VER\nCompiled version: $pgver\n";
+print "Connected to $DSN\n";
+print "Server version: $VER\n";
+print "Compiled version: $pgver\n";
 $dbh->trace($trace);
 
 __END__
@@ -548,7 +550,7 @@ README (one place, two if a beta version)
 Pg.pm (three places)
 Changes
 Makefile.PL
-META.yaml (three places)
+META.yml (three places)
 META.json (three places)
 lib/Bundle/DBD/Pg.pm
 
@@ -599,7 +601,7 @@ other sections referenced herein (indicated with **)
 * Make sure everything is up to date in git (git status)
 
 * Update the versions (see ** Version Numbers) in README, Pg.pm (3 places!), Makefile.PL, 
-  lib/Bundle/DBD/Pg.pm, META.yaml and META.json (3 places each), and Changes. Run the t/00_release.t file 
+  lib/Bundle/DBD/Pg.pm, META.yml and META.json (3 places each), and Changes. Run the t/00_release.t file 
   to double check you got everything.
 
 * If a final version, put the release date into the Changes file.
@@ -664,6 +666,8 @@ Download the tarball to a completely different system, unpack and test it.
 
 dbd-pg@perl.org
 pgsql-interfaces@postgresql.org
+
+Possible subject line: Version 3.18.0 of DBD::Pg released (Perl DBI driver for Postgres)
 
 * Upload to CPAN and test.
 
@@ -782,8 +786,11 @@ while (1)
 == Resources ==
 ===============
 
-The primary resource is the mailing list, where the developers live. Other 
-resources depend on the subject:
+The primary resource is the mailing list, where the developers live.
+
+Subscribe with an email to dbd-pg-subscribe@perl.org
+
+Other resources depend on the subject:
 
 * DBD::Pg
 
@@ -798,12 +805,16 @@ http://matrix.cpantesters.org/?dist=DBD-Pg
 
 The DBI developers list:
 http://lists.perl.org/showlist.cgi?name=dbi-dev
+Subscribe: dbi-dev-subscribe@perl.org
 
 The DBI users list:
 http://lists.perl.org/showlist.cgi?name=dbi-users
+Subscribe: dbi-users-subscribe@perl.org
 
 The DBI announcement list:
 http://lists.perl.org/showlist.cgi?name=dbi-announce
+Subscribe: dbi-announce-subscribe@perl.org
+
 
 The latest DBI:
 http://search.cpan.org/dist/DBI/
