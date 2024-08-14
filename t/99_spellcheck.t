@@ -375,6 +375,7 @@ GBorg
 gcc
 Gcc
 gdb
+ge
 getcom
 getcopydata
 getfd
@@ -461,6 +462,7 @@ lseg
 LSEG
 lsegs
 lssl
+lt
 mak
 Makefile
 MAKEFILE
@@ -733,6 +735,7 @@ struct
 structs
 subdirectory
 submitnews
+substr
 sudo
 sv
 Sv
@@ -816,6 +819,7 @@ utf
 UTF
 Util
 valgrind
+vals
 VARBINARY
 varchar
 VARCHAR
