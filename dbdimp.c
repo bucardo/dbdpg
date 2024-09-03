@@ -1658,21 +1658,21 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
 
     /* Parse and set any attributes passed in */
     if (attribs) {
-        if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_server_prepare", 17, 0)) != NULL) {
+        if ((svp = hv_fetchs((HV*)SvRV(attribs),"pg_server_prepare", 0)) != NULL) {
             imp_sth->server_prepare = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
         }
-        if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_direct", 9, 0)) != NULL)
+        if ((svp = hv_fetchs((HV*)SvRV(attribs),"pg_direct", 0)) != NULL)
             imp_sth->direct = 0==SvIV(*svp) ? DBDPG_FALSE : DBDPG_TRUE;
-        else if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_prepare_now", 14, 0)) != NULL) {
+        else if ((svp = hv_fetchs((HV*)SvRV(attribs),"pg_prepare_now", 0)) != NULL) {
             imp_sth->prepare_now = 0==SvIV(*svp) ? DBDPG_FALSE : DBDPG_TRUE;
         }
-        if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_placeholder_dollaronly", 25, 0)) != NULL) {
+        if ((svp = hv_fetchs((HV*)SvRV(attribs),"pg_placeholder_dollaronly", 0)) != NULL) {
             imp_sth->dollaronly = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
         }
-        if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_placeholder_nocolons", 23, 0)) != NULL) {
+        if ((svp = hv_fetchs((HV*)SvRV(attribs),"pg_placeholder_nocolons", 0)) != NULL) {
             imp_sth->nocolons = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
         }
-        if ((svp = hv_fetch((HV*)SvRV(attribs),"pg_async", 8, 0)) != NULL) {
+        if ((svp = hv_fetchs((HV*)SvRV(attribs),"pg_async", 0)) != NULL) {
             imp_sth->async_flag = (int)SvIV(*svp);
         }
     }
@@ -2565,7 +2565,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 
     /* Check for a pg_type argument (sql_type already handled) */
     if (attribs) {
-        if((svp = hv_fetch((HV*)SvRV(attribs),"pg_type", 7, 0)) != NULL)
+        if((svp = hv_fetchs((HV*)SvRV(attribs),"pg_type", 0)) != NULL)
             pg_type = (int)SvIV(*svp);
     }
     

@@ -292,10 +292,10 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
                     /* Currently the type argument must be a hashref, so throw an exception if not */
                     if (!SvROK(type_sv) || SvTYPE(SvRV(type_sv)) != SVt_PVHV)
                         croak("Second argument to quote must be a hashref");
-                    if ((svp = hv_fetch((HV*)SvRV(type_sv),"pg_type", 7, 0)) != NULL) {
+                    if ((svp = hv_fetchs((HV*)SvRV(type_sv),"pg_type", 0)) != NULL) {
                         type_info = pg_type_data(SvIV(*svp));
                     }
-                    else if ((svp = hv_fetch((HV*)SvRV(type_sv),"type", 4, 0)) != NULL) {
+                    else if ((svp = hv_fetchs((HV*)SvRV(type_sv),"type", 0)) != NULL) {
                         type_info = sql_type_data(SvIV(*svp));
                     }
                     else {
@@ -383,7 +383,7 @@ void do(dbh, statement_sv, attr=Nullsv, ...)
 
         if (attr && SvROK(attr) && SvTYPE(SvRV(attr)) == SVt_PVHV) {
             SV **svp;
-            if ((svp = hv_fetch((HV*)SvRV(attr),"pg_async", 8, 0)) != NULL) {
+            if ((svp = hv_fetchs((HV*)SvRV(attr),"pg_async", 0)) != NULL) {
                asyncflag = (int)SvIV(*svp);
             }
         }
