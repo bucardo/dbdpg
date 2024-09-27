@@ -17,6 +17,10 @@
 #define atoll(X) _atoi64(X)
 #endif
 
+#ifndef SvIsBOOL
+#define SvIsBOOL(sv) DBDPG_FALSE
+#endif
+
 #define DEBUG_LAST_RESULT 0
 
 #if PGLIBVERSION < 80300
@@ -2625,9 +2629,16 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
     (void)SvUPGRADE(newvalue, SVt_PV);
 
     if (SvOK(newvalue)) {
-        /* get the right encoding, without modifying the caller's copy */
-        newvalue = pg_rightgraded_sv(aTHX_ newvalue, imp_dbh->pg_utf8_flag && PG_BYTEA!=currph->bind_type->type_id);
-        value_string = SvPV(newvalue, currph->valuelen);
+        if (SvIsBOOL(newvalue)) {
+            /* bind native booleans as 1/0 */
+            value_string = SvTRUE(newvalue) ? "1" : "0";
+            currph->valuelen = 1;
+        }
+        else {
+            /* get the right encoding, without modifying the caller's copy */
+            newvalue = pg_rightgraded_sv(aTHX_ newvalue, imp_dbh->pg_utf8_flag && PG_BYTEA!=currph->bind_type->type_id);
+            value_string = SvPV(newvalue, currph->valuelen);
+        }
         Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
         Copy(value_string, currph->value, currph->valuelen+1, char);
         currph->value[currph->valuelen] = '\0';

@@ -4455,6 +4455,13 @@ set the L<pg_bool_tf|/pg_bool_tf (boolean)> attribute to a true value to change 
 Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
 '1' for true and FALSE, 'f', 'false', 'n', 'no' or '0' for false.
 
+On Perl 5.36 and newer, distinguished boolean values (see
+L<builtin/is_bool>) can be used as placeholder values.  On older
+versions of Perl, false values returned by built-in operators (such
+as C<!!0>) must be converted to one of the above false values, or
+bound with C<< pg_type => PG_BOOL >>, since they stringify to the empty
+string.
+
 =head2 Schema support
 
 The PostgreSQL schema concept may differ from those of other databases. In a nutshell,

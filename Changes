@@ -2,6 +2,9 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+ - Support binding native boolean false on Perl 5.36 and newer
+   [Dagfinn Ilmari Mannsåker]
+
 Version 3.18.0 (released December 6, 2023)
 
  - Support new PQclosePrepared function, added in Postgres 17
