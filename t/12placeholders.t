@@ -887,6 +887,7 @@ $sth->bind_param(2,'TRUE',SQL_BOOLEAN);
 $sth->execute(104,'','Boolean empty string attempt number four');
 $dbh->{pg_bool_tf} = 1;
 is_deeply ($sth->fetch, [104,'f'], $t);
+$dbh->{pg_bool_tf} = 0;
 
 ## Test of placeholder escaping. Enabled by default, so let's jump right in
 $t = q{Basic placeholder escaping works via backslash-question mark for \?};
