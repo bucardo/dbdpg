@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 261;
+plan tests => 264;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -819,6 +819,7 @@ undef         => 'NULL',
 '0e0'         => 'TRUE',
 '0 but true'  => 'TRUE',
 '0 BUT TRUE'  => 'TRUE',
+'real true'   => 'TRUE',
 'f'           => 'FALSE',
 'F'           => 'FALSE',
 0             => 'FALSE',
@@ -827,6 +828,7 @@ undef         => 'NULL',
 'false'       => 'FALSE',
 'FALSE'       => 'FALSE',
 ''            => 'FALSE',
+'real false'  => 'FALSE',
 12            => 'ERROR',
 '01'          => 'ERROR',
 '00'          => 'ERROR',
@@ -839,10 +841,12 @@ undef         => 'NULL',
 );
 
 while (my ($name,$res) = each %booltest) {
-    $name = undef if $name eq 'undef';
-    $t = sprintf 'Boolean quoting of %s',
-        defined $name ? qq{"$name"} : 'undef';
-    eval { $result = $dbh->quote($name, {pg_type => PG_BOOL}); };
+    my ($bool, $desc) =
+        $name eq 'undef'  ? (undef, $name) :
+        $name =~ /\Areal/ ? (!!($name =~ / true\z/), $name) :
+                            ($name, qq{"$name"});
+    $t = "Boolean quoting of $desc",
+    eval { $result = $dbh->quote($bool, {pg_type => PG_BOOL}); };
     if ($@) {
         if ($res eq 'ERROR' and $@ =~ /Invalid boolean/) {
             pass ($t);
@@ -888,6 +892,14 @@ $sth->execute(104,'','Boolean empty string attempt number four');
 $dbh->{pg_bool_tf} = 1;
 is_deeply ($sth->fetch, [104,'f'], $t);
 $dbh->{pg_bool_tf} = 0;
+
+SKIP: {
+    skip 'Cannot test native false without builtin::is_bool', 1 unless defined &builtin::is_bool;
+    $t = q{Inserting into a boolean column with native false works};
+    $sth = $dbh->prepare($SQL);
+    $sth->execute(105, !!0, 'Boolean native false');
+    is_deeply ($sth->fetch, [105, 0], $t);
+}
 
 ## Test of placeholder escaping. Enabled by default, so let's jump right in
 $t = q{Basic placeholder escaping works via backslash-question mark for \?};
