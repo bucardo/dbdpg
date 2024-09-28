@@ -2630,8 +2630,10 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 
     if (SvOK(newvalue)) {
         if (SvIsBOOL(newvalue)) {
-            /* bind native booleans as 1/0 */
-            value_string = SvTRUE(newvalue) ? "1" : "0";
+            /* bind native booleans as 1/0 or t/f if pg_bool_tf is set */
+            value_string = SvTRUE(newvalue)
+                ? imp_dbh->pg_bool_tf ? "t" : "1"
+                : imp_dbh->pg_bool_tf ? "f" : "0";
             currph->valuelen = 1;
         }
         else {
