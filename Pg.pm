@@ -3247,7 +3247,9 @@ should the query fail (see C<ShowErrorStatement>).
 =head3 B<pg_bool_tf> (boolean)
 
 DBD::Pg specific attribute. If true, boolean values will be returned
-as the characters 't' and 'f' instead of '1' and '0'.
+as the characters 't' and 'f' instead of '1' and '0'.  On Perl 5.36
+and newer, distinguished boolean values (see L<builtin/is_bool>) will
+also be sent as 't' and 'f' when used as placeholder values.
 
 =head3 B<ReadOnly> (boolean)
 
@@ -4469,11 +4471,14 @@ Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
 '1' for true and FALSE, 'f', 'false', 'n', 'no' or '0' for false.
 
 On Perl 5.36 and newer, distinguished boolean values (see
-L<builtin/is_bool>) can be used as placeholder values.  On older
-versions of Perl, false values returned by built-in operators (such
-as C<!!0>) must be converted to one of the above false values, or
-bound with C<< pg_type => PG_BOOL >>, since they stringify to the empty
-string.
+L<builtin/is_bool>) can be used as placeholder values.  They will be
+sent as C<1> and C<0>, or C<t> and C<f> if C<pg_bool_tf> is set to a
+true value.
+
+On older versions of Perl, false values returned by built-in operators
+(such as C<!!0>) must be converted to one of the above false values,
+or bound with C<< pg_type => PG_BOOL >>, since they stringify to the
+empty string.
 
 =head2 Schema support
 

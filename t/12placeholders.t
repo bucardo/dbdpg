@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 264;
+plan tests => 266;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -894,11 +894,19 @@ is_deeply ($sth->fetch, [104,'f'], $t);
 $dbh->{pg_bool_tf} = 0;
 
 SKIP: {
-    skip 'Cannot test native false without builtin::is_bool', 1 unless defined &builtin::is_bool;
+    skip 'Cannot test native false without builtin::is_bool', 3 unless defined &builtin::is_bool;
     $t = q{Inserting into a boolean column with native false works};
     $sth = $dbh->prepare($SQL);
     $sth->execute(105, !!0, 'Boolean native false');
     is_deeply ($sth->fetch, [105, 0], $t);
+
+    local $dbh->{pg_bool_tf} = 1;
+    $t = q{Inserting into a boolean column with native false works (pg_bool_tf on)};
+    $sth = $dbh->prepare($SQL);
+    $sth->execute(106, !!1, 'Boolean native true (pg_bool_tf on)');
+    is_deeply ($sth->fetch, [106, 't'], $t);
+    $sth->execute(107, !!0, 'Boolean native false (pg_bool_tf on)');
+    is_deeply ($sth->fetch, [107, 'f'], $t);
 }
 
 ## Test of placeholder escaping. Enabled by default, so let's jump right in
