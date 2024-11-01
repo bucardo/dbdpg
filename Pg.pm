@@ -2971,7 +2971,7 @@ Examples of use:
 
   $sth = $dbh->column_info( undef, $schema, $table, $column );
 
-Supported by this driver as proposed by DBI with the follow exceptions.
+Supported by this driver as proposed by DBI with the following exceptions.
 These fields are currently always returned with NULL (C<undef>) values:
 
    BUFFER_LENGTH
