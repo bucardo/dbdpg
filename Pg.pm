@@ -2664,6 +2664,19 @@ If you did not want to worry about the sequence name:
     print "Last insert id was $newid\n";
   }
 
+Alternatively, using C<RETURNING>:
+
+  $dbh->do('CREATE TABLE lii2 (
+    foobar SERIAL UNIQUE,
+    baz VARCHAR)');
+  $SQL = 'INSERT INTO lii2(baz) VALUES (?) RETURNING foobar';
+  $sth = $dbh->prepare($SQL);
+  for (qw(uno dos tres cuatro)) {
+    $sth->execute($_);
+    my ($newid) = $sth->fetchrow_array;
+    print "Last insert id was $newid\n";
+  }
+
 =head3 B<commit>
 
   $rv = $dbh->commit;
