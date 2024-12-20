@@ -374,7 +374,7 @@ version: $version
             $su = $testuser = '';
 
             $testdir = exists $ENV{DBDPG_TEMPDIR} ?
-                File::Temp::tempdir("$ENV{DBDPG_TEMPDIR}/dbdpg_testdatabase_XXXXXX", TMPDIR => 1, CLEANUP => 0) :
+                File::Temp::tempdir("$ENV{DBDPG_TEMPDIR}/dbdpg_testdatabase_XXXXXX", CLEANUP => 0) :
                 File::Temp::tempdir('dbdpg_testdatabase_XXXXXX', TMPDIR => 1, CLEANUP => 0);
 
             my $readme = "$testdir/README";
