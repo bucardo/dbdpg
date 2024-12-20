@@ -473,6 +473,7 @@ MCPAN
 md
 MDevel
 Mergl
+metacpan
 metadata
 mingw
 MinGW
