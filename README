@@ -9,7 +9,7 @@ DESCRIPTION:
 This is version 3.18.0 of DBD::Pg, the Perl interface to Postgres using DBI.
 The web site for this interface, and the latest version, can be found at:
 
-	https://metacpan.org/dist/DBD-Pg
+	https://metacpan.org/pod/DBD::Pg
 
 The mailing list is at:
 
