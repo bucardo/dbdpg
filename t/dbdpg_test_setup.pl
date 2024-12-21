@@ -826,7 +826,7 @@ sub get_test_settings {
     if (!$testdir) {
         my $dir = getcwd();
         $testdir = exists $ENV{DBDPG_TEMPDIR} ?
-            File::Temp::tempdir("$ENV{DBDPG_TEMPDIR}/dbdpg_testdatabase_XXXXXX", TMPDIR => 1, CLEANUP => 0) :
+            File::Temp::tempdir("$ENV{DBDPG_TEMPDIR}/dbdpg_testdatabase_XXXXXX", CLEANUP => 0) :
             "$dir/dbdpg_test_database";
     }
 
