@@ -5367,6 +5367,9 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             TRACE_PQCLEAR;
             PQclear(result);
         }
+        if ( rows == -1 ) {
+            break;
+        }
     }
 
     if (NULL != imp_dbh->async_sth) {
