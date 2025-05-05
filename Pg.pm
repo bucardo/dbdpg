@@ -151,6 +151,7 @@ use 5.008001;
         # uncoverable branch false
         if (!$methods_are_installed) {
             DBD::Pg::db->install_method('pg_cancel');
+            DBD::Pg::db->install_method('pg_continue_async_connect');
             DBD::Pg::db->install_method('pg_endcopy');
             DBD::Pg::db->install_method('pg_error_field');
             DBD::Pg::db->install_method('pg_getline');
