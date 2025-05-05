@@ -68,6 +68,13 @@ typedef enum
     (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV &&                    \
      SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
+enum {
+	DBH_ASYNC_CANCELLED =	-1,
+	DBH_NO_ASYNC,
+	DBH_ASYNC,
+	DBH_ASYNC_CONNECT
+};
+
 static void pg_error(pTHX_ SV *h, int error_num, const char *error_msg);
 static void pg_warn (void * arg, const char * message);
 static ExecStatusType _result(pTHX_ imp_dbh_t *imp_dbh, const char *sql);
