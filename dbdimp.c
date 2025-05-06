@@ -299,8 +299,8 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     /* if not connecting asynchronously, do after connect init */
     imp_dbh->pg_protocol = -1;
     imp_dbh->pg_server_version = -1;
-    if (!async_connect) after_connect_init(aTHX_ dbh, imp_dbh);
-    else imp_dbh->async_status = DBH_ASYNC_CONNECT;
+    if (async_connect) imp_dbh->async_status = DBH_ASYNC_CONNECT;
+    else after_connect_init(aTHX_ dbh, imp_dbh);
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login\n", THEADER_slow);
 
