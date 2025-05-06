@@ -3224,6 +3224,25 @@ the L</fetchrow_hashref> method.
 Creates a copy of the database handle by connecting with the same parameters as the original 
 handle, then trying to merge the attributes. See the DBI documentation for complete usage.
 
+=head3 B<pg_continue_connect>
+
+  $rc = $dbh->pg_continue_connect();
+
+Continues an asychronous connect operation. See B<Asynchronous
+Connect> below. After an asychronous connect was initiated, this
+method must be called in a loop for as long as it returns either 1 or
+2, indicating a desire to read or write data,
+respectively. Afterwards, the next call to pg_continue_connect must
+not take place until an indication that data can either be
+read or written on the current pg_socket was obtained, eg, via
+select. 
+
+The method returns -1 if no asynchronous connect was in progress, -2 to
+indicate that an asynchronous connect failed and 0 if the connection
+was successfully established.
+
+The socket may have changed after each call to the method.
+
 =head2 Database Handle Attributes
 
 =head3 B<AutoCommit> (boolean)
