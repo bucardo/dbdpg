@@ -851,10 +851,10 @@ _pg_type_info (type_sv=Nullsv)
     }
 
 int
-pg_continue_async_connect(dbh)
+pg_continue_connect(dbh)
 		SV* dbh
 	CODE:
-		RETVAL = pg_db_continue_async_connect(dbh);
+		RETVAL = pg_db_continue_connect(dbh);
 	OUTPUT:
 		RETVAL
 

@@ -308,18 +308,18 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 
 } /* end of dbd_db_login */
 
-int pg_db_continue_async_connect(SV *dbh)
+int pg_db_continue_connect(SV *dbh)
 {
 	dTHX;
         D_imp_dbh(dbh);
 	int status;
 
 	if (TSTART_slow)
-		TRC(DBILOGFP, "%sBegin pg_db_continue_async_connect\n", THEADER_slow);
+		TRC(DBILOGFP, "%sBegin pg_db_continue_connect\n", THEADER_slow);
 
 	if (imp_dbh->async_status != DBH_ASYNC_CONNECT) {
 		pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, "No async connect in progress\n");
-		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_continue_async_connect\n", THEADER_slow);
+		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_continue_connect\n", THEADER_slow);
 		return -1;
 	}
 
@@ -353,7 +353,7 @@ int pg_db_continue_async_connect(SV *dbh)
 		status = -2;
 	}
 
-	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_continue_async_connect\n", THEADER_slow);
+	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_continue_connect\n", THEADER_slow);
 	return status;
 }
 
