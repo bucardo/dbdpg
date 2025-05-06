@@ -236,14 +236,14 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 
     /* Attempt the connection to the database */
     if (TLOGIN_slow) TRC(DBILOGFP, "%sLogin connection string: (%s)\n", THEADER_slow, conn_str);
-    if (!async_connect) {
-        TRACE_PQCONNECTDB;
-        imp_dbh->conn = PQconnectdb(conn_str);
-        if (TLOGIN_slow) TRC(DBILOGFP, "%sConnection complete\n", THEADER_slow);
-    } else {
+    if (async_connect) {
         TRACE_PQCONNECTSTART;
         imp_dbh->conn = PQconnectStart(conn_str);
         if (TLOGIN_slow) TRC(DBILOGFP, "%sConnection started\n", THEADER_slow);
+    } else {
+        TRACE_PQCONNECTDB;
+        imp_dbh->conn = PQconnectdb(conn_str);
+        if (TLOGIN_slow) TRC(DBILOGFP, "%sConnection complete\n", THEADER_slow);
     }
     Safefree(conn_str);
 
