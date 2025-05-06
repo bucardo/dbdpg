@@ -113,38 +113,38 @@ static int want_async_connect(pTHX_ SV *attrs)
 
 static void after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
 {
-	/* Figure out what protocol this server is using (most likely 3) */
-	TRACE_PQPROTOCOLVERSION;
-	imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
-        if (TLOGIN_slow) TRC(DBILOGFP, "%sprotocol version %d\n", THEADER_slow, imp_dbh->pg_protocol);
+    /* Figure out what protocol this server is using (most likely 3) */
+    TRACE_PQPROTOCOLVERSION;
+    imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
+    if (TLOGIN_slow) TRC(DBILOGFP, "%sprotocol version %d\n", THEADER_slow, imp_dbh->pg_protocol);
 
-	/* Figure out this particular backend's version */
-	TRACE_PQSERVERVERSION;
-	imp_dbh->pg_server_version = PQserverVersion(imp_dbh->conn);
-        if (TLOGIN_slow) TRC(DBILOGFP, "%sserver version %d\n", THEADER_slow, imp_dbh->pg_server_version);
+    /* Figure out this particular backend's version */
+    TRACE_PQSERVERVERSION;
+    imp_dbh->pg_server_version = PQserverVersion(imp_dbh->conn);
+    if (TLOGIN_slow) TRC(DBILOGFP, "%sserver version %d\n", THEADER_slow, imp_dbh->pg_server_version);
 
-        if (imp_dbh->pg_server_version < 80000) {
-            if (NULL != strstr(PQparameterStatus(imp_dbh->conn, "server_version"), "bouncer")) {
-                imp_dbh->pg_server_version = 90600;
-            }
-            else {
-                TRACE_PQERRORMESSAGE;
-                strncpy(imp_dbh->sqlstate, "08001", 6); /* sqlclient_unable_to_establish_sqlconnection */
-                pg_error(aTHX_ dbh, CONNECTION_BAD, "Server version 8.0 required");
-                TRACE_PQFINISH;
-                PQfinish(imp_dbh->conn);
-                sv_free((SV *)imp_dbh->savepoints);
-                if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login (error)\n", THEADER_slow);
-                return;
-            }
+    if (imp_dbh->pg_server_version < 80000) {
+        if (NULL != strstr(PQparameterStatus(imp_dbh->conn, "server_version"), "bouncer")) {
+            imp_dbh->pg_server_version = 90600;
         }
+        else {
+            TRACE_PQERRORMESSAGE;
+            strncpy(imp_dbh->sqlstate, "08001", 6); /* sqlclient_unable_to_establish_sqlconnection */
+            pg_error(aTHX_ dbh, CONNECTION_BAD, "Server version 8.0 required");
+            TRACE_PQFINISH;
+            PQfinish(imp_dbh->conn);
+            sv_free((SV *)imp_dbh->savepoints);
+            if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login (error)\n", THEADER_slow);
+            return;
+        }
+    }
 
-        pg_db_detect_client_encoding_utf8(aTHX_ imp_dbh);
-        /* If the client_encoding is UTF8, flip the utf8 flag until convinced otherwise */
-        imp_dbh->pg_utf8_flag = imp_dbh->client_encoding_utf8;
+    pg_db_detect_client_encoding_utf8(aTHX_ imp_dbh);
+    /* If the client_encoding is UTF8, flip the utf8 flag until convinced otherwise */
+    imp_dbh->pg_utf8_flag = imp_dbh->client_encoding_utf8;
 
-	/* Tell DBI that we should call disconnect when the handle dies */
-	DBIc_ACTIVE_on(imp_dbh);
+    /* Tell DBI that we should call disconnect when the handle dies */
+    DBIc_ACTIVE_on(imp_dbh);
 }
 
 int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char * pwd, SV *attr)
@@ -310,51 +310,51 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 
 int pg_db_continue_connect(SV *dbh)
 {
-	dTHX;
-        D_imp_dbh(dbh);
-	int status;
+    dTHX;
+    D_imp_dbh(dbh);
+    int status;
 
-	if (TSTART_slow)
-		TRC(DBILOGFP, "%sBegin pg_db_continue_connect\n", THEADER_slow);
+    if (TSTART_slow)
+        TRC(DBILOGFP, "%sBegin pg_db_continue_connect\n", THEADER_slow);
 
-	if (imp_dbh->async_status != DBH_ASYNC_CONNECT) {
-		pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, "No async connect in progress\n");
-		if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_continue_connect\n", THEADER_slow);
-		return -1;
-	}
+    if (imp_dbh->async_status != DBH_ASYNC_CONNECT) {
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, "No async connect in progress\n");
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_continue_connect\n", THEADER_slow);
+        return -1;
+    }
 
-	TRACE_PQCONNECTPOLL;
-	status = PQconnectPoll(imp_dbh->conn);
-	if (TRACE5_slow) TRC(DBILOGFP, "%sPQconnectPoll returned %d\n", THEADER_slow, status);
-	switch (status) {
-	case PGRES_POLLING_READING:
-	case PGRES_POLLING_WRITING:
-		break;
+    TRACE_PQCONNECTPOLL;
+    status = PQconnectPoll(imp_dbh->conn);
+    if (TRACE5_slow) TRC(DBILOGFP, "%sPQconnectPoll returned %d\n", THEADER_slow, status);
+    switch (status) {
+    case PGRES_POLLING_READING:
+    case PGRES_POLLING_WRITING:
+        break;
 
-	case PGRES_POLLING_OK:
-		if (TLOGIN_slow) TRC(DBILOGFP, "%sconnection established\n", THEADER_slow);
+    case PGRES_POLLING_OK:
+        if (TLOGIN_slow) TRC(DBILOGFP, "%sconnection established\n", THEADER_slow);
 
-		imp_dbh->async_status = DBH_NO_ASYNC;
-		after_connect_init(aTHX_ dbh, imp_dbh);
+        imp_dbh->async_status = DBH_NO_ASYNC;
+        after_connect_init(aTHX_ dbh, imp_dbh);
 
-		status = 0;
-		break;
+        status = 0;
+        break;
 
-	case PGRES_POLLING_FAILED:
-		TRACE_PQERRORMESSAGE;
-		strncpy(imp_dbh->sqlstate, "08006", 6); /* "CONNECTION FAILURE" */
-		pg_error(aTHX_ dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
-		TRACE_PQFINISH;
-		PQfinish(imp_dbh->conn);
-		imp_dbh->conn = NULL;
+    case PGRES_POLLING_FAILED:
+        TRACE_PQERRORMESSAGE;
+        strncpy(imp_dbh->sqlstate, "08006", 6); /* "CONNECTION FAILURE" */
+        pg_error(aTHX_ dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+        TRACE_PQFINISH;
+        PQfinish(imp_dbh->conn);
+        imp_dbh->conn = NULL;
 
-		imp_dbh->async_status = DBH_NO_ASYNC;
+        imp_dbh->async_status = DBH_NO_ASYNC;
 
-		status = -2;
-	}
+        status = -2;
+    }
 
-	if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_continue_connect\n", THEADER_slow);
-	return status;
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_continue_connect\n", THEADER_slow);
+    return status;
 }
 
 /* ================================================================== */
