@@ -72,7 +72,8 @@ enum {
 	DBH_ASYNC_CANCELLED =	-1,
 	DBH_NO_ASYNC,
 	DBH_ASYNC,
-	DBH_ASYNC_CONNECT
+	DBH_ASYNC_CONNECT,
+        DBH_ASYNC_CONNECT_POLL
 };
 
 static void pg_error(pTHX_ SV *h, int error_num, const char *error_msg);
@@ -317,40 +318,47 @@ int pg_db_continue_connect(SV *dbh)
     if (TSTART_slow)
         TRC(DBILOGFP, "%sBegin pg_db_continue_connect\n", THEADER_slow);
 
-    if (imp_dbh->async_status != DBH_ASYNC_CONNECT) {
+    switch (imp_dbh->async_status) {
+    default:
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, "No async connect in progress\n");
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_continue_connect\n", THEADER_slow);
-        return -1;
-    }
-
-    TRACE_PQCONNECTPOLL;
-    status = PQconnectPoll(imp_dbh->conn);
-    if (TRACE5_slow) TRC(DBILOGFP, "%sPQconnectPoll returned %d\n", THEADER_slow, status);
-    switch (status) {
-    case PGRES_POLLING_READING:
-    case PGRES_POLLING_WRITING:
+        status = -1;
         break;
 
-    case PGRES_POLLING_OK:
-        if (TLOGIN_slow) TRC(DBILOGFP, "%sconnection established\n", THEADER_slow);
-
-        imp_dbh->async_status = DBH_NO_ASYNC;
-        after_connect_init(aTHX_ dbh, imp_dbh);
-
-        status = 0;
+    case DBH_ASYNC_CONNECT:
+        imp_dbh->async_status = DBH_ASYNC_CONNECT_POLL;
+        status = PGRES_POLLING_WRITING;
         break;
 
-    case PGRES_POLLING_FAILED:
-        TRACE_PQERRORMESSAGE;
-        strncpy(imp_dbh->sqlstate, "08006", 6); /* "CONNECTION FAILURE" */
-        pg_error(aTHX_ dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
-        TRACE_PQFINISH;
-        PQfinish(imp_dbh->conn);
-        imp_dbh->conn = NULL;
+    case DBH_ASYNC_CONNECT_POLL:
+        TRACE_PQCONNECTPOLL;
+        status = PQconnectPoll(imp_dbh->conn);
+        if (TRACE5_slow) TRC(DBILOGFP, "%sPQconnectPoll returned %d\n", THEADER_slow, status);
+        switch (status) {
+        case PGRES_POLLING_READING:
+        case PGRES_POLLING_WRITING:
+            break;
 
-        imp_dbh->async_status = DBH_NO_ASYNC;
+        case PGRES_POLLING_OK:
+            if (TLOGIN_slow) TRC(DBILOGFP, "%sconnection established\n", THEADER_slow);
 
-        status = -2;
+            imp_dbh->async_status = DBH_NO_ASYNC;
+            after_connect_init(aTHX_ dbh, imp_dbh);
+
+            status = 0;
+            break;
+
+        case PGRES_POLLING_FAILED:
+            TRACE_PQERRORMESSAGE;
+            strncpy(imp_dbh->sqlstate, "08006", 6); /* "CONNECTION FAILURE" */
+            pg_error(aTHX_ dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+            TRACE_PQFINISH;
+            PQfinish(imp_dbh->conn);
+            imp_dbh->conn = NULL;
+
+            imp_dbh->async_status = DBH_NO_ASYNC;
+
+            status = -2;
+        }
     }
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_continue_connect\n", THEADER_slow);
