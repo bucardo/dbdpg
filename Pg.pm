@@ -4317,7 +4317,7 @@ Passing the attribute pg_async_connect to the DBI connect method, eg,
   $dbh = DBI->connect('dbi:Pg:...', $username, $password,
                       { pg_async_connect => 1 });
 
-starts an asynchronous connect. The C<pg_continue_connect> method must
+starts an asynchronous connect. The B<pg_continue_connect> method must
 be used afterwards to complete the connection establisment process.
 
 =head2 Array support
