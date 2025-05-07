@@ -333,6 +333,7 @@ int pg_db_continue_connect(SV *dbh)
         TRACE_PQCONNECTPOLL;
         status = PQconnectPoll(imp_dbh->conn);
         if (TRACE5_slow) TRC(DBILOGFP, "%sPQconnectPoll returned %d\n", THEADER_slow, status);
+
         switch (status) {
         case PGRES_POLLING_READING:
         case PGRES_POLLING_WRITING:

@@ -3235,7 +3235,7 @@ method must be called in a loop for as long as it returns either 1 or
 respectively. Afterwards, the next call to pg_continue_connect must
 not take place until an indication that data can either be
 read or written on the current pg_socket was obtained, eg, via
-select. 
+select.
 
 The method returns -1 if no asynchronous connect was in progress, -2 to
 indicate that an asynchronous connect failed and 0 if the connection
