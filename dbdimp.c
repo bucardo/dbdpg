@@ -117,12 +117,10 @@ static void after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
     /* Figure out what protocol this server is using (most likely 3) */
     TRACE_PQPROTOCOLVERSION;
     imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
-    if (TLOGIN_slow) TRC(DBILOGFP, "%sprotocol version %d\n", THEADER_slow, imp_dbh->pg_protocol);
-
+ 
     /* Figure out this particular backend's version */
     TRACE_PQSERVERVERSION;
     imp_dbh->pg_server_version = PQserverVersion(imp_dbh->conn);
-    if (TLOGIN_slow) TRC(DBILOGFP, "%sserver version %d\n", THEADER_slow, imp_dbh->pg_server_version);
 
     if (imp_dbh->pg_server_version < 80000) {
          /* 
