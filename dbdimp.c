@@ -149,6 +149,9 @@ static void after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
     /* If the client_encoding is UTF8, flip the utf8 flag until convinced otherwise */
     imp_dbh->pg_utf8_flag = imp_dbh->client_encoding_utf8;
 
+    /* Tell DBI that we should call destroy when the handle dies */
+    DBIc_IMPSET_on(imp_dbh);
+    
     /* Tell DBI that we should call disconnect when the handle dies */
     DBIc_ACTIVE_on(imp_dbh);
 }
