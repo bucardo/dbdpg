@@ -151,7 +151,7 @@ static void after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
 
     /* Tell DBI that we should call destroy when the handle dies */
     DBIc_IMPSET_on(imp_dbh);
-    
+
     /* Tell DBI that we should call disconnect when the handle dies */
     DBIc_ACTIVE_on(imp_dbh);
 }
