@@ -125,6 +125,11 @@ static void after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
     if (TLOGIN_slow) TRC(DBILOGFP, "%sserver version %d\n", THEADER_slow, imp_dbh->pg_server_version);
 
     if (imp_dbh->pg_server_version < 80000) {
+         /* 
+           Special workaround for PgBouncer, which has the unfortunate habit of modifying 'server_version',
+           something it should never do. If we think this is the case for the version failure, we
+           simply allow things to continue with a faked version. See github issue #47
+        */
         if (NULL != strstr(PQparameterStatus(imp_dbh->conn, "server_version"), "bouncer")) {
             imp_dbh->pg_server_version = 90600;
         }
