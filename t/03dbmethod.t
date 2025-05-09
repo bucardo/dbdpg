@@ -2542,6 +2542,14 @@ ASYNC_CONNECT: {
     $dbh = DBI->connect($dsn, $user, '', {
                                           RaiseError => 0,
                                           PrintError => 0,
+                                          pg_async_connect => 0 });
+    $rc = $dbh->ping();
+    ok($rc == 1, 'pg_ascync_connect false connects synchronously');
+    $dbh->disconnect();
+    
+    $dbh = DBI->connect($dsn, $user, '', {
+                                          RaiseError => 0,
+                                          PrintError => 0,
                                           pg_async_connect => 1 });
     if (!$dbh) {
         fail('failed to create async_connect dbh');
