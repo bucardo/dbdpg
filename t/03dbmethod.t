@@ -2542,7 +2542,6 @@ ASYNC_CONNECT: {
     #
     # test sync connect when pfg_async_connect is false
     #
-
     $dbh = DBI->connect($dsn, $user, '', {
                                           RaiseError => 0,
                                           PrintError => 0,
@@ -2559,7 +2558,6 @@ ASYNC_CONNECT: {
     #
     # test async connect
     #
-
     $dbh = DBI->connect($dsn, $user, '', {
                                           RaiseError => 0,
                                           PrintError => 0,
@@ -2586,7 +2584,6 @@ ASYNC_CONNECT: {
     #
     # test pg_continue_connect ret value when connected
     #
-    
     $rc = $dbh->pg_continue_connect();
     ok($rc == -1, 'pg_continue_connect returned -1 when async connect not in progress');
 }
