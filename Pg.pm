@@ -4312,13 +4312,16 @@ as you don't need it anymore.
 
 =head3 Asynchronous Connect
 
-Passing the attribute pg_async_connect to the DBI connect method, eg,
+Passing a true value for the attribute pg_async_connect to the DBI
+connect method, eg,
 
   $dbh = DBI->connect('dbi:Pg:...', $username, $password,
                       { pg_async_connect => 1 });
 
 starts an asynchronous connect. The B<pg_continue_connect> method must
-be used afterwards to complete the connection establisment process.
+be used afterwards to complete the connection establishment process. If
+the attribute is present but its value is false, an ordinarty
+synchronous connect will be done instead.
 
 =head2 Array support
 
