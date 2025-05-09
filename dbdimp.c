@@ -117,13 +117,13 @@ static void after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
     /* Figure out what protocol this server is using (most likely 3) */
     TRACE_PQPROTOCOLVERSION;
     imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
- 
+
     /* Figure out this particular backend's version */
     TRACE_PQSERVERVERSION;
     imp_dbh->pg_server_version = PQserverVersion(imp_dbh->conn);
 
     if (imp_dbh->pg_server_version < 80000) {
-         /* 
+         /*
            Special workaround for PgBouncer, which has the unfortunate habit of modifying 'server_version',
            something it should never do. If we think this is the case for the version failure, we
            simply allow things to continue with a faked version. See github issue #47

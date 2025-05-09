@@ -2550,7 +2550,7 @@ ASYNC_CONNECT: {
         fail('failed to create dbh for sync connect test');
         last;
     }
-        
+
     $rc = $dbh->ping();
     ok($rc == 1, 'pg_ascync_connect false connects synchronously');
     $dbh->disconnect();
@@ -2574,7 +2574,7 @@ ASYNC_CONNECT: {
             fail('pg_continue_connect return value > 0 but neither 1 nor 2');
             last ASYNC_CONNECT;
         }
-        
+
         $ref = $rc == 1 ? \$rin : \$win;
         vec($$ref, $$dbh{pg_socket}, 1) = 1;
         $rc = select($rin, $win, undef, undef);
