@@ -2564,7 +2564,7 @@ ASYNC_CONNECT: {
                                           RaiseError => 0,
                                           PrintError => 0,
                                           pg_async_connect => 1 });
-    if (!$dbh) {
+    unless ($dbh) {
         fail('failed to create async_connect dbh');
         last;
     }
