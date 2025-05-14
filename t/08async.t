@@ -103,7 +103,7 @@ eval {
 like ($@, qr{No async}, $t);
 
 $res = $dbh->do('SELECT 123', {pg_async => PG_ASYNC});
-$t=q{Method pg_ready() works after a non-async query};
+$t=q{Method pg_ready() works after async query};
 ## Sleep a sub-second to make sure the server has caught up
 sleep 0.2;
 eval {
