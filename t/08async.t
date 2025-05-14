@@ -118,8 +118,6 @@ $res = $dbh->pg_ready();
 $t=q{Database method pg_ready() returns true when called a second time};
 is ($res, 1, $t);
 
-$t=q{Database method pg_ready() returns 1 after a completed async do()};
-is ($res, 1, $t);
 $t=q{Cancelling an async do() query works };
 eval {
     $res = $dbh->pg_cancel();
