@@ -18,7 +18,7 @@ if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 
-plan tests => 67;
+plan tests => 66;
 
 isnt ($dbh, undef, 'Connect to database for async testing');
 
