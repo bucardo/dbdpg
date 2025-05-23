@@ -3146,7 +3146,17 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
     }            
 
     /* If we are still waiting on an async, handle it */
-    if (imp_dbh->async_status) {
+    switch (imp_dbh->async_status) {
+    case DBH_NO_ASYNC:
+        break;
+
+    case DBH_ASYNC_CONNECT:
+    case DBH_ASYNC_CONNECT_POLL:
+        if (TRACE5_slow) TRC(DBILOGFP, "%snot yet connected\n", THEADER_slow);
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (async rows: %d)\n", THEADER_slow, rows);
+        return -1;
+
+    default:
         if (TRACE5_slow) TRC(DBILOGFP, "%shandling old async\n", THEADER_slow);
         rows = handle_old_async(aTHX_ dbh, imp_dbh, asyncflag);
         if (rows) {
@@ -3195,7 +3205,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
             if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (error: async do failed)\n", THEADER_slow);
             return -2;
         }
-        imp_dbh->async_status = 1;
+        imp_dbh->async_status = DBH_ASYNC;
         imp_dbh->async_sth = NULL; /* Needed? */
 
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (async)\n", THEADER_slow);
@@ -3347,7 +3357,17 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
     }
 
     /* Check for old async transactions */
-    if (imp_dbh->async_status) {
+    switch (imp_dbh->async_status) {
+    case DBH_NO_ASYNC:
+        break;
+
+    case DBH_ASYNC_CONNECT:
+    case DBH_ASYNC_CONNECT_POLL:
+        if (TRACE5_slow) TRC(DBILOGFP, "%snot yet connected\n", THEADER_slow);
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute\n", THEADER_slow);
+        return -2;
+
+    default:
         if (TRACE7_slow) TRC(DBILOGFP, "%sAttempting to handle existing async transaction\n", THEADER_slow);
         ret = handle_old_async(aTHX_ sth, imp_dbh, imp_sth->async_flag);
         if (ret) {
@@ -3748,7 +3768,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         if (TRACEWARN_slow) TRC(DBILOGFP, "%sEarly return for async query", THEADER_slow);
         imp_sth->async_status = 1;
         imp_dbh->async_sth = imp_sth;
-        imp_dbh->async_status = 1;
+        imp_dbh->async_status = DBH_ASYNC;
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (async)\n", THEADER_slow);
         return 0;
     }
@@ -5370,11 +5390,11 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_result\n", THEADER_slow);
 
-    if (1 != imp_dbh->async_status) {
+    if (DBH_ASYNC != imp_dbh->async_status) {
         pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running\n");
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (error: no async)\n", THEADER_slow);
         return -2;
-    }    
+    }
 
     imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
 
@@ -5473,10 +5493,9 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
         imp_dbh->async_sth->rows = rows;
         imp_dbh->async_sth->async_status = 0;
     }
-    imp_dbh->async_status = 0;
+    imp_dbh->async_status = DBH_NO_ASYNC;
     if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (rows: %ld)\n", THEADER_slow, rows);
     return rows;
-
 } /* end of pg_db_result */
 
 
@@ -5497,11 +5516,18 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_ready (async status: %d)\n",
                     THEADER_slow, imp_dbh->async_status);
 
-    if (0 == imp_dbh->async_status) {
+    switch (imp_dbh->async_status) {
+    case DBH_NO_ASYNC:
         pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running\n");
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_ready (error: no async)\n", THEADER_slow);
         return -1;
-    }    
+
+    case DBH_ASYNC_CONNECT:
+    case DBH_ASYNC_CONNECT_POLL:
+        if (TRACE5_slow) TRC(DBILOGFP, "%snot yet connected\n", THEADER_slow);
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_ready (error: not connected)\n", THEADER_slow);
+        return -1;
+    }
 
     TRACE_PQCONSUMEINPUT;
     if (!PQconsumeInput(imp_dbh->conn)) {
@@ -5536,17 +5562,17 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
     ExecStatusType status;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_cancel (async status: %d)\n",
-                    THEADER_slow, imp_dbh->async_status);
+                         THEADER_slow, imp_dbh->async_status);
 
-    if (0 == imp_dbh->async_status) {
-        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running");
+    if (DBH_ASYNC != imp_dbh->async_status) {
+        if (DBH_ASYNC_CANCELLED == imp_dbh->async_status) {
+            pg_error(aTHX_ h, PGRES_FATAL_ERROR,
+                     "Asychronous query has already been cancelled");
+        } else {
+            pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running");
+        }
+
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error: no async)\n", THEADER_slow);
-        return DBDPG_FALSE;
-    }
-
-    if (-1 == imp_dbh->async_status) {
-        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "Asychronous query has already been cancelled");
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error: async cancelled)\n", THEADER_slow);
         return DBDPG_FALSE;
     }
 
