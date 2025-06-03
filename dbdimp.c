@@ -5434,6 +5434,7 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
     char errbuf[256];
     PGresult *result;
     ExecStatusType status;
+    int cancelled, errored;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_cancel (async status: %d)\n",
                     THEADER_slow, imp_dbh->async_status);
@@ -5473,36 +5474,32 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
     if (NULL != imp_dbh->async_sth)
         imp_dbh->async_sth->async_status = -1;
 
-    /* Read in the result - assume only one */
     TRACE_PQGETRESULT;
     result = PQgetResult(imp_dbh->conn);
     status = _sqlstate(aTHX_ imp_dbh, result);
-    if (!result) {
-        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "Failed to get a result after PQcancel");
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error: no result)\n", THEADER_slow);
-        return DBDPG_FALSE;
-    }
 
-    TRACE_PQCLEAR;
-    PQclear(result);
-
+    errored = cancelled = 0;
     /* If we actually cancelled a running query, just return true - the caller must rollback if needed */
     if (0 == strncmp(imp_dbh->sqlstate, "57014", 5)) {
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel\n", THEADER_slow);
-        return DBDPG_TRUE;
-    }
-
-    /* If we got any other error, make sure we report it */
-    if (0 != strncmp(imp_dbh->sqlstate, "00000", 5)) {
+        cancelled = 1;
+    } else if (0 == strncmp(imp_dbh->sqlstate, "00000", 5)) {
         if (TRACEWARN_slow) TRC(DBILOGFP,
-                           "%sQuery was not cancelled: was already finished\n", THEADER_slow);
+                                "%sQuery was not cancelled: was already finished\n", THEADER_slow);
+    } else {
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ h, status, PQerrorMessage(imp_dbh->conn));
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error)\n", THEADER_slow);
+
+        errored = 1;
     }
-    else if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel\n", THEADER_slow);
-    return DBDPG_FALSE;
-                    
+
+    do {
+        TRACE_PQCLEAR;
+        PQclear(result);
+    } while ((result = PQgetResult(imp_dbh->conn)) != NULL);
+
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel%s\n", THEADER_slow,
+                       errored ? " (error)" : "");
+    return cancelled;
 } /* end of pg_db_cancel */
 
 
