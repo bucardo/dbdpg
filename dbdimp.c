@@ -83,6 +83,33 @@ static int pg_db_start_txn (pTHX_ SV *dbh, imp_dbh_t *imp_dbh);
 static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int asyncflag);
 static void pg_db_detect_client_encoding_utf8(pTHX_ imp_dbh_t *imp_dbh);
 
+static int do_send_cancel(SV *h, imp_dbh_t *imp_dbh, char const *caller)
+{
+    dTHX;
+    PGcancel *cancel;
+    char errbuf[256];
+
+    /* Get the cancel structure */
+    TRACE_PQGETCANCEL;
+    cancel = PQgetCancel(imp_dbh->conn);
+
+    /* This almost always works. If not, free our structure and complain loudly */
+    TRACE_PQCANCEL;
+    if (! PQcancel(cancel,errbuf,sizeof(errbuf))) {
+        TRACE_PQFREECANCEL;
+        PQfreeCancel(cancel);
+        if (TRACEWARN_slow) { TRC(DBILOGFP, "%sPQcancel failed: %s\n", THEADER_slow, errbuf); }
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "PQcancel failed");
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd %s (error: cancel failed)\n", THEADER_slow, caller);
+        return DBDPG_FALSE;
+    }
+    TRACE_PQFREECANCEL;
+    PQfreeCancel(cancel);
+
+    return DBDPG_TRUE;
+}
+
 /* ================================================================== */
 void dbd_init (dbistate_t *dbistate)
 {
@@ -5436,8 +5463,6 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
 {
     dTHX;
-    PGcancel *cancel;
-    char errbuf[256];
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_cancel (async status: %d)\n",
                     THEADER_slow, imp_dbh->async_status);
@@ -5448,23 +5473,8 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
         return DBDPG_FALSE;
     }
 
-    /* Get the cancel structure */
-    TRACE_PQGETCANCEL;
-    cancel = PQgetCancel(imp_dbh->conn);
-
-    /* This almost always works. If not, free our structure and complain loudly */
-    TRACE_PQCANCEL;
-    if (! PQcancel(cancel,errbuf,sizeof(errbuf))) {
-        TRACE_PQFREECANCEL;
-        PQfreeCancel(cancel);
-        if (TRACEWARN_slow) { TRC(DBILOGFP, "%sPQcancel failed: %s\n", THEADER_slow, errbuf); }
-        _fatal_sqlstate(aTHX_ imp_dbh);
-        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "PQcancel failed");
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error: cancel failed)\n", THEADER_slow);
+    if (!do_send_cancel(h, imp_dbh, "pg_db_cancel"))
         return DBDPG_FALSE;
-    }
-    TRACE_PQFREECANCEL;
-    PQfreeCancel(cancel);
 
     pg_db_result(h, imp_dbh);
 
@@ -5510,23 +5520,11 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
         if (TRACE3_slow) { TRC(DBILOGFP, "%sCancelling old async command\n", THEADER_slow); }
         TRACE_PQISBUSY;
         if (PQisBusy(imp_dbh->conn)) {
-            PGcancel *cancel;
-            char errbuf[256];
-            int cresult;
             if (TRACE3_slow) TRC(DBILOGFP, "%sAttempting to cancel query\n", THEADER_slow);
-            TRACE_PQGETCANCEL;
-            cancel = PQgetCancel(imp_dbh->conn);
-            TRACE_PQCANCEL;
-            cresult = PQcancel(cancel,errbuf,255);
-            if (! cresult) {
-                if (TRACEWARN_slow) { TRC(DBILOGFP, "%sPQcancel failed: %s\n", THEADER_slow, errbuf); }
-                _fatal_sqlstate(aTHX_ imp_dbh);
-                pg_error(aTHX_ handle, PGRES_FATAL_ERROR, "Could not cancel previous command");
-                if (TEND_slow) TRC(DBILOGFP, "%sEnd handle_old_async (error: could not cancel)\n", THEADER_slow);
+
+            if (!do_send_cancel(handle, imp_dbh, "handle_old_async"))
                 return -2;
-            }
-            TRACE_PQFREECANCEL;
-            PQfreeCancel(cancel);
+
             /* Suck up the cancellation notice */
             TRACE_PQGETRESULT;
             while ((result = PQgetResult(imp_dbh->conn)) != NULL) {
@@ -5597,27 +5595,11 @@ int dbd_st_cancel(SV *sth, imp_sth_t *imp_sth)
 {
     dTHX;
     D_imp_dbh_from_sth;
-    PGcancel *cancel;
-    char errbuf[256];
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_cancel\n", THEADER_slow);
 
-    /* Get the cancel structure */
-    TRACE_PQGETCANCEL;
-    cancel = PQgetCancel(imp_dbh->conn);
-
-    /* This almost always works. If not, free our structure and complain loudly */
-    TRACE_PQCANCEL;
-    if (!PQcancel(cancel, errbuf, sizeof(errbuf))) {
-        TRACE_PQFREECANCEL;
-        PQfreeCancel(cancel);
-        if (TRACEWARN_slow) TRC(DBILOGFP, "%sPQcancel failed: %s\n", THEADER_slow, errbuf);
-        pg_error(aTHX_ sth, PGRES_FATAL_ERROR, "PQcancel failed");
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_cancel (error: cancel failed)\n", THEADER_slow);
+    if (!do_send_cancel(sth, imp_dbh, "dbd_st_cancel"))
         return DBDPG_FALSE;
-    }
-    TRACE_PQFREECANCEL;
-    PQfreeCancel(cancel);
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_cancel\n", THEADER_slow);
     return DBDPG_TRUE;
