@@ -82,9 +82,9 @@ is ($@, q{}, $t);
 $t=q{Database method pg_cancel returns a false value when cancellation works but finished};
 is ($res, q{}, $t);
 
-$t=q{Database attribute "async_status" returns -1 after pg_cancel};
+$t=q{Database attribute "async_status" returns 0 after pg_cancel};
 $res = $dbh->{pg_async_status};
-is ($res, -1, $t);
+is ($res, 0, $t);
 
 $t=q{Running do() after a cancelled query works};
 eval {
@@ -309,8 +309,8 @@ like ($@, qr{previous async}, $t);
 
 $dbh->pg_cancel;
 
-$t=q{Directly after pg_cancel(), pg_async_status is -1};
-is ($dbh->{pg_async_status}, -1, $t);
+$t=q{Directly after pg_cancel(), pg_async_status is 0};
+is ($dbh->{pg_async_status}, 0, $t);
 
 $t=q{Method execute() works when prepare has PG_ASYNC flag};
 $sth->execute();
