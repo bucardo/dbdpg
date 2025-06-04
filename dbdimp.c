@@ -5333,6 +5333,12 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             pg_error(aTHX_ h, status, PQerrorMessage(imp_dbh->conn));
             break;
         case PGRES_FATAL_ERROR:
+            /* query cancelled? */
+            if (0 == strncmp(imp_dbh->sqlstate, "57014", 5)) {
+                rows = 0;
+                break;
+            }
+
         default:
             rows = -2;
             TRACE_PQERRORMESSAGE;
