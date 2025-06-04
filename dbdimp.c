@@ -5438,9 +5438,6 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
     dTHX;
     PGcancel *cancel;
     char errbuf[256];
-    PGresult *result;
-    ExecStatusType status;
-    int cancelled, errored;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_cancel (async status: %d)\n",
                     THEADER_slow, imp_dbh->async_status);
@@ -5475,37 +5472,10 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
     TRACE_PQFREECANCEL;
     PQfreeCancel(cancel);
 
-    /* Whatever else happens, we should no longer be inside of an async query */
-    imp_dbh->async_status = -1;
-    if (NULL != imp_dbh->async_sth)
-        imp_dbh->async_sth->async_status = -1;
+    pg_db_result(h, imp_dbh);
 
-    TRACE_PQGETRESULT;
-    result = PQgetResult(imp_dbh->conn);
-    status = _sqlstate(aTHX_ imp_dbh, result);
-
-    errored = cancelled = 0;
-    /* If we actually cancelled a running query, just return true - the caller must rollback if needed */
-    if (0 == strncmp(imp_dbh->sqlstate, "57014", 5)) {
-        cancelled = 1;
-    } else if (0 == strncmp(imp_dbh->sqlstate, "00000", 5)) {
-        if (TRACEWARN_slow) TRC(DBILOGFP,
-                                "%sQuery was not cancelled: was already finished\n", THEADER_slow);
-    } else {
-        TRACE_PQERRORMESSAGE;
-        pg_error(aTHX_ h, status, PQerrorMessage(imp_dbh->conn));
-
-        errored = 1;
-    }
-
-    do {
-        TRACE_PQCLEAR;
-        PQclear(result);
-    } while ((result = PQgetResult(imp_dbh->conn)) != NULL);
-
-    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel%s\n", THEADER_slow,
-                       errored ? " (error)" : "");
-    return cancelled;
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel\n", THEADER_slow);
+    return 0 == strncmp(imp_dbh->sqlstate, "57014", 5);
 } /* end of pg_db_cancel */
 
 
