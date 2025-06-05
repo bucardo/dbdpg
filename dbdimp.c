@@ -5455,6 +5455,33 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 
 /* ================================================================== */
 /*
+  Send a cancel request for a running asynchronus query to the server.
+  The result of the query - which may be "query was cancelled" (SQLSTATE 57014) -
+  still needs to be determined in the ordinary way.
+*/
+int pg_db_send_cancel(SV *h, imp_dbh_t *imp_dbh)
+{
+    dTHX;
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_send_cancel (async status: %d)\n",
+                    THEADER_slow, imp_dbh->async_status);
+
+    if (0 == imp_dbh->async_status) {
+        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running");
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_cancel (error: no async)\n", THEADER_slow);
+        return DBDPG_FALSE;
+    }
+
+    if (!do_send_cancel(h, imp_dbh, "pg_db_send_cancel"))
+        return DBDPG_FALSE;
+
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_cancel\n", THEADER_slow);
+    return DBDPG_TRUE;
+} /* end of pg_db_send_cancel */
+
+
+/* ================================================================== */
+/*
   Attempt to cancel a running asynchronous query
   Returns true if the cancel succeeded, and false if it did not
   In this case, pg_cancel will return false.
@@ -5467,13 +5494,7 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_cancel (async status: %d)\n",
                     THEADER_slow, imp_dbh->async_status);
 
-    if (0 == imp_dbh->async_status) {
-        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running");
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error: no async)\n", THEADER_slow);
-        return DBDPG_FALSE;
-    }
-
-    if (!do_send_cancel(h, imp_dbh, "pg_db_cancel"))
+    if (!pg_db_send_cancel(h, imp_dbh))
         return DBDPG_FALSE;
 
     pg_db_result(h, imp_dbh);

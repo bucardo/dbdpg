@@ -166,6 +166,7 @@ use 5.008001;
             DBD::Pg::db->install_method('pg_result'); ## NOT duplicated below!
             DBD::Pg::db->install_method('pg_rollback_to');
             DBD::Pg::db->install_method('pg_savepoint');
+            DBD::Pg::db->install_method('pg_send_cancel');
             DBD::Pg::db->install_method('pg_server_trace');
             DBD::Pg::db->install_method('pg_server_untrace');
             DBD::Pg::db->install_method('pg_type_info');
