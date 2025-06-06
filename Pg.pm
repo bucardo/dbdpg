@@ -4209,6 +4209,14 @@ that would have been returned by the asynchronous L</do> or L</execute> if it ha
 
   $result = $dbh->pg_result;
 
+=item B<pg_send_cancel>
+
+Send a request to cancel a running asynchronous query to the
+server. Returns true if this succeeded, false otherwise. The actual
+outcome of the query still needs to be determined in the ordinary
+way. If a running query was actually cancelled, C<pg_result> will
+return zero and the C<state> method will return 57014.
+
 =back
 
 =head3 Asynchronous Examples
