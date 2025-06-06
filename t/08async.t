@@ -12,7 +12,7 @@ use DBD::Pg ':async';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
-my $dbh = connect_database();
+my $dbh = connect_database({AutoCommit => 1});
 
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -349,7 +349,6 @@ $t=q{Method fetchall_arrayref returns correct result after pg_result};
 is_deeply ($res, [[123]], $t);
 
 $dbh->do('CREATE TABLE dbd_pg_test5(id INT, t TEXT)');
-$dbh->commit();
 $sth->execute();
 
 $t=q{Method prepare() works when passed in PG_OLDQUERY_CANCEL};
