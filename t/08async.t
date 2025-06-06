@@ -18,7 +18,7 @@ if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 
-plan tests => 67;
+plan tests => 70;
 
 isnt ($dbh, undef, 'Connect to database for async testing');
 
@@ -263,6 +263,18 @@ SKIP: {
 
     $sth->finish();
 
+    $t = q{Can get result of an async query which already finished after pg_send_cancel};
+    $dbh->do('select 123', { pg_async => PG_ASYNC});
+    sleep(1);
+    $dbh->pg_send_cancel();
+    $res = $dbh->pg_result();
+    is($res, 1, $t);
+
+    $dbh->do('select pg_sleep(10)', { pg_async => PG_ASYNC });
+    $dbh->pg_send_cancel();
+    $res = $dbh->pg_result();
+    is (0+$res, 0, 'pg_result returns zero after cancelled query');
+    is ($dbh->state(), '57014', 'state is 57014 after cancelled query');
 } ## end of pg_sleep skip
 
 
