@@ -194,6 +194,8 @@ SKIP: {
          qr{PG_REGCOLLATIONARRAY},
          qr{PG_REGCONFIG},
          qr{PG_REGCONFIGARRAY},
+         qr{PG_REGDATABASE},
+         qr{PG_REGDATABASEARRAY},
          qr{PG_REGDICTIONARY},
          qr{PG_REGDICTIONARYARRAY},
          qr{PG_REGNAMESPACE},

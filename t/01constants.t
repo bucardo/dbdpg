@@ -147,6 +147,8 @@ is (PG_REGCOLLATION                     ,  4191, 'PG_REGCOLLATION returns correc
 is (PG_REGCOLLATIONARRAY                ,  4192, 'PG_REGCOLLATIONARRAY returns correct value');
 is (PG_REGCONFIG                        ,  3734, 'PG_REGCONFIG returns correct value');
 is (PG_REGCONFIGARRAY                   ,  3735, 'PG_REGCONFIGARRAY returns correct value');
+is (PG_REGDATABASE                      ,  8326, 'PG_REGDATABASE returns correct value');
+is (PG_REGDATABASEARRAY                 ,  8327, 'PG_REGDATABASEARRAY returns correct value');
 is (PG_REGDICTIONARY                    ,  3769, 'PG_REGDICTIONARY returns correct value');
 is (PG_REGDICTIONARYARRAY               ,  3770, 'PG_REGDICTIONARYARRAY returns correct value');
 is (PG_REGNAMESPACE                     ,  4089, 'PG_REGNAMESPACE returns correct value');
