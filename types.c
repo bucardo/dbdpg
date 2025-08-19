@@ -603,8 +603,8 @@ typedef struct sql_type_info {
     bool    bind_ok;
     char    array_delimiter;
     char*   arrayout;
-    char*   (*quote)();
-    void    (*dequote)();
+    char*   (*quote)(pTHX_ const char *, STRLEN, STRLEN *, int);
+    void    (*dequote)(pTHX_ char *, STRLEN *);
     union   {
             int pg;
             int sql;
