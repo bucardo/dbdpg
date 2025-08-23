@@ -72,6 +72,14 @@ typedef enum
     (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV &&                    \
      SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
+enum {
+	DBH_ASYNC_CANCELLED =	-1,
+	DBH_NO_ASYNC,
+	DBH_ASYNC,
+	DBH_ASYNC_CONNECT,
+        DBH_ASYNC_CONNECT_POLL
+};
+
 static void pg_error(pTHX_ SV *h, int error_num, const char *error_msg);
 static void pg_warn (void * arg, const char * message);
 static ExecStatusType _result(pTHX_ imp_dbh_t *imp_dbh, const char *sql);
@@ -96,9 +104,62 @@ void dbd_init (dbistate_t *dbistate)
 
 
 /* ================================================================== */
+static int want_async_connect(pTHX_ SV *attrs)
+{
+	HV *hv;
+	SV **psv, *sv;
+
+	return
+		attrs
+		&& (psv = hv_fetchs((HV *)SvRV(attrs), "pg_async_connect", 0))
+		&& (sv = *psv)
+		&& SvTRUE(sv);
+}
+
+static void after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
+{
+    /* Figure out what protocol this server is using (most likely 3) */
+    TRACE_PQPROTOCOLVERSION;
+    imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
+
+    /* Figure out this particular backend's version */
+    TRACE_PQSERVERVERSION;
+    imp_dbh->pg_server_version = PQserverVersion(imp_dbh->conn);
+
+    if (imp_dbh->pg_server_version < 80000) {
+         /*
+           Special workaround for PgBouncer, which has the unfortunate habit of modifying 'server_version',
+           something it should never do. If we think this is the case for the version failure, we
+           simply allow things to continue with a faked version. See github issue #47
+        */
+        if (NULL != strstr(PQparameterStatus(imp_dbh->conn, "server_version"), "bouncer")) {
+            imp_dbh->pg_server_version = 90600;
+        }
+        else {
+            TRACE_PQERRORMESSAGE;
+            strncpy(imp_dbh->sqlstate, "08001", 6); /* sqlclient_unable_to_establish_sqlconnection */
+            pg_error(aTHX_ dbh, CONNECTION_BAD, "Server version 8.0 required");
+            TRACE_PQFINISH;
+            PQfinish(imp_dbh->conn);
+            sv_free((SV *)imp_dbh->savepoints);
+            if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login (error)\n", THEADER_slow);
+            return;
+        }
+    }
+
+    pg_db_detect_client_encoding_utf8(aTHX_ imp_dbh);
+    /* If the client_encoding is UTF8, flip the utf8 flag until convinced otherwise */
+    imp_dbh->pg_utf8_flag = imp_dbh->client_encoding_utf8;
+
+    /* Tell DBI that we should call destroy when the handle dies */
+    DBIc_IMPSET_on(imp_dbh);
+
+    /* Tell DBI that we should call disconnect when the handle dies */
+    DBIc_ACTIVE_on(imp_dbh);
+}
+
 int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char * pwd, SV *attr)
 {
-
     dTHR;
     dTHX;
     char *         conn_str;
@@ -106,8 +167,15 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     bool           inquote = DBDPG_FALSE;
     STRLEN         connect_string_size;
     ConnStatusType connstatus;
+    int            async_connect;
 
-    if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_login\n", THEADER_slow);
+    async_connect = want_async_connect(aTHX_ attr);
+
+    if (TSTART_slow) {
+        TRC(DBILOGFP, "%sBegin dbd_db_login6\n", THEADER_slow);
+        if (async_connect)
+            TRC(DBILOGFP, "%sAsync connect requested\n", THEADER_slow);
+    }
 
     /* DBD::Pg syntax: 'dbname=dbname;host=host;port=port', 'User', 'Pass' */
     /* libpq syntax: 'dbname=dbname host=host port=port user=uid password=pwd' */
@@ -176,12 +244,18 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
         TRACE_PQFINISH;
         PQfinish(imp_dbh->conn);
     }
-    
+
     /* Attempt the connection to the database */
     if (TLOGIN_slow) TRC(DBILOGFP, "%sLogin connection string: (%s)\n", THEADER_slow, conn_str);
-    TRACE_PQCONNECTDB;
-    imp_dbh->conn = PQconnectdb(conn_str);
-    if (TLOGIN_slow) TRC(DBILOGFP, "%sConnection complete\n", THEADER_slow);
+    if (async_connect) {
+        TRACE_PQCONNECTSTART;
+        imp_dbh->conn = PQconnectStart(conn_str);
+        if (TLOGIN_slow) TRC(DBILOGFP, "%sConnection started\n", THEADER_slow);
+    } else {
+        TRACE_PQCONNECTDB;
+        imp_dbh->conn = PQconnectdb(conn_str);
+        if (TLOGIN_slow) TRC(DBILOGFP, "%sConnection complete\n", THEADER_slow);
+    }
     Safefree(conn_str);
 
     /* Set the initial sqlstate */
@@ -191,7 +265,8 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     /* Check to see that the backend connection was successfully made */
     TRACE_PQSTATUS;
     connstatus = PQstatus(imp_dbh->conn);
-    if (CONNECTION_OK != connstatus) {
+    switch (connstatus) {
+    case CONNECTION_BAD:
         TRACE_PQERRORMESSAGE;
         strncpy(imp_dbh->sqlstate, "08006", 6); /* "CONNECTION FAILURE" */
         pg_error(aTHX_ dbh, connstatus, PQerrorMessage(imp_dbh->conn));
@@ -200,46 +275,15 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
         sv_free((SV *)imp_dbh->savepoints);
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login (error)\n", THEADER_slow);
         return 0;
+
+    case CONNECTION_OK:
+        async_connect = 0;
     }
 
     /* Call the pg_warn function anytime this connection raises a notice */
     TRACE_PQSETNOTICEPROCESSOR;
     (void)PQsetNoticeProcessor(imp_dbh->conn, pg_warn, (void *)SvRV(dbh));
     
-    /* Figure out what protocol this server is using (most likely 3) */
-    TRACE_PQPROTOCOLVERSION;
-    imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
-
-    /* Figure out this particular backend's version */
-    TRACE_PQSERVERVERSION;
-    imp_dbh->pg_server_version = PQserverVersion(imp_dbh->conn);
-
-    if (imp_dbh->pg_server_version < 80000) {
-        /* 
-           Special workaround for PgBouncer, which has the unfortunate habit of modifying 'server_version', 
-           something it should never do. If we think this is the case for the version failure, we 
-           simply allow things to continue with a faked version. See github issue #47
-        */
-        if (NULL != strstr(PQparameterStatus(imp_dbh->conn, "server_version"), "bouncer")) {
-           imp_dbh->pg_server_version = 90600;
-        }
-        else {
-            TRACE_PQERRORMESSAGE;
-            strncpy(imp_dbh->sqlstate, "08001", 6); /* sqlclient_unable_to_establish_sqlconnection */
-            pg_error(aTHX_ dbh, CONNECTION_BAD, "Server version 8.0 required");
-            TRACE_PQFINISH;
-            PQfinish(imp_dbh->conn);
-            sv_free((SV *)imp_dbh->savepoints);
-            if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login (error)\n", THEADER_slow);
-            return 0;
-        }
-    }
-
-    pg_db_detect_client_encoding_utf8(aTHX_ imp_dbh);
-
-    /* If the client_encoding is UTF8, flip the utf8 flag until convinced otherwise */
-    imp_dbh->pg_utf8_flag = imp_dbh->client_encoding_utf8;
-
     imp_dbh->pg_enable_utf8  = -1;
 
     imp_dbh->prepare_now       = DBDPG_FALSE;
@@ -256,18 +300,18 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     imp_dbh->copystate         = 0;
     imp_dbh->copybinary        = DBDPG_FALSE;
     imp_dbh->pg_errorlevel     = 1; /* Default */
-    imp_dbh->async_status      = 0;
+    imp_dbh->async_status      = DBH_NO_ASYNC;
     imp_dbh->async_sth         = NULL;
     imp_dbh->last_result       = NULL; /* NULL or the last PGresult returned by a database or statement handle */
     imp_dbh->result_clearable  = DBDPG_TRUE;
     imp_dbh->pg_int8_as_string = DBDPG_FALSE;
     imp_dbh->skip_deallocate   = DBDPG_FALSE;
 
-    /* Tell DBI that we should call destroy when the handle dies */
-    DBIc_IMPSET_on(imp_dbh);
-
-    /* Tell DBI that we should call disconnect when the handle dies */
-    DBIc_ACTIVE_on(imp_dbh);
+    /* if not connecting asynchronously, do after connect init */
+    imp_dbh->pg_protocol = -1;
+    imp_dbh->pg_server_version = -1;
+    if (async_connect) imp_dbh->async_status = DBH_ASYNC_CONNECT;
+    else after_connect_init(aTHX_ dbh, imp_dbh);
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login\n", THEADER_slow);
 
@@ -275,6 +319,62 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
 
 } /* end of dbd_db_login */
 
+int pg_db_continue_connect(SV *dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+    int status;
+
+    if (TSTART_slow)
+        TRC(DBILOGFP, "%sBegin pg_db_continue_connect\n", THEADER_slow);
+
+    switch (imp_dbh->async_status) {
+    default:
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, "No async connect in progress\n");
+        status = -1;
+        break;
+
+    case DBH_ASYNC_CONNECT:
+        imp_dbh->async_status = DBH_ASYNC_CONNECT_POLL;
+        status = PGRES_POLLING_WRITING;
+        break;
+
+    case DBH_ASYNC_CONNECT_POLL:
+        TRACE_PQCONNECTPOLL;
+        status = PQconnectPoll(imp_dbh->conn);
+        if (TRACE5_slow) TRC(DBILOGFP, "%sPQconnectPoll returned %d\n", THEADER_slow, status);
+
+        switch (status) {
+        case PGRES_POLLING_READING:
+        case PGRES_POLLING_WRITING:
+            break;
+
+        case PGRES_POLLING_OK:
+            if (TLOGIN_slow) TRC(DBILOGFP, "%sconnection established\n", THEADER_slow);
+
+            imp_dbh->async_status = DBH_NO_ASYNC;
+            after_connect_init(aTHX_ dbh, imp_dbh);
+
+            status = 0;
+            break;
+
+        case PGRES_POLLING_FAILED:
+            TRACE_PQERRORMESSAGE;
+            strncpy(imp_dbh->sqlstate, "08006", 6); /* "CONNECTION FAILURE" */
+            pg_error(aTHX_ dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
+            TRACE_PQFINISH;
+            PQfinish(imp_dbh->conn);
+            imp_dbh->conn = NULL;
+
+            imp_dbh->async_status = DBH_NO_ASYNC;
+
+            status = -2;
+        }
+    }
+
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_continue_connect\n", THEADER_slow);
+    return status;
+}
 
 /* ================================================================== */
 /* 
@@ -3059,7 +3159,17 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
     }            
 
     /* If we are still waiting on an async, handle it */
-    if (imp_dbh->async_status) {
+    switch (imp_dbh->async_status) {
+    case DBH_NO_ASYNC:
+        break;
+
+    case DBH_ASYNC_CONNECT:
+    case DBH_ASYNC_CONNECT_POLL:
+        if (TRACE5_slow) TRC(DBILOGFP, "%snot yet connected\n", THEADER_slow);
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (async rows: %d)\n", THEADER_slow, rows);
+        return -1;
+
+    default:
         if (TRACE5_slow) TRC(DBILOGFP, "%shandling old async\n", THEADER_slow);
         rows = handle_old_async(aTHX_ dbh, imp_dbh, asyncflag);
         if (rows) {
@@ -3108,7 +3218,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
             if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (error: async do failed)\n", THEADER_slow);
             return -2;
         }
-        imp_dbh->async_status = 1;
+        imp_dbh->async_status = DBH_ASYNC;
         imp_dbh->async_sth = NULL; /* Needed? */
 
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (async)\n", THEADER_slow);
@@ -3260,7 +3370,17 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
     }
 
     /* Check for old async transactions */
-    if (imp_dbh->async_status) {
+    switch (imp_dbh->async_status) {
+    case DBH_NO_ASYNC:
+        break;
+
+    case DBH_ASYNC_CONNECT:
+    case DBH_ASYNC_CONNECT_POLL:
+        if (TRACE5_slow) TRC(DBILOGFP, "%snot yet connected\n", THEADER_slow);
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute\n", THEADER_slow);
+        return -2;
+
+    default:
         if (TRACE7_slow) TRC(DBILOGFP, "%sAttempting to handle existing async transaction\n", THEADER_slow);
         ret = handle_old_async(aTHX_ sth, imp_dbh, imp_sth->async_flag);
         if (ret) {
@@ -3661,7 +3781,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         if (TRACEWARN_slow) TRC(DBILOGFP, "%sEarly return for async query", THEADER_slow);
         imp_sth->async_status = 1;
         imp_dbh->async_sth = imp_sth;
-        imp_dbh->async_status = 1;
+        imp_dbh->async_status = DBH_ASYNC;
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (async)\n", THEADER_slow);
         return 0;
     }
@@ -5283,11 +5403,11 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_result\n", THEADER_slow);
 
-    if (1 != imp_dbh->async_status) {
+    if (DBH_ASYNC != imp_dbh->async_status) {
         pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running\n");
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (error: no async)\n", THEADER_slow);
         return -2;
-    }    
+    }
 
     imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
 
@@ -5386,10 +5506,9 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
         imp_dbh->async_sth->rows = rows;
         imp_dbh->async_sth->async_status = 0;
     }
-    imp_dbh->async_status = 0;
+    imp_dbh->async_status = DBH_NO_ASYNC;
     if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (rows: %ld)\n", THEADER_slow, rows);
     return rows;
-
 } /* end of pg_db_result */
 
 
@@ -5410,11 +5529,18 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_ready (async status: %d)\n",
                     THEADER_slow, imp_dbh->async_status);
 
-    if (0 == imp_dbh->async_status) {
+    switch (imp_dbh->async_status) {
+    case DBH_NO_ASYNC:
         pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running\n");
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_ready (error: no async)\n", THEADER_slow);
         return -1;
-    }    
+
+    case DBH_ASYNC_CONNECT:
+    case DBH_ASYNC_CONNECT_POLL:
+        if (TRACE5_slow) TRC(DBILOGFP, "%snot yet connected\n", THEADER_slow);
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_ready (error: not connected)\n", THEADER_slow);
+        return -1;
+    }
 
     TRACE_PQCONSUMEINPUT;
     if (!PQconsumeInput(imp_dbh->conn)) {
@@ -5449,17 +5575,17 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
     ExecStatusType status;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_cancel (async status: %d)\n",
-                    THEADER_slow, imp_dbh->async_status);
+                         THEADER_slow, imp_dbh->async_status);
 
-    if (0 == imp_dbh->async_status) {
-        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running");
+    if (DBH_ASYNC != imp_dbh->async_status) {
+        if (DBH_ASYNC_CANCELLED == imp_dbh->async_status) {
+            pg_error(aTHX_ h, PGRES_FATAL_ERROR,
+                     "Asychronous query has already been cancelled");
+        } else {
+            pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running");
+        }
+
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error: no async)\n", THEADER_slow);
-        return DBDPG_FALSE;
-    }
-
-    if (-1 == imp_dbh->async_status) {
-        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "Asychronous query has already been cancelled");
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error: async cancelled)\n", THEADER_slow);
         return DBDPG_FALSE;
     }
 

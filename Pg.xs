@@ -225,6 +225,9 @@ constant(name=Nullch)
     PG_OLDQUERY_CANCEL                = 2
     PG_OLDQUERY_WAIT                  = 4
 
+    PG_ASYNC_CONN_READ    = 1
+    PG_ASYNC_CONN_WRITE   = 2
+
     CODE:
         if (0==ix) {
             if (!name) {
@@ -848,6 +851,14 @@ _pg_type_info (type_sv=Nullsv)
         }
         ST(0) = sv_2mortal( newSViv( type_num ) );
     }
+
+int
+pg_continue_connect(dbh)
+		SV* dbh
+	CODE:
+		RETVAL = pg_db_continue_connect(dbh);
+	OUTPUT:
+		RETVAL
 
 void
 pg_result(dbh)
