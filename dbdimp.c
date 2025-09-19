@@ -5312,14 +5312,6 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
         /* Don't return early - let the full processing happen below */
     }
 
-    if (imp_sth && imp_sth->async_status == -99) {
-        pg_error(aTHX_ h, PGRES_FATAL_ERROR,
-                "Results for this query were discarded by PG_OLDQUERY_WAIT. "
-                "To preserve results, call pg_result() before executing another async query.\n");
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (error: results discarded)\n", THEADER_slow);
-        return -2;
-    }
-
     /* Skip async status check for auto-retrieved results and errors */
     if (1 != imp_dbh->async_status && !(imp_sth && (imp_sth->async_status == 100 || imp_sth->async_status == -1))) {
         pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running\n");
