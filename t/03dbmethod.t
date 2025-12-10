@@ -2537,7 +2537,7 @@ $dbh->{PrintError} = 0;
 #
 ASYNC_CONNECT: {
     my ($dsn, $user) = get_test_settings();
-    my ($dbh, $rc);
+    my ($rc);
 
     #
     # test sync connect when pfg_async_connect is false
@@ -2546,7 +2546,7 @@ ASYNC_CONNECT: {
                                           RaiseError => 0,
                                           PrintError => 0,
                                           pg_async_connect => 0 });
-    unless ($dbh) {
+    if (!$dbh) {
         fail('failed to create dbh for sync connect test');
         last;
     }
@@ -2562,7 +2562,7 @@ ASYNC_CONNECT: {
                                           RaiseError => 0,
                                           PrintError => 0,
                                           pg_async_connect => 1 });
-    unless ($dbh) {
+    is (!$dbh) {
         fail ('failed to create async_connect dbh');
         last;
     }
@@ -2570,7 +2570,7 @@ ASYNC_CONNECT: {
     while ($rc = $dbh->pg_continue_connect(), $rc > 0) {
         my ($rin, $win, $ref);
 
-        unless ($rc == 1 || $rc == 2) {
+        if ($rc > 2) {
             fail ('pg_continue_connect return value > 0 but neither 1 nor 2');
             last ASYNC_CONNECT;
         }

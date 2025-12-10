@@ -3234,8 +3234,8 @@ method must be called in a loop for as long as it returns either 1 or
 2, indicating a desire to read or write data,
 respectively. Afterwards, the next call to pg_continue_connect must
 not take place until an indication that data can either be
-read or written on the current pg_socket was obtained, eg, via
-select.
+read or written on the current pg_socket was obtained (e.g. via
+select).
 
 The method returns -1 if no asynchronous connect was in progress, -2 to
 indicate that an asynchronous connect failed and 0 if the connection
@@ -4315,7 +4315,7 @@ as you don't need it anymore.
 =head3 Asynchronous Connect
 
 Passing a true value for the attribute pg_async_connect to the DBI
-connect method, eg,
+connect method, e.g.
 
   $dbh = DBI->connect('dbi:Pg:...', $username, $password,
                       { pg_async_connect => 1 });
