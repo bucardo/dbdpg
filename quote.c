@@ -183,13 +183,13 @@ char * quote_circle(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int es
 }
 
 
-char * quote_bytea(pTHX_ char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_bytea(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
     char * result;
     STRLEN oldlen = len;
 
     /* For this one, always use the E'' format if we can */
-    result = string;
+    result = (char *)string;
     (*retlen) = 2;
     while (len > 0) {
         if (*string == '\'') {
@@ -311,7 +311,7 @@ char * quote_int(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estri
     return result;
 }
 
-char * quote_float(pTHX_ char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_float(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
     char * result;
 
@@ -413,21 +413,21 @@ char * quote_name(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estr
     return result;
 }
 
-void dequote_char(pTHX_ const char *string, STRLEN *retlen, int estring)
+void dequote_char(pTHX_ char *string, STRLEN *retlen)
 {
     /* TODO: chop_blanks if requested */
     *retlen = strlen(string);
 }
 
 
-void dequote_string(pTHX_ const char *string, STRLEN *retlen, int estring)
+void dequote_string(pTHX_ char *string, STRLEN *retlen)
 {
     *retlen = strlen(string);
 }
 
 
 
-static void _dequote_bytea_escape(char *string, STRLEN *retlen, int estring)
+static void _dequote_bytea_escape(char *string, STRLEN *retlen)
 {
     char *result;
 
@@ -476,7 +476,7 @@ static int _decode_hex_digit(char digit)
     return -1;
 }
 
-static void _dequote_bytea_hex(char *string, STRLEN *retlen, int estring)
+static void _dequote_bytea_hex(char *string, STRLEN *retlen)
 {
     char *result;
 
@@ -499,14 +499,14 @@ static void _dequote_bytea_hex(char *string, STRLEN *retlen, int estring)
     }
 }
 
-void dequote_bytea(pTHX_ char *string, STRLEN *retlen, int estring)
+void dequote_bytea(pTHX_ char *string, STRLEN *retlen)
 {
 
     if (NULL != string) {
         if ('\\' == *string && 'x' == *(string+1))
-            _dequote_bytea_hex(string, retlen, estring);
+            _dequote_bytea_hex(string, retlen);
         else
-            _dequote_bytea_escape(string, retlen, estring);
+            _dequote_bytea_escape(string, retlen);
     }
 }
 
@@ -515,19 +515,19 @@ void dequote_bytea(pTHX_ char *string, STRLEN *retlen, int estring)
     it might be nice to let people go the other way too. Say when talking
     to something that uses SQL_BINARY
  */
-void dequote_sql_binary(pTHX_ char *string, STRLEN *retlen, int estring)
+void dequote_sql_binary(pTHX_ char *string, STRLEN *retlen)
 {
 
     /* We are going to return a dequote_bytea(), just in case */
     warn("Use of SQL_BINARY invalid in dequote()");
-    dequote_bytea(aTHX_ string, retlen, estring);
+    dequote_bytea(aTHX_ string, retlen);
 
     /* Put dequote_sql_binary function here at some point */
 }
 
 
 
-void dequote_bool(pTHX_ char *string, STRLEN *retlen, int estring)
+void dequote_bool(pTHX_ char *string, STRLEN *retlen)
 {
 
     switch(*string){
@@ -540,7 +540,7 @@ void dequote_bool(pTHX_ char *string, STRLEN *retlen, int estring)
 }
 
 
-void null_dequote(pTHX_ const char *string, STRLEN *retlen, int estring)
+void null_dequote(pTHX_ char *string, STRLEN *retlen)
 {
     *retlen = strlen(string);
 

@@ -8,8 +8,8 @@ typedef struct sql_type_info {
     bool    bind_ok;
     char    array_delimiter;
     char*   arrayout;
-    char*   (*quote)();
-    void    (*dequote)();
+    char*   (*quote)(pTHX_ const char *, STRLEN, STRLEN *, int);
+    void    (*dequote)(pTHX_ char *, STRLEN *);
     union   {
             int pg;
             int sql;
@@ -95,6 +95,7 @@ sql_type_info_t* sql_type_data(int);
 #define                       PG_REGCLASS  2205
 #define                   PG_REGCOLLATION  4191
 #define                      PG_REGCONFIG  3734
+#define                    PG_REGDATABASE  8326
 #define                  PG_REGDICTIONARY  3769
 #define                   PG_REGNAMESPACE  4089
 #define                        PG_REGOPER  2203
@@ -186,6 +187,7 @@ sql_type_info_t* sql_type_data(int);
 #define                  PG_REGCLASSARRAY  2210
 #define              PG_REGCOLLATIONARRAY  4192
 #define                 PG_REGCONFIGARRAY  3735
+#define               PG_REGDATABASEARRAY  8327
 #define             PG_REGDICTIONARYARRAY  3770
 #define              PG_REGNAMESPACEARRAY  4090
 #define                   PG_REGOPERARRAY  2208

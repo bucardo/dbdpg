@@ -41,7 +41,7 @@ use 5.008001;
 
     our %EXPORT_TAGS =
         (
-         async => [qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT)],
+         async => [qw($DBDPG_DEFAULT PG_ASYNC PG_OLDQUERY_CANCEL PG_OLDQUERY_WAIT PG_ASYNC_CONN_READ PG_ASYNC_CONN_WRITE)],
          pg_limits => [qw($DBDPG_DEFAULT
                        PG_MIN_SMALLINT PG_MAX_SMALLINT PG_MIN_INTEGER PG_MAX_INTEGER PG_MAX_BIGINT PG_MIN_BIGINT
                        PG_MIN_SMALLSERIAL PG_MAX_SMALLSERIAL PG_MIN_SERIAL PG_MAX_SERIAL PG_MIN_BIGSERIAL PG_MAX_BIGSERIAL)],
@@ -72,19 +72,19 @@ use 5.008001;
             PG_PG_PROCARRAY PG_PG_SNAPSHOT PG_PG_SNAPSHOTARRAY PG_PG_TYPE PG_PG_TYPEARRAY
             PG_POINT PG_POINTARRAY PG_POLYGON PG_POLYGONARRAY PG_RECORD
             PG_RECORDARRAY PG_REFCURSOR PG_REFCURSORARRAY PG_REGCLASS PG_REGCLASSARRAY
-            PG_REGCOLLATION PG_REGCOLLATIONARRAY PG_REGCONFIG PG_REGCONFIGARRAY PG_REGDICTIONARY
-            PG_REGDICTIONARYARRAY PG_REGNAMESPACE PG_REGNAMESPACEARRAY PG_REGOPER PG_REGOPERARRAY
-            PG_REGOPERATOR PG_REGOPERATORARRAY PG_REGPROC PG_REGPROCARRAY PG_REGPROCEDURE
-            PG_REGPROCEDUREARRAY PG_REGROLE PG_REGROLEARRAY PG_REGTYPE PG_REGTYPEARRAY
-            PG_TABLE_AM_HANDLER PG_TEXT PG_TEXTARRAY PG_TID PG_TIDARRAY
-            PG_TIME PG_TIMEARRAY PG_TIMESTAMP PG_TIMESTAMPARRAY PG_TIMESTAMPTZ
-            PG_TIMESTAMPTZARRAY PG_TIMETZ PG_TIMETZARRAY PG_TRIGGER PG_TSMULTIRANGE
-            PG_TSMULTIRANGEARRAY PG_TSM_HANDLER PG_TSQUERY PG_TSQUERYARRAY PG_TSRANGE
-            PG_TSRANGEARRAY PG_TSTZMULTIRANGE PG_TSTZMULTIRANGEARRAY PG_TSTZRANGE PG_TSTZRANGEARRAY
-            PG_TSVECTOR PG_TSVECTORARRAY PG_TXID_SNAPSHOT PG_TXID_SNAPSHOTARRAY PG_UNKNOWN
-            PG_UUID PG_UUIDARRAY PG_VARBIT PG_VARBITARRAY PG_VARCHAR
-            PG_VARCHARARRAY PG_VOID PG_XID PG_XID8 PG_XID8ARRAY
-            PG_XIDARRAY PG_XML PG_XMLARRAY
+            PG_REGCOLLATION PG_REGCOLLATIONARRAY PG_REGCONFIG PG_REGCONFIGARRAY PG_REGDATABASE
+            PG_REGDATABASEARRAY PG_REGDICTIONARY PG_REGDICTIONARYARRAY PG_REGNAMESPACE PG_REGNAMESPACEARRAY
+            PG_REGOPER PG_REGOPERARRAY PG_REGOPERATOR PG_REGOPERATORARRAY PG_REGPROC
+            PG_REGPROCARRAY PG_REGPROCEDURE PG_REGPROCEDUREARRAY PG_REGROLE PG_REGROLEARRAY
+            PG_REGTYPE PG_REGTYPEARRAY PG_TABLE_AM_HANDLER PG_TEXT PG_TEXTARRAY
+            PG_TID PG_TIDARRAY PG_TIME PG_TIMEARRAY PG_TIMESTAMP
+            PG_TIMESTAMPARRAY PG_TIMESTAMPTZ PG_TIMESTAMPTZARRAY PG_TIMETZ PG_TIMETZARRAY
+            PG_TRIGGER PG_TSMULTIRANGE PG_TSMULTIRANGEARRAY PG_TSM_HANDLER PG_TSQUERY
+            PG_TSQUERYARRAY PG_TSRANGE PG_TSRANGEARRAY PG_TSTZMULTIRANGE PG_TSTZMULTIRANGEARRAY
+            PG_TSTZRANGE PG_TSTZRANGEARRAY PG_TSVECTOR PG_TSVECTORARRAY PG_TXID_SNAPSHOT
+            PG_TXID_SNAPSHOTARRAY PG_UNKNOWN PG_UUID PG_UUIDARRAY PG_VARBIT
+            PG_VARBITARRAY PG_VARCHAR PG_VARCHARARRAY PG_VOID PG_XID
+            PG_XID8 PG_XID8ARRAY PG_XIDARRAY PG_XML PG_XMLARRAY
         )],
     );
 
@@ -151,6 +151,7 @@ use 5.008001;
         # uncoverable branch false
         if (!$methods_are_installed) {
             DBD::Pg::db->install_method('pg_cancel');
+            DBD::Pg::db->install_method('pg_continue_connect');
             DBD::Pg::db->install_method('pg_endcopy');
             DBD::Pg::db->install_method('pg_error_field');
             DBD::Pg::db->install_method('pg_getline');
@@ -3224,6 +3225,25 @@ the L</fetchrow_hashref> method.
 Creates a copy of the database handle by connecting with the same parameters as the original 
 handle, then trying to merge the attributes. See the DBI documentation for complete usage.
 
+=head3 B<pg_continue_connect>
+
+  $rc = $dbh->pg_continue_connect();
+
+Continues an asynchronous connect operation. See B<Asynchronous
+Connect> below. After an asynchronous connect was initiated, this
+method must be called in a loop for as long as it returns either 1 or
+2, indicating a desire to read or write data,
+respectively. Afterwards, the next call to pg_continue_connect must
+not take place until an indication that data can either be
+read or written on the current pg_socket was obtained, eg, via
+select.
+
+The method returns -1 if no asynchronous connect was in progress, -2 to
+indicate that an asynchronous connect failed and 0 if the connection
+was successfully established.
+
+The socket may have changed after each call to the method.
+
 =head2 Database Handle Attributes
 
 =head3 B<AutoCommit> (boolean)
@@ -3248,7 +3268,9 @@ should the query fail (see C<ShowErrorStatement>).
 =head3 B<pg_bool_tf> (boolean)
 
 DBD::Pg specific attribute. If true, boolean values will be returned
-as the characters 't' and 'f' instead of '1' and '0'.
+as the characters 't' and 'f' instead of '1' and '0'.  On Perl 5.36
+and newer, distinguished boolean values (see L<builtin/is_bool>) will
+also be sent as 't' and 'f' when used as placeholder values.
 
 =head3 B<ReadOnly> (boolean)
 
@@ -3530,17 +3552,17 @@ The current list of Postgres data types exported is:
  PG_PG_PROC PG_PG_PROCARRAY PG_PG_SNAPSHOT PG_PG_SNAPSHOTARRAY PG_PG_TYPE PG_PG_TYPEARRAY
  PG_POINT PG_POINTARRAY PG_POLYGON PG_POLYGONARRAY PG_RECORD PG_RECORDARRAY
  PG_REFCURSOR PG_REFCURSORARRAY PG_REGCLASS PG_REGCLASSARRAY PG_REGCOLLATION PG_REGCOLLATIONARRAY
- PG_REGCONFIG PG_REGCONFIGARRAY PG_REGDICTIONARY PG_REGDICTIONARYARRAY PG_REGNAMESPACE PG_REGNAMESPACEARRAY
- PG_REGOPER PG_REGOPERARRAY PG_REGOPERATOR PG_REGOPERATORARRAY PG_REGPROC PG_REGPROCARRAY
- PG_REGPROCEDURE PG_REGPROCEDUREARRAY PG_REGROLE PG_REGROLEARRAY PG_REGTYPE PG_REGTYPEARRAY
- PG_TABLE_AM_HANDLER PG_TEXT PG_TEXTARRAY PG_TID PG_TIDARRAY PG_TIME
- PG_TIMEARRAY PG_TIMESTAMP PG_TIMESTAMPARRAY PG_TIMESTAMPTZ PG_TIMESTAMPTZARRAY PG_TIMETZ
- PG_TIMETZARRAY PG_TRIGGER PG_TSMULTIRANGE PG_TSMULTIRANGEARRAY PG_TSM_HANDLER PG_TSQUERY
- PG_TSQUERYARRAY PG_TSRANGE PG_TSRANGEARRAY PG_TSTZMULTIRANGE PG_TSTZMULTIRANGEARRAY PG_TSTZRANGE
- PG_TSTZRANGEARRAY PG_TSVECTOR PG_TSVECTORARRAY PG_TXID_SNAPSHOT PG_TXID_SNAPSHOTARRAY PG_UNKNOWN
- PG_UUID PG_UUIDARRAY PG_VARBIT PG_VARBITARRAY PG_VARCHAR PG_VARCHARARRAY
- PG_VOID PG_XID PG_XID8 PG_XID8ARRAY PG_XIDARRAY PG_XML
- PG_XMLARRAY
+ PG_REGCONFIG PG_REGCONFIGARRAY PG_REGDATABASE PG_REGDATABASEARRAY PG_REGDICTIONARY PG_REGDICTIONARYARRAY
+ PG_REGNAMESPACE PG_REGNAMESPACEARRAY PG_REGOPER PG_REGOPERARRAY PG_REGOPERATOR PG_REGOPERATORARRAY
+ PG_REGPROC PG_REGPROCARRAY PG_REGPROCEDURE PG_REGPROCEDUREARRAY PG_REGROLE PG_REGROLEARRAY
+ PG_REGTYPE PG_REGTYPEARRAY PG_TABLE_AM_HANDLER PG_TEXT PG_TEXTARRAY PG_TID
+ PG_TIDARRAY PG_TIME PG_TIMEARRAY PG_TIMESTAMP PG_TIMESTAMPARRAY PG_TIMESTAMPTZ
+ PG_TIMESTAMPTZARRAY PG_TIMETZ PG_TIMETZARRAY PG_TRIGGER PG_TSMULTIRANGE PG_TSMULTIRANGEARRAY
+ PG_TSM_HANDLER PG_TSQUERY PG_TSQUERYARRAY PG_TSRANGE PG_TSRANGEARRAY PG_TSTZMULTIRANGE
+ PG_TSTZMULTIRANGEARRAY PG_TSTZRANGE PG_TSTZRANGEARRAY PG_TSVECTOR PG_TSVECTORARRAY PG_TXID_SNAPSHOT
+ PG_TXID_SNAPSHOTARRAY PG_UNKNOWN PG_UUID PG_UUIDARRAY PG_VARBIT PG_VARBITARRAY
+ PG_VARCHAR PG_VARCHARARRAY PG_VOID PG_XID PG_XID8 PG_XID8ARRAY
+ PG_XIDARRAY PG_XML PG_XMLARRAY
 
 Be warned that PG_CHAR is probably not what you think it is. When in doubt, use PG_TEXT
 for anything storing a non-numeric string.
@@ -4299,6 +4321,19 @@ as you don't need it anymore.
     $count = $sth2->fetchall_arrayref()->[0][0];
   }
 
+=head3 Asynchronous Connect
+
+Passing a true value for the attribute pg_async_connect to the DBI
+connect method, eg,
+
+  $dbh = DBI->connect('dbi:Pg:...', $username, $password,
+                      { pg_async_connect => 1 });
+
+starts an asynchronous connect. The B<pg_continue_connect> method must
+be used afterwards to complete the connection establishment process. If
+the attribute is present but its value is false, an ordinarty
+synchronous connect will be done instead.
+
 =head2 Array support
 
 DBD::Pg allows arrays (as arrayrefs) to be passed in to both 
@@ -4476,6 +4511,16 @@ set the L<pg_bool_tf|/pg_bool_tf (boolean)> attribute to a true value to change 
 
 Boolean values can be passed to PostgreSQL as TRUE, 't', 'true', 'y', 'yes' or
 '1' for true and FALSE, 'f', 'false', 'n', 'no' or '0' for false.
+
+On Perl 5.36 and newer, distinguished boolean values (see
+L<builtin/is_bool>) can be used as placeholder values.  They will be
+sent as C<1> and C<0>, or C<t> and C<f> if C<pg_bool_tf> is set to a
+true value.
+
+On older versions of Perl, false values returned by built-in operators
+(such as C<!!0>) must be converted to one of the above false values,
+or bound with C<< pg_type => PG_BOOL >>, since they stringify to the
+empty string.
 
 =head2 Schema support
 

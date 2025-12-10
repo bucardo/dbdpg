@@ -159,6 +159,8 @@ constant(name=Nullch)
     PG_REGCOLLATIONARRAY              = 4192
     PG_REGCONFIG                      = 3734
     PG_REGCONFIGARRAY                 = 3735
+    PG_REGDATABASE                    = 8326
+    PG_REGDATABASEARRAY               = 8327
     PG_REGDICTIONARY                  = 3769
     PG_REGDICTIONARYARRAY             = 3770
     PG_REGNAMESPACE                   = 4089
@@ -222,6 +224,9 @@ constant(name=Nullch)
     PG_ASYNC                          = 1
     PG_OLDQUERY_CANCEL                = 2
     PG_OLDQUERY_WAIT                  = 4
+
+    PG_ASYNC_CONN_READ    = 1
+    PG_ASYNC_CONN_WRITE   = 2
 
     CODE:
         if (0==ix) {
@@ -846,6 +851,14 @@ _pg_type_info (type_sv=Nullsv)
         }
         ST(0) = sv_2mortal( newSViv( type_num ) );
     }
+
+int
+pg_continue_connect(dbh)
+		SV* dbh
+	CODE:
+		RETVAL = pg_db_continue_connect(dbh);
+	OUTPUT:
+		RETVAL
 
 void
 pg_result(dbh)
