@@ -4322,7 +4322,7 @@ connect method, eg,
 
 starts an asynchronous connect. The B<pg_continue_connect> method must
 be used afterwards to complete the connection establishment process. If
-the attribute is present but its value is false, an ordinarty
+the attribute is present but its value is false, an ordinary
 synchronous connect will be done instead.
 
 =head2 Array support

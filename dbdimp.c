@@ -73,7 +73,7 @@ typedef enum
      SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
 enum {
-    STH_ASYNC_CANCELLED =	-1,
+    STH_ASYNC_CANCELLED = -1,
     STH_NO_ASYNC,
     STH_ASYNC,
     STH_ASYNC_PREPARE
@@ -3347,11 +3347,11 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 /* Return value <= -2:error, >=0:ok row count, (-1=unknown count) */
 static int pq_send_prepared_query (pTHX_ imp_dbh_t * imp_dbh, imp_sth_t * imp_sth)
 {
-	TRACE_PQSENDQUERYPREPARED;
-	return PQsendQueryPrepared (imp_dbh->conn,
-				    imp_sth->prepare_name, imp_sth->numphs,
-				    imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts,
-				    0);
+    TRACE_PQSENDQUERYPREPARED;
+    return PQsendQueryPrepared (imp_dbh->conn,
+                                imp_sth->prepare_name, imp_sth->numphs,
+                                imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts,
+                                0);
 }
 
 long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
