@@ -2532,6 +2532,62 @@ $t=q{DB handle method "pg_type_info" returns 12 for type 123 (PrintError on)};
 is ($dbh->pg_type_info(123), 12, $t);
 $dbh->{PrintError} = 0;
 
+#
+# Test async connect
+#
+ASYNC_CONNECT: {
+    my ($dsn, $user) = get_test_settings();
+    my ($dbh, $rc);
+
+    #
+    # test sync connect when pfg_async_connect is false
+    #
+    $dbh = DBI->connect($dsn, $user, '', {
+                                          RaiseError => 0,
+                                          PrintError => 0,
+                                          pg_async_connect => 0 });
+    unless ($dbh) {
+        fail('failed to create dbh for sync connect test');
+        last;
+    }
+
+    $rc = $dbh->ping();
+    ok ($rc == 1, 'pg_ascync_connect false connects synchronously');
+    $dbh->disconnect();
+
+    #
+    # test async connect
+    #
+    $dbh = DBI->connect($dsn, $user, '', {
+                                          RaiseError => 0,
+                                          PrintError => 0,
+                                          pg_async_connect => 1 });
+    unless ($dbh) {
+        fail ('failed to create async_connect dbh');
+        last;
+    }
+
+    while ($rc = $dbh->pg_continue_connect(), $rc > 0) {
+        my ($rin, $win, $ref);
+
+        unless ($rc == 1 || $rc == 2) {
+            fail ('pg_continue_connect return value > 0 but neither 1 nor 2');
+            last ASYNC_CONNECT;
+        }
+
+        $ref = $rc == 1 ? \$rin : \$win;
+        vec($$ref, $$dbh{pg_socket}, 1) = 1;
+        $rc = select($rin, $win, undef, undef);
+    }
+    ok ($rc == 0 || $rc == -2, 'pg_continue_connect loop ended with success or failure return value');
+
+    #
+    # test pg_continue_connect ret value when connected
+    #
+    $rc = $dbh->pg_continue_connect();
+    ok ($rc == -1, 'pg_continue_connect returned -1 when async connect not in progress');
+}
+
 done_testing();
 
 exit;
