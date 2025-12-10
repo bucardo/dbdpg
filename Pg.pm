@@ -3228,8 +3228,8 @@ handle, then trying to merge the attributes. See the DBI documentation for compl
 
   $rc = $dbh->pg_continue_connect();
 
-Continues an asychronous connect operation. See B<Asynchronous
-Connect> below. After an asychronous connect was initiated, this
+Continues an asynchronous connect operation. See B<Asynchronous
+Connect> below. After an asynchronous connect was initiated, this
 method must be called in a loop for as long as it returns either 1 or
 2, indicating a desire to read or write data,
 respectively. Afterwards, the next call to pg_continue_connect must

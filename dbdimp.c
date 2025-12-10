@@ -3207,7 +3207,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 
     /* Asynchronous commands get kicked off and return undef */
     if (asyncflag & PG_ASYNC) {
-        if (TRACE4_slow) TRC(DBILOGFP, "%sGoing asychronous with do()\n", THEADER_slow);
+        if (TRACE4_slow) TRC(DBILOGFP, "%sGoing asynchronous with do()\n", THEADER_slow);
         TRACE_PQSENDQUERY;
         if (! PQsendQuery(imp_dbh->conn, sql)) {
             if (TRACE4_slow) TRC(DBILOGFP, "%sPQsendQuery failed\n", THEADER_slow);
