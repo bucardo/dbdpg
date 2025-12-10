@@ -1,4 +1,4 @@
-use ExtUtils::MakeMaker;
+use ExtUtils::MakeMaker 7.64;
 use Config;
 use strict;
 use warnings;
@@ -221,7 +221,7 @@ my %opts =
      AUTHOR         => 'Greg Sabino Mullane',
      ABSTRACT       => 'PostgreSQL database driver for the DBI module',
      PREREQ_PM      => {
-                        'ExtUtils::MakeMaker' => '6.58',
+                        'ExtUtils::MakeMaker' => '7.64',
                         'DBI'                 => '1.614',
                         'File::Temp'          => '0',
                         'Test::More'          => '0.88',
