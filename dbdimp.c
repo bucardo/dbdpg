@@ -73,11 +73,11 @@ typedef enum
      SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
 enum {
-	DBH_ASYNC_CANCELLED =	-1,
-	DBH_NO_ASYNC,
-	DBH_ASYNC,
-	DBH_ASYNC_CONNECT,
-        DBH_ASYNC_CONNECT_POLL
+    DBH_ASYNC_CANCELLED = -1,
+    DBH_NO_ASYNC,
+    DBH_ASYNC,
+    DBH_ASYNC_CONNECT,
+    DBH_ASYNC_CONNECT_POLL
 };
 
 static void pg_error(pTHX_ SV *h, int error_num, const char *error_msg);
@@ -106,14 +106,14 @@ void dbd_init (dbistate_t *dbistate)
 /* ================================================================== */
 static int want_async_connect(pTHX_ SV *attrs)
 {
-	HV *hv;
-	SV **psv, *sv;
+    HV *hv;
+    SV **psv, *sv;
 
-	return
-		attrs
-		&& (psv = hv_fetchs((HV *)SvRV(attrs), "pg_async_connect", 0))
-		&& (sv = *psv)
-		&& SvTRUE(sv);
+    return
+        attrs
+        && (psv = hv_fetchs((HV *)SvRV(attrs), "pg_async_connect", 0))
+        && (sv = *psv)
+        && SvTRUE(sv);
 }
 
 static void after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
