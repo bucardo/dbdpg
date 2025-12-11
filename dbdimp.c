@@ -5706,7 +5706,6 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
     return ret;
 } /* end of pg_db_ready */
 
-
 /* ================================================================== */
 /*
   Send a cancel request for a running asynchronus query to the server.
@@ -5717,29 +5716,32 @@ int pg_db_send_cancel(SV *h, imp_dbh_t *imp_dbh)
 {
     dTHX;
 
-    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_cancel (async status: %d)\n",
-                         THEADER_slow, imp_dbh->async_status);
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_send_cancel (async status: %d)\n",
+                    THEADER_slow, imp_dbh->async_status);
 
-    if (DBH_ASYNC != imp_dbh->async_status) {
-        if (DBH_ASYNC_CANCELLED == imp_dbh->async_status) {
-            pg_error(aTHX_ h, PGRES_FATAL_ERROR,
-                     "Asychronous query has already been cancelled");
-        } else {
-            pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running");
-        }
+    if (0 == imp_dbh->async_status) {
+        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running");
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_cancel (error: no async)\n", THEADER_slow);
+        return DBDPG_FALSE;
+    }
 
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error: no async)\n", THEADER_slow);
+    if (!do_send_cancel(h, imp_dbh, "pg_db_send_cancel"))
         return DBDPG_FALSE;
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_cancel\n", THEADER_slow);
     return DBDPG_TRUE;
 } /* end of pg_db_send_cancel */
 
-
-    /* Whatever else happens, we should no longer be inside of an async query */
-    imp_dbh->async_status = -1;
-    if (imp_dbh->async_sth)
-        imp_dbh->async_sth->async_status = STH_ASYNC_CANCELLED;
+/* ================================================================== */
+/*
+  Attempt to cancel a running asynchronous query
+  Returns true if the cancel succeeded, and false if it did not
+  In this case, pg_cancel will return false.
+  NOTE: We only return true if we cancelled
+*/
+int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
+{
+    dTHX;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_cancel (async status: %d)\n",
                     THEADER_slow, imp_dbh->async_status);
@@ -5752,7 +5754,6 @@ int pg_db_send_cancel(SV *h, imp_dbh_t *imp_dbh)
     if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel\n", THEADER_slow);
     return 0 == strncmp(imp_dbh->sqlstate, "57014", 5);
 } /* end of pg_db_cancel */
-
 
 /* ================================================================== */
 int pg_db_cancel_sth(SV *sth, imp_sth_t *imp_sth)
