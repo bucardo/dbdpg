@@ -281,6 +281,8 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh);
 
 int pg_db_ready(SV *h, imp_dbh_t *imp_dbh);
 
+int pg_db_send_cancel (SV *h, imp_dbh_t *imp_dbh);
+
 int pg_db_cancel (SV *h, imp_dbh_t *imp_dbh);
 
 int pg_db_cancel_sth (SV *sth, imp_sth_t *imp_sth);

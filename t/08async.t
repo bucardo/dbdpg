@@ -12,7 +12,7 @@ use DBD::Pg ':async';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
-my $dbh = connect_database();
+my $dbh = connect_database({AutoCommit => 1});
 
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -82,9 +82,9 @@ is ($@, q{}, $t);
 $t=q{Database method pg_cancel returns a false value when cancellation works but finished};
 is ($res, q{}, $t);
 
-$t=q{Database attribute "async_status" returns -1 after pg_cancel};
+$t=q{Database attribute "async_status" returns 0 after pg_cancel};
 $res = $dbh->{pg_async_status};
-is ($res, -1, $t);
+is ($res, 0, $t);
 
 $t=q{Running do() after a cancelled query works};
 eval {
@@ -261,6 +261,18 @@ SKIP: {
 
     $sth->finish();
 
+    $t = q{Can get result of an async query which already finished after pg_send_cancel};
+    $dbh->do('select 123', { pg_async => PG_ASYNC});
+    sleep(1);
+    $dbh->pg_send_cancel();
+    $res = $dbh->pg_result();
+    is($res, 1, $t);
+
+    $dbh->do('select pg_sleep(10)', { pg_async => PG_ASYNC });
+    $dbh->pg_send_cancel();
+    $res = $dbh->pg_result();
+    is (0+$res, 0, 'pg_result returns zero after cancelled query');
+    is ($dbh->state(), '57014', 'state is 57014 after cancelled query');
 } ## end of pg_sleep skip
 
 
@@ -307,8 +319,8 @@ like ($@, qr{previous async}, $t);
 
 $dbh->pg_cancel;
 
-$t=q{Directly after pg_cancel(), pg_async_status is -1};
-is ($dbh->{pg_async_status}, -1, $t);
+$t=q{Directly after pg_cancel(), pg_async_status is 0};
+is ($dbh->{pg_async_status}, 0, $t);
 
 $t=q{Method execute() works when prepare has PG_ASYNC flag};
 $sth->execute();
@@ -335,7 +347,6 @@ $t=q{Method fetchall_arrayref returns correct result after pg_result};
 is_deeply ($res, [[123]], $t);
 
 $dbh->do('CREATE TABLE dbd_pg_test5(id INT, t TEXT)');
-$dbh->commit();
 $sth->execute();
 
 $t=q{Method prepare() works when passed in PG_OLDQUERY_CANCEL};

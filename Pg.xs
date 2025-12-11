@@ -882,6 +882,13 @@ pg_ready(dbh)
         ST(0) = sv_2mortal(newSViv(pg_db_ready(dbh, imp_dbh)));
 
 void
+pg_send_cancel(dbh)
+    SV *dbh
+    CODE:
+    D_imp_dbh(dbh);
+    ST(0) = pg_db_send_cancel(dbh, imp_dbh) ? &PL_sv_yes : &PL_sv_no;
+
+void
 pg_cancel(dbh)
     SV *dbh
     CODE:

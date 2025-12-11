@@ -102,6 +102,33 @@ static int pg_db_start_txn (pTHX_ SV *dbh, imp_dbh_t *imp_dbh);
 static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int asyncflag);
 static void pg_db_detect_client_encoding_utf8(pTHX_ imp_dbh_t *imp_dbh);
 
+static int do_send_cancel(SV *h, imp_dbh_t *imp_dbh, char const *caller)
+{
+    dTHX;
+    PGcancel *cancel;
+    char errbuf[256];
+
+    /* Get the cancel structure */
+    TRACE_PQGETCANCEL;
+    cancel = PQgetCancel(imp_dbh->conn);
+
+    /* This almost always works. If not, free our structure and complain loudly */
+    TRACE_PQCANCEL;
+    if (! PQcancel(cancel,errbuf,sizeof(errbuf))) {
+        TRACE_PQFREECANCEL;
+        PQfreeCancel(cancel);
+        if (TRACEWARN_slow) { TRC(DBILOGFP, "%sPQcancel failed: %s\n", THEADER_slow, errbuf); }
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "PQcancel failed");
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd %s (error: cancel failed)\n", THEADER_slow, caller);
+        return DBDPG_FALSE;
+    }
+    TRACE_PQFREECANCEL;
+    PQfreeCancel(cancel);
+
+    return DBDPG_TRUE;
+}
+
 /* ================================================================== */
 void dbd_init (dbistate_t *dbistate)
 {
@@ -5516,6 +5543,12 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             pg_error(aTHX_ h, status, PQerrorMessage(imp_dbh->conn));
             break;
         case PGRES_FATAL_ERROR:
+            /* query cancelled? */
+            if (0 == strncmp(imp_dbh->sqlstate, "57014", 5)) {
+                rows = 0;
+                break;
+            }
+
         default:
             rows = -2;
             TRACE_PQERRORMESSAGE;
@@ -5676,18 +5709,13 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 
 /* ================================================================== */
 /*
-  Attempt to cancel a running asynchronous query
-  Returns true if the cancel succeeded, and false if it did not
-  In this case, pg_cancel will return false.
-  NOTE: We only return true if we cancelled
+  Send a cancel request for a running asynchronus query to the server.
+  The result of the query - which may be "query was cancelled" (SQLSTATE 57014) -
+  still needs to be determined in the ordinary way.
 */
-int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
+int pg_db_send_cancel(SV *h, imp_dbh_t *imp_dbh)
 {
     dTHX;
-    PGcancel *cancel;
-    char errbuf[256];
-    PGresult *result;
-    ExecStatusType status;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_cancel (async status: %d)\n",
                          THEADER_slow, imp_dbh->async_status);
@@ -5702,61 +5730,27 @@ int pg_db_cancel(SV *h, imp_dbh_t *imp_dbh)
 
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error: no async)\n", THEADER_slow);
         return DBDPG_FALSE;
-    }
 
-    /* Get the cancel structure */
-    TRACE_PQGETCANCEL;
-    cancel = PQgetCancel(imp_dbh->conn);
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_cancel\n", THEADER_slow);
+    return DBDPG_TRUE;
+} /* end of pg_db_send_cancel */
 
-    /* This almost always works. If not, free our structure and complain loudly */
-    TRACE_PQGETCANCEL;
-    if (! PQcancel(cancel,errbuf,sizeof(errbuf))) {
-        TRACE_PQFREECANCEL;
-        PQfreeCancel(cancel);
-        if (TRACEWARN_slow) { TRC(DBILOGFP, "%sPQcancel failed: %s\n", THEADER_slow, errbuf); }
-        _fatal_sqlstate(aTHX_ imp_dbh);
-        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "PQcancel failed");
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error: cancel failed)\n", THEADER_slow);
-        return DBDPG_FALSE;
-    }
-    TRACE_PQFREECANCEL;
-    PQfreeCancel(cancel);
 
     /* Whatever else happens, we should no longer be inside of an async query */
     imp_dbh->async_status = -1;
     if (imp_dbh->async_sth)
         imp_dbh->async_sth->async_status = STH_ASYNC_CANCELLED;
 
-    /* Read in the result - assume only one */
-    TRACE_PQGETRESULT;
-    result = PQgetResult(imp_dbh->conn);
-    status = _sqlstate(aTHX_ imp_dbh, result);
-    if (!result) {
-        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "Failed to get a result after PQcancel");
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error: no result)\n", THEADER_slow);
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_cancel (async status: %d)\n",
+                    THEADER_slow, imp_dbh->async_status);
+
+    if (!pg_db_send_cancel(h, imp_dbh))
         return DBDPG_FALSE;
-    }
 
-    TRACE_PQCLEAR;
-    PQclear(result);
+    pg_db_result(h, imp_dbh);
 
-    /* If we actually cancelled a running query, just return true - the caller must rollback if needed */
-    if (0 == strncmp(imp_dbh->sqlstate, "57014", 5)) {
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel\n", THEADER_slow);
-        return DBDPG_TRUE;
-    }
-
-    /* If we got any other error, make sure we report it */
-    if (0 != strncmp(imp_dbh->sqlstate, "00000", 5)) {
-        if (TRACEWARN_slow) TRC(DBILOGFP,
-                           "%sQuery was not cancelled: was already finished\n", THEADER_slow);
-        TRACE_PQERRORMESSAGE;
-        pg_error(aTHX_ h, status, PQerrorMessage(imp_dbh->conn));
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel (error)\n", THEADER_slow);
-    }
-    else if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel\n", THEADER_slow);
-    return DBDPG_FALSE;
-                    
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_cancel\n", THEADER_slow);
+    return 0 == strncmp(imp_dbh->sqlstate, "57014", 5);
 } /* end of pg_db_cancel */
 
 
@@ -5801,23 +5795,11 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
         if (TRACE3_slow) { TRC(DBILOGFP, "%sCancelling old async command\n", THEADER_slow); }
         TRACE_PQISBUSY;
         if (PQisBusy(imp_dbh->conn)) {
-            PGcancel *cancel;
-            char errbuf[256];
-            int cresult;
             if (TRACE3_slow) TRC(DBILOGFP, "%sAttempting to cancel query\n", THEADER_slow);
-            TRACE_PQGETCANCEL;
-            cancel = PQgetCancel(imp_dbh->conn);
-            TRACE_PQCANCEL;
-            cresult = PQcancel(cancel,errbuf,255);
-            if (! cresult) {
-                if (TRACEWARN_slow) { TRC(DBILOGFP, "%sPQcancel failed: %s\n", THEADER_slow, errbuf); }
-                _fatal_sqlstate(aTHX_ imp_dbh);
-                pg_error(aTHX_ handle, PGRES_FATAL_ERROR, "Could not cancel previous command");
-                if (TEND_slow) TRC(DBILOGFP, "%sEnd handle_old_async (error: could not cancel)\n", THEADER_slow);
+
+            if (!do_send_cancel(handle, imp_dbh, "handle_old_async"))
                 return -2;
-            }
-            TRACE_PQFREECANCEL;
-            PQfreeCancel(cancel);
+
             /* Suck up the cancellation notice */
             status = 0;
             TRACE_PQGETRESULT;
@@ -5844,7 +5826,7 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
             imp_dbh->done_begin = DBDPG_FALSE;
         }
     }
-    else if (asyncflag & PG_OLDQUERY_WAIT || imp_dbh->async_status == -1) {
+    else if (asyncflag & PG_OLDQUERY_WAIT) {
         /* Finish up the outstanding query and throw out the result, unless an error */
         if (TRACE3_slow) { TRC(DBILOGFP, "%sWaiting for old async command to finish\n", THEADER_slow); }
 
@@ -5922,27 +5904,11 @@ int dbd_st_cancel(SV *sth, imp_sth_t *imp_sth)
 {
     dTHX;
     D_imp_dbh_from_sth;
-    PGcancel *cancel;
-    char errbuf[256];
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_cancel\n", THEADER_slow);
 
-    /* Get the cancel structure */
-    TRACE_PQGETCANCEL;
-    cancel = PQgetCancel(imp_dbh->conn);
-
-    /* This almost always works. If not, free our structure and complain loudly */
-    TRACE_PQGETCANCEL;
-    if (!PQcancel(cancel, errbuf, sizeof(errbuf))) {
-        TRACE_PQFREECANCEL;
-        PQfreeCancel(cancel);
-        if (TRACEWARN_slow) TRC(DBILOGFP, "%sPQcancel failed: %s\n", THEADER_slow, errbuf);
-        pg_error(aTHX_ sth, PGRES_FATAL_ERROR, "PQcancel failed");
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_cancel (error: cancel failed)\n", THEADER_slow);
+    if (!do_send_cancel(sth, imp_dbh, "dbd_st_cancel"))
         return DBDPG_FALSE;
-    }
-    TRACE_PQFREECANCEL;
-    PQfreeCancel(cancel);
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_cancel\n", THEADER_slow);
     return DBDPG_TRUE;

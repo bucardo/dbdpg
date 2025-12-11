@@ -167,6 +167,7 @@ use 5.008001;
             DBD::Pg::db->install_method('pg_result'); ## NOT duplicated below!
             DBD::Pg::db->install_method('pg_rollback_to');
             DBD::Pg::db->install_method('pg_savepoint');
+            DBD::Pg::db->install_method('pg_send_cancel');
             DBD::Pg::db->install_method('pg_server_trace');
             DBD::Pg::db->install_method('pg_server_untrace');
             DBD::Pg::db->install_method('pg_type_info');
@@ -4230,6 +4231,14 @@ running, this method will wait until it has finished. The result returned is the
 that would have been returned by the asynchronous L</do> or L</execute> if it had been called without an asynchronous flag.
 
   $result = $dbh->pg_result;
+
+=item B<pg_send_cancel>
+
+Send a request to cancel a running asynchronous query to the
+server. Returns true if this succeeded, false otherwise. The actual
+outcome of the query still needs to be determined in the ordinary
+way. If a running query was actually cancelled, C<pg_result> will
+return zero and the C<state> method will return 57014.
 
 =back
 
