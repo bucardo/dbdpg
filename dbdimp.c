@@ -5821,10 +5821,13 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
                 async_sth->prepare_name = NULL;
             }
 
-            /* We need to rollback! - reprepare!? */
-            TRACE_PQEXEC;
-            PQexec(imp_dbh->conn, "rollback");
-            imp_dbh->done_begin = DBDPG_FALSE;
+            if (PQTRANS_IDLE != PQtransactionStatus(imp_dbh->conn)) {
+                /* We need to rollback! - reprepare!? */
+
+                TRACE_PQEXEC;
+                PQexec(imp_dbh->conn, "rollback");
+                imp_dbh->done_begin = DBDPG_FALSE;
+            }
         }
     }
     else if (asyncflag & PG_OLDQUERY_WAIT) {
