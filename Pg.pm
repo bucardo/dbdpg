@@ -1752,11 +1752,12 @@ specific environment variables, and then fall back to hard-coded defaults:
   hostaddr     PGHOSTADDR              local domain socket
   port         PGPORT                  5432
   dbname*      PGDATABASE              current userid
-  username     PGUSER                  current userid
-  password     PGPASSWORD              (none)
   options      PGOPTIONS               (none)
   service      PGSERVICE               (none)
   sslmode      PGSSLMODE               (none)
+
+  $username    PGUSER                  current userid
+  $password    PGPASSWORD              (none)
 
 * May also use the aliases C<db> or C<database>
 
