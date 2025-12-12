@@ -2552,7 +2552,7 @@ ASYNC_CONNECT: {
     }
 
     $rc = $dbh->ping();
-    ok ($rc == 1, 'pg_ascync_connect false connects synchronously');
+    ok (1 == $rc, 'pg_ascync_connect false connects synchronously');
     $dbh->disconnect();
 
     #
@@ -2575,17 +2575,17 @@ ASYNC_CONNECT: {
             last ASYNC_CONNECT;
         }
 
-        $ref = $rc == 1 ? \$rin : \$win;
+        $ref = (1 == $rc) ? \$rin : \$win;
         vec($$ref, $$dbh{pg_socket}, 1) = 1;
         $rc = select($rin, $win, undef, undef);
     }
-    ok ($rc == 0 || $rc == -2, 'pg_continue_connect loop ended with success or failure return value');
+    ok (0 == $rc || -2 == $rc, 'pg_continue_connect loop ended with success or failure return value');
 
     #
     # test pg_continue_connect ret value when connected
     #
     $rc = $dbh->pg_continue_connect();
-    ok ($rc == -1, 'pg_continue_connect returned -1 when async connect not in progress');
+    ok (-1 == $rc, 'pg_continue_connect returned -1 when async connect not in progress');
 }
 
 done_testing();
