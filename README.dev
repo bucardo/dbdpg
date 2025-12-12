@@ -40,6 +40,11 @@ blib/arch/auto/DBD/Pg/Pg.so form the core of the module once installed.
 
 The canonical git repo is at git://github.com/bucardo/dbdpg.git
 
+The repo for DBI is: https://github.com/perl5-dbi/dbi
+
+The (mirrored) repo for Postgres is: https://github.com/postgres/postgres
+
+
 ===============
 == File List ==
 ===============
