@@ -2,11 +2,15 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+
+Version 3.19.0  (unreleased)
+
  - Support binding native boolean false on Perl 5.36 and newer
    [Dagfinn Ilmari Mannsåker]
 
  - Respect pg_bool_tf when binding native booleans on Perl 5.36 and newer
    [Dagfinn Ilmari Mannsåker]
+
 
 Version 3.18.0 (released December 6, 2023)
 
