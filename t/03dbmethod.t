@@ -2537,12 +2537,13 @@ $dbh->{PrintError} = 0;
 #
 ASYNC_CONNECT: {
     my ($dsn, $user) = get_test_settings();
+    my $pass = $ENV{DBI_PASS} // '';
     my ($rc);
 
     #
     # test sync connect when pfg_async_connect is false
     #
-    $dbh = DBI->connect($dsn, $user, '', {
+    $dbh = DBI->connect($dsn, $user, $pass, {
                                           RaiseError => 0,
                                           PrintError => 0,
                                           pg_async_connect => 0 });
@@ -2558,7 +2559,7 @@ ASYNC_CONNECT: {
     #
     # test async connect
     #
-    $dbh = DBI->connect($dsn, $user, '', {
+    $dbh = DBI->connect($dsn, $user, $pass, {
                                           RaiseError => 0,
                                           PrintError => 0,
                                           pg_async_connect => 1 });
