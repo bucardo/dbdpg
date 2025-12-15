@@ -9,6 +9,7 @@
 
 use strict;
 use warnings;
+use lib 'blib/lib', 'blib/arch', 't';
 use Test::More;
 use DBI;
 use DBD::Pg qw(:async);
