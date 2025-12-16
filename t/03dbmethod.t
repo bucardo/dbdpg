@@ -2536,16 +2536,23 @@ $dbh->{PrintError} = 0;
 # Test async connect
 #
 ASYNC_CONNECT: {
+
     my ($dsn, $user) = get_test_settings();
     my ($rc);
+
+    sub test_connect
+    {
+        return DBI->connect($dsn, $user, $ENV{DBI_PASS},
+                            {
+                             RaiseError => 0,
+                             PrintError => 0,
+                             pg_async_connect => $_[0]});
+    }
 
     #
     # test sync connect when pfg_async_connect is false
     #
-    $dbh = DBI->connect($dsn, $user, '', {
-                                          RaiseError => 0,
-                                          PrintError => 0,
-                                          pg_async_connect => 0 });
+    $dbh = test_connect(0);
     if (!$dbh) {
         fail('failed to create dbh for sync connect test');
         last;
@@ -2558,10 +2565,7 @@ ASYNC_CONNECT: {
     #
     # test async connect
     #
-    $dbh = DBI->connect($dsn, $user, '', {
-                                          RaiseError => 0,
-                                          PrintError => 0,
-                                          pg_async_connect => 1 });
+    $dbh = test_connect(1);
     if (!$dbh) {
         fail ('failed to create async_connect dbh');
         last;
