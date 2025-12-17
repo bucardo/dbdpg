@@ -30,8 +30,20 @@ my $tracelevel = shift || 0;
 $ENV{DBI_TRACE} = $tracelevel;
 
 my $DSN = "DBI:Pg:dbname=postgres;port=$DBPORT";
-my $dbh = DBI->connect($DSN, '', '', {AutoCommit=>0,RaiseError=>1,PrintError=>0})
-  or die "Connection failed!\n";
+my $dbh;
+eval {
+    $dbh = DBI->connect($DSN, '', '', {AutoCommit=>0,RaiseError=>1,PrintError=>0});
+};
+
+if ($@) {
+    print "Connection failed!\n\n$@\n";
+
+    if ($@ =~ /socket/) {
+        print "HINT: Port number can be sent as first argument to this script\n";
+    }
+
+    exit 0;
+}
 
 my $me = $dbh->{Driver}{Name};
 my $sversion = $dbh->{pg_server_version};
