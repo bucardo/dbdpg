@@ -45,9 +45,10 @@ $dbh->{RaiseError} = 0;
 $dbh->{PrintError} = 1;
 $dbh->{AutoCommit} = 1;
 
-update_rule_return();
 
 exit;
+
+#update_rule_return();
 
 #column_types_github_issue_24();
 
@@ -164,7 +165,7 @@ $sth_u->finish();
 # psql> (1 row)
 # psql>
 # psql> UPDATE 1
-my ($rv2) = $sth_u->execute('bear','roar',1);
+$rv2 = $sth_u->execute('bear','roar',1);
 $sth_s->execute(1);
 ($animal,$sound) = $sth_s->fetchrow_array();
 $sth_s->finish;
