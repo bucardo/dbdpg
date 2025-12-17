@@ -2,6 +2,9 @@
 
 ## This is a test file, used by the DBD::Pg developers to duplicate and debug issues
 
+## Helpful install tip: yum install libyaml-perl libdata-peek-perl libdevel-leak-perl
+
+
 BEGIN {
     use lib '.', 'blib/lib', 'blib/arch';
     system 'make';
