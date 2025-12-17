@@ -4,6 +4,8 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  paths-ignore:
+    - 'testme.tmp.pl'
 #  schedule:
 #    - cron: '42 5 * * *'
 
