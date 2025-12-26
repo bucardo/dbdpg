@@ -2,10 +2,12 @@ name: CI in Docker container
 
 on:
   push:
+    paths-ignore:
+      - 'testme.tmp.pl'
   pull_request:
+    paths-ignore:
+      - 'testme.tmp.pl'
   workflow_dispatch:
-  paths-ignore:
-    - 'testme.tmp.pl'
 #  schedule:
 #    - cron: '42 5 * * *'
 
