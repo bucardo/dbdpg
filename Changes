@@ -5,6 +5,8 @@ RT refers to rt.cpan.org
 
 Version 3.19.0  (unreleased)
 
+ - Much improved async support
+
  - Support binding native boolean false on Perl 5.36 and newer
    [Dagfinn Ilmari Mannsåker]
 
