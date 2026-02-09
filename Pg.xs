@@ -447,7 +447,10 @@ pg_error_field(dbh, fieldname)
     SV * dbh
     char * fieldname;
     CODE:
-        ST(0) = pg_db_error_field(dbh, fieldname);
+        /* pg_db_error_field() modifies its argument, so make a copy */
+        char *tmp = savepv(fieldname);
+        SAVEFREEPV(tmp);
+        ST(0) = pg_db_error_field(dbh, tmp);
 
 
 void
