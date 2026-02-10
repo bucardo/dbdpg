@@ -156,7 +156,7 @@ while (<$fh>) {
     next if /^   \(RT tickets \#[0-9]+(?:[, \#0-9])*\)$/;
 
     ## Github issues and pull requests - three spaces, parens
-    next if /^   \(Github (?:issue|pull request) #[0-9]+\)$/;
+    next if /^   \(Github (?:issue|pull request) #[0-9]+.*\)$/;
 
     ## Debian issue
     next if /^   \(Debian bug \#[0-9]+\)$/;
@@ -171,7 +171,7 @@ while (<$fh>) {
     }
 
     ## Authors - three spaces, bracketed names
-    next if /^   \[[A-Z][\w\. \P{IsLower}]+\]$/;
+    next if /^   \[[bA-Z][\w\. \P{IsLower}]+\]$/;
 
     ## Authors - three spaces, email
     next if /^   \[\w[\w\.\-]+ at \w+[\w \.]+\]$/;
