@@ -7,11 +7,41 @@ Version 3.19.0  (unreleased)
 
  - Much improved async support
 
+ - Many cleanups and improvements to the cancel functions
+   [Rainer Weikusat]
+   (Github issue #145 and #152)
+
+ - Prevent pg_error_field() from modifying string
+   [Lukas Mai]
+   (Github issue #157 and #158)
+
+ - Speed up quote_name using binary search
+   Also a new test t/01keywords.t
+   [Michael Conrad]
+   (Github issue #124)
+
  - Support binding native boolean false on Perl 5.36 and newer
    [Dagfinn Ilmari Mannsåker]
 
  - Respect pg_bool_tf when binding native booleans on Perl 5.36 and newer
    [Dagfinn Ilmari Mannsåker]
+   (Github issue #125 and #129)
+
+ - C23 compliance for functions taking variable number of arguments
+   [Rainer Weikusat]
+   (Github issue #148)
+
+ - Require ExtUtils::MakeMaker 7.64
+   [brian d foy]
+   (Github issue #148)
+
+ - Separate $username and $password from DSN parameters in POD
+   [Daniel Böhmer]
+   (Github issue #149)
+
+ - Do not use TMPDIR if we are providing a path via DBDPG_TEMDIR environment variable.
+   [Greg Sabino Mullane]
+   (RT ticket #157598)
 
 
 Version 3.18.0 (released December 6, 2023)
