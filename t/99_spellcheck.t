@@ -234,6 +234,7 @@ conf
 config
 conformant
 consrc
+const
 Conway's
 copydata
 COPYing
@@ -411,6 +412,7 @@ includedir
 IncludingOptionalDependencies
 inerror
 initdb
+init
 inout
 installarchlib
 installsitearch
@@ -634,6 +636,7 @@ PROGRA
 projdisplay
 proven
 pseudotype
+pTHX
 pulldown
 putcopydata
 putcopyend
@@ -778,6 +781,7 @@ TIMESTAMPTZ
 TINYINT
 tmp
 TMP
+TMPDIR
 TODO
 topav
 topdollar
