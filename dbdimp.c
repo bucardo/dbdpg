@@ -5708,7 +5708,7 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 
 /* ================================================================== */
 /*
-  Send a cancel request for a running asynchronus query to the server.
+  Send a cancel request for a running asynchronous query to the server.
   The result of the query - which may be "query was cancelled" (SQLSTATE 57014) -
   still needs to be determined in the ordinary way.
 */
