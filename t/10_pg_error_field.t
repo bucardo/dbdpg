@@ -85,9 +85,11 @@ for my $loop (1..5) {
             if (defined $expected) {
                 $expected = ($expected eq 'number') ? qr/^[0-9]+$/ : qr/$expected/i;
             }
+            my $field_copy = "[$field]"; # force perl to copy the string contents
             $t = "(query $loop) Calling pg_error_field returns expected value for field $field";
             my $actual = $dbh->pg_error_field($field);
             defined $expected ? like ($actual, $expected, $t) : is($actual, undef, $t);
+            is "[$field]", $field_copy, "(query $loop) Calling pg_error_field does not modify its argument: $field";
 
             $field = uc $field;
             $t = "(query $loop) Calling pg_error_field returns expected value for field $field";
