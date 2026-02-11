@@ -35,6 +35,7 @@ t/00_signature.t
 t/00basic.t
 t/01connect.t
 t/01constants.t
+t/01keywords.t
 t/02attribs.t
 t/03dbmethod.t
 t/03smethod.t

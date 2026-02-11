@@ -177,6 +177,8 @@ t/01connect.t - Basic connection tests, outputs pretty, detailed connection info
 
 t/01constants.t - Quick test of pg_types.
 
+t/01keywords.t - Test is_keyword inside of quote.c
+
 t/02attribs.t - Tests all attributes.
 
 t/03dbmethod.t - Tests all database handle methods.
