@@ -47,7 +47,7 @@
    ],
    "configure_requires" : {
       "DBI" : "1.614",
-       "ExtUtils::MakeMaker" : "7.64",
+      "ExtUtils::MakeMaker" : "7.64",
       "version" : "0"
    },
    "license" : "perl",
