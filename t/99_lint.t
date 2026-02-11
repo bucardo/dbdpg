@@ -107,6 +107,16 @@ for my $file (sort keys %devfile) {
     }
 }
 
+## All files in the repo should be mentioned in the README.dev
+my %gitfiles = map { chomp; $_, 1 } qx{git ls-files};
+for my $file (sort keys %gitfiles) {
+    next if $file =~ /^z_announcements/;
+    next if $file =~ /^\.git/;
+    if (!exists $devfile{$file}) {
+        fail qq{File "$file" is in the repo but not in the README.dev file};
+    }
+}
+
 ##
 ## Make sure all Test::More function calls are standardized
 ##
