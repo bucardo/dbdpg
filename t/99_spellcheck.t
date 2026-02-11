@@ -498,6 +498,7 @@ Compiled
 ndone
 ne
 ness
+netstat
 newfh
 newSVpv
 Newz
