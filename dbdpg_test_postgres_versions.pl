@@ -4,18 +4,18 @@
 ## Usage: $0 <postgresdir> [-t specific_test_file] [-c compile_version] [-r run_version] [--setup versions]
 
 ## Usage:
-## Create Postgres 11,12,13,14, and 15 directories in $ENV{HOME}/pg/:
-## perl dbdpg_test_postgres_versions.pl --setup 11,12,13,14,15
+## Create Postgres 15,16, and 17 directories in $ENV{HOME}/pg/:
+## perl dbdpg_test_postgres_versions.pl --setup 15,16,17
 ## Test all combinations of the same:
 ## perl dbdpg_test_postgres_versions.pl
-## Only run for versions 12 and up:
-## perl dbdpg_test_postgres_versions.pl --minversion 11
+## Only run for versions 15 and up:
+## perl dbdpg_test_postgres_versions.pl --minversion 15
 ## Same, but do not run head
-## perl dbdpg_test_postgres_versions.pl --minversion 11 --nohead
+## perl dbdpg_test_postgres_versions.pl --minversion 15 --nohead
 ## Add in the current HEAD branch, recreating if already there:
 ## perl dbdpg_test_postgres_versions.pl --setup head --force
-## Test DBD::Pg compiled against head and run against Postgres 11:
-## perl dbdpg_test_postgres_versions.pl -c head -r 11
+## Test DBD::Pg compiled against head and run against Postgres 14:
+## perl dbdpg_test_postgres_versions.pl -c head -r 14
 
 
 use 5.008001;
@@ -83,6 +83,7 @@ if ($arg{wipe}) {
     }
 }
 
+-d 'tmp' or mkdir 'tmp';
 my $summaryfile = 'tmp/summary.testallversions.log';
 open my $sfh, ($arg{wipe} ? '>' : '>>'), $summaryfile;
 printf {$sfh} "\nSTARTED $0 at %s\n\n", scalar localtime;
