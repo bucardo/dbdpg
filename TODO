@@ -36,4 +36,3 @@ https://github.com/bucardo/dbdpg/issues
 - Full support for execute_array, e.g. the return values
 - Fix array support: execute([1,2]) not working as expected, deep arrays not returned correctly.
 - Support RaiseError on $sth from closed $dbh (GH #28)
-- Remove netstat from the test script

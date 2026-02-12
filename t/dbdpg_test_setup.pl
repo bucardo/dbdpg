@@ -14,6 +14,10 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 my $superuser = 1;
 
+my $TEST_PORT_MIN = 5442;
+my $TEST_PORT_MAX = 5444;
+
+
 my $testfh;
 if (exists $ENV{TEST_OUTPUT}) {
     my $file = $ENV{TEST_OUTPUT};
@@ -288,7 +292,6 @@ version: $version
         }
 
       INITDB:
-        my $testport;
         $helpconnect = 16;
 
         ## Let the ENV variables win
@@ -470,29 +473,24 @@ version: $version
         }
 
         ## Now we need to find an open port to use
-        $testport = 5442;
-        ## If we've got netstat available, we'll trust that
+        my $testport = $TEST_PORT_MIN;
         $info = '';
         my $evalok = 0;
         eval {
-            $info = qx{netstat -na 2>&1};
+            $info = qx{ss -QanO 2>&1};
             $evalok = 1;
         };
         if (!$evalok or ! defined $info) {
-            warn "netstat call failed, trying port $testport\n";
+            warn "ss call to determine open port failed, trying port $testport\n";
         }
         else {
-            ## Start at 5440 and go up until we are free
-            $testport = 5440;
-            my $maxport = 5470;
             {
-                last if $info !~ /PGSQL\.$testport$/m
-                    and $info !~ /\b127\.0\.0\.1:$testport\b/m;
-                last if ++$testport >= $maxport;
+                last if $info !~ /:$testport /m;
+                last if ++$testport > $TEST_PORT_MAX;
                 redo;
             }
-            if ($testport >= $maxport) {
-                $@ = "No free ports found for testing: tried 5440 to $maxport\n";
+            if ($testport > $TEST_PORT_MAX) {
+                $@ = "No free ports found for testing: tried $TEST_PORT_MIN to $TEST_PORT_MAX\n";
                 last GETHANDLE; ## Fail - no free ports
             }
         }

@@ -602,6 +602,8 @@ PQchangePassword
 PQclear
 PQclosePrepared
 PQconnectdb
+PQconnectPoll
+PQconnectStart
 PQconsumeInput
 PQexec
 PQexecParams
@@ -611,6 +613,7 @@ PQprepare
 PQprotocolVersion
 PQresultErrorField
 PQsend
+PQsendPrepare
 PQsendQuery
 PQsendQueryParams
 PQsendQueryPrepared
@@ -716,6 +719,7 @@ sqlstate
 SQLSTATE
 sqltype
 src
+ss
 SSL
 sslmode
 starslash

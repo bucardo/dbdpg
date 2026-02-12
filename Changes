@@ -55,6 +55,9 @@ Version 3.19.0  (unreleased)
    [Greg Sabino Mullane]
    (RT ticket #157598)
 
+ - Switch from netstat to ss for finding free ports during testing
+   [Greg Sabino Mullane]
+
 
 Version 3.18.0 (released December 6, 2023)
 
