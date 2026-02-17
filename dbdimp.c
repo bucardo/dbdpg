@@ -69,10 +69,12 @@ typedef enum
      SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
 enum {
+    STH_ASYNC_AUTOERROR = -2,    /* PG_OLDQUERY_WAIT auto-retrieved an error result */
     STH_ASYNC_CANCELLED = -1,
     STH_NO_ASYNC,
     STH_ASYNC,
-    STH_ASYNC_PREPARE
+    STH_ASYNC_PREPARE,
+    STH_ASYNC_AUTORETRIEVED      /* PG_OLDQUERY_WAIT auto-retrieved results */
 };
 
 enum {
@@ -4118,15 +4120,16 @@ int dbd_st_finish (SV * sth, imp_sth_t * imp_sth)
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbdpg_finish (async: %d)\n",
                     THEADER_slow, imp_dbh->async_status);
     
-    /* Are we in the middle of an async for this statement handle? */
-    if (imp_dbh->async_status) {
-        if (imp_sth->async_status) {
-            handle_old_async(aTHX_ sth, imp_dbh, PG_OLDQUERY_WAIT);
-        }
+    /* Only handle async cleanup if THIS statement owns the async query */
+    if (imp_dbh->async_status && imp_dbh->async_sth == imp_sth) {
+        handle_old_async(aTHX_ sth, imp_dbh, PG_OLDQUERY_WAIT);
     }
 
     imp_sth->async_status = STH_NO_ASYNC;
-    imp_dbh->async_sth = NULL;
+    if (imp_dbh->async_sth == imp_sth) {
+        imp_dbh->async_sth = NULL;
+        imp_dbh->async_status = DBH_NO_ASYNC;
+    }
 
     DBIc_ACTIVE_off(imp_sth);
     if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_finish\n", THEADER_slow);
@@ -4274,7 +4277,8 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
         return;
     }
 
-    if (imp_dbh->async_status) {
+    /* Only handle async cleanup if THIS statement owns the async query */
+    if (imp_dbh->async_status && imp_dbh->async_sth == imp_sth) {
         handle_old_async(aTHX_ sth, imp_dbh, PG_OLDQUERY_WAIT);
     }
 
@@ -5419,12 +5423,70 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
     PGresult *result;
     ExecStatusType status;
     long rows = 0;
+    /* Determine if we were called from a statement handle or database handle */
+    /* The Pg.xs passes sth/dbh as h, but imp_dbh is always the database handle */
+    D_imp_xxh(h);
+    imp_sth_t *imp_sth = NULL;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_result\n", THEADER_slow);
 
+    if (DBIt_ST == DBIc_TYPE(imp_xxh)) {
+        imp_sth = (imp_sth_t*)imp_xxh;
+    }
+
+    /* Handle auto-retrieved results from PG_OLDQUERY_WAIT */
+    if (imp_sth && STH_ASYNC_AUTORETRIEVED == imp_sth->async_status) {
+        if (NULL == imp_sth->result) {
+            pg_error(aTHX_ h, PGRES_FATAL_ERROR, "Auto-retrieved results already consumed");
+            return -2;
+        }
+
+        result = imp_sth->result;
+        status = _sqlstate(aTHX_ imp_dbh, result);
+
+        if (PGRES_TUPLES_OK == status || PGRES_COMMAND_OK == status) {
+            rows = imp_sth->rows;
+        }
+        else {
+            TRACE_PQERRORMESSAGE;
+            pg_error(aTHX_ h, status, PQerrorMessage(imp_dbh->conn));
+            rows = -2;
+        }
+        imp_sth->async_status = STH_NO_ASYNC;
+
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (auto-retrieved, %ld rows)\n", THEADER_slow, rows);
+        return rows;
+    }
+
+    /* Handle auto-retrieved error results from PG_OLDQUERY_WAIT */
+    if (imp_sth && STH_ASYNC_AUTOERROR == imp_sth->async_status) {
+        if (NULL == imp_sth->result) {
+            pg_error(aTHX_ h, PGRES_FATAL_ERROR, "Auto-retrieved error already reported");
+            return -2;
+        }
+
+        result = imp_sth->result;
+        status = _sqlstate(aTHX_ imp_dbh, result);
+
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ h, status, PQresultErrorMessage(result));
+        imp_sth->async_status = STH_NO_ASYNC;
+
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (auto-retrieved error)\n", THEADER_slow);
+        return -2;
+    }
+
+    /* No auto-retrieved results: check that an async query is actually running */
     if (DBH_ASYNC != imp_dbh->async_status) {
         pg_error(aTHX_ h, PGRES_FATAL_ERROR, "No asynchronous query is running\n");
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (error: no async)\n", THEADER_slow);
+        return -2;
+    }
+
+    /* Verify ownership: only the statement that started the async query can retrieve it */
+    if (imp_sth && imp_dbh->async_sth && imp_sth != imp_dbh->async_sth) {
+        pg_error(aTHX_ h, PGRES_FATAL_ERROR, "pg_result() called on wrong statement handle - this statement does not own the async query\n");
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (wrong statement)\n", THEADER_slow);
         return -2;
     }
 
@@ -5439,11 +5501,28 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             TRACE_PQNTUPLES;
             rows = PQntuples(result);
 
-            if (NULL != imp_dbh->async_sth) {
+            /* Store metadata in the appropriate statement handle */
+            if (imp_sth && imp_sth == imp_dbh->async_sth) {
+                imp_sth->cur_tuple = 0;
+                TRACE_PQNFIELDS;
+                DBIc_NUM_FIELDS(imp_sth) = PQnfields(result);
+                DBIc_ACTIVE_on(imp_sth);
+            }
+            else if (!imp_sth && imp_dbh->async_sth) {
+                /* Called via $dbh->pg_result - store in the async statement */
                 imp_dbh->async_sth->cur_tuple = 0;
                 TRACE_PQNFIELDS;
                 DBIc_NUM_FIELDS(imp_dbh->async_sth) = PQnfields(result);
                 DBIc_ACTIVE_on(imp_dbh->async_sth);
+                if (TRACE3_slow) {
+                    TRC(DBILOGFP, "%sUsing imp_dbh->async_sth for $dbh->pg_result()\n", THEADER_slow);
+                }
+            }
+            else if (imp_sth && imp_sth != imp_dbh->async_sth) {
+                /* ERROR: Called from wrong statement handle */
+                if (TRACEWARN_slow) {
+                    TRC(DBILOGFP, "%sWARNING: pg_result called from wrong statement handle!\n", THEADER_slow);
+                }
             }
 
             break;
@@ -5481,8 +5560,22 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             break;
         }
 
-        if (NULL != imp_dbh->async_sth) {
-            /* Free the last_result as needed */
+        /* Store the result in the appropriate statement handle */
+        if (imp_sth && imp_sth == imp_dbh->async_sth) {
+            if (imp_dbh->last_result && imp_dbh->result_clearable) {
+                TRACE_PQCLEAR;
+                PQclear(imp_dbh->last_result);
+                imp_dbh->last_result = NULL;
+            }
+            if (imp_sth->result) {
+                TRACE_PQCLEAR;
+                PQclear(imp_sth->result);
+                imp_sth->result = NULL;
+            }
+            imp_dbh->last_result = imp_sth->result = result;
+            imp_dbh->result_clearable = DBDPG_FALSE;
+        }
+        else if (NULL == imp_sth && NULL != imp_dbh->async_sth) {
             if (imp_dbh->last_result && imp_dbh->result_clearable) {
                 TRACE_PQCLEAR;
                 PQclear(imp_dbh->last_result);
@@ -5497,14 +5590,23 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 
             imp_dbh->last_result = imp_dbh->async_sth->result = result;
             imp_dbh->result_clearable = DBDPG_FALSE;
+
         }
         else {
-            TRACE_PQCLEAR;
-            PQclear(result);
+            if (imp_dbh->last_result && imp_dbh->result_clearable) {
+                TRACE_PQCLEAR;
+                PQclear(imp_dbh->last_result);
+            }
+            imp_dbh->last_result = result;
+            imp_dbh->result_clearable = DBDPG_TRUE;
         }
     }
 
-    if (NULL != imp_dbh->async_sth) {
+    if (imp_sth && imp_sth == imp_dbh->async_sth) {
+        imp_sth->rows = rows;
+        imp_sth->async_status = STH_NO_ASYNC;
+    }
+    else if (NULL == imp_sth && NULL != imp_dbh->async_sth) {
         imp_dbh->async_sth->rows = rows;
         imp_dbh->async_sth->async_status = STH_NO_ASYNC;
     }
@@ -5752,8 +5854,63 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
         TRACE_PQGETRESULT;
         while ((result = PQgetResult(imp_dbh->conn)) != NULL) {
             status = _sqlstate(aTHX_ imp_dbh, result);
-            TRACE_PQCLEAR;
-            PQclear(result);
+
+            /* Auto-retrieve results for the owning statement instead of discarding */
+            if ((asyncflag & PG_OLDQUERY_WAIT) && NULL != imp_dbh->async_sth &&
+                (PGRES_TUPLES_OK == status || PGRES_COMMAND_OK == status)) {
+
+                imp_sth_t *orig_sth = imp_dbh->async_sth;
+
+                if (orig_sth->result) {
+                    TRACE_PQCLEAR;
+                    PQclear(orig_sth->result);
+                }
+
+                orig_sth->result = result;
+                orig_sth->rows = (PGRES_TUPLES_OK == status) ? PQntuples(result) : 0;
+
+                if (PGRES_TUPLES_OK == status) {
+                    orig_sth->cur_tuple = 0;
+                    DBIc_NUM_FIELDS(orig_sth) = PQnfields(result);
+                    DBIc_ACTIVE_on(orig_sth);
+                }
+
+                orig_sth->async_status = STH_ASYNC_AUTORETRIEVED;
+
+                if (TRACE3_slow) {
+                    TRC(DBILOGFP, "%sPG_OLDQUERY_WAIT: Auto-retrieved %ld rows for original statement\n",
+                        THEADER_slow, orig_sth->rows);
+                }
+
+                result = NULL;
+            }
+            /* Auto-retrieve error: store for the owning statement */
+            else if ((asyncflag & PG_OLDQUERY_WAIT) && NULL != imp_dbh->async_sth &&
+                     PGRES_EMPTY_QUERY != status &&
+                     PGRES_COMMAND_OK != status &&
+                     PGRES_TUPLES_OK != status) {
+
+                imp_sth_t *orig_sth = imp_dbh->async_sth;
+
+                if (orig_sth->result) {
+                    TRACE_PQCLEAR;
+                    PQclear(orig_sth->result);
+                }
+
+                orig_sth->result = result;
+                orig_sth->rows = -1;
+                orig_sth->async_status = STH_ASYNC_AUTOERROR;
+
+                if (TRACE3_slow) {
+                    TRC(DBILOGFP, "%sPG_OLDQUERY_WAIT: Stored error result for original statement\n", THEADER_slow);
+                }
+
+                result = NULL;
+            }
+            else {
+                TRACE_PQCLEAR;
+                PQclear(result);
+            }
             if (status == PGRES_COPY_IN) { /* In theory, this should be caught by copystate, but we'll be careful */
                 TRACE_PQPUTCOPYEND;
                 if (-1 == PQputCopyEnd(imp_dbh->conn, NULL)) {
@@ -5771,10 +5928,13 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
             else if (status != PGRES_EMPTY_QUERY
                      && status != PGRES_COMMAND_OK
                      && status != PGRES_TUPLES_OK) {
-                TRACE_PQERRORMESSAGE;
-                pg_error(aTHX_ handle, status, PQerrorMessage(imp_dbh->conn));
-                if (TEND_slow) TRC(DBILOGFP, "%sEnd handle_old_async (error: bad status)\n", THEADER_slow);
-                return -2;
+                /* Only report error to current handle if not PG_OLDQUERY_WAIT */
+                if (!(asyncflag & PG_OLDQUERY_WAIT)) {
+                    TRACE_PQERRORMESSAGE;
+                    pg_error(aTHX_ handle, status, PQerrorMessage(imp_dbh->conn));
+                    if (TEND_slow) TRC(DBILOGFP, "%sEnd handle_old_async (error: bad status)\n", THEADER_slow);
+                    return -2;
+                }
             }
         }
 
@@ -5803,9 +5963,13 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
     }
 
     /* If we made it this far, safe to assume there is no running query */
-    imp_dbh->async_status = 0;
-    if (async_sth)
-        async_sth->async_status = STH_NO_ASYNC;
+    imp_dbh->async_status = DBH_NO_ASYNC;
+    if (async_sth) {
+        if (STH_ASYNC_AUTORETRIEVED != async_sth->async_status && STH_ASYNC_AUTOERROR != async_sth->async_status) {
+            async_sth->async_status = STH_NO_ASYNC;
+        }
+        imp_dbh->async_sth = NULL;
+    }
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd handle_old_async\n", THEADER_slow);
     return 0;
