@@ -19,13 +19,13 @@ if (! $dbh) {
 
 ## Use a second handle with RaiseError off for expected-failure tests
 my $dbh_noerr = connect_database({AutoCommit => 1});
+if (! $dbh_noerr) {
+    plan skip_all => 'Second connection to database failed, cannot continue testing';
+}
 $dbh_noerr->{RaiseError} = 0;
 $dbh_noerr->{PrintError} = 0;
 
-plan tests => 57;
-
-isnt ($dbh, undef, 'Connect to database for async regression testing');
-isnt ($dbh_noerr, undef, 'Connect second handle with RaiseError off');
+plan tests => 55;
 
 my ($sth, $sth1, $sth2, $sth3, $rows, $id, $val);
 
@@ -127,35 +127,32 @@ $_->finish for @sths;
 
 ## PG_OLDQUERY_WAIT auto-retrieves results for the owning statement
 
-@sths = ();
+$sth1 = $dbh->prepare(q{SELECT 1 AS id, pg_sleep(0.001)}, { pg_async => PG_ASYNC });
+ok ($sth1->execute, 'Async execute on sth1 for OLDQUERY_WAIT auto-retrieve test');
 
-for my $i (1..3) {
-    $sths[$i-1] = $dbh->prepare(qq{SELECT $i AS id, pg_sleep(0.001)}, { pg_async => PG_ASYNC });
-}
+$sth2 = $dbh->prepare(q{SELECT 2 AS id}, { pg_async => PG_ASYNC + PG_OLDQUERY_WAIT });
+ok ($sth2->execute, 'Async execute with OLDQUERY_WAIT on sth2 waits for sth1');
 
-ok ($sths[0]->execute, 'Async execute on sth1 for interleaved OLDQUERY_WAIT test');
+$sth3 = $dbh->prepare(q{SELECT 3 AS id}, { pg_async => PG_ASYNC + PG_OLDQUERY_WAIT });
+ok ($sth3->execute, 'Async execute with OLDQUERY_WAIT on sth3 waits for sth2');
 
-for my $i (2..3) {
-    $sth = $dbh->prepare(qq{SELECT $i AS id}, { pg_async => PG_ASYNC + PG_OLDQUERY_WAIT });
-    ok ($sth->execute, "Async execute with OLDQUERY_WAIT on sth$i");
-    push @sths, $sth;
-}
+ok ($sth3->pg_result, 'pg_result() on sth3 succeeds');
+ok ($sth1->pg_result, 'pg_result() on sth1 retrieves auto-stored results');
+ok ($sth2->pg_result, 'pg_result() on sth2 retrieves auto-stored results');
 
-ok ($sths[3]->pg_result, 'pg_result() on last OLDQUERY_WAIT statement succeeds');
-ok ($sths[0]->pg_result, 'pg_result() on first statement retrieves auto-stored results');
-ok ($sths[4]->pg_result, 'pg_result() on middle OLDQUERY_WAIT statement succeeds');
+($val) = $sth1->fetchrow_array;
+is ($val, 1, 'sth1 has correct auto-retrieved data');
 
-($val) = $sths[0]->fetchrow_array;
-is ($val, 1, 'First statement has correct auto-retrieved data');
+($val) = $sth2->fetchrow_array;
+is ($val, 2, 'sth2 has correct data');
 
-($val) = $sths[3]->fetchrow_array;
-is ($val, 2, 'Second OLDQUERY_WAIT statement has correct data');
+($val) = $sth3->fetchrow_array;
+is ($val, 3, 'sth3 has correct data');
 
-($val) = $sths[4]->fetchrow_array;
-is ($val, 3, 'Third OLDQUERY_WAIT statement has correct data');
-
-$_->finish for grep { defined } @sths;
-pass ('All interleaved statements finished cleanly');
+$sth1->finish;
+$sth2->finish;
+$sth3->finish;
+pass ('All OLDQUERY_WAIT statements finished cleanly');
 
 ## Errors from PG_OLDQUERY_WAIT are attributed to the correct statement
 ## Use the no-error handle since pg_result on error results raises
