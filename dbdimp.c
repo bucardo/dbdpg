@@ -5441,8 +5441,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             return -2;
         }
 
-        result = imp_sth->result;
-        status = _sqlstate(aTHX_ imp_dbh, result);
+        status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
 
         if (PGRES_TUPLES_OK == status || PGRES_COMMAND_OK == status) {
             rows = imp_sth->rows;
@@ -5461,15 +5460,15 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
     /* Handle auto-retrieved error results from PG_OLDQUERY_WAIT */
     if (imp_sth && STH_ASYNC_AUTOERROR == imp_sth->async_status) {
         if (NULL == imp_sth->result) {
+            TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ h, PGRES_FATAL_ERROR, "Auto-retrieved error already reported");
             return -2;
         }
 
-        result = imp_sth->result;
-        status = _sqlstate(aTHX_ imp_dbh, result);
+        status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
 
         TRACE_PQERRORMESSAGE;
-        pg_error(aTHX_ h, status, PQresultErrorMessage(result));
+        pg_error(aTHX_ h, status, PQresultErrorMessage(imp_sth->result));
         imp_sth->async_status = STH_NO_ASYNC;
 
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (auto-retrieved error)\n", THEADER_slow);
@@ -5518,13 +5517,6 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
                     TRC(DBILOGFP, "%sUsing imp_dbh->async_sth for $dbh->pg_result()\n", THEADER_slow);
                 }
             }
-            else if (imp_sth && imp_sth != imp_dbh->async_sth) {
-                /* ERROR: Called from wrong statement handle */
-                if (TRACEWARN_slow) {
-                    TRC(DBILOGFP, "%sWARNING: pg_result called from wrong statement handle!\n", THEADER_slow);
-                }
-            }
-
             break;
         case PGRES_COMMAND_OK:
             /* non-select statement */
@@ -5565,12 +5557,10 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             if (imp_dbh->last_result && imp_dbh->result_clearable) {
                 TRACE_PQCLEAR;
                 PQclear(imp_dbh->last_result);
-                imp_dbh->last_result = NULL;
             }
-            if (imp_sth->result) {
+            if (imp_sth->result && imp_sth->result != imp_dbh->last_result) {
                 TRACE_PQCLEAR;
                 PQclear(imp_sth->result);
-                imp_sth->result = NULL;
             }
             imp_dbh->last_result = imp_sth->result = result;
             imp_dbh->result_clearable = DBDPG_FALSE;
@@ -5579,13 +5569,11 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             if (imp_dbh->last_result && imp_dbh->result_clearable) {
                 TRACE_PQCLEAR;
                 PQclear(imp_dbh->last_result);
-                imp_dbh->last_result = NULL;
             }
             /* If the above wasn't the async handle's result, free that too */
-            if (imp_dbh->async_sth->result) {
+            if (imp_dbh->async_sth->result && imp_dbh->async_sth->result != imp_dbh->last_result) {
                 TRACE_PQCLEAR;
                 PQclear(imp_dbh->async_sth->result);
-                imp_dbh->async_sth->result = NULL;
             }
 
             imp_dbh->last_result = imp_dbh->async_sth->result = result;
@@ -5867,7 +5855,13 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
                 }
 
                 orig_sth->result = result;
-                orig_sth->rows = (PGRES_TUPLES_OK == status) ? PQntuples(result) : 0;
+                if (PGRES_TUPLES_OK == status) {
+                    orig_sth->rows = PQntuples(result);
+                }
+                else {
+                    const char *ct = PQcmdTuples(result);
+                    orig_sth->rows = ct[0] ? atol(ct) : 0;
+                }
 
                 if (PGRES_TUPLES_OK == status) {
                     orig_sth->cur_tuple = 0;
@@ -5898,7 +5892,7 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
                 }
 
                 orig_sth->result = result;
-                orig_sth->rows = -1;
+                orig_sth->rows = -2; /* Error; pg_db_result reports the actual error via pg_error */
                 orig_sth->async_status = STH_ASYNC_AUTOERROR;
 
                 if (TRACE3_slow) {
