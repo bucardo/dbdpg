@@ -287,4 +287,9 @@ int pg_db_cancel (SV *h, imp_dbh_t *imp_dbh);
 
 int pg_db_cancel_sth (SV *sth, imp_sth_t *imp_sth);
 
+SV * pg_upgraded_sv(pTHX_ SV *input);
+
+SV * pg_downgraded_sv(pTHX_ SV *input);
+
+
 /* end of dbdimp.h */

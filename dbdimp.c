@@ -140,7 +140,6 @@ void dbd_init (dbistate_t *dbistate)
 /* ================================================================== */
 static int want_async_connect(pTHX_ SV *attrs)
 {
-    HV *hv;
     SV **psv, *sv;
 
     return
@@ -3155,7 +3154,7 @@ SV * pg_rightgraded_sv(pTHX_ SV *input, bool utf8) {
 
 static void pg_db_detect_client_encoding_utf8(pTHX_ imp_dbh_t *imp_dbh) {
     char *clean_encoding;
-    int i, j;
+    long unsigned int i, j;
     const char * const client_encoding =
         PQparameterStatus(imp_dbh->conn, "client_encoding");
     if (NULL != client_encoding) {
@@ -3213,7 +3212,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
     case DBH_ASYNC_CONNECT:
     case DBH_ASYNC_CONNECT_POLL:
         if (TRACE5_slow) TRC(DBILOGFP, "%snot yet connected\n", THEADER_slow);
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (async rows: %d)\n", THEADER_slow, rows);
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (async rows: %ld)\n", THEADER_slow, rows);
         return -1;
 
     default:
@@ -4183,7 +4182,6 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 {
     D_imp_dbh_from_sth;
     char                    tempsqlstate[6];
-    char *                  stmt;
     int                     status;
     PGTransactionStatusType tstatus;
     
@@ -4220,7 +4218,8 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
                 if (TRACE4_slow)
                     TRC(DBILOGFP, "%sRolling back to savepoint %s\n", THEADER_slow, SvPV_nolen(sp));
                 sprintf(cmd, "rollback to %s", SvPV_nolen(sp));
-                strncpy(tempsqlstate, imp_dbh->sqlstate, 6);
+                strncpy(tempsqlstate, imp_dbh->sqlstate, sizeof(tempsqlstate)-1);
+                tempsqlstate[sizeof(tempsqlstate)-1]='\0';
                 status = _result(aTHX_ imp_dbh, cmd);
                 Safefree(cmd);
             }
@@ -4247,15 +4246,18 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     imp_dbh->result_clearable = DBDPG_FALSE;
     status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
 #else
-    New(0, stmt, strlen("DEALLOCATE ") + strlen(imp_sth->prepare_name) + 1, char); /* freed below */
+    {
+        char *                  stmt;
+        New(0, stmt, strlen("DEALLOCATE ") + strlen(imp_sth->prepare_name) + 1, char); /* freed below */
 
-    sprintf(stmt, "DEALLOCATE %s", imp_sth->prepare_name);
+        sprintf(stmt, "DEALLOCATE %s", imp_sth->prepare_name);
 
-    if (TRACE5_slow)
-        TRC(DBILOGFP, "%sDeallocating (%s)\n", THEADER_slow, imp_sth->prepare_name);
+        if (TRACE5_slow)
+            TRC(DBILOGFP, "%sDeallocating (%s)\n", THEADER_slow, imp_sth->prepare_name);
 
-    status = _result(aTHX_ imp_dbh, stmt);
-    Safefree(stmt);
+        status = _result(aTHX_ imp_dbh, stmt);
+        Safefree(stmt);
+    }
 #endif
 
     if (PGRES_COMMAND_OK != status) {
@@ -4295,7 +4297,7 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
         croak("dbd_st_destroy called twice!");
 
     /* If the AutoInactiveDestroy flag has been set, we go no further */
-    if ((DBIc_AIADESTROY(imp_dbh)) && ((U32)PerlProc_getpid() != imp_dbh->pid_number)) {
+    if ((DBIc_AIADESTROY(imp_dbh)) && ((U32)PerlProc_getpid() != (unsigned int)imp_dbh->pid_number)) {
         if (TRACE4_slow) {
             TRC(DBILOGFP, "%sskipping sth destroy due to AutoInactiveDestroy\n", THEADER_slow);
         }
@@ -5362,7 +5364,7 @@ int pg_db_lo_export (SV * dbh, unsigned int lobjId, char * filename)
     }
     loid = lo_export(imp_dbh->conn, lobjId, filename); /* 1 on success, -1 on failure */
     if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-        if (!pg_db_end_txn(aTHX_ dbh, imp_dbh, -1==loid ? 0 : 1))
+        if (!pg_db_end_txn(aTHX_ dbh, imp_dbh, (unsigned int)-1==loid ? 0 : 1))
             return -1;
     }
 
