@@ -634,7 +634,7 @@ for (sort {
 
 print $newfh "\n";
 close $newfh;
-system("mv $file.tmp $file");
+rename("$file.tmp", $file);
 print "Wrote $file\n";
 
 ## Rewrite Pg.xs
@@ -711,7 +711,7 @@ while (<$oldfh>) {
 }
 close $newfh;
 close $oldfh;
-system("mv $file.tmp $file");
+rename("$file.tmp", $file);
 print "Wrote $file\n";
 
 ## Rewrite 01constants.t
@@ -735,7 +735,7 @@ while (<$oldfh>) {
 }
 close $newfh;
 close $oldfh;
-system("mv $file.tmp $file");
+rename("$file.tmp", $file);
 print "Wrote $file\n";
 
 ## Rewrite 99_pod.t
@@ -763,7 +763,7 @@ while (<$oldfh>) {
 }
 close $newfh;
 close $oldfh;
-system("mv $file.tmp $file");
+rename("$file.tmp", $file);
 print "Wrote $file\n";
 
 
@@ -872,7 +872,7 @@ seek(DATA,0,0);
 print $newfh "#!perl\n";
 while (<DATA>) { print $newfh $_; }
 close $newfh;
-system("mv $file.tmp $file");
+rename("$file.tmp", $file);
 print "Wrote $file\n";
 
 exit;
