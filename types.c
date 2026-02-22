@@ -663,7 +663,7 @@ while (<$oldfh>) {
 }
 close $newfh;
 close $oldfh;
-system("mv $file.tmp $file");
+rename("$file.tmp", $file);
 print "Wrote $file\n";
 
 
