@@ -850,17 +850,12 @@ use 5.008001;
             }
         }
         else { ## Nicer way: return only one row
-
-            # TABLE_CAT
             $info->[0] = $info->[10];
-            # TABLESPACES
-            $info->[7] = $info->[5];
-            $info->[8] = $info->[6];
-            # Unquoted names
-            $info->[9] = $info->[7];
-            $info->[10] = $info->[8];
             $info->[11] = $info->[9];
-            # PK_NAME
+            $info->[10] = $info->[8];
+            $info->[9] = $info->[7];
+            $info->[8] = $info->[6];
+            $info->[7] = $info->[5];
             $info->[5] = $info->[3];
             # COLUMN_NAME
             $info->[3] = 2==$attr->{'pg_onerow'} ?

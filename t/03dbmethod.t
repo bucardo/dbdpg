@@ -1050,6 +1050,7 @@ is_deeply (\%missing, {}, $t);
 $r = $result->[0];
 is ($r->{TABLE_CAT},   $dbh->{pg_db},      'DB handle method "primary_key_info" returns proper TABLE_CAT');
 is ($r->{TABLE_NAME},  'dbd_pg_test',      'DB handle method "primary_key_info" returns proper TABLE_NAME');
+is ($r->{pg_table},    'dbd_pg_test',      'DB handle method "primary_key_info" returns proper pg_table');
 is ($r->{COLUMN_NAME}, 'id',               'DB handle method "primary_key_info" returns proper COLUMN_NAME');
 is ($r->{PK_NAME},     'dbd_pg_test_pkey', 'DB handle method "primary_key_info" returns proper PK_NAME');
 is ($r->{DATA_TYPE},   'int4',             'DB handle method "primary_key_info" returns proper DATA_TYPE');
@@ -1058,7 +1059,7 @@ is ($r->{KEY_SEQ},     1,                  'DB handle method "primary_key_info" 
 $t='DB handle method "primary_key_info" works when pg_onerow attribute set to 1';
 $sth = $dbh->primary_key_info('',$schema,'dbd_pg_test', {pg_onerow => 1});
 $result = $sth->fetchall_arrayref({});
-is ($result->[0]{KEY_SEQ}, 1, $t);
+is ($result->[0]{pg_table}, 'dbd_pg_test', $t);
 
 $t='DB handle method "primary_key_info" works when pg_onerow attribute set to 2';
 $sth = $dbh->primary_key_info('',$schema,'dbd_pg_test', {pg_onerow => 2});
