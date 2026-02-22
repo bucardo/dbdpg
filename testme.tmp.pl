@@ -15,7 +15,7 @@ use strict;
 use warnings;
 use DBI ':sql_types';
 use utf8;
-use Data::Dumper;
+use Data::Dumper; $Data::Dumper::Sortkeys = 1;
 use YAML;
 use DBD::Pg qw/:pg_types/;
 use Data::Peek;
