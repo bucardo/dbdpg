@@ -21,7 +21,7 @@ else {
     opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
     @testfiles = map { "t/$_" } grep { ! /spellcheck|lint/ } grep { /^.+\.(t|pl)$/ } readdir $dir;
     closedir $dir or die qq{Could not closedir "$dir": $!\n};
-    plan tests => 20+@testfiles;
+    plan tests => 19+@testfiles;
 }
 
 my %okword;
@@ -131,7 +131,7 @@ SKIP: {
 
 
     for my $file (@testfiles, qw{Makefile.PL Pg.xs Pg.pm lib/Bundle/DBD/Pg.pm
-        dbdimp.c dbdimp.h types.c quote.c quote.h Pg.h types.h dbdpg_test_postgres_versions.pl}) {
+        dbdimp.c dbdimp.h quote.c quote.h Pg.h types.h dbdpg_test_postgres_versions.pl}) {
         ## Tests as well?
         if (! -e $file) {
             fail (qq{Could not find the file "$file"!});
