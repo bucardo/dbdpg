@@ -539,13 +539,15 @@ else {
     $typefile = "$dir/pg_type.h";
     open my $fh, '<', $typefile;
 
+    my %oidseen;
     while (<$fh>) {
         s/FLOAT8PASSBYVAL/t/;
         s/FLOAT4PASSBYVAL/t/;
         if (/^DATA\(insert OID\s+=\s+(\d+)\s+\(\s+(\S+)\s+\S+ \S+\s+\S+\s+[t|f]\s+. . [tf] ([tf]) \\(\d+) (\d+)\s+(\d+) (\d+) (\S+) (\S+) (\S+) (\S+)/o) {
             my ($oid,$name,$typedef,$delim,$typrelid,$typelem,$typarray,$tin,$tout,$bin,$bout) =
                 ($1,$2,$3,chr(oct($4)),$5,$6,$7,$8,$9,$10,$11);
-            die "Duplicated OID $oid!: $_\n" if exists $pgtype{$oid};
+            die "Duplicated OID $oid!: $_\n" if exists $oidseen{$oid};
+            $oidseen{$oid} = 1;
             $pgtype{$name} = {
                 oid       => $oid,
                 typdelim  => $delim,
