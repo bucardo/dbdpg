@@ -277,8 +277,7 @@ use 5.008001;
     }
 
     sub private_attribute_info {
-        return {
-        };
+        return {};
     }
 
 } ## end of package DBD::Pg::dr
@@ -1565,23 +1564,23 @@ use 5.008001;
             no if $] >= 5.022, warnings => 'redundant';
             return sprintf '%02d.%02d.%1d%1d%1d%1d', split (/\./, "$simpleversion.0.0.0.0.0.0");
         }
-         elsif ($ans eq 'KEYWORDS') {
+        elsif ($ans eq 'KEYWORDS') {
             ## http://www.postgresql.org/docs/current/static/sql-keywords-appendix.html
             ## Basically, we want ones that are 'reserved' for PostgreSQL but not 'reserved' in SQL:2011
             return join ',' => (qw(ANALYSE ANALYZE ASC CONCURRENTLY DEFERRABLE DESC DO FREEZE ILIKE INITIALLY ISNULL LIMIT NOTNULL PLACING RETURNING VARIADIC VERBOSE));
-         }
-         elsif ($ans eq 'READONLY') {
-             my $SQL = q{SELECT CASE WHEN setting = 'on' THEN 'Y' ELSE 'N' END FROM pg_settings WHERE name = 'transaction_read_only'};
-             my $info = $dbh->selectall_arrayref($SQL);
-             return $info->[0][0];
-         }
-         elsif ($ans eq 'DEFAULTTXN') {
-             my $SQL = q{SELECT CASE WHEN setting = 'read committed' THEN 2 ELSE 8 END FROM pg_settings WHERE name = 'default_transaction_isolation'};
-             my $info = $dbh->selectall_arrayref($SQL);
-             return $info->[0][0];
-         }
+        }
+        elsif ($ans eq 'READONLY') {
+            my $SQL = q{SELECT CASE WHEN setting = 'on' THEN 'Y' ELSE 'N' END FROM pg_settings WHERE name = 'transaction_read_only'};
+            my $info = $dbh->selectall_arrayref($SQL);
+            return $info->[0][0];
+        }
+        elsif ($ans eq 'DEFAULTTXN') {
+            my $SQL = q{SELECT CASE WHEN setting = 'read committed' THEN 2 ELSE 8 END FROM pg_settings WHERE name = 'default_transaction_isolation'};
+            my $info = $dbh->selectall_arrayref($SQL);
+            return $info->[0][0];
+        }
 
-         return $ans;
+        return $ans;
     } # end of get_info
 
     sub private_attribute_info {
