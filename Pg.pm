@@ -644,7 +644,7 @@ use 5.008001;
             push(@exe_args, $schema);
         }
 
-        my $stats_sql;
+        my $stats_sql = '';
 
         # Table-level stats
         if (!$unique_only) {
@@ -890,10 +890,10 @@ use 5.008001;
 
         ## PK: catalog, schema, table, FK: catalog, schema, table, attr
         ## Each of these may be undef or empty
-        my $pschema = $_[1] || '';
-        my $ptable = $_[2] || '';
-        my $fschema = $_[4] || '';
-        my $ftable = $_[5] || '';
+        my $pschema = $_[1] // '';
+        my $ptable = $_[2] // '';
+        my $fschema = $_[4] // '';
+        my $ftable = $_[5] // '';
 
         my @cols = (qw(
             UK_TABLE_CAT UK_TABLE_SCHEM UK_TABLE_NAME UK_COLUMN_NAME
@@ -1032,7 +1032,7 @@ use 5.008001;
         my $dbh = shift;
         my ($catalog, $schema, $table, $type) = @_;
 
-        my $tbl_sql = ();
+        my $tbl_sql = '';
 
         my $extracols = q{,NULL::text AS pg_schema, NULL::text AS pg_table};
         if ( # Rule 19a
@@ -1211,6 +1211,8 @@ use 5.008001;
 
         my $attrs = $sth->fetchall_arrayref(\%convert);
 
+        my @pri_keys = $dbh->primary_key( undef, undef, $table );
+
         for my $row (@$attrs) {
             # switch the column names
             for my $name (keys %$row) {
@@ -1225,8 +1227,7 @@ use 5.008001;
             # NOTNULL inverts the sense of NULLABLE
             $row->{NOTNULL} = ($row->{NOTNULL} ? 0 : 1);
 
-            my @pri_keys = $dbh->primary_key( undef, undef, $table );
-            $row->{PRIMARY_KEY} = scalar(grep { /^$row->{NAME}$/i } @pri_keys) ? 1 : 0;
+            $row->{PRIMARY_KEY} = scalar(grep { /^\Q$row->{NAME}\E$/i } @pri_keys) ? 1 : 0;
         }
 
         return $attrs;
