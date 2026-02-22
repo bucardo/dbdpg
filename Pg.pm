@@ -413,7 +413,7 @@ use 5.008001;
                 $SQL = 'SELECT inhparent::regclass FROM pg_inherits WHERE inhrelid = ?::regclass::oid';
                 my $isth = $dbh->prepare($SQL);
                 $count = $isth->execute($table);
-                if ($count < 1) {
+                if (!defined $count or $count eq '0E0') {
                     $isth->finish();
                     $dbh->set_err(1, qq{No suitable column found for last_insert_id of table "$table"\n});
                     return undef;
