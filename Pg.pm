@@ -1840,7 +1840,7 @@ Implemented by DBI, no driver-specific impact.
   @data_sources = $dbh->data_sources();
 
 Returns a list of available databases. Unless the environment variable C<DBI_DSN> is set, 
-a connection will be attempted to the database C<template1>. The normal connection 
+a connection will be attempted to the database C<postgres>. The normal connection 
 environment variables also apply, such as C<PGHOST>, C<PGPORT>, C<DBI_USER>, 
 C<DBI_PASS>, and C<PGSERVICE>.
 
