@@ -268,7 +268,7 @@ char * quote_bool(pTHX_ const char *value, STRLEN len, STRLEN *retlen, int estri
         (10 == len && 0 == strncasecmp(value, "0 but true", 10))
         ) {
         New(0, result, 5, char);
-        strncpy(result,"TRUE",4);
+        strcpy(result,"TRUE");
         *retlen = 4;
         return result;
     }
@@ -282,7 +282,7 @@ char * quote_bool(pTHX_ const char *value, STRLEN len, STRLEN *retlen, int estri
         (0 == len)
         ) {
         New(0, result, 6, char);
-        strncpy(result,"FALSE",5);
+        strcpy(result,"FALSE");
         *retlen = 5;
         return result;
     }
