@@ -678,9 +678,9 @@ while (<$oldfh>) {
         if (/pg_types/) {
             chomp;
             print $newfh $_;
-            $step = 0;
+            my $counter = 0;
             for (sort { $pgtype{$a}{define} cmp $pgtype{$b}{define} } keys %pgtype) {
-                printf $newfh "%s$pgtype{$_}{define}", !($step++ % 5) ? "\n            " : ' ';
+                printf $newfh "%s$pgtype{$_}{define}", !($counter++ % 5) ? "\n            " : ' ';
             }
             print $newfh "\n";
             $step = 1;
