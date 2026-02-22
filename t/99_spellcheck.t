@@ -104,7 +104,7 @@ SKIP: {
 ## Now the comments
 SKIP: {
     if (!eval { require File::Comments; 1 }) {
-        skip ('Need File::Comments to test the spelling inside comments', 12+@testfiles);
+        skip ('Need File::Comments to test the spelling inside comments', 11+@testfiles);
     }
     {
         ## For XS files...
