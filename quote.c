@@ -294,19 +294,20 @@ char * quote_bool(pTHX_ const char *value, STRLEN len, STRLEN *retlen, int estri
 char * quote_int(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
     char * result;
+    const char *p = string;
+    STRLEN left = len;
+
+    while (left-- > 0 && *p != '\0') {
+        if (!isdigit(*p) || ' ' == *p || '+' == *p || '-' == *p) {
+            p++;
+            continue;
+        }
+        croak("Invalid integer");
+    }
 
     New(0, result, len+1, char);
     strcpy(result,string);
     *retlen = len;
-
-    while (len > 0 && *string != '\0') {
-        len--;
-        if (isdigit(*string) || ' ' == *string || '+' == *string || '-' == *string) {
-            string++;
-            continue;            
-        }
-        croak("Invalid integer");
-    }
 
     return result;
 }
