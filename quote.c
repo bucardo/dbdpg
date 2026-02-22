@@ -330,9 +330,9 @@ char * quote_float(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int est
     *retlen = len;
 
     /* Allow some standard strings in */
-    if (0 != strncasecmp(string, "NaN", 3)
-        && 0 != strncasecmp(string, "Infinity", 8)
-        && 0 != strncasecmp(string, "-Infinity", 9)) {
+    if (0 != strncasecmp(string, "NaN", 4)
+        && 0 != strncasecmp(string, "Infinity", 9)
+        && 0 != strncasecmp(string, "-Infinity", 10)) {
         while (len > 0 && *string != '\0') {
             len--;
             if (isdigit(*string)
