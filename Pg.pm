@@ -89,7 +89,7 @@ use 5.008001;
 
     {
         package DBD::Pg::DefaultValue;
-        sub new { my $self = {}; return bless $self, shift; }
+        sub new { my $class = shift; return bless {}, $class; }
     }
     our $DBDPG_DEFAULT = DBD::Pg::DefaultValue->new();
     Exporter::export_ok_tags('pg_types', 'async', 'pg_limits');
@@ -385,7 +385,7 @@ use 5.008001;
                     ) AS seqname
                 FROM pg_class c
                     JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-                    -- LEFT JOIN so we can distingiuish between table not found (zero rows)
+                    -- LEFT JOIN so we can distinguish between table not found (zero rows)
                     -- and no suitable column found (at least one all-NULL row)
                     LEFT JOIN pg_catalog.pg_index i
                         ON c.oid = i.indrelid AND i.indisunique
@@ -472,7 +472,7 @@ use 5.008001;
 
     # Column expected in statement handle returned.
     # table_cat, table_schem, table_name, column_name, data_type, type_name,
-     # column_size, buffer_length, DECIMAL_DIGITS, NUM_PREC_RADIX, NULLABLE,
+    # column_size, buffer_length, DECIMAL_DIGITS, NUM_PREC_RADIX, NULLABLE,
     # REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB, CHAR_OCTET_LENGTH,
     # ORDINAL_POSITION, IS_NULLABLE
     # The result set is ordered by TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION.
@@ -967,7 +967,7 @@ use 5.008001;
                 JOIN pg_catalog.pg_class fk_class ON constr.conrelid = fk_class.oid
                 JOIN pg_catalog.pg_namespace fk_ns ON fk_class.relnamespace = fk_ns.oid
                 -- can't do unnest() until 8.4, and would need WITH ORDINALITY to get the array indices,
-                -- wich isn't available until 9.4 at the earliest, so we join against a series table instead
+                -- which isn't available until 9.4 at the earliest, so we join against a series table instead
                 JOIN pg_catalog.generate_series(1, pg_catalog.current_setting('max_index_keys')::integer) colnum(i)
                     ON colnum.i <= pg_catalog.array_upper(constr.conkey,1)
                 JOIN pg_catalog.pg_attribute uk_col ON uk_col.attrelid = constr.confrelid AND uk_col.attnum = constr.confkey[colnum.i]
@@ -1617,6 +1617,8 @@ use 5.008001;
 
 {
     package DBD::Pg::st;
+
+    use strict;
 
     sub parse_trace_flag {
         return DBD::Pg->parse_trace_flag($_[1]);
