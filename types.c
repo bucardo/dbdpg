@@ -526,7 +526,6 @@ my $maxlen = 1;
 my %pgtype;
 my $thisname = 0;
 my $typefile;
-my %pseudotype;
 
 if (-e "$dir/pg_type.dat") {
     $typefile = "$dir/pg_type.dat";
@@ -535,7 +534,6 @@ if (-e "$dir/pg_type.dat") {
     my $catalog = Catalog::ParseHeader("$dir/pg_type.h");
     my $types   = Catalog::ParseData($typefile, $catalog->{columns}, 0);
     %pgtype     = map +($_->{typname} => $_), @$types;
-    %pseudotype = map +($_, 1), grep { $pgtype{$_}{typtype} eq 'p' } keys %pgtype;
 }
 else {
     $typefile = "$dir/pg_type.h";
@@ -576,6 +574,7 @@ else {
     close $fh;
 }
 
+my %pseudotype = map +($_, 1), grep { $pgtype{$_}{typtype} eq 'p' } keys %pgtype;
 for my $name (keys %pgtype) {
     length($name) > $maxlen and $maxlen = length($name);
     $pgtype{$name} = {
