@@ -3,6 +3,7 @@ Possible items to do, in no particular order
 Feature requests can be entered at 
 https://github.com/bucardo/dbdpg/issues
 
+- Address that "XXX Wrong" in types.c
 - Move the contraint and enum calls out of the main loop in column_info in Pg.pm
 - Consider support for PQchangePassword
 - Support pipeline mode: https://www.postgresql.org/docs/14/libpq-pipeline-mode.html

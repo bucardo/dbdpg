@@ -555,6 +555,7 @@ else {
                 typoutput => $tout,
                 typrecv   => $bin,
                 typsend   => $bout,
+                typtype  => $typedef,
             };
             if ($name =~ /^_/) {
                 (my $basename = $name) =~ s/^_//;
@@ -694,9 +695,9 @@ while (<$oldfh>) {
     elsif (2 == $step) {
         if (/data types exported/) {
             print $newfh $_;
-            $step = 0;
+            my $counter = 0;
             for (sort { $pgtype{$a}{define} cmp $pgtype{$b}{define} } keys %pgtype) {
-                printf $newfh "%s$pgtype{$_}{define}", !($step++ % 6) ? "\n " : ' ';
+                printf $newfh "%s$pgtype{$_}{define}", !($counter++ % 6) ? "\n " : ' ';
             }
             print $newfh "\n\n";
             $step = 3;
