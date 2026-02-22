@@ -21,7 +21,6 @@ use 5.008001;
     use DBI 1.614 ();
     use Exporter ();
     use XSLoader;
-    our $dbh;
     our @ISA = qw(Exporter);
 
     use constant {
