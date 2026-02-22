@@ -543,7 +543,7 @@ else {
     while (<$fh>) {
         s/FLOAT8PASSBYVAL/t/;
         s/FLOAT4PASSBYVAL/t/;
-        if (/^DATA\(insert OID\s+=\s+(\d+)\s+\(\s+(\S+)\s+\S+ \S+\s+\S+\s+[t|f]\s+. . [tf] ([tf]) \\(\d+) (\d+)\s+(\d+) (\d+) (\S+) (\S+) (\S+) (\S+)/o) {
+        if (/^DATA\(insert OID\s+=\s+(\d+)\s+\(\s+(\S+)\s+\S+ \S+\s+\S+\s+[tf]\s+. . [tf] ([tf]) \\(\d+) (\d+)\s+(\d+) (\d+) (\S+) (\S+) (\S+) (\S+)/o) {
             my ($oid,$name,$typedef,$delim,$typrelid,$typelem,$typarray,$tin,$tout,$bin,$bout) =
                 ($1,$2,$3,chr(oct($4)),$5,$6,$7,$8,$9,$10,$11);
             die "Duplicated OID $oid!: $_\n" if exists $oidseen{$oid};
@@ -556,8 +556,8 @@ else {
                 typrecv   => $bin,
                 typsend   => $bout,
             };
-            if ($name =~ /_/) {
-                (my $basename = $name) =~ s/_//;
+            if ($name =~ /^_/) {
+                (my $basename = $name) =~ s/^_//;
                 if (exists $pgtype{$basename}) {
                     $pgtype{$name}{typdelim} = $pgtype{$basename}{typdelim};
                 }
