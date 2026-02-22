@@ -109,6 +109,8 @@ is (PG_NUMMULTIRANGEARRAY               ,  6151, 'PG_NUMMULTIRANGEARRAY returns 
 is (PG_NUMRANGE                         ,  3906, 'PG_NUMRANGE returns correct value');
 is (PG_NUMRANGEARRAY                    ,  3907, 'PG_NUMRANGEARRAY returns correct value');
 is (PG_OID                              ,    26, 'PG_OID returns correct value');
+is (PG_OID8                             ,  8256, 'PG_OID8 returns correct value');
+is (PG_OID8ARRAY                        ,  8261, 'PG_OID8ARRAY returns correct value');
 is (PG_OIDARRAY                         ,  1028, 'PG_OIDARRAY returns correct value');
 is (PG_OIDVECTOR                        ,    30, 'PG_OIDVECTOR returns correct value');
 is (PG_OIDVECTORARRAY                   ,  1013, 'PG_OIDVECTORARRAY returns correct value');

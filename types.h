@@ -73,6 +73,7 @@ sql_type_info_t* sql_type_data(int);
 #define                  PG_NUMMULTIRANGE  4532
 #define                       PG_NUMRANGE  3906
 #define                            PG_OID  26
+#define                           PG_OID8  8256
 #define                      PG_OIDVECTOR  30
 #define                           PG_PATH  602
 #define                   PG_PG_ATTRIBUTE  75
@@ -171,6 +172,7 @@ sql_type_info_t* sql_type_data(int);
 #define                   PG_NUMERICARRAY  1231
 #define             PG_NUMMULTIRANGEARRAY  6151
 #define                  PG_NUMRANGEARRAY  3907
+#define                      PG_OID8ARRAY  8261
 #define                       PG_OIDARRAY  1028
 #define                 PG_OIDVECTORARRAY  1013
 #define                      PG_PATHARRAY  1019

@@ -156,6 +156,8 @@ SKIP: {
          qr{PG_NUMRANGE},
          qr{PG_NUMRANGEARRAY},
          qr{PG_OID},
+         qr{PG_OID8},
+         qr{PG_OID8ARRAY},
          qr{PG_OIDARRAY},
          qr{PG_OIDVECTOR},
          qr{PG_OIDVECTORARRAY},
