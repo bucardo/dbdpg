@@ -194,7 +194,7 @@ static sql_type_info_t pg_types[] = {
  {PG_TIME                          ,"time"                         ,1,',',"time_out"            ,quote_string,dequote_string,{SQL_TYPE_TIME},0},
  {PG_TIMESTAMP                     ,"timestamp"                    ,1,',',"timestamp_out"       ,quote_string,dequote_string,{SQL_TIMESTAMP},0},
  {PG_TIMESTAMPTZ                   ,"timestamptz"                  ,1,',',"timestamptz_out"     ,quote_string,dequote_string,{SQL_TYPE_TIMESTAMP_WITH_TIMEZONE},0},
- {PG_TIMETZ                        ,"timetz"                       ,1,',',"timetz_out"          ,quote_string,dequote_string,{0},0},
+ {PG_TIMETZ                        ,"timetz"                       ,1,',',"timetz_out"          ,quote_string,dequote_string,{SQL_TYPE_TIME_WITH_TIMEZONE},0},
  {PG_TRIGGER                       ,"trigger"                      ,1,',',"trigger_out"         ,quote_string,dequote_string,{0},0},
  {PG_TSM_HANDLER                   ,"tsm_handler"                  ,1,',',"tsm_handler_out"     ,quote_string,dequote_string,{0},0},
  {PG_TSMULTIRANGE                  ,"tsmultirange"                 ,1,',',"multirange_out"      ,quote_string,dequote_string,{0},0},
@@ -443,7 +443,7 @@ static sql_type_info_t sql_types[] = {
  {SQL_TIMESTAMP,"SQL_TIMESTAMP",1,',', "none", quote_string, dequote_string, {PG_TIMESTAMP}, 0},
  {SQL_TYPE_TIMESTAMP,"SQL_TYPE_TIMESTAMP",1,',', "none", quote_string, dequote_string, {PG_TIMESTAMP}, 0},
  {SQL_TYPE_TIMESTAMP_WITH_TIMEZONE,"SQL_TYPE_TIMESTAMP_WITH_TIMEZONE",1,',', "none", quote_string, dequote_string, {PG_TIMESTAMPTZ}, 0},
- {SQL_TYPE_TIME_WITH_TIMEZONE,"SQL_TYPE_TIME_WITH_TIMEZONE",1,',', "none", quote_string, dequote_string, {PG_TIMESTAMPTZ}, 0},
+ {SQL_TYPE_TIME_WITH_TIMEZONE,"SQL_TYPE_TIME_WITH_TIMEZONE",1,',', "none", quote_string, dequote_string, {PG_TIMETZ}, 0},
  {SQL_VARCHAR,"SQL_VARCHAR",1,',', "none", quote_string, dequote_string, {PG_VARCHAR}, 0},
 };
 
@@ -919,8 +919,9 @@ bytea    quote_bytea   dequote_bytea   SQL_VARBINARY|SQL_BLOB|SQL_BINARY|SQL_LON
 ## Time and date
 date        quote_string  dequote_string  SQL_TYPE_DATE                     1  0
 time        quote_string  dequote_string  SQL_TYPE_TIME                     1  0
+timetz      quote_string  dequote_string  SQL_TYPE_TIME_WITH_TIMEZONE       1  0
 timestamp   quote_string  dequote_string  SQL_TIMESTAMP|SQL_TYPE_TIMESTAMP  1  0
-timestamptz quote_string  dequote_string  SQL_TYPE_TIMESTAMP_WITH_TIMEZONE|SQL_TYPE_TIME_WITH_TIMEZONE       1  0
+timestamptz quote_string  dequote_string  SQL_TYPE_TIMESTAMP_WITH_TIMEZONE  1  0
 
 __END__
 
