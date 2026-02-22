@@ -1688,8 +1688,38 @@ my $foo;
     no warnings;## Perl does not like undef args
     is ($dbh->quote($foo), q{NULL}, $t);
 }
-$t='DB handle method "quote" works with a supplied data type argument';
+
+$t='DB handle method "quote" works with integer data type for simple digit';
 is ($dbh->quote(1, 4), 1, $t);
+
+$t='DB handle method "quote" works with integer data type for simple digits';
+is ($dbh->quote(123, 4), 123, $t);
+
+$t='DB handle method "quote" works with integer data type for space then digit';
+is ($dbh->quote(' 123', 4), ' 123', $t);
+
+$t='DB handle method "quote" works with integer data type for space and plus then digit';
+is ($dbh->quote(' + 123', 4), ' + 123', $t);
+
+$t='DB handle method "quote" works with integer data type for space and minus then digit';
+is ($dbh->quote(' -123', 4), ' -123', $t);
+
+$t='DB handle method "quote" fails with integer data type for digit followed by a plus';
+eval { $dbh->quote('1+1', 4); };
+like ($@, qr{Invalid integer}, $t);
+
+$t='DB handle method "quote" fails with integer data type for digit followed by a minus';
+eval { $dbh->quote('1--', 4); };
+like ($@, qr{Invalid integer}, $t);
+
+$t='DB handle method "quote" fails with integer data type for digit followed by space';
+eval { $dbh->quote('123 456', 4); };
+like ($@, qr{Invalid integer}, $t);
+
+$t='DB handle method "quote" fails with integer data type for a non digit';
+eval { $dbh->quote('12z45', 4); };
+like ($@, qr{Invalid integer}, $t);
+
 
 ## Test bytea quoting
 my $scs = $dbh->{pg_standard_conforming_strings};

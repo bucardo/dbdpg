@@ -101,7 +101,7 @@ char * quote_geom(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estr
     (*retlen) = 2;
 
     while (*string != '\0') {
-        if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
+        if (*string != '\t' && *string != ' ' && *string != '(' && *string != ')'
             && *string != '-' && *string != '+' && *string != '.'
             && *string != 'e' && *string != 'E'
             && *string != ',' && (*string < '0' || *string > '9'))
@@ -243,7 +243,7 @@ char * quote_bytea(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int est
     return (char *)result - (*retlen);
 }
 
-char * quote_sql_binary(pTHX_ char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_sql_binary(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
 {
     /* We are going to return a quote_bytea() for backwards compat but
          we warn first */
@@ -268,7 +268,7 @@ char * quote_bool(pTHX_ const char *value, STRLEN len, STRLEN *retlen, int estri
         (10 == len && 0 == strncasecmp(value, "0 but true", 10))
         ) {
         New(0, result, 5, char);
-        strncpy(result,"TRUE\0",5);
+        strncpy(result,"TRUE",4);
         *retlen = 4;
         return result;
     }
@@ -282,7 +282,7 @@ char * quote_bool(pTHX_ const char *value, STRLEN len, STRLEN *retlen, int estri
         (0 == len)
         ) {
         New(0, result, 6, char);
-        strncpy(result,"FALSE\0",6);
+        strncpy(result,"FALSE",5);
         *retlen = 5;
         return result;
     }
@@ -296,9 +296,15 @@ char * quote_int(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estri
     char * result;
     const char *p = string;
     STRLEN left = len;
+    bool seendigit = false;
 
     while (left-- > 0 && *p != '\0') {
-        if (!isdigit(*p) || ' ' == *p || '+' == *p || '-' == *p) {
+        if (isdigit(*p)) {
+            seendigit = true;
+            p++;
+            continue;
+        }
+        if (!seendigit && (' ' == *p || '+' == *p || '-' == *p)) {
             p++;
             continue;
         }
@@ -357,6 +363,9 @@ char * quote_name(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estr
     int nquotes = 0;
     int x;
     bool safe;
+
+    if (len < 1)
+        croak("Empty identifier name");
 
     /* We throw double quotes around the whole thing, if:
        1. It starts with anything other than [a-z_]
@@ -531,13 +540,15 @@ void dequote_sql_binary(pTHX_ char *string, STRLEN *retlen)
 void dequote_bool(pTHX_ char *string, STRLEN *retlen)
 {
 
-    switch(*string){
-    case 'f': *string = '0'; break;
-    case 't': *string = '1'; break;
-    default:
-        croak("I do not know how to deal with %c as a bool", *string);
+    if (NULL != string) {
+        switch(*string){
+        case 'f': *string = '0'; break;
+        case 't': *string = '1'; break;
+        default:
+            croak("I do not know how to deal with %c as a bool", *string);
+        }
+        *retlen = 1;
     }
-    *retlen = 1;
 }
 
 
@@ -2046,7 +2057,7 @@ while (<DATA>) {
 close $fh2 or die qq{Could not close "$tempfile": $!\n};
 
 my $ofile = 'quote.c';
-system("mv $tempfile $ofile");
+rename($tempfile, $ofile);
 print "Wrote $ofile\n";
 
 my $testfile= "t/01keywords.t";
@@ -2065,7 +2076,7 @@ if ($start && $end) {
 open my $fh4, '>', "$testfile.tmp" or die "open($testfile.tmp): $!";
 print $fh4 @lines;
 close $fh4 or die "close: $!";
-system("mv $testfile.tmp $testfile");
+rename("$testfile.tmp", $testfile);
 print "Wrote $testfile\n";
 
 exit;

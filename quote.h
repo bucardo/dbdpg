@@ -2,7 +2,7 @@
 char * null_quote(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_string(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_bytea(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring);
-char * quote_sql_binary(pTHX_ char *string, STRLEN len, STRLEN *retlen, int estring);
+char * quote_sql_binary(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_bool(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_integer(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring);
 char * quote_int(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring);
