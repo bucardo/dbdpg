@@ -490,7 +490,6 @@ Mullane
 multi
 Multi
 MULTI
-mv
 MYMETA
 myperl
 myval
