@@ -2590,7 +2590,7 @@ ASYNC_CONNECT: {
     }
 
     $rc = $dbh->ping();
-    ok (1 == $rc, 'pg_ascync_connect false connects synchronously');
+    ok (1 == $rc, 'pg_async_connect false connects synchronously');
     $dbh->disconnect();
 
     #

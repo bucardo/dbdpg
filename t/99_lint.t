@@ -15,7 +15,7 @@ if (! $ENV{AUTHOR_TESTING}) {
 }
 
 $ENV{LANG} = 'C';
-find (sub { push @cfiles      => $File::Find::name if /^[^.].+\.c$/ and $_ ne 'Pg.c' and $File::Find::dir !~ /tmp/; }, '.');
+find (sub { push @cfiles      => $File::Find::name if /^[^.].+\.c$/ and $_ ne 'Pg.c' and $File::Find::dir !~ /tmp|DBD-Pg/; }, '.');
 find (sub { push @headerfiles => $File::Find::name if /^[^.].+\.h$/ and $_ ne 'dbivport.h' and $File::Find::dir !~ /tmp/; }, '.');
 find (sub { push @testfiles   => $File::Find::name if /^[^.]\w+\.(t|pl)$/; }, 't');
 find (sub { push @perlfiles   => $File::Find::name if /^[^.].+\.(pm|pl|t)$/ and $File::Find::dir !~ /tmp/; }, '.');
@@ -84,6 +84,48 @@ while (<$fh>) {
     $manfile{$1} = $.;
 }
 close $fh or die qq{Could not close "$file": $!\n};
+
+
+## Make sure each PQxx() call has a matching TRACE above it
+for my $file (@cfiles) {
+    open $fh, '<', $file or die qq{Could not open "$file": $!\n};
+    my $lastline = '';
+    my $lastline2 = '';
+    my $traceok = 1;
+    while (<$fh>) {
+        chomp;
+        if (/PQerrorMessage/) {
+            if ($lastline !~ /TRACE_PQERRORMESSAGE/) {
+                diag "Failure at line $. for PQerrorMessage\n";
+            }
+        }
+        while (/\b(PQ[a-z]\w+)\(/g) {
+            my $func = $1;
+            ## Items small and rare enough not to trace:
+            next if $func eq 'PQgetlength';
+            next if $func eq 'PQgetvalue';
+            next if $func eq 'PQbinaryTuples';
+            next if $func eq 'PQflush';
+            next if $func eq 'PQclosePrepared';
+
+            my $uc = uc($func);
+            next if $lastline =~ /TRACE_$uc\b/;
+            next if $lastline !~ /;/ and $lastline2 =~ /TRACE_$uc\b/;
+
+            diag "Failure at line $.: Found no matching TRACE for $func\n";
+            $traceok = 0;
+        }
+        $lastline2 = $lastline;
+        $lastline = $_;
+    }
+    close $fh;
+    if ($traceok) {
+        pass (qq{File "$file" has matching TRACE calls for each PQ function});
+    }
+    else {
+        fail (qq{File "$file" does not have TRACE cals for each PQ function});
+    }
+}
 
 ##
 ## Everything in MANIFEST[.SKIP] should also be in README.dev

@@ -365,7 +365,6 @@ fh
 filename
 firstword
 fk
-fprintf
 FreeBSD
 fulltest
 func
@@ -517,7 +516,6 @@ num
 NUM
 numbound
 numphs
-numrows
 NYTProf
 nytprofhtml
 ocitrace

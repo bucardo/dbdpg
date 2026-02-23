@@ -21,14 +21,11 @@
 #define SvIsBOOL(sv) DBDPG_FALSE
 #endif
 
-#define DEBUG_LAST_RESULT 0
-
 #if PGLIBVERSION < 80300
 Oid lo_truncate (PGconn *conn, int fd, size_t len);
 Oid lo_truncate (PGconn *conn, int fd, size_t len) {
     croak ("Cannot use lo_truncate unless compiled against Postgres 8.3 or later");
 }
-
 #endif
 
 #if PGLIBVERSION < 80400
@@ -36,7 +33,6 @@ Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId);
 Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId) {
     croak ("Cannot use lo_import_with_oid unless compiled against Postgres 8.4 or later");
 }
-
 #endif
 
 #ifndef PG_DIAG_SCHEMA_NAME
@@ -54,9 +50,9 @@ Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId) {
 #ifndef PGErrorVerbosity
 typedef enum
     {
-        PGERROR_TERSE,                /* single-line error messages */
-        PGERROR_DEFAULT,            /* recommended style */
-        PGERROR_VERBOSE                /* all the facts, ma'am */
+        PGERROR_TERSE,       /* single-line error messages */
+        PGERROR_DEFAULT,     /* recommended style */
+        PGERROR_VERBOSE      /* all the facts, ma'am */
     } PGErrorVerbosity;
 #endif
 
@@ -149,8 +145,9 @@ static int want_async_connect(pTHX_ SV *attrs)
         && SvTRUE(sv);
 }
 
-static void after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
+static int after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
 {
+
     /* Figure out what protocol this server is using (most likely 3) */
     TRACE_PQPROTOCOLVERSION;
     imp_dbh->pg_protocol = PQprotocolVersion(imp_dbh->conn);
@@ -165,7 +162,9 @@ static void after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
            something it should never do. If we think this is the case for the version failure, we
            simply allow things to continue with a faked version. See github issue #47
         */
-        if (NULL != strstr(PQparameterStatus(imp_dbh->conn, "server_version"), "bouncer")) {
+        TRACE_PQPARAMETERSTATUS;
+        const char *sv = PQparameterStatus(imp_dbh->conn, "server_version");
+        if (NULL != sv && NULL != strstr(sv, "bouncer")) {
             imp_dbh->pg_server_version = 90600;
         }
         else {
@@ -174,9 +173,10 @@ static void after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
             pg_error(aTHX_ dbh, CONNECTION_BAD, "Server version 8.0 required");
             TRACE_PQFINISH;
             PQfinish(imp_dbh->conn);
+            imp_dbh->conn = NULL;
             sv_free((SV *)imp_dbh->savepoints);
             if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login (error)\n", THEADER_slow);
-            return;
+            return 1;
         }
     }
 
@@ -189,6 +189,8 @@ static void after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
 
     /* Tell DBI that we should call disconnect when the handle dies */
     DBIc_ACTIVE_on(imp_dbh);
+
+    return 0;
 }
 
 int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, char * pwd, SV *attr)
@@ -201,6 +203,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     STRLEN         connect_string_size;
     ConnStatusType connstatus;
     int            async_connect;
+    int            retval = 1;
 
     async_connect = want_async_connect(aTHX_ attr);
 
@@ -276,6 +279,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     if (imp_dbh->conn) {
         TRACE_PQFINISH;
         PQfinish(imp_dbh->conn);
+        imp_dbh->conn = NULL;
     }
 
     /* Attempt the connection to the database */
@@ -300,11 +304,12 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     connstatus = PQstatus(imp_dbh->conn);
     switch (connstatus) {
     case CONNECTION_BAD:
-        TRACE_PQERRORMESSAGE;
         strncpy(imp_dbh->sqlstate, "08006", 6); /* "CONNECTION FAILURE" */
+        TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, connstatus, PQerrorMessage(imp_dbh->conn));
         TRACE_PQFINISH;
         PQfinish(imp_dbh->conn);
+        imp_dbh->conn = NULL;
         sv_free((SV *)imp_dbh->savepoints);
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login (error)\n", THEADER_slow);
         return 0;
@@ -343,12 +348,15 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     /* if not connecting asynchronously, do after connect init */
     imp_dbh->pg_protocol = -1;
     imp_dbh->pg_server_version = -1;
-    if (async_connect) imp_dbh->async_status = DBH_ASYNC_CONNECT;
-    else after_connect_init(aTHX_ dbh, imp_dbh);
+
+    if (async_connect)
+        imp_dbh->async_status = DBH_ASYNC_CONNECT;
+    else
+        retval = ! after_connect_init(aTHX_ dbh, imp_dbh);
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login\n", THEADER_slow);
 
-    return 1;
+    return retval;
 
 } /* end of dbd_db_login */
 
@@ -386,14 +394,13 @@ int pg_db_continue_connect(SV *dbh)
             if (TLOGIN_slow) TRC(DBILOGFP, "%sconnection established\n", THEADER_slow);
 
             imp_dbh->async_status = DBH_NO_ASYNC;
-            after_connect_init(aTHX_ dbh, imp_dbh);
+            status = after_connect_init(aTHX_ dbh, imp_dbh) ? -2 : 0;
 
-            status = 0;
             break;
 
         case PGRES_POLLING_FAILED:
-            TRACE_PQERRORMESSAGE;
             strncpy(imp_dbh->sqlstate, "08006", 6); /* "CONNECTION FAILURE" */
+            TRACE_PQSTATUS; TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, PQstatus(imp_dbh->conn), PQerrorMessage(imp_dbh->conn));
             TRACE_PQFINISH;
             PQfinish(imp_dbh->conn);
@@ -406,6 +413,7 @@ int pg_db_continue_connect(SV *dbh)
     }
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_continue_connect\n", THEADER_slow);
+
     return status;
 }
 
@@ -509,9 +517,6 @@ static ExecStatusType _result(pTHX_ imp_dbh_t * imp_dbh, const char * sql)
     /* Free the last_result as needed, as we are about to replace it */
     if (imp_dbh->last_result && imp_dbh->result_clearable) {
         TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-        fprintf(stderr, "CLEAR last_result of %ld at line %d of %s\n", (long int)imp_dbh->last_result,__LINE__,__func__);
-#endif
         PQclear(imp_dbh->last_result);
         imp_dbh->last_result = NULL;
     }
@@ -533,6 +538,7 @@ static void _fatal_sqlstate(pTHX_ imp_dbh_t * imp_dbh)
 {
     char *sqlstate;
 
+    TRACE_PQSTATUS;
     sqlstate = PQstatus(imp_dbh->conn) == CONNECTION_BAD ?
         "08000" :    /* CONNECTION EXCEPTION */
         "22000";    /* DATA EXCEPTION */
@@ -584,6 +590,7 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
             break;
         case PGRES_FATAL_ERROR:
             /* libpq returns NULL result in case of connection failures */
+            TRACE_PQSTATUS;
             if (!result || PQstatus(imp_dbh->conn) == CONNECTION_BAD) {
                 sqlstate = "08000";    /* CONNECTION EXCEPTION */
                 break;
@@ -597,9 +604,6 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
 
     strncpy(imp_dbh->sqlstate, sqlstate, 5);
     imp_dbh->sqlstate[5] = 0;
-
-    if (TEND_slow) TRC(DBILOGFP, "%sEnd _sqlstate (imp_dbh->sqlstate: %s)\n",
-                  THEADER_slow, imp_dbh->sqlstate);
 
     if (TRACE7_slow) TRC(DBILOGFP, "%s_sqlstate txn_status is %d\n",
                     THEADER_slow, pg_db_txn_status(aTHX_ imp_dbh));
@@ -636,8 +640,11 @@ int dbd_db_ping (SV * dbh)
     }
 
     /* No matter what state we are in, send an empty query to the backend */
+    TRACE_PQEXEC;
     result = PQexec(imp_dbh->conn, "/* DBD::Pg ping test v3.19.0 */");
+    TRACE_PQRESULTSTATUS;
     status = PQresultStatus(result);
+    TRACE_PQCLEAR;
     PQclear(result);
     if (PGRES_FATAL_ERROR == status) {
         /* Something very bad, usually indicating the backend is gone */
@@ -652,6 +659,7 @@ int dbd_db_ping (SV * dbh)
     }
 
     /* As a safety measure, check PQstatus as well */
+    TRACE_PQSTATUS;
     if (CONNECTION_BAD == PQstatus(imp_dbh->conn)) {
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (PQstatus returned CONNECTION_BAD)\n", THEADER_slow);
         return -4;
@@ -834,9 +842,6 @@ void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
     /* Free the last_result as needed */
     if (imp_dbh->last_result && imp_dbh->result_clearable) {
         TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-        fprintf(stderr, "CLEAR last_result of %ld at line %d of %s\n", (long int)imp_dbh->last_result,__LINE__,__func__);
-#endif
         PQclear(imp_dbh->last_result);
         imp_dbh->last_result = NULL;
     }
@@ -860,7 +865,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
     char * key = SvPV(keysv,kl);
     SV *   retsv = Nullsv;
 
-    if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_FETCH (key: %s)\n", THEADER_slow, dbh ? key : key);
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_FETCH (key: %s)\n", THEADER_slow, key);
 
     switch (kl) {
 
@@ -998,7 +1003,9 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
     case 30: /* pg_standard_conforming_strings */
 
         if (strEQ("pg_standard_conforming_strings", key)) {
+            TRACE_PQPARAMETERSTATUS;
             if (NULL != PQparameterStatus(imp_dbh->conn, "standard_conforming_strings")) {
+                TRACE_PQPARAMETERSTATUS;
                 retsv = newSVpv(PQparameterStatus(imp_dbh->conn,"standard_conforming_strings"),0);
             }
         }
@@ -1200,7 +1207,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
     STRLEN            kl;
     char *            key = SvPV(keysv,kl);
     SV *              retsv = Nullsv;
-    int               fields, x;
+    int               fields;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_FETCH (key: %s)\n", THEADER_slow, key);
 
@@ -1451,21 +1458,22 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
         if (strEQ("NULLABLE", key)) {
             AV *av = newAV();
             PGresult *result;
-            int status = -1;
+            int status;
             D_imp_dbh_from_sth;
             int nullable; /* 0 = not nullable, 1 = nullable 2 = unknown */
             int y;
+            Oid o;
             retsv = newRV_inc(sv_2mortal((SV*)av));
 
             while(--fields >= 0) {
                 nullable=2;
                 TRACE_PQFTABLE;
-                x = PQftable(imp_sth->result, fields);
+                o = PQftable(imp_sth->result, fields);
                 TRACE_PQFTABLECOL;
                 y = PQftablecol(imp_sth->result, fields);
-                if (InvalidOid != x && y > 0) { /* We know what table and column this came from */
+                if (InvalidOid != o && y > 0) { /* We know what table and column this came from */
                     char statement[128];
-                    sprintf(statement, "SELECT attnotnull FROM pg_catalog.pg_attribute WHERE attrelid=%d AND attnum=%d", x, y);
+                    sprintf(statement, "SELECT attnotnull FROM pg_catalog.pg_attribute WHERE attrelid=%u AND attnum=%d", o, y);
                     TRACE_PQEXEC;
                     result = PQexec(imp_dbh->conn, statement);
                     TRACE_PQRESULTSTATUS;
@@ -1698,7 +1706,6 @@ SV * pg_db_pg_notifies (SV * dbh, imp_dbh_t * imp_dbh)
     status = PQconsumeInput(imp_dbh->conn);
     if (0 == status) {
         _fatal_sqlstate(aTHX_ imp_dbh);
-        
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_pg_notifies (error)\n", THEADER_slow);
@@ -1747,9 +1754,10 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
     D_imp_dbh_from_sth;
     STRLEN mypos=0; /* Used to find and set firstword */
     SV **svp; /* To help parse the arguments */
+    char *statement;
 
     statement_sv = pg_rightgraded_sv(aTHX_ statement_sv, imp_dbh->pg_utf8_flag);
-    char *statement = SvPV_nolen(statement_sv);
+    statement = SvPV_nolen(statement_sv);
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_prepare (statement: %s)\n", THEADER_slow, statement);
 
@@ -1999,6 +2007,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
             STRLEN backslashes = 0;
             bool estring = (oldch == 'E') ? DBDPG_TRUE : DBDPG_FALSE; /* E'' style string with backslash escapes */
             if ('\'' == ch && -1 == non_standard_strings) {
+                TRACE_PQPARAMETERSTATUS;
                 const char * scs = PQparameterStatus(imp_dbh->conn,"standard_conforming_strings");
                 non_standard_strings = (NULL==scs ? 1 : 0==strncmp(scs,"on",2) ? 0 : 1);
             }
@@ -2182,7 +2191,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
         */
         if ('\\' == oldch && imp_dbh->ph_escaped) {
             if (! statement_rewritten) {
-                Renew(original_statement, strlen(statement-currpos)+1, char);
+                New(0, original_statement, strlen(statement-currpos)+1, char);
                 Copy(statement-currpos, original_statement, strlen(statement-currpos)+1, char);
                 statement_rewritten = DBDPG_TRUE;
             }
@@ -2454,12 +2463,13 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     D_imp_dbh_from_sth;
     char *       statement;
     unsigned int placeholder_digits;
-    int          x;
+    int          x, params;
     STRLEN       execsize;
-    int          status = -1;
+    int          status;
     seg_t *      currseg;
     ph_t *       currph;
     long         power_of_ten;
+
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_prepare_statement\n", THEADER_slow);
 
@@ -2510,7 +2520,7 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     if (TRACE6_slow)
         TRC(DBILOGFP, "%sPrepared statement (%s)\n", THEADER_slow, statement);
 
-    int params = 0;
+    params = 0;
     if (imp_sth->numbound!=0) {
         params = imp_sth->numphs;
         if (NULL == imp_sth->PQoids) {
@@ -2526,18 +2536,12 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     /* Free the last_result as needed, even if happens to be owned by us */
     if (imp_dbh->last_result && imp_dbh->result_clearable) {
         TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-        fprintf(stderr, "CLEAR last_result of %ld at line %d of %s\n", (long int)imp_dbh->last_result,__LINE__,__func__);
-#endif
         PQclear(imp_dbh->last_result);
         imp_dbh->last_result = NULL;
     }
     if (imp_sth->result) {
 
         TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-        fprintf(stderr, "CLEAR sth->result of %ld at line %d of %s\n", (long int)imp_sth->result,__LINE__,__func__);
-#endif
         PQclear(imp_sth->result);
         imp_sth->result = NULL;
     }
@@ -2567,9 +2571,9 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     Safefree(statement);
 
     if (PGRES_COMMAND_OK != status) {
-        TRACE_PQERRORMESSAGE;
         Safefree(imp_sth->prepare_name);
         imp_sth->prepare_name = NULL;
+        TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ sth, status, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_prepare_statement (error)\n", THEADER_slow);
         return -2;
@@ -3155,6 +3159,7 @@ SV * pg_rightgraded_sv(pTHX_ SV *input, bool utf8) {
 static void pg_db_detect_client_encoding_utf8(pTHX_ imp_dbh_t *imp_dbh) {
     char *clean_encoding;
     long unsigned int i, j;
+    TRACE_PQPARAMETERSTATUS;
     const char * const client_encoding =
         PQparameterStatus(imp_dbh->conn, "client_encoding");
     if (NULL != client_encoding) {
@@ -3164,7 +3169,7 @@ static void pg_db_detect_client_encoding_utf8(pTHX_ imp_dbh_t *imp_dbh) {
             const char c = toLOWER(client_encoding[i]);
             if (isALPHA(c) || isDIGIT(c))
                 clean_encoding[j++] = c;
-        };
+        }
         clean_encoding[j] = '\0';
         imp_dbh->client_encoding_utf8 =
             (strnEQ(clean_encoding, "utf8", 4) || strnEQ(clean_encoding, "unicode", 8))
@@ -3183,7 +3188,6 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
     D_imp_dbh(dbh);
     ExecStatusType          status = PGRES_FATAL_ERROR; /* Assume the worst */
     PGTransactionStatusType txn_status;
-    char *                  cmdStatus = NULL;
     long                    rows = 0;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_quickexec (query: %s async: %d async_status: %d)\n",
@@ -3277,9 +3281,6 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
     /* Free the last_result as needed, as we are about to replace it */
     if (imp_dbh->last_result && imp_dbh->result_clearable) {
         TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-        fprintf(stderr, "CLEAR last_result of %ld at line %d of %s\n", (long int)imp_dbh->last_result,__LINE__,__func__);
-#endif
         PQclear(imp_dbh->last_result);
         imp_dbh->last_result = NULL;
     }
@@ -3299,27 +3300,8 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
         break;
     case PGRES_COMMAND_OK:
         /* non-select statement */
-        TRACE_PQCMDSTATUS;
-        cmdStatus = PQcmdStatus(imp_dbh->last_result);
-        /* If the statement indicates a number of rows, we want to return that */
-        /* Note: COPY and FETCH do not currently reach here, although they return numbers */
-        if (0 == strncmp(cmdStatus, "INSERT", 6)) {
-            /* INSERT(space)oid(space)numrows */
-            for (rows=8; cmdStatus[rows-1] != ' '; rows++) {
-            }
-            rows = atol(cmdStatus + rows);
-        }
-        else if (0 == strncmp(cmdStatus, "MOVE", 4)) {
-            rows = atol(cmdStatus + 5);
-        }
-        else if (0 == strncmp(cmdStatus, "DELETE", 6)
-               || 0 == strncmp(cmdStatus, "UPDATE", 6)
-               || 0 == strncmp(cmdStatus, "SELECT", 6)) {
-            rows = atol(cmdStatus + 7);
-        }
-        else if (0 == strncmp(cmdStatus, "MERGE", 5)) {
-            rows = atol(cmdStatus + 6);
-        }
+        TRACE_PQCMDTUPLES;
+        rows = atol(PQcmdTuples(imp_dbh->last_result));
         break;
     case PGRES_COPY_OUT:
     case PGRES_COPY_IN:
@@ -3385,14 +3367,14 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
     dTHX;
     D_imp_dbh_from_sth;
     ph_t *        currph;
-    int           status = -1;
+    int           status;
     STRLEN        execsize, x;
     unsigned int  placeholder_digits;
     seg_t *       currseg;
     char *        statement = NULL;
     int           num_fields;
-    long          ret = -2;
-    PQExecType    pqtype = PQTYPE_UNKNOWN;
+    long          ret;
+    PQExecType    pqtype;
     long          power_of_ten;
     
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_execute\n", THEADER_slow);
@@ -3436,16 +3418,16 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         return -2;
 
     default:
-      if (imp_dbh->async_status && STH_ASYNC_PREPARE != imp_sth->async_status) {
-        if (TRACE7_slow) TRC(DBILOGFP, "%sAttempting to handle existing async transaction\n", THEADER_slow);
-          ret = handle_old_async(aTHX_ sth, imp_dbh, imp_sth->async_flag);
+        if (imp_dbh->async_status && STH_ASYNC_PREPARE != imp_sth->async_status) {
+            if (TRACE7_slow) TRC(DBILOGFP, "%sAttempting to handle existing async transaction\n", THEADER_slow);
+            ret = handle_old_async(aTHX_ sth, imp_dbh, imp_sth->async_flag);
             if (ret) {
-              if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (async ret: %ld)\n", THEADER_slow, ret);
-              return ret;
+                if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (async ret: %ld)\n", THEADER_slow, ret);
+                return ret;
             }
         }
-     }
-        
+    }
+
     /* If not autocommit, start a new transaction */
     if (!imp_dbh->done_begin && !DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
         status = _result(aTHX_ imp_dbh, "begin");
@@ -3564,11 +3546,6 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
                                                           ); /* freed in dbd_st_destroy */
             }
         }
-        /* Set the size of each actual in-place placeholder */
-        for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-            if (currseg->placeholder!=0)
-                execsize += currseg->ph->quotedlen;
-        }
     }
     else { /* We are using a server that can handle PQexecParams/PQexecPrepared */
 
@@ -3634,24 +3611,25 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
         if (imp_sth->async_flag & PG_ASYNC) {
             TRACE_PQSENDQUERY;
-            ret = PQsendQuery(imp_dbh->conn, statement);
+            if (!PQsendQuery(imp_dbh->conn, statement)) {
+                Safefree(statement);
+                _fatal_sqlstate(aTHX_ imp_dbh);
+                TRACE_PQERRORMESSAGE;
+                pg_error(aTHX_ sth, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+                if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (error: PQsendQuery failed)\n", THEADER_slow);
+                return -2;
+            }
         }
         else {
 
             /* Free the last_result as needed, even if happens to be owned by us */
             if (imp_dbh->last_result && imp_dbh->result_clearable) {
                 TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-        fprintf(stderr, "CLEAR last_result of %ld at line %d of %s\n", (long int)imp_dbh->last_result,__LINE__,__func__);
-#endif
                 PQclear(imp_dbh->last_result);
                 imp_dbh->last_result = NULL;
             }
             if (imp_sth->result) {
                 TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-        fprintf(stderr, "CLEAR sth->result of %ld at line %d of %s\n", (long int)imp_sth->result,__LINE__,__func__);
-#endif
                 PQclear(imp_sth->result);
                 imp_sth->result = NULL;
             }
@@ -3730,26 +3708,27 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
         if (imp_sth->async_flag & PG_ASYNC) {
             TRACE_PQSENDQUERYPARAMS;
-            ret = PQsendQueryParams
+            if (!PQsendQueryParams
                 (imp_dbh->conn, statement, imp_sth->numphs,
-                 imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+                 imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0)) {
+                Safefree(statement);
+                _fatal_sqlstate(aTHX_ imp_dbh);
+                TRACE_PQERRORMESSAGE;
+                pg_error(aTHX_ sth, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+                if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (error: PQsendQueryParams failed)\n", THEADER_slow);
+                return -2;
+            }
         }
         else {
 
             /* Free the last_result as needed, even if happens to be owned by us */
             if (imp_dbh->last_result && imp_dbh->result_clearable) {
                 TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-        fprintf(stderr, "CLEAR last_result of %ld at line %d of %s\n", (long int)imp_dbh->last_result,__LINE__,__func__);
-#endif
                 PQclear(imp_dbh->last_result);
                 imp_dbh->last_result = NULL;
             }
             if (imp_sth->result) {
                 TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-        fprintf(stderr, "CLEAR sth->result of %ld at line %d of %s\n", (long int)imp_sth->result,__LINE__,__func__);
-#endif
                 PQclear(imp_sth->result);
                 imp_sth->result = NULL;
             }
@@ -3815,26 +3794,26 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
             if (imp_sth->async_flag & PG_ASYNC) {
                 TRACE_PQSENDQUERYPREPARED;
-                ret = PQsendQueryPrepared
+                if (!PQsendQueryPrepared
                     (imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs,
-                     imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0);
+                     imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0)) {
+                    _fatal_sqlstate(aTHX_ imp_dbh);
+                    TRACE_PQERRORMESSAGE;
+                    pg_error(aTHX_ sth, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+                    if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (error: PQsendQueryPrepared failed)\n", THEADER_slow);
+                    return -2;
+                }
             }
             else {
 
                 /* Free the last_result as needed, even if happens to be owned by us */
                 if (imp_dbh->last_result && imp_dbh->result_clearable) {
                     TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-                    fprintf(stderr, "CLEAR last_result of %ld at line %d of %s\n", (long int)imp_dbh->last_result,__LINE__,__func__);
-#endif
                     PQclear(imp_dbh->last_result);
                     imp_dbh->last_result = NULL;
                 }
                 if (imp_sth->result) {
                     TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-                    fprintf(stderr, "CLEAR sth->result of %ld at line %d of %s\n", (long int)imp_sth->result,__LINE__,__func__);
-#endif
                     PQclear(imp_sth->result);
                     imp_sth->result = NULL;
                 }
@@ -3880,36 +3859,15 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
     }
     else if (PGRES_COMMAND_OK == status) {
         /* non-select statement */
-        char *cmdStatus = NULL;
         bool gotrows = DBDPG_FALSE;
 
         if (TRACE5_slow)
             TRC(DBILOGFP, "%sStatus was PGRES_COMMAND_OK\n", THEADER_slow);
 
         if (imp_sth->result) {
-            TRACE_PQCMDSTATUS;
-            cmdStatus = PQcmdStatus(imp_sth->result);
-            if (0 == strncmp(cmdStatus, "INSERT", 6)) {
-                /* INSERT(space)oid(space)numrows */
-                for (ret=8; cmdStatus[ret-1] != ' '; ret++) {
-                }
-                ret = atol(cmdStatus + ret);
-                gotrows = DBDPG_TRUE;
-            }
-            else if (0 == strncmp(cmdStatus, "MOVE", 4)) {
-                ret = atol(cmdStatus + 5);
-                gotrows = DBDPG_TRUE;
-            }
-            else if (0 == strncmp(cmdStatus, "DELETE", 6)
-                     || 0 == strncmp(cmdStatus, "UPDATE", 6)
-                     || 0 == strncmp(cmdStatus, "SELECT", 6)) {
-                ret = atol(cmdStatus + 7);
-                gotrows = DBDPG_TRUE;
-            }
-            else if (0 == strncmp(cmdStatus, "MERGE", 5)) {
-                ret = atol(cmdStatus + 6);
-                gotrows = DBDPG_TRUE;
-            }
+            TRACE_PQCMDTUPLES;
+            ret = atol(PQcmdTuples(imp_sth->result));
+            gotrows = ret;
         }
         if (!gotrows) {
             /* No rows affected, but check for change of state */
@@ -4349,9 +4307,6 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
         if (imp_sth->result) {
             /* Nobody else is using this PGresult, so we can clear it */
             TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-        fprintf(stderr, "CLEAR sth->result of %ld at line %d of %s\n", (long int)imp_sth->result,__LINE__,__func__);
-#endif
             PQclear(imp_sth->result);
         }
     }
@@ -4383,7 +4338,7 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
     }
     imp_sth->ph = NULL;
 
-    if (NULL != imp_dbh->async_sth)
+    if (NULL != imp_dbh->async_sth && imp_dbh->async_sth == imp_sth)
         imp_dbh->async_sth = NULL;
 
     DBIc_IMPSET_off(imp_sth); /* let DBI know we've done it */
@@ -4417,7 +4372,6 @@ int pg_db_putline (SV * dbh, SV * svbuf)
     copystatus = PQputCopyData(imp_dbh->conn, buffer, (int)strlen(buffer));
     if (-1 == copystatus) {
         _fatal_sqlstate(aTHX_ imp_dbh);
-        
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putline (error: copystatus not -1)\n", THEADER_slow);
@@ -4440,9 +4394,6 @@ int pg_db_getline (SV * dbh, SV * svbuf, int length)
     D_imp_dbh(dbh);
     int    copystatus;
     char * tempbuf;
-    char * buffer;
-
-    buffer = SvPV_nolen(svbuf);
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_getline\n", THEADER_slow);
 
@@ -4457,7 +4408,7 @@ int pg_db_getline (SV * dbh, SV * svbuf, int length)
     copystatus = PQgetCopyData(imp_dbh->conn, &tempbuf, 0);
 
     if (-1 == copystatus) {
-        *buffer = '\0';
+        sv_setpvn(svbuf, "", 0);
         imp_dbh->copystate=0;
         TRACE_PQENDCOPY;
         PQendcopy(imp_dbh->conn); /* Can't hurt */
@@ -4466,7 +4417,6 @@ int pg_db_getline (SV * dbh, SV * svbuf, int length)
     }
     else if (copystatus < 1) {
         _fatal_sqlstate(aTHX_ imp_dbh);
-        
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
     }
@@ -4513,7 +4463,6 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
         TRACE_PQCONSUMEINPUT;
         if (!PQconsumeInput(imp_dbh->conn)) {
             _fatal_sqlstate(aTHX_ imp_dbh);
-            
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
             if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_getcopydata (error: async in progress)\n", THEADER_slow);
@@ -4529,11 +4478,11 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
         result = PQgetResult(imp_dbh->conn);
         status = _sqlstate(aTHX_ imp_dbh, result);
         while (result != NULL) {
+            TRACE_PQCLEAR;
             PQclear(result);
+            TRACE_PQGETRESULT;
             result = PQgetResult(imp_dbh->conn);
         }
-        TRACE_PQCLEAR;
-        PQclear(result);
         if (PGRES_COMMAND_OK != status) {
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
@@ -4541,7 +4490,6 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
     }
     else {
         _fatal_sqlstate(aTHX_ imp_dbh);
-        
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
     }
@@ -4578,7 +4526,6 @@ int pg_db_putcopydata (SV * dbh, SV * dataline)
     if (1 == copystatus) {
         if (PGRES_COPY_BOTH == imp_dbh->copystate && PQflush(imp_dbh->conn)) {
             _fatal_sqlstate(aTHX_ imp_dbh);
-
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         }
@@ -4587,7 +4534,6 @@ int pg_db_putcopydata (SV * dbh, SV * dataline)
     }
     else {
         _fatal_sqlstate(aTHX_ imp_dbh);
-        
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
     }
@@ -4636,11 +4582,11 @@ int pg_db_putcopyend (SV * dbh)
         result = PQgetResult(imp_dbh->conn);
         status = _sqlstate(aTHX_ imp_dbh, result);
         while (result != NULL) {
+            TRACE_PQCLEAR;
             PQclear(result);
+            TRACE_PQGETRESULT;
             result = PQgetResult(imp_dbh->conn);
         }
-        TRACE_PQCLEAR;
-        PQclear(result);
         if (PGRES_COMMAND_OK != status) {
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
@@ -4656,7 +4602,6 @@ int pg_db_putcopyend (SV * dbh)
     }
     else {
         _fatal_sqlstate(aTHX_ imp_dbh);
-        
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend (error: copystatus unknown)\n", THEADER_slow);
@@ -4672,93 +4617,91 @@ SV * pg_db_error_field (SV *dbh, char * fieldname)
     dTHX;
     D_imp_dbh(dbh);
     int fieldcode = 0;
-    char * startstring = fieldname;
+    char ucname[42];
+    int i;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_error_field (fieldname=%s)\n", THEADER_slow, fieldname);
 
-    while (*fieldname) {
-        if (*fieldname >= 'a' && *fieldname <= 'z')
-            *fieldname += 'A' - 'a';
-        fieldname++;
-    }
-    fieldname = startstring;
+    for (i = 0; i < (int)sizeof(ucname) - 1 && fieldname[i]; i++)
+        ucname[i] = toupper((unsigned char)fieldname[i]);
+    ucname[i] = '\0';
 
     /* These allow partial matches, which is why 'severity_nonlocalized'  needs to go first */
-    if ( 0 == strncmp(fieldname, "PG_DIAG_SEVERITY_NONLOCALIZED", 25) ||
-         0 == strncmp(fieldname, "SEVERITY_NONLOCAL", 17)) {
+    if ( 0 == strncmp(ucname, "PG_DIAG_SEVERITY_NONLOCALIZED", 25) ||
+         0 == strncmp(ucname, "SEVERITY_NONLOCAL", 17)) {
         fieldcode = PG_DIAG_SEVERITY_NONLOCALIZED; // i.e. 'V'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_SEVERITY", 16) ||
-              0 == strncmp(fieldname, "SEVERITY", 8)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_SEVERITY", 16) ||
+              0 == strncmp(ucname, "SEVERITY", 8)) {
         fieldcode = PG_DIAG_SEVERITY; // i.e. 'S'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_MESSAGE_PRIMARY", 20) ||
-              0 == strncmp(fieldname, "MESSAGE_PRIMARY", 13) ||
-              0 == strncmp(fieldname, "PRIMARY", 4)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_MESSAGE_PRIMARY", 20) ||
+              0 == strncmp(ucname, "MESSAGE_PRIMARY", 13) ||
+              0 == strncmp(ucname, "PRIMARY", 4)) {
         fieldcode = PG_DIAG_MESSAGE_PRIMARY; // i.e. 'M'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_MESSAGE_DETAIL", 22) ||
-              0 == strncmp(fieldname, "MESSAGE_DETAIL", 14) ||
-              0 == strncmp(fieldname, "DETAIL", 6)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_MESSAGE_DETAIL", 22) ||
+              0 == strncmp(ucname, "MESSAGE_DETAIL", 14) ||
+              0 == strncmp(ucname, "DETAIL", 6)) {
         fieldcode = PG_DIAG_MESSAGE_DETAIL; // i.e. 'D'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_MESSAGE_HINT", 20) ||
-              0 == strncmp(fieldname, "MESSAGE_HINT", 12) ||
-              0 == strncmp(fieldname, "HINT", 4)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_MESSAGE_HINT", 20) ||
+              0 == strncmp(ucname, "MESSAGE_HINT", 12) ||
+              0 == strncmp(ucname, "HINT", 4)) {
         fieldcode = PG_DIAG_MESSAGE_HINT; // i.e. 'H'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_STATEMENT_POSITION", 21) ||
-              0 == strncmp(fieldname, "STATEMENT_POSITION", 13)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_STATEMENT_POSITION", 21) ||
+              0 == strncmp(ucname, "STATEMENT_POSITION", 13)) {
         fieldcode = PG_DIAG_STATEMENT_POSITION; // i.e. 'P'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_INTERNAL_POSITION", 20) ||
-              0 == strncmp(fieldname, "INTERNAL_POSITION", 12)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_INTERNAL_POSITION", 20) ||
+              0 == strncmp(ucname, "INTERNAL_POSITION", 12)) {
         fieldcode = PG_DIAG_INTERNAL_POSITION; // i.e. 'p'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_INTERNAL_QUERY", 22) ||
-              0 == strncmp(fieldname, "INTERNAL_QUERY", 14)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_INTERNAL_QUERY", 22) ||
+              0 == strncmp(ucname, "INTERNAL_QUERY", 14)) {
         fieldcode = PG_DIAG_INTERNAL_QUERY; // i.e. 'q'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_CONTEXT", 15) ||
-              0 == strncmp(fieldname, "CONTEXT", 7)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_CONTEXT", 15) ||
+              0 == strncmp(ucname, "CONTEXT", 7)) {
         fieldcode = PG_DIAG_CONTEXT; // i.e. 'W'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_SCHEMA_NAME", 14) ||
-              0 == strncmp(fieldname, "SCHEMA", 5)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_SCHEMA_NAME", 14) ||
+              0 == strncmp(ucname, "SCHEMA", 5)) {
         fieldcode = PG_DIAG_SCHEMA_NAME; // i.e. 's'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_TABLE_NAME", 13) ||
-              0 == strncmp(fieldname, "TABLE", 5)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_TABLE_NAME", 13) ||
+              0 == strncmp(ucname, "TABLE", 5)) {
         fieldcode = PG_DIAG_TABLE_NAME; // i.e. 't'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_COLUMN_NAME", 11) ||
-              0 == strncmp(fieldname, "COLUMN", 3)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_COLUMN_NAME", 11) ||
+              0 == strncmp(ucname, "COLUMN", 3)) {
         fieldcode = PG_DIAG_COLUMN_NAME; // i.e. 'c'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_DATATYPE_NAME", 16) ||
-              0 == strncmp(fieldname, "DATATYPE", 8) ||
-              0 == strncmp(fieldname, "TYPE", 4)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_DATATYPE_NAME", 16) ||
+              0 == strncmp(ucname, "DATATYPE", 8) ||
+              0 == strncmp(ucname, "TYPE", 4)) {
         fieldcode = PG_DIAG_DATATYPE_NAME; // i.e. 'd'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_CONSTRAINT_NAME", 18) ||
-              0 == strncmp(fieldname, "CONSTRAINT", 10)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_CONSTRAINT_NAME", 18) ||
+              0 == strncmp(ucname, "CONSTRAINT", 10)) {
         fieldcode = PG_DIAG_CONSTRAINT_NAME; // i.e. 'n'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_SOURCE_FILE", 19) ||
-              0 == strncmp(fieldname, "SOURCE_FILE", 11)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_SOURCE_FILE", 19) ||
+              0 == strncmp(ucname, "SOURCE_FILE", 11)) {
         fieldcode = PG_DIAG_SOURCE_FILE; // i.e. 'F'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_SOURCE_LINE", 19) ||
-              0 == strncmp(fieldname, "SOURCE_LINE", 11)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_SOURCE_LINE", 19) ||
+              0 == strncmp(ucname, "SOURCE_LINE", 11)) {
         fieldcode = PG_DIAG_SOURCE_LINE; // i.e. 'L'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_SOURCE_FUNCTION", 19) ||
-              0 == strncmp(fieldname, "SOURCE_FUNCTION", 11)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_SOURCE_FUNCTION", 19) ||
+              0 == strncmp(ucname, "SOURCE_FUNCTION", 11)) {
         fieldcode = PG_DIAG_SOURCE_FUNCTION; // i.e. 'R'
     }
-    else if ( 0 == strncmp(fieldname, "PG_DIAG_SQLSTATE", 16) || 
-              0 == strncmp(fieldname, "SQLSTATE", 8) ||
-              0 == strncmp(fieldname, "STATE", 5)) {
+    else if ( 0 == strncmp(ucname, "PG_DIAG_SQLSTATE", 16) || 
+              0 == strncmp(ucname, "SQLSTATE", 8) ||
+              0 == strncmp(ucname, "STATE", 5)) {
         fieldcode = PG_DIAG_SQLSTATE; // i.e. 'C'
     }
     else {
@@ -4769,6 +4712,7 @@ SV * pg_db_error_field (SV *dbh, char * fieldname)
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_error_field (fieldcode: %d)\n", THEADER_slow, fieldcode);
 
+    TRACE_PQRESULTERRORFIELD;
     char *pq_err_field = PQresultErrorField(imp_dbh->last_result, fieldcode);
     if (NULL == pq_err_field) {
         return &PL_sv_undef;
@@ -4802,7 +4746,6 @@ int pg_db_endcopy (SV * dbh)
         copystatus = PQputCopyEnd(imp_dbh->conn, NULL);
         if (-1 == copystatus) {
             _fatal_sqlstate(aTHX_ imp_dbh);
-            
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
             if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_endcopy (error)\n", THEADER_slow);
@@ -4988,13 +4931,11 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 */
 static int pg_db_start_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh)
 {
-    int status = -1;
-
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_start_txn\n", THEADER_slow);
 
     /* If not autocommit, start a new transaction */
     if (!imp_dbh->done_begin) {
-        status = _result(aTHX_ imp_dbh, "begin");
+        int status = _result(aTHX_ imp_dbh, "begin");
         if (PGRES_COMMAND_OK != status) {
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
@@ -5017,7 +4958,7 @@ static int pg_db_start_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh)
 */
 static int pg_db_end_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int commit)
 {
-    int status = -1;
+    int status;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_end_txn with %s\n",
                     THEADER_slow, commit ? "commit" : "rollback");
@@ -5325,7 +5266,7 @@ unsigned int pg_db_lo_import_with_oid (SV * dbh, char * filename, unsigned int l
     dTHX;
     D_imp_dbh(dbh);
 
-    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_lo_import_with_oid (filename: %s, oid: %d)\n",
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_lo_import_with_oid (filename: %s, oid: %u)\n",
                     THEADER_slow, filename, lobjId);
 
     if (!pg_db_start_txn(aTHX_ dbh,imp_dbh))
@@ -5349,7 +5290,7 @@ unsigned int pg_db_lo_import_with_oid (SV * dbh, char * filename, unsigned int l
 int pg_db_lo_export (SV * dbh, unsigned int lobjId, char * filename)
 {
 
-    Oid loid;
+    int result;
     dTHX;
     D_imp_dbh(dbh);
 
@@ -5362,13 +5303,13 @@ int pg_db_lo_export (SV * dbh, unsigned int lobjId, char * filename)
     if (TLIBPQ_slow) {
         TRC(DBILOGFP, "%slo_export\n", THEADER_slow);
     }
-    loid = lo_export(imp_dbh->conn, lobjId, filename); /* 1 on success, -1 on failure */
+    result = lo_export(imp_dbh->conn, lobjId, filename); /* 1 on success, -1 on failure */
     if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-        if (!pg_db_end_txn(aTHX_ dbh, imp_dbh, (unsigned int)-1==loid ? 0 : 1))
+        if (!pg_db_end_txn(aTHX_ dbh, imp_dbh, result==-1 ? 0 : 1))
             return -1;
     }
 
-    return loid;
+    return result;
 }
 
 
@@ -5476,9 +5417,8 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 {
     dTHX;
     PGresult *result;
-    ExecStatusType status = PGRES_FATAL_ERROR;
+    ExecStatusType status;
     long rows = 0;
-    char *cmdStatus = NULL;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_result\n", THEADER_slow);
 
@@ -5509,25 +5449,8 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             break;
         case PGRES_COMMAND_OK:
             /* non-select statement */
-            TRACE_PQCMDSTATUS;
-            cmdStatus = PQcmdStatus(result);
-            if (0 == strncmp(cmdStatus, "INSERT", 6)) {
-                /* INSERT(space)oid(space)numrows */
-                for (rows=8; cmdStatus[rows-1] != ' '; rows++) {
-                }
-                rows = atol(cmdStatus + rows);
-            }
-            else if (0 == strncmp(cmdStatus, "MOVE", 4)) {
-                rows = atol(cmdStatus + 5);
-            }
-            else if (0 == strncmp(cmdStatus, "DELETE", 6)
-                     || 0 == strncmp(cmdStatus, "UPDATE", 6)
-                     || 0 == strncmp(cmdStatus, "SELECT", 6)) {
-                rows = atol(cmdStatus + 7);
-            }
-            else if (0 == strncmp(cmdStatus, "MERGE", 5)) {
-                rows = atol(cmdStatus + 6);
-            }
+            TRACE_PQCMDTUPLES;
+            rows = atol(PQcmdTuples(result));
             break;
         case PGRES_COPY_OUT:
         case PGRES_COPY_IN:
@@ -5562,18 +5485,12 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             /* Free the last_result as needed */
             if (imp_dbh->last_result && imp_dbh->result_clearable) {
                 TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-        fprintf(stderr, "CLEAR last_result of %ld at line %d of %s\n", (long int)imp_dbh->last_result,__LINE__,__func__);
-#endif
                 PQclear(imp_dbh->last_result);
                 imp_dbh->last_result = NULL;
             }
             /* If the above wasn't the async handle's result, free that too */
             if (imp_dbh->async_sth->result) {
                 TRACE_PQCLEAR;
-#if DEBUG_LAST_RESULT
-        fprintf(stderr, "CLEAR imp_dbh->async_sth->result of %ld at line %d of %s\n", (long int)imp_dbh->async_sth->result,__LINE__,__func__);
-#endif
                 PQclear(imp_dbh->async_sth->result);
                 imp_dbh->async_sth->result = NULL;
             }
@@ -5624,7 +5541,6 @@ static int pg_db_ready_error(SV *h, imp_dbh_t *imp_dbh, char *pq_call)
 int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 {
     struct imp_sth_st *imp_sth;
-    char const *pg_func;
     PGresult *result;
     int ret, status;
     dTHX;
@@ -5647,8 +5563,7 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 
     TRACE_PQCONSUMEINPUT;
     if (!PQconsumeInput(imp_dbh->conn)) {
-        _fatal_sqlstate(aTHX_ imp_dbh);
-        
+        _fatal_sqlstate(aTHX_ imp_dbh);        
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ h, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_ready (error: consume failed)\n", THEADER_slow);
@@ -5656,10 +5571,6 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
     }
 
     strcpy(imp_dbh->sqlstate, "00000");
-
-    TRACE_PQCONSUMEINPUT;
-    if (!PQconsumeInput(imp_dbh->conn))
-        return pg_db_ready_error(h, imp_dbh, "PQconsumeInput");
 
     ret = 0;
     TRACE_PQISBUSY;
@@ -5678,7 +5589,7 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
             while ((result = PQgetResult(imp_dbh->conn))) {
                 ret = _sqlstate(aTHX_ imp_dbh, result);
                 if (ret != PGRES_COMMAND_OK) status = ret;
-
+                TRACE_PQCLEAR;
                 PQclear(result);
             }
 
@@ -5817,12 +5728,13 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
                     status = -1;
             }
 
-            if (STH_ASYNC_PREPARE == async_sth->async_status
+            if (async_sth && STH_ASYNC_PREPARE == async_sth->async_status
                 && -1 == status) {
                 Safefree(async_sth->prepare_name);
                 async_sth->prepare_name = NULL;
             }
 
+            TRACE_PQTRANSACTIONSTATUS;
             if (PQTRANS_IDLE != PQtransactionStatus(imp_dbh->conn)) {
                 /* We need to rollback! - reprepare!? */
 
@@ -5937,8 +5849,8 @@ SV* dbd_st_canonical_ids(SV *sth, imp_sth_t *imp_sth)
     while(fields--){
         int stored = 0;
         TRACE_PQFTABLE;
-        int oid = PQftable(imp_sth->result, fields);
-        if(oid != InvalidOid){
+        Oid oid = PQftable(imp_sth->result, fields);
+        if (oid != InvalidOid){
             TRACE_PQFTABLECOL;
             int pos = PQftablecol(imp_sth->result, fields);
             if(pos > 0){
@@ -5969,7 +5881,7 @@ SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth)
 {
     dTHX;
     D_imp_dbh_from_sth;
-    ExecStatusType status = PGRES_FATAL_ERROR;
+    ExecStatusType status;
     PGresult * result;
     TRACE_PQNFIELDS;
     int fields = PQnfields(imp_sth->result);
@@ -5978,7 +5890,7 @@ SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth)
 
     while(fields--){
         TRACE_PQFTABLE;
-        int oid = PQftable(imp_sth->result, fields);
+        Oid oid = PQftable(imp_sth->result, fields);
         int stored = 0;
 
         if(oid != InvalidOid) {
@@ -5987,7 +5899,7 @@ SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth)
             if(pos > 0){
                 char statement[200];
                 sprintf(statement, 
-                    "SELECT n.nspname, c.relname, a.attname FROM pg_class c LEFT JOIN pg_namespace n ON c.relnamespace = n.oid LEFT JOIN pg_attribute a ON a.attrelid = c.oid WHERE c.oid = %d AND a.attnum = %d", oid, pos);
+                    "SELECT n.nspname, c.relname, a.attname FROM pg_class c LEFT JOIN pg_namespace n ON c.relnamespace = n.oid LEFT JOIN pg_attribute a ON a.attrelid = c.oid WHERE c.oid = %u AND a.attnum = %d", oid, pos);
                 TRACE_PQEXEC;
                 result = PQexec(imp_dbh->conn, statement);
                 TRACE_PQRESULTSTATUS;
