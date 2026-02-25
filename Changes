@@ -33,6 +33,9 @@ Version 3.19.0  (unreleased)
    [Dagfinn Ilmari Mannsåker]
    (Github issue #125 and pull request #129)
 
+ - Clean up and clarify $dbh->data_sources behavior
+   [Greg Sabino Mullane]
+
  - Require ExtUtils::MakeMaker 7.64
    [brian d foy]
    [Rainer Weikusat]

@@ -216,23 +216,28 @@ use 5.008001;
     sub data_sources {
 
         my $drh = shift;
-        my $conninfo = shift || '';
+        my $extra_conninfo = shift // '';
+        $extra_conninfo =~ s/^([^;])/;$1/;
+
         my $connstring = 'dbname=postgres';
         if ($ENV{DBI_DSN}) {
             ($connstring = $ENV{DBI_DSN}) =~ s/dbi:Pg://i;
         }
-        if (length $conninfo) {
-            $connstring .= ";$conninfo";
-        }
 
-        my $dbh = DBD::Pg::dr::connect($drh, $connstring) or return;
-        $dbh->{AutoCommit}=1;
-        my $SQL = 'SELECT pg_catalog.quote_ident(datname) FROM pg_catalog.pg_database ORDER BY 1';
-        my $sth = $dbh->prepare($SQL);
-        $sth->execute();
-        $conninfo and $conninfo = ";$conninfo";
-        my @sources = map { "dbi:Pg:dbname=$_->[0]$conninfo" } @{$sth->fetchall_arrayref()};
+        my $dbh = DBD::Pg::dr::connect($drh, $connstring) or die 'Could not connect to the database';
+
+        my @sources;
+        eval {
+            my $SQL = 'SELECT pg_catalog.quote_ident(datname) FROM pg_catalog.pg_database ORDER BY 1';
+            my $sth = $dbh->prepare($SQL) or die $dbh->errstr;
+            $sth->execute() or die $sth->errstr;
+            @sources = map { "dbi:Pg:dbname=$_->[0]$extra_conninfo" } @{$sth->fetchall_arrayref()};
+        };
+        my $error = $@;
+
         $dbh->disconnect;
+        die $error if $error;
+
         return @sources;
     }
 
@@ -1833,23 +1838,22 @@ Implemented by DBI, no driver-specific impact.
 
 =head3 B<data_sources>
 
-  @data_sources = DBI->data_sources('Pg');
-  @data_sources = $dbh->data_sources();
+  @data_sources = $dbh->data_sources('Pg', \%attr);
+  @data_sources = DBI->data_sources('Pg', \%attr);
 
-Returns a list of available databases. Unless the environment variable C<DBI_DSN> is set, 
-a connection will be attempted to the database C<postgres>. The normal connection 
-environment variables also apply, such as C<PGHOST>, C<PGPORT>, C<DBI_USER>, 
-C<DBI_PASS>, and C<PGSERVICE>.
+Returns a list of available databases as DBI connection strings.
 
-You can also pass in options to add to the connection string For example, to specify 
-an alternate port and host:
+Unless the environment variable C<DBI_DSN> is set, a connection will be attempted 
+to the database C<postgres>. The normal connection environment variables also apply,
+such as C<PGHOST>, C<PGPORT>, C<DBI_USER>, C<DBI_PASS>, and C<PGSERVICE>.
+
+The first argument should always be 'Pg'
+
+The second argument is a list of options to append to the resulting connection strings.
+
+For example, to specify an alternate port and host:
 
   @data_sources = DBI->data_sources('Pg', 'port=5824;host=example.com');
-
-  or:
-
-  @data_sources = $dbh->data_sources('port=5824;host=example.com');
-
 
 =head2 Methods Common To All Handles
 

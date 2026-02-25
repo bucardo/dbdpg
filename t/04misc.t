@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 110;
+plan tests => 105;
 
 my $superuser = is_super();
 
@@ -459,29 +459,35 @@ dbdpg: Begin _sqlstate
 # Test of the "data_sources" method
 #
 
-$t='The "data_sources" method does not throw an exception';
-my @sources;
+$t='The "data_sources" method returns an entry for template0 when called via $dbh';
+my @sources = $dbh->data_sources('Pg');
+my $expected = qr{\bdbi:Pg:dbname=template0\b};
+like ((join ' ' => @sources), $expected, $t);
+
+$t='The "data_sources" method returns an entry for template0 when called via DBI';
+@sources = DBI->data_sources('Pg');
+like ((join ' ' => @sources), $expected, $t);
+
+$t='The "data_sources" method returns an error when called with no arg via DBI';
 eval {
-    @sources = DBI->data_sources('Pg');
+    @sources = DBI->data_sources();
 };
-is ($@, q{}, $t);
+like ($@, qr/usage:/, $t);
 
-$t='The "data_sources" method returns a template1 listing';
-if (! defined $sources[0]) {
-    fail ('The data_sources() method returned an empty list');
-}
-else {
-    is (grep (/^dbi:Pg:dbname=template1$/, @sources), '1', $t);
-}
+$t='The "data_sources" method returns an entry for template0 when called with no arg via $dbh';
+eval {
+    @sources = $dbh->data_sources();
+};
+like ((join ' ' => @sources), $expected, $t);
 
-$t='The "data_sources" method returns undef when fed a bogus second argument';
-@sources = DBI->data_sources('Pg','foobar');
-is (scalar @sources, 0, $t);
-
-$t='The "data_sources" method returns valid information when fed a valid port as the second arg';
-my $port = $dbh->{pg_port};
+$t='The "data_sources" method returns correct DSN when second arg is a port';
+my $port = 12345;
 @sources = DBI->data_sources('Pg',"port=$port");
-like ((join ' ' => @sources), qr{template0;port=$port}, $t);
+like ((join ' ' => @sources), qr{dbi:Pg:dbname=template0;port=$port}, $t);
+
+$t='The "data_sources" method returns correct DSN when second arg is a port and a leading semicolon';
+@sources = DBI->data_sources('Pg',";port=$port");
+like ((join ' ' => @sources), qr{dbi:Pg:dbname=template0;port=$port}, $t);
 
 SKIP: {
 
@@ -507,74 +513,6 @@ SKIP: {
         $dbh->do(qq{DROP DATABASE "$test_db_name"});
     };
     $@ and diag "Unable to drop database $test_db_name: $@";
-
-}
-
-$t='The "data_sources" method works when DBI_DSN is not set';
-{
-    local $ENV{DBI_DSN};
-    eval {
-        @sources = DBI->data_sources('Pg');
-    };
-    is ($@, q{}, $t);
-}
-
-$t='The "data_sources" method works when DBI_USER is set';
-{
-    local $ENV{DBI_USER} = 'alice';
-    eval {
-        @sources = DBI->data_sources('Pg');
-    };
-    is ($@, q{}, $t);
-}
-
-$t='The "data_sources" method works when DBI_USER is not set';
-{
-    local $ENV{DBI_USER};
-    eval {
-        @sources = DBI->data_sources('Pg');
-    };
-    is ($@, q{}, $t);
-}
-
-$t='The "data_sources" method works when DBI_PASS is set';
-{
-    local $ENV{DBI_PASS} = 'foo';
-    eval {
-        @sources = DBI->data_sources('Pg');
-    };
-    is ($@, q{}, $t);
-}
-
-$t='The "data_sources" method works when DBI_PASS is not set';
-{
-    local $ENV{DBI_PASS};
-    eval {
-        @sources = DBI->data_sources('Pg');
-    };
-    is ($@, q{}, $t);
-}
-
-SKIP: {
-
-    $t=q{The "data_sources" method returns information when 'dbi:Pg' is uppercased};
-
-    if (! exists $ENV{DBI_DSN} or $ENV{DBI_DSN} !~ /pg/i) {
-        skip 'Cannot test data_sources() DBI_DSN munging unless DBI_DSN is set', 2;
-    }
-
-    my $orig = $ENV{DBI_DSN};
-    $ENV{DBI_DSN} =~ s/DBI:PG/DBI:PG/i;
-    @sources = DBI->data_sources('Pg');
-    like ((join '' => @sources), qr{template0}, $t);
-
-    $t=q{The "data_sources" method returns information when 'DBI:' is mixed case};
-
-    $ENV{DBI_DSN} =~ s/DBI:PG/dBi:pg/i;
-    @sources = DBI->data_sources('Pg');
-    like ((join '' => @sources), qr{template0}, $t);
-
-    $ENV{DBI_DSN} = $orig;
 
 }
 

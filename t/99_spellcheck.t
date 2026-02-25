@@ -890,7 +890,6 @@ unicode
 UNKNOWNOID
 unreferenced
 untrace
-uppercased
 userid
 username
 Username
