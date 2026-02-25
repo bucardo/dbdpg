@@ -37,7 +37,7 @@ jobs:
     container: perl:${{ matrix.perl }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Show Perl Version
       run: |
