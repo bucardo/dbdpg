@@ -23,6 +23,8 @@ plan tests => 293;
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
 my $pgversion = $dbh->{pg_server_version};
+my $pglibversion = $dbh->{pg_lib_version};
+
 
 =begin comment
 
@@ -428,7 +430,7 @@ is ($dbh->do($SQL), '3', $t);
 
 SKIP: {
 
-    if ($pgversion < 150000) {
+    if ($pglibversion < 150000) {
         skip ('Cannot test MERGE return value on pre 15 servers', 1);
     }
 
