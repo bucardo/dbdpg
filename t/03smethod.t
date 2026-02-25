@@ -104,7 +104,7 @@ $sth->execute(1);
 ok ($sth->execute, $t);
 
 ## We must send a hashref as the final arg
-$t='Prepare failes when sent a non-hashref';
+$t='Prepare fails when sent a non-hashref';
 eval {
     $sth = $dbh->prepare('SELECT 123', ['I am not a hashref!']);
 };
@@ -216,7 +216,7 @@ $sth->bind_param_inout(1, \$var, 0);
 $var = 'abc';
 $sth->execute();
 $sth->fetch;
-is ($var, 'Xabc', $t);
+is ($var, 'Xabc', $t); ## nospellcheck
 
 $t = q{Calling bind_param_inout changes a string to a float};
 $sth = $dbh->prepare('SELECT ?::float');

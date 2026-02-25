@@ -168,6 +168,7 @@ for my $file (sort keys %fileslurp) {
             $t=qq{Test::More method "$func" is in standard format inside $file at line $linenum};
             my $line = $fileslurp{$file}{$linenum}{$func};
             ## Must be at start of line (optional whitespace and comment), a space, a paren, and something interesting
+            next if $line =~ /testmorewords/;
             next if $line =~ /\w+ fail/;
             next if $line =~ /defined \$expected \? like/;
             like ($line, qr{^\s*#?$func \(['\S]}, $t);
@@ -256,7 +257,7 @@ is ($dupes, 0, $t);
 for my $file (qw{
     README Changes TODO README.dev README.win32 CONTRIBUTING.md
     Pg.pm Pg.xs dbdimp.c quote.c Makefile.PL Pg.h types.c dbdimp.h
-    t/03dbmethod.t t/03smethod.t t/12placeholders.t t/01constants.t t/99_yaml.t
+    t/03dbmethod.t t/03smethod.t t/12placeholders.t t/01constants.t t/99_yaml.t t/04misc.t t/02attribs.t
     testme.tmp.pl dbdpg_test_postgres_versions.pl
 }) {
     open $fh, '<', $file or die "Could not open $file: $!\n";

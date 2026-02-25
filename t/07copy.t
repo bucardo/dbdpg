@@ -142,7 +142,7 @@ $t='pg_getline returns empty on final call';
 $result = $dbh->pg_getline($data[3], 100);
 is ($result, '', $t);
 
-$t='getline returned all rows successfuly';
+$t='getline returned all rows successfully';
 $result = \@data;
 $expected = ["12\tMulberry\n","13\tStrawberry\n","14\tBlueberry\n",''];
 is_deeply ($result, $expected, $t);
@@ -411,7 +411,8 @@ while ($dbh->pg_getcopydata(my $tmp) >= 0) {
 }
 
 ok (!utf8::is_utf8($copydata), 'pg_getcopydata clears UTF-8 flag on binary copy result');
-is (substr($copydata, 0, 11), "PGCOPY\n\377\r\n\0", 'pg_getcopydata preserves binary copy header signature');
+$expected = "PGCOPY\n\377\r\n\0";
+is (substr($copydata, 0, 11), $expected, 'pg_getcopydata preserves binary copy header signature');
 cmp_ok ($length, '>=', 19, 'pg_getcopydata returns sane length of binary copy');
 
 $dbh->do('COPY binarycopy FROM STDIN BINARY');
@@ -422,8 +423,8 @@ eval {
 is $@, '', 'pg_putcopydata in binary mode works'
     or diag $copydata;
 
-$t=q{COPY in binary mode roundtrips};
-is_deeply ($dbh->selectall_arrayref('SELECT * FROM binarycopy'), [[1],[1]], $t);
+$t=q{COPY in binary mode round trips};
+is_deeply ($dbh->selectall_arrayref('SELECT * FROM binarycopy'), [[1],[1]], $t); ## nospellcheck
 
 $dbh->do("DROP TABLE $table");
 $dbh->commit();

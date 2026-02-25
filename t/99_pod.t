@@ -35,7 +35,7 @@ t/lib/App/Info/RDBMS.pm
 
 SKIP: {
     if ($@ or $Test::Pod::VERSION < $PODVERSION) {
-        skip ("Test::Pod $PODVERSION is required", 9);
+        skip ("Test::Pod $PODVERSION is required", 9); ## nospellcheck
     }
     for my $filename (@pm_files) {
         pod_file_ok($filename);
@@ -51,7 +51,7 @@ eval {
 SKIP: {
 
     if ($@ or $Test::Pod::Coverage::VERSION < $PODCOVERVERSION) {
-        skip ("Test::Pod::Coverage $PODCOVERVERSION is required", 1);
+        skip ("Test::Pod::Coverage $PODCOVERVERSION is required", 1); ## nospellcheck
     }
 
     my $trusted_names  =

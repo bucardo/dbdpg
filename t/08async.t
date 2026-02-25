@@ -55,13 +55,13 @@ eval {
 is ($@, q{}, $t);
 is ($res, 1, $t);
 
-$t=q{Cancelling a non-async do() query gives an error };
+$t=q{Canceling a non-async do() query gives an error };
 eval {
     $res = $dbh->pg_cancel();
 };
 like ($@, qr{No asynchronous query is running}, $t);
 
-$t=q{Method do() works as expected with an asychronous flag };
+$t=q{Method do() works as expected with an asynchronous flag };
 eval {
     $res = $dbh->do('SELECT 123', {pg_async => PG_ASYNC});
 };
@@ -73,7 +73,7 @@ $res = $dbh->{pg_async_status};
 is ($res, +1, $t);
 
 sleep 1;
-$t=q{Cancelling an async do() query works };
+$t=q{Canceling an async do() query works };
 eval {
     $res = $dbh->pg_cancel();
 };
@@ -86,7 +86,7 @@ $t=q{Database attribute "async_status" returns 0 after pg_cancel};
 $res = $dbh->{pg_async_status};
 is ($res, 0, $t);
 
-$t=q{Running do() after a cancelled query works};
+$t=q{Running do() after a canceled query works};
 eval {
     $res = $dbh->do('SELECT 123');
 };
@@ -118,7 +118,7 @@ $res = $dbh->pg_ready();
 $t=q{Database method pg_ready() returns true when called a second time};
 is ($res, 1, $t);
 
-$t=q{Cancelling an async do() query works };
+$t=q{Canceling an async do() query works };
 eval {
     $res = $dbh->pg_cancel();
 };
@@ -216,7 +216,7 @@ SKIP: {
     $t=q{Database method pg_cancel returns false when query has already finished};
     ok (!$res, $t);
 
-    $t=q{Database method pg_result() fails after async query has been cancelled};
+    $t=q{Database method pg_result() fails after async query has been canceled};
     eval {
         $res = $dbh->pg_result();
     };
@@ -271,8 +271,8 @@ SKIP: {
     $dbh->do('select pg_sleep(10)', { pg_async => PG_ASYNC });
     $dbh->pg_send_cancel();
     $res = $dbh->pg_result();
-    is (0+$res, 0, 'pg_result returns zero after cancelled query');
-    is ($dbh->state(), '57014', 'state is 57014 after cancelled query');
+    is (0+$res, 0, 'pg_result returns zero after canceled query');
+    is ($dbh->state(), '57014', 'state is 57014 after canceled query');
 } ## end of pg_sleep skip
 
 
@@ -358,7 +358,7 @@ eval {
 };
 is ($@, q{}, $t);
 
-$t=q{Fetch on cancelled statement handle fails};
+$t=q{Fetch on canceled statement handle fails};
 eval {
     $sth->fetch();
 };

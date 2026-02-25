@@ -373,13 +373,10 @@ dbdpg: Begin _sqlstate
     $dbh->trace(0);
     seek $fh,0,0;
     { local $/; ($info = <$fh>) =~ s/\r//go; }
-    $expected = q{End _sqlstate (imp_dbh->sqlstate: 00000)
-End _sqlstate (status: 1)
+    $expected = q{End _sqlstate (status: 1)
 End _result
-End _sqlstate (imp_dbh->sqlstate: 00000)
 End _sqlstate (status: 2)
 End pg_quickexec (rows: 1, txn_status: 2)
-End _sqlstate (imp_dbh->sqlstate: 00000)
 End _sqlstate (status: 1)
 End _result
 End pg_db_rollback_commit (result: 1)

@@ -215,11 +215,11 @@ for my $test (split /\n\n/ => $array_tests) {
     if ($msg =~ s/NEED ([0-9]+):\s*//) {
         my $ver = $1;
         if ($pgversion < $ver) {
-            my ($maj, $min, $patch) = $ver =~ /\A([0-9]{1,2})([0-9]{2})([0-9]{2})\z/;
-            $_ += 0 for $maj, $min, $patch;
+            my ($major, $minor, $patch) = $ver =~ /\A([0-9]{1,2})([0-9]{2})([0-9]{2})\z/;
+            $_ += 0 for $major, $minor, $patch;
           SKIP: {
                 my $count = $expected =~ /error:/ ? 2 : 5;
-                skip ("$msg requires PostgreSQL $maj.$min.$patch or newer", $count);
+                skip ("$msg requires PostgreSQL $major.$minor.$patch or newer", $count);
             }
 
             next;
@@ -497,10 +497,10 @@ for my $test (split /\n\n/ => $array_tests_out) {
     if ($msg =~ s/NEED ([0-9]+):\s*//) {
         my $ver = $1;
         if ($pgversion < $ver) {
-            my ($maj, $min, $patch) = $ver =~ /\A([0-9]{1,2})([0-9]{2})([0-9]{2})\z/;
-            $_ += 0 for $maj, $min, $patch;
+            my ($major, $minor, $patch) = $ver =~ /\A([0-9]{1,2})([0-9]{2})([0-9]{2})\z/;
+            $_ += 0 for $major, $minor, $patch;
           SKIP: {
-                skip ("$msg requires PostgreSQL $maj.$min.$patch or newer", 1);
+                skip ("$msg requires PostgreSQL $major.$minor.$patch or newer", 1);
             }
             next;
         }
@@ -559,7 +559,7 @@ SKIP: {
     };
     is ($@, q{}, $t);
 
-    $t='Retreiving an array containing utf-8 works';
+    $t='Retrieving an array containing utf-8 works';
     $SQL = q{SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1};
     $sth = $dbh->prepare($SQL);
     $sth->execute();
@@ -584,7 +584,7 @@ SKIP: {
 
     local $dbh->{pg_enable_utf8} = 1;
 
-    $t='Retreiving an array containing utf-8 works';
+    $t='Retrieving an array containing utf-8 works';
     $SQL = q{SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1};
     $sth = $dbh->prepare($SQL);
     $sth->execute();

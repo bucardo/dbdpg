@@ -33,6 +33,10 @@ my $superuser = is_super();
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
+$dbh->trace('pglibpq', '/tmp/err');
+
+
+
 # silence notices about implicitly created and dropped objects
 $dbh->do('set client_min_messages=warning');
 
@@ -181,7 +185,7 @@ $t='DB handle method "do" works properly with passed-in array with undefined ent
 $dbh->rollback();
 $dbh->do('CREATE TEMP TABLE foobar (id INT, p TEXT[])');
 my @aa;
-$aa[2] = 'asasa';
+$aa[2] = 'apples';
 eval {
     $dbh->do('INSERT INTO foobar (p) VALUES (?)', undef, \@aa);
 };
@@ -189,7 +193,7 @@ is ($@, q{}, $t);
 
 $SQL = 'SELECT * FROM foobar';
 $result = $dbh->selectall_arrayref($SQL)->[0];
-is_deeply ($result, [undef,[undef,undef,'asasa']], $t);
+is_deeply ($result, [undef,[undef,undef,'apples']], $t);
 
 $t='DB handle method "last_insert_id" works when given a valid sequence and an invalid table';
 $dbh->rollback();
@@ -1478,7 +1482,7 @@ $expected = [$fk3,$fk1,$fk2];
 is_deeply ($result, $expected, $t);
 
 ## Create another foreign key table to point to the first (primary) table
-$t='DB handle method "foreign_key_info" works for multiple fks';
+$t='DB handle method "foreign_key_info" works for multiple foreign keys';
 for my $s ($schema3, $schema2) {
     local $SIG{__WARN__} = sub {};
     $dbh->do("CREATE TABLE $s.dbd_pg_test3 (ff1 INT NOT NULL)");
@@ -1570,14 +1574,14 @@ $dbh->{FetchHashKeyName} = 'NAME_uc';
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,$table2);
 $sth->execute();
 $result = $sth->fetchrow_hashref();
-ok (exists $result->{'FK_TABLE_NAME'}, $t);
+ok (exists $result->{'FK_TABLE_NAME'}, $t); ## nospellcheck
 
 $t='DB handle method "foreign_key_info" works with FetchHashKeyName NAME';
 $dbh->{FetchHashKeyName} = 'NAME';
 $sth = $dbh->foreign_key_info(undef,undef,$table1,undef,undef,$table2);
 $sth->execute();
 $result = $sth->fetchrow_hashref();
-ok (exists $result->{'FK_TABLE_NAME'}, $t);
+ok (exists $result->{'FK_TABLE_NAME'}, $t); ## nospellcheck
 
 # Clean everything up
 for my $s ($schema3, $schema2) {
@@ -1622,23 +1626,23 @@ $result = $dbh->type_info_all();
 
 # Quick check that the structure looks correct
 $t='DB handle method "type_info_all" returns a valid structure';
-my $badresult=q{};
+my $bad_result=q{};
 if (ref $result eq 'ARRAY') {
     my $index = $result->[0];
     if (ref $index ne 'HASH') {
-        $badresult = 'First element in array not a hash ref';
+        $bad_result = 'First element in array not a hash ref';
     }
     else {
         for (qw(TYPE_NAME DATA_TYPE CASE_SENSITIVE)) {
-            $badresult = "Field $_ missing" if !exists $index->{$_};
+            $bad_result = "Field $_ missing" if !exists $index->{$_};
         }
     }
 }
 else {
-    $badresult = 'Array reference not returned';
+    $bad_result = 'Array reference not returned';
 }
-diag "type_info_all problem: $badresult" if $badresult;
-ok (!$badresult, $t);
+diag "type_info_all problem: $bad_result" if $bad_result;
+ok (!$bad_result, $t);
 
 #
 # Test of the "type_info" database handle method
@@ -1679,8 +1683,8 @@ for (keys %quotetests) {
 ## Test timestamp - should quote as a string
 $t='DB handle method "quote" work on timestamp';
 my $tstype = 93;
-my $testtime = '2008001-01-28 11:12:13';
-is ($dbh->quote( $testtime, $tstype ), qq{'$testtime'}, $t);
+my $test_time = '2008001-01-28 11:12:13';
+is ($dbh->quote( $test_time, $tstype ), qq{'$test_time'}, $t);
 
 $t='DB handle method "quote" works with an undefined value';
 my $foo;

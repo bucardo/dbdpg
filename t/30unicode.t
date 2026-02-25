@@ -117,7 +117,7 @@ foreach (@tests) {
             if $client_encoding ne 'UTF8';
 
         foreach my $enable_utf8 (1, 0, -1) {
-            my $desc = "$state $range UTF-8 $test->{qtype} $type (pg_enable_utf8=$enable_utf8)";
+            my $description = "$state $range UTF-8 $test->{qtype} $type (pg_enable_utf8=$enable_utf8)";
             my @args = @{$test->{args} || []};
             my $want = exists $test->{want} ? $test->{want} : $value;
             if (!$enable_utf8) {
@@ -125,11 +125,11 @@ foreach (@tests) {
                     : encode_utf8($want);
             }
 
-            is(utf8::is_utf8($test->{sql}), ($state eq 'upgraded'), "$desc query has correct flag")
+            is(utf8::is_utf8($test->{sql}), ($state eq 'upgraded'), "$description query has correct flag")
                 if $test->{qtype} =~ /^interpolated/;
             if ($state ne 'mixed') {
                 foreach my $arg (map { ref($_) ? @{$_} : $_ } @args) { ## no critic
-                    is(utf8::is_utf8($arg), ($state eq 'upgraded'), "$desc arg has correct flag")
+                    is(utf8::is_utf8($arg), ($state eq 'upgraded'), "$description arg has correct flag")
                 }
             }
             $dbh->{pg_enable_utf8} = $enable_utf8;
@@ -158,13 +158,13 @@ foreach (@tests) {
                     $sth->execute();
                 }
                 my $result = $sth->fetchall_arrayref->[0][0];
-                is_deeply ($result, $want, "$desc via prepare+execute+fetchall returns proper value");
+                is_deeply ($result, $want, "$description via prepare+execute+fetchall returns proper value");
                 if ($test->{qtype} !~ /length/) {
                     # Whilst XS code can set SVf_UTF8 on an IV, the core's SV
                     # copying code doesn't copy it. So we can't assume that numeric
                     # values we see "out here" still have it set. Hence skip this
                     # test for the SQL length() tests.
-                    is (utf8::is_utf8($_), !!$enable_utf8, "$desc via prepare+execute+fetchall returns string with correct UTF-8 flag")
+                    is (utf8::is_utf8($_), !!$enable_utf8, "$description via prepare+execute+fetchall returns string with correct UTF-8 flag")
                         for (ref $result ? @{$result} : $result);
                 }
             }
@@ -189,13 +189,13 @@ foreach (@tests) {
                 die $@;
             }
             else {
-                is_deeply ($result, $want, "$desc via do/selectall returns proper value");
+                is_deeply ($result, $want, "$description via do/selectall returns proper value");
                 if ($test->{qtype} !~ /length/) {
                     # Whilst XS code can set SVf_UTF8 on an IV, the core's SV
                     # copying code doesn't copy it. So we can't assume that numeric
                     # values we see "out here" still have it set. Hence skip this
                     # test for the SQL length() tests.
-                    is (utf8::is_utf8($_), !!$enable_utf8, "$desc via do/selectall returns string with correct UTF-8 flag")
+                    is (utf8::is_utf8($_), !!$enable_utf8, "$description via do/selectall returns string with correct UTF-8 flag")
                         for (ref $result ? @{$result} : $result);
                 }
             }
@@ -229,10 +229,10 @@ for my $name ('LATIN CAPITAL LETTER N',
     my $ord = charnames::vianame($name);
   SKIP:
     foreach my $enable_utf8 (1, 0, -1) {
-        my $desc = sprintf "chr(?) for U+%04X $name, \$enable_utf8=$enable_utf8", $ord;
-        skip "Pg < 8.3 has broken $desc", 1
+        my $description = sprintf "chr(?) for U+%04X $name, \$enable_utf8=$enable_utf8", $ord;
+        skip "Pg < 8.3 has broken $description", 1
             if $ord > 127 && $dbh->{pg_server_version} < 80300;
-        skip "Cannot do $desc with server_encoding='$server_encoding'", 1
+        skip "Cannot do $description with server_encoding='$server_encoding'", 1
             if $ord > ($ord_max{$server_encoding} || 127);
         $dbh->{pg_enable_utf8} = $enable_utf8;
          my $sth = $dbh->prepare('SELECT chr(?)');
@@ -242,11 +242,11 @@ for my $name ('LATIN CAPITAL LETTER N',
             # We asked for UTF-8 octets to arrive in Perl-space.
             # Check this, and convert them to character(s).
             # If we didn't, the next two tests are meaningless, so skip them.
-            is(utf8::decode($result), 1, "Got valid UTF-8 for $desc")
+            is(utf8::decode($result), 1, "Got valid UTF-8 for $description")
                 or next;
         }
-        is (length $result, 1, "Got 1 character for $desc");
-        is (ord $result, $ord, "Got correct character for $desc");
+        is (length $result, 1, "Got 1 character for $description");
+        is (ord $result, $ord, "Got correct character for $description");
     }
 }
 
@@ -256,4 +256,5 @@ cleanup_database($dbh,'test');
 $dbh->disconnect();
 
 done_testing();
+
 

@@ -33,7 +33,7 @@ $sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytetest,bytearray,testarray2
 $t='bytea insert test with string containing null and backslashes';
 $sth->bind_param(1, undef, { pg_type => PG_INT4 });
 $sth->bind_param(2, undef, { pg_type => PG_BYTEA });
-ok ($sth->execute(400, 'aa\\bb\\cc\\\0dd\\'), $t);
+ok ($sth->execute(400, 'aa\\bb\\cc\\\0dd\\'), $t); ## nospellcheck
 
 $t='bytea insert test with string containing a single quote';
 ok ($sth->execute(401, '\''), $t);
@@ -95,7 +95,7 @@ sub test_outputs {
     $sth = $dbh->prepare(q{SELECT bytetest FROM dbd_pg_test WHERE id=?});
     $sth->execute(400);
     my $byte = $sth->fetchall_arrayref()->[0][0];
-    is ($byte, 'aa\bb\cc\\\0dd\\', $t);
+    is ($byte, 'aa\bb\cc\\\0dd\\', $t); ## nospellcheck
 
     $t='Received correct text from BYTEA column with quote';
     $t.=" ($output output)" if $output;

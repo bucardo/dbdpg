@@ -9,19 +9,20 @@ use Test::More;
 use utf8; ## no critic (TooMuchCode::ProhibitUnnecessaryUTF8Pragma)
 select(($|=1,select(STDERR),$|=1)[1]);
 
-my (@testfiles, $fh);
+my (@testfiles, @alltestfiles, $fh);
 
 if (! $ENV{AUTHOR_TESTING}) {
     plan (skip_all =>  'Test skipped unless environment variable AUTHOR_TESTING is set');
 }
 elsif (!eval { require Text::SpellChecker; 1 }) {
-    plan skip_all => 'Could not find Text::SpellChecker';
+    plan skip_all => 'Could not find Text::SpellChecker'; ## nospellcheck
 }
 else {
     opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
     @testfiles = map { "t/$_" } grep { ! /spellcheck|lint/ } grep { /^.+\.(t|pl)$/ } readdir $dir;
+    rewinddir $dir;
+    @alltestfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
     closedir $dir or die qq{Could not closedir "$dir": $!\n};
-    plan tests => 19+@testfiles;
 }
 
 my %okword;
@@ -34,7 +35,10 @@ while (<DATA>) {
 
 
 sub spellcheck {
-    my ($desc, $text, $filename) = @_;
+
+    my ($item, $text, $filename, $summarize) = @_;
+
+    $summarize //= 0;
 
     my $check = Text::SpellChecker->new(text => $text, lang => 'en_US');
     my %badword;
@@ -43,19 +47,75 @@ sub spellcheck {
         $badword{$word}++;
     }
     my $count = keys %badword;
-    if (! $count) {
-        pass ("Spell check passed for $desc");
-        return;
+    if ($summarize) {
+        return join ' ' => sort keys %badword;
     }
-    fail ("Spell check failed for $desc. Bad words: $count");
+
+    if (! $count) {
+        pass ("Spell check passed for $item");
+        return 0;
+    }
+    fail ("Spell check failed for $item. Bad words: $count");
     for (sort keys %badword) {
         diag "$_\n";
     }
-    return;
+    return $count;
 }
 
 
-## First, the plain ol' textfiles
+## The test names
+my $testmorewords = qr{(?:is|ok|cmp_ok|isa_ok|isnt|like|unlike|pass|fail|skip|skip_all|is_deeply|diag|BAIL_OUT)};
+for my $file (@alltestfiles) {
+
+    next if $file =~ /dbdpg_test_setup/;
+
+    if (!open $fh, '<', $file) {
+        fail (qq{Could not find the file "$file"!});
+        next;
+    }
+
+    binmode($fh, ':encoding(UTF-8)');
+    my $line = 0;
+    my $failures = 0;
+    while (<$fh>) {
+        $line++;
+        next if / nospellcheck/;
+        my $string = '';
+        if (/\$t=q\{(.+)\}/ or /\$t=['"](.+)['"]/) {
+            $string = $1;
+        }
+        elsif (/\b$testmorewords\b.+?(['"])(.+)\1/) {
+            $string = $2;
+        }
+
+        next unless $string;
+
+        next if $string eq 'eq';
+
+        $string =~ s{\\t}{ }g;
+        $string =~ s{\\n}{ }g;
+
+        $string =~ s/casetest/ /gi;
+        my $value = spellcheck("$file" => $string, $file, 1);
+
+        if (length $value) {
+            diag "test name from $file at line $line: $value";
+            $failures++;
+        }
+
+
+    }
+
+    if ($failures) {
+        fail ("Spell check failed for strings in test file $file");
+     }
+    else {
+        pass ("Spell check passed for strings in test file $file");
+    }
+
+}
+
+## The plain ol' textfiles
 for my $file (qw/README Changes TODO README.dev README.win32 CONTRIBUTING.md/) {
 
     if (!open $fh, '<', $file) {
@@ -86,7 +146,7 @@ for my $file (qw/README Changes TODO README.dev README.win32 CONTRIBUTING.md/) {
     }
 }
 
-## Now the embedded POD
+## The embedded POD
 SKIP: {
     if (!eval { require Pod::Spell; 1 }) {
         skip ('Need Pod::Spell to test the spelling of embedded POD', 2);
@@ -101,7 +161,7 @@ SKIP: {
     }
 }
 
-## Now the comments
+## The comments
 SKIP: {
     if (!eval { require File::Comments; 1 }) {
         skip ('Need File::Comments to test the spelling inside comments', 11+@testfiles);
@@ -150,6 +210,9 @@ SKIP: {
 }
 
 
+done_testing();
+
+
 __DATA__
 ## These words are okay
 
@@ -162,14 +225,17 @@ AIX
 alphanum
 archlib
 arg
+args
 arith
 arrayout
 arrayref
 arrayrefs
 ArrayTupleFetch
 ASC
+ascii
 async
 ASYNC
+Async
 attr
 attrib
 attribs
@@ -285,6 +351,7 @@ dbmethod
 dbname
 DDL
 deallocate
+deallocates
 Deallocate
 DEALLOCATE
 deallocating
@@ -458,6 +525,7 @@ LongReadLen
 LongTruncOk
 LONGVARCHAR
 lotest
+lowercased
 lpq
 lseg
 LSEG
@@ -470,6 +538,8 @@ MAKEFILE
 MakeMaker
 malloc
 maxlen
+maxrows
+MaxRows
 MCPAN
 md
 MDevel
@@ -602,6 +672,7 @@ PQconnectdb
 PQconnectPoll
 PQconnectStart
 PQconsumeInput
+PQerrorMessage
 PQexec
 PQexecParams
 PQexecPrepared
@@ -817,7 +888,9 @@ undefs
 unescaped
 unicode
 UNKNOWNOID
+unreferenced
 untrace
+uppercased
 userid
 username
 Username

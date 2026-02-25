@@ -36,7 +36,7 @@ my %filelist = (
 my %v;
 my $goodversion = 1;
 my $goodcopies = 1;
-my $lastversion = '?';
+my $last_version = '?';
 
 ## Walk through each file and slurp out the version numbers
 ## Make sure that the version number matches
@@ -52,10 +52,10 @@ for my $file (sort keys %filelist) {
             if (/$regex/) {
                 my $foundversion = $1;
                 push @{$v{$file}} => [$foundversion, $.];
-                if ($lastversion =~ /[0-9]/ and $foundversion ne $lastversion) {
+                if ($last_version =~ /[0-9]/ and $foundversion ne $last_version) {
                     $goodversion = 0;
                 }
-                $lastversion = $foundversion;
+                $last_version = $foundversion;
                 $instances++;
                 last SLURP if $file eq 'Changes'; ## Only the top version please
             }
@@ -63,7 +63,7 @@ for my $file (sort keys %filelist) {
     }
     close $fh or warn qq{Could not close "$file": $!\n};
 
-    if ($file eq 'README' and $lastversion =~ /_/) {
+    if ($file eq 'README' and $last_version =~ /_/) {
         ## Beta gets two mentions in README
         $expected++;
     }
@@ -84,14 +84,14 @@ else {
 }
 
 if ($goodversion) {
-    pass ("All version numbers are the same ($lastversion)");
+    pass ("All version numbers are the same ($last_version)");
 }
 else {
     fail ('All version numbers were not the same!');
     for my $filename (sort keys %v) {
         for my $glob (@{$v{$filename}}) {
-            my ($ver,$line) = @$glob;
-            diag "File: $filename. Line: $line. Version: $ver\n";
+            my ($version,$line) = @$glob;
+            diag "File: $filename. Line: $line. Version: $version\n";
         }
     }
 }

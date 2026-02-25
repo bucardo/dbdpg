@@ -101,7 +101,7 @@ SKIP: {
     ok (ref $ldbh, $t);
     $ldbh->disconnect();
 
-    $t=q{Connect with mixed case 'DbI:' works};
+    $t=q{Connect with mixed case 'DbI:' works}; ## nospellcheck
     $testdsn =~ s/^dbi/DbI/i;
     $ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
         {RaiseError => 1, PrintError => 0, AutoCommit => 0});
@@ -110,7 +110,7 @@ SKIP: {
 
   SKIP: {
         if ($pglibversion <  100000) {
-            skip ('Multiple host names requies libpq >= 10', 1);
+            skip ('Multiple host names requires libpq >= 10', 1);
         }
         $t=q{Connect with multiple host names works};
         $testdsn =~ s/host=/host=foo.invalid,/;
@@ -134,7 +134,7 @@ SKIP: {
         my @names = ('foo', 'foo bar', ';foo;bar;', 'foo\'bar', 'foo\\\'bar',
                      'foo\';bar\';', '\\foo\\');
         if ($pgversion < 90000) {
-            skip ('applicaiton_name requires PostgreSQL >= 9.0', @names * 2);
+            skip ('application_name requires PostgreSQL >= 9.0', @names * 2);
         }
 
         for my $application_name (@names) {
@@ -144,7 +144,7 @@ SKIP: {
                                     {RaiseError => 0, PrintError => 0});
             ok (ref $adbh, $t) or diag $DBI::errstr;
             my $returned_name = $adbh && $adbh->selectrow_array('show application_name');
-            $t=q{application_name roundtrip};
+            $t=q{application_name round trip};
             is ($returned_name, $application_name, $t);
             $adbh && $adbh->disconnect;
         }

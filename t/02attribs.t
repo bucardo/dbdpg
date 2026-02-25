@@ -358,7 +358,7 @@ $t='DB handle method "pg_skip_deallocate" starts as 0';
 $result = $dbh->{pg_skip_deallocate};
 is ($result, 0, $t);
 
-$t=q{DB handle method "pg_skip_deallocate" dellocates prepare statements when off};
+$t=q{DB handle method "pg_skip_deallocate" deallocates prepare statements when off};
 ## pg_prepared_statements added in 8.2, so we don't bother with a skip block
 $SQL = 'SELECT count(*) from pg_prepared_statements';
 my $tempsth = $dbh->prepare('select * FROM pg_class WHERE reltuples = 42', {pg_prepare_now => 1});
@@ -372,7 +372,7 @@ $dbh->{pg_skip_deallocate} = 1;
 $result = $dbh->{pg_skip_deallocate};
 is ($result, 1, $t);
 
-$t=q{DB handle method "pg_skip_deallocate" dellocates prepare statements when off};
+$t=q{DB handle method "pg_skip_deallocate" deallocates prepare statements when off};
 $tempsth = $dbh->prepare('select * FROM pg_class WHERE reltuples = 42', {pg_prepare_now => 1});
 $initial_count = $dbh->selectall_arrayref($SQL)->[0][0];
 $tempsth = $dbh->prepare('select * FROM pg_class WHERE relpages = 42', {pg_prepare_now => 0});
@@ -1370,7 +1370,7 @@ $dbh->{HandleSetErr} = sub {
 eval {$sth = $dbh->last_insert_id('cat', 'schema', 'table', 'col', ['notahashref']); };
 ## Changing the state does not work yet.
 like ($@, qr{ERRSTR}, $t);
-is ($dbh->errstr, 'ERRSTR', $t);
+is ($dbh->errstr, 'ERRSTR', $t); ## nospellcheck
 is ($dbh->err, '42', $t);
 $dbh->{HandleSetErr} = 0;
 
@@ -1404,7 +1404,7 @@ $dbh4->disconnect();
 # Test of the handle attribute "ShowErrorStatement"
 #
 
-$t='Database handle attribute "ShowErrorStatemnt" starts out false';
+$t='Database handle attribute "ShowErrorStatement" starts out false';
 is ($dbh->{ShowErrorStatement}, '', $t);
 
 $t='Database handle attribute "ShowErrorStatement" has no effect if not set';

@@ -65,7 +65,7 @@ for my $filename (qw{Pg.pm Makefile.PL lib/Bundle/DBD/Pg.pm }) {
         my $l = $v->location();
         my $line = $l->[0];
         diag "\nFile: $f (line $line)\n";
-        diag "Vio: $d\n";
+        diag "Vio: $d\n"; ## nospellcheck
         diag "Policy: $policy\n";
         diag "Source: $source\n\n";
     }
@@ -138,7 +138,7 @@ for my $filename (sort @testfiles) {
         my $l = $v->location();
         my $line = $l->[0];
         diag "\nFile: $f (line $line)\n";
-        diag "Vio: $d\n";
+        diag "Vio: $d\n"; ## nospellcheck
         diag "Policy: $policy\n";
         diag "Source: $source\n\n";
     }

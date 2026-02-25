@@ -491,6 +491,6 @@ for (
   ok (DBD::Pg::db::_is_keyword($_), $_);
 }
 # ...but why not test just one negative result
-ok (!DBD::Pg::db::_is_keyword('notakeyword'), 'notakeyword');
+ok (!DBD::Pg::db::_is_keyword('notakeyword'), 'notakeyword'); ## nospellcheck
 
 done_testing;

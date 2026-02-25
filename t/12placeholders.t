@@ -40,8 +40,8 @@ $t='Quoting works with a function call';
 # It has to be in this function, otherwise it doesn't fail the
 # way described in https://rt.cpan.org/Ticket/Display.html?id=4996.
 sub checkquote {
-    my $str = shift;
-    return is ($dbh->quote(substr($str, 0, 10)), "'$str'", $t);
+    my $string = shift;
+    return is ($dbh->quote(substr($string, 0, 10)), "'$string'", $t);
 }
 
 checkquote('one');
