@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 109;
+plan tests => 110;
 
 my $superuser = is_super();
 
@@ -459,7 +459,7 @@ dbdpg: Begin _sqlstate
 # Test of the "data_sources" method
 #
 
-$t='The "data_sources" method did not throw an exception';
+$t='The "data_sources" method does not throw an exception';
 my @sources;
 eval {
     @sources = DBI->data_sources('Pg');
@@ -478,10 +478,37 @@ $t='The "data_sources" method returns undef when fed a bogus second argument';
 @sources = DBI->data_sources('Pg','foobar');
 is (scalar @sources, 0, $t);
 
-$t='The "data_sources" method returns information when fed a valid port as the second arg';
+$t='The "data_sources" method returns valid information when fed a valid port as the second arg';
 my $port = $dbh->{pg_port};
 @sources = DBI->data_sources('Pg',"port=$port");
-isnt ($sources[0], undef, $t);
+like ((join ' ' => @sources), qr{template0;port=$port}, $t);
+
+SKIP: {
+
+    $t='The "data_sources" method handles database names with spaces';
+    my $test_db_name = 'dbdpg space test';
+
+    if (! grep { /\b$test_db_name\b/ } @sources) {
+        eval {
+            $dbh->{AutoCommit} = 1;
+            $dbh->do(qq{CREATE DATABASE "$test_db_name" TEMPLATE template0});
+        };
+        if ($@) {
+            skip (qq{Could not create database "$test_db_name": $@}, 1);
+        }
+    }
+
+    @sources = DBI->data_sources('Pg',"port=$port");
+
+    like ((join ' ' => @sources), qr{dbi:Pg:dbname="$test_db_name";port=$port}, $t);
+
+    eval {
+        $dbh->{AutoCommit} = 1;
+        $dbh->do(qq{DROP DATABASE "$test_db_name"});
+    };
+    $@ and diag "Unable to drop database $test_db_name: $@";
+
+}
 
 $t='The "data_sources" method works when DBI_DSN is not set';
 {
@@ -492,13 +519,17 @@ $t='The "data_sources" method works when DBI_DSN is not set';
     is ($@, q{}, $t);
 }
 
-$t='The "data_sources" method works when DBI_USER is not set or not set';
+$t='The "data_sources" method works when DBI_USER is set';
 {
     local $ENV{DBI_USER} = 'alice';
     eval {
         @sources = DBI->data_sources('Pg');
     };
     is ($@, q{}, $t);
+}
+
+$t='The "data_sources" method works when DBI_USER is not set';
+{
     local $ENV{DBI_USER};
     eval {
         @sources = DBI->data_sources('Pg');
@@ -506,13 +537,17 @@ $t='The "data_sources" method works when DBI_USER is not set or not set';
     is ($@, q{}, $t);
 }
 
-$t='The "data_sources" method works when DBI_PASS is set or not set';
+$t='The "data_sources" method works when DBI_PASS is set';
 {
     local $ENV{DBI_PASS} = 'foo';
     eval {
         @sources = DBI->data_sources('Pg');
     };
     is ($@, q{}, $t);
+}
+
+$t='The "data_sources" method works when DBI_PASS is not set';
+{
     local $ENV{DBI_PASS};
     eval {
         @sources = DBI->data_sources('Pg');
