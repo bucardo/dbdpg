@@ -430,7 +430,7 @@ is ($dbh->do($SQL), '3', $t);
 
 SKIP: {
 
-    if ($pglibversion < 150000) {
+    if ($pglibversion < 150000 or $pgversion < 150000) {
         skip ('Cannot test MERGE return value on pre 15 servers', 1);
     }
 
