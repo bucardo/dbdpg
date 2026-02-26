@@ -216,7 +216,7 @@ use 5.008001;
     sub data_sources {
 
         my $drh = shift;
-        my $extra_conninfo = shift // '';
+        my $extra_conninfo = shift || '';
         $extra_conninfo =~ s/^([^;])/;$1/;
 
         my $connstring = 'dbname=postgres';
@@ -896,10 +896,10 @@ use 5.008001;
 
         ## PK: catalog, schema, table, FK: catalog, schema, table, attr
         ## Each of these may be undef or empty
-        my $pschema = $_[1] // '';
-        my $ptable = $_[2] // '';
-        my $fschema = $_[4] // '';
-        my $ftable = $_[5] // '';
+        my $pschema = $_[1] || '';
+        my $ptable = $_[2] || '';
+        my $fschema = $_[4] || '';
+        my $ftable = $_[5] || '';
 
         my @cols = (qw(
             UK_TABLE_CAT UK_TABLE_SCHEM UK_TABLE_NAME UK_COLUMN_NAME
