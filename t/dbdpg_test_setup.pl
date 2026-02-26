@@ -361,7 +361,7 @@ version: $version
         }
 
         ## initdb and pg_ctl seems to be available, let's use them to fire up a cluster
-        warn "Please wait, creating new database (version $version) for testing\n";
+        warn "Please wait, creating new Postgres cluster (version $version) for testing\n";
         $info = '';
         eval {
             my $com = "$initdb --locale=C -E UTF8 -D $testdir/data";
