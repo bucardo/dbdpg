@@ -123,7 +123,7 @@ for my $file (@cfiles) {
         pass (qq{File "$file" has matching TRACE calls for each PQ function});
     }
     else {
-        fail (qq{File "$file" does not have TRACE cals for each PQ function});
+        fail (qq{File "$file" does not have TRACE calls for each PQ function});
     }
 }
 
