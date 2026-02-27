@@ -24,19 +24,18 @@ BEGIN {
 if (! defined $dbh or $connerror) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 30;
 
-pass ('Established a connection to the database');
+pass ('Connection to test database works');
 
 $pgversion    = $dbh->{pg_server_version};
 $pglibversion = $dbh->{pg_lib_version};
 $pgdefport    = $dbh->{pg_default_port};
 $pgvstring    = $dbh->selectall_arrayref('SELECT VERSION()')->[0][0];
 
-ok ($dbh->disconnect(), 'Disconnect from the database');
+ok ($dbh->disconnect(), 'Calling $dbh->disconnect() works');
 
 # Connect two times. From this point onward, do a simpler connection check
-$t=q{Second database connection attempt worked};
+$t=q{Second database connection works};
 (undef,$connerror,$dbh) = connect_database();
 is ($connerror, '', $t);
 if ($connerror ne '') {
@@ -59,99 +58,103 @@ for (@{$dbh->selectall_arrayref($SQL)}) {
 
 my $dbh2 = connect_database();
 
-pass ('Connected with second database handle');
+pass ('Connect with second database handle');
 
 my $sth = $dbh->prepare('SELECT 123');
-ok ($dbh->disconnect(), 'Disconnect with first database handle');
-ok ($dbh2->disconnect(), 'Disconnect with second database handle');
-ok ($dbh2->disconnect(), 'Disconnect again with second database handle');
+ok ($dbh->disconnect(), 'Disconnect first database handle');
+ok ($dbh2->disconnect(), 'Disconnect second database handle (first attempt)');
+ok ($dbh2->disconnect(), 'Disconnect second database handle (second attempt)');
 
-eval {
- $sth->execute();
-};
-ok ($@, 'Execute fails on a disconnected statement');
+$t=q{Calling execute() fails on a disconnected statement};
+eval { $sth->execute() };
+ok ($@, $t);
 
-# Try out various connection options
-$ENV{DBI_DSN} ||= '';
-SKIP: {
-    my $alias = qr{(database|db|dbname)};
-    if ($ENV{DBI_DSN} !~ /$alias\s*=\s*\S+/) {
-        skip ('DBI_DSN contains no database option, so skipping connection tests', 8);
-    }
+## A failure to produce a valid arg for libpq will give a message like this:
+## DBI connect('dbname=dbdpg_test;baldrick=0','',...) failed: 
+## invalid connection option "baldrick"
 
-    $t=q{Connect with invalid option fails};
-    my $err;
-    (undef,$err,$dbh) = connect_database({ dbreplace => 'dbbarf', nocreate => 1 });
-    like ($err, qr{DBI connect.+failed:}, $t);
+$t=q{Calling DBI->connect() with an invalid option fails};
+my $bad_dsn = 'dbi:Pg:dbname=dbdpg_test;baldrick=0';
+eval { DBI->connect($bad_dsn, '', '', {RaiseError=>1}) };
+like ($@, qr/DBI.*"baldrick"/, $t);
 
-    for my $opt (qw/db dbname database/) {
-        $t=qq{Connect using string '$opt' works};
-        $dbh and $dbh->disconnect();
-        (undef,$err,$dbh) = connect_database({dbreplace => $opt});
-        $err =~ s/(Previous failure).*/$1/;
-        is ($err, '', $t);
-    }
-
-    $t=q{Connect with forced uppercase 'DBI:' works};
-    my ($testdsn,$testuser,undef,$su,$uid,$testdir,$pg_ctl,$initdb,$error,$version) ## no critic (Variables::ProhibitUnusedVarsStricter)
-        = get_test_settings();
-    $testdsn =~ s/^dbi/DBI/i;
-    my $ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
-        {RaiseError => 1, PrintError => 0, AutoCommit => 0});
-    ok (ref $ldbh, $t);
-    $ldbh->disconnect();
-
-    $t=q{Connect with mixed case 'DbI:' works}; ## nospellcheck
-    $testdsn =~ s/^dbi/DbI/i;
-    $ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
-        {RaiseError => 1, PrintError => 0, AutoCommit => 0});
-    ok (ref $ldbh, $t);
-    $ldbh->disconnect();
-
-  SKIP: {
-        if ($pglibversion <  100000) {
-            skip ('Multiple host names requires libpq >= 10', 1);
-        }
-        $t=q{Connect with multiple host names works};
-        $testdsn =~ s/host=/host=foo.invalid,/;
-        $ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
-            {RaiseError => 1, PrintError => 0, AutoCommit => 0});
-        ok (ref $ldbh, $t);
-        $ldbh->do('select 1');
-        $ldbh->disconnect();
-    }
-    if ($ENV{DBI_DSN} =~ /$alias\s*=\s*\"/) {
-        skip ('DBI_DSN already contains quoted database, no need for explicit test', 1);
-    }
-    $t=q{Connect using a quoted database argument};
-    eval {
-        $dbh and $dbh->disconnect();
-        (undef,$err,$dbh) = connect_database({dbquotes => 1, nocreate => 1});
-    };
-    is ($@, q{}, $t);
-
-  SKIP: {
-        my @names = ('foo', 'foo bar', ';foo;bar;', 'foo\'bar', 'foo\\\'bar',
-                     'foo\';bar\';', '\\foo\\');
-        if ($pgversion < 90000) {
-            skip ('application_name requires PostgreSQL >= 9.0', @names * 2);
-        }
-
-        for my $application_name (@names) {
-            $t=qq{Connect with application_name=$application_name};
-            (my $escaped_name = $application_name) =~ s/(['\\])/\\$1/g;
-            my $adbh = DBI->connect("$testdsn;application_name='$escaped_name'", $testuser, $ENV{DBI_PASS},
-                                    {RaiseError => 0, PrintError => 0});
-            ok (ref $adbh, $t) or diag $DBI::errstr;
-            my $returned_name = $adbh && $adbh->selectrow_array('show application_name');
-            $t=q{application_name round trip};
-            is ($returned_name, $application_name, $t);
-            $adbh && $adbh->disconnect;
-        }
-    }
+$t=q{Calling DBI->connect with database as "XXX" works};
+for my $opt (qw/db dbname database/) {
+    $bad_dsn = "dbi:Pg:$opt=dbdpg_test;edmund=1";
+    eval { DBI->connect($bad_dsn, '', '', {RaiseError=>1}) };
+    (my $tt = $t) =~ s/XXX/$opt/;
+    like ($@, qr/DBI.*"edmund"/, $tt);
 }
 
+$t=q{Calling DBI->connect() with forced uppercase 'DBI:' works};
+my ($testdsn,$testuser,undef,$su,$uid,$testdir,$pg_ctl,$initdb,$error,$version) ## no critic (Variables::ProhibitUnusedVarsStricter)
+    = get_test_settings();
+$testdsn =~ s/^dbi/DBI/i;
+my $ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS});
+ok (ref $ldbh, $t);
+$ldbh->disconnect();
+
+$t=q{Calling DBI->connect() with mixed case 'DbI:' works}; ## nospellcheck
+$testdsn =~ s/^dbi/DbI/i;
+$ldbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS});
+ok (ref $ldbh, $t);
+$ldbh->disconnect();
+
+$t=q{Calling DBI->connect() with an improperly quoted dbname fails};
+## A failure to produce a valid arg for libpq will give a message like this:
+## failed: missing "=" after "s" in connection info string
+$bad_dsn = q{dbi:Pg:dbname=dbdpg space name;port=1};
+eval { DBI->connect($bad_dsn, '', '', {RaiseError=>1}) };
+like ($@, qr/"="/, $t);
+
+$t=q{Calling DBI->connect() with proper quoting but bad port gives expected error};
+## An otherwise correct call but to an invalid port gives a message like this:
+## DBI connect('dbname='dbdpg \'spacey\' name';port=1','',...) failed: 
+## could not connect to server: No such file or directory
+## Is the server running locally and accepting
+## connections on Unix domain socket "/tmp/.s.PGSQL.1"?
+$bad_dsn = q{dbi:Pg:dbname='dbdpg \'spacey\' name';port=1};
+eval { DBI->connect($bad_dsn, '', '', {RaiseError=>1}) };
+like ($@, qr/DBI.*Unix/s, $t);
+
+ SKIP: {
+     if ($pglibversion <  100000) {
+         skip ('Multiple host names requires libpq >= 10', 1);
+     }
+     $t=q{Calling DBI->connect() with multiple host names works};
+     (my $tempdsn = $testdsn) =~ s/host=/host=foo.invalid,/;
+     $ldbh = DBI->connect($tempdsn, $testuser, $ENV{DBI_PASS});
+     ok (ref $ldbh, $t);
+     $ldbh->do('select 1');
+     $ldbh->disconnect();
+}
+
+
+ SKIP: {
+     my @names = ('foo', 'foo bar', ';foo;bar;', 'foo\'bar', 'foo\\\'bar', 'foo\';bar\';', '\\foo\\');
+     if ($pgversion < 90000) {
+         skip ('Calling DBI->connect() with an application_name requires Postgres >= 9.0', @names * 2);
+     }
+
+     for my $aname (@names) {
+         $t=qq{Calling DBI->connect() with aname=$aname};
+         (my $escaped_name = $aname) =~ s/(['\\])/\\$1/g;
+         my $adbh = DBI->connect("$testdsn;application_name='$escaped_name'", $testuser, $ENV{DBI_PASS});
+         if (! ref $adbh) {
+             fail ("Failed to connect: $DBI::errstr");
+             next;
+         }
+         my $returned_name = $adbh->selectrow_array('show application_name');
+         $t=qq{Setting application_name on connect() returns correct value for: $aname};
+         is ($returned_name, $aname, $t);
+         $adbh->disconnect;
+     }
+}
+
+done_testing();
+
 END {
+
     my $pv = sprintf('%vd', $^V);
     my $schema = 'dbd_pg_testschema';
     my $dsn = exists $ENV{DBI_DSN} ? $ENV{DBI_DSN} : '?';

@@ -252,6 +252,7 @@ backend
 backend's
 backslashed
 backtrace
+baldrick
 basename
 BegunWork
 bigint
@@ -402,6 +403,7 @@ dv
 DYLD
 dylib
 DynaLoader
+edmund
 eg
 Eisentraut
 el

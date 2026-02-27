@@ -244,39 +244,32 @@ use 5.008001;
 
     sub connect { ## no critic (ProhibitBuiltinHomonyms)
 
-        my ($drh, $dbname, $user, $pass, $attr) = @_;
+        my ($drh, $dsn, $user, $pass, $attr) = @_;
 
         ## Allow "db" and "database" as synonyms for "dbname"
-        $dbname =~ s/\b(?:db|database)\s*=/dbname=/;
+        $dsn =~ s/\b(?:db|database)\s*=/dbname=/;
 
-        my $name = $dbname;
-        if ($dbname =~ m{dbname\s*=\s*[\"\']([^\"\']+)}) {
-            $name = "'$1'";
-            $dbname =~ s/\"/\'/g;
-        }
-        elsif ($dbname =~ m{dbname\s*=\s*([^;]+)}) {
-            $name = $1;
-        }
+        ## If the database name is wrapped in double quotes, change to single quotes
+        $dsn =~ s/dbname\s*=\s*"(.+?)"/dbname='$1'/;
+
+        ## No other escaping needed here: docs indicate this is a client job:
+        #e.g. C<dbi:Pg:dbname='\'spacey\' name';host=$host>.
 
         $user = defined($user) ? $user : defined $ENV{DBI_USER} ? $ENV{DBI_USER} : '';
         $pass = defined($pass) ? $pass : defined $ENV{DBI_PASS} ? $ENV{DBI_PASS} : '';
 
         my ($dbh) = DBI::_new_dbh($drh, {
-            'Name'         => $dbname,
+            'Name'         => $dsn,
             'Username'     => $user,
             'CURRENT_USER' => $user,
          });
 
-        # Connect to the database..
-        DBD::Pg::db::_login($dbh, $dbname, $user, $pass, $attr) or return undef;
+        DBD::Pg::db::_login($dbh, $dsn, $user, $pass, $attr) or return;
 
-        my $version = $dbh->{pg_server_version};
-        $dbh->{private_dbdpg}{version} = $version;
+        $dbh->{private_dbdpg}{version} = $dbh->{pg_server_version};
 
-        if ($attr) {
-            if ($attr->{dbd_verbose}) {
-                $dbh->trace('DBD');
-            }
+        if ($attr and $attr->{dbd_verbose}) {
+            $dbh->trace('DBD');
         }
 
         return $dbh;
@@ -1742,7 +1735,7 @@ The following connect statement shows almost all possible parameters:
                       {AutoCommit => 0, RaiseError => 1, PrintError => 0}
                      );
 
-Parameters containing unusual characters such as spaces can be wrapped in single quotes 
+Parameters containing unusual characters such as spaces must be wrapped in single quotes
 around the value, and single quotes and backslashes can be escaped with a backslash,
 e.g. C<dbi:Pg:dbname='\'spacey\' name';host=$host>.
 
