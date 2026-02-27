@@ -38,7 +38,7 @@ sub spellcheck {
 
     my ($item, $text, $filename, $summarize) = @_;
 
-    $summarize //= 0;
+    $summarize ||= 0;
 
     my $check = Text::SpellChecker->new(text => $text, lang => 'en_US');
     my %badword;
