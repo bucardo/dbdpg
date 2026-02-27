@@ -465,7 +465,6 @@ use 5.008001;
 
     sub pg_type_info {
         my($dbh,$pg_type) = @_;
-        local $SIG{__WARN__} = sub {} if $dbh->FETCH('PrintError');
         return DBD::Pg::db::_pg_type_info($pg_type);
     }
 
