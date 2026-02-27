@@ -5467,7 +5467,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 
         status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
 
-        TRACE_PQERRORMESSAGE;
+        TRACE_PQRESULTERRORMESSAGE;
         pg_error(aTHX_ h, status, PQresultErrorMessage(imp_sth->result));
         imp_sth->async_status = STH_NO_ASYNC;
 
@@ -5856,15 +5856,18 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
 
                 orig_sth->result = result;
                 if (PGRES_TUPLES_OK == status) {
+                    TRACE_PQNTUPLES;
                     orig_sth->rows = PQntuples(result);
                 }
                 else {
+                    TRACE_PQCMDTUPLES;
                     const char *ct = PQcmdTuples(result);
                     orig_sth->rows = ct[0] ? atol(ct) : 0;
                 }
 
                 if (PGRES_TUPLES_OK == status) {
                     orig_sth->cur_tuple = 0;
+                    TRACE_PQNFIELDS;
                     DBIc_NUM_FIELDS(orig_sth) = PQnfields(result);
                     DBIc_ACTIVE_on(orig_sth);
                 }
