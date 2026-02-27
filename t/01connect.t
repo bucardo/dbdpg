@@ -115,7 +115,7 @@ $t=q{Calling DBI->connect() with proper quoting but bad port gives expected erro
 ## connections on Unix domain socket "/tmp/.s.PGSQL.1"?
 $bad_dsn = q{dbi:Pg:dbname='dbdpg \'spacey\' name';port=1};
 eval { DBI->connect($bad_dsn, '', '', {RaiseError=>1}) };
-like ($@, qr/DBI.*Unix/s, $t);
+like ($@, qr/DBI.*\Q.s.PGSQL.1\E\b/s, $t);
 
  SKIP: {
      if ($pglibversion <  100000) {
