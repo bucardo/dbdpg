@@ -150,7 +150,7 @@ for my $file (sort keys %devfile) {
 }
 
 ## All files in the repo should be mentioned in the README.dev
-my %gitfiles = map { chomp; $_, 1 } qx{git ls-files};
+my %gitfiles = map { chomp; $_, 1 } qx{git -c 'safe.directory=*' ls-files};
 for my $file (sort keys %gitfiles) {
     next if $file =~ /^z_announcements/;
     next if $file =~ /^\.git/;
