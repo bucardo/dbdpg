@@ -468,7 +468,7 @@ use 5.008001;
         return DBD::Pg::db::_pg_type_info($pg_type);
     }
 
-    # Column expected in statement handle returned.
+    # Columns expected in statement handle returned:
     # table_cat, table_schem, table_name, column_name, data_type, type_name,
     # column_size, buffer_length, DECIMAL_DIGITS, NUM_PREC_RADIX, NULLABLE,
     # REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB, CHAR_OCTET_LENGTH,
