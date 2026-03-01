@@ -496,6 +496,8 @@ use 5.008001;
 
         my $whereclause = join "\n\t\t\t\tAND ", '', @search;
 
+        ## Note: we do not need a attisdropped check because attypid will be 0
+        ## for dropped columns and thus fail to join to pg_type
         my $col_info_sql = qq!
             SELECT
                 pg_catalog.quote_ident(pg_catalog.current_database()) AS "TABLE_CAT"
@@ -533,7 +535,7 @@ use 5.008001;
                 LEFT JOIN pg_catalog.pg_attrdef af ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
                 JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
             WHERE
-                a.attnum >= 0
+                a.attnum >= 1
                 AND c.relkind IN ('r','p','v','m','f')
                 $whereclause
             ORDER BY "TABLE_SCHEM", "TABLE_NAME", "ORDINAL_POSITION"
