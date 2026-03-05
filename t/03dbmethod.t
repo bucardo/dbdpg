@@ -40,6 +40,11 @@ $dbh->trace('pglibpq', '/tmp/err');
 # silence notices about implicitly created and dropped objects
 $dbh->do('set client_min_messages=warning');
 
+my $test_table = 'dbd_pg_test';
+my $space_table = q{dbd_pg_test Table};
+my $missing_table = 'dbd_pg_nosuchtable';
+my $test_schema = 'dbd_pg_testschema';
+
 my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 my ($schema,$schema2,$schema3) = ('dbd_pg_testschema', 'dbd_pg_testschema2', 'dbd_pg_testschema3');
 my ($table1,$table2,$table3,$table4) = ('dbd_pg_test1','dbd_pg_test2','dbd_pg_test3','dbd_pg_test4');
@@ -838,182 +843,373 @@ is_deeply ([keys %surprises], [], $t)
 #
 
 # Check required minimum fields
-$t='DB handle method "column_info" returns fields required by DBI';
-$sth = $dbh->column_info('','','dbd_pg_test','score');
-$result = $sth->fetchall_arrayref({});
-@required =
-    (qw(TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME DATA_TYPE 
-            TYPE_NAME COLUMN_SIZE BUFFER_LENGTH DECIMAL_DIGITS 
-            NUM_PREC_RADIX NULLABLE REMARKS COLUMN_DEF SQL_DATA_TYPE
-         SQL_DATETIME_SUB CHAR_OCTET_LENGTH ORDINAL_POSITION
-         IS_NULLABLE));
-undef %missing;
-for my $r (@$result) {
-    for (@required) {
-        $missing{$_}++ if ! exists $r->{$_};
-    }
-}
-is_deeply (\%missing, {}, $t);
+$t='DB handle method "column_info" returns expected fields in correct order';
+$sth = $dbh->column_info('','',$test_table,'score');
+my $r1 = $sth->fetchall_arrayref({})->[0];
+my $colnames = join ',', @{$sth->{NAME}};
+$expected = join ',', (qw(
+  TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME DATA_TYPE
+  TYPE_NAME COLUMN_SIZE BUFFER_LENGTH DECIMAL_DIGITS
+  NUM_PREC_RADIX NULLABLE REMARKS COLUMN_DEF SQL_DATA_TYPE
+  SQL_DATETIME_SUB CHAR_OCTET_LENGTH ORDINAL_POSITION IS_NULLABLE
+  pg_type pg_constraint pg_database pg_schema pg_table pg_column pg_enum_values
+));
+is ($colnames, $expected, $t);
 
-# Check that pg_constraint was populated
-$t=q{DB handle method "column info" 'pg_constraint' returns a value for constrained columns};
-$result = $result->[0];
-like ($result->{pg_constraint}, qr/score/, $t);
+# Store a non-matching result
+$sth = $dbh->column_info('', $test_schema, $test_table, 'id2');
+my $nomatch = $sth->fetchall_arrayref({})->[0];
 
-# Check that it is not populated for non-constrained columns
-$t=q{DB handle method "column info" 'pg_constraint' returns undef for non-constrained columns};
-$sth = $dbh->column_info('','','dbd_pg_test','id');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{pg_constraint}, undef, $t);
+## Store a single column match for 'id', an INT
+$sth = $dbh->column_info('', $test_schema, $test_table, 'id');
+my $matchid = $sth->fetchall_arrayref({})->[0];
 
-# Check the rest of the custom "pg" columns
-$t=q{DB handle method "column_info" returns good value for 'pg_type'};
-is ($result->{pg_type}, 'integer', $t);
+## Store a single column match for 'val', a TEXT
+$sth = $dbh->column_info('', $test_schema, $test_table, 'val');
+my $matchval = $sth->fetchall_arrayref({})->[0];
 
-## Check some of the returned fields:
-my $r = $result;
-is ($r->{TABLE_CAT},   $dbh->{pg_db},       'DB handle method "column_info" returns proper TABLE_CAT');
-is ($r->{TABLE_NAME},  'dbd_pg_test',       'DB handle method "column_info returns proper TABLE_NAME');
-is ($r->{COLUMN_NAME}, 'id',                'DB handle method "column_info" returns proper COLUMN_NAME');
-is ($r->{DATA_TYPE},   4,                   'DB handle method "column_info" returns proper DATA_TYPE');
-is ($r->{COLUMN_SIZE}, 4,                   'DB handle method "column_info" returns proper COLUMN_SIZE');
-is ($r->{NULLABLE},    '0',                 'DB handle method "column_info" returns proper NULLABLE');
-is ($r->{REMARKS},     'Bob is your uncle', 'DB handle method "column_info" returns proper REMARKS');
-is ($r->{COLUMN_DEF},  undef,               'DB handle method "column_info" returns proper COLUMN_DEF');
-is ($r->{IS_NULLABLE}, 'NO',                'DB handle method "column_info" returns proper IS_NULLABLE');
-is ($r->{pg_type},     'integer',           'DB handle method "column_info" returns proper pg_type');
-is ($r->{ORDINAL_POSITION}, 1,              'DB handle method "column_info" returns proper ORDINAL_POSITION');
+## Store a single column match for column pname, a VARCHAR(20)
+$sth = $dbh->column_info('', $test_schema, $test_table, 'pname');
+my $matchpname = $sth->fetchall_arrayref({})->[0];
 
-# Make sure we handle CamelCase Column Correctly
-$t=q{DB handle method "column_info" works with non-lowercased columns};
-$sth = $dbh->column_info('','','dbd_pg_test','CaseTest');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{COLUMN_NAME}, q{"CaseTest"}, $t);
+## Store a single column match for column expo, a NUMERIC(6,2)
+$sth = $dbh->column_info('', $test_schema, $test_table, 'expo');
+my $matchexpo = $sth->fetchall_arrayref({})->[0];
 
-$t=q{DB handle method "column_info" works when schema argument is undef};
-$sth = $dbh->column_info('',undef,'dbd_pg_test','CaseTest');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{TABLE_SCHEM}, 'dbd_pg_testschema', $t);
+## Check the TABLE_CAT field
+$t=q{DB handle method "column_info" returns correct TABLE_CAT (database name)};
+is ($matchid->{TABLE_CAT}, $dbh->{pg_db}, $t);
 
-$t=q{DB handle method "column_info" works when schema argument is empty};
-$sth = $dbh->column_info('','','dbd_pg_test','CaseTest');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{TABLE_SCHEM}, 'dbd_pg_testschema', $t);
+## Check the TABLE_NAME field
+$t=q{DB handle method "column_info" returns correct TABLE_NAME};
+is ($matchid->{TABLE_NAME}, $test_table, $t);
 
-$t=q{DB handle method "column_info" returns undef when schema argument has no match};
-$sth = $dbh->column_info('','badschema','dbd_pg_test','CaseTest');
-is ($sth->fetch, undef, $t);
+$t=q{DB handle method "column_info" returns TABLE_NAME as undef when no table matches};
+$sth = $dbh->column_info('','',$missing_table,'');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{TABLE_NAME}, undef, $t);
 
-$t=q{DB handle method "column_info" returns undef schema argument has non-matching regex};
-$sth = $dbh->column_info('','badschema%','dbd_pg_test','CaseTest');
-is ($sth->fetch, undef, $t);
+$t=q{DB handle method "column_info" returns correct TABLE_NAME (with quoting)};
+$dbh->do(qq{CREATE TABLE "$space_table" (id int)});
+$sth = $dbh->column_info('','',$space_table,'');
+my $r2 = $sth->fetchall_arrayref({})->[0];
+is ($r2->{TABLE_NAME}, qq{"$space_table"}, $t);
 
-$t=q{DB handle method "column_info" works when schema argument matches exactly};
-$sth = $dbh->column_info('',$schema,'dbd_pg_test','CaseTest');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{pg_schema}, $schema, $t);
-
-$t=q{DB handle method "column_info" works when schema argument matches via regex};
-$sth = $dbh->column_info('','dbd%','dbd_pg_test','CaseTest');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{pg_schema}, $schema, $t);
+$t=q{DB handle method "column_info" returns correct pg_table (with quoting)};
+is ($r2->{pg_table}, $space_table, $t);
+$dbh->do(qq{DROP TABLE "$space_table"});
 
 $t=q{DB handle method "column_info" works when table argument is undef};
-$sth = $dbh->column_info('','',undef,'CaseTest');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{COLUMN_SIZE}, 1, $t);
+$sth = $dbh->column_info('','',undef,'id');
+$r1 = $sth->fetchall_arrayref({})->[0];
+ok (exists $r1->{BUFFER_LENGTH}, $t);
 
 $t=q{DB handle method "column_info" works when table argument is empty};
-$sth = $dbh->column_info('','','','CaseTest');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{IS_NULLABLE}, 'YES', $t);
+$sth = $dbh->column_info('','','','id');
+$r1 = $sth->fetchall_arrayref({})->[0];
+ok (exists $r1->{BUFFER_LENGTH}, $t);
 
-$t=q{DB handle method "column_info" returns undef when table argument has no match};
-$sth = $dbh->column_info('','','badtable','CaseTest');
+$t=q{DB handle method "column_info" returns undef when table argument has non-matching search pattern};
+$sth = $dbh->column_info('','','dbd_pg_badtable%','');
 is ($sth->fetch, undef, $t);
 
-$t=q{DB handle method "column_info" returns undef when table argument has non-matching regex};
-$sth = $dbh->column_info('','','badtable%','CaseTest');
+$t=q{DB handle method "column_info" works when table argument matches via search pattern};
+$sth = $dbh->column_info('','',"$test_table%",'');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{pg_table}, $test_table, $t);
+
+## These can be very expensive, so we skip unless AUTHOR_TESTING
+SKIP: {
+    if (! $ENV{AUTHOR_TESTING}) {
+        skip ('Not pulling back every column in the database unless AUTHOR_TESTING is set', 2);
+    }
+
+    $t=q{DB handle method "column_info" works when all arguments are undef};
+    $sth = $dbh->column_info(undef, undef, undef, undef);
+    $r1 = $sth->fetchall_arrayref({})->[0];
+    ok (exists $r1->{BUFFER_LENGTH}, $t);
+
+    $t=q{DB handle method "column_info" works when all arguments are empty};
+    $sth = $dbh->column_info('','','','');
+    $r1 = $sth->fetchall_arrayref({})->[0];
+    ok (exists $r1->{BUFFER_LENGTH}, $t);
+}
+
+## Check the TABLE_SCHEM field
+$t=q{DB handle method "column_info" returns correct TABLE_SCHEM};
+is ($matchid->{TABLE_SCHEM}, $test_schema, $t);
+
+$t=q{DB handle method "column_info" returns TABLE_SCHEM as undef when no schema matches};
+$sth = $dbh->column_info('',$missing_table,$test_table, '');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{TABLE_SCHEM}, undef, $t);
+
+$t=q{DB handle method "column_info" works when schema argument is undef};
+$sth = $dbh->column_info('',undef,$test_table,'id');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{TABLE_SCHEM}, $test_schema, $t);
+
+$t=q{DB handle method "column_info" works when schema argument is empty};
+$sth = $dbh->column_info('','',$test_table,'id');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{TABLE_SCHEM}, $test_schema, $t);
+
+$t=q{DB handle method "column_info" returns undef when schema argument has non-matching search pattern};
+$sth = $dbh->column_info('','dbd_pg_badschema%',$test_table,'id');
 is ($sth->fetch, undef, $t);
 
-$t=q{DB handle method "column_info" works when table argument matches exactly};
-$sth = $dbh->column_info('','','dbd_pg_test','CaseTest');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{NULLABLE}, 1, $t);
+$t=q{DB handle method "column_info" works when schema argument matches via search pattern};
+$sth = $dbh->column_info('',"$test_schema%",$test_table,'id');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{pg_schema}, $test_schema, $t);
 
-$t=q{DB handle method "column_info" works when table argument has no underscore or percent};
-my $table = 'dbdpgtest';
-$dbh->do(qq{CREATE TABLE $schema.$table("id with a space" INT)});
-$sth = $dbh->column_info('',undef,$table,'id with a space');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{pg_column}, 'id with a space', $t);
+## Check the COLUMN_NAME field
+$t=q{DB handle method "column_info" returns correct COLUMN_NAME};
+$sth = $dbh->column_info('','',$test_table,'id');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{COLUMN_NAME}, 'id', $t);
+
+$t=q{DB handle method "column_info" returns COLUMN_NAME as undef when no column matches};
+is ($nomatch->{COLUMN_NAME}, undef, $t);
+
+$t=q{DB handle method "column_info" returns correct COLUMN_NAME (with quoting)};
+$sth = $dbh->column_info('','',$test_table, 'CaseTest');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{COLUMN_NAME}, '"CaseTest"', $t);
+
+$t=q{DB handle method "column_info" returns correct pg_column (with quoting)};
+is ($r1->{pg_column}, 'CaseTest', $t);
 
 $t=q{DB handle method "column_info" works when column argument is undef};
-$sth = $dbh->column_info('',undef,$table,'id with a space');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{DATA_TYPE}, 4, $t);
+$sth = $dbh->column_info('',undef,$test_table,undef);
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{TABLE_NAME}, $test_table, $t);
 
 $t=q{DB handle method "column_info" works when column argument is empty};
-$sth = $dbh->column_info('',undef,$table,'id with a space');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{TYPE_NAME}, 'integer', $t);
+$sth = $dbh->column_info('',undef,$test_table,'');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{TABLE_NAME}, $test_table, $t);
 
-$t=q{DB handle method "column_info" returns undef when column argument has no match};
-$sth = $dbh->column_info('','',$table, 'idfoobar');
+$t=q{DB handle method "column_info" returns undef when column argument has non-matching search pattern};
+$sth = $dbh->column_info('','',$test_table,'nosuchcolumn');
 is ($sth->fetch, undef, $t);
 
-$t=q{DB handle method "column_info" returns undef when column argument has non-matching regex};
-$sth = $dbh->column_info('','',$table, 'idfoo%');
-is ($sth->fetch, undef, $t);
+$t=q{DB handle method "column_info" works when column argument matches via search pattern};
+$sth = $dbh->column_info('','',$test_table,'id%');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{pg_column}, 'id', $t);
 
-$t=q{DB handle method "column_info" works when column argument is empty};
-$sth = $dbh->column_info('','',$table, '');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{IS_NULLABLE}, 'YES', $t);
+## Check the DATA_TYPE field (DBI specs say this is a "concise data type code")
+$t=q{DB handle method "column_info" returns correct DATA_TYPE};
+$sth = $dbh->column_info('','',$test_table,'score');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{DATA_TYPE}, '6', $t);
 
-$t=q{DB handle method "column_info" works when column argument matches exactly};
-$sth = $dbh->column_info('','',$table,'id with a space');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{pg_schema}, $schema, $t);
+$t=q{DB handle method "column_info" returns DATA_TYPE as undef when no column matches};
+is ($nomatch->{DATA_TYPE}, undef, $t);
 
-$t=q{DB handle method "column_info" works when column argument matches via regex};
-$sth = $dbh->column_info('','',$table,'id % a space');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{pg_table}, $table, $t);
+## Check the TYPE_NAME field
+$t=q{DB handle method "column_info" returns correct TYPE_NAME};
+is ($matchid->{TYPE_NAME}, 'integer', $t);
 
-$t=q{DB handle method "column_info" works when column argument matches via regex and no explicit table};
-$sth = $dbh->column_info('','','','id % a space');
-$result = $sth->fetchall_arrayref({})->[0];
-is ($result->{pg_type}, 'integer', $t);
+$t=q{DB handle method "column_info" returns TYPE_NAME as undef when no column matches};
+is ($nomatch->{TYPE_NAME}, undef, $t);
 
-$dbh->do(qq{DROP TABLE $schema.$table});
+## Check the COLUMN_SIZE field
+$t=q{DB handle method "column_info" returns correct COLUMN_SIZE for int};
+is ($matchid->{COLUMN_SIZE}, 4, $t);
+
+$t=q{DB handle method "column_info" returns correct COLUMN_SIZE for varchar};
+is ($matchpname->{COLUMN_SIZE}, '20', $t);
+
+$t=q{DB handle method "column_info" returns correct COLUMN_SIZE for numeric};
+is ($matchexpo->{COLUMN_SIZE}, '6', $t);
+
+$t=q{DB handle method "column_info" returns COLUMN_SIZE as undef when no column matches};
+is ($nomatch->{COLUMN_SIZE}, undef, $t);
+
+## Check the BUFFER_LENGTH field (always null)
+$t=q{DB handle method "column_info" returns BUFFER_LENGTH as undef};
+is ($matchid->{BUFFER_LENGTH}, undef, $t);
+
+## Check the DECIMAL_DIGITS field
+$t=q{DB handle method "column_info" returns DECIMAL_DIGITS as undef for int};
+is ($matchid->{DECIMAL_DIGITS}, undef, $t);
+
+$t=q{DB handle method "column_info" returns DECIMAL_DIGITS as undef for varchar};
+is ($matchpname->{DECIMAL_DIGITS}, undef, $t);
+
+$t=q{DB handle method "column_info" returns correct DECIMAL_DIGITS for numeric};
+is ($matchexpo->{DECIMAL_DIGITS}, 2, $t);
+
+## Check the NUM_PREC_RADIX field (always null)
+$t=q{DB handle method "column_info" returns NUM_PREC_RADIX as undef};
+is ($matchexpo->{NUM_PREC_RADIX}, undef, $t);
+
+## Check the NULLABLE field
+$t=q{DB handle method "column_info" returns correct NULLABLE (when not nullable)};
+is ($matchid->{NULLABLE}, 0, $t);
+
+$t=q{DB handle method "column_info" returns correct NULLABLE (when nullable)};
+is ($matchval->{NULLABLE}, 1, $t);
+
+$t=q{DB handle method "column_info" returns NULLABLE as undef when no column matches};
+is ($nomatch->{NULLABLE}, undef, $t);
+
+## Check the REMARKS field
+$t=q{DB handle method "column_info" returns REMARKS as undef if no comment};
+is ($matchval->{REMARKS}, undef, $t);
+
+$t=q{DB handle method "column_info" returns correct REMARKS when there is a comment};
+is ($matchid->{REMARKS}, 'Bob is your uncle', $t);
+
+$t=q{DB handle method "column_info" returns REMARKS as undef when no column matches};
+is ($nomatch->{REMARKS}, undef, $t);
+
+## Check the COLUMN_DEF field
+$t=q{DB handle method "column_info" returns correct COLUMN_DEF (has default)};
+$sth = $dbh->column_info('','',$test_table,'pdate');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{COLUMN_DEF}, 'now()', $t);
+
+$t=q{DB handle method "column_info" returns COLUMN_DEF as undef (no default)};
+is ($matchid->{COLUMN_DEF}, undef, $t);
+
+$t=q{DB handle method "column_info" returns COLUMN_DEF as undef when no column matches};
+is ($nomatch->{COLUMN_DEF}, undef, $t);
+
+## Check the SQL_DATA_TYPE field (always null for now)
+$t=q{DB handle method "column_info" returns SQL_DATA_TYPE as undef};
+is ($matchid->{SQL_DATA_TYPE}, undef, $t);
+
+## Check the SQL_DATETIME_SUB field (always null)
+$t=q{DB handle method "column_info" returns SQL_DATETIME_SUB as undef};
+is ($matchid->{SQL_DATETIME_SUB}, undef, $t);
+
+## Check the CHAR_OCTET_LENGTH field (always null)
+$t=q{DB handle method "column_info" returns CHAR_OCTET_LENGTH as undef};
+is ($matchid->{CHAR_OCTET_LENGTH}, undef, $t);
+
+## Check the ORDINAL_POSITION field
+$t=q{DB handle method "column_info" returns correct ORDINAL_POSITION};
+is ($matchval->{ORDINAL_POSITION}, 4, $t);
+
+$t=q{DB handle method "column_info" returns ORDINAL_POSITION as undef when no column matches};
+is ($nomatch->{ORDINAL_POSITION}, undef, $t);
+
+$t=q{DB handle method "column_info" returns ORDINAL_POSITION as undef after column dropped};
+$dbh->do("ALTER TABLE $test_schema.$test_table DROP COLUMN val");
+$sth = $dbh->column_info('','',$test_table,'val');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{ORDINAL_POSITION}, undef, $t);
+
+$t=q{DB handle method "column_info" returns correct ORDINAL_POSITION after column re-added};
+$dbh->do("ALTER TABLE $test_schema.$test_table ADD COLUMN val TEXT");
+$sth = $dbh->column_info('','',$test_table,'val');
+$r1 = $sth->fetchall_arrayref({})->[0];
+ok ($r1->{ORDINAL_POSITION} > 4, $t);
+
+## Check the IS_NULLABLE field
+$t=q{DB handle method "column_info" returns correct IS_NULLABLE (when nullable)};
+is ($matchval->{IS_NULLABLE}, 'YES', $t);
+
+$t=q{DB handle method "column_info" returns correct IS_NULLABLE (when not nullable)};
+is ($matchid->{IS_NULLABLE}, 'NO', $t);
+
+$t=q{DB handle method "column_info" returns IS_NULLABLE as undef when no column matches};
+is ($nomatch->{IS_NULLABLE}, undef, $t);
+
+## Check the pg_type field
+$t=q{DB handle method "column_info" returns correct pg_type (text)};
+is ($matchval->{pg_type}, 'text', $t);
+
+$t=q{DB handle method "column_info" returns correct pg_type (text array)};
+$sth = $dbh->column_info('','',$test_table,'testarray');
+$r1 = $sth->fetchall_arrayref({})->[0];
+is ($r1->{pg_type}, 'text[]', $t);
+
+$t=q{DB handle method "column_info" returns pg_type as undef when no column matches};
+is ($nomatch->{pg_type}, undef, $t);
+
+## Check the pg_constraint field
+$t=q{DB handle method "column_info" returns pg_constraint as undef when no constraints};
+is ($matchid->{pg_constraint}, undef, $t);
+
+$t=q{DB handle method "column_info" returns correct pg_constraint when one constraint};
+$sth = $dbh->column_info('','',$test_table,'lii');
+$r1 = $sth->fetchall_arrayref({})->[0];
+like ($r1->{pg_constraint}, qr/-777/, $t);
+
+$t=q{DB handle method "column_info" returns correct pg_constraint when two constraints (#1)};
+$sth = $dbh->column_info('','',$test_table,'score');
+$r1 = $sth->fetchall_arrayref({})->[0];
+like ($r1->{pg_constraint}, qr/888/s, $t);
+
+$t=q{DB handle method "column_info" returns correct pg_constraint when two constraints (#2)};
+like ($r1->{pg_constraint}, qr/999/s, $t);
+
+$t=q{DB handle method "column_info" returns pg_constraint as undef when no column matches};
+is ($nomatch->{pg_constraint}, undef, $t);
+
+## Check the pg_database field
+$t=q{DB handle method "column_info" returns correct pg_database};
+is ($matchid->{pg_database}, $dbh->{pg_db}, $t);
+
+$t=q{DB handle method "column_info" returns pg_database as undef when no column matches};
+is ($nomatch->{pg_database}, undef, $t);
+
+## Check the pg_schema field
+$t=q{DB handle method "column_info" returns correct pg_schema};
+is ($matchid->{pg_schema}, $test_schema, $t);
+
+$t=q{DB handle method "column_info" returns pg_schema as undef when no column matches};
+is ($nomatch->{pg_schema}, undef, $t);
+
+## Check the pg_table field
+$t=q{DB handle method "column_info" returns correct pg_table};
+is ($matchid->{pg_table}, $test_table, $t);
+
+$t=q{DB handle method "column_info" returns pg_table as undef when no column matches};
+is ($nomatch->{pg_table}, undef, $t);
+
+## Check the pg_column field
+$t=q{DB handle method "column_info" returns correct pg_column};
+is ($matchid->{pg_column}, 'id', $t);
+
+$t=q{DB handle method "column_info" returns pg_column as undef when no column matches};
+is ($nomatch->{pg_column}, undef, $t);
+
+## Check the pg_enum_values field
+$t=q{DB handle method "column_info" returns pg_enum_values as undef for non-enum column};
+is ($matchid->{pg_enum_values}, undef, $t);
 
 SKIP: {
 
     if ($pgversion < 80300) {
-        skip ('DB handle method column_info attribute "pg_enum_values" requires at least Postgres 8.3', 1);
+        skip ('DB handle method "column_info" -> pg_enum_values requires at least Postgres 8.3', 1);
     }
 
     my @enumvalues = qw( foo bar baz buz );
 
     $dbh->do( q{CREATE TYPE dbd_pg_enumerated AS ENUM ('foo', 'bar', 'baz', 'buz')} );
     $dbh->do( q{CREATE TEMP TABLE dbd_pg_enum_test ( is_enum dbd_pg_enumerated NOT NULL )} );
-    if ($pgversion >= 90300) {
+    if ($pgversion >= 90100) {
         $dbh->do( q{ALTER TYPE dbd_pg_enumerated ADD VALUE 'first' BEFORE 'foo'} );
         unshift @enumvalues, 'first';
     }
 
-    $t='DB handle method "column_info" returns proper pg_type';
+    $t='DB handle method "column_info" returns correct pg_enum_values';
     $sth = $dbh->column_info('','','dbd_pg_enum_test','is_enum');
-    $result = $sth->fetchall_arrayref({})->[0];
-    is ($result->{pg_type}, 'dbd_pg_enumerated', $t);
-
-    $t='DB handle method "column_info" returns proper pg_enum_values';
-    is_deeply ($result->{pg_enum_values}, \@enumvalues, $t);
+    $r1 = $sth->fetchall_arrayref({})->[0];
+    is_deeply ($r1->{pg_enum_values}, \@enumvalues, $t);
 
     $dbh->do('DROP TABLE dbd_pg_enum_test');
     $dbh->do('DROP TYPE dbd_pg_enumerated');
 }
+
+$t=q{DB handle method "column_info" returns pg_enum_values as undef when no column matches};
+is ($nomatch->{pg_enum_values}, undef, $t);
+
 
 #
 # Test of the "primary_key_info" database handle method
@@ -1051,7 +1247,7 @@ for my $r (@$result) {
 is_deeply (\%missing, {}, $t);
 
 ## Check some of the returned fields:
-$r = $result->[0];
+my $r = $result->[0];
 is ($r->{TABLE_CAT},   $dbh->{pg_db},      'DB handle method "primary_key_info" returns proper TABLE_CAT');
 is ($r->{TABLE_NAME},  'dbd_pg_test',      'DB handle method "primary_key_info" returns proper TABLE_NAME');
 is ($r->{pg_table},    'dbd_pg_test',      'DB handle method "primary_key_info" returns proper pg_table');
@@ -1071,7 +1267,7 @@ $result = $sth->fetchall_arrayref({});
 is_deeply ($result->[0]{KEY_SEQ}, ['1'], $t);
 
 $t='DB handle method "primary_key_info" works when pg_onerow attribute set to 1 (multi-pk)';
-$table = 'dbd_pg_test_combo_pk';
+my $table = 'dbd_pg_test_combo_pk';
 $dbh->do("CREATE TABLE $schema.$table(a INTEGER, b INTEGER, CONSTRAINT combo PRIMARY KEY (a,b))");
 $sth = $dbh->primary_key_info('',$schema,$table, {pg_onerow => 1});
 $result = $sth->fetchall_arrayref({});
@@ -1295,6 +1491,7 @@ $SQL = "SELECT n.nspname||'.'||r.relname FROM pg_catalog.pg_class r, pg_catalog.
         $dbh->do("DROP TABLE $_->[0] CASCADE");
     }
 }
+
 ## Invalid primary table
 $t='DB handle method "foreign_key_info" returns no rows: bad pk / no fk';
 $sth = $dbh->foreign_key_info(undef,undef,'dbd_pg_test9',undef,undef,undef);
@@ -1585,9 +1782,7 @@ ok (exists $result->{'FK_TABLE_NAME'}, $t); ## nospellcheck
 
 # Clean everything up
 for my $s ($schema3, $schema2) {
-    $dbh->do("DROP TABLE $s.dbd_pg_test3");
-    $dbh->do("DROP TABLE $s.dbd_pg_test2");
-    $dbh->do("DROP TABLE $s.dbd_pg_test1");
+    $dbh->do("DROP TABLE $s.$table1, $s.$table2, $s.$table3");
 }
 $dbh->do("DROP SCHEMA $schema2");
 $dbh->do("DROP SCHEMA $schema3");
