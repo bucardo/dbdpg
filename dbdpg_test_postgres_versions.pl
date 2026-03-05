@@ -1,7 +1,8 @@
 #!/usr/bin/env perl
 
 ## Test combinations of Postgres for DBD::Pg
-## Usage: $0 <postgresdir> [-t specific_test_file] [-c compile_version] [-r run_version] [--setup versions]
+
+my $USAGE = "Usage: $0 <postgresdir> [-t specific_test_file] [-c compile_version] [-r run_version] [--setup versions]";
 
 ## Usage:
 ## Create Postgres 15,16, and 17 directories in $ENV{HOME}/pg/:
@@ -49,7 +50,13 @@ GetOptions
    'setup=s',
    'minversion=s',
    'nohead',
+   'help',
 );
+
+if ($arg{help}) {
+    print "$USAGE\n\n";
+    exit 0;
+}
 
 my $testfile = $arg{testfile} || $ENV{DBDPG_TEST_FILE} || '';
 my $compileversion = $arg{compileversion} || $ENV{DBDPG_COMPILE_VERSION} || '';
