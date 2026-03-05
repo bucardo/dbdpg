@@ -218,7 +218,7 @@ run it and look at the output?
 
 Modern Mac software has a feature called Software Integrity Protection that
 strips out all LD_* and DYLD_* environment variables when a program starts,
-which means DBD::Pg will no compile. One solution is to use the install_name_tool
+which means DBD::Pg will not compile. One solution is to use the install_name_tool
 program to modify the relative paths to absolute ones. As an example:
 
 	sudo install_name_tool -change \
