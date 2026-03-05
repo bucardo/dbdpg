@@ -157,10 +157,6 @@ pass ('All OLDQUERY_WAIT statements finished cleanly');
 ## Errors from PG_OLDQUERY_WAIT are attributed to the correct statement
 ## Use the no-error handle since pg_result on error results raises
 
-$dbh_noerr->do(q{DROP TABLE IF EXISTS async_test_constraints});
-$dbh_noerr->do(q{CREATE TABLE async_test_constraints (id INT PRIMARY KEY)});
-$dbh_noerr->do(q{INSERT INTO async_test_constraints VALUES (1)});
-
 my $bad1 = $dbh_noerr->prepare(q{SELECT * FROM missing_table_1}, { pg_async => PG_ASYNC });
 my $bad2 = $dbh_noerr->prepare(q{SELECT * FROM missing_table_2}, { pg_async => PG_ASYNC + PG_OLDQUERY_WAIT });
 
@@ -183,8 +179,6 @@ ok ($good->pg_result, 'pg_result() on valid query after error queries succeeds')
 $bad1->finish;
 $bad2->finish;
 $good->finish;
-
-$dbh_noerr->do(q{DROP TABLE async_test_constraints});
 
 ## PG_OLDQUERY_WAIT preserves data from the previous async query via auto-retrieve
 
