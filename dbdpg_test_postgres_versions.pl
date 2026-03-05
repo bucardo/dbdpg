@@ -25,12 +25,15 @@ use warnings;
 use autodie;
 use Cwd;
 use File::Spec::Functions;
+use IO::Uncompress::Gunzip qw/ gunzip $GunzipError /;
 use Getopt::Long qw/ GetOptions /;
 use Data::Dumper; $Data::Dumper::Sortkeys = 1;
 use Time::HiRes qw/ gettimeofday tv_interval /;
 use List::Util qw/ shuffle /;
 
 our $VERSION = 1.5;
+
+my $startdir = getcwd();
 
 my %arg = (
     quiet => 0,
@@ -215,6 +218,7 @@ sub setup_postgres_dirs {
             print "Directory already exists: $newdir\n";
             ## However, there may be a newer version!
             my ($existing_revision) = qx{$newdir/bin/psql --version} =~ /\.(\d+)$/;
+            $existing_revision //= 0;
             if ($existing_revision < $maxversion{$version}->[1]) {
                 printf "For version %s, have revision %d but need %s\n",
                     $version, $existing_revision, $maxversion{$version}->[1];
@@ -231,11 +235,21 @@ sub setup_postgres_dirs {
         if ($install) {
             chdir($dir);
             my $tag = $maxversion{$version}->[0];
-            system "git checkout $tag";
+            system "git stash save oldstuff";
+            system "git checkout $tag --quiet";
             system 'git clean -fdx';
             my $COM = "./configure --prefix=$newdir --quiet";
-            if ($version =~ /^\d/ and $version <= 9.0) {
-                $COM .= ' CFLAGS="-Wno-aggressive-loop-optimizations -O0"';
+            if ($version =~ /^\d/ and $version <= 9.1) {
+                $COM .= ' CFLAGS="-Wno-aggressive-loop-optimizations -O0 -Wno-implicit-int -Wno-implicit-function-declaration"';
+                $COM .= ' --without-zlib';
+            }
+            if ($version eq '9.1') {
+                my $scanfile = "$startdir/misc/pg9.1.24.scan.c.gz";
+                if (-e $scanfile) {
+                    my $oldfile = "src/backend/parser/scan.c";
+                    gunzip $scanfile => $oldfile or die "gunzip failed: $GunzipError\n";
+                    warn "DONE!";
+                }
             }
             print "Running: $COM\n";
             system $COM;
