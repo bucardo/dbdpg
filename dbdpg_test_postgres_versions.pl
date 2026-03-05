@@ -68,7 +68,7 @@ setup_postgres_dirs() if $arg{setup};
 
 my $dh;
 opendir $dh, $basedir;
-my @versions = grep { /^[1-9][0-9]$/ or /^head$/i } readdir $dh;
+my @versions = grep { /^[1-9]\.?[0-9]$/ or /^head$/i } readdir $dh;
 closedir $dh;
 if ($arg{minversion} =~ /^[0-9]+$/) {
     @versions = grep { ! /^[0-9]+$/ or $_ >= $arg{minversion} } @versions;
