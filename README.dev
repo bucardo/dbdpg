@@ -193,6 +193,8 @@ t/07copy.t - Tests COPY-related methods.
 
 t/08async.t - Tests asynchronous methods.
 
+t/08async_regression.t - Regression tests for async query ownership and data preservation.
+
 t/09arrays.t - Tests array manipulation.
 
 t/10_pg_error_field.t - Tests $dbh->pg_error_field function
