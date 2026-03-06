@@ -201,8 +201,8 @@ version: $version
                     eval { $info = qx{$COM}; };
                     my $err = $@;
                     $su and chdir $olddir;
-                    if ($err or $info !~ /\w/) {
-                        $err = "Could not startup new database ($err) ($info)";
+                    if ($info !~ /starting/ and ($err or $info !~ /\w/)) {
+                        $err = "Could not startup THIS new database (err=$err) ($info)";
                         return $helpconnect, $err, undef;
                     }
                     ## Wait for it to startup and verify the connection
@@ -738,13 +738,13 @@ CREATE TABLE dbd_pg_test (
   lii        integer unique not null default nextval('dbd_pg_testsequence'),
   pname      varchar(20) default 'Testing Default' ,
   val        text,
-  score      float CHECK(score IN ('1','2','3')),
-  Fixed      character(5),
+  score      float CHECK(score IN ('1','2','3', '999')),
+  Fixed      character(5) CHECK (lii > -777),
   pdate      timestamp default now(),
   testarray  text[][],
   testarray2 int[],
   testarray3 bool[],
-  "CaseTest" boolean,
+  "CaseTest" boolean CHECK (score < 888),
   expo       numeric(6,2),
   bytetest   bytea,
   bytearray  bytea[]

@@ -468,35 +468,37 @@ use 5.008001;
         return DBD::Pg::db::_pg_type_info($pg_type);
     }
 
-    # Columns expected in statement handle returned:
-    # table_cat, table_schem, table_name, column_name, data_type, type_name,
-    # column_size, buffer_length, DECIMAL_DIGITS, NUM_PREC_RADIX, NULLABLE,
-    # REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB, CHAR_OCTET_LENGTH,
-    # ORDINAL_POSITION, IS_NULLABLE
-    # The result set is ordered by TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION.
-
     sub column_info {
-        my $dbh = shift;
-        my (undef, $schema, $table, $column) = @_;
 
-        my @search;
+        # Columns expected in statement handle returned (Per DBI, must be in order):
+        # TABLE_CAT, TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, DATA_TYPE, TYPE_NAME,
+        # COLUMN_SIZE, BUFFER_LENGTH, DECIMAL_DIGITS, NUM_PREC_RADIX, NULLABLE,
+        # REMARKS, COLUMN_DEF, SQL_DATA_TYPE, SQL_DATETIME_SUB, CHAR_OCTET_LENGTH,
+        # ORDINAL_POSITION, IS_NULLABLE
+        # The result set is ordered by TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION.
+
+        my ($dbh, $catalog, $schema, $table, $column) = @_;
+
+        my (@search, @args);
         ## If the schema or table has an underscore or a %, use a LIKE comparison
         if (defined $schema and length $schema) {
-            push @search, 'n.nspname ' . ($schema =~ /[_%]/ ? 'LIKE ' : '= ') .
-                $dbh->quote($schema);
+            push @search, 'n.nspname ' . ($schema =~ /[_%]/ ? 'LIKE ?' : '= ?');
+            push @args, $schema;
         }
         if (defined $table and length $table) {
-            push @search, 'c.relname ' . ($table =~ /[_%]/ ? 'LIKE ' : '= ') .
-                $dbh->quote($table);
+            push @search, 'c.relname ' . ($table =~ /[_%]/ ? 'LIKE ?' : '= ?');
+            push @args, $table;
         }
         if (defined $column and length $column) {
-            push @search, 'a.attname ' . ($column =~ /[_%]/ ? 'LIKE ' : '= ') .
-                $dbh->quote($column);
+            push @search, 'a.attname ' . ($column =~ /[_%]/ ? 'LIKE ?' : '= ?');
+            push @args, $column;
         }
 
-        my $whereclause = join "\n\t\t\t\tAND ", '', @search;
+        my $whereclause = @search
+          ? ("\n                AND " . join "\n                AND ", @search)
+          : '';
 
-        ## Note: we do not need a attisdropped check because attypid will be 0
+        ## Note: we do not need to check attisdropped because attypid will be 0
         ## for dropped columns and thus fail to join to pg_type
         my $col_info_sql = qq!
             SELECT
@@ -510,22 +512,25 @@ use 5.008001;
                 , NULL::text AS "BUFFER_LENGTH"
                 , NULL::text AS "DECIMAL_DIGITS"
                 , NULL::text AS "NUM_PREC_RADIX"
-                , CASE a.attnotnull WHEN 't' THEN 0 ELSE 1 END AS "NULLABLE"
+                , CASE WHEN a.attnotnull THEN 0 ELSE 1 END AS "NULLABLE"
                 , pg_catalog.col_description(a.attrelid, a.attnum) AS "REMARKS"
                 , pg_catalog.pg_get_expr(af.adbin, af.adrelid) AS "COLUMN_DEF"
                 , NULL::text AS "SQL_DATA_TYPE"
                 , NULL::text AS "SQL_DATETIME_SUB"
                 , NULL::text AS "CHAR_OCTET_LENGTH"
                 , a.attnum AS "ORDINAL_POSITION"
-                , CASE a.attnotnull WHEN 't' THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
+                , CASE WHEN a.attnotnull THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
                 , pg_catalog.format_type(a.atttypid, a.atttypmod) AS "pg_type"
-                , '?' AS "pg_constraint"
+                , NULL::text AS "pg_constraint"
+                , pg_catalog.current_database() AS "pg_database"
                 , n.nspname AS "pg_schema"
                 , c.relname AS "pg_table"
                 , a.attname AS "pg_column"
-                , a.attrelid AS "pg_attrelid"
-                , a.attnum AS "pg_attnum"
-                , a.atttypmod AS "pg_atttypmod"
+                , NULL::text[] AS "pg_enum_values"
+
+                , a.attrelid AS "_pg_attrelid"
+                , a.attnum AS "_pg_attnum"
+                , a.atttypmod AS "_pg_atttypmod"
                 , t.typtype AS "_pg_type_typtype"
                 , t.oid AS "_pg_type_oid"
             FROM
@@ -538,91 +543,107 @@ use 5.008001;
                 a.attnum >= 1
                 AND c.relkind IN ('r','p','v','m','f')
                 $whereclause
-            ORDER BY "TABLE_SCHEM", "TABLE_NAME", "ORDINAL_POSITION"
+            ORDER BY n.nspname, c.relname, a.attnum
             !;
+        my $sth = $dbh->prepare($col_info_sql);
+        $sth->execute(@args) or die $sth->errstr;
+        ## Immediately grab all the column names in order, but exclude internal ones
+        my @colnames = grep { ! /^_pg/ } @{ $sth->{NAME} };
 
-        my $data = $dbh->selectall_arrayref($col_info_sql);
+        my $data = $sth->fetchall_arrayref({});
 
-        # To turn the data back into a statement handle, we need 
-        # to fetch the data as an array of arrays, and also have a
-        # a matching array of all the column names
-        my %col_map = (qw/
-            TABLE_CAT             0
-            TABLE_SCHEM           1
-            TABLE_NAME            2
-            COLUMN_NAME           3
-            DATA_TYPE             4
-            TYPE_NAME             5
-            COLUMN_SIZE           6
-            BUFFER_LENGTH         7
-            DECIMAL_DIGITS        8
-            NUM_PREC_RADIX        9
-            NULLABLE             10
-            REMARKS              11
-            COLUMN_DEF           12
-            SQL_DATA_TYPE        13
-            SQL_DATETIME_SUB     14
-            CHAR_OCTET_LENGTH    15
-            ORDINAL_POSITION     16
-            IS_NULLABLE          17
-            pg_type              18
-            pg_constraint        19
-            pg_schema            20
-            pg_table             21
-            pg_column            22
-            pg_enum_values       23
-            /);
+        if (!@$data) {
+            return _prepare_from_data('column_info', [], \@colnames);
+        }
 
-        for my $row (@$data) {
-            my $typoid = pop @$row;
-            my $typtype = pop @$row;
-            my $typmod = pop @$row;
-            my $attnum = pop @$row;
-            my $aid = pop @$row;
+        ## Grab any constraints that match the columns we are looking at
+        my %colconstraint;
+        ## Also grab the list of possible enums for any relevant columns
+        my %enuminfo;
 
-            $row->[$col_map{COLUMN_SIZE}] =
-                 _calc_col_size($typmod,$row->[$col_map{COLUMN_SIZE}]);
-
-            # Replace the Pg type with the SQL_ type
-            $row->[$col_map{DATA_TYPE}] = DBD::Pg::db::pg_type_info($dbh,$row->[$col_map{DATA_TYPE}]);
-
-            # Add pg_constraint
-            my $SQL = q{SELECT pg_catalog.pg_get_constraintdef(oid) }.
-                q{FROM pg_catalog.pg_constraint WHERE contype = 'c' AND }.
-                qq{conrelid = $aid AND conkey = '{$attnum}'};
-            my $info = $dbh->selectall_arrayref($SQL);
-            if (@$info) {
-                $row->[$col_map{pg_constraint}] = $info->[0][0];
-            }
-            else {
-                $row->[$col_map{pg_constraint}] = undef;
-            }
-
-            if ( $typtype eq 'e' ) {
-                my $order_column = $dbh->{private_dbdpg}{version} >= 90100
-                    ? 'enumsortorder' : 'oid';
-                $SQL = "SELECT enumlabel FROM pg_catalog.pg_enum WHERE enumtypid = $typoid ORDER BY $order_column";
-                $row->[$col_map{pg_enum_values}] = $dbh->selectcol_arrayref($SQL);
-            }
-            else {
-                $row->[$col_map{pg_enum_values}] = undef;
+        ## We cast conkey to text because we cannot control if pg_expand_array is set
+        my $csql = q{SELECT conrelid, conkey::text, pg_catalog.pg_get_constraintdef(oid) }.
+          q{FROM pg_catalog.pg_constraint WHERE contype = 'c' AND conrelid = ANY(?)};
+        my $csth = $dbh->prepare($csql);
+        my @relidlist = do {
+            my %seen;
+            grep { !$seen{$_}++ }
+              map { $_->{_pg_attrelid} }
+              @$data;
+        };
+        $csth->execute(\@relidlist) or die $csth->errstr;
+        for my $row (@{ $csth->fetchall_arrayref() }) {
+            for my $attnum ($row->[1] =~ /(\d+)/g) {
+                push @{ $colconstraint{$row->[0]}{$attnum}}, $row->[2];
             }
         }
 
-        # Since we've processed the data in Perl, we have to jump through a hoop
-        # To turn it back into a statement handle
-        #
+        my @typelist = do {
+            my %seen;
+            grep { !$seen{$_}++ }
+              map { $_->{_pg_type_oid} }
+              grep { $_->{_pg_type_typtype} eq 'e' }
+              @$data;
+        };
+        if (@typelist) {
+            my $order = $dbh->{private_dbdpg}{version} >= 90100 ? 'enumsortorder' : 'oid';
+            my $esql = "SELECT enumtypid, enumlabel FROM pg_catalog.pg_enum WHERE enumtypid = ANY(?) ORDER BY enumtypid, $order";
+            my $esth = $dbh->prepare($esql);
+            $esth->execute(\@typelist) or die $esth->errstr;
+            for my $row (@{ $esth->fetchall_arrayref() }) {
+                push @{$enuminfo{$row->[0]}}, $row->[1];
+            }
+        }
+
+        ## Final transformations
+        for my $row (@$data) {
+
+            ## Decode attribute mod and length into friendlier forms
+            my $attlen = $row->{COLUMN_SIZE};
+            if ($attlen <= 0) {
+                my $mod = $row->{_pg_atttypmod} - 4;
+                if ($mod < 0) {
+                    $row->{COLUMN_SIZE} = undef;
+                }
+                elsif ($mod <= 0xffff) {
+                    $row->{COLUMN_SIZE} = $mod;
+                }
+                else {
+                    $row->{COLUMN_SIZE} = $mod >> 16;
+                    $row->{DECIMAL_DIGITS} = $mod & 0xffff;
+                }
+            }
+
+            # Replace the Pg type with the SQL_ type
+            $row->{DATA_TYPE} = DBD::Pg::db::pg_type_info($dbh, $row->{DATA_TYPE});
+
+            # Add pg_constraint information
+            my $aid = $row->{_pg_attrelid};
+            if (exists $colconstraint{ $aid }{ $row->{_pg_attnum} }) {
+                $row->{pg_constraint} = join "\n", @{ $colconstraint{ $aid }{ $row->{_pg_attnum} }};
+            }
+            else {
+                $row->{pg_constraint} = undef;
+            }
+
+            ## Add enum information as an arrayref of allowed values
+            $row->{pg_enum_values} = $enuminfo{ $row->{_pg_type_oid} };
+
+        }
+
+        ## Use DBD::Sponge to turn this into a statement handle
         return _prepare_from_data(
-             'column_info',
-             $data,
-             [ sort { $col_map{$a} <=> $col_map{$b} } keys %col_map],
-        );
+                                  'column_info',
+                                  [ map { [ @{$_}{@colnames} ] } @$data ],
+                                  \@colnames
+                                 );
+
     }
 
     sub _prepare_from_data {
         my ($statement, $data, $names, %attrinfo) = @_;
         my $sponge = DBI->connect('dbi:Sponge:', '', '', { RaiseError => 1 });
-        my $sth = $sponge->prepare($statement, { rows=>$data, NAME=>$names, %attrinfo });
+        my $sth = $sponge->prepare($statement, { rows => $data, NAME => $names, %attrinfo });
         return $sth;
     }
 
@@ -1233,29 +1254,6 @@ use 5.008001;
         return $attrs;
 
     }
-
-    sub _calc_col_size {
-
-        my $mod = shift;
-        my $size = shift;
-
-
-        if ($size > 0) {
-            return $size;
-        }
-        elsif ($mod > 0xffff) {
-            my $prec = ($mod & 0xffff) - 4;
-            $mod >>= 16;
-            my $dig = $mod;
-            return "$prec,$dig";
-        }
-        elsif ($mod >= 4) {
-            return $mod - 4;
-        }
-
-        return;
-    }
-
 
     sub type_info_all {
 
@@ -2983,20 +2981,21 @@ Examples of use:
   $sth = $dbh->column_info( undef, $schema, $table, $column );
 
 Supported by this driver as proposed by DBI with the following exceptions.
-These fields are currently always returned with NULL (C<undef>) values:
+These fields always return NULL (C<undef>):
 
    BUFFER_LENGTH
-   DECIMAL_DIGITS
    NUM_PREC_RADIX
    SQL_DATA_TYPE
    SQL_DATETIME_SUB
    CHAR_OCTET_LENGTH
 
-Also, six additional non-standard fields are returned:
+Seven additional non-standard fields are returned:
 
 B<pg_type>: data type with additional info i.e. "character varying(20)"
 
-B<pg_constraint>: holds column constraint definition
+B<pg_constraint>: shows CHECK constraints which reference the column (multiple constraints are newline separated)
+
+B<pg_database>: the unquoted name of the database
 
 B<pg_schema>: the unquoted name of the schema
 
@@ -3006,7 +3005,7 @@ B<pg_column>: the unquoted name of the column
 
 B<pg_enum_values>: an array reference of allowed values for an enum column
 
-Note that the TABLE_SCHEM, TABLE_NAME, and COLUMN_NAME fields all return 
+Note that the TABLE_CAT, TABLE_SCHEM, TABLE_NAME, and COLUMN_NAME fields all return
 output wrapped in quote_ident(). If you need the unquoted version, use 
 the pg_ fields above.
 
