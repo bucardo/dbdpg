@@ -22,7 +22,7 @@ BEGIN {
 ($helpconnect,$connerror,$dbh) = connect_database();
 
 if (! defined $dbh or $connerror) {
-    plan skip_all => 'Connection to database failed, cannot continue testing';
+    plan skip_all => "Connection to database failed, cannot continue testing ($connerror) (dbh=$dbh)";
 }
 
 pass ('Connection to test database works');

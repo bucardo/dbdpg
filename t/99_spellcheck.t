@@ -276,7 +276,6 @@ Bytea
 BYTEA
 cabrion
 CachedKids
-CamelCase
 cancelled
 cancelling
 CARDINALITY
@@ -300,6 +299,7 @@ CompatMode
 conf
 config
 conformant
+connerror
 consrc
 const
 Conway's
@@ -527,7 +527,6 @@ LongReadLen
 LongTruncOk
 LONGVARCHAR
 lotest
-lowercased
 lpq
 lseg
 LSEG
