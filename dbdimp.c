@@ -5858,18 +5858,15 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
                 if (PGRES_TUPLES_OK == status) {
                     TRACE_PQNTUPLES;
                     orig_sth->rows = PQntuples(result);
+                    orig_sth->cur_tuple = 0;
+                    TRACE_PQNFIELDS;
+                    DBIc_NUM_FIELDS(orig_sth) = PQnfields(result);
+                    DBIc_ACTIVE_on(orig_sth);
                 }
                 else {
                     TRACE_PQCMDTUPLES;
                     const char *ct = PQcmdTuples(result);
                     orig_sth->rows = ct[0] ? atol(ct) : 0;
-                }
-
-                if (PGRES_TUPLES_OK == status) {
-                    orig_sth->cur_tuple = 0;
-                    TRACE_PQNFIELDS;
-                    DBIc_NUM_FIELDS(orig_sth) = PQnfields(result);
-                    DBIc_ACTIVE_on(orig_sth);
                 }
 
                 orig_sth->async_status = STH_ASYNC_AUTORETRIEVED;
