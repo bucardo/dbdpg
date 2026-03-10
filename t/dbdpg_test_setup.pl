@@ -15,7 +15,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $superuser = 1;
 
 my $TEST_PORT_MIN = 5442;
-my $TEST_PORT_MAX = 5444;
+my $TEST_PORT_MAX = 5542;
 
 
 my $testfh;
