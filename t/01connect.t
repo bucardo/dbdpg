@@ -25,6 +25,8 @@ if (! defined $dbh or $connerror) {
     plan skip_all => "Connection to database failed, cannot continue testing ($connerror) (dbh=$dbh)";
 }
 
+plan tests => 24;
+
 pass ('Connection to test database works');
 
 $pgversion    = $dbh->{pg_server_version};
@@ -150,8 +152,6 @@ like ($@, qr/DBI.*\Q.s.PGSQL.1\E\b/s, $t);
          $adbh->disconnect;
      }
 }
-
-done_testing();
 
 END {
 
