@@ -1194,6 +1194,7 @@ SKIP: {
     $dbh->do( q{CREATE TYPE dbd_pg_enumerated AS ENUM ('foo', 'bar', 'baz', 'buz')} );
     $dbh->do( q{CREATE TEMP TABLE dbd_pg_enum_test ( is_enum dbd_pg_enumerated NOT NULL )} );
     if ($pgversion >= 90100) {
+        $dbh->{AutoCommit} = 1;
         $dbh->do( q{ALTER TYPE dbd_pg_enumerated ADD VALUE 'first' BEFORE 'foo'} );
         unshift @enumvalues, 'first';
     }
