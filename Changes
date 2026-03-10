@@ -11,7 +11,7 @@ Version 3.19.0  (unreleased)
 
  - Fix async query ownership and data preservation
    [Tobias Oetiker]
-   (GitHub pull request #105)
+   (Github pull request #105)
     
  - Use PQsendPrepare instead of PQprepare for async queries
    [Rainer Weikusat]
@@ -29,6 +29,12 @@ Version 3.19.0  (unreleased)
    Also a new test t/01keywords.t
    [Michael Conrad]
    (Github pull request #124)
+
+ - Cleanup and improve the column_info() function.
+   Added a new field, pg_database
+   Split numeric type sizes across COLUMN_SIZE and DECIMAL_DIGITS
+   [Greg Sabino Mullane]
+   (Github pull request #162)
 
  - Support binding native boolean false on Perl 5.36 and newer
    [Dagfinn Ilmari Mannsåker]
