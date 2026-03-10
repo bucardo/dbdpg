@@ -7,8 +7,12 @@ Version 3.19.0  (unreleased)
 
  - Support for asynchronous connect via PQconnectStart/ PQconnectPoll
    [Rainer Weikusat]
-   (Github pull request #141)
+   (Github pull requests #141)
 
+ - Fix async query ownership and data preservation
+   [Tobias Oetiker]
+   (GitHub pull request #105)
+    
  - Use PQsendPrepare instead of PQprepare for async queries
    [Rainer Weikusat]
    (Github pull request #142)
