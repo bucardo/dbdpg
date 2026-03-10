@@ -18,7 +18,15 @@ if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
 
-plan tests => 69;
+## Second handle with errors suppressed for expected-failure tests
+my $dbh_noerr = connect_database({AutoCommit => 1});
+if (! $dbh_noerr) {
+    plan skip_all => 'Second connection to database failed, cannot continue testing';
+}
+$dbh_noerr->{RaiseError} = 0;
+$dbh_noerr->{PrintError} = 0;
+
+plan tests => 116;
 
 isnt ($dbh, undef, 'Connect to database for async testing');
 
@@ -393,6 +401,233 @@ $dbh->do('DROP TABLE dbd_pg_test5');
 
 ## TODO: More pg_sleep tests with execute
 
+## ====================================================================
+## Regression tests for async query ownership and data preservation
+## (GitHub issue #105)
+## ====================================================================
+
+my ($sth1, $sth3, $rows, $id, $val, @sths);
+
+## pg_result() on the wrong statement handle returns an error and does not steal results
+
+$sth1 = $dbh->prepare(q{SELECT 991 AS id}, { pg_async => PG_ASYNC });
+$sth2 = $dbh->prepare(q{SELECT 992 AS id}, { pg_async => PG_ASYNC });
+
+$t=q{Async execute on sth1 succeeds};
+ok ($sth1->execute, $t);
+
+$t=q{pg_result() on wrong statement handle mentions wrong statement};
+eval { $rows = $sth2->pg_result; };
+like ($@, qr/wrong statement/i, $t);
+
+$t=q{pg_result() on correct statement handle returns expected row count};
+$rows = $sth1->pg_result;
+is ($rows, 1, $t);
+
+$t=q{fetchrow_array on correct statement handle returns expected data};
+($id) = $sth1->fetchrow_array;
+is ($id, 991, $t);
+
+$sth1->finish;
+$sth2->finish;
+
+## $dbh->pg_result() retrieves results and finished statement cannot steal new async results
+
+$sth1 = $dbh->prepare(q{SELECT 993 AS num}, { pg_async => PG_ASYNC });
+
+$t=q{Async execute on sth1 for dbh->pg_result test};
+ok ($sth1->execute, $t);
+
+$t=q{$dbh->pg_result() returns expected row count};
+$rows = $dbh->pg_result;
+is ($rows, 1, $t);
+
+$t=q{Data is accessible via statement handle after $dbh->pg_result()};
+($val) = $sth1->fetchrow_array;
+is ($val, 993, $t);
+
+$t=q{$dbh->pg_result() with no pending async query mentions no async};
+eval { $dbh->pg_result; };
+like ($@, qr/no async/i, $t);
+
+$sth1->finish;
+
+$sth2 = $dbh->prepare(q{SELECT 994}, { pg_async => PG_ASYNC });
+
+$t=q{Async execute on sth2 after sth1 finished};
+ok ($sth2->execute, $t);
+
+$t=q{Finished statement handle cannot retrieve results from new async query};
+eval { $sth1->pg_result; };
+like ($@, qr/no async|wrong statement/i, $t);
+
+$sth2->pg_result;
+$sth2->finish;
+
+## Destroying an unrelated statement handle does not cancel an active async query
+
+$sth1 = $dbh->prepare(q{SELECT 991 AS id}, { pg_async => PG_ASYNC });
+
+$t=q{Async execute on sth1 before destroying unrelated statement};
+ok ($sth1->execute, $t);
+
+## Scope block: create and destroy an unrelated statement handle
+{
+    $sth2 = $dbh->prepare(q{SELECT 992 AS id}, { pg_async => PG_ASYNC });
+    $t=q{Unrelated statement handle created};
+    ok ($sth2, $t);
+}
+$t=q{Unrelated statement handle destroyed via scope exit};
+pass ($t);
+
+$t=q{pg_result() returns expected row count after unrelated destroy};
+$rows = $sth1->pg_result;
+is ($rows, 1, $t);
+
+$t=q{fetchrow_array returns expected data after unrelated destroy};
+($id) = $sth1->fetchrow_array;
+is ($id, 991, $t);
+
+$t=q{Statement finish succeeds after unrelated destroy};
+ok ($sth1->finish, $t);
+
+## Only the statement that initiated the async query can retrieve its result
+
+for my $i (1..3) {
+    my $qval = 990 + $i;
+    $sths[$i] = $dbh->prepare(qq{SELECT $qval AS id}, { pg_async => PG_ASYNC });
+    $t=qq{Statement $i prepared for cross-statement test};
+    ok ($sths[$i], $t);
+}
+
+$t=q{Async execute on middle statement only};
+ok ($sths[2]->execute, $t);
+
+$t=q{Non-executing statement gets appropriate error};
+eval { $sths[1]->pg_result; };
+like ($@, qr/no async|wrong statement/i, $t);
+
+$t=q{Other non-executing statement gets appropriate error};
+eval { $sths[3]->pg_result; };
+like ($@, qr/no async|wrong statement/i, $t);
+
+$t=q{Executing statement retrieves its own async result};
+ok ($sths[2]->pg_result, $t);
+
+$t=q{Executing statement gets correct data};
+($id) = $sths[2]->fetchrow_array;
+is ($id, 992, $t);
+
+$_->finish for grep { defined } @sths;
+
+## PG_OLDQUERY_WAIT auto-retrieves results for the owning statement
+
+$sth1 = $dbh->prepare(q{SELECT 991 AS id, pg_sleep(0.001)}, { pg_async => PG_ASYNC });
+
+$t=q{Async execute on sth1 for OLDQUERY_WAIT auto-retrieve test};
+ok ($sth1->execute, $t);
+
+$sth2 = $dbh->prepare(q{SELECT 992 AS id}, { pg_async => PG_ASYNC + PG_OLDQUERY_WAIT });
+
+$t=q{Async execute with OLDQUERY_WAIT on sth2 waits for sth1};
+ok ($sth2->execute, $t);
+
+$sth3 = $dbh->prepare(q{SELECT 993 AS id}, { pg_async => PG_ASYNC + PG_OLDQUERY_WAIT });
+
+$t=q{Async execute with OLDQUERY_WAIT on sth3 waits for sth2};
+ok ($sth3->execute, $t);
+
+$t=q{pg_result() on sth3 succeeds};
+ok ($sth3->pg_result, $t);
+
+$t=q{pg_result() on sth1 retrieves auto-stored results};
+ok ($sth1->pg_result, $t);
+
+$t=q{pg_result() on sth2 retrieves auto-stored results};
+ok ($sth2->pg_result, $t);
+
+$t=q{sth1 has correct auto-retrieved data};
+($val) = $sth1->fetchrow_array;
+is ($val, 991, $t);
+
+$t=q{sth2 has correct data};
+($val) = $sth2->fetchrow_array;
+is ($val, 992, $t);
+
+$t=q{sth3 has correct data};
+($val) = $sth3->fetchrow_array;
+is ($val, 993, $t);
+
+$sth1->finish;
+$sth2->finish;
+$sth3->finish;
+
+## Errors from PG_OLDQUERY_WAIT are attributed to the correct statement
+## Use the no-error handle since pg_result on error results raises
+
+$sth1 = $dbh_noerr->prepare(q{SELECT * FROM dbd_pg_missing1}, { pg_async => PG_ASYNC });
+
+$t=q{Async execute on query referencing dbd_pg_missing1};
+ok ($sth1->execute, $t);
+
+$sth2 = $dbh_noerr->prepare(q{SELECT * FROM dbd_pg_missing2}, { pg_async => PG_ASYNC + PG_OLDQUERY_WAIT });
+
+$t=q{Async execute with OLDQUERY_WAIT on query referencing dbd_pg_missing2};
+ok ($sth2->execute, $t);
+
+my $good = $dbh_noerr->prepare(q{SELECT 994}, { pg_async => PG_ASYNC + PG_OLDQUERY_WAIT });
+
+$t=q{Async execute with OLDQUERY_WAIT on valid query};
+ok ($good->execute, $t);
+
+$t=q{pg_result() on query with dbd_pg_missing1 fails};
+ok (!$sth1->pg_result, $t);
+
+$t=q{Error for dbd_pg_missing1 query mentions the correct table name};
+like ($sth1->errstr || '', qr/dbd_pg_missing1/, $t);
+
+$t=q{pg_result() on query with dbd_pg_missing2 fails};
+ok (!$sth2->pg_result, $t);
+
+$t=q{Error for dbd_pg_missing2 query mentions the correct table name};
+like ($sth2->errstr || '', qr/dbd_pg_missing2/, $t);
+
+$t=q{pg_result() on valid query after error queries succeeds};
+ok ($good->pg_result, $t);
+
+$sth1->finish;
+$sth2->finish;
+$good->finish;
+
+## PG_OLDQUERY_WAIT preserves data from the previous async query via auto-retrieve
+
+$sth1 = $dbh->prepare(q{SELECT 991 AS id}, { pg_async => PG_ASYNC });
+
+$t=q{Async execute on sth1 for data preservation test};
+ok ($sth1->execute, $t);
+
+$sth2 = $dbh->prepare(q{SELECT 992 AS id}, { pg_async => PG_ASYNC + PG_OLDQUERY_WAIT });
+
+$t=q{Async execute with OLDQUERY_WAIT triggers auto-retrieve of sth1 results};
+ok ($sth2->execute, $t);
+
+$t=q{Auto-retrieved data from sth1 is preserved and correct};
+($val) = $sth1->fetchrow_array;
+is ($val, 991, $t);
+
+$t=q{pg_result() on sth2 after OLDQUERY_WAIT succeeds};
+ok ($sth2->pg_result, $t);
+
+$t=q{sth2 data is correct after OLDQUERY_WAIT};
+($val) = $sth2->fetchrow_array;
+is ($val, 992, $t);
+
+$t=q{sth2 finish succeeds};
+ok ($sth2->finish, $t);
+
+$sth1->finish;
+
 cleanup_database($dbh,'test');
+$dbh_noerr->disconnect;
 $dbh->disconnect;
 
