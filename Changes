@@ -3,11 +3,11 @@ Changes for the DBD::Pg module
 RT refers to rt.cpan.org
 
 
-Version 3.19.0  (unreleased)
+Version 3.19.0  (released March 14, 2026)
 
  - Support for asynchronous connect via PQconnectStart/ PQconnectPoll
    [Rainer Weikusat]
-   (Github pull requests #141)
+   (Github pull request #141)
 
  - Fix async query ownership and data preservation
    [Tobias Oetiker]
@@ -72,7 +72,7 @@ Version 3.19.0  (unreleased)
    [Greg Sabino Mullane]
 
 
-Version 3.18.0 (released December 6, 2023)
+Version 3.18.0  (released December 6, 2023)
 
  - Support new PQclosePrepared function, added in Postgres 17
    [Greg Sabino Mullane]
