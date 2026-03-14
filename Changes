@@ -64,7 +64,7 @@ Version 3.19.0  (released March 14, 2026)
    [H.Merijn Brand]
    (Github pull request #134)
 
- - Do not use TMPDIR if we are providing a path via DBDPG_TEMDIR environment variable.
+ - Do not use TMPDIR if we are providing a path via DBDPG_TEMPDIR environment variable.
    [Greg Sabino Mullane]
    (RT ticket #157598)
 
