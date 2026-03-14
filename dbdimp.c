@@ -5588,6 +5588,9 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             imp_dbh->last_result = result;
             imp_dbh->result_clearable = DBDPG_TRUE;
         }
+        if (rows == -1) {
+            break;
+        }
     }
 
     if (imp_sth && imp_sth == imp_dbh->async_sth) {
