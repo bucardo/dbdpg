@@ -1,4 +1,3 @@
-
 ## Helper file for the DBD::Pg tests
 
 use strict;
@@ -165,13 +164,17 @@ version: $version
         ## If this was created by us, try and restart it
         if (16 == $helpconnect) {
 
+            $debug and Test::More::diag 'Attempting restart of existing test cluster';
+
             ## Bypass if the testdir has been removed
             if (! -e $testdir) {
                 $arg->{nocreate} and return $helpconnect, '', undef;
                 warn "Test directory $testdir has been removed, will create a new one\n";
             }
             else {
-                if (-e "$testdir/data/postmaster.pid") {
+                my $pidfile = "$testdir/data/postmaster.pid";
+                if (-e $pidfile) {
+                    $debug and Test::More::diag "Found $pidfile";
                     ## Assume it's up, and move on
                 }
                 else {
@@ -216,6 +219,7 @@ version: $version
                     };
                     if ($@ =~ /starting up/ or $@ =~ /PGSQL\.[0-9]+/) {
                         if ($loop++ < 20) {
+                            $debug and Test::More::diag "Failed to start, sleeping 1 second round $loop/20";
                             sleep 1;
                             redo STARTUP;
                         }
