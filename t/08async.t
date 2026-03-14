@@ -658,23 +658,15 @@ eval {
 };
 is ($@, q{}, $t);
 ### TODO: THIS TEST IS NOT WORKING PROPERLY
-###ok (defined $res && $res == 0, "$t - pg_result() after async COPY TO STDOUT returned 0 (expected rows-affected value)");
+### (defined $res && $res == 0, "$t - pg_result() after async COPY TO STDOUT returned 0 (expected rows-affected value)");
 ok (defined $res, "$t - got defined result (but not what should be expected?)");
-# Added diagnostics
-note "DEBUG: after pg_result: defined? " . (defined $res ? 'yes' : 'NO');
-note "DEBUG: ref(\$res) = " . (ref $res || 'scalar');
-note "DEBUG: \$res as string = '" . (defined $res ? $res : '<undef>') . "'";
-note "DEBUG: 0 + \$res = " . (defined $res ? 0 + $res : '<undef>');
-note "DEBUG: \$res eq '0E0'? " . ($res eq '0E0' ? 'yes' : 'no');
-note "DEBUG: \$res == 0?     " . ($res == 0     ? 'yes' : 'no');
-# End of diagnostics
 
 $t = q{We can drain the async COPY TO STDOUT data stream via pg_getcopydata loop};
 my @copied_rows;
 while (1) {
     my $buf = '';
     my $status = $dbh->pg_getcopydata($buf);
-    last unless defined $status && $status >= 0;
+    last if !(defined $status && $status >= 0);
     chomp $buf;
     push @copied_rows, $buf;
 }
