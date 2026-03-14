@@ -1689,10 +1689,10 @@ DBD::Pg - PostgreSQL database driver for the DBI module
   # For some advanced uses you may need PostgreSQL type values:
   use DBD::Pg qw(:pg_types);
 
-  $dbh->do('INSERT INTO mytable(a) VALUES (1)');
+  $dbh->do('INSERT INTO mytable(a) VALUES (42)');
 
   $sth = $dbh->prepare('INSERT INTO mytable(a) VALUES (?)');
-  $sth->execute();
+  $sth->execute(42);
 
 =head1 VERSION
 
