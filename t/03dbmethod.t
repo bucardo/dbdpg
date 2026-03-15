@@ -42,8 +42,9 @@ $dbh->do('set client_min_messages=warning');
 
 my $test_table = 'dbd_pg_test';
 my $space_table = q{dbd_pg_test Table};
-my $missing_table = 'dbd_pg_nosuchtable';
+my $missing_table = 'dbd_pg_no_such_table';
 my $test_schema = 'dbd_pg_testschema';
+my $missing_schema = 'dbd_pg_no_such_schema';
 
 my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 my ($schema,$schema2,$schema3) = ('dbd_pg_testschema', 'dbd_pg_testschema2', 'dbd_pg_testschema3');
@@ -844,8 +845,7 @@ is_deeply ([keys %surprises], [], $t)
 
 # Check required minimum fields
 $t='DB handle method "column_info" returns expected fields in correct order';
-$sth = $dbh->column_info('','',$test_table,'score');
-my $r1 = $sth->fetchall_arrayref({})->[0];
+$sth = $dbh->column_info('', $test_schema, $test_table, 'score');
 my $colnames = join ',', @{$sth->{NAME}};
 $expected = join ',', (qw(
   TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME DATA_TYPE
@@ -885,38 +885,38 @@ $t=q{DB handle method "column_info" returns correct TABLE_NAME};
 is ($matchid->{TABLE_NAME}, $test_table, $t);
 
 $t=q{DB handle method "column_info" returns TABLE_NAME as undef when no table matches};
-$sth = $dbh->column_info('','',$missing_table,'');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{TABLE_NAME}, undef, $t);
+$sth = $dbh->column_info('', $test_schema, $missing_table, '');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{TABLE_NAME}, undef, $t);
 
 $t=q{DB handle method "column_info" returns correct TABLE_NAME (with quoting)};
 $dbh->do(qq{CREATE TABLE "$space_table" (id int)});
-$sth = $dbh->column_info('','',$space_table,'');
-my $r2 = $sth->fetchall_arrayref({})->[0];
-is ($r2->{TABLE_NAME}, qq{"$space_table"}, $t);
+$sth = $dbh->column_info('', $test_schema, $space_table, '');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{TABLE_NAME}, qq{"$space_table"}, $t);
 
 $t=q{DB handle method "column_info" returns correct pg_table (with quoting)};
-is ($r2->{pg_table}, $space_table, $t);
+is ($result->{pg_table}, $space_table, $t);
 $dbh->do(qq{DROP TABLE "$space_table"});
 
 $t=q{DB handle method "column_info" works when table argument is undef};
-$sth = $dbh->column_info('','',undef,'id');
-$r1 = $sth->fetchall_arrayref({})->[0];
-ok (exists $r1->{BUFFER_LENGTH}, $t);
+$sth = $dbh->column_info('', $test_schema, undef, 'id');
+$result = $sth->fetchall_arrayref({})->[0];
+ok (exists $result->{BUFFER_LENGTH}, $t);
 
 $t=q{DB handle method "column_info" works when table argument is empty};
-$sth = $dbh->column_info('','','','id');
-$r1 = $sth->fetchall_arrayref({})->[0];
-ok (exists $r1->{BUFFER_LENGTH}, $t);
+$sth = $dbh->column_info('', $test_schema, '', 'id');
+$result = $sth->fetchall_arrayref({})->[0];
+ok (exists $result->{BUFFER_LENGTH}, $t);
 
 $t=q{DB handle method "column_info" returns undef when table argument has non-matching search pattern};
-$sth = $dbh->column_info('','','dbd_pg_badtable%','');
+$sth = $dbh->column_info('', $test_schema, 'dbd_pg_badtable%', '');
 is ($sth->fetch, undef, $t);
 
 $t=q{DB handle method "column_info" works when table argument matches via search pattern};
-$sth = $dbh->column_info('','',"$test_table%",'');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{pg_table}, $test_table, $t);
+$sth = $dbh->column_info('', $test_schema, "$test_table%", '');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{pg_table}, $test_table, $t);
 
 ## These can be very expensive, so we skip unless AUTHOR_TESTING
 SKIP: {
@@ -926,13 +926,13 @@ SKIP: {
 
     $t=q{DB handle method "column_info" works when all arguments are undef};
     $sth = $dbh->column_info(undef, undef, undef, undef);
-    $r1 = $sth->fetchall_arrayref({})->[0];
-    ok (exists $r1->{BUFFER_LENGTH}, $t);
+    $result = $sth->fetchall_arrayref({})->[0];
+    ok (exists $result->{BUFFER_LENGTH}, $t);
 
     $t=q{DB handle method "column_info" works when all arguments are empty};
-    $sth = $dbh->column_info('','','','');
-    $r1 = $sth->fetchall_arrayref({})->[0];
-    ok (exists $r1->{BUFFER_LENGTH}, $t);
+    $sth = $dbh->column_info('', '', '', '');
+    $result = $sth->fetchall_arrayref({})->[0];
+    ok (exists $result->{BUFFER_LENGTH}, $t);
 }
 
 ## Check the TABLE_SCHEM field
@@ -940,70 +940,70 @@ $t=q{DB handle method "column_info" returns correct TABLE_SCHEM};
 is ($matchid->{TABLE_SCHEM}, $test_schema, $t);
 
 $t=q{DB handle method "column_info" returns TABLE_SCHEM as undef when no schema matches};
-$sth = $dbh->column_info('',$missing_table,$test_table, '');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{TABLE_SCHEM}, undef, $t);
+$sth = $dbh->column_info('', $missing_schema, $test_table, '');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{TABLE_SCHEM}, undef, $t);
 
 $t=q{DB handle method "column_info" works when schema argument is undef};
-$sth = $dbh->column_info('',undef,$test_table,'id');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{TABLE_SCHEM}, $test_schema, $t);
+$sth = $dbh->column_info('', undef, $test_table, 'id');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{TABLE_SCHEM}, $test_schema, $t);
 
 $t=q{DB handle method "column_info" works when schema argument is empty};
-$sth = $dbh->column_info('','',$test_table,'id');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{TABLE_SCHEM}, $test_schema, $t);
+$sth = $dbh->column_info('', '', $test_table, 'id');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{TABLE_SCHEM}, $test_schema, $t);
 
 $t=q{DB handle method "column_info" returns undef when schema argument has non-matching search pattern};
-$sth = $dbh->column_info('','dbd_pg_badschema%',$test_table,'id');
+$sth = $dbh->column_info('', 'dbd_pg_badschema%', $test_table, 'id');
 is ($sth->fetch, undef, $t);
 
 $t=q{DB handle method "column_info" works when schema argument matches via search pattern};
-$sth = $dbh->column_info('',"$test_schema%",$test_table,'id');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{pg_schema}, $test_schema, $t);
+$sth = $dbh->column_info('', "$test_schema%", $test_table, 'id');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{pg_schema}, $test_schema, $t);
 
 ## Check the COLUMN_NAME field
 $t=q{DB handle method "column_info" returns correct COLUMN_NAME};
-$sth = $dbh->column_info('','',$test_table,'id');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{COLUMN_NAME}, 'id', $t);
+$sth = $dbh->column_info('', $test_schema, $test_table, 'id');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{COLUMN_NAME}, 'id', $t);
 
 $t=q{DB handle method "column_info" returns COLUMN_NAME as undef when no column matches};
 is ($nomatch->{COLUMN_NAME}, undef, $t);
 
 $t=q{DB handle method "column_info" returns correct COLUMN_NAME (with quoting)};
-$sth = $dbh->column_info('','',$test_table, 'CaseTest');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{COLUMN_NAME}, '"CaseTest"', $t);
+$sth = $dbh->column_info('', $test_schema, $test_table, 'CaseTest');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{COLUMN_NAME}, '"CaseTest"', $t);
 
 $t=q{DB handle method "column_info" returns correct pg_column (with quoting)};
-is ($r1->{pg_column}, 'CaseTest', $t);
+is ($result->{pg_column}, 'CaseTest', $t);
 
 $t=q{DB handle method "column_info" works when column argument is undef};
-$sth = $dbh->column_info('',undef,$test_table,undef);
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{TABLE_NAME}, $test_table, $t);
+$sth = $dbh->column_info('', $test_schema, $test_table, undef);
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{TABLE_NAME}, $test_table, $t);
 
 $t=q{DB handle method "column_info" works when column argument is empty};
-$sth = $dbh->column_info('',undef,$test_table,'');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{TABLE_NAME}, $test_table, $t);
+$sth = $dbh->column_info('', $test_schema, $test_table, '');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{TABLE_NAME}, $test_table, $t);
 
 $t=q{DB handle method "column_info" returns undef when column argument has non-matching search pattern};
-$sth = $dbh->column_info('','',$test_table,'nosuchcolumn');
+$sth = $dbh->column_info('', $test_schema, $test_table, 'nosuchcolumn');
 is ($sth->fetch, undef, $t);
 
 $t=q{DB handle method "column_info" works when column argument matches via search pattern};
-$sth = $dbh->column_info('','',$test_table,'id%');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{pg_column}, 'id', $t);
+$sth = $dbh->column_info('', $test_schema, $test_table, 'id%');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{pg_column}, 'id', $t);
 
 ## Check the DATA_TYPE field (DBI specs say this is a "concise data type code")
 $t=q{DB handle method "column_info" returns correct DATA_TYPE};
-$sth = $dbh->column_info('','',$test_table,'score');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{DATA_TYPE}, '6', $t);
+$sth = $dbh->column_info('', $test_schema, $test_table, 'score');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{DATA_TYPE}, '6', $t);
 
 $t=q{DB handle method "column_info" returns DATA_TYPE as undef when no column matches};
 is ($nomatch->{DATA_TYPE}, undef, $t);
@@ -1068,9 +1068,9 @@ is ($nomatch->{REMARKS}, undef, $t);
 
 ## Check the COLUMN_DEF field
 $t=q{DB handle method "column_info" returns correct COLUMN_DEF (has default)};
-$sth = $dbh->column_info('','',$test_table,'pdate');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{COLUMN_DEF}, 'now()', $t);
+$sth = $dbh->column_info('', $test_schema, $test_table, 'pdate');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{COLUMN_DEF}, 'now()', $t);
 
 $t=q{DB handle method "column_info" returns COLUMN_DEF as undef (no default)};
 is ($matchid->{COLUMN_DEF}, undef, $t);
@@ -1099,15 +1099,15 @@ is ($nomatch->{ORDINAL_POSITION}, undef, $t);
 
 $t=q{DB handle method "column_info" returns ORDINAL_POSITION as undef after column dropped};
 $dbh->do("ALTER TABLE $test_schema.$test_table DROP COLUMN val");
-$sth = $dbh->column_info('','',$test_table,'val');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{ORDINAL_POSITION}, undef, $t);
+$sth = $dbh->column_info('', $test_schema, $test_table, 'val');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{ORDINAL_POSITION}, undef, $t);
 
 $t=q{DB handle method "column_info" returns correct ORDINAL_POSITION after column re-added};
 $dbh->do("ALTER TABLE $test_schema.$test_table ADD COLUMN val TEXT");
-$sth = $dbh->column_info('','',$test_table,'val');
-$r1 = $sth->fetchall_arrayref({})->[0];
-ok ($r1->{ORDINAL_POSITION} > 4, $t);
+$sth = $dbh->column_info('', $test_schema, $test_table, 'val');
+$result = $sth->fetchall_arrayref({})->[0];
+ok ($result->{ORDINAL_POSITION} > 4, $t);
 
 ## Check the IS_NULLABLE field
 $t=q{DB handle method "column_info" returns correct IS_NULLABLE (when nullable)};
@@ -1124,9 +1124,9 @@ $t=q{DB handle method "column_info" returns correct pg_type (text)};
 is ($matchval->{pg_type}, 'text', $t);
 
 $t=q{DB handle method "column_info" returns correct pg_type (text array)};
-$sth = $dbh->column_info('','',$test_table,'testarray');
-$r1 = $sth->fetchall_arrayref({})->[0];
-is ($r1->{pg_type}, 'text[]', $t);
+$sth = $dbh->column_info('', $test_schema, $test_table, 'testarray');
+$result = $sth->fetchall_arrayref({})->[0];
+is ($result->{pg_type}, 'text[]', $t);
 
 $t=q{DB handle method "column_info" returns pg_type as undef when no column matches};
 is ($nomatch->{pg_type}, undef, $t);
@@ -1136,17 +1136,17 @@ $t=q{DB handle method "column_info" returns pg_constraint as undef when no const
 is ($matchid->{pg_constraint}, undef, $t);
 
 $t=q{DB handle method "column_info" returns correct pg_constraint when one constraint};
-$sth = $dbh->column_info('','',$test_table,'lii');
-$r1 = $sth->fetchall_arrayref({})->[0];
-like ($r1->{pg_constraint}, qr/-777/, $t);
+$sth = $dbh->column_info('', $test_schema, $test_table, 'lii');
+$result = $sth->fetchall_arrayref({})->[0];
+like ($result->{pg_constraint}, qr/-777/, $t);
 
 $t=q{DB handle method "column_info" returns correct pg_constraint when two constraints (#1)};
-$sth = $dbh->column_info('','',$test_table,'score');
-$r1 = $sth->fetchall_arrayref({})->[0];
-like ($r1->{pg_constraint}, qr/888/s, $t);
+$sth = $dbh->column_info('', $test_schema, $test_table, 'score');
+$result = $sth->fetchall_arrayref({})->[0];
+like ($result->{pg_constraint}, qr/888/s, $t);
 
 $t=q{DB handle method "column_info" returns correct pg_constraint when two constraints (#2)};
-like ($r1->{pg_constraint}, qr/999/s, $t);
+like ($result->{pg_constraint}, qr/999/s, $t);
 
 $t=q{DB handle method "column_info" returns pg_constraint as undef when no column matches};
 is ($nomatch->{pg_constraint}, undef, $t);
@@ -1192,7 +1192,7 @@ SKIP: {
     my @enumvalues = qw( foo bar baz buz );
 
     $dbh->do( q{CREATE TYPE dbd_pg_enumerated AS ENUM ('foo', 'bar', 'baz', 'buz')} );
-    $dbh->do( q{CREATE TEMP TABLE dbd_pg_enum_test ( is_enum dbd_pg_enumerated NOT NULL )} );
+    $dbh->do( qq{CREATE TEMP TABLE dbd_pg_enum_test ( is_enum dbd_pg_enumerated NOT NULL )} );
     if ($pgversion >= 90100) {
         $dbh->{AutoCommit} = 1;
         $dbh->do( q{ALTER TYPE dbd_pg_enumerated ADD VALUE 'first' BEFORE 'foo'} );
@@ -1200,9 +1200,9 @@ SKIP: {
     }
 
     $t='DB handle method "column_info" returns correct pg_enum_values';
-    $sth = $dbh->column_info('','','dbd_pg_enum_test','is_enum');
-    $r1 = $sth->fetchall_arrayref({})->[0];
-    is_deeply ($r1->{pg_enum_values}, \@enumvalues, $t);
+    $sth = $dbh->column_info('', '', 'dbd_pg_enum_test', 'is_enum');
+    $result = $sth->fetchall_arrayref({})->[0];
+    is_deeply ($result->{pg_enum_values}, \@enumvalues, $t);
 
     $dbh->do('DROP TABLE dbd_pg_enum_test');
     $dbh->do('DROP TYPE dbd_pg_enumerated');
@@ -1217,26 +1217,26 @@ is ($nomatch->{pg_enum_values}, undef, $t);
 #
 
 $t=q{DB handle method "primary_key_info" returns undef when table argument is undef};
-$sth = $dbh->primary_key_info('',undef,undef);
+$sth = $dbh->primary_key_info('', undef, undef);
 is ($sth->fetch, undef, $t);
 
 $t=q{DB handle method "primary_key_info" returns undef when table argument is empty};
-$sth = $dbh->primary_key_info('','','');
+$sth = $dbh->primary_key_info('', '', '');
 is ($sth->fetch, undef, $t);
 
 $t=q{DB handle method "primary_key_info" works when schema argument is undef};
-$sth = $dbh->primary_key_info('',undef,'dbd_pg_test');
+$sth = $dbh->primary_key_info('', undef, $test_table);
 $result = $sth->fetch;
 ok (defined $result->[0], $t);
 
 $t=q{DB handle method "primary_key_info" works when schema argument is empty};
-$sth = $dbh->primary_key_info('','','dbd_pg_test');
+$sth = $dbh->primary_key_info('', '', $test_table);
 $result = $sth->fetch;
 ok (defined $result->[0], $t);
 
 # Check required minimum fields
 $t='DB handle method "primary_key_info" returns required fields';
-$sth = $dbh->primary_key_info('',$schema,'dbd_pg_test');
+$sth = $dbh->primary_key_info('', $test_schema, $test_table);
 $result = $sth->fetchall_arrayref({});
 @required = (qw(TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME KEY_SEQ PK_NAME DATA_TYPE));
 undef %missing;
@@ -1258,28 +1258,26 @@ is ($r->{DATA_TYPE},   'int4',             'DB handle method "primary_key_info" 
 is ($r->{KEY_SEQ},     1,                  'DB handle method "primary_key_info" returns proper KEY_SEQ');
 
 $t='DB handle method "primary_key_info" works when pg_onerow attribute set to 1';
-$sth = $dbh->primary_key_info('',$schema,'dbd_pg_test', {pg_onerow => 1});
+$sth = $dbh->primary_key_info('', $test_schema, 'dbd_pg_test', {pg_onerow => 1});
 $result = $sth->fetchall_arrayref({});
 is ($result->[0]{pg_table}, 'dbd_pg_test', $t);
 
 $t='DB handle method "primary_key_info" works when pg_onerow attribute set to 2';
-$sth = $dbh->primary_key_info('',$schema,'dbd_pg_test', {pg_onerow => 2});
+$sth = $dbh->primary_key_info('', $test_schema, 'dbd_pg_test', {pg_onerow => 2});
 $result = $sth->fetchall_arrayref({});
 is_deeply ($result->[0]{KEY_SEQ}, ['1'], $t);
 
 $t='DB handle method "primary_key_info" works when pg_onerow attribute set to 1 (multi-pk)';
 my $table = 'dbd_pg_test_combo_pk';
-$dbh->do("CREATE TABLE $schema.$table(a INTEGER, b INTEGER, CONSTRAINT combo PRIMARY KEY (a,b))");
-$sth = $dbh->primary_key_info('',$schema,$table, {pg_onerow => 1});
+$dbh->do("CREATE TABLE $test_schema.$table(a INTEGER, b INTEGER, CONSTRAINT combo PRIMARY KEY (a,b))");
+$sth = $dbh->primary_key_info('', $test_schema, $table, {pg_onerow => 1});
 $result = $sth->fetchall_arrayref({});
 is ($result->[0]{KEY_SEQ}, '1, 2', $t);
 
 $t='DB handle method "primary_key_info" works when pg_onerow attribute set to 2 (multi-pk)';
-$sth = $dbh->primary_key_info('',$schema,$table, {pg_onerow => 2});
+$sth = $dbh->primary_key_info('', $test_schema, $table, {pg_onerow => 2});
 $result = $sth->fetchall_arrayref({});
 is_deeply ($result->[0]{KEY_SEQ}, ['1','2'], $t);
-
-$dbh->do("DROP TABLE $schema.$table");
 
 #
 # Test of the "primary_key" database handle method
@@ -1300,18 +1298,17 @@ is_deeply (\@results, $expected, $t);
 #
 
 $t='DB handle method "statistics_info" returns undef when table argument is undef';
-$sth = $dbh->statistics_info(undef,undef,undef,undef,undef);
+$sth = $dbh->statistics_info(undef, undef, undef, undef, undef);
 is ($sth, undef, $t);
 
 $t='DB handle method "statistics_info" returns undef when table argument is empty';
-$sth = $dbh->statistics_info(undef,undef,'',undef,undef);
+$sth = $dbh->statistics_info(undef, undef, '', undef, undef);
 is ($sth, undef, $t);
 
 $t='DB handle method "statistics_info" returns no rows when table argument is invalid';
-$sth = $dbh->statistics_info(undef,'','dbd_pg_test9',undef,undef);
+$sth = $dbh->statistics_info(undef, $test_schema, $missing_table, undef, undef);
 $result = $sth->fetchall_arrayref;
-$expected = [];
-is_deeply ($result, $expected, $t);
+is_deeply ($result, [], $t);
 
 my $with_oids = $pgversion < 120000 ? 'WITH OIDS' : '';
 my $with_include = $pgversion >= 110000;
@@ -1327,8 +1324,7 @@ my ($nulls_last, $nl) = $pgversion >= 80300 ? ('NULLS LAST', 'last') : ('', 'las
     local $SIG{__WARN__} = sub {};
 
     ## Drop the third schema.
-    ## PostgresSQL < 8.3 doesn't have DROP SCHEMA IF EXISTS,
-    ## so check manually
+    ## Postgres < 8.3 doesn't have DROP SCHEMA IF EXISTS, so check manually
     if ($dbh->selectrow_array(
         'SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = ?',
         undef, $schema3
@@ -1361,7 +1357,7 @@ one => [
     [ $dbh->{pg_db}, $schema, $table1, '0', undef, 'dbd_pg_test1_uc1',     'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1', 'last' ],
     [ $dbh->{pg_db}, $schema, $table1, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef, undef, undef ],
     ],
-    two => [
+two => [
     [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1', 'last' ],
     [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_b_key',   'btree',  2, 'c', 'A', '0', '1', undef, 'c', '1', 'last' ],
     [ $dbh->{pg_db}, $schema, $table2, '0', undef, 'dbd_pg_test2_pkey',    'btree',  1, 'a', 'A', '0', '1', undef, 'a', '1', 'last' ],
@@ -1370,7 +1366,7 @@ one => [
     [ $dbh->{pg_db}, $schema, $table2, '1', undef, 'dbd_pg_test2_expr',    'btree',  2, 'c', $d, '0', '1', undef, 'c', '1', $nl ],
     [ $dbh->{pg_db}, $schema, $table2, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef, undef, undef ],
     ],
-    three => [
+three => [
     ($with_include ? (
         [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1', 'last' ],
         [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  2, 'c', undef, '0', '1', undef, 'c', '0', undef ],
@@ -1382,7 +1378,7 @@ one => [
     [ $dbh->{pg_db}, $schema, $table3, '1', undef, 'dbd_pg_test3_index_c', 'hashed', 1, 'c', undef, '0', '4', undef, 'c', '1', undef ],
     [ $dbh->{pg_db}, $schema, $table3, undef, undef, undef, 'table', undef, undef, undef, '0', '0', undef, undef, undef, undef ],
 ],
-    three_uo => [
+three_uo => [
     ($with_include ? (
         [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  1, 'b', 'A', '0', '1', undef, 'b', '1', 'last' ],
         [ $dbh->{pg_db}, $schema, $table3, '0', undef, 'dbd_pg_test3_incl',    'btree',  2, 'c', undef, '0', '1', undef, 'c', '0', undef ],
@@ -1393,76 +1389,51 @@ one => [
     ],
 };
 
+## Make some per-version tweaks
+
+## Postgres 9 changed the way foreign key names are generated
+if ($pgversion >= 90000) {
+    $correct_stats->{two}[0][5] = $correct_stats->{two}[1][5] = 'dbd_pg_test2_b_c_key';
+}
+
+## Postgres 14 changed unknown reltuples from 0 to -1
+if ($pgversion >= 140000) {
+    $correct_stats->{one}[3][10] = $correct_stats->{two}[6][10] = $correct_stats->{three}[6][10] = -1;
+}
+
+$t=qq{DB handle method "statistics_info" returns correct results for $table1};
+$sth = $dbh->statistics_info(undef, $schema, $table1, undef, undef);
+$result = $sth->fetchall_arrayref;
+is_deeply ($result, $correct_stats->{one}, $t);
+
+$t=qq{DB handle method "statistics_info" returns correct results for $table2};
+$sth = $dbh->statistics_info(undef,$schema, $table2, undef, undef);
+$result = $sth->fetchall_arrayref;
+is_deeply ($result, $correct_stats->{two}, $t);
+
+$t=qq{DB handle method "statistics_info" returns correct results for $table3};
+$sth = $dbh->statistics_info(undef, $schema, $table3, undef, undef);
+$result = $sth->fetchall_arrayref;
+## Too many intra-version differences to try for an exact number here:
+$correct_stats->{three}[$hash_index_idx][11] = $result->[$hash_index_idx][11] = 0;
+is_deeply ($result, $correct_stats->{three}, $t);
+
 my @stats_columns = qw(
     TABLE_CAT TABLE_SCHEM TABLE_NAME NON_UNIQUE INDEX_QUALIFIER INDEX_NAME TYPE
     ORDINAL_POSITION COLUMN_NAME ASC_OR_DESC CARDINALITY PAGES FILTER_CONDITION
     pg_expression pg_is_key_column pg_null_ordering
 );
 
-## Make some per-version tweaks
-
-## Postgres 8.5 changed the way foreign key names are generated
-if ($pgversion >= 80500) {
-    $correct_stats->{two}[0][5] = $correct_stats->{two}[1][5] = 'dbd_pg_test2_b_c_key';
-}
-
-## Postgres 13 changed unknown reltuples from 0 to -1
-if ($pgversion >= 140000) {
-    $correct_stats->{one}[3][10] = $correct_stats->{two}[6][10] = $correct_stats->{three}[6][10] = -1;
-}
-
-my $stats;
-
-$t="Correct stats output for $table1";
-$sth = $dbh->statistics_info(undef,$schema,$table1,undef,undef);
-$stats = $sth->fetchall_arrayref;
-is_deeply ($stats, $correct_stats->{one}, $t);
-
-$t="Correct stats output for $table2";
-$sth = $dbh->statistics_info(undef,$schema,$table2,undef,undef);
-$stats = $sth->fetchall_arrayref;
-is_deeply ($stats, $correct_stats->{two}, $t);
-
-$t="Correct stats output for $table3";
-$sth = $dbh->statistics_info(undef,$schema,$table3,undef,undef);
-$stats = $sth->fetchall_arrayref;
-## Too many intra-version differences to try for an exact number here:
-$correct_stats->{three}[$hash_index_idx][11] = $stats->[$hash_index_idx][11] = 0;
-is_deeply ($stats, $correct_stats->{three}, $t);
-
-$t = 'Correct stats column names';
+$t=qq{DB handle method "statistics_info" returns correct columns};
 is_deeply ($sth->{NAME}, \@stats_columns, $t);
 
-$t="Correct stats output for $table3 (unique only)";
-$sth = $dbh->statistics_info(undef,$schema,$table3,1,undef);
-$stats = $sth->fetchall_arrayref;
-is_deeply ($stats, $correct_stats->{three_uo}, $t);
+$t=qq{DB handle method "statistics_info" returns correct results for $table3 (unique_only=true)};
+$sth = $dbh->statistics_info(undef, $schema, $table3, 1, undef);
+$result = $sth->fetchall_arrayref;
+is_deeply ($result, $correct_stats->{three_uo}, $t);
 
-$t = 'Correct stats column names (unique only)';
+$t=qq{DB handle method "statistics_info" returns correct columns (unique_only=true)};
 is_deeply ($sth->{NAME}, \@stats_columns, $t);
-
-{
-    $t="Correct stats output for $table1";
-    $sth = $dbh->statistics_info(undef,undef,$table1,undef,undef);
-    $stats = $sth->fetchall_arrayref;
-    is_deeply ($stats, $correct_stats->{one}, $t);
-
-    $t="Correct stats output for $table3";
-    $sth = $dbh->statistics_info(undef,undef,$table2,undef,undef);
-    $stats = $sth->fetchall_arrayref;
-    is_deeply ($stats, $correct_stats->{two}, $t);
-
-    $t="Correct stats output for $table3";
-    $sth = $dbh->statistics_info(undef,undef,$table3,undef,undef);
-    $stats = $sth->fetchall_arrayref;
-    $correct_stats->{three}[$hash_index_idx][11] = $stats->[$hash_index_idx][11] = 0;
-    is_deeply ($stats, $correct_stats->{three}, $t);
-
-    $t="Correct stats output for $table3 (unique only)";
-    $sth = $dbh->statistics_info(undef,undef,$table3,1,undef);
-    $stats = $sth->fetchall_arrayref;
-    is_deeply ($stats, $correct_stats->{three_uo}, $t);
-}
 
 # Clean everything up
 $dbh->do("DROP TABLE $table3");
