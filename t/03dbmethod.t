@@ -1192,7 +1192,7 @@ SKIP: {
     my @enumvalues = qw( foo bar baz buz );
 
     $dbh->do( q{CREATE TYPE dbd_pg_enumerated AS ENUM ('foo', 'bar', 'baz', 'buz')} );
-    $dbh->do( qq{CREATE TEMP TABLE dbd_pg_enum_test ( is_enum dbd_pg_enumerated NOT NULL )} );
+    $dbh->do( q{CREATE TEMP TABLE dbd_pg_enum_test ( is_enum dbd_pg_enumerated NOT NULL )} );
     if ($pgversion >= 90100) {
         $dbh->{AutoCommit} = 1;
         $dbh->do( q{ALTER TYPE dbd_pg_enumerated ADD VALUE 'first' BEFORE 'foo'} );
@@ -1424,7 +1424,7 @@ my @stats_columns = qw(
     pg_expression pg_is_key_column pg_null_ordering
 );
 
-$t=qq{DB handle method "statistics_info" returns correct columns};
+$t=q{DB handle method "statistics_info" returns correct columns};
 is_deeply ($sth->{NAME}, \@stats_columns, $t);
 
 $t=qq{DB handle method "statistics_info" returns correct results for $table3 (unique_only=true)};
@@ -1432,7 +1432,7 @@ $sth = $dbh->statistics_info(undef, $schema, $table3, 1, undef);
 $result = $sth->fetchall_arrayref;
 is_deeply ($result, $correct_stats->{three_uo}, $t);
 
-$t=qq{DB handle method "statistics_info" returns correct columns (unique_only=true)};
+$t=q{DB handle method "statistics_info" returns correct columns (unique_only=true)};
 is_deeply ($sth->{NAME}, \@stats_columns, $t);
 
 # Clean everything up
