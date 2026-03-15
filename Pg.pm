@@ -494,57 +494,50 @@ use 5.008001;
             push @args, $column;
         }
 
-        my $whereclause = @search
-          ? ("\n                AND " . join "\n                AND ", @search)
-          : '';
+        my $whereclause = @search ? (" AND " . join " AND ", @search) : '';
 
         ## Note: we do not need to check attisdropped because attypid will be 0
         ## for dropped columns and thus fail to join to pg_type
-        my $col_info_sql = qq!
-            SELECT
-                pg_catalog.quote_ident(pg_catalog.current_database()) AS "TABLE_CAT"
-                , pg_catalog.quote_ident(n.nspname) AS "TABLE_SCHEM"
-                , pg_catalog.quote_ident(c.relname) AS "TABLE_NAME"
-                , pg_catalog.quote_ident(a.attname) AS "COLUMN_NAME"
-                , a.atttypid AS "DATA_TYPE"
-                , pg_catalog.format_type(a.atttypid, NULL) AS "TYPE_NAME"
-                , a.attlen AS "COLUMN_SIZE"
-                , NULL::text AS "BUFFER_LENGTH"
-                , NULL::text AS "DECIMAL_DIGITS"
-                , NULL::text AS "NUM_PREC_RADIX"
-                , CASE WHEN a.attnotnull THEN 0 ELSE 1 END AS "NULLABLE"
-                , pg_catalog.col_description(a.attrelid, a.attnum) AS "REMARKS"
-                , pg_catalog.pg_get_expr(af.adbin, af.adrelid) AS "COLUMN_DEF"
-                , NULL::text AS "SQL_DATA_TYPE"
-                , NULL::text AS "SQL_DATETIME_SUB"
-                , NULL::text AS "CHAR_OCTET_LENGTH"
-                , a.attnum AS "ORDINAL_POSITION"
-                , CASE WHEN a.attnotnull THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE"
-                , pg_catalog.format_type(a.atttypid, a.atttypmod) AS "pg_type"
-                , NULL::text AS "pg_constraint"
-                , pg_catalog.current_database() AS "pg_database"
-                , n.nspname AS "pg_schema"
-                , c.relname AS "pg_table"
-                , a.attname AS "pg_column"
-                , NULL::text[] AS "pg_enum_values"
-
-                , a.attrelid AS "_pg_attrelid"
-                , a.attnum AS "_pg_attnum"
-                , a.atttypmod AS "_pg_atttypmod"
-                , t.typtype AS "_pg_type_typtype"
-                , t.oid AS "_pg_type_oid"
-            FROM
-                pg_catalog.pg_type t
-                JOIN pg_catalog.pg_attribute a ON (t.oid = a.atttypid)
-                JOIN pg_catalog.pg_class c ON (a.attrelid = c.oid)
-                LEFT JOIN pg_catalog.pg_attrdef af ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
-                JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-            WHERE
-                a.attnum >= 1
-                AND c.relkind IN ('r','p','v','m','f')
-                $whereclause
-            ORDER BY n.nspname, c.relname, a.attnum
-            !;
+        my $col_info_sql = <<"EOSQL";
+SELECT
+  pg_catalog.quote_ident(pg_catalog.current_database()) AS "TABLE_CAT",
+  pg_catalog.quote_ident(n.nspname) AS "TABLE_SCHEM",
+  pg_catalog.quote_ident(c.relname) AS "TABLE_NAME",
+  pg_catalog.quote_ident(a.attname) AS "COLUMN_NAME",
+  a.atttypid AS "DATA_TYPE",
+  pg_catalog.format_type(a.atttypid, NULL) AS "TYPE_NAME",
+  a.attlen AS "COLUMN_SIZE",
+  NULL::text AS "BUFFER_LENGTH",
+  NULL::text AS "DECIMAL_DIGITS",
+  NULL::text AS "NUM_PREC_RADIX",
+  CASE WHEN a.attnotnull THEN 0 ELSE 1 END AS "NULLABLE",
+  pg_catalog.col_description(a.attrelid, a.attnum) AS "REMARKS",
+  pg_catalog.pg_get_expr(af.adbin, af.adrelid) AS "COLUMN_DEF",
+  NULL::text AS "SQL_DATA_TYPE",
+  NULL::text AS "SQL_DATETIME_SUB",
+  NULL::text AS "CHAR_OCTET_LENGTH",
+  a.attnum AS "ORDINAL_POSITION",
+  CASE WHEN a.attnotnull THEN 'NO' ELSE 'YES' END AS "IS_NULLABLE",
+  pg_catalog.format_type(a.atttypid, a.atttypmod) AS "pg_type",
+  NULL::text AS "pg_constraint",
+  pg_catalog.current_database() AS "pg_database",
+  n.nspname AS "pg_schema",
+  c.relname AS "pg_table",
+  a.attname AS "pg_column",
+  NULL::text[] AS "pg_enum_values",
+  a.attrelid AS "_pg_attrelid",
+  a.attnum AS "_pg_attnum",
+  a.atttypmod AS "_pg_atttypmod",
+  t.typtype AS "_pg_type_typtype",
+  t.oid AS "_pg_type_oid"
+  FROM pg_catalog.pg_type t
+JOIN pg_catalog.pg_attribute a ON (t.oid = a.atttypid)
+JOIN pg_catalog.pg_class c ON (a.attrelid = c.oid)
+JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
+LEFT JOIN pg_catalog.pg_attrdef af ON (a.attnum = af.adnum AND a.attrelid = af.adrelid)
+WHERE a.attnum >= 1 AND c.relkind IN ('r','p','v','m','f')$whereclause
+ORDER BY n.nspname, c.relname, a.attnum
+EOSQL
         my $sth = $dbh->prepare($col_info_sql);
         $sth->execute(@args) or die $sth->errstr;
         ## Immediately grab all the column names in order, but exclude internal ones
@@ -586,6 +579,7 @@ use 5.008001;
               @$data;
         };
         if (@typelist) {
+            ## Postgres version 9.1 added the pg_enum.enumsortorder column
             my $order = $dbh->{private_dbdpg}{version} >= 90100 ? 'enumsortorder' : 'oid';
             my $esql = "SELECT enumtypid, enumlabel FROM pg_catalog.pg_enum WHERE enumtypid = ANY(?) ORDER BY enumtypid, $order";
             my $esth = $dbh->prepare($esql);
