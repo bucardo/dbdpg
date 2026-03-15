@@ -494,7 +494,7 @@ use 5.008001;
             push @args, $column;
         }
 
-        my $whereclause = @search ? (" AND " . join " AND ", @search) : '';
+        my $whereclause = @search ? (' AND ' . join ' AND ', @search) : '';
 
         ## Note: we do not need to check attisdropped because attypid will be 0
         ## for dropped columns and thus fail to join to pg_type
