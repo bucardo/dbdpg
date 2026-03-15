@@ -6055,7 +6055,7 @@ SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth)
             TRACE_PQFTABLECOL;
             int pos = PQftablecol(imp_sth->result, fields);
             if(pos > 0){
-                char statement[200];
+                char statement[204];
                 sprintf(statement, 
                     "SELECT n.nspname, c.relname, a.attname FROM pg_class c LEFT JOIN pg_namespace n ON c.relnamespace = n.oid LEFT JOIN pg_attribute a ON a.attrelid = c.oid WHERE c.oid = %u AND a.attnum = %d", oid, pos);
                 TRACE_PQEXEC;
