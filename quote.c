@@ -296,11 +296,11 @@ char * quote_int(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estri
     char * result;
     const char *p = string;
     STRLEN left = len;
-    bool seendigit = false;
+    bool seendigit = DBDPG_FALSE;
 
     while (left-- > 0 && *p != '\0') {
         if (isdigit(*p)) {
-            seendigit = true;
+            seendigit = DBDPG_TRUE;
             p++;
             continue;
         }

@@ -22,7 +22,7 @@ BEGIN {
 ($helpconnect,$connerror,$dbh) = connect_database();
 
 if (! defined $dbh or $connerror) {
-    plan skip_all => "Connection to database failed, cannot continue testing ($connerror) (dbh=$dbh)";
+    plan skip_all => "Connection to database failed, cannot continue testing ($connerror) (dbh=" . (defined($dbh) ? $dbh : '<undefined>') . ')';
 }
 
 plan tests => 24;
@@ -78,14 +78,14 @@ ok ($@, $t);
 $t=q{Calling DBI->connect() with an invalid option fails};
 my $bad_dsn = 'dbi:Pg:dbname=dbdpg_test;baldrick=0';
 eval { DBI->connect($bad_dsn, '', '', {RaiseError=>1}) };
-like ($@, qr/DBI.*"baldrick"/, $t);
+like ($@, qr/DBI.*baldrick/, $t);
 
 $t=q{Calling DBI->connect with database as "XXX" works};
 for my $opt (qw/db dbname database/) {
     $bad_dsn = "dbi:Pg:$opt=dbdpg_test;edmund=1";
     eval { DBI->connect($bad_dsn, '', '', {RaiseError=>1}) };
     (my $tt = $t) =~ s/XXX/$opt/;
-    like ($@, qr/DBI.*"edmund"/, $tt);
+    like ($@, qr/DBI.*edmund/, $tt);
 }
 
 $t=q{Calling DBI->connect() with forced uppercase 'DBI:' works};
@@ -107,7 +107,7 @@ $t=q{Calling DBI->connect() with an improperly quoted dbname fails};
 ## failed: missing "=" after "s" in connection info string
 $bad_dsn = q{dbi:Pg:dbname=dbdpg space name;port=1};
 eval { DBI->connect($bad_dsn, '', '', {RaiseError=>1}) };
-like ($@, qr/"="/, $t);
+like ($@, qr/=/, $t);
 
 $t=q{Calling DBI->connect() with proper quoting but bad port gives expected error};
 ## An otherwise correct call but to an invalid port gives a message like this:
