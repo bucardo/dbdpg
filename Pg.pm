@@ -643,20 +643,17 @@ EOSQL
 
     sub statistics_info {
 
-        my $dbh = shift;
-        my (undef, $schema, $table, $unique_only) = @_;
+        my ($dbh, $catalog, $schema, $table, $unique_only, $quick) = @_;
 
         ## Catalog is ignored, but table is mandatory
-        return undef unless defined $table and length $table;
+        return undef if ! defined $table or $table eq '';
 
         my $schema_where = '';
         my @exe_args = ($table);
 
-        my $input_schema = (defined $schema and length $schema) ? 1 : 0;
-
-        if ($input_schema) {
+        if (defined $schema and $schema ne '') {
             $schema_where = 'AND n.nspname = ?';
-            push(@exe_args, $schema);
+            push @exe_args, $schema;
         }
 
         my $stats_sql = '';
@@ -686,7 +683,8 @@ EOSQL
                 WHERE  d.relname = ? $schema_where
                 UNION ALL
             };
-            push @exe_args, @exe_args;
+            push @exe_args, $table;
+            push @exe_args, $schema if $schema;
         }
 
         my $is_key_column = $dbh->{private_dbdpg}{version} >= 110000
