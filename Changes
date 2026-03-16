@@ -2,6 +2,12 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+Version 3.20.0  (unreleased)
+
+ - Cleanup and improve the statistics_info() function.
+   We no longer return "clustered" as a "TYPE"
+   [Greg Sabino Mullane]
+
 
 Version 3.19.0  (released March 14, 2026)
 
