@@ -643,9 +643,12 @@ EOSQL
 
     sub statistics_info {
 
+        ## Gather statistics about a table and its columns
+        ## See https://metacpan.org/pod/DBI#statistics_info
+
         my ($dbh, $catalog, $schema, $table, $unique_only, $quick) = @_;
 
-        ## Catalog is ignored, but table is mandatory
+        ## Catalog is ignored, schema is optional, and table is mandatory
         return undef if ! defined $table or $table eq '';
 
         my $schema_where = '';
@@ -660,106 +663,113 @@ EOSQL
 
         # Table-level stats
         if (!$unique_only) {
-            $stats_sql .= qq{
-                SELECT
-                    pg_catalog.current_database() AS "TABLE_CAT",
-                    n.nspname                     AS "TABLE_SCHEM",
-                    d.relname                     AS "TABLE_NAME",
-                    NULL                          AS "NON_UNIQUE",
-                    NULL                          AS "INDEX_QUALIFIER",
-                    NULL                          AS "INDEX_NAME",
-                    'table'                       AS "TYPE",
-                    NULL                          AS "ORDINAL_POSITION",
-                    NULL                          AS "COLUMN_NAME",
-                    NULL                          AS "ASC_OR_DESC",
-                    d.reltuples                   AS "CARDINALITY",
-                    d.relpages                    AS "PAGES",
-                    NULL                          AS "FILTER_CONDITION",
-                    NULL                          AS "pg_expression",
-                    NULL                          AS "pg_is_key_column",
-                    NULL                          AS "pg_null_ordering"
-                FROM   pg_catalog.pg_class d
-                JOIN   pg_catalog.pg_namespace n ON n.oid = d.relnamespace
-                WHERE  d.relname = ? $schema_where
-                UNION ALL
-            };
+            ## DBI requires NULL in most fields if the type is 'table'
+            $stats_sql = <<"EOSQL";
+SELECT pg_catalog.current_database() AS "TABLE_CAT",
+  n.nspname   AS "TABLE_SCHEM",
+  c.relname   AS "TABLE_NAME",
+  NULL        AS "NON_UNIQUE",
+  NULL        AS "INDEX_QUALIFIER",
+  NULL        AS "INDEX_NAME",
+  'table'     AS "TYPE",
+  NULL        AS "ORDINAL_POSITION",
+  NULL        AS "COLUMN_NAME",
+  NULL        AS "ASC_OR_DESC",
+  c.reltuples AS "CARDINALITY",
+  c.relpages  AS "PAGES",
+  NULL        AS "FILTER_CONDITION",
+  NULL        AS "pg_expression",
+  NULL        AS "pg_is_key_column",
+  NULL        AS "pg_null_ordering"
+FROM   pg_catalog.pg_class c
+JOIN   pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE  c.relname = ? $schema_where
+UNION ALL
+EOSQL
             push @exe_args, $table;
-            push @exe_args, $schema if $schema;
+            push @exe_args, $schema if $schema_where;
         }
 
-        my $is_key_column = $dbh->{private_dbdpg}{version} >= 110000
-            ? 'col.i <= i.indnkeyatts' : 'true';
+        my $pgversion = $dbh->{private_dbdpg}{version};
+
+        ## Postgres version 11 added the pg_index.indnkeyatts column,
+        ## which tells the number of non-included columns in the index
+        my $is_key_column = $pgversion >= 110000 ? 'col.i <= i.indnkeyatts' : 'true';
 
         my ($asc_or_desc, $null_ordering);
-        if ($dbh->{private_dbdpg}{version} >= 90600) {
-            $asc_or_desc = q{
-                CASE WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'asc') THEN 'A'
-                     WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'desc') THEN 'D'
-                END};
-            $null_ordering = q{
-                CASE WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'nulls_first') THEN 'first'
-                     WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'nulls_last') THEN 'last'
-                END};
+
+        ## Postgres version 9.6 added pg_index_column_has_property(),
+        ## which can tell if the index sorts ascending or descending,
+        ## and if it sorts nulls first or nulls last
+        if ($pgversion >= 90600) {
+            $asc_or_desc = <<'EOSQL';
+CASE WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'asc') THEN 'A'
+     WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'desc') THEN 'D'
+     ELSE NULL END
+EOSQL
+            $null_ordering = <<'EOSQL';
+CASE WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'nulls_first') THEN 'first'
+     WHEN pg_catalog.pg_index_column_has_property(c.oid, col.i, 'nulls_last') THEN 'last'
+     ELSE NULL END
+EOSQL
         }
-        elsif ($dbh->{private_dbdpg}{version} > 80300) {
-            $asc_or_desc = q{
-                CASE WHEN a.amcanorder THEN
-                     CASE WHEN i.indoption[col.i - 1] & 1 = 0 THEN 'A' ELSE 'D' END
-                END};
-            $null_ordering = q{
-                CASE WHEN a.amcanorder THEN
-                     CASE WHEN i.indoption[col.i - 1] & 2 = 0 THEN 'last' ELSE 'first' END
-                END};
+        ## Postgres version 8.3 added the pg_am.amcanorder column,
+        ## which tells if ordering is supported
+        elsif ($pgversion >= 80300) {
+            $asc_or_desc = <<'EOSQL';
+CASE WHEN a.amcanorder THEN
+     CASE WHEN i.indoption[col.i - 1] & 1 = 0 THEN 'A' ELSE 'D' END END
+EOSQL
+            $null_ordering = <<'EOSQL';
+CASE WHEN a.amcanorder THEN
+     CASE WHEN i.indoption[col.i - 1] & 2 = 0 THEN 'last' ELSE 'first' END END
+EOSQL
         }
+        ## Postgres version 8.2 and older is simply ordered or not
         else {
-            $asc_or_desc = q{CASE WHEN a.amorderstrategy <> 0 THEN 'A' END};
-            $null_ordering = q{CASE WHEN a.amorderstrategy <> 0 THEN 'last' END};
+            $asc_or_desc = q{CASE WHEN a.amorderstrategy <> 0 THEN 'A' ELSE NULL END};
+            $null_ordering = q{CASE WHEN a.amorderstrategy <> 0 THEN 'last' ELSE NULL END};
         }
 
-        # Fetch the index definitions
-        $stats_sql .= qq{
-            SELECT
-                pg_catalog.current_database() AS "TABLE_CAT",
-                n.nspname                     AS "TABLE_SCHEM",
-                d.relname                     AS "TABLE_NAME",
-                NOT(i.indisunique)            AS "NON_UNIQUE",
-                NULL                          AS "INDEX_QUALIFIER",
-                c.relname                     AS "INDEX_NAME",
-                CASE WHEN i.indisclustered THEN 'clustered'
-                     WHEN a.amname = 'btree' THEN 'btree'
-                     WHEN a.amname = 'hash' THEN 'hashed'
-                     ELSE 'other'
-                END                           AS "TYPE",
-                col.i                         AS "ORDINAL_POSITION",
-                att.attname                   AS "COLUMN_NAME",
-                $asc_or_desc                  AS "ASC_OR_DESC",
-                c.reltuples                   AS "CARDINALITY",
-                c.relpages                    AS "PAGES",
-                pg_catalog.pg_get_expr(i.indpred,i.indrelid)
-                                              AS "FILTER_CONDITION",
-                pg_catalog.pg_get_indexdef(i.indexrelid, col.i, true)
-                                              AS "pg_expression",
-                $is_key_column                AS "pg_is_key_column",
-                $null_ordering                AS "pg_null_ordering"
-            FROM
-                pg_catalog.pg_index i
-                JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
-                JOIN pg_catalog.pg_class d ON d.oid = i.indrelid
-                JOIN pg_catalog.pg_am a ON a.oid = c.relam
-                JOIN pg_catalog.pg_namespace n ON n.oid = d.relnamespace
-                JOIN pg_catalog.generate_series(1, pg_catalog.current_setting('max_index_keys')::integer) col(i)
-                     ON col.i <= i.indnatts
-                LEFT JOIN pg_catalog.pg_attribute att
-                     ON att.attrelid = d.oid AND att.attnum = i.indkey[col.i - 1]
-            WHERE
-                d.relname = ? $schema_where
-                AND (i.indisunique OR NOT(?)) -- unique_only
-            ORDER BY
-                "NON_UNIQUE", "TYPE", "INDEX_QUALIFIER", "INDEX_NAME", "ORDINAL_POSITION"
-        };
+        my $unique_where = $unique_only ? 'AND i.indisunique' : '';
+
+        ## Grab column-level statistics
+        $stats_sql .= <<"EOSQL";
+SELECT pg_catalog.current_database() AS "TABLE_CAT",
+  n.nspname              AS "TABLE_SCHEM",
+  d.relname              AS "TABLE_NAME",
+  CASE WHEN i.indisunique THEN 0 ELSE 1 END AS "NON_UNIQUE",
+  NULL                   AS "INDEX_QUALIFIER",
+  c.relname              AS "INDEX_NAME",
+  CASE WHEN a.amname = 'btree' THEN 'btree'
+       WHEN a.amname = 'hash'  THEN 'hashed'
+       ELSE 'other' END AS "TYPE",
+  col.i                  AS "ORDINAL_POSITION",
+  att.attname            AS "COLUMN_NAME",
+  $asc_or_desc AS "ASC_OR_DESC",
+  c.reltuples            AS "CARDINALITY",
+  c.relpages             AS "PAGES",
+  pg_catalog.pg_get_expr(i.indpred,i.indrelid) AS "FILTER_CONDITION",
+  pg_catalog.pg_get_indexdef(i.indexrelid, col.i, true) AS "pg_expression",
+  $is_key_column AS "pg_is_key_column",
+  $null_ordering AS "pg_null_ordering"
+FROM
+  pg_catalog.pg_index i
+  JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
+  JOIN pg_catalog.pg_class d ON d.oid = i.indrelid
+  JOIN pg_catalog.pg_am a ON a.oid = c.relam
+  JOIN pg_catalog.pg_namespace n ON n.oid = d.relnamespace
+  JOIN pg_catalog.generate_series(1, pg_catalog.current_setting('max_index_keys')::integer) col(i)
+    ON col.i <= i.indnatts
+  LEFT JOIN pg_catalog.pg_attribute att
+    ON att.attrelid = d.oid AND att.attnum = i.indkey[col.i - 1]
+WHERE
+  d.relname = ? $schema_where $unique_where
+ORDER BY "NON_UNIQUE", "TYPE", "INDEX_QUALIFIER", "INDEX_NAME", "ORDINAL_POSITION"
+EOSQL
 
         my $sth = $dbh->prepare($stats_sql);
-        $sth->execute(@exe_args, 0+!!$unique_only);
+        $sth->execute(@exe_args) or die $sth->errstr;
         return $sth;
     }
 
@@ -3083,8 +3093,8 @@ In addition, the following Postgres specific columns are returned:
 =item pg_expression
 
 Postgres allows indexes on functions and scalar expressions based on one or more columns. This field 
-will always be populated if an index, but the lack of an entry in the COLUMN_NAME should indicate 
-that this is an index expression.
+will always be populated if this is an index row. The lack of an entry in the COLUMN_NAME should
+indicate that this is an index expression.
 
 =item pg_is_key_column
 

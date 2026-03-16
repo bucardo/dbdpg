@@ -1297,18 +1297,44 @@ is_deeply (\@results, $expected, $t);
 # Test of the "statistics_info" database handle method
 #
 
-$t='DB handle method "statistics_info" returns undef when table argument is undef';
+# Arguments are $catalog, $schema, $table, $unique_only, $quick
+
+$t='DB handle method "statistics_info" returns false when table argument is undef';
 $sth = $dbh->statistics_info(undef, undef, undef, undef, undef);
 is ($sth, undef, $t);
 
-$t='DB handle method "statistics_info" returns undef when table argument is empty';
+$t='DB handle method "statistics_info" returns false when table argument is empty';
 $sth = $dbh->statistics_info(undef, undef, '', undef, undef);
 is ($sth, undef, $t);
 
-$t='DB handle method "statistics_info" returns no rows when table argument is invalid';
-$sth = $dbh->statistics_info(undef, $test_schema, $missing_table, undef, undef);
+$t='DB handle method "statistics_info" returns no rows when table does not exist';
+$sth = $dbh->statistics_info(undef, '', $missing_table, undef, undef);
 $result = $sth->fetchall_arrayref;
 is_deeply ($result, [], $t);
+
+$t='DB handle method "statistics_info" returns no rows when schema does not exist';
+$sth = $dbh->statistics_info(undef, $missing_schema, $test_table, undef, undef);
+$result = $sth->fetchall_arrayref;
+is_deeply ($result, [], $t);
+
+# Check required minimum fields
+$t='DB handle method "statistics_info" returns expected fields in correct order';
+$sth = $dbh->statistics_info('','',$test_table, '', '');
+$colnames = join ',', @{$sth->{NAME}};
+$expected = join ',', (qw(
+  TABLE_CAT         TABLE_SCHEM        TABLE_NAME
+  NON_UNIQUE        INDEX_QUALIFIER    INDEX_NAME
+  TYPE              ORDINAL_POSITION   COLUMN_NAME
+  ASC_OR_DESC       CARDINALITY        PAGES
+  FILTER_CONDITION
+  pg_expression     pg_is_key_column   pg_null_ordering
+));
+is ($colnames, $expected, $t);
+
+$t='DB handle method "statistics_info" returns expected fields in correct order (unique_only=true)';
+$sth = $dbh->statistics_info('','',$test_table, 1, '');
+$colnames = join ',', @{$sth->{NAME}};
+is ($colnames, $expected, $t);
 
 my $with_oids = $pgversion < 120000 ? 'WITH OIDS' : '';
 my $with_include = $pgversion >= 110000;
@@ -1418,22 +1444,10 @@ $result = $sth->fetchall_arrayref;
 $correct_stats->{three}[$hash_index_idx][11] = $result->[$hash_index_idx][11] = 0;
 is_deeply ($result, $correct_stats->{three}, $t);
 
-my @stats_columns = qw(
-    TABLE_CAT TABLE_SCHEM TABLE_NAME NON_UNIQUE INDEX_QUALIFIER INDEX_NAME TYPE
-    ORDINAL_POSITION COLUMN_NAME ASC_OR_DESC CARDINALITY PAGES FILTER_CONDITION
-    pg_expression pg_is_key_column pg_null_ordering
-);
-
-$t=q{DB handle method "statistics_info" returns correct columns};
-is_deeply ($sth->{NAME}, \@stats_columns, $t);
-
 $t=qq{DB handle method "statistics_info" returns correct results for $table3 (unique_only=true)};
 $sth = $dbh->statistics_info(undef, $schema, $table3, 1, undef);
 $result = $sth->fetchall_arrayref;
 is_deeply ($result, $correct_stats->{three_uo}, $t);
-
-$t=q{DB handle method "statistics_info" returns correct columns (unique_only=true)};
-is_deeply ($sth->{NAME}, \@stats_columns, $t);
 
 # Clean everything up
 $dbh->do("DROP TABLE $table3");
