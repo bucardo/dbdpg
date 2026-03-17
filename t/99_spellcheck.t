@@ -268,6 +268,7 @@ bools
 BOOTCHECK
 bpchar
 bt
+btree
 bucardo
 BUFSIZE
 Bunce
