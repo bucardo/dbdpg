@@ -4445,24 +4445,47 @@ After a successful return of 1, call L</pg_flush> to push the data to the
 server. If C<pg_flush> returns 1 (data pending), poll the socket for
 write-readiness and call C<pg_flush> again.
 
-Example usage with an event loop:
+Example usage:
 
-  $dbh->do("COPY mytable FROM STDIN");
-
-  for my $row (@data) {
-      my $status = $dbh->pg_putcopydata_async($row);
-      while ($status == 0) {
-          # buffer full — poll for write-readiness, retry
-          poll_writable($dbh->{pg_socket});
-          $status = $dbh->pg_putcopydata_async($row);
-      }
-      die "COPY error" if $status == -1;
-      # Flush to server
+  ## Simple usage (flush after each row):
+  use IO::Select;
+  $dbh->do("COPY mytable(id, flavor, slices) FROM STDIN");
+  for my $row ("123\tPepperoni\t3\n", "314\tMushroom\t8\n") {
+      $dbh->pg_putcopydata_async($row);
       while ($dbh->pg_flush()) {
-          poll_writable($dbh->{pg_socket});
+          IO::Select->new($dbh->{pg_socket})->can_write();
       }
   }
   $dbh->pg_putcopyend();
+
+  ## Robust usage (handles buffer-full and async end):
+  use IO::Select;
+  my $sel = IO::Select->new($dbh->{pg_socket});
+
+  ## Column list is optional but recommended. Default format is
+  ## tab-delimited text with newline row terminators, matching
+  ## PostgreSQL's COPY text format. Use COPY ... WITH (FORMAT csv)
+  ## for CSV data, or WITH (DELIMITER '|') for custom delimiters.
+  $dbh->do("COPY mytable(id, flavor, slices) FROM STDIN");
+  my @data = ("123\tPepperoni\t3\n", "314\tMushroom\t8\n",
+              "6\tAnchovies\t100\n");
+  for my $row (@data) {
+      my $status = $dbh->pg_putcopydata_async($row);
+      while ($status == 0) {         # buffer full
+          $sel->can_write();
+          $status = $dbh->pg_putcopydata_async($row);
+      }
+      die "COPY error" if $status == -1;
+      while ($dbh->pg_flush()) {     # push to server
+          $sel->can_write();
+      }
+  }
+
+  ## Non-blocking end: poll until server confirms
+  while ((my $end = $dbh->pg_putcopyend_async()) == 0) {
+      $sel->can_read();
+  }
+  die "COPY end error" if $end == -1;
 
 =head3 B<pg_putcopyend>
 
