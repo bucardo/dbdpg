@@ -33,10 +33,6 @@ my $superuser = is_super();
 
 isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
-$dbh->trace('pglibpq', '/tmp/err');
-
-
-
 # silence notices about implicitly created and dropped objects
 $dbh->do('set client_min_messages=warning');
 
