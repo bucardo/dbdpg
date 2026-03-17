@@ -15,7 +15,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if ($dbh) {
-    plan tests => 79;
+    plan tests => 80;
 }
 else {
     plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -445,32 +445,29 @@ like ($@, qr{COPY FROM command}, $t);
 $t='pg_putcopydata_async returns 1 on success';
 $dbh->do("COPY $async_table FROM STDIN");
 $result = $dbh->pg_putcopydata_async("1\tAlice\n");
-ok ($result >= 1, $t); # may be 1 (flushed) or 2 (flush pending)
+is ($result, 1, $t);
+
+$t='pg_flush sends data to server';
+$result = $dbh->pg_flush();
+is ($result, 0, $t); # 0 = flushed, 1 = pending
 
 $t='pg_putcopydata_async works on second call';
 $result = $dbh->pg_putcopydata_async("2\tBob\n");
-ok ($result >= 1, $t);
+is ($result, 1, $t);
+$dbh->pg_flush();
 
 $t='pg_putcopydata_async works on third call';
 $result = $dbh->pg_putcopydata_async("3\tCharlie\n");
-ok ($result >= 1, $t);
-
-# If any calls returned 2 (flush pending), flush now
-if ($result == 2) {
-    $dbh->pg_flush();
-}
+is ($result, 1, $t);
+$dbh->pg_flush();
 
 # pg_putcopyend_async: basic operation
 
 $t='pg_putcopyend_async completes the COPY';
 my $end_result = $dbh->pg_putcopyend_async();
-# May need to poll if result is 0 (server not ready) or 2 (flush pending)
+# May need to poll if result is 0 (not ready yet)
 my $poll_count = 0;
-while ($end_result != 1 && $end_result != -1 && $poll_count < 100) {
-    if ($end_result == 2) {
-        $dbh->pg_flush();
-    }
-    # Brief delay then retry
+while ($end_result == 0 && $poll_count < 100) {
     select(undef, undef, undef, 0.01);
     $end_result = $dbh->pg_putcopyend_async();
     $poll_count++;
@@ -539,13 +536,16 @@ for my $i (1..1000) {
         $async_ok = 0;
         last;
     }
-    # Handle flush-pending by flushing
-    if ($row_result == 2) {
-        my $flush = $dbh->pg_flush();
-        while ($flush == 1) {
-            select(undef, undef, undef, 0.001);
-            $flush = $dbh->pg_flush();
-        }
+    # If buffer full (0), poll and retry
+    while ($row_result == 0) {
+        select(undef, undef, undef, 0.001);
+        $row_result = $dbh->pg_putcopydata_async("$i\tRow number $i\n");
+    }
+    # Flush after each successful queue
+    my $flush = $dbh->pg_flush();
+    while ($flush == 1) {
+        select(undef, undef, undef, 0.001);
+        $flush = $dbh->pg_flush();
     }
 }
 ok ($async_ok, $t);
@@ -553,10 +553,7 @@ ok ($async_ok, $t);
 $t='pg_putcopyend_async works after large data set';
 $end_result = $dbh->pg_putcopyend_async();
 $poll_count = 0;
-while ($end_result != 1 && $end_result != -1 && $poll_count < 100) {
-    if ($end_result == 2) {
-        $dbh->pg_flush();
-    }
+while ($end_result == 0 && $poll_count < 100) {
     select(undef, undef, undef, 0.01);
     $end_result = $dbh->pg_putcopyend_async();
     $poll_count++;

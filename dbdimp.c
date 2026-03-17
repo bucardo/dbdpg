@@ -4541,23 +4541,18 @@ int pg_db_putcopydata (SV * dbh, SV * dataline, int async)
     copystatus = PQputCopyData(imp_dbh->conn, copydata, copylen);
 
     if (1 == copystatus) {
-        if (async || PGRES_COPY_BOTH == imp_dbh->copystate) {
-            int flush_status;
+        /* For COPY_BOTH (logical replication), flush immediately as before */
+        if (PGRES_COPY_BOTH == imp_dbh->copystate) {
             TRACE_PQFLUSH;
-            flush_status = PQflush(imp_dbh->conn);
-            if (-1 == flush_status) {
+            if (PQflush(imp_dbh->conn)) {
                 _fatal_sqlstate(aTHX_ imp_dbh);
                 TRACE_PQERRORMESSAGE;
                 pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
                 if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata (error: flush)\n", THEADER_slow);
                 return -1;
             }
-            /* flush_status 1 means data still pending in output buffer */
-            if (async && 1 == flush_status) {
-                if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata (flush pending)\n", THEADER_slow);
-                return 2;
-            }
         }
+        /* For async mode, caller is responsible for calling pg_flush */
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata (1)\n", THEADER_slow);
         return 1;
     }
@@ -4656,8 +4651,7 @@ int pg_db_putcopyend (SV * dbh)
 
    Returns:
     1 = COPY completed successfully, connection is back in normal mode
-    0 = server result not ready yet (caller should poll socket for read-ready)
-    2 = flush pending (caller should poll socket for write-ready, then call pg_db_flush)
+    0 = not ready yet (caller should poll socket and call again)
    -1 = error
 */
 int pg_db_putcopyend_async (SV * dbh)
@@ -4713,9 +4707,9 @@ int pg_db_putcopyend_async (SV * dbh)
                 return -1;
             }
             if (1 == flush_status) {
-                /* Data pending in output buffer, caller should poll for write-ready */
+                /* Data pending in output buffer, caller should poll and retry */
                 if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (flush pending)\n", THEADER_slow);
-                return 2;
+                return 0;
             }
 
             /* Fall through to result polling */

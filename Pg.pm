@@ -4434,24 +4434,35 @@ connection is switched into non-blocking mode (via C<PQsetnonblocking>), which i
 because no other operations are permitted during a COPY. The non-blocking mode is
 automatically restored to blocking when L</pg_putcopyend_async> completes.
 
-Return values:
+Return values match C<PQputCopyData>:
 
-  1  = data queued and flushed successfully
-  2  = data queued but output buffer not fully flushed; caller should
-       poll the socket for write-readiness and call L</pg_flush>
+  1  = data queued successfully (caller should call L</pg_flush> to send)
   0  = output buffer full; caller should poll the socket for
        write-readiness and retry the same pg_putcopydata_async call
   -1 = error
 
+After a successful return of 1, call L</pg_flush> to push the data to the
+server. If C<pg_flush> returns 1 (data pending), poll the socket for
+write-readiness and call C<pg_flush> again.
+
 Example usage with an event loop:
 
   $dbh->do("COPY mytable FROM STDIN");
-  my $status = $dbh->pg_putcopydata_async("123\tPepperoni\t3\n");
-  if ($status == 0 || $status == 2) {
-      # poll $dbh->{pg_socket} for write-readiness, then:
-      #   if $status == 2: call $dbh->pg_flush
-      #   if $status == 0: retry the pg_putcopydata_async call
+
+  for my $row (@data) {
+      my $status = $dbh->pg_putcopydata_async($row);
+      while ($status == 0) {
+          # buffer full — poll for write-readiness, retry
+          poll_writable($dbh->{pg_socket});
+          $status = $dbh->pg_putcopydata_async($row);
+      }
+      die "COPY error" if $status == -1;
+      # Flush to server
+      while ($dbh->pg_flush()) {
+          poll_writable($dbh->{pg_socket});
+      }
   }
+  $dbh->pg_putcopyend();
 
 =head3 B<pg_putcopyend>
 
@@ -4462,15 +4473,14 @@ success. This method will fail if called when not in COPY IN mode.
 =head3 B<pg_putcopyend_async>
 
 Non-blocking version of pg_putcopyend for use by async libraries. Sends the COPY
-end marker and attempts to collect the server result without blocking.
+end marker and attempts to collect the server result without blocking. Designed to
+be called in a poll loop.
 
 Return values:
 
   1  = COPY completed successfully, connection is back in normal blocking mode
-  2  = COPY end marker sent but output buffer not fully flushed; caller should
-       poll the socket for write-readiness and call L</pg_flush>, then retry
-  0  = server result not ready yet; caller should poll the socket for
-       read-readiness, then call pg_putcopyend_async again
+  0  = not ready yet; caller should poll the socket for readiness, then call
+       pg_putcopyend_async again
   -1 = error
 
 After pg_putcopyend_async returns 1, the connection is back in blocking mode and
@@ -4478,10 +4488,10 @@ normal queries can be issued.
 
 =head3 B<pg_flush>
 
-Flushes the libpq output buffer. Used during non-blocking COPY operations when
-L</pg_putcopydata_async> or L</pg_putcopyend_async> return 2 (flush pending).
+Flushes the libpq output buffer. Wraps C<PQflush> directly. Used after
+L</pg_putcopydata_async> returns 1 to push queued data to the server.
 
-Return values:
+Return values match C<PQflush>:
 
   0  = all data flushed successfully
   1  = data still pending; caller should poll the socket for write-readiness
