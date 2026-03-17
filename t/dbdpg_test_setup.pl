@@ -367,8 +367,9 @@ version: $version
         ## initdb and pg_ctl seems to be available, let's use them to fire up a cluster
         warn "Please wait, creating new Postgres cluster (version $version) for testing\n";
         $info = '';
+        my $locale = $ENV{DBDPG_TEST_LOCALE} || 'C';
         eval {
-            my $com = "$initdb --locale=C -E UTF8 -D $testdir/data";
+            my $com = "$initdb --locale=$locale -E UTF8 -D $testdir/data";
             $debug and warn" Attempting: $com\n";
             $info = qx{$com 2>&1};
         };

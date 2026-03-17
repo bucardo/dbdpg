@@ -319,6 +319,9 @@ The standard way to test is run "make test" which runs all the scripts in the
 minor or a temporary problem, please add it to the test suite. The more tests 
 we have, the better.
 
+The environment variable DBDPG_TEST_LOCALE can be set to have the test script
+at t/dbdpg_test_setup.pl run initdb with that locale. Otherwise, it defaults to 'C'.
+
 Generally, we want to run 'make test' on as wide a variety of configurations as 
 possible. If you have different platforms of course, you should test all of those. 
 Beyond that, you may find it helpful to set up some aliases to allow quick switching 
