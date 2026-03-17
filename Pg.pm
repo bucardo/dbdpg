@@ -778,8 +778,10 @@ EOSQL
 
     sub primary_key_info {
 
-        my $dbh = shift;
-        my (undef, $schema, $table, $attr) = @_;
+        ## Return a statement handle with info on the columns of a primary key
+        ## See https://metacpan.org/pod/DBI#primary_key_info
+
+        my ($dbh, $catalog, $schema, $table, $attr) = @_;
 
         my @cols = (qw(TABLE_CAT TABLE_SCHEM TABLE_NAME
                        COLUMN_NAME KEY_SEQ PK_NAME DATA_TYPE
@@ -788,128 +790,129 @@ EOSQL
                        )
             );
 
-        ## Catalog is ignored, but table is mandatory
-        if (! defined $table or ! length $table) {
+        ## If no table is given, we return an empty list
+        if (! defined $table || ! length $table) {
             return _prepare_from_data('primary_key_info', [], \@cols);
         }
 
-        my $whereclause = 'AND c.relname = ' . $dbh->quote($table);
+        my $schema_where = '';
+        my @exe_args = ($table);
 
-        if (defined $schema and length $schema) {
-            $whereclause .= "\n\t\t\tAND n.nspname = " . $dbh->quote($schema);
+        if (defined $schema && $schema ne '') {
+            $schema_where = 'AND n.nspname = ?';
+            push @exe_args, $schema;
         }
 
-        my $pri_key_sql = qq{
-            SELECT
-                  c.oid
-                , pg_catalog.quote_ident(n.nspname)
-                , pg_catalog.quote_ident(c.relname)
-                , pg_catalog.quote_ident(c2.relname)
-                , i.indkey
-                , pg_catalog.quote_ident(t.spcname)
-                , pg_catalog.quote_ident(t.spclocation)
-                , n.nspname, c.relname, c2.relname
-                , pg_catalog.quote_ident(pg_catalog.current_database())
-            FROM
-                pg_catalog.pg_class c
-                JOIN pg_catalog.pg_index i ON (i.indrelid = c.oid)
-                JOIN pg_catalog.pg_class c2 ON (c2.oid = i.indexrelid)
-                LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-                LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)
-            WHERE
-                i.indisprimary IS TRUE
-            $whereclause
-        };
+        my $pri_key_sql = <<"EOSQL";
+SELECT
+  pg_catalog.quote_ident(pg_catalog.current_database()) AS "TABLE_CAT",
+  pg_catalog.quote_ident(n.nspname) AS "TABLE_SCHEM",
+  pg_catalog.quote_ident(c.relname) AS "TABLE_NAME",
+  NULL AS "COLUMN_NAME",
+  NULL AS "KEY_SEQ",
+  pg_catalog.quote_ident(c2.relname) AS "PK_NAME",
+  NULL AS "DATA_TYPE",
+  pg_catalog.quote_ident(t.spcname) AS pg_tablespace_name,
+  pg_catalog.quote_ident(pg_catalog.pg_tablespace_location(t.oid)) AS pg_tablespace_location,
+  n.nspname AS pg_schema,
+  c.relname AS pg_table,
+  NULL AS pg_column,
+  c.oid AS "_pg_reloid",
+  i.indkey AS "_pg_indkey"
+FROM pg_catalog.pg_class c
+JOIN pg_catalog.pg_index i ON (i.indrelid = c.oid)
+JOIN pg_catalog.pg_class c2 ON (c2.oid = i.indexrelid)
+LEFT JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
+LEFT JOIN pg_catalog.pg_tablespace t ON (t.oid = c.reltablespace)
+WHERE i.indisprimary IS TRUE AND c.relname = ? $schema_where
+EOSQL
 
-        if ($dbh->{private_dbdpg}{version} >= 90200) {
-            $pri_key_sql =~ s/t.spclocation/pg_catalog.pg_tablespace_location(t.oid)/;
+        ## Postgres version 9.2 added the pg_tablespace_location() function
+        if ($dbh->{private_dbdpg}{version} < 90200) {
+            $pri_key_sql =~ s/\Qpg_catalog.pg_tablespace_location(t.oid)/t.spclocation/;
         }
 
         local $dbh->{FetchHashKeyName} = 'NAME';
         my $sth = $dbh->prepare($pri_key_sql);
-        $sth->execute();
-        my $info = $sth->fetchall_arrayref()->[0];
+        $sth->execute(@exe_args) or die $sth->errstr;
+        my $info = $sth->fetchall_arrayref({})->[0];
         if (! defined $info) {
             return _prepare_from_data('primary_key_info', [], \@cols);
         }
 
-        # Get the attribute information
-        my $indkey = join ',', split /\s+/, $info->[4];
-        my $sql = qq{
-            SELECT a.attnum, pg_catalog.quote_ident(a.attname) AS colname,
-                pg_catalog.quote_ident(t.typname) AS typename
-            FROM pg_catalog.pg_attribute a, pg_catalog.pg_type t
-            WHERE a.attrelid = '$info->[0]'
-            AND a.atttypid = t.oid
-            AND attnum IN ($indkey);
-        };
+        ## Map pg_index.indkey to name/type for each column
+        my @index_cols = grep { /\d+/ } split /\s+/, delete $info->{_pg_indkey};
+        my $index_cols = join ', ', @index_cols;
+        my $sql = <<"EOSQL";
+SELECT a.attnum,
+  pg_catalog.quote_ident(a.attname) AS colname,
+  a.attname AS raw_colname,
+  pg_catalog.quote_ident(t.typname) AS typename
+FROM pg_catalog.pg_attribute a
+JOIN pg_catalog.pg_type t ON (t.oid = a.atttypid)
+WHERE a.attrelid = ?
+AND attnum IN ($index_cols);
+EOSQL
         $sth = $dbh->prepare($sql);
-        $sth->execute();
+        $sth->execute(delete $info->{_pg_reloid}) or die $sth->errstr;
         my $attribinfo = $sth->fetchall_hashref('attnum');
 
         my $pkinfo = [];
 
         ## Normal way: complete "row" per column in the primary key
-        if (!exists $attr->{'pg_onerow'}) {
-            my $x=0;
-            my @key_seq = split/\s+/, $info->[4];
-            for (@key_seq) {
-                # TABLE_CAT
-                $pkinfo->[$x][0] = $info->[10];
-                # SCHEMA_NAME
-                $pkinfo->[$x][1] = $info->[1];
-                # TABLE_NAME
-                $pkinfo->[$x][2] = $info->[2];
-                # COLUMN_NAME
-                $pkinfo->[$x][3] = $attribinfo->{$_}{colname};
-                # KEY_SEQ
-                $pkinfo->[$x][4] = $_;
-                # PK_NAME
-                $pkinfo->[$x][5] = $info->[3];
-                # DATA_TYPE
-                $pkinfo->[$x][6] = $attribinfo->{$_}{typename};
-                $pkinfo->[$x][7] = $info->[5];
-                $pkinfo->[$x][8] = $info->[6];
-                $pkinfo->[$x][9] = $info->[7];
-                $pkinfo->[$x][10] = $info->[8];
-                $pkinfo->[$x][11] = $info->[9];
-                $x++;
+        if (! defined $attr || ! $attr->{'pg_onerow'}) {
+            for my $colnum (@index_cols) {
+                push @$pkinfo,
+                  [
+                   $info->{TABLE_CAT},
+                   $info->{TABLE_SCHEM},
+                   $info->{TABLE_NAME},
+                   $attribinfo->{$colnum}{colname}, ## COLUMN_NAME
+                   $colnum, ## KEY_SEQ
+                   $info->{PK_NAME},
+                   $attribinfo->{$colnum}{typename}, ## DATA_TYPE
+                   $info->{pg_tablespace_name},
+                   $info->{pg_tablespace_location},
+                   $info->{pg_schema},
+                   $info->{pg_table},
+                   $attribinfo->{$colnum}{raw_colname}, ## pg_column
+                  ];
             }
         }
-        else { ## Nicer way: return only one row
-            $info->[0] = $info->[10];
-            $info->[11] = $info->[9];
-            $info->[10] = $info->[8];
-            $info->[9] = $info->[7];
-            $info->[8] = $info->[6];
-            $info->[7] = $info->[5];
-            $info->[5] = $info->[3];
-            # COLUMN_NAME
-            $info->[3] = 2==$attr->{'pg_onerow'} ?
-                [ map { $attribinfo->{$_}{colname} } split /\s+/, $info->[4] ] :
-                    join ', ', map { $attribinfo->{$_}{colname} } split /\s+/, $info->[4];
-            # DATA_TYPE
-            $info->[6] = 2==$attr->{'pg_onerow'} ?
-                [ map { $attribinfo->{$_}{typename} } split /\s+/, $info->[4] ] :
-                    join ', ', map { $attribinfo->{$_}{typename} } split /\s+/, $info->[4];
-            # KEY_SEQ
-            $info->[4] = 2==$attr->{'pg_onerow'} ?
-                [ split /\s+/, $info->[4] ] :
-                    join ', ', split /\s+/, $info->[4];
+        else { ## Nicer way if pg_onerow is set
 
-            $pkinfo = [$info];
+            $info->{COLUMN_NAME} = 2==$attr->{'pg_onerow'} ?
+                [ map { $attribinfo->{$_}{colname} } @index_cols ] :
+                    join ', ', map { $attribinfo->{$_}{colname} } @index_cols;
+
+            $info->{DATA_TYPE} = 2==$attr->{'pg_onerow'} ?
+                [ map { $attribinfo->{$_}{typename} } @index_cols ] :
+                    join ', ', map { $attribinfo->{$_}{typename} } @index_cols;
+
+            $info->{KEY_SEQ} = 2==$attr->{'pg_onerow'} ? [@index_cols] : $index_cols;
+
+            $info->{pg_column} = 2==$attr->{'pg_onerow'} ?
+                [ map { $attribinfo->{$_}{raw_colname} } @index_cols ] :
+                    join ', ', map { $attribinfo->{$_}{raw_colname} } @index_cols;
+
+            $pkinfo = [[map { $info->{$_} } @cols]];
+
         }
 
         return _prepare_from_data('primary_key_info', $pkinfo, \@cols);
 
-    }
+    } ## end of primary_key_info
 
     sub primary_key {
-        my $sth = primary_key_info(@_[0..3], {pg_onerow => 2});
+
+        ## Simple interface to the primary_key_info() method.
+        ## See https://metacpan.org/pod/DBI#primary_key
+
+        my ($dbh, $catalog, $schema, $table) = @_;
+        my $sth = $dbh->primary_key_info($catalog, $schema, $table, {pg_onerow => 2});
         my $result = $sth->fetchall_arrayref();
         return defined $result->[0] ? @{$result->[0][3]} : ();
     }
-
 
     sub foreign_key_info {
 
@@ -3029,7 +3032,7 @@ shows the data type for each of the arguments in the "COLUMN_NAME" field.
 This method will also return tablespace information for servers that support
 tablespaces. See the L</table_info> entry for more information.
 
-The five additional custom fields returned are:
+Five additional fields are returned:
 
 B<pg_tablespace_name>: name of the tablespace, if any
 
@@ -3039,7 +3042,7 @@ B<pg_schema>: the unquoted name of the schema
 
 B<pg_table>: the unquoted name of the table
 
-B<pg_column>: the unquoted name of the column
+B<pg_column>: the unquoted name of the column or columns
 
 In addition to the standard format of returning one row for each column
 found for the primary key, you can pass the C<pg_onerow> attribute to force

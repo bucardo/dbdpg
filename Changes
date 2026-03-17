@@ -27,6 +27,9 @@ Version 3.20.0  (unreleased)
    (Github issue #165)
    (Github pull request #167)
 
+ - Cleanup and improve the primary_key_info() function.
+   [Greg Sabino Mullane]
+
 
 Version 3.19.0  (released March 14, 2026)
 
