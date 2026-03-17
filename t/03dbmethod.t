@@ -835,6 +835,15 @@ is_deeply ([keys %surprises], [], $t)
 
 } # END test listing table types
 
+$t=q{DB handle method "table_info" works when FetchHashKeyName set to NAME_lc};
+{
+    local $dbh->{FetchHashKeyName} = 'NAME_lc';
+    $sth = $dbh->table_info('', $test_schema, $test_table);
+    $result = $sth->fetchall_arrayref({})->[0];
+    is ($result->{TABLE_TYPE}, 'TABLE', $t);
+}
+
+
 #
 # Test of the "column_info" database handle method
 #
@@ -1207,6 +1216,13 @@ SKIP: {
 $t=q{DB handle method "column_info" returns pg_enum_values as undef when no column matches};
 is ($nomatch->{pg_enum_values}, undef, $t);
 
+$t=q{DB handle method "column_info" works when FetchHashKeyName set to NAME_lc};
+{
+    local $dbh->{FetchHashKeyName} = 'NAME_lc';
+    $sth = $dbh->column_info('', $test_schema, $test_table, 'id');
+    $result = $sth->fetchall_arrayref({})->[0];
+    is ($result->{TABLE_NAME}, $test_table, $t);
+}
 
 #
 # Test of the "primary_key_info" database handle method
@@ -1274,6 +1290,15 @@ $t='DB handle method "primary_key_info" works when pg_onerow attribute set to 2 
 $sth = $dbh->primary_key_info('', $test_schema, $table, {pg_onerow => 2});
 $result = $sth->fetchall_arrayref({});
 is_deeply ($result->[0]{KEY_SEQ}, ['1','2'], $t);
+
+$t=q{DB handle method "primary_key_info" works when FetchHashKeyName set to NAME_lc};
+{
+    local $dbh->{FetchHashKeyName} = 'NAME_lc';
+    $sth = $dbh->primary_key_info('', $test_schema, $test_table);
+    $result = $sth->fetchall_arrayref({})->[0];
+    is ($result->{COLUMN_NAME}, 'id', $t);
+}
+
 
 #
 # Test of the "primary_key" database handle method
@@ -1444,6 +1469,14 @@ $t=qq{DB handle method "statistics_info" returns correct results for $table3 (un
 $sth = $dbh->statistics_info(undef, $schema, $table3, 1, undef);
 $result = $sth->fetchall_arrayref;
 is_deeply ($result, $correct_stats->{three_uo}, $t);
+
+$t=q{DB handle method "statistics_info" works when FetchHashKeyName set to NAME_lc};
+{
+    local $dbh->{FetchHashKeyName} = 'NAME_lc';
+    $sth = $dbh->statistics_info('', $test_schema, $test_table, 0, 0);
+    $result = $sth->fetchall_arrayref({})->[0];
+    is ($result->{TYPE}, 'btree', $t);
+}
 
 # Clean everything up
 $dbh->do("DROP TABLE $table3");
