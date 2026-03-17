@@ -4505,7 +4505,7 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 
 
 /* ================================================================== */
-int pg_db_putcopydata (SV * dbh, SV * dataline)
+int pg_db_putcopydata (SV * dbh, SV * dataline, int async)
 {
     dTHX;
     D_imp_dbh(dbh);
@@ -4513,11 +4513,24 @@ int pg_db_putcopydata (SV * dbh, SV * dataline)
     const char *copydata;
     STRLEN copylen;
 
-    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_putcopydata\n", THEADER_slow);
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_putcopydata (async: %d)\n", THEADER_slow, async);
 
     /* We must be in COPY IN state */
     if (PGRES_COPY_IN != imp_dbh->copystate && PGRES_COPY_BOTH != imp_dbh->copystate)
         croak("pg_putcopydata can only be called directly after issuing a COPY FROM command\n");
+
+    /* Enable non-blocking mode for async callers (safe during COPY: no other ops allowed) */
+    if (async && !imp_dbh->copy_nonblocking) {
+        TRACE_PQSETNONBLOCKING;
+        if (PQsetnonblocking(imp_dbh->conn, 1) != 0) {
+            _fatal_sqlstate(aTHX_ imp_dbh);
+            TRACE_PQERRORMESSAGE;
+            pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+            if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata (error: setnonblocking)\n", THEADER_slow);
+            return -1;
+        }
+        imp_dbh->copy_nonblocking = 1;
+    }
 
     if (imp_dbh->pg_utf8_flag && !imp_dbh->copybinary)
         copydata = SvPVutf8(dataline, copylen);
@@ -4528,22 +4541,38 @@ int pg_db_putcopydata (SV * dbh, SV * dataline)
     copystatus = PQputCopyData(imp_dbh->conn, copydata, copylen);
 
     if (1 == copystatus) {
-        if (PGRES_COPY_BOTH == imp_dbh->copystate && PQflush(imp_dbh->conn)) {
-            _fatal_sqlstate(aTHX_ imp_dbh);
-            TRACE_PQERRORMESSAGE;
-            pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (async || PGRES_COPY_BOTH == imp_dbh->copystate) {
+            int flush_status;
+            TRACE_PQFLUSH;
+            flush_status = PQflush(imp_dbh->conn);
+            if (-1 == flush_status) {
+                _fatal_sqlstate(aTHX_ imp_dbh);
+                TRACE_PQERRORMESSAGE;
+                pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+                if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata (error: flush)\n", THEADER_slow);
+                return -1;
+            }
+            /* flush_status 1 means data still pending in output buffer */
+            if (async && 1 == flush_status) {
+                if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata (flush pending)\n", THEADER_slow);
+                return 2;
+            }
         }
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata (1)\n", THEADER_slow);
+        return 1;
     }
-    else if (0 == copystatus) { /* non-blocking mode only */
+    else if (0 == copystatus) {
+        /* Non-blocking mode: output buffer full, caller should wait for write-ready */
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata (buffer full)\n", THEADER_slow);
+        return 0;
     }
     else {
         _fatal_sqlstate(aTHX_ imp_dbh);
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata (error)\n", THEADER_slow);
+        return -1;
     }
-
-    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata\n", THEADER_slow);    
-    return copystatus == 1 ? 1 : 0;
 
 } /* end of pg_db_putcopydata */
 
@@ -4613,6 +4642,186 @@ int pg_db_putcopyend (SV * dbh)
     }
 
 } /* end of pg_db_putcopyend */
+
+
+/* ================================================================== */
+/*
+   Non-blocking version of pg_db_putcopyend.
+   Sends the COPY end marker and attempts to collect the server result
+   without blocking. Restores blocking mode on completion.
+
+   This function is designed to be called repeatedly in a poll loop:
+   - First call: sends PQputCopyEnd, attempts flush and result check
+   - Subsequent calls (when returning 0): polls for the server result
+
+   Returns:
+    1 = COPY completed successfully, connection is back in normal mode
+    0 = server result not ready yet (caller should poll socket for read-ready)
+    2 = flush pending (caller should poll socket for write-ready, then call pg_db_flush)
+   -1 = error
+*/
+int pg_db_putcopyend_async (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_putcopyend_async (copystate: %d)\n",
+                         THEADER_slow, imp_dbh->copystate);
+
+    /*
+       copystate == -1 means we already sent PQputCopyEnd on a prior call
+       and are waiting for the server result. Skip straight to result polling.
+    */
+    if (-1 == imp_dbh->copystate) {
+        goto poll_result;
+    }
+
+    if (0 == imp_dbh->copystate) {
+        warn("pg_putcopyend_async cannot be called until a COPY is issued");
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (warning: copystate is 0)\n", THEADER_slow);
+        return -1;
+    }
+
+    if (PGRES_COPY_OUT == imp_dbh->copystate) {
+        warn("pg_putcopyend_async does not need to be called when using pg_getcopydata");
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (warning: copy state is OUT)\n", THEADER_slow);
+        return -1;
+    }
+
+    /* Must be PGRES_COPY_IN or PGRES_COPY_BOTH at this point */
+    {
+        int copystatus;
+
+        TRACE_PQPUTCOPYEND;
+        copystatus = PQputCopyEnd(imp_dbh->conn, NULL);
+
+        if (1 == copystatus) {
+            int flush_status;
+
+            /* Mark that PQputCopyEnd has been sent, awaiting result */
+            imp_dbh->copystate = -1;
+
+            /* Flush the end marker to the server */
+            TRACE_PQFLUSH;
+            flush_status = PQflush(imp_dbh->conn);
+            if (-1 == flush_status) {
+                imp_dbh->copystate = 0;
+                _fatal_sqlstate(aTHX_ imp_dbh);
+                TRACE_PQERRORMESSAGE;
+                pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+                if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (error: flush)\n", THEADER_slow);
+                return -1;
+            }
+            if (1 == flush_status) {
+                /* Data pending in output buffer, caller should poll for write-ready */
+                if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (flush pending)\n", THEADER_slow);
+                return 2;
+            }
+
+            /* Fall through to result polling */
+        }
+        else if (0 == copystatus) {
+            /* Non-blocking mode: buffer full, caller should poll for write-ready */
+            if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (buffer full)\n", THEADER_slow);
+            return 0;
+        }
+        else {
+            imp_dbh->copystate = 0;
+            _fatal_sqlstate(aTHX_ imp_dbh);
+            TRACE_PQERRORMESSAGE;
+            pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+            if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (error)\n", THEADER_slow);
+            return -1;
+        }
+    }
+
+poll_result:
+    /* Check if the server result is ready (non-blocking) */
+    {
+        PGresult * result;
+        ExecStatusType status;
+
+        TRACE_PQCONSUMEINPUT;
+        if (!PQconsumeInput(imp_dbh->conn)) {
+            imp_dbh->copystate = 0;
+            _fatal_sqlstate(aTHX_ imp_dbh);
+            TRACE_PQERRORMESSAGE;
+            pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+            if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (error: consumeInput)\n", THEADER_slow);
+            return -1;
+        }
+
+        TRACE_PQISBUSY;
+        if (PQisBusy(imp_dbh->conn)) {
+            /* Server hasn't replied yet, caller should poll for read-ready */
+            if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (result pending)\n", THEADER_slow);
+            return 0;
+        }
+
+        /* Result is ready. Restore blocking mode and drain results. */
+        if (imp_dbh->copy_nonblocking) {
+            TRACE_PQSETNONBLOCKING;
+            PQsetnonblocking(imp_dbh->conn, 0);
+            imp_dbh->copy_nonblocking = 0;
+        }
+
+        imp_dbh->copystate = 0;
+        TRACE_PQGETRESULT;
+        result = PQgetResult(imp_dbh->conn);
+        status = _sqlstate(aTHX_ imp_dbh, result);
+        while (result != NULL) {
+            TRACE_PQCLEAR;
+            PQclear(result);
+            TRACE_PQGETRESULT;
+            result = PQgetResult(imp_dbh->conn);
+        }
+
+        if (PGRES_COMMAND_OK != status) {
+            TRACE_PQERRORMESSAGE;
+            pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
+            if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (error: status not OK)\n", THEADER_slow);
+            return -1;
+        }
+
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (1)\n", THEADER_slow);
+        return 1;
+    }
+
+} /* end of pg_db_putcopyend_async */
+
+
+/* ================================================================== */
+/*
+   Flush the libpq output buffer. Used during non-blocking COPY operations.
+
+   Returns:
+    0 = all data flushed successfully
+    1 = data still pending (caller should poll for write-ready and call again)
+   -1 = error
+*/
+int pg_db_flush (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+    int flush_status;
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_flush\n", THEADER_slow);
+
+    TRACE_PQFLUSH;
+    flush_status = PQflush(imp_dbh->conn);
+
+    if (-1 == flush_status) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_flush (error)\n", THEADER_slow);
+        return -1;
+    }
+
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_flush (%d)\n", THEADER_slow, flush_status);
+    return flush_status;
+
+} /* end of pg_db_flush */
 
 
 /* ================================================================== */
