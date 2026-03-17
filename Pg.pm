@@ -538,6 +538,8 @@ LEFT JOIN pg_catalog.pg_attrdef af ON (a.attnum = af.adnum AND a.attrelid = af.a
 WHERE a.attnum >= 1 AND c.relkind IN ('r','p','v','m','f')$whereclause
 ORDER BY n.nspname, c.relname, a.attnum
 EOSQL
+
+        local $dbh->{FetchHashKeyName} = 'NAME';
         my $sth = $dbh->prepare($col_info_sql);
         $sth->execute(@args) or die $sth->errstr;
         ## Immediately grab all the column names in order, but exclude internal ones
@@ -768,6 +770,7 @@ WHERE
 ORDER BY "NON_UNIQUE", "TYPE", "INDEX_QUALIFIER", "INDEX_NAME", "ORDINAL_POSITION"
 EOSQL
 
+        local $dbh->{FetchHashKeyName} = 'NAME';
         my $sth = $dbh->prepare($stats_sql);
         $sth->execute(@exe_args) or die $sth->errstr;
         return $sth;
@@ -822,6 +825,7 @@ EOSQL
             $pri_key_sql =~ s/t.spclocation/pg_catalog.pg_tablespace_location(t.oid)/;
         }
 
+        local $dbh->{FetchHashKeyName} = 'NAME';
         my $sth = $dbh->prepare($pri_key_sql);
         $sth->execute();
         my $info = $sth->fetchall_arrayref()->[0];
@@ -1200,6 +1204,8 @@ EOSQL
                 $tbl_sql = qq{SELECT * FROM ($tbl_sql) ti WHERE "TABLE_TYPE" IN ($type_restrict)};
             }
         }
+
+        local $dbh->{FetchHashKeyName} = 'NAME';
         my $sth = $dbh->prepare($tbl_sql);
         $sth->execute();
 
