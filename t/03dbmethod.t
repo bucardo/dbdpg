@@ -35,8 +35,6 @@ isnt ($dbh, undef, 'Connect to database for database handle method testing');
 
 $dbh->trace('pglibpq', '/tmp/err');
 
-
-
 # silence notices about implicitly created and dropped objects
 $dbh->do('set client_min_messages=warning');
 
@@ -45,6 +43,8 @@ my $space_table = q{dbd_pg_test Table};
 my $missing_table = 'dbd_pg_no_such_table';
 my $test_schema = 'dbd_pg_testschema';
 my $missing_schema = 'dbd_pg_no_such_schema';
+my $test_table_no_pk = 'dbd_pg_test_no_pk';
+my $test_table_combo_pk = 'dbd_pg_test_combo_pk';
 
 my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
 my ($schema,$schema2,$schema3) = ('dbd_pg_testschema', 'dbd_pg_testschema2', 'dbd_pg_testschema3');
@@ -1216,6 +1216,16 @@ is ($nomatch->{pg_enum_values}, undef, $t);
 # Test of the "primary_key_info" database handle method
 #
 
+# Check required minimum fields
+$t='DB handle method "primary_key_info" returns expected fields in correct order';
+$sth = $dbh->primary_key_info('', $test_schema, $test_table);
+$colnames = join ',', @{$sth->{NAME}};
+$expected = join ',', (qw(
+  TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME KEY_SEQ PK_NAME DATA_TYPE
+  pg_tablespace_name pg_tablespace_location pg_schema pg_table pg_column
+));
+is ($colnames, $expected, $t);
+
 $t=q{DB handle method "primary_key_info" returns undef when table argument is undef};
 $sth = $dbh->primary_key_info('', undef, undef);
 is ($sth->fetch, undef, $t);
@@ -1231,65 +1241,120 @@ ok (defined $result->[0], $t);
 
 $t=q{DB handle method "primary_key_info" works when schema argument is empty};
 $sth = $dbh->primary_key_info('', '', $test_table);
-$result = $sth->fetch;
-ok (defined $result->[0], $t);
+$result = $sth->fetchall_arrayref({})->[0];
+ok (defined $result, $t);
 
-# Check required minimum fields
-$t='DB handle method "primary_key_info" returns required fields';
-$sth = $dbh->primary_key_info('', $test_schema, $test_table);
-$result = $sth->fetchall_arrayref({});
-@required = (qw(TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME KEY_SEQ PK_NAME DATA_TYPE));
-undef %missing;
-for my $r (@$result) {
-    for (@required) {
-        $missing{$_}++ if ! exists $r->{$_};
-    }
-}
-is_deeply (\%missing, {}, $t);
+## Create a second table with multiple columns
+$dbh->do(qq{CREATE TEMP TABLE $test_table_combo_pk(a INTEGER, "B" TEXT, CONSTRAINT combo PRIMARY KEY (a,"B"))});
+$sth = $dbh->primary_key_info('', '', $test_table_combo_pk);
+my $multi = $sth->fetchall_arrayref({});
+$sth = $dbh->primary_key_info('', '', $test_table_combo_pk, {pg_onerow => 1});
+my $onerow = $sth->fetchall_arrayref({})->[0];
+$sth = $dbh->primary_key_info('', '', $test_table_combo_pk, {pg_onerow => 2});
+my $arrayrow = $sth->fetchall_arrayref({})->[0];
 
-## Check some of the returned fields:
-my $r = $result->[0];
-is ($r->{TABLE_CAT},   $dbh->{pg_db},      'DB handle method "primary_key_info" returns proper TABLE_CAT');
-is ($r->{TABLE_NAME},  'dbd_pg_test',      'DB handle method "primary_key_info" returns proper TABLE_NAME');
-is ($r->{pg_table},    'dbd_pg_test',      'DB handle method "primary_key_info" returns proper pg_table');
-is ($r->{COLUMN_NAME}, 'id',               'DB handle method "primary_key_info" returns proper COLUMN_NAME');
-is ($r->{PK_NAME},     'dbd_pg_test_pkey', 'DB handle method "primary_key_info" returns proper PK_NAME');
-is ($r->{DATA_TYPE},   'int4',             'DB handle method "primary_key_info" returns proper DATA_TYPE');
-is ($r->{KEY_SEQ},     1,                  'DB handle method "primary_key_info" returns proper KEY_SEQ');
+## Create a third table with no primary key
+$t=q{DB handle method "primary_key_info" returns nothing for tables with no PK};
+$dbh->do(qq{CREATE TEMP TABLE $test_table_no_pk(n int)});
+$sth = $dbh->primary_key_info('', '', $test_table_no_pk);
+is_deeply ($sth->fetch, undef, $t);
 
-$t='DB handle method "primary_key_info" works when pg_onerow attribute set to 1';
-$sth = $dbh->primary_key_info('', $test_schema, 'dbd_pg_test', {pg_onerow => 1});
-$result = $sth->fetchall_arrayref({});
-is ($result->[0]{pg_table}, 'dbd_pg_test', $t);
+$t=q{DB handle method "primary_key_info" returns correct TABLE_CAT (database name)};
+is ($result->{TABLE_CAT}, $dbh->{pg_db}, $t);
 
-$t='DB handle method "primary_key_info" works when pg_onerow attribute set to 2';
-$sth = $dbh->primary_key_info('', $test_schema, 'dbd_pg_test', {pg_onerow => 2});
-$result = $sth->fetchall_arrayref({});
-is_deeply ($result->[0]{KEY_SEQ}, ['1'], $t);
+$t=q{DB handle method "primary_key_info" returns correct TABLE_SCHEM};
+is ($result->{TABLE_SCHEM}, $test_schema, $t);
 
-$t='DB handle method "primary_key_info" works when pg_onerow attribute set to 1 (multi-pk)';
-my $table = 'dbd_pg_test_combo_pk';
-$dbh->do("CREATE TABLE $test_schema.$table(a INTEGER, b INTEGER, CONSTRAINT combo PRIMARY KEY (a,b))");
-$sth = $dbh->primary_key_info('', $test_schema, $table, {pg_onerow => 1});
-$result = $sth->fetchall_arrayref({});
-is ($result->[0]{KEY_SEQ}, '1, 2', $t);
+$t=q{DB handle method "primary_key_info" returns correct TABLE_NAME};
+is ($result->{TABLE_NAME}, $test_table, $t);
 
-$t='DB handle method "primary_key_info" works when pg_onerow attribute set to 2 (multi-pk)';
-$sth = $dbh->primary_key_info('', $test_schema, $table, {pg_onerow => 2});
-$result = $sth->fetchall_arrayref({});
-is_deeply ($result->[0]{KEY_SEQ}, ['1','2'], $t);
+$t=q{DB handle method "primary_key_info" returns correct COLUMN_NAME};
+is ($result->{COLUMN_NAME}, 'id', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct COLUMN_NAME (multi-row pk 1)};
+is ($multi->[0]{COLUMN_NAME}, 'a', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct COLUMN_NAME (multi-row pk 2)};
+is ($multi->[1]{COLUMN_NAME}, '"B"', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct COLUMN_NAME (multi-row pk, pg_onerow=>1)};
+is ($onerow->{COLUMN_NAME}, 'a, "B"', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct COLUMN_NAME (multi-row pk, pg_onerow=>2)};
+is_deeply ($arrayrow->{COLUMN_NAME}, ['a', '"B"'], $t);
+
+$t=q{DB handle method "primary_key_info" returns correct KEY_SEQ};
+is ($result->{KEY_SEQ}, 1, $t);
+
+$t=q{DB handle method "primary_key_info" returns correct KEY_SEQ (multi-row pk 1)};
+is ($multi->[0]{KEY_SEQ}, 1, $t);
+
+$t=q{DB handle method "primary_key_info" returns correct KEY_SEQ (multi-row pk 2)};
+is ($multi->[1]{KEY_SEQ}, 2, $t);
+
+$t=q{DB handle method "primary_key_info" returns correct KEY_SEQ (multi-row pk, pg_onerow=>1)};
+is ($onerow->{KEY_SEQ}, '1, 2', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct KEY_SEQ (multi-row pk, pg_onerow=>2)};
+is_deeply ($arrayrow->{KEY_SEQ}, [1,2], $t);
+
+$t=q{DB handle method "primary_key_info" returns correct PK_NAME};
+is ($result->{PK_NAME}, 'dbd_pg_test_pkey', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct DATA_TYPE};
+is ($result->{DATA_TYPE}, 'int4', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct DATA_TYPE (multi-row pk 1)};
+is ($multi->[0]{DATA_TYPE}, 'int4', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct DATA_TYPE (multi-row pk 2)};
+is ($multi->[1]{DATA_TYPE}, 'text', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct DATA_TYPE (multi-row pk, pg_onerow=>1)};
+is ($onerow->{DATA_TYPE}, 'int4, text', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct DATA_TYPE (multi-row pk, pg_onerow=>2)};
+is_deeply ($arrayrow->{DATA_TYPE}, ['int4','text'], $t);
+
+$t=q{DB handle method "primary_key_info" returns correct pg_tablespace_name};
+## Ideally we test these better, but creating tablespaces in the test cluster is too tricky
+is ($result->{pg_tablespace_name}, undef, $t);
+
+$t=q{DB handle method "primary_key_info" returns correct pg_tablespace_location};
+is ($result->{pg_tablespace_location}, undef, $t);
+
+$t=q{DB handle method "primary_key_info" returns correct pg_schema};
+is ($result->{pg_schema}, $test_schema, $t);
+
+$t=q{DB handle method "primary_key_info" returns correct pg_table};
+is ($result->{pg_table}, $test_table, $t);
+
+$t=q{DB handle method "primary_key_info" returns correct pg_column};
+is ($result->{pg_column}, 'id', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct pg_column (multi-row pk 1)};
+is ($multi->[0]{pg_column}, 'a', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct pg_column (multi-row pk 2)};
+is ($multi->[1]{pg_column}, 'B', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct pg_column (multi-row pk, pg_onerow=>1)};
+is ($onerow->{pg_column}, 'a, B', $t);
+
+$t=q{DB handle method "primary_key_info" returns correct pg_column (multi-row pk, pg_onerow=>2)};
+is_deeply ($arrayrow->{pg_column}, ['a', 'B'], $t);
 
 #
 # Test of the "primary_key" database handle method
 #
 
 $t='DB handle method "primary_key" works';
-@results = $dbh->primary_key('', '', 'dbd_pg_test');
+@results = $dbh->primary_key('', $test_schema, $test_table);
 $expected = ['id'];
 is_deeply (\@results, $expected, $t);
 
 $t='DB handle method "primary_key" returns empty list for invalid table';
-@results = $dbh->primary_key('', '', 'dbd_pg_test_do_not_create_this_table');
+@results = $dbh->primary_key('', $test_schema, $missing_table);
 $expected = [];
 is_deeply (\@results, $expected, $t);
 
