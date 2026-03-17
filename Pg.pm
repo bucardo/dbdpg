@@ -829,6 +829,7 @@ EOSQL
             $pri_key_sql =~ s/\Qpg_catalog.pg_tablespace_location(t.oid)/t.spclocation/;
         }
 
+        local $dbh->{FetchHashKeyName} = 'NAME';
         my $sth = $dbh->prepare($pri_key_sql);
         $sth->execute(@exe_args) or die $sth->errstr;
         my $info = $sth->fetchall_arrayref({})->[0];

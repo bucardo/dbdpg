@@ -1344,6 +1344,14 @@ is ($onerow->{pg_column}, 'a, B', $t);
 $t=q{DB handle method "primary_key_info" returns correct pg_column (multi-row pk, pg_onerow=>2)};
 is_deeply ($arrayrow->{pg_column}, ['a', 'B'], $t);
 
+$t=q{DB handle method "primary_key_info" works when FetchHashKeyName set to NAME_lc};
+{
+    local $dbh->{FetchHashKeyName} = 'NAME_lc';
+    $sth = $dbh->primary_key_info('', $test_schema, $test_table);
+    $result = $sth->fetchall_arrayref({})->[0];
+    is ($result->{COLUMN_NAME}, 'id', $t);
+}
+
 #
 # Test of the "primary_key" database handle method
 #
