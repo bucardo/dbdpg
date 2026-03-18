@@ -4431,8 +4431,14 @@ the COPY statement. Returns a 1 on successful input. Examples:
 
 Non-blocking version of pg_putcopydata for use by async libraries. When called, the
 connection is switched into non-blocking mode (via C<PQsetnonblocking>), which is safe
-because no other operations are permitted during a COPY. The non-blocking mode is
-automatically restored to blocking when L</pg_putcopyend_async> completes.
+because no other operations are permitted on this connection during a COPY. The
+non-blocking mode is automatically restored to blocking when L</pg_putcopyend_async>
+completes.
+
+Note: the connection performing the COPY is restricted to COPY operations until
+the COPY ends. However, the non-blocking methods allow the event loop to service
+other connections and tasks between calls, which is the primary benefit over the
+blocking variants.
 
 Return values match C<PQputCopyData>:
 
