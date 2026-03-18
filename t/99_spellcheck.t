@@ -576,6 +576,7 @@ nmake
 nntp
 nohead
 nonliteral
+nopause
 noprefix
 noreturn
 nosetup
