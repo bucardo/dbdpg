@@ -2,21 +2,37 @@
 
 ## Test combinations of Postgres for DBD::Pg
 
-my $USAGE = "Usage: $0 <postgresdir> [-t specific_test_file] [-c compile_version] [-r run_version] [--setup versions]";
+my $USAGE = "Usage: $0 <postgresdir> [-t specific_test_file] [-c compile_versions] [-r run_versions] [--setup versions]";
 
-## Usage:
+## Other flags:
+## --minversion
+## --quiet
+## --nohead
+## --nopause
+
+
+## Usage examples:
+##
 ## Create Postgres 15,16, and 17 directories in $ENV{HOME}/pg/:
 ## perl dbdpg_test_postgres_versions.pl --setup 15,16,17
+##
 ## Test all combinations of the same:
 ## perl dbdpg_test_postgres_versions.pl
+##
 ## Only run for versions 15 and up:
 ## perl dbdpg_test_postgres_versions.pl --minversion 15
+##
 ## Same, but do not run head
 ## perl dbdpg_test_postgres_versions.pl --minversion 15 --nohead
+##
 ## Add in the current HEAD branch, recreating if already there:
 ## perl dbdpg_test_postgres_versions.pl --setup head --force
+##
 ## Test DBD::Pg compiled against head and run against Postgres 14:
 ## perl dbdpg_test_postgres_versions.pl -c head -r 14
+##
+## Test compiled version 16 against everything 14 or greater:
+## perl dbdpg_test_postgres_versions.pl -c 16 -r 14+
 
 
 use 5.008001;
@@ -31,7 +47,7 @@ use Data::Dumper; $Data::Dumper::Sortkeys = 1;
 use Time::HiRes qw/ gettimeofday tv_interval /;
 use List::Util qw/ shuffle /;
 
-our $VERSION = 1.5;
+our $VERSION = 1.6;
 
 my $startdir = getcwd();
 
@@ -53,8 +69,9 @@ GetOptions
    'setup=s',
    'minversion=s',
    'nohead',
+   'nopause',
    'help',
-);
+) or die "Usage: $USAGE\n";
 
 if ($arg{help}) {
     print "$USAGE\n\n";
@@ -65,6 +82,9 @@ my $testfile = $arg{testfile} || $ENV{DBDPG_TEST_FILE} || '';
 my $compileversion = $arg{compileversion} || $ENV{DBDPG_COMPILE_VERSION} || '';
 my $runversion = $arg{runversion} || $ENV{DBDPG_RUN_VERSION} || '';
 
+my $min_run_version = $runversion =~ /(\d[\d\.]*)\+/ ? $1 : '';
+my $min_compile_version = $compileversion =~ /(\d[\d\.]*)\+/ ? $1 : '';
+
 my $basedir = shift || "$ENV{HOME}/pg";
 
 setup_postgres_dirs() if $arg{setup};
@@ -73,12 +93,13 @@ my $dh;
 opendir $dh, $basedir;
 my @versions = grep { /^[1-9]\.?[0-9]$/ or /^head$/i } readdir $dh;
 closedir $dh;
-if ($arg{minversion} =~ /^[0-9]+$/) {
-    @versions = grep { ! /^[0-9]+$/ or $_ >= $arg{minversion} } @versions;
+if ($arg{minversion} =~ /^[0-9]+/) {
+    @versions = grep { ! /^[0-9]+/ or $_ >= $arg{minversion} } @versions;
 }
 if ($arg{nohead}) {
     @versions = grep { ! /head/ } @versions;
 }
+@versions = sort { $a <=> $b } @versions;
 
 ## Sanity check:
 for my $lver (@versions) {
@@ -106,20 +127,67 @@ sub note {
     return;
 }
 
-my $debug_loop = 0;
-for my $lib_version (shuffle @versions) {
 
-    next if $compileversion and $compileversion !~ /\b$lib_version\b/;
+my @compile_versions = grep {
+    if ($min_compile_version) {
+        $_ >= $min_compile_version;
+    }
+    elsif ($compileversion) {
+        $compileversion =~ /\b$_\b/;
+    }
+    else {
+        $_;
+    }
+}
+@versions;
+
+@compile_versions or die "No valid compile versions found\n";
+my $pretty_compile_list = join ' ', @compile_versions;
+
+my @run_versions = grep {
+    if ($min_run_version) {
+        $_ >= $min_run_version;
+    }
+    elsif ($runversion) {
+        $runversion =~ /\b$_\b/;
+    }
+    else {
+        $_;
+    }
+}
+@versions;
+
+@run_versions or die "No valid run versions found\n";
+my $pretty_run_list = join ' ', @run_versions;
+
+print "Testing compilation of these versions: $pretty_compile_list\n";
+print "Testing run of these versions: $pretty_run_list\n";
+
+my $debug_loop = 0;
+my $readme = 'README.testdatabase';
+
+for my $lib_version (shuffle @compile_versions) {
 
     my $lib_dir = "$basedir/$lib_version";
 
-    for my $target_version (shuffle @versions) {
+    my $compfile = "tmp/alltest.dbdpg.compile.$lib_version.log";
+    note "Compiling $lib_version - results stored in $compfile";
 
-        next if $runversion and $runversion !~ /\b$target_version\b/;
+    open my $fh, '>>', $compfile;
+    printf {$fh} "STARTED COMPILE $lib_version: %s\n\n", scalar localtime;
+    my $start_time = [gettimeofday];
+
+    my $COM = "LD_LIBRARY_PATH=$lib_dir/lib POSTGRES_LIB= POSTGRES_INCLUDE= POSTGRES_HOME=$lib_dir perl Makefile.PL 2>&1 >> $compfile";
+    note "--> $COM";
+    print {$fh} "***\nRUN: $COM\n***\n\n\n";
+    print {$fh} qx{$COM};
+
+    $COM = "LD_LIBRARY_PATH=$lib_dir/lib make 2>&1 >> $compfile";
+
+    for my $target_version (shuffle @run_versions) {
 
         my $target_dir = "$basedir/$target_version";
 
-        my $readme = 'README.testdatabase';
         unlink $readme if -e $readme;
 
         my $testdbdir = 'dbdpg_test_database';
@@ -135,11 +203,6 @@ for my $lib_version (shuffle @versions) {
         my $start_time = [gettimeofday];
 
         system "perl t/99cleanup.t >> $outfile";
-
-        my $COM = "LD_LIBRARY_PATH=$lib_dir/lib POSTGRES_LIB= POSTGRES_INCLUDE= POSTGRES_HOME=$lib_dir perl Makefile.PL 2>&1 >> $outfile";
-        note "--> $COM";
-        print {$fh} "***\nRUN: $COM\n***\n\n\n";
-        print {$fh} qx{$COM};
 
         $COM = "LD_LIBRARY_PATH=$lib_dir/lib DBDPG_TEST_ALWAYS_ENV=0 AUTHOR_TESTING=0 TEST_SIGNATURE=0 DBDPG_INITDB=$target_dir/bin/initdb make test TEST_VERBOSE=1 2>&1 >> $outfile";
         $testfile and $COM =~ s/make test/make test TEST_FILES=$testfile/;
@@ -159,14 +222,20 @@ for my $lib_version (shuffle @versions) {
         }
         note "--> $final_line $lib_version vs $target_version ($date) ($final_time)\n\n";
 
-        if ($debug_loop++ > 300) {
+        if ($debug_loop++ > 500) {
             die "Leaving at loop $debug_loop\n";
         }
 
         ## Just in case we want to catch something
         if ($final_line =~ /FAIL/) {
-            warn "Got a failure. Hit Enter to continue, or break out to examine it\n";
-            <STDIN>;
+            if ($arg{nopause}) {
+                warn " ******* FAILURE at $outfile\n";
+            }
+            else {
+                warn "Got a failure. Hit Enter to continue, or break out to examine it\n";
+                warn "Log file: $outfile\n";
+                <STDIN>;
+            }
         }
 
         sleep 1;
