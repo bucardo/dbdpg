@@ -26,3 +26,4 @@ dbdpg_test_*
 cover_db/
 tarballs/
 *.swp
+DBD-Pg-*
