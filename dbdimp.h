@@ -22,6 +22,7 @@ struct imp_dbh_st {
     int     prepare_number;    /* internal prepared statement name modifier */
     int     copystate;         /* 0=none PGRES_COPY_IN PGRES_COPY_OUT */
     bool    copybinary;        /* whether the copy is in binary format */
+    bool    copy_nonblocking;  /* whether PQsetnonblocking was enabled for async COPY */
     int     pg_errorlevel;     /* PQsetErrorVerbosity. Set by user, defaults to 1 */
     bool    server_prepare;    /* do we want to use PQexecPrepared? Can be changed by user */
     int     switch_prepared;   /* how many executes until we switch to PQexecPrepared */
@@ -235,9 +236,13 @@ int pg_db_getline (SV *dbh, SV * svbuf, int length);
 
 int pg_db_getcopydata (SV *dbh, SV * dataline, int async);
 
-int pg_db_putcopydata (SV *dbh, SV * dataline);
+int pg_db_putcopydata (SV *dbh, SV * dataline, int async);
 
 int pg_db_putcopyend (SV * dbh);
+
+int pg_db_putcopyend_async (SV * dbh);
+
+int pg_db_flush (SV * dbh);
 
 int pg_db_endcopy (SV * dbh);
 
