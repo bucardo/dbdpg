@@ -680,6 +680,7 @@ PQexecPrepared
 PQoids
 PQprepare
 PQprotocolVersion
+PQputCopyEnd
 PQresultErrorField
 PQsend
 PQsendPrepare
@@ -688,6 +689,7 @@ PQsendQueryParams
 PQsendQueryPrepared
 PQserverVersion
 PQsetErrorVerbosity
+PQsetnonblocking
 PQsetSingleRowMode
 PQstatus
 pqtype

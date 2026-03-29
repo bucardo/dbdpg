@@ -628,8 +628,8 @@ $dbh->commit();
 
 # Binary COPY with async methods
 
-$dbh->do('CREATE TEMP TABLE binarycopy_async AS SELECT 1::INTEGER AS x');
-$dbh->do('COPY binarycopy_async TO STDOUT BINARY');
+$dbh->do('CREATE TEMP TABLE dbd_pg_test_binarycopy_async AS SELECT 1::INTEGER AS x');
+$dbh->do('COPY dbd_pg_test_binarycopy_async TO STDOUT BINARY');
 
 my $bindata;
 my $binlen = $dbh->pg_getcopydata($bindata);
@@ -638,7 +638,7 @@ while ($dbh->pg_getcopydata(my $tmp) >= 0) {
 }
 
 $t='pg_putcopydata_async works in binary mode';
-$dbh->do('COPY binarycopy_async FROM STDIN BINARY');
+$dbh->do('COPY dbd_pg_test_binarycopy_async FROM STDIN BINARY');
 eval {
     $dbh->pg_putcopydata_async($bindata);
     $dbh->pg_flush();
@@ -653,7 +653,7 @@ eval {
 is ($@, '', $t);
 
 $t='Binary COPY via async round trips correctly';
-is_deeply ($dbh->selectall_arrayref('SELECT * FROM binarycopy_async'), [[1],[1]], $t);
+is_deeply ($dbh->selectall_arrayref('SELECT * FROM dbd_pg_test_binarycopy_async'), [[1],[1]], $t); ## nospellcheck
 
 # Multiple async COPY cycles on the same connection
 
@@ -682,7 +682,6 @@ is_deeply ($result, $expected, $t);
 
 $dbh->commit();
 
-$dbh->do("DROP TABLE $async_table");
 $dbh->do("DROP TABLE $table");
 $dbh->commit();
 
