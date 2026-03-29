@@ -15,7 +15,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if ($dbh) {
-    plan tests => 62;
+    plan tests => 89;
 }
 else {
     plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -425,6 +425,262 @@ is $@, '', 'pg_putcopydata in binary mode works'
 
 $t=q{COPY in binary mode round trips};
 is_deeply ($dbh->selectall_arrayref('SELECT * FROM binarycopy'), [[1],[1]], $t); ## nospellcheck
+
+##
+## Test the async COPY methods
+##
+
+my $async_table = 'dbd_pg_test_async_copy';
+$dbh->do(qq{CREATE TABLE $async_table(id integer, name text)});
+$dbh->commit();
+
+# pg_putcopydata_async: basic operation
+
+$t='pg_putcopydata_async fails if not after a COPY FROM statement';
+eval {
+    $dbh->pg_putcopydata_async("pizza\tpie");
+};
+like ($@, qr{COPY FROM command}, $t);
+
+$t='pg_putcopydata_async returns 1 on success';
+$dbh->do("COPY $async_table FROM STDIN");
+$result = $dbh->pg_putcopydata_async("1\tAlice\n");
+is ($result, 1, $t);
+
+$t='pg_flush sends data to server';
+$result = $dbh->pg_flush();
+is ($result, 0, $t); # 0 = flushed, 1 = pending
+
+$t='pg_putcopydata_async works on second call';
+$result = $dbh->pg_putcopydata_async("2\tBob\n");
+is ($result, 1, $t);
+$dbh->pg_flush();
+
+$t='pg_putcopydata_async works on third call';
+$result = $dbh->pg_putcopydata_async("3\tCharlie\n");
+is ($result, 1, $t);
+$dbh->pg_flush();
+
+# pg_putcopyend_async: basic operation
+
+$t='pg_putcopyend_async completes the COPY';
+my $end_result = $dbh->pg_putcopyend_async();
+# May need to poll if result is 0 (not ready yet)
+my $poll_count = 0;
+while ($end_result == 0 && $poll_count < 100) {
+    select(undef, undef, undef, 0.01);
+    $end_result = $dbh->pg_putcopyend_async();
+    $poll_count++;
+}
+is ($end_result, 1, $t);
+
+$t='Data from pg_putcopydata_async was inserted correctly';
+$result = $dbh->selectall_arrayref("SELECT id,name FROM $async_table ORDER BY id");
+$expected = [[1,'Alice'],[2,'Bob'],[3,'Charlie']];
+is_deeply ($result, $expected, $t);
+
+$dbh->commit();
+
+# Normal queries work after async COPY
+
+$t='Normal queries work after async COPY IN';
+eval {
+    $dbh->do('SELECT 999');
+};
+is ($@, q{}, $t);
+
+# Async queries work after async COPY
+
+$t='Async queries work after async COPY IN';
+eval {
+    $dbh->do('SELECT 888', { pg_async => PG_ASYNC} );
+};
+is ($@, q{}, $t);
+$dbh->pg_result();
+
+# pg_putcopyend_async: state checks (uses Test::Warn like blocking variant)
+
+$t='pg_putcopyend_async warns when not in COPY state';
+eval { require Test::Warn; };
+if ($@) {
+    pass ('Skipping Test::Warn test for putcopyend_async no-copy');
+    pass ('Skipping Test::Warn test for putcopyend_async copy-out');
+}
+else {
+    Test::Warn::warning_like (sub { $dbh->pg_putcopyend_async(); }, qr/until a COPY/, $t);
+
+    $t='pg_putcopyend_async warns when in COPY OUT state';
+    $dbh->do("COPY $async_table TO STDOUT");
+    Test::Warn::warning_like (sub { $dbh->pg_putcopyend_async(); }, qr/pg_getcopydata/, $t);
+    # Drain the COPY OUT
+    1 while ($dbh->pg_getcopydata($buffer) >= 0);
+}
+
+# pg_flush: works outside COPY (should just return 0 = nothing to flush)
+
+$t='pg_flush returns 0 when nothing to flush';
+$result = $dbh->pg_flush();
+is ($result, 0, $t);
+
+# Async COPY with larger data set (tests buffering behavior)
+
+$dbh->do("DELETE FROM $async_table");
+$dbh->commit();
+
+$t='pg_putcopydata_async handles larger data sets';
+$dbh->do("COPY $async_table FROM STDIN");
+my $async_ok = 1;
+for my $i (1..1000) {
+    my $row_result = $dbh->pg_putcopydata_async("$i\tRow number $i\n");
+    if ($row_result == -1) {
+        $async_ok = 0;
+        last;
+    }
+    # If buffer full (0), poll and retry
+    while ($row_result == 0) {
+        select(undef, undef, undef, 0.001);
+        $row_result = $dbh->pg_putcopydata_async("$i\tRow number $i\n");
+    }
+    # Flush after each successful queue
+    my $flush = $dbh->pg_flush();
+    while ($flush == 1) {
+        select(undef, undef, undef, 0.001);
+        $flush = $dbh->pg_flush();
+    }
+}
+ok ($async_ok, $t);
+
+$t='pg_putcopyend_async works after large data set';
+$end_result = $dbh->pg_putcopyend_async();
+$poll_count = 0;
+while ($end_result == 0 && $poll_count < 100) {
+    select(undef, undef, undef, 0.01);
+    $end_result = $dbh->pg_putcopyend_async();
+    $poll_count++;
+}
+is ($end_result, 1, $t);
+
+$t='All 1000 rows were inserted via async COPY';
+$result = $dbh->selectall_arrayref("SELECT count(*) FROM $async_table");
+is ($result->[0][0], 1000, $t);
+
+$dbh->commit();
+
+# Mixing: blocking putcopydata still works (backward compatibility)
+
+$dbh->do("DELETE FROM $async_table");
+$dbh->commit();
+
+$t='Blocking pg_putcopydata still works after async has been used';
+$dbh->do("COPY $async_table FROM STDIN");
+$result = $dbh->pg_putcopydata("42\tBlocking row\n");
+is ($result, 1, $t);
+
+$t='Blocking pg_putcopyend still works';
+$result = $dbh->pg_putcopyend();
+is ($result, 1, $t);
+
+$t='Blocking COPY data was inserted correctly';
+$result = $dbh->selectall_arrayref("SELECT id,name FROM $async_table ORDER BY id");
+$expected = [[42,'Blocking row']];
+is_deeply ($result, $expected, $t);
+
+$dbh->commit();
+
+# pg_putcopydata_async: wrong state checks
+
+$t='pg_putcopydata_async fails in COPY OUT state';
+$dbh->do("COPY $async_table TO STDOUT");
+eval {
+    $dbh->pg_putcopydata_async("pizza\tpie");
+};
+like ($@, qr{COPY FROM command}, $t);
+# Drain the COPY OUT
+1 while ($dbh->pg_getcopydata($buffer) >= 0);
+
+$t='pg_putcopydata_async fails with no argument';
+$dbh->do("COPY $async_table FROM STDIN");
+eval {
+    $dbh->pg_putcopydata_async();
+};
+ok ($@, $t);
+$dbh->rollback();
+
+# do() fails during async COPY IN (same as blocking)
+
+$t='do() fails during async COPY IN';
+$dbh->do("COPY $async_table FROM STDIN");
+$dbh->pg_putcopydata_async("99\tDuringCopy\n");
+eval {
+    $dbh->do('SELECT 123');
+};
+like ($@, qr{pg_putcopyend}, $t);
+
+$t='pg_putcopydata_async works after a rude non-COPY attempt';
+eval {
+    $result = $dbh->pg_putcopydata_async("100\tAfterRude\n");
+};
+is ($@, q{}, $t);
+is ($result, 1, $t);
+$dbh->pg_flush();
+$dbh->pg_putcopyend();
+$dbh->commit();
+
+# Binary COPY with async methods
+
+$dbh->do('CREATE TEMP TABLE dbd_pg_test_binarycopy_async AS SELECT 1::INTEGER AS x');
+$dbh->do('COPY dbd_pg_test_binarycopy_async TO STDOUT BINARY');
+
+my $bindata;
+my $binlen = $dbh->pg_getcopydata($bindata);
+while ($dbh->pg_getcopydata(my $tmp) >= 0) {
+    $bindata .= $tmp;
+}
+
+$t='pg_putcopydata_async works in binary mode';
+$dbh->do('COPY dbd_pg_test_binarycopy_async FROM STDIN BINARY');
+eval {
+    $dbh->pg_putcopydata_async($bindata);
+    $dbh->pg_flush();
+    my $bend = $dbh->pg_putcopyend_async();
+    my $bpoll = 0;
+    while ($bend == 0 && $bpoll < 100) {
+        select(undef, undef, undef, 0.01);
+        $bend = $dbh->pg_putcopyend_async();
+        $bpoll++;
+    }
+};
+is ($@, '', $t);
+
+$t='Binary COPY via async round trips correctly';
+is_deeply ($dbh->selectall_arrayref('SELECT * FROM dbd_pg_test_binarycopy_async'), [[1],[1]], $t); ## nospellcheck
+
+# Multiple async COPY cycles on the same connection
+
+$dbh->do("DELETE FROM $async_table");
+$dbh->commit();
+
+$t='Second async COPY cycle works on same connection';
+$dbh->do("COPY $async_table FROM STDIN");
+$dbh->pg_putcopydata_async("50\tFirstCycle\n");
+$dbh->pg_flush();
+my $e1 = $dbh->pg_putcopyend_async();
+while ($e1 == 0) { select(undef, undef, undef, 0.01); $e1 = $dbh->pg_putcopyend_async(); }
+$dbh->commit();
+
+$dbh->do("COPY $async_table FROM STDIN");
+$dbh->pg_putcopydata_async("51\tSecondCycle\n");
+$dbh->pg_flush();
+my $e2 = $dbh->pg_putcopyend_async();
+while ($e2 == 0) { select(undef, undef, undef, 0.01); $e2 = $dbh->pg_putcopyend_async(); }
+is ($e2, 1, $t);
+
+$t='Both async COPY cycles inserted data correctly';
+$result = $dbh->selectall_arrayref("SELECT id,name FROM $async_table ORDER BY id");
+$expected = [[50,'FirstCycle'],[51,'SecondCycle']];
+is_deeply ($result, $expected, $t);
+
+$dbh->commit();
 
 $dbh->do("DROP TABLE $table");
 $dbh->commit();
