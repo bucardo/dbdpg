@@ -2,10 +2,32 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.20.0  (unreleased)
+Version 3.20.0  (released March 19, 2026)
 
  - Cleanup and improve the statistics_info() function.
    We no longer return "clustered" as a "TYPE"
+   [Greg Sabino Mullane]
+
+ - Ensure FetchHashKeyName cannot affect internal functions
+   [Greg Sabino Mullane]
+   (Github issue #174)
+
+ - Fix compilation warning with gcc 15.2.0
+   [Ed Sabol]
+   (Github issue #165)
+   (Github pull request #167)
+
+ - Fix failing test due to localized error messages.
+   [Ed Sabol]
+   (Github issue #169)
+   (Github pull request #164)
+
+ - Add a security policy via the SECURITY.md file
+   [Ed Sabol]
+   (Github issue #146)
+   (Github pull request #172)
+
+ - Cleanup and improve the primary_key_info() function.
    [Greg Sabino Mullane]
 
 

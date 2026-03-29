@@ -268,6 +268,7 @@ bools
 BOOTCHECK
 bpchar
 bt
+btree
 bucardo
 BUFSIZE
 Bunce
@@ -575,6 +576,7 @@ nmake
 nntp
 nohead
 nonliteral
+nopause
 noprefix
 noreturn
 nosetup
