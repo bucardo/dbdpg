@@ -799,6 +799,15 @@ pg_putcopyend(dbh)
     OUTPUT:
         RETVAL
 
+I32
+pg_pipeline_status(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_pipeline_status(dbh);
+    OUTPUT:
+        RETVAL
+
 void
 getline(dbh, buf, len)
     PREINIT:

@@ -4616,6 +4616,28 @@ int pg_db_putcopyend (SV * dbh)
 
 
 /* ================================================================== */
+int pg_db_pipeline_status (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_pipeline_status\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    int status;
+    TRACE_PQPIPELINESTATUS;
+    status = PQpipelineStatus(imp_dbh->conn);
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_pipeline_status (%d)\n", THEADER_slow, status);
+    return status;
+#else
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_pipeline_status (not supported)\n", THEADER_slow);
+    return 0;
+#endif
+
+} /* end of pg_db_pipeline_status */
+
+
+/* ================================================================== */
 SV * pg_db_error_field (SV *dbh, char * fieldname)
 {
     dTHX;
