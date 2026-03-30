@@ -186,6 +186,9 @@ my $defines = " -DPGLIBVERSION=$serverversion -DPGDEFPORT=$defaultport";
 if ($Config{ivsize} >= 8 && $serverversion >= 90300) {
     $defines .= ' -DHAS64BITLO';
 }
+if ($serverversion >= 140000) {
+    $defines .= ' -DDBDPG_HAS_PIPELINE';
+}
 my $comp_opts = $Config{q{ccflags}} . $defines;
 
 if ($ENV{DBDPG_GCCDEBUG}) {

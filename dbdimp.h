@@ -22,6 +22,7 @@ struct imp_dbh_st {
     int     prepare_number;    /* internal prepared statement name modifier */
     int     copystate;         /* 0=none PGRES_COPY_IN PGRES_COPY_OUT */
     bool    copybinary;        /* whether the copy is in binary format */
+    int     pipeline;          /* 0=off, tracks PQpipelineStatus */
     int     pg_errorlevel;     /* PQsetErrorVerbosity. Set by user, defaults to 1 */
     bool    server_prepare;    /* do we want to use PQexecPrepared? Can be changed by user */
     int     switch_prepared;   /* how many executes until we switch to PQexecPrepared */
@@ -240,6 +241,17 @@ int pg_db_putcopydata (SV *dbh, SV * dataline);
 int pg_db_putcopyend (SV * dbh);
 
 int pg_db_endcopy (SV * dbh);
+
+/* Pipeline mode (PG14+) */
+int pg_db_enter_pipeline_mode (SV *dbh);
+int pg_db_exit_pipeline_mode (SV *dbh);
+int pg_db_pipeline_sync (SV *dbh);
+int pg_db_pipeline_status (SV *dbh);
+SV* pg_db_getresult (SV *dbh);
+int pg_db_send_query_params (SV *dbh, char *sql, AV *params);
+int pg_db_send_query_prepared (SV *dbh, char *name, AV *params);
+int pg_db_send_prepare (SV *dbh, char *name, char *sql);
+int pg_db_send_flush_request (SV *dbh);
 
 SV * pg_db_error_field (SV *dbh, char * fieldname);
 
