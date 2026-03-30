@@ -166,6 +166,7 @@ use 5.008001;
             DBD::Pg::db->install_method('pg_pipeline_status');
             DBD::Pg::db->install_method('pg_pipeline_sync');
             DBD::Pg::db->install_method('pg_ping');
+            DBD::Pg::db->install_method('pg_send_query_params');
             DBD::Pg::db->install_method('pg_putline');
             DBD::Pg::db->install_method('pg_ready');
             DBD::Pg::db->install_method('pg_release');

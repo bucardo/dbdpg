@@ -843,6 +843,21 @@ pg_getresult(dbh)
     CODE:
         ST(0) = pg_db_getresult(dbh);
 
+I32
+pg_send_query_params(dbh, sql, ...)
+    INPUT:
+        SV * dbh
+        char * sql
+    PREINIT:
+        AV * params = NULL;
+    CODE:
+        if (items > 2 && SvROK(ST(2)) && SvTYPE(SvRV(ST(2))) == SVt_PVAV) {
+            params = (AV *)SvRV(ST(2));
+        }
+        RETVAL = pg_db_send_query_params(dbh, sql, params);
+    OUTPUT:
+        RETVAL
+
 void
 getline(dbh, buf, len)
     PREINIT:
