@@ -23,7 +23,7 @@ if ($pgversion < 140000) {
     plan skip_all => 'Pipeline mode requires PostgreSQL 14 or later';
 }
 
-plan tests => 49;
+plan tests => 60;
 
 my ($result, $expected, $t);
 
@@ -332,6 +332,119 @@ $dbh->pg_getresult();  # NULL separator
 $dbh->pg_pipeline_sync();
 $dbh->pg_getresult();  # PIPELINE_SYNC
 $dbh->pg_exit_pipeline_mode();
+
+# Guards: COPY rejected in pipeline mode
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='pg_putcopydata croaks in pipeline mode';
+eval {
+    $dbh->pg_putcopydata("data\n");
+};
+like ($@, qr{pipeline}, $t);
+
+$t='pg_putcopyend croaks in pipeline mode';
+eval {
+    $dbh->pg_putcopyend();
+};
+like ($@, qr{pipeline}, $t);
+
+$dbh->pg_exit_pipeline_mode();
+
+# Exit with pending results
+
+$dbh->pg_enter_pipeline_mode();
+$dbh->pg_send_query_params('SELECT 1', []);
+$dbh->pg_pipeline_sync();
+
+$t='pg_exit_pipeline_mode fails with unconsumed results';
+eval {
+    $result = $dbh->pg_exit_pipeline_mode();
+};
+ok ($@, $t);
+
+# Drain results before exiting
+$dbh->pg_getresult();  # SELECT result
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # PIPELINE_SYNC
+
+$t='pg_exit_pipeline_mode succeeds after draining results';
+$result = $dbh->pg_exit_pipeline_mode();
+is ($result, 1, $t);
+
+# Multiple pipeline cycles without exiting
+
+$dbh->pg_exit_pipeline_mode();
+eval { $dbh->do('DROP TABLE IF EXISTS dbd_pg_test_pipeline_multi'); };
+$dbh->do('CREATE TEMP TABLE dbd_pg_test_pipeline_multi(id integer, name text)');
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='First pipeline cycle: INSERT';
+$dbh->pg_send_query_params(
+    'INSERT INTO dbd_pg_test_pipeline_multi(id, name) VALUES ($1, $2)',
+    [10, 'Cycle1']
+);
+$dbh->pg_pipeline_sync();
+
+$result = $dbh->pg_getresult();
+is ($result->{status}, 1, $t);
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # PIPELINE_SYNC
+
+$t='Second pipeline cycle: SELECT';
+$dbh->pg_send_query_params(
+    'SELECT name FROM dbd_pg_test_pipeline_multi WHERE id = $1',
+    [10]
+);
+$dbh->pg_pipeline_sync();
+
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, $t);
+is_deeply ($result->{rows}, [['Cycle1']], "$t correct data");
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # PIPELINE_SYNC
+
+$dbh->pg_exit_pipeline_mode();
+
+# Large pipeline: 100 INSERTs
+
+$dbh->pg_exit_pipeline_mode() if $dbh->pg_pipeline_status();
+eval { $dbh->do('DROP TABLE IF EXISTS dbd_pg_test_pipeline_large'); };
+$dbh->do('CREATE TEMP TABLE dbd_pg_test_pipeline_large(id integer, name text)');
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='Large pipeline: 100 INSERTs queued';
+my $large_ok = 1;
+for my $i (1..100) {
+    my $r = $dbh->pg_send_query_params(
+        'INSERT INTO dbd_pg_test_pipeline_large(id, name) VALUES ($1, $2)',
+        [$i, "Row$i"]
+    );
+    if (!$r) { $large_ok = 0; last; }
+}
+ok ($large_ok, $t);
+
+$dbh->pg_pipeline_sync();
+
+$t='Large pipeline: drain all 100 results';
+my $drain_ok = 1;
+for my $i (1..100) {
+    my $r = $dbh->pg_getresult();
+    if (!$r || $r->{status} != 1) { $drain_ok = 0; last; }
+    $dbh->pg_getresult();  # NULL separator
+}
+ok ($drain_ok, $t);
+
+$result = $dbh->pg_getresult();  # PIPELINE_SYNC
+ok (defined $result && $result->{status} == 10, "$t sync");
+
+$dbh->pg_exit_pipeline_mode();
+
+$t='All 100 rows inserted';
+$rows = $dbh->selectall_arrayref('SELECT count(*) FROM dbd_pg_test_pipeline_large');
+is ($rows->[0][0], 100, $t);
 
 cleanup_database($dbh,'test');
 $dbh->disconnect;

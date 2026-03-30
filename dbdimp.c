@@ -4515,6 +4515,10 @@ int pg_db_putcopydata (SV * dbh, SV * dataline)
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_putcopydata\n", THEADER_slow);
 
+    /* Cannot use COPY in pipeline mode */
+    if (imp_dbh->pipeline)
+        croak("pg_putcopydata cannot be used in pipeline mode\n");
+
     /* We must be in COPY IN state */
     if (PGRES_COPY_IN != imp_dbh->copystate && PGRES_COPY_BOTH != imp_dbh->copystate)
         croak("pg_putcopydata can only be called directly after issuing a COPY FROM command\n");
@@ -4560,6 +4564,10 @@ int pg_db_putcopyend (SV * dbh)
     int copystatus;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_putcopyend\n", THEADER_slow);
+
+    /* Cannot use COPY in pipeline mode */
+    if (imp_dbh->pipeline)
+        croak("pg_putcopyend cannot be used in pipeline mode\n");
 
     if (0 == imp_dbh->copystate) {
         warn("pg_putcopyend cannot be called until a COPY is issued");
