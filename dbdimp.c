@@ -339,6 +339,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     imp_dbh->switch_prepared   = 2;
     imp_dbh->copystate         = 0;
     imp_dbh->copybinary        = DBDPG_FALSE;
+    imp_dbh->pipeline          = 0;
     imp_dbh->pg_errorlevel     = 1; /* Default */
     imp_dbh->async_status      = DBH_NO_ASYNC;
     imp_dbh->async_sth         = NULL;
@@ -4814,12 +4815,12 @@ int pg_db_send_query_params (SV * dbh, char * sql, AV * params)
 {
     dTHX;
     D_imp_dbh(dbh);
-    int nparams, i, ret;
-    const char ** paramValues = NULL;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_send_query_params\n", THEADER_slow);
 
 #ifdef DBDPG_HAS_PIPELINE
+    int nparams, i, ret;
+    const char ** paramValues = NULL;
     nparams = (params) ? (int)(av_len(params) + 1) : 0;
 
     if (nparams > 0) {
@@ -4892,12 +4893,12 @@ int pg_db_send_query_prepared (SV * dbh, char * name, AV * params)
 {
     dTHX;
     D_imp_dbh(dbh);
-    int nparams, i, ret;
-    const char ** paramValues = NULL;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_send_query_prepared\n", THEADER_slow);
 
 #ifdef DBDPG_HAS_PIPELINE
+    int nparams, i, ret;
+    const char ** paramValues = NULL;
     nparams = (params) ? (int)(av_len(params) + 1) : 0;
     if (nparams > 0) {
         Newz(0, paramValues, nparams, const char *);

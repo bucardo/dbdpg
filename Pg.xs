@@ -838,8 +838,6 @@ pg_pipeline_sync(dbh)
 void
 pg_getresult(dbh)
     SV * dbh
-    PREINIT:
-        D_imp_dbh(dbh);
     CODE:
         ST(0) = pg_db_getresult(dbh);
 
