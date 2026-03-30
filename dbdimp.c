@@ -4819,10 +4819,11 @@ SV * pg_db_getresult (SV * dbh)
 /* comments, and dollar-quoted sections. Returns a new SV*.           */
 /* If the input already uses $N placeholders or has no ?, returns a   */
 /* copy of the original.                                              */
-static SV * pg_convert_placeholders(pTHX_ PGconn *conn, const char *input)
+static SV * pg_convert_placeholders(pTHX_ SV *dbh, PGconn *conn, const char *input)
 {
+    D_imp_dbh(dbh);
     const char *ptr = input;
-    const char *seg_start = input;
+    const char *segment_start = input;
     unsigned char ch, oldch;
     int placeholder_num = 0;
     bool has_question = DBDPG_FALSE;
@@ -4861,7 +4862,9 @@ static SV * pg_convert_placeholders(pTHX_ PGconn *conn, const char *input)
             STRLEN backslashes = 0;
             bool estring = (oldch == 'E') ? DBDPG_TRUE : DBDPG_FALSE;
             if ('\'' == ch && -1 == non_standard_strings) {
-                const char * scs = PQparameterStatus(conn, "standard_conforming_strings");
+                const char * scs;
+                TRACE_PQPARAMETERSTATUS;
+                scs = PQparameterStatus(conn, "standard_conforming_strings");
                 non_standard_strings = (NULL==scs ? 1 : 0==strncmp(scs,"on",2) ? 0 : 1);
             }
 
@@ -4980,13 +4983,13 @@ static SV * pg_convert_placeholders(pTHX_ PGconn *conn, const char *input)
 
         /* 4: Replace ? placeholder */
         if ('?' == ch) {
-            /* Append everything from seg_start up to the ? */
-            if (ptr > seg_start) {
-                sv_catpvn(output, seg_start, ptr - seg_start);
+            /* Append everything from segment_start up to the ? */
+            if (ptr > segment_start) {
+                sv_catpvn(output, segment_start, ptr - segment_start);
             }
             sv_catpvf(output, "$%d", ++placeholder_num);
             ptr++;
-            seg_start = ptr;
+            segment_start = ptr;
             oldch = ch;
             continue;
         }
@@ -4996,8 +4999,8 @@ static SV * pg_convert_placeholders(pTHX_ PGconn *conn, const char *input)
     }
 
     /* Append any remaining segment */
-    if (ptr > seg_start) {
-        sv_catpvn(output, seg_start, ptr - seg_start);
+    if (ptr > segment_start) {
+        sv_catpvn(output, segment_start, ptr - segment_start);
     }
 
     return output;
@@ -5016,7 +5019,7 @@ int pg_db_send_query_params (SV * dbh, char * sql, AV * params)
 #ifdef DBDPG_HAS_PIPELINE
     int nparams, i, ret;
     const char ** paramValues = NULL;
-    SV *converted = pg_convert_placeholders(aTHX_ imp_dbh->conn, sql);
+    SV *converted = pg_convert_placeholders(aTHX_ dbh, imp_dbh->conn, sql);
     const char *real_sql = SvPV_nolen(converted);
 
     nparams = (params) ? (int)(av_len(params) + 1) : 0;
@@ -5070,7 +5073,7 @@ int pg_db_send_prepare (SV * dbh, char * name, char * sql)
 
 #ifdef DBDPG_HAS_PIPELINE
     {
-        SV *converted = pg_convert_placeholders(aTHX_ imp_dbh->conn, sql);
+        SV *converted = pg_convert_placeholders(aTHX_ dbh, imp_dbh->conn, sql);
         const char *real_sql = SvPV_nolen(converted);
 
         TRACE_PQSENDPREPARE;
