@@ -23,7 +23,7 @@ if ($pgversion < 140000) {
     plan skip_all => 'Pipeline mode requires PostgreSQL 14 or later';
 }
 
-plan tests => 86;
+plan tests => 109;
 
 my ($result, $expected, $t);
 
@@ -641,6 +641,148 @@ $rows = $dbh->selectall_arrayref(
 );
 $expected = [[1, 'Alice'], [2, 'Bob']];
 is_deeply ($rows, $expected, $t);
+
+# ? inside single-quoted string is preserved
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='? inside single-quoted string is not converted';
+$result = $dbh->pg_send_query_params(
+    q{SELECT 'what?' AS question, ? AS param},
+    ['hello']
+);
+is ($result, 1, $t);
+$dbh->pg_pipeline_sync();
+
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, "$t TUPLES_OK");
+is ($result->{rows}[0][0], 'what?', "$t literal preserved");
+is ($result->{rows}[0][1], 'hello', "$t param bound correctly");
+
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # SYNC
+$dbh->pg_exit_pipeline_mode();
+
+# ? inside double-quoted identifier - use a column alias
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='? inside double-quoted identifier is not converted';
+$result = $dbh->pg_send_query_params(
+    q{SELECT ? AS "what?"},
+    ['test']
+);
+is ($result, 1, $t);
+$dbh->pg_pipeline_sync();
+
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, "$t TUPLES_OK");
+is ($result->{rows}[0][0], 'test', "$t param bound correctly");
+
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # SYNC
+$dbh->pg_exit_pipeline_mode();
+
+# ? inside dollar-quoted string
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='? inside dollar-quoted string is not converted';
+$result = $dbh->pg_send_query_params(
+    q{SELECT $$what?$$ AS question, ? AS param},
+    ['hello']
+);
+is ($result, 1, $t);
+$dbh->pg_pipeline_sync();
+
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, "$t TUPLES_OK");
+is ($result->{rows}[0][0], 'what?', "$t dollar-quoted preserved");
+is ($result->{rows}[0][1], 'hello', "$t param bound correctly");
+
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # SYNC
+$dbh->pg_exit_pipeline_mode();
+
+# ? inside line comment
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='? inside line comment is not converted';
+$result = $dbh->pg_send_query_params(
+    "SELECT ? AS val -- is this a question?\n",
+    [42]
+);
+is ($result, 1, $t);
+$dbh->pg_pipeline_sync();
+
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, "$t TUPLES_OK");
+is ($result->{rows}[0][0], '42', "$t param bound correctly");
+
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # SYNC
+$dbh->pg_exit_pipeline_mode();
+
+# ? inside block comment
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='? inside block comment is not converted';
+$result = $dbh->pg_send_query_params(
+    'SELECT ? AS val /* what? really? */',
+    [99]
+);
+is ($result, 1, $t);
+$dbh->pg_pipeline_sync();
+
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, "$t TUPLES_OK");
+is ($result->{rows}[0][0], '99', "$t param bound correctly");
+
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # SYNC
+$dbh->pg_exit_pipeline_mode();
+
+# Multiple ? convert to correct $1, $2, $3 sequence
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='Multiple ? placeholders convert to correct sequence';
+$result = $dbh->pg_send_query_params(
+    'SELECT ? AS a, ? AS b, ? AS c',
+    ['x', 'y', 'z']
+);
+is ($result, 1, $t);
+$dbh->pg_pipeline_sync();
+
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, "$t TUPLES_OK");
+is_deeply ($result->{rows}, [['x', 'y', 'z']], "$t all params correct");
+
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # SYNC
+$dbh->pg_exit_pipeline_mode();
+
+# $1 present skips conversion entirely
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='$1 present means no ? conversion (SQL passed through as-is)';
+$result = $dbh->pg_send_query_params(
+    'SELECT $1 AS val',
+    ['works']
+);
+is ($result, 1, $t);
+$dbh->pg_pipeline_sync();
+
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, "$t TUPLES_OK");
+is ($result->{rows}[0][0], 'works', "$t \$1 param correct");
+
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # SYNC
+$dbh->pg_exit_pipeline_mode();
 
 cleanup_database($dbh,'test');
 $dbh->disconnect;
