@@ -4638,6 +4638,62 @@ int pg_db_pipeline_status (SV * dbh)
 
 
 /* ================================================================== */
+int pg_db_enter_pipeline_mode (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_enter_pipeline_mode\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    TRACE_PQENTERPIPELINEMODE;
+    if (0 == PQenterPipelineMode(imp_dbh->conn)) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_enter_pipeline_mode (error)\n", THEADER_slow);
+        return 0;
+    }
+    imp_dbh->pipeline = 1;
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_enter_pipeline_mode (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_enter_pipeline_mode requires PostgreSQL 14 or later");
+    return 0;
+#endif
+
+} /* end of pg_db_enter_pipeline_mode */
+
+
+/* ================================================================== */
+int pg_db_exit_pipeline_mode (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_exit_pipeline_mode\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    TRACE_PQEXITPIPELINEMODE;
+    if (0 == PQexitPipelineMode(imp_dbh->conn)) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_exit_pipeline_mode (error)\n", THEADER_slow);
+        return 0;
+    }
+    imp_dbh->pipeline = 0;
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_exit_pipeline_mode (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_exit_pipeline_mode requires PostgreSQL 14 or later");
+    return 0;
+#endif
+
+} /* end of pg_db_exit_pipeline_mode */
+
+
+/* ================================================================== */
 SV * pg_db_error_field (SV *dbh, char * fieldname)
 {
     dTHX;

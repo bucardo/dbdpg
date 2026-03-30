@@ -808,6 +808,24 @@ pg_pipeline_status(dbh)
     OUTPUT:
         RETVAL
 
+I32
+pg_enter_pipeline_mode(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_enter_pipeline_mode(dbh);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_exit_pipeline_mode(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_exit_pipeline_mode(dbh);
+    OUTPUT:
+        RETVAL
+
 void
 getline(dbh, buf, len)
     PREINIT:

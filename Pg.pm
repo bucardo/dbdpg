@@ -160,6 +160,8 @@ use 5.008001;
             DBD::Pg::db->install_method('pg_notifies');
             DBD::Pg::db->install_method('pg_putcopydata');
             DBD::Pg::db->install_method('pg_putcopyend');
+            DBD::Pg::db->install_method('pg_enter_pipeline_mode');
+            DBD::Pg::db->install_method('pg_exit_pipeline_mode');
             DBD::Pg::db->install_method('pg_pipeline_status');
             DBD::Pg::db->install_method('pg_ping');
             DBD::Pg::db->install_method('pg_putline');
