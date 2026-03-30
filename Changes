@@ -2,14 +2,9 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
-Version 3.21.0  (not yet released)
-
- - Add pipeline mode support for PostgreSQL 14+ (pg_enter_pipeline_mode,
-   pg_exit_pipeline_mode, pg_pipeline_sync, pg_pipeline_status,
-   pg_getresult, pg_send_query_params, pg_send_prepare,
-   pg_send_query_prepared, pg_send_flush_request)
-
 Version 3.20.0  (released March 19, 2026)
+
+ - Add pipeline mode support for PostgreSQL 14+
 
  - Cleanup and improve the statistics_info() function.
    We no longer return "clustered" as a "TYPE"
