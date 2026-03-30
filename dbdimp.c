@@ -4751,12 +4751,14 @@ SV * pg_db_getresult (SV * dbh)
         return &PL_sv_undef;
     }
 
+    TRACE_PQRESULTSTATUS;
     status = PQresultStatus(result);
 
     hv = newHV();
 
     (void)hv_stores(hv, "status", newSViv((IV)status));
 
+    TRACE_PQRESULTERRORMESSAGE;
     errmsg = PQresultErrorMessage(result);
     if (errmsg && errmsg[0] != '\0') {
         (void)hv_stores(hv, "error", newSVpv(errmsg, 0));
@@ -4765,8 +4767,11 @@ SV * pg_db_getresult (SV * dbh)
         (void)hv_stores(hv, "error", newSVsv(&PL_sv_undef));
     }
 
+    TRACE_PQNTUPLES;
     ntuples = PQntuples(result);
+    TRACE_PQNFIELDS;
     nfields = PQnfields(result);
+    TRACE_PQCMDTUPLES;
     cmdtuples = PQcmdTuples(result);
 
     (void)hv_stores(hv, "ntuples", newSViv(ntuples));
@@ -4780,6 +4785,7 @@ SV * pg_db_getresult (SV * dbh)
         for (r = 0; r < ntuples; r++) {
             AV * row = newAV();
             for (c = 0; c < nfields; c++) {
+                TRACE_PQGETISNULL;
                 if (PQgetisnull(result, r, c)) {
                     av_push(row, newSVsv(&PL_sv_undef));
                 }

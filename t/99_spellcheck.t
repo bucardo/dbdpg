@@ -572,6 +572,7 @@ netstat
 newfh
 newSVpv
 Newz
+nfields
 nmake
 nntp
 nohead
@@ -581,6 +582,7 @@ noprefix
 noreturn
 nosetup
 NOSUCH
+ntuples
 Server
 nullable
 NULLABLE
@@ -680,6 +682,7 @@ PQexec
 PQexecParams
 PQexecPrepared
 PQoids
+PQpipelineStatus
 PQprepare
 PQprotocolVersion
 PQresultErrorField

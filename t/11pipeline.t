@@ -137,7 +137,7 @@ $result = $dbh->pg_send_query_params(
 );
 is ($result, 1, $t);
 
-$t='pg_pipeline_sync after INSERTs succeeds';
+$t='pg_pipeline_sync after INSERTs succeeds'; # nospellcheck
 $result = $dbh->pg_pipeline_sync();
 is ($result, 1, $t);
 
@@ -165,7 +165,7 @@ ok (defined $result && $result->{status} == 10, $t);
 
 $dbh->pg_exit_pipeline_mode();
 
-$t='Pipeline INSERTs committed the data';
+$t='Pipeline INSERTs committed the data'; # nospellcheck
 my $rows = $dbh->selectall_arrayref(
     'SELECT id, name FROM dbd_pg_test_pipeline ORDER BY id'
 );
@@ -415,7 +415,7 @@ $dbh->do('CREATE TEMP TABLE dbd_pg_test_pipeline_large(id integer, name text)');
 
 $dbh->pg_enter_pipeline_mode();
 
-$t='Large pipeline: 100 INSERTs queued';
+$t='Large pipeline: 100 INSERTs queued'; # nospellcheck
 my $large_ok = 1;
 for my $i (1..100) {
     my $r = $dbh->pg_send_query_params(
