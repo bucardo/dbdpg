@@ -478,6 +478,20 @@ use 5.008001;
         return DBD::Pg::db::_pg_type_info($pg_type);
     }
 
+    sub pg_send_query_params {
+        my ($dbh, $sql, $params) = @_;
+        if ($sql =~ /\?/ && $sql !~ /\$\d/) {
+            my $n = 0;
+            $sql =~ s/\?/'$' . ++$n/ge;
+        }
+        return DBD::Pg::db::_pg_send_query_params($dbh, $sql, $params);
+    }
+
+    sub pg_send_query_prepared {
+        my ($dbh, $name, $params) = @_;
+        return DBD::Pg::db::_pg_send_query_prepared($dbh, $name, $params);
+    }
+
     sub column_info {
 
         # Columns expected in statement handle returned (Per DBI, must be in order):
@@ -4542,10 +4556,12 @@ Example:
 =head3 B<pg_send_query_params>
 
 Sends a parameterized query into the pipeline without waiting for results.
-Uses C<$1>, C<$2> placeholder syntax. Returns 1 on success, 0 on error.
+Accepts both C<$1>, C<$2> (libpq native) and C<?> (DBI standard) placeholder
+syntax. When C<?> placeholders are detected, they are automatically converted
+to C<$1>, C<$2>, etc. Returns 1 on success, 0 on error.
 
   $dbh->pg_send_query_params(
-      'INSERT INTO t(id, name) VALUES ($1, $2)',
+      'INSERT INTO t(id, name) VALUES (?, ?)',
       [42, 'Alice']
   );
 

@@ -842,7 +842,7 @@ pg_getresult(dbh)
         ST(0) = pg_db_getresult(dbh);
 
 I32
-pg_send_query_params(dbh, sql, ...)
+_pg_send_query_params(dbh, sql, ...)
     INPUT:
         SV * dbh
         char * sql
@@ -868,7 +868,7 @@ pg_send_prepare(dbh, name, sql)
         RETVAL
 
 I32
-pg_send_query_prepared(dbh, name, ...)
+_pg_send_query_prepared(dbh, name, ...)
     INPUT:
         SV * dbh
         char * name

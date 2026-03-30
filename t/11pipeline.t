@@ -23,7 +23,7 @@ if ($pgversion < 140000) {
     plan skip_all => 'Pipeline mode requires PostgreSQL 14 or later';
 }
 
-plan tests => 78;
+plan tests => 86;
 
 my ($result, $expected, $t);
 
@@ -578,6 +578,69 @@ $result = $dbh->pg_getresult();
 is ($result->{status}, 10, 'Second PIPELINE_SYNC');
 
 $dbh->pg_exit_pipeline_mode();
+
+# ? placeholder conversion
+
+eval { $dbh->do('DROP TABLE IF EXISTS dbd_pg_test_pipeline_qmark'); };
+$dbh->do('CREATE TEMP TABLE dbd_pg_test_pipeline_qmark(id integer, name text)');
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='pg_send_query_params accepts ? placeholders';
+$result = $dbh->pg_send_query_params(
+    'INSERT INTO dbd_pg_test_pipeline_qmark(id, name) VALUES (?, ?)',
+    [1, 'Alice']
+);
+is ($result, 1, $t);
+
+$t='pg_send_query_params accepts ? for SELECT';
+$result = $dbh->pg_send_query_params(
+    'SELECT id, name FROM dbd_pg_test_pipeline_qmark WHERE id = ?',
+    [1]
+);
+is ($result, 1, $t);
+
+$dbh->pg_pipeline_sync();
+
+$t='? INSERT result is COMMAND_OK';
+$result = $dbh->pg_getresult();
+is ($result->{status}, 1, $t);
+$dbh->pg_getresult();  # NULL
+
+$t='? SELECT result has correct data';
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, $t);
+is_deeply ($result->{rows}, [['1', 'Alice']], "$t rows match");
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # PIPELINE_SYNC
+
+$dbh->pg_exit_pipeline_mode();
+
+# $1 placeholders still work (not converted)
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='$1 placeholders still work alongside ? support';
+$result = $dbh->pg_send_query_params(
+    'INSERT INTO dbd_pg_test_pipeline_qmark(id, name) VALUES ($1, $2)',
+    [2, 'Bob']
+);
+is ($result, 1, $t);
+
+$dbh->pg_pipeline_sync();
+$result = $dbh->pg_getresult();
+is ($result->{status}, 1, $t);
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # PIPELINE_SYNC
+
+$dbh->pg_exit_pipeline_mode();
+
+$t='Both ? and $1 data committed correctly';
+$rows = $dbh->selectall_arrayref(
+    'SELECT id, name FROM dbd_pg_test_pipeline_qmark ORDER BY id'
+);
+$expected = [[1, 'Alice'], [2, 'Bob']];
+is_deeply ($rows, $expected, $t);
 
 cleanup_database($dbh,'test');
 $dbh->disconnect;
