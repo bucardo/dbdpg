@@ -23,7 +23,7 @@ if ($pgversion < 140000) {
     plan skip_all => 'Pipeline mode requires PostgreSQL 14 or later';
 }
 
-plan tests => 61;
+plan tests => 78;
 
 my ($result, $expected, $t);
 
@@ -452,6 +452,132 @@ $dbh->pg_exit_pipeline_mode();
 $t='All 100 rows inserted';
 $rows = $dbh->selectall_arrayref('SELECT count(*) FROM dbd_pg_test_pipeline_large');
 is ($rows->[0][0], 100, $t);
+
+# SELECT returning zero rows
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='SELECT zero rows returns TUPLES_OK';
+$dbh->pg_send_query_params(
+    'SELECT id, name FROM dbd_pg_test_pipeline WHERE id = $1',
+    [99999]
+);
+$dbh->pg_pipeline_sync();
+
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, $t);
+is ($result->{ntuples}, 0, "$t with ntuples 0");
+is ($result->{nfields}, 2, "$t with correct nfields");
+ok (!exists $result->{rows}, "$t has no rows key");
+
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # PIPELINE_SYNC
+$dbh->pg_exit_pipeline_mode();
+
+# NULL parameter values
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='pg_send_query_params handles undef (NULL) params';
+$result = $dbh->pg_send_query_params(
+    'SELECT $1::text AS val',
+    [undef]
+);
+is ($result, 1, $t);
+
+$dbh->pg_pipeline_sync();
+
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, "$t returns TUPLES_OK");
+is ($result->{rows}[0][0], undef, "$t NULL value returned as undef");
+
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # PIPELINE_SYNC
+$dbh->pg_exit_pipeline_mode();
+
+# pg_pipeline_status returns 2 (aborted) during error
+
+$dbh->pg_enter_pipeline_mode();
+
+$dbh->pg_send_query_params('GARBAGE', []);
+$dbh->pg_pipeline_sync();
+
+$dbh->pg_getresult();  # FATAL_ERROR
+$dbh->pg_getresult();  # NULL
+
+$t='pg_pipeline_status returns 2 (aborted) after error';
+$status = $dbh->pg_pipeline_status();
+is ($status, 2, $t);
+
+$dbh->pg_getresult();  # PIPELINE_SYNC
+
+$t='pg_pipeline_status returns 1 (on) after sync clears abort';
+$status = $dbh->pg_pipeline_status();
+is ($status, 1, $t);
+
+$dbh->pg_exit_pipeline_mode();
+$dbh->do('ROLLBACK');
+
+# pg_flush return value
+
+$dbh->pg_enter_pipeline_mode();
+
+$dbh->pg_send_query_params('SELECT 1', []);
+$dbh->pg_send_flush_request();
+
+$t='pg_flush returns 0 (flushed) or 1 (pending)';
+my $flush_result = $dbh->pg_flush();
+ok ($flush_result == 0 || $flush_result == 1, $t);
+
+# Drain
+$dbh->pg_getresult();  # SELECT result
+$dbh->pg_getresult();  # NULL
+$dbh->pg_pipeline_sync();
+$dbh->pg_getresult();  # PIPELINE_SYNC
+$dbh->pg_exit_pipeline_mode();
+
+# pg_send_query_params with no params
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='pg_send_query_params works without params argument';
+$result = $dbh->pg_send_query_params('SELECT 42 AS answer');
+is ($result, 1, $t);
+
+$dbh->pg_pipeline_sync();
+
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, "$t returns TUPLES_OK");
+is_deeply ($result->{rows}, [['42']], "$t correct data");
+
+$dbh->pg_getresult();  # NULL
+$dbh->pg_getresult();  # PIPELINE_SYNC
+$dbh->pg_exit_pipeline_mode();
+
+# Two consecutive syncs
+
+$dbh->pg_enter_pipeline_mode();
+
+$dbh->pg_send_query_params('SELECT 1 AS a', []);
+$dbh->pg_pipeline_sync();
+$dbh->pg_send_query_params('SELECT 2 AS b', []);
+$dbh->pg_pipeline_sync();
+
+# Drain first pipeline: result -> NULL -> SYNC
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, 'First sync group: TUPLES_OK');
+$dbh->pg_getresult();  # NULL
+$result = $dbh->pg_getresult();
+is ($result->{status}, 10, 'First PIPELINE_SYNC');
+
+# Drain second pipeline: result -> NULL -> SYNC
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, 'Second sync group: TUPLES_OK');
+$dbh->pg_getresult();  # NULL
+$result = $dbh->pg_getresult();
+is ($result->{status}, 10, 'Second PIPELINE_SYNC');
+
+$dbh->pg_exit_pipeline_mode();
 
 cleanup_database($dbh,'test');
 $dbh->disconnect;
