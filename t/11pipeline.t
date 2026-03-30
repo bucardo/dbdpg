@@ -23,7 +23,7 @@ if ($pgversion < 140000) {
     plan skip_all => 'Pipeline mode requires PostgreSQL 14 or later';
 }
 
-plan tests => 60;
+plan tests => 61;
 
 my ($result, $expected, $t);
 
@@ -346,6 +346,13 @@ like ($@, qr{pipeline}, $t);
 $t='pg_putcopyend croaks in pipeline mode';
 eval {
     $dbh->pg_putcopyend();
+};
+like ($@, qr{pipeline}, $t);
+
+$t='pg_getcopydata croaks in pipeline mode';
+my $copy_buf;
+eval {
+    $dbh->pg_getcopydata($copy_buf);
 };
 like ($@, qr{pipeline}, $t);
 

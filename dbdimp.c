@@ -4446,6 +4446,10 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_getcopydata\n", THEADER_slow);
 
+    /* Cannot use COPY in pipeline mode */
+    if (imp_dbh->pipeline)
+        croak("pg_getcopydata cannot be used in pipeline mode\n");
+
     /* We must be in COPY OUT state */
     if (PGRES_COPY_OUT != imp_dbh->copystate && PGRES_COPY_BOTH != imp_dbh->copystate)
         croak("pg_getcopydata can only be called directly after issuing a COPY TO command\n");

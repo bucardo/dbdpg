@@ -4460,6 +4460,12 @@ independent queries.
 Pipeline mode uses the extended query protocol exclusively. COPY operations
 are not supported in pipeline mode.
 
+B<Note:> In blocking mode (the default), very large pipelines risk deadlock
+if both the client send buffer and server result buffer fill simultaneously.
+For large pipelines, use L</pg_flush> and poll C<pg_socket> for readiness
+between sends, or keep pipelines to a reasonable size with periodic
+L</pg_pipeline_sync> calls.
+
 =head3 B<pg_enter_pipeline_mode>
 
 Enters pipeline mode on the connection. The connection must be idle.
@@ -4567,6 +4573,21 @@ Returns 1 on success.
 
   $dbh->pg_send_flush_request();
   $dbh->pg_flush();
+
+=head3 B<pg_flush>
+
+Flushes the libpq output buffer. Wraps C<PQflush> directly. Used after
+L</pg_send_flush_request> to push the request to the server, or during
+non-blocking COPY operations after L</pg_putcopydata>.
+
+Return values:
+
+  0  = all data flushed successfully
+  1  = data still pending (caller should poll socket for write-readiness
+       and call pg_flush again)
+  -1 = error
+
+  my $status = $dbh->pg_flush();
 
 =head2 Postgres limits
 
