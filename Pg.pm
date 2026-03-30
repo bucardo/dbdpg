@@ -478,20 +478,6 @@ use 5.008001;
         return DBD::Pg::db::_pg_type_info($pg_type);
     }
 
-    sub pg_send_query_params {
-        my ($dbh, $sql, $params) = @_;
-        if ($sql =~ /\?/ && $sql !~ /\$\d/) {
-            my $n = 0;
-            $sql =~ s/\?/'$' . ++$n/ge;
-        }
-        return DBD::Pg::db::_pg_send_query_params($dbh, $sql, $params);
-    }
-
-    sub pg_send_query_prepared {
-        my ($dbh, $name, $params) = @_;
-        return DBD::Pg::db::_pg_send_query_prepared($dbh, $name, $params);
-    }
-
     sub column_info {
 
         # Columns expected in statement handle returned (Per DBI, must be in order):

@@ -4815,6 +4815,197 @@ SV * pg_db_getresult (SV * dbh)
 
 
 /* ================================================================== */
+/* Convert ? placeholders to $N style, skipping quoted strings,       */
+/* comments, and dollar-quoted sections. Returns a new SV*.           */
+/* If the input already uses $N placeholders or has no ?, returns a   */
+/* copy of the original.                                              */
+static SV * pg_convert_placeholders(pTHX_ PGconn *conn, const char *input)
+{
+    const char *ptr = input;
+    const char *seg_start = input;
+    unsigned char ch, oldch;
+    int placeholder_num = 0;
+    bool has_question = DBDPG_FALSE;
+    SV *output;
+    signed char non_standard_strings = -1;
+
+    /* First pass: check if we need to do anything */
+    /* If there's a $<digit> anywhere, skip conversion entirely */
+    {
+        const char *scan = input;
+        while (*scan) {
+            if ('$' == *scan && scan[1] >= '1' && scan[1] <= '9') {
+                return newSVpv(input, 0);
+            }
+            if ('?' == *scan) {
+                has_question = DBDPG_TRUE;
+            }
+            scan++;
+        }
+    }
+
+    /* No ? found, return a copy unchanged */
+    if (!has_question) {
+        return newSVpv(input, 0);
+    }
+
+    /* Build output with ? replaced by $N */
+    output = newSVpvs("");
+    oldch = 1;
+
+    while ((ch = (unsigned char)*ptr)) {
+
+        /* 1: A traditionally quoted section */
+        if ('\'' == ch || '"' == ch) {
+            char quote = ch;
+            STRLEN backslashes = 0;
+            bool estring = (oldch == 'E') ? DBDPG_TRUE : DBDPG_FALSE;
+            if ('\'' == ch && -1 == non_standard_strings) {
+                const char * scs = PQparameterStatus(conn, "standard_conforming_strings");
+                non_standard_strings = (NULL==scs ? 1 : 0==strncmp(scs,"on",2) ? 0 : 1);
+            }
+
+            ptr++;
+            while (quote && (ch = (unsigned char)*ptr)) {
+                ptr++;
+                if (ch == quote && (quote == '"' || 0==(backslashes&1))) {
+                    quote = 0;
+                }
+                else if ('\\' == ch) {
+                    if (quote == '"' || non_standard_strings || estring)
+                        backslashes++;
+                }
+                else {
+                    backslashes = 0;
+                }
+            }
+            if (ch != 0) {
+                oldch = ch;
+                continue;
+            }
+            /* String ended inside quote - just finish */
+            break;
+        }
+
+        /* 2: A comment block */
+        if (('-' == ch && '-' == ptr[1]) ||
+            ('/' == ch && '*' == ptr[1])) {
+            char ctype = ptr[1]; /* '-' for line comment, '*' for block comment */
+            ptr += 2;
+            while ((ch = (unsigned char)*ptr)) {
+                ptr++;
+                if ('-' == ctype && '\n' == ch) {
+                    break;
+                }
+                else if ('*' == ctype && '*' == ch && '/' == *ptr) {
+                    ptr++;
+                    break;
+                }
+            }
+            if (ch != 0) {
+                oldch = ch;
+                continue;
+            }
+            break;
+        }
+
+        /* 3: Dollar quoting */
+        if ('$' == ch &&
+            (ptr[1] == '$'
+             || ptr[1] == '_'
+             || (ptr[1] >= 'A' && ptr[1] <= 'Z')
+             || (ptr[1] >= 'a' && ptr[1] <= 'z')
+             || ((unsigned char)ptr[1] >= (unsigned char)'\200'))) {
+            const char *dollar_start = ptr;
+            const char *tag_start;
+            STRLEN tag_len;
+            bool found = DBDPG_FALSE;
+
+            ptr++; /* skip the initial $ */
+            tag_start = ptr;
+
+            /* Scan for closing $ of the opening tag */
+            while (*ptr) {
+                if ('$' == *ptr) {
+                    found = DBDPG_TRUE;
+                    break;
+                }
+                /* Invalid tag character - bail out */
+                if (*ptr <= 47
+                    || (*ptr >= 58 && *ptr <= 64)
+                    || (*ptr >= 91 && *ptr <= 94)
+                    || *ptr == 96) {
+                    break;
+                }
+                ptr++;
+            }
+
+            if (!found) {
+                /* Not a dollar quote, rewind to just after the initial $ */
+                ptr = dollar_start + 1;
+                oldch = ch;
+                continue;
+            }
+
+            tag_len = ptr - tag_start;
+            ptr++; /* skip the closing $ of opening tag */
+
+            /* Now find the matching closing dollar quote */
+            found = DBDPG_FALSE;
+            while (*ptr) {
+                if ('$' == *ptr) {
+                    /* Check if this is the closing tag */
+                    if (tag_len == 0) {
+                        /* $$ case */
+                        ptr++;
+                        found = DBDPG_TRUE;
+                        break;
+                    }
+                    if (0 == strncmp(ptr + 1, tag_start, tag_len) && ptr[tag_len + 1] == '$') {
+                        ptr += tag_len + 2;
+                        found = DBDPG_TRUE;
+                        break;
+                    }
+                }
+                ptr++;
+            }
+
+            /* Whether found or not, continue from current position */
+            if (*ptr) {
+                oldch = *(ptr - 1);
+                continue;
+            }
+            break;
+        }
+
+        /* 4: Replace ? placeholder */
+        if ('?' == ch) {
+            /* Append everything from seg_start up to the ? */
+            if (ptr > seg_start) {
+                sv_catpvn(output, seg_start, ptr - seg_start);
+            }
+            sv_catpvf(output, "$%d", ++placeholder_num);
+            ptr++;
+            seg_start = ptr;
+            oldch = ch;
+            continue;
+        }
+
+        oldch = ch;
+        ptr++;
+    }
+
+    /* Append any remaining segment */
+    if (ptr > seg_start) {
+        sv_catpvn(output, seg_start, ptr - seg_start);
+    }
+
+    return output;
+
+} /* end of pg_convert_placeholders */
+
+
+/* ================================================================== */
 int pg_db_send_query_params (SV * dbh, char * sql, AV * params)
 {
     dTHX;
@@ -4825,6 +5016,9 @@ int pg_db_send_query_params (SV * dbh, char * sql, AV * params)
 #ifdef DBDPG_HAS_PIPELINE
     int nparams, i, ret;
     const char ** paramValues = NULL;
+    SV *converted = pg_convert_placeholders(aTHX_ imp_dbh->conn, sql);
+    const char *real_sql = SvPV_nolen(converted);
+
     nparams = (params) ? (int)(av_len(params) + 1) : 0;
 
     if (nparams > 0) {
@@ -4841,10 +5035,11 @@ int pg_db_send_query_params (SV * dbh, char * sql, AV * params)
     }
 
     TRACE_PQSENDQUERYPARAMS;
-    ret = PQsendQueryParams(imp_dbh->conn, sql, nparams, NULL,
+    ret = PQsendQueryParams(imp_dbh->conn, real_sql, nparams, NULL,
                             paramValues, NULL, NULL, 0);
 
     Safefree(paramValues);
+    SvREFCNT_dec(converted);
 
     if (0 == ret) {
         _fatal_sqlstate(aTHX_ imp_dbh);
@@ -4874,8 +5069,14 @@ int pg_db_send_prepare (SV * dbh, char * name, char * sql)
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_send_prepare\n", THEADER_slow);
 
 #ifdef DBDPG_HAS_PIPELINE
-    TRACE_PQSENDPREPARE;
-    ret = PQsendPrepare(imp_dbh->conn, name, sql, 0, NULL);
+    {
+        SV *converted = pg_convert_placeholders(aTHX_ imp_dbh->conn, sql);
+        const char *real_sql = SvPV_nolen(converted);
+
+        TRACE_PQSENDPREPARE;
+        ret = PQsendPrepare(imp_dbh->conn, name, real_sql, 0, NULL);
+        SvREFCNT_dec(converted);
+    }
     if (0 == ret) {
         _fatal_sqlstate(aTHX_ imp_dbh);
         TRACE_PQERRORMESSAGE;
