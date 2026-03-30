@@ -4846,6 +4846,136 @@ int pg_db_send_query_params (SV * dbh, char * sql, AV * params)
 
 
 /* ================================================================== */
+int pg_db_send_prepare (SV * dbh, char * name, char * sql)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+    int ret;
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_send_prepare\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    TRACE_PQSENDPREPARE;
+    ret = PQsendPrepare(imp_dbh->conn, name, sql, 0, NULL);
+    if (0 == ret) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_prepare (error)\n", THEADER_slow);
+        return 0;
+    }
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_prepare (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_send_prepare requires PostgreSQL 14 or later");
+    return 0;
+#endif
+} /* end of pg_db_send_prepare */
+
+
+/* ================================================================== */
+int pg_db_send_query_prepared (SV * dbh, char * name, AV * params)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+    int nparams, i, ret;
+    const char ** paramValues = NULL;
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_send_query_prepared\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    nparams = (params) ? (int)(av_len(params) + 1) : 0;
+    if (nparams > 0) {
+        Newz(0, paramValues, nparams, const char *);
+        for (i = 0; i < nparams; i++) {
+            SV ** svp = av_fetch(params, i, 0);
+            if (svp && SvOK(*svp)) {
+                paramValues[i] = SvPV_nolen(*svp);
+            }
+            else {
+                paramValues[i] = NULL;
+            }
+        }
+    }
+
+    TRACE_PQSENDQUERYPREPARED;
+    ret = PQsendQueryPrepared(imp_dbh->conn, name, nparams,
+                              paramValues, NULL, NULL, 0);
+    Safefree(paramValues);
+    if (0 == ret) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_query_prepared (error)\n", THEADER_slow);
+        return 0;
+    }
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_query_prepared (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_send_query_prepared requires PostgreSQL 14 or later");
+    return 0;
+#endif
+} /* end of pg_db_send_query_prepared */
+
+
+/* ================================================================== */
+int pg_db_send_flush_request (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_send_flush_request\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    if (0 == imp_dbh->pipeline) {
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, "pg_send_flush_request requires pipeline mode");
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_flush_request (not in pipeline mode)\n", THEADER_slow);
+        return 0;
+    }
+    TRACE_PQSENDFLUSHREQUEST;
+    if (0 == PQsendFlushRequest(imp_dbh->conn)) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_flush_request (error)\n", THEADER_slow);
+        return 0;
+    }
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_flush_request (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_send_flush_request requires PostgreSQL 14 or later");
+    return 0;
+#endif
+} /* end of pg_db_send_flush_request */
+
+
+/* ================================================================== */
+int pg_db_flush (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+    int flush_status;
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_flush\n", THEADER_slow);
+
+    TRACE_PQFLUSH;
+    flush_status = PQflush(imp_dbh->conn);
+
+    if (-1 == flush_status) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_flush (error)\n", THEADER_slow);
+        return -1;
+    }
+
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_flush (%d)\n", THEADER_slow, flush_status);
+    return flush_status;
+
+} /* end of pg_db_flush */
+
+
+/* ================================================================== */
 SV * pg_db_error_field (SV *dbh, char * fieldname)
 {
     dTHX;

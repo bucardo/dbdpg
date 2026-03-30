@@ -23,7 +23,7 @@ if ($pgversion < 140000) {
     plan skip_all => 'Pipeline mode requires PostgreSQL 14 or later';
 }
 
-plan tests => 37;
+plan tests => 49;
 
 my ($result, $expected, $t);
 
@@ -245,6 +245,93 @@ eval {
     $dbh->do('SELECT 1');
 };
 is ($@, q{}, $t);
+
+# pg_send_prepare + pg_send_query_prepared
+# The ROLLBACK above cleared the aborted transaction, which also rolled back
+# the temp table and its data. Recreate and repopulate for the next tests.
+$dbh->do('CREATE TEMP TABLE dbd_pg_test_pipeline(id integer, name text)');
+$dbh->do(q{INSERT INTO dbd_pg_test_pipeline(id, name) VALUES (1, 'Alice'), (2, 'Bob')});
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='pg_send_prepare queues a PREPARE';
+$result = $dbh->pg_send_prepare(
+    'pipeline_insert',
+    'INSERT INTO dbd_pg_test_pipeline(id, name) VALUES ($1, $2)'
+);
+is ($result, 1, $t);
+
+$t='pg_send_query_prepared queues execution';
+$result = $dbh->pg_send_query_prepared('pipeline_insert', [3, 'Charlie']);
+is ($result, 1, $t);
+
+$t='pg_send_query_prepared queues second execution';
+$result = $dbh->pg_send_query_prepared('pipeline_insert', [4, 'Diana']);
+is ($result, 1, $t);
+
+$dbh->pg_pipeline_sync();
+
+# Collect: PREPARE -> NULL -> INSERT1 -> NULL -> INSERT2 -> NULL -> SYNC
+$t='PREPARE result is COMMAND_OK';
+$result = $dbh->pg_getresult();
+is ($result->{status}, 1, $t);
+$dbh->pg_getresult();  # NULL
+
+$t='First prepared INSERT is COMMAND_OK';
+$result = $dbh->pg_getresult();
+is ($result->{status}, 1, $t);
+$dbh->pg_getresult();  # NULL
+
+$t='Second prepared INSERT is COMMAND_OK';
+$result = $dbh->pg_getresult();
+is ($result->{status}, 1, $t);
+$dbh->pg_getresult();  # NULL
+
+$t='PIPELINE_SYNC after prepared statements';
+$result = $dbh->pg_getresult();
+ok (defined $result && $result->{status} == 10, $t);
+
+$dbh->pg_exit_pipeline_mode();
+
+$t='Prepared statement data committed';
+$rows = $dbh->selectall_arrayref(
+    'SELECT id, name FROM dbd_pg_test_pipeline ORDER BY id'
+);
+$expected = [[1, 'Alice'], [2, 'Bob'], [3, 'Charlie'], [4, 'Diana']];
+is_deeply ($rows, $expected, $t);
+
+# Deallocate the prepared statement
+$dbh->do('DEALLOCATE pipeline_insert');
+
+# pg_send_flush_request
+
+$t='pg_send_flush_request fails outside pipeline mode';
+eval {
+    $dbh->pg_send_flush_request();
+};
+ok ($@, $t);
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='pg_send_flush_request succeeds in pipeline mode';
+$dbh->pg_send_query_params('SELECT 42 AS answer', []);
+$result = $dbh->pg_send_flush_request();
+is ($result, 1, $t);
+
+# Flush the output buffer and collect result
+$dbh->pg_flush();
+
+$t='Flush request lets us retrieve result without sync';
+$result = $dbh->pg_getresult();
+is ($result->{status}, 2, $t);
+is_deeply ($result->{rows}, [['42']], "$t data correct");
+
+$dbh->pg_getresult();  # NULL separator
+
+# Need a sync to cleanly exit
+$dbh->pg_pipeline_sync();
+$dbh->pg_getresult();  # PIPELINE_SYNC
+$dbh->pg_exit_pipeline_mode();
 
 cleanup_database($dbh,'test');
 $dbh->disconnect;

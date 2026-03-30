@@ -858,6 +858,50 @@ pg_send_query_params(dbh, sql, ...)
     OUTPUT:
         RETVAL
 
+I32
+pg_send_prepare(dbh, name, sql)
+    INPUT:
+        SV * dbh
+        char * name
+        char * sql
+    CODE:
+        RETVAL = pg_db_send_prepare(dbh, name, sql);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_send_query_prepared(dbh, name, ...)
+    INPUT:
+        SV * dbh
+        char * name
+    PREINIT:
+        AV * params = NULL;
+    CODE:
+        if (items > 2 && SvROK(ST(2)) && SvTYPE(SvRV(ST(2))) == SVt_PVAV) {
+            params = (AV *)SvRV(ST(2));
+        }
+        RETVAL = pg_db_send_query_prepared(dbh, name, params);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_send_flush_request(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_send_flush_request(dbh);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_flush(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_flush(dbh);
+    OUTPUT:
+        RETVAL
+
 void
 getline(dbh, buf, len)
     PREINIT:

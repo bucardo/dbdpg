@@ -252,6 +252,7 @@ int pg_db_send_query_params (SV *dbh, char *sql, AV *params);
 int pg_db_send_query_prepared (SV *dbh, char *name, AV *params);
 int pg_db_send_prepare (SV *dbh, char *name, char *sql);
 int pg_db_send_flush_request (SV *dbh);
+int pg_db_flush (SV *dbh);
 
 SV * pg_db_error_field (SV *dbh, char * fieldname);
 
