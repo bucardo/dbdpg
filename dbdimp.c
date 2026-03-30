@@ -4694,6 +4694,108 @@ int pg_db_exit_pipeline_mode (SV * dbh)
 
 
 /* ================================================================== */
+int pg_db_pipeline_sync (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_pipeline_sync\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    TRACE_PQPIPELINESYNC;
+    if (0 == PQpipelineSync(imp_dbh->conn)) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_pipeline_sync (error)\n", THEADER_slow);
+        return 0;
+    }
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_pipeline_sync (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_pipeline_sync requires PostgreSQL 14 or later");
+    return 0;
+#endif
+
+} /* end of pg_db_pipeline_sync */
+
+
+/* ================================================================== */
+SV * pg_db_getresult (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+    PGresult * result;
+    ExecStatusType status;
+    HV * hv;
+    SV * retsv;
+    int ntuples, nfields;
+    const char * errmsg;
+    const char * cmdtuples;
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_getresult\n", THEADER_slow);
+
+    TRACE_PQGETRESULT;
+    result = PQgetResult(imp_dbh->conn);
+
+    if (NULL == result) {
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_getresult (undef)\n", THEADER_slow);
+        return &PL_sv_undef;
+    }
+
+    status = PQresultStatus(result);
+
+    hv = newHV();
+
+    (void)hv_stores(hv, "status", newSViv((IV)status));
+
+    errmsg = PQresultErrorMessage(result);
+    if (errmsg && errmsg[0] != '\0') {
+        (void)hv_stores(hv, "error", newSVpv(errmsg, 0));
+    }
+    else {
+        (void)hv_stores(hv, "error", newSVsv(&PL_sv_undef));
+    }
+
+    ntuples = PQntuples(result);
+    nfields = PQnfields(result);
+    cmdtuples = PQcmdTuples(result);
+
+    (void)hv_stores(hv, "ntuples", newSViv(ntuples));
+    (void)hv_stores(hv, "nfields", newSViv(nfields));
+    (void)hv_stores(hv, "cmdtuples", newSVpv(cmdtuples, 0));
+
+    /* For TUPLES_OK, extract row data */
+    if (PGRES_TUPLES_OK == status && ntuples > 0) {
+        AV * rows = newAV();
+        int r, c;
+        for (r = 0; r < ntuples; r++) {
+            AV * row = newAV();
+            for (c = 0; c < nfields; c++) {
+                if (PQgetisnull(result, r, c)) {
+                    av_push(row, newSVsv(&PL_sv_undef));
+                }
+                else {
+                    av_push(row, newSVpv(PQgetvalue(result, r, c), PQgetlength(result, r, c)));
+                }
+            }
+            av_push(rows, newRV_noinc((SV*)row));
+        }
+        (void)hv_stores(hv, "rows", newRV_noinc((SV*)rows));
+    }
+
+    TRACE_PQCLEAR;
+    PQclear(result);
+
+    retsv = newRV_noinc((SV*)hv);
+
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_getresult (status: %d)\n", THEADER_slow, (int)status);
+    return sv_2mortal(retsv);
+
+} /* end of pg_db_getresult */
+
+
+/* ================================================================== */
 SV * pg_db_error_field (SV *dbh, char * fieldname)
 {
     dTHX;

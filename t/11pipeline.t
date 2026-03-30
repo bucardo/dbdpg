@@ -23,7 +23,7 @@ if ($pgversion < 140000) {
     plan skip_all => 'Pipeline mode requires PostgreSQL 14 or later';
 }
 
-plan tests => 8;
+plan tests => 16;
 
 my ($result, $expected, $t);
 
@@ -63,6 +63,59 @@ $t='Normal queries work after entering and exiting pipeline mode';
 eval {
     $dbh->do('SELECT 1');
 };
+is ($@, q{}, $t);
+
+# pg_pipeline_sync
+
+$t='pg_pipeline_sync fails when not in pipeline mode';
+eval {
+    $dbh->pg_pipeline_sync();
+};
+ok ($@, $t);
+
+# pg_pipeline_sync + pg_getresult: basic sync cycle
+
+$dbh->pg_enter_pipeline_mode();
+
+$t='pg_pipeline_sync succeeds in pipeline mode';
+$result = $dbh->pg_pipeline_sync();
+is ($result, 1, $t);
+
+$t='pg_getresult returns pipeline sync result';
+$result = $dbh->pg_getresult();
+is (ref $result, 'HASH', $t);
+
+$t='Pipeline sync result has status PGRES_PIPELINE_SYNC';
+# PGRES_PIPELINE_SYNC = 10 in libpq-fe.h
+is ($result->{status}, 10, $t);
+
+$t='pg_getresult returns undef after sync result';
+my $null_result = $dbh->pg_getresult();
+ok (!defined $null_result, $t);
+
+$dbh->pg_exit_pipeline_mode();
+
+# pg_getresult when not in pipeline mode
+
+$t='pg_getresult returns undef when no results pending';
+$null_result = $dbh->pg_getresult();
+ok (!defined $null_result, $t);
+
+# Verify connection is still good
+
+$t='Connection works after sync cycle';
+eval {
+    $dbh->do('SELECT 1');
+};
+is ($@, q{}, $t);
+
+$t='Enter/exit pipeline still works after sync cycle';
+$dbh->pg_enter_pipeline_mode();
+$dbh->pg_pipeline_sync();
+$dbh->pg_getresult();  # PIPELINE_SYNC
+$dbh->pg_getresult();  # NULL
+$dbh->pg_exit_pipeline_mode();
+eval { $dbh->do('SELECT 2'); };
 is ($@, q{}, $t);
 
 cleanup_database($dbh,'test');

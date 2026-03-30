@@ -826,6 +826,23 @@ pg_exit_pipeline_mode(dbh)
     OUTPUT:
         RETVAL
 
+I32
+pg_pipeline_sync(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_pipeline_sync(dbh);
+    OUTPUT:
+        RETVAL
+
+void
+pg_getresult(dbh)
+    SV * dbh
+    PREINIT:
+        D_imp_dbh(dbh);
+    CODE:
+        ST(0) = pg_db_getresult(dbh);
+
 void
 getline(dbh, buf, len)
     PREINIT:
