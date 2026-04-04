@@ -4453,12 +4453,12 @@ Return values match C<PQputCopyData>:
 
   1  = data queued successfully (caller should call L</pg_flush> to send)
   0  = output buffer full; caller should poll the socket for
-       write-readiness and retry the same pg_putcopydata_async call
+       write-ready and retry the same pg_putcopydata_async call
   -1 = error
 
 After a successful return of 1, call L</pg_flush> to push the data to the
 server. If C<pg_flush> returns 1 (data pending), poll the socket for
-write-readiness and call C<pg_flush> again.
+write-ready and call C<pg_flush> again.
 
 Example usage:
 
@@ -4532,7 +4532,7 @@ L</pg_putcopydata_async> returns 1 to push queued data to the server.
 Return values match C<PQflush>:
 
   0  = all data flushed successfully
-  1  = data still pending; caller should poll the socket for write-readiness
+  1  = data still pending; caller should poll the socket for write-ready
        and call pg_flush again
   -1 = error
 
