@@ -4461,19 +4461,6 @@ server. If C<pg_flush> returns 1 (data pending), poll the socket for
 write-ready and call C<pg_flush> again.
 
 Example usage:
-
-  ## Simple usage (flush after each row):
-  use IO::Select;
-  $dbh->do("COPY mytable(id, flavor, slices) FROM STDIN");
-  for my $row ("123\tPepperoni\t3\n", "314\tMushroom\t8\n") {
-      $dbh->pg_putcopydata_async($row);
-      while ($dbh->pg_flush()) {
-          IO::Select->new($dbh->{pg_socket})->can_write();
-      }
-  }
-  $dbh->pg_putcopyend();
-
-  ## Robust usage (handles buffer-full and async end):
   use IO::Select;
   my $sel = IO::Select->new($dbh->{pg_socket});
 
