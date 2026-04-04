@@ -543,9 +543,17 @@ for my $i (1..1000) {
     }
     # Flush after each successful queue
     my $flush = $dbh->pg_flush();
+    if ($flush == -1) {
+        $async_ok = 0;
+        last;
+    }
     while ($flush == 1) {
         select(undef, undef, undef, 0.001);
         $flush = $dbh->pg_flush();
+        if ($flush == -1) {
+            $async_ok = 0;
+            last;
+        }
     }
 }
 ok ($async_ok, $t);
