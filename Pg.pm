@@ -4530,9 +4530,9 @@ Example:
   $dbh->pg_send_query_params('SELECT * FROM t', []);
   $dbh->pg_pipeline_sync();
 
-  my $ins = $dbh->pg_getresult();   # {status => 1}
+  my $ins = $dbh->pg_getresult();    # {status => 1}
   $dbh->pg_getresult();              # undef (separator)
-  my $sel = $dbh->pg_getresult();   # {status => 2, rows => [...]}
+  my $sel = $dbh->pg_getresult();    # {status => 2, rows => [...]}
   my @rows = @{ $sel->{rows} };
   $dbh->pg_getresult();              # undef (separator)
   $dbh->pg_getresult();              # {status => 10} (PIPELINE_SYNC)
