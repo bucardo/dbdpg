@@ -4523,6 +4523,16 @@ In pipeline mode, results arrive in this pattern for each query:
 
   result -> undef -> result -> undef -> ... -> PIPELINE_SYNC
 
+Each query's results are terminated by an C<undef> return, which acts as a
+boundary marker between queries — similar to how delimiters separate fields
+in a string. Callers must consume each C<undef> separator before the next
+query's result becomes available. In practice, odd-numbered calls to
+C<pg_getresult> return actual results while even-numbered calls return the
+C<undef> delimiters. The final call returns a hashref with status 10
+(PIPELINE_SYNC) to mark the end of the sync group. This protocol mirrors
+libpq's C<PQgetResult> behavior directly and matches how other drivers
+(e.g., Ruby pg) expose pipeline mode.
+
 Example:
 
   $dbh->pg_enter_pipeline_mode();
