@@ -5845,10 +5845,10 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
             status = _sqlstate(aTHX_ imp_dbh, result);
 
             /* Auto-retrieve results for the owning statement instead of discarding */
-            if (NULL != imp_dbh->async_sth &&
+            if (NULL != async_sth &&
                 (PGRES_TUPLES_OK == status || PGRES_COMMAND_OK == status)) {
 
-                imp_sth_t *orig_sth = imp_dbh->async_sth;
+                imp_sth_t *orig_sth = async_sth;
 
                 if (orig_sth->result) {
                     TRACE_PQCLEAR;
@@ -5880,12 +5880,12 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
                 result = NULL;
             }
             /* Auto-retrieve error: store for the owning statement */
-            else if (NULL != imp_dbh->async_sth &&
+            else if (NULL != async_sth &&
                      PGRES_EMPTY_QUERY != status &&
                      PGRES_COMMAND_OK != status &&
                      PGRES_TUPLES_OK != status) {
 
-                imp_sth_t *orig_sth = imp_dbh->async_sth;
+                imp_sth_t *orig_sth = async_sth;
 
                 if (orig_sth->result) {
                     TRACE_PQCLEAR;
