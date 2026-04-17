@@ -26,7 +26,7 @@ if (! $dbh_noerr) {
 $dbh_noerr->{RaiseError} = 0;
 $dbh_noerr->{PrintError} = 0;
 
-plan tests => 116;
+plan tests => 117;
 
 isnt ($dbh, undef, 'Connect to database for async testing');
 
@@ -396,6 +396,43 @@ eval {
 is ($@, q{}, $t);
 $t=q{Database method pg_result returns correct result after execute};
 is ($res, 2, $t);
+
+{
+    my ($sth0, $sth1);
+
+    #
+    # Test that handle_old_async deals correctly with async prepares.
+    # See https://github.com/bucardo/dbdpg/pull/142#issuecomment-4260460925
+    #
+
+    $t=q{Pending async prepare handled correctly by handle_old_async};
+
+    # Start an async prepare.
+    $sth0= $dbh->prepare('select * from dbd_pg_test5 where id = ?', { pg_async => PG_ASYNC, pg_prepare_now => 1 });
+
+    # Tell execute that it should prepare on first execution.
+    $$dbh{pg_switch_prepared} = 1;
+
+    # Create async statement w/o prepare.
+    $sth1 = $dbh->prepare('select * from dbd_pg_test5 where t = ?', { pg_async => PG_ASYNC | PG_OLDQUERY_WAIT});
+
+    # Execute. This will call handle_old_async to wait for the result
+    # of the previous async prepare & query and then start a second
+    # async prepare.
+    $sth1->execute(2);
+    eval {
+        # Wait for result.
+        # Without the fix, this will abort with
+        #
+        #  prepared statement "dbdpg_p3993_X" already exists
+        #
+        # as first and second prepare will have used the same
+        # prepare_number because handle_old_async didn't increment
+        # it.
+        $dbh->pg_result();
+    };
+    is ($@, q{}, $t);
+}
 
 $dbh->do('DROP TABLE dbd_pg_test5');
 
