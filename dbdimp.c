@@ -2552,9 +2552,10 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
         TRACE_PQSENDPREPARE;
         status = PQsendPrepare(imp_dbh->conn, imp_sth->prepare_name, statement, params,
                                imp_sth->PQoids);
-        if (status)
+        if (status) {
             imp_sth->async_status = STH_ASYNC_PREPARE;
-        else {
+            imp_dbh->async_sth = imp_sth;
+        } else {
             status = PGRES_FATAL_ERROR;
             _fatal_sqlstate(aTHX_ imp_dbh);
         }
