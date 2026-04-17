@@ -5938,6 +5938,8 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
            to be sent & the result dealt with */
         if (async_sth && async_sth->async_status == STH_ASYNC_PREPARE
             && status == PGRES_COMMAND_OK) {
+            ++imp_dbh->prepare_number;
+
             ret = pq_send_prepared_query(aTHX_ imp_dbh, async_sth);
             if (!ret) {
                 TRACE_PQERRORMESSAGE;
