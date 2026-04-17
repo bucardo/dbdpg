@@ -5846,6 +5846,7 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
 
             /* Auto-retrieve results for the owning statement instead of discarding */
             if (NULL != async_sth &&
+                STH_ASYNC == async_sth->async_status &&
                 (PGRES_TUPLES_OK == status || PGRES_COMMAND_OK == status)) {
 
                 imp_sth_t *orig_sth = async_sth;
