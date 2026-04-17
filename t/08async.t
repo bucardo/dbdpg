@@ -398,7 +398,7 @@ $t=q{Database method pg_result returns correct result after execute};
 is ($res, 2, $t);
 
 {
-    my ($sth0, $sth1);
+    my ($sth0, $sth1, $old_switch);
 
     #
     # Test that handle_old_async deals correctly with async prepares.
@@ -411,6 +411,7 @@ is ($res, 2, $t);
     $sth0= $dbh->prepare('select * from dbd_pg_test5 where id = ?', { pg_async => PG_ASYNC, pg_prepare_now => 1 });
 
     # Tell execute that it should prepare on first execution.
+    $old_switch = $$dbh{switch_prepared};
     $$dbh{pg_switch_prepared} = 1;
 
     # Create async statement w/o prepare.
@@ -432,6 +433,8 @@ is ($res, 2, $t);
         $dbh->pg_result();
     };
     is ($@, q{}, $t);
+
+    $$dbh{pg_switch_prepared} = $old_switch;
 }
 
 $dbh->do('DROP TABLE dbd_pg_test5');
