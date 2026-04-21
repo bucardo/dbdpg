@@ -408,11 +408,11 @@ is ($res, 2, $t);
     $t=q{Pending async prepare handled correctly by handle_old_async};
 
     # Start an async prepare.
-    $sth0= $dbh->prepare('select * from dbd_pg_test5 where id = ?', { pg_async => PG_ASYNC, pg_prepare_now => 1 });
+    $sth0 = $dbh->prepare('select * from dbd_pg_test5 where id = ?', { pg_async => PG_ASYNC, pg_prepare_now => 1 });
 
     # Tell execute that it should prepare on first execution.
     $old_switch = $$dbh{switch_prepared};
-    $$dbh{pg_switch_prepared} = 1;
+    $dbh->{pg_switch_prepared} = 1;
 
     # Create async statement w/o prepare.
     $sth1 = $dbh->prepare('select * from dbd_pg_test5 where t = ?', { pg_async => PG_ASYNC | PG_OLDQUERY_WAIT});
@@ -434,7 +434,7 @@ is ($res, 2, $t);
     };
     is ($@, q{}, $t);
 
-    $$dbh{pg_switch_prepared} = $old_switch;
+    $dbh->{pg_switch_prepared} = $old_switch;
 }
 
 $dbh->do('DROP TABLE dbd_pg_test5');
