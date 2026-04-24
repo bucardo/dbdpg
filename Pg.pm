@@ -158,8 +158,11 @@ use 5.008001;
             DBD::Pg::db->install_method('pg_getcopydata');
             DBD::Pg::db->install_method('pg_getcopydata_async');
             DBD::Pg::db->install_method('pg_notifies');
+            DBD::Pg::db->install_method('pg_flush');
             DBD::Pg::db->install_method('pg_putcopydata');
+            DBD::Pg::db->install_method('pg_putcopydata_async');
             DBD::Pg::db->install_method('pg_putcopyend');
+            DBD::Pg::db->install_method('pg_putcopyend_async');
             DBD::Pg::db->install_method('pg_ping');
             DBD::Pg::db->install_method('pg_putline');
             DBD::Pg::db->install_method('pg_ready');
@@ -4433,11 +4436,87 @@ the COPY statement. Returns a 1 on successful input. Examples:
   $dbh->pg_putcopydata("Anchovies~6\n");
   $dbh->pg_putcopyend();
 
+=head3 B<pg_putcopydata_async>
+
+Non-blocking version of pg_putcopydata for use by async libraries. When called, the
+connection is switched into non-blocking mode (via C<PQsetnonblocking>), which is safe
+because no other operations are permitted on this connection during a COPY. The
+non-blocking mode is automatically restored to blocking when L</pg_putcopyend_async>
+completes.
+
+Note: the connection performing the COPY is restricted to COPY operations until
+the COPY ends. However, the non-blocking methods allow the event loop to service
+other connections and tasks between calls, which is the primary benefit over the
+blocking variants.
+
+Return values match C<PQputCopyData>:
+
+  1  = data queued successfully (caller should call L</pg_flush> to send)
+  0  = output buffer full; caller should poll the socket for
+       write-ready and retry the same pg_putcopydata_async call
+  -1 = error
+
+After a successful return of 1, call L</pg_flush> to push the data to the
+server. If C<pg_flush> returns 1 (data pending), poll the socket for
+write-ready and call C<pg_flush> again.
+
+Example usage:
+  use Time::HiRes 'sleep';
+
+  $dbh->do("COPY mytable(id, flavor, slices) FROM STDIN");
+  my @data = ("123\tPepperoni\t3\n", "314\tMushroom\t8\n",
+              "6\tAnchovies\t100\n");
+  for my $row (@data) {
+      my $status = $dbh->pg_putcopydata_async($row);
+      while ($status == 0) {         # buffer full, retry
+          sleep 0.01;
+          $status = $dbh->pg_putcopydata_async($row);
+      }
+      die "COPY error" if $status == -1;
+      while ($dbh->pg_flush()) {     # push to server
+          sleep 0.01;
+      }
+  }
+
+  ## Non-blocking end: poll until server confirms
+  while ((my $end = $dbh->pg_putcopyend_async()) == 0) {
+      sleep 0.01;
+  }
+  die "COPY end error" if $end == -1;
+
 =head3 B<pg_putcopyend>
 
-When you are finished with pg_putcopydata, call pg_putcopyend to let the server know 
-that you are done, and it will return to a normal, non-COPY state. Returns a 1 on 
+When you are finished with pg_putcopydata, call pg_putcopyend to let the server know
+that you are done, and it will return to a normal, non-COPY state. Returns a 1 on
 success. This method will fail if called when not in COPY IN mode.
+
+=head3 B<pg_putcopyend_async>
+
+Non-blocking version of pg_putcopyend for use by async libraries. Sends the COPY
+end marker and attempts to collect the server result without blocking. Designed to
+be called in a poll loop.
+
+Return values:
+
+  1  = COPY completed successfully, connection is back in normal blocking mode
+  0  = not ready yet; caller should poll the socket for readiness, then call
+       pg_putcopyend_async again
+  -1 = error
+
+After pg_putcopyend_async returns 1, the connection is back in blocking mode and
+normal queries can be issued.
+
+=head3 B<pg_flush>
+
+Flushes the libpq output buffer. Wraps C<PQflush> directly. Used after
+L</pg_putcopydata_async> returns 1 to push queued data to the server.
+
+Return values match C<PQflush>:
+
+  0  = all data flushed successfully
+  1  = data still pending; caller should poll the socket for write-ready
+       and call pg_flush again
+  -1 = error
 
 =head2 Postgres limits
 

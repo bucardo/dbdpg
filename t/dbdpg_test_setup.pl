@@ -58,6 +58,7 @@ my @tables =
      'dbd_pg_test1',
      'dbd_pg_test',
      'dbd_pg_test_geom',
+     'dbd_pg_test_async_copy',
      );
 
 my @sequences =
