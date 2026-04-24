@@ -793,6 +793,7 @@ src
 ss
 SSL
 sslmode
+sslrootcert
 starslash
 StartTransactionCommand
 stderr
