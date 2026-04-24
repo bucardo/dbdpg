@@ -2552,9 +2552,10 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
         TRACE_PQSENDPREPARE;
         status = PQsendPrepare(imp_dbh->conn, imp_sth->prepare_name, statement, params,
                                imp_sth->PQoids);
-        if (status)
+        if (status) {
             imp_sth->async_status = STH_ASYNC_PREPARE;
-        else {
+            imp_dbh->async_sth = imp_sth;
+        } else {
             status = PGRES_FATAL_ERROR;
             _fatal_sqlstate(aTHX_ imp_dbh);
         }
@@ -5844,10 +5845,11 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
             status = _sqlstate(aTHX_ imp_dbh, result);
 
             /* Auto-retrieve results for the owning statement instead of discarding */
-            if ((asyncflag & PG_OLDQUERY_WAIT) && NULL != imp_dbh->async_sth &&
+            if (NULL != async_sth &&
+                STH_ASYNC == async_sth->async_status &&
                 (PGRES_TUPLES_OK == status || PGRES_COMMAND_OK == status)) {
 
-                imp_sth_t *orig_sth = imp_dbh->async_sth;
+                imp_sth_t *orig_sth = async_sth;
 
                 if (orig_sth->result) {
                     TRACE_PQCLEAR;
@@ -5879,12 +5881,12 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
                 result = NULL;
             }
             /* Auto-retrieve error: store for the owning statement */
-            else if ((asyncflag & PG_OLDQUERY_WAIT) && NULL != imp_dbh->async_sth &&
+            else if (NULL != async_sth &&
                      PGRES_EMPTY_QUERY != status &&
                      PGRES_COMMAND_OK != status &&
                      PGRES_TUPLES_OK != status) {
 
-                imp_sth_t *orig_sth = imp_dbh->async_sth;
+                imp_sth_t *orig_sth = async_sth;
 
                 if (orig_sth->result) {
                     TRACE_PQCLEAR;
@@ -5936,6 +5938,8 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
            to be sent & the result dealt with */
         if (async_sth && async_sth->async_status == STH_ASYNC_PREPARE
             && status == PGRES_COMMAND_OK) {
+            ++imp_dbh->prepare_number;
+
             ret = pq_send_prepared_query(aTHX_ imp_dbh, async_sth);
             if (!ret) {
                 TRACE_PQERRORMESSAGE;
