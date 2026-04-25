@@ -2,6 +2,24 @@ Changes for the DBD::Pg module
 
 RT refers to rt.cpan.org
 
+
+Version 3.20.1  (unreleased)
+
+ - Set imp_dbh->async_sth when a prepare is successfully sent from pg_st_prepare_statement
+   Don't execute "result auto-retrieve" code for a successful async prepare
+   Increment imp_dbh->prepare_number when success of an async prepare is detected in handle_old_async
+   [Rainer Weikusat]
+   (Github issue #183, PR #184)
+
+ - Fix hangup of queries like "COPY TO STDOUT" in async mode
+   [Ed Sabol]
+   [Alexander Gorlov]
+   (Github issue #98, PRs #101 and 163)
+
+ - Improve documentation aobut ssl options
+   [Ed Sabol]
+   (Github issue #180, PR #186)
+
 Version 3.20.0  (released March 19, 2026)
 
  - Cleanup and improve the statistics_info() function.
