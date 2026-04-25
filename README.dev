@@ -222,7 +222,7 @@ t/99_yaml.t - Uses Test::YAML::Meta to verify the META.yml file.
 
 t/99_spellcheck.t - Checks the spelling of everything it can.
 
-dbdpg_test_database - May be created by the test suite as a place to store 
+testdb - May be created by the test suite as a place to store 
 a new database cluster.
 
 misc/pg9.1.24.scan.c.gz - Special pre-compiled file to help Postgres 9.1

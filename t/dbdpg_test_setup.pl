@@ -184,18 +184,7 @@ version: $version
                     }
 
                     warn "Restarting test database $testdsn at $testdir\n";
-                    if ($^O !~ /Win32/) {
-                        my $sockdir = "$testdir/data/socket";
-                        if (! -e $sockdir) {
-                            mkdir $sockdir;
-                            if ($uid) {
-                                if (! chown $uid, -1, $sockdir) {
-                                    warn "chown of $sockdir failed!\n";
-                                }
-                            }
-                        }
-                    }
-                    my $COM = qq{$pg_ctl -o '-k $testdir/data/socket' -l $testdir/dbdpg_test.logfile -D $testdir/data start};
+                    my $COM = qq{$pg_ctl -o '-k $testdir' -l $testdir/dbdpg_test.logfile -D $testdir/data start};
                     if ($su) {
                         $COM = qq{su -m $su -c "$COM"};
                         chdir $testdir;
@@ -565,18 +554,7 @@ version: $version
 
             ## Attempt to start up the test server
             $info = '';
-            if ($^O !~ /Win32/) {
-                my $sockdir = "$testdir/data/socket";
-                if (! -e $sockdir) {
-                    mkdir $sockdir;
-                    if ($su) {
-                        if (! chown $uid, -1, $sockdir) {
-                            warn "chown of $sockdir failed!\n";
-                        }
-                    }
-                }
-            }
-            my $COM = qq{$pg_ctl -o '-k $testdir/data/socket' -l $testdir/dbdpg_test.logfile -D $testdir/data start};
+            my $COM = qq{$pg_ctl -o '-k $testdir' -l $testdir/dbdpg_test.logfile -D $testdir/data start};
             $olddir = getcwd;
             if ($su) {
                 chdir $testdir;
@@ -601,7 +579,7 @@ version: $version
             $testdsn .= ';host=localhost';
         }
         else {
-            $testdsn .= ";host=$testdir/data/socket";
+            $testdsn .= ";host=$testdir";
         }
 
         $debug and Test::More::diag qq{Test DSN: $testdsn};
@@ -829,8 +807,8 @@ sub get_test_settings {
     if (!$testdir) {
         my $dir = getcwd();
         $testdir = exists $ENV{DBDPG_TEMPDIR} ?
-            File::Temp::tempdir("$ENV{DBDPG_TEMPDIR}/dbdpg_testdatabase_XXXXXX", CLEANUP => 0) :
-            "$dir/dbdpg_test_database";
+            File::Temp::tempdir("$ENV{DBDPG_TEMPDIR}/testdb_XXXXXX", CLEANUP => 0) :
+            "$dir/testdb";
     }
 
     ## Allow forcing of ENV variables

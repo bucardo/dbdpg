@@ -190,7 +190,7 @@ for my $lib_version (shuffle @compile_versions) {
 
         unlink $readme if -e $readme;
 
-        my $testdbdir = 'dbdpg_test_database';
+        my $testdbdir = 'testdb';
         if (-d $testdbdir) {
             system("/bin/rm -fr $testdbdir");
         }

@@ -238,7 +238,7 @@ my %opts =
                         'lib/Bundle/DBD/Pg.pm' => '$(INST_LIB)/Bundle/DBD/Pg.pm',
                        },
      clean          => { FILES => 'trace Pg.xsi README.testdatabase cover_db *.tst' },
-     realclean      => { FILES => 'dbdpg_test_database/' },
+     realclean      => { FILES => 'testdb/' },
 );
 
 if ($os eq 'hpux') {
