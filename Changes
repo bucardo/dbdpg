@@ -14,9 +14,9 @@ Version 3.20.1  (unreleased)
  - Fix hangup of queries like "COPY TO STDOUT" in async mode
    [Ed Sabol]
    [Alexander Gorlov]
-   (Github issue #98, PRs #101 and 163)
+   (Github issue #98, PR #101 and 163)
 
- - Improve documentation aobut ssl options
+ - Improve documentation about sslmode options
    [Ed Sabol]
    (Github issue #180, PR #186)
 
