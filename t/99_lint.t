@@ -268,6 +268,11 @@ for my $file (qw{
     }
 }
 
+## Special case for words only found in comments
+for (qw/ issuecomment /) {
+    delete $word{$_};
+}
+
 $t = q{Number of unused spelling words is zero};
 my $unused_words = keys %word;
 is ($unused_words, 0, $t);
