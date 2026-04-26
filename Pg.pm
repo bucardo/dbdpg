@@ -160,7 +160,14 @@ use 5.008001;
             DBD::Pg::db->install_method('pg_notifies');
             DBD::Pg::db->install_method('pg_putcopydata');
             DBD::Pg::db->install_method('pg_putcopyend');
+            DBD::Pg::db->install_method('pg_enter_pipeline_mode');
+            DBD::Pg::db->install_method('pg_exit_pipeline_mode');
+            DBD::Pg::db->install_method('pg_flush');
+            DBD::Pg::db->install_method('pg_getresult');
+            DBD::Pg::db->install_method('pg_pipeline_status');
+            DBD::Pg::db->install_method('pg_pipeline_sync');
             DBD::Pg::db->install_method('pg_ping');
+            DBD::Pg::db->install_method('pg_send_query_params');
             DBD::Pg::db->install_method('pg_putline');
             DBD::Pg::db->install_method('pg_ready');
             DBD::Pg::db->install_method('pg_release');
@@ -168,6 +175,9 @@ use 5.008001;
             DBD::Pg::db->install_method('pg_rollback_to');
             DBD::Pg::db->install_method('pg_savepoint');
             DBD::Pg::db->install_method('pg_send_cancel');
+            DBD::Pg::db->install_method('pg_send_flush_request');
+            DBD::Pg::db->install_method('pg_send_prepare');
+            DBD::Pg::db->install_method('pg_send_query_prepared');
             DBD::Pg::db->install_method('pg_server_trace');
             DBD::Pg::db->install_method('pg_server_untrace');
             DBD::Pg::db->install_method('pg_type_info');
@@ -4467,6 +4477,158 @@ the COPY statement. Returns a 1 on successful input. Examples:
 When you are finished with pg_putcopydata, call pg_putcopyend to let the server know 
 that you are done, and it will return to a normal, non-COPY state. Returns a 1 on 
 success. This method will fail if called when not in COPY IN mode.
+
+=head2 Pipeline Mode
+
+Pipeline mode (PostgreSQL 14+) batches multiple queries into fewer
+network round trips. Instead of waiting for each query's result before sending
+the next, queries are queued and their results collected after a synchronization
+point. This can dramatically reduce latency for workloads that issue many
+independent queries.
+
+Pipeline mode uses the extended query protocol exclusively. COPY operations
+are not supported in pipeline mode.
+
+B<Note:> In blocking mode (the default), very large pipelines risk deadlock
+if both the client send buffer and server result buffer fill simultaneously.
+For large pipelines, use L</pg_flush> and poll C<pg_socket> for readiness
+between sends, or keep pipelines to a reasonable size with periodic
+L</pg_pipeline_sync> calls.
+
+=head3 B<pg_enter_pipeline_mode>
+
+Enters pipeline mode on the connection. The connection must be idle.
+Entering pipeline mode when already in pipeline mode is a no-op.
+Requires libpq from PostgreSQL 14 or later; croaks if compiled against
+an older version. Returns 1 on success, 0 on failure.
+
+  $dbh->pg_enter_pipeline_mode();
+
+=head3 B<pg_exit_pipeline_mode>
+
+Exits pipeline mode. Fails if there are unconsumed results; call
+L</pg_getresult> to drain all results before exiting. Exiting when
+not in pipeline mode is a no-op. Returns 1 on success, 0 on failure.
+
+  $dbh->pg_exit_pipeline_mode();
+
+=head3 B<pg_pipeline_status>
+
+Returns the current pipeline status as an integer:
+
+  0 = not in pipeline mode
+  1 = pipeline mode active
+  2 = pipeline aborted (error occurred, waiting for sync)
+
+  my $status = $dbh->pg_pipeline_status();
+
+=head3 B<pg_pipeline_sync>
+
+Marks a synchronization point in the pipeline. Each sync point delimits
+an implicit transaction: queries between sync points are atomically
+committed or rolled back. Returns 1 on success. Croaks if not in
+pipeline mode.
+
+  $dbh->pg_pipeline_sync();
+
+=head3 B<pg_getresult>
+
+Retrieves the next result from the connection. Returns a hashref or
+C<undef> when no more results are available for the current query.
+
+The hashref contains:
+
+  status    - integer status code
+  error     - error message string, or undef
+  ntuples   - number of rows (for SELECT results)
+  nfields   - number of columns
+  cmdtuples - affected row count string (for DML)
+  rows      - arrayref of arrayrefs (only present for SELECT results)
+
+Common status values: 1 (COMMAND_OK), 2 (TUPLES_OK), 7 (FATAL_ERROR),
+10 (PIPELINE_SYNC), 11 (PIPELINE_ABORTED).
+
+In pipeline mode, results arrive in this pattern for each query:
+
+  result -> undef -> result -> undef -> ... -> PIPELINE_SYNC
+
+Each query's results are terminated by an C<undef> return, which acts as a
+boundary marker between queries — similar to how delimiters separate fields
+in a string. Callers must consume each C<undef> separator before the next
+query's result becomes available. In practice, odd-numbered calls to
+C<pg_getresult> return actual results while even-numbered calls return the
+C<undef> delimiters. The final call returns a hashref with status 10
+(PIPELINE_SYNC) to mark the end of the sync group. This protocol mirrors
+libpq's C<PQgetResult> behavior directly and matches how other drivers
+(e.g., Ruby pg) expose pipeline mode.
+
+Example:
+
+  $dbh->pg_enter_pipeline_mode();
+  $dbh->pg_send_query_params('INSERT INTO t VALUES ($1)', [1]);
+  $dbh->pg_send_query_params('SELECT * FROM t', []);
+  $dbh->pg_pipeline_sync();
+
+  my $ins = $dbh->pg_getresult();    # {status => 1}
+  $dbh->pg_getresult();              # undef (separator)
+  my $sel = $dbh->pg_getresult();    # {status => 2, rows => [...]}
+  my @rows = @{ $sel->{rows} };
+  $dbh->pg_getresult();              # undef (separator)
+  $dbh->pg_getresult();              # {status => 10} (PIPELINE_SYNC)
+
+  $dbh->pg_exit_pipeline_mode();
+
+=head3 B<pg_send_query_params>
+
+Sends a parameterized query into the pipeline without waiting for results.
+Accepts both C<$1>, C<$2> (libpq native) and C<?> (DBI standard) placeholder
+syntax. When C<?> placeholders are detected, they are automatically converted
+to C<$1>, C<$2>, etc. Returns 1 on success, 0 on error.
+
+  $dbh->pg_send_query_params(
+      'INSERT INTO t(id, name) VALUES (?, ?)',
+      [42, 'Alice']
+  );
+
+=head3 B<pg_send_prepare>
+
+Sends a PREPARE into the pipeline. The prepared statement can be executed
+with L</pg_send_query_prepared> in the same or a later pipeline.
+Returns 1 on success.
+
+  $dbh->pg_send_prepare('my_insert', 'INSERT INTO t VALUES ($1, $2)');
+
+=head3 B<pg_send_query_prepared>
+
+Executes a previously prepared statement in the pipeline.
+Returns 1 on success.
+
+  $dbh->pg_send_query_prepared('my_insert', [1, 'Alice']);
+
+=head3 B<pg_send_flush_request>
+
+Sends a flush request to the server without a synchronization point. This
+makes buffered results available to the client without creating a transaction
+boundary. Call L</pg_flush> afterward to push the request to the server.
+Returns 1 on success.
+
+  $dbh->pg_send_flush_request();
+  $dbh->pg_flush();
+
+=head3 B<pg_flush>
+
+Flushes the libpq output buffer. Wraps C<PQflush> directly. Used after
+L</pg_send_flush_request> to push the request to the server, or during
+non-blocking COPY operations after L</pg_putcopydata>.
+
+Return values:
+
+  0  = all data flushed successfully
+  1  = data still pending (caller should poll socket for write-readiness
+       and call pg_flush again)
+  -1 = error
+
+  my $status = $dbh->pg_flush();
 
 =head2 Postgres limits
 

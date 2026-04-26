@@ -339,6 +339,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     imp_dbh->switch_prepared   = 2;
     imp_dbh->copystate         = 0;
     imp_dbh->copybinary        = DBDPG_FALSE;
+    imp_dbh->pipeline          = 0;
     imp_dbh->pg_errorlevel     = 1; /* Default */
     imp_dbh->async_status      = DBH_NO_ASYNC;
     imp_dbh->async_sth         = NULL;
@@ -4446,6 +4447,10 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_getcopydata\n", THEADER_slow);
 
+    /* Cannot use COPY in pipeline mode */
+    if (imp_dbh->pipeline)
+        croak("pg_getcopydata cannot be used in pipeline mode\n");
+
     /* We must be in COPY OUT state */
     if (PGRES_COPY_OUT != imp_dbh->copystate && PGRES_COPY_BOTH != imp_dbh->copystate)
         croak("pg_getcopydata can only be called directly after issuing a COPY TO command\n");
@@ -4516,6 +4521,10 @@ int pg_db_putcopydata (SV * dbh, SV * dataline)
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_putcopydata\n", THEADER_slow);
 
+    /* Cannot use COPY in pipeline mode */
+    if (imp_dbh->pipeline)
+        croak("pg_putcopydata cannot be used in pipeline mode\n");
+
     /* We must be in COPY IN state */
     if (PGRES_COPY_IN != imp_dbh->copystate && PGRES_COPY_BOTH != imp_dbh->copystate)
         croak("pg_putcopydata can only be called directly after issuing a COPY FROM command\n");
@@ -4561,6 +4570,10 @@ int pg_db_putcopyend (SV * dbh)
     int copystatus;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_putcopyend\n", THEADER_slow);
+
+    /* Cannot use COPY in pipeline mode */
+    if (imp_dbh->pipeline)
+        croak("pg_putcopyend cannot be used in pipeline mode\n");
 
     if (0 == imp_dbh->copystate) {
         warn("pg_putcopyend cannot be called until a COPY is issued");
@@ -4614,6 +4627,576 @@ int pg_db_putcopyend (SV * dbh)
     }
 
 } /* end of pg_db_putcopyend */
+
+
+/* ================================================================== */
+int pg_db_pipeline_status (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_pipeline_status\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    int status;
+    TRACE_PQPIPELINESTATUS;
+    status = PQpipelineStatus(imp_dbh->conn);
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_pipeline_status (%d)\n", THEADER_slow, status);
+    return status;
+#else
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_pipeline_status (not supported)\n", THEADER_slow);
+    return 0;
+#endif
+
+} /* end of pg_db_pipeline_status */
+
+
+/* ================================================================== */
+int pg_db_enter_pipeline_mode (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_enter_pipeline_mode\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    TRACE_PQENTERPIPELINEMODE;
+    if (0 == PQenterPipelineMode(imp_dbh->conn)) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_enter_pipeline_mode (error)\n", THEADER_slow);
+        return 0;
+    }
+    imp_dbh->pipeline = 1;
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_enter_pipeline_mode (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_enter_pipeline_mode requires PostgreSQL 14 or later");
+    return 0;
+#endif
+
+} /* end of pg_db_enter_pipeline_mode */
+
+
+/* ================================================================== */
+int pg_db_exit_pipeline_mode (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_exit_pipeline_mode\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    TRACE_PQEXITPIPELINEMODE;
+    if (0 == PQexitPipelineMode(imp_dbh->conn)) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_exit_pipeline_mode (error)\n", THEADER_slow);
+        return 0;
+    }
+    imp_dbh->pipeline = 0;
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_exit_pipeline_mode (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_exit_pipeline_mode requires PostgreSQL 14 or later");
+    return 0;
+#endif
+
+} /* end of pg_db_exit_pipeline_mode */
+
+
+/* ================================================================== */
+int pg_db_pipeline_sync (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_pipeline_sync\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    TRACE_PQPIPELINESYNC;
+    if (0 == PQpipelineSync(imp_dbh->conn)) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_pipeline_sync (error)\n", THEADER_slow);
+        return 0;
+    }
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_pipeline_sync (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_pipeline_sync requires PostgreSQL 14 or later");
+    return 0;
+#endif
+
+} /* end of pg_db_pipeline_sync */
+
+
+/* ================================================================== */
+SV * pg_db_getresult (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+    PGresult * result;
+    ExecStatusType status;
+    HV * hv;
+    SV * retsv;
+    int ntuples, nfields;
+    const char * errmsg;
+    const char * cmdtuples;
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_getresult\n", THEADER_slow);
+
+    TRACE_PQGETRESULT;
+    result = PQgetResult(imp_dbh->conn);
+
+    if (NULL == result) {
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_getresult (undef)\n", THEADER_slow);
+        return &PL_sv_undef;
+    }
+
+    TRACE_PQRESULTSTATUS;
+    status = PQresultStatus(result);
+
+    hv = newHV();
+
+    (void)hv_stores(hv, "status", newSViv((IV)status));
+
+    TRACE_PQRESULTERRORMESSAGE;
+    errmsg = PQresultErrorMessage(result);
+    if (errmsg && errmsg[0] != '\0') {
+        (void)hv_stores(hv, "error", newSVpv(errmsg, 0));
+    }
+    else {
+        (void)hv_stores(hv, "error", newSVsv(&PL_sv_undef));
+    }
+
+    TRACE_PQNTUPLES;
+    ntuples = PQntuples(result);
+    TRACE_PQNFIELDS;
+    nfields = PQnfields(result);
+    TRACE_PQCMDTUPLES;
+    cmdtuples = PQcmdTuples(result);
+
+    (void)hv_stores(hv, "ntuples", newSViv(ntuples));
+    (void)hv_stores(hv, "nfields", newSViv(nfields));
+    (void)hv_stores(hv, "cmdtuples", newSVpv(cmdtuples, 0));
+
+    /* For TUPLES_OK, extract row data */
+    if (PGRES_TUPLES_OK == status && ntuples > 0) {
+        AV * rows = newAV();
+        int r, c;
+        for (r = 0; r < ntuples; r++) {
+            AV * row = newAV();
+            for (c = 0; c < nfields; c++) {
+                TRACE_PQGETISNULL;
+                if (PQgetisnull(result, r, c)) {
+                    av_push(row, newSVsv(&PL_sv_undef));
+                }
+                else {
+                    av_push(row, newSVpv(PQgetvalue(result, r, c), PQgetlength(result, r, c)));
+                }
+            }
+            av_push(rows, newRV_noinc((SV*)row));
+        }
+        (void)hv_stores(hv, "rows", newRV_noinc((SV*)rows));
+    }
+
+    TRACE_PQCLEAR;
+    PQclear(result);
+
+    retsv = newRV_noinc((SV*)hv);
+
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_getresult (status: %d)\n", THEADER_slow, (int)status);
+    return sv_2mortal(retsv);
+
+} /* end of pg_db_getresult */
+
+
+/* ================================================================== */
+/* Convert ? placeholders to $N style, skipping quoted strings,       */
+/* comments, and dollar-quoted sections. Returns a new SV*.           */
+/* If the input already uses $N placeholders or has no ?, returns a   */
+/* copy of the original.                                              */
+static SV * pg_convert_placeholders(pTHX_ SV *dbh, PGconn *conn, const char *input)
+{
+    D_imp_dbh(dbh);
+    const char *ptr = input;
+    const char *segment_start = input;
+    unsigned char ch, oldch;
+    int placeholder_num = 0;
+    bool has_question = DBDPG_FALSE;
+    SV *output;
+    signed char non_standard_strings = -1;
+
+    /* First pass: check if we need to do anything */
+    /* If there's a $<digit> anywhere, skip conversion entirely */
+    {
+        const char *scan = input;
+        while (*scan) {
+            if ('$' == *scan && scan[1] >= '1' && scan[1] <= '9') {
+                return newSVpv(input, 0);
+            }
+            if ('?' == *scan) {
+                has_question = DBDPG_TRUE;
+            }
+            scan++;
+        }
+    }
+
+    /* No ? found, return a copy unchanged */
+    if (!has_question) {
+        return newSVpv(input, 0);
+    }
+
+    /* Build output with ? replaced by $N */
+    output = newSVpvs("");
+    oldch = 1;
+
+    while ((ch = (unsigned char)*ptr)) {
+
+        /* 1: A traditionally quoted section */
+        if ('\'' == ch || '"' == ch) {
+            char quote = ch;
+            STRLEN backslashes = 0;
+            bool estring = (oldch == 'E') ? DBDPG_TRUE : DBDPG_FALSE;
+            if ('\'' == ch && -1 == non_standard_strings) {
+                const char * scs;
+                TRACE_PQPARAMETERSTATUS;
+                scs = PQparameterStatus(conn, "standard_conforming_strings");
+                non_standard_strings = (NULL==scs ? 1 : 0==strncmp(scs,"on",2) ? 0 : 1);
+            }
+
+            ptr++;
+            while (quote && (ch = (unsigned char)*ptr)) {
+                ptr++;
+                if (ch == quote && (quote == '"' || 0==(backslashes&1))) {
+                    quote = 0;
+                }
+                else if ('\\' == ch) {
+                    if (quote == '"' || non_standard_strings || estring)
+                        backslashes++;
+                }
+                else {
+                    backslashes = 0;
+                }
+            }
+            if (ch != 0) {
+                oldch = ch;
+                continue;
+            }
+            /* String ended inside quote - just finish */
+            break;
+        }
+
+        /* 2: A comment block */
+        if (('-' == ch && '-' == ptr[1]) ||
+            ('/' == ch && '*' == ptr[1])) {
+            char ctype = ptr[1]; /* '-' for line comment, '*' for block comment */
+            ptr += 2;
+            while ((ch = (unsigned char)*ptr)) {
+                ptr++;
+                if ('-' == ctype && '\n' == ch) {
+                    break;
+                }
+                else if ('*' == ctype && '*' == ch && '/' == *ptr) {
+                    ptr++;
+                    break;
+                }
+            }
+            if (ch != 0) {
+                oldch = ch;
+                continue;
+            }
+            break;
+        }
+
+        /* 3: Dollar quoting */
+        if ('$' == ch &&
+            (ptr[1] == '$'
+             || ptr[1] == '_'
+             || (ptr[1] >= 'A' && ptr[1] <= 'Z')
+             || (ptr[1] >= 'a' && ptr[1] <= 'z')
+             || ((unsigned char)ptr[1] >= (unsigned char)'\200'))) {
+            const char *dollar_start = ptr;
+            const char *tag_start;
+            STRLEN tag_len;
+            bool found = DBDPG_FALSE;
+
+            ptr++; /* skip the initial $ */
+            tag_start = ptr;
+
+            /* Scan for closing $ of the opening tag */
+            while (*ptr) {
+                if ('$' == *ptr) {
+                    found = DBDPG_TRUE;
+                    break;
+                }
+                /* Invalid tag character - bail out */
+                if (*ptr <= 47
+                    || (*ptr >= 58 && *ptr <= 64)
+                    || (*ptr >= 91 && *ptr <= 94)
+                    || *ptr == 96) {
+                    break;
+                }
+                ptr++;
+            }
+
+            if (!found) {
+                /* Not a dollar quote, rewind to just after the initial $ */
+                ptr = dollar_start + 1;
+                oldch = ch;
+                continue;
+            }
+
+            tag_len = ptr - tag_start;
+            ptr++; /* skip the closing $ of opening tag */
+
+            /* Now find the matching closing dollar quote */
+            found = DBDPG_FALSE;
+            while (*ptr) {
+                if ('$' == *ptr) {
+                    /* Check if this is the closing tag */
+                    if (tag_len == 0) {
+                        /* $$ case */
+                        ptr++;
+                        found = DBDPG_TRUE;
+                        break;
+                    }
+                    if (0 == strncmp(ptr + 1, tag_start, tag_len) && ptr[tag_len + 1] == '$') {
+                        ptr += tag_len + 2;
+                        found = DBDPG_TRUE;
+                        break;
+                    }
+                }
+                ptr++;
+            }
+
+            /* Whether found or not, continue from current position */
+            if (*ptr) {
+                oldch = *(ptr - 1);
+                continue;
+            }
+            break;
+        }
+
+        /* 4: Replace ? placeholder */
+        if ('?' == ch) {
+            /* Append everything from segment_start up to the ? */
+            if (ptr > segment_start) {
+                sv_catpvn(output, segment_start, ptr - segment_start);
+            }
+            sv_catpvf(output, "$%d", ++placeholder_num);
+            ptr++;
+            segment_start = ptr;
+            oldch = ch;
+            continue;
+        }
+
+        oldch = ch;
+        ptr++;
+    }
+
+    /* Append any remaining segment */
+    if (ptr > segment_start) {
+        sv_catpvn(output, segment_start, ptr - segment_start);
+    }
+
+    return output;
+
+} /* end of pg_convert_placeholders */
+
+
+/* ================================================================== */
+int pg_db_send_query_params (SV * dbh, char * sql, AV * params)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_send_query_params\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    int nparams, i, ret;
+    const char ** paramValues = NULL;
+    SV *converted = pg_convert_placeholders(aTHX_ dbh, imp_dbh->conn, sql);
+    const char *real_sql = SvPV_nolen(converted);
+
+    nparams = (params) ? (int)(av_len(params) + 1) : 0;
+
+    if (nparams > 0) {
+        Newz(0, paramValues, nparams, const char *);
+        for (i = 0; i < nparams; i++) {
+            SV ** svp = av_fetch(params, i, 0);
+            if (svp && SvOK(*svp)) {
+                paramValues[i] = SvPV_nolen(*svp);
+            }
+            else {
+                paramValues[i] = NULL;
+            }
+        }
+    }
+
+    TRACE_PQSENDQUERYPARAMS;
+    ret = PQsendQueryParams(imp_dbh->conn, real_sql, nparams, NULL,
+                            paramValues, NULL, NULL, 0);
+
+    Safefree(paramValues);
+    SvREFCNT_dec(converted);
+
+    if (0 == ret) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_query_params (error)\n", THEADER_slow);
+        return 0;
+    }
+
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_query_params (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_send_query_params requires PostgreSQL 14 or later");
+    return 0;
+#endif
+
+} /* end of pg_db_send_query_params */
+
+
+/* ================================================================== */
+int pg_db_send_prepare (SV * dbh, char * name, char * sql)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+    int ret;
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_send_prepare\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    {
+        SV *converted = pg_convert_placeholders(aTHX_ dbh, imp_dbh->conn, sql);
+        const char *real_sql = SvPV_nolen(converted);
+
+        TRACE_PQSENDPREPARE;
+        ret = PQsendPrepare(imp_dbh->conn, name, real_sql, 0, NULL);
+        SvREFCNT_dec(converted);
+    }
+    if (0 == ret) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_prepare (error)\n", THEADER_slow);
+        return 0;
+    }
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_prepare (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_send_prepare requires PostgreSQL 14 or later");
+    return 0;
+#endif
+} /* end of pg_db_send_prepare */
+
+
+/* ================================================================== */
+int pg_db_send_query_prepared (SV * dbh, char * name, AV * params)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_send_query_prepared\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    int nparams, i, ret;
+    const char ** paramValues = NULL;
+    nparams = (params) ? (int)(av_len(params) + 1) : 0;
+    if (nparams > 0) {
+        Newz(0, paramValues, nparams, const char *);
+        for (i = 0; i < nparams; i++) {
+            SV ** svp = av_fetch(params, i, 0);
+            if (svp && SvOK(*svp)) {
+                paramValues[i] = SvPV_nolen(*svp);
+            }
+            else {
+                paramValues[i] = NULL;
+            }
+        }
+    }
+
+    TRACE_PQSENDQUERYPREPARED;
+    ret = PQsendQueryPrepared(imp_dbh->conn, name, nparams,
+                              paramValues, NULL, NULL, 0);
+    Safefree(paramValues);
+    if (0 == ret) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_query_prepared (error)\n", THEADER_slow);
+        return 0;
+    }
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_query_prepared (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_send_query_prepared requires PostgreSQL 14 or later");
+    return 0;
+#endif
+} /* end of pg_db_send_query_prepared */
+
+
+/* ================================================================== */
+int pg_db_send_flush_request (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_send_flush_request\n", THEADER_slow);
+
+#ifdef DBDPG_HAS_PIPELINE
+    if (0 == imp_dbh->pipeline) {
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, "pg_send_flush_request requires pipeline mode");
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_flush_request (not in pipeline mode)\n", THEADER_slow);
+        return 0;
+    }
+    TRACE_PQSENDFLUSHREQUEST;
+    if (0 == PQsendFlushRequest(imp_dbh->conn)) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_flush_request (error)\n", THEADER_slow);
+        return 0;
+    }
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_send_flush_request (1)\n", THEADER_slow);
+    return 1;
+#else
+    croak("pg_send_flush_request requires PostgreSQL 14 or later");
+    return 0;
+#endif
+} /* end of pg_db_send_flush_request */
+
+
+/* ================================================================== */
+int pg_db_flush (SV * dbh)
+{
+    dTHX;
+    D_imp_dbh(dbh);
+    int flush_status;
+
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_flush\n", THEADER_slow);
+
+    TRACE_PQFLUSH;
+    flush_status = PQflush(imp_dbh->conn);
+
+    if (-1 == flush_status) {
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        TRACE_PQERRORMESSAGE;
+        pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_flush (error)\n", THEADER_slow);
+        return -1;
+    }
+
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_flush (%d)\n", THEADER_slow, flush_status);
+    return flush_status;
+
+} /* end of pg_db_flush */
 
 
 /* ================================================================== */
