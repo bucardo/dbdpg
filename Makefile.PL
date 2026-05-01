@@ -14,7 +14,6 @@ my $sep;
 BEGIN {
     my %seplist = (
                MacOS   => ':',
-               darwin  => ':',
                MSWin32 => '\\',
                os2     => '\\',
                VMS     => '\\',
