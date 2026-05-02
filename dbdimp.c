@@ -2973,7 +2973,7 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version,
 } /* end of pg_stringify_array */
 
 /* ================================================================== */
-static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input, sql_type_info_t * coltype)
+static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, char * input, sql_type_info_t * coltype)
 {
 
     AV*    av;              /* The main array we are returning a reference to */
@@ -3013,7 +3013,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, unsigned char * input
     }
     input -= opening_braces;
 
-    New(0, string, strlen((char *)input), char); /* Freed at end of this function */
+    New(0, string, strlen(input), char); /* Freed at end of this function */
     string[0] = '\0';
 
     av = currentav = topav = newAV();
@@ -3979,9 +3979,9 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
             SvROK(sv) ? (void)sv_unref(sv) : (void)SvOK_off(sv);
         }
         else {
-            unsigned char * value;
+            char * value;
             TRACE_PQGETVALUE;
-            value = (unsigned char*)PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
+            value = PQgetvalue(imp_sth->result, imp_sth->cur_tuple, i); 
 
             type_info = imp_sth->type_info[i];
 
@@ -3999,7 +3999,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
                     case PG_BOOL:
                         if (imp_dbh->pg_bool_tf) {
                             *value = ('1' == *value) ? 't' : 'f';
-                            sv_setpvn(sv, (char *)value, value_len);
+                            sv_setpvn(sv, value, value_len);
                         }
                         else
                             sv_setiv(sv, '1' == *value ? 1 : 0);
@@ -4007,24 +4007,24 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 #if IVSIZE >= 8 && LONGSIZE >= 8
                     case PG_INT8:
                         if (imp_dbh->pg_int8_as_string) {
-                            sv_setpvn(sv, (char *)value, value_len);
+                            sv_setpvn(sv, value, value_len);
                             break;
                         }
 #endif
                     case PG_INT2:
                     case PG_INT4:
-                        sv_setiv(sv, atol((char *)value));
+                        sv_setiv(sv, atol(value));
                         break;
                     case PG_FLOAT4:
                     case PG_FLOAT8:
-                        sv_setnv(sv, strtod((char *)value, NULL));
+                        sv_setnv(sv, strtod(value, NULL));
                         break;
                     default:
-                        sv_setpvn(sv, (char *)value, value_len);
+                        sv_setpvn(sv, value, value_len);
                     }
                 }
                 else {
-                    sv_setpv(sv, (char *)value);
+                    sv_setpv(sv, value);
                 }
             
                 if (type_info && (PG_BPCHAR == type_info->type_id) && chopblanks) {
