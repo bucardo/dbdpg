@@ -201,7 +201,7 @@ t/10_pg_error_field.t - Tests $dbh->pg_error_field function
 
 t/12placeholders.t - Tests placeholders.
 
-t/13pqclose_leak.t - Regression tests for the PQclosePrepared cleanup path
+t/13leak.t - Regression tests for the PQclosePrepared cleanup path
   (libpq >= 17), which previously leaked the SELECT result.
 
 t/20savepoints.t - Test savepoints.

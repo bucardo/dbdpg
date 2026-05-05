@@ -29,13 +29,13 @@ isnt ($dbh, undef, 'Connect to database for PQclosePrepared leak regression test
 $dbh->{AutoCommit} = 0;
 
 $dbh->do(q{
-    CREATE TEMP TABLE pqclose_leak_test (
+    CREATE TEMP TABLE dbd_pg_pqclose_leak_test (
         id   serial PRIMARY KEY,
         body text   NOT NULL
     )
 });
 $dbh->do(q{
-    INSERT INTO pqclose_leak_test (body)
+    INSERT INTO dbd_pg_pqclose_leak_test (body)
     SELECT 'row' || n FROM generate_series(1, 50) AS n
 });
 $dbh->commit;
@@ -59,7 +59,7 @@ sub _rss_kb {
     my $ok = 1;
     eval {
         for (1 .. 20) {
-            my $sth = $dbh->prepare('SELECT body FROM pqclose_leak_test WHERE id > ?');
+            my $sth = $dbh->prepare('SELECT body FROM dbd_pg_pqclose_leak_test WHERE id > ?');
             $sth->execute(0);
             1 while $sth->fetchrow_arrayref;
         }
@@ -75,7 +75,7 @@ sub _rss_kb {
     my $ok = 1;
     eval {
         for (1 .. 20) {
-            my $sth = $dbh->prepare('SELECT body FROM pqclose_leak_test ORDER BY id');
+            my $sth = $dbh->prepare('SELECT body FROM dbd_pg_pqclose_leak_test ORDER BY id');
             $sth->execute;
             1 while $sth->fetchrow_array;
         }
@@ -92,7 +92,7 @@ sub _rss_kb {
     my $ok = 1;
     eval {
         for (1 .. 20) {
-            my $sth = $dbh->prepare('SELECT body FROM pqclose_leak_test WHERE id > ?');
+            my $sth = $dbh->prepare('SELECT body FROM dbd_pg_pqclose_leak_test WHERE id > ?');
             $sth->execute(0);
             $sth->fetchrow_arrayref;
             $sth->finish;
@@ -109,7 +109,7 @@ sub _rss_kb {
     my $t = 'Multiple re-executes on one sth before destroy complete without errors';
     my $ok = 1;
     eval {
-        my $sth = $dbh->prepare('SELECT body FROM pqclose_leak_test WHERE id > ?');
+        my $sth = $dbh->prepare('SELECT body FROM dbd_pg_pqclose_leak_test WHERE id > ?');
         for (1 .. 10) {
             $sth->execute(0);
             1 while $sth->fetchrow_arrayref;
@@ -128,7 +128,7 @@ sub _rss_kb {
     local $dbh->{PrintWarn} = 0;
     eval {
         for (1 .. 10) {
-            my $sth = $dbh->prepare('SELECT body FROM pqclose_leak_test ORDER BY id');
+            my $sth = $dbh->prepare('SELECT body FROM dbd_pg_pqclose_leak_test ORDER BY id');
             $sth->execute;
             $sth->fetchrow_arrayref;
         }
@@ -146,7 +146,7 @@ sub _rss_kb {
     local $dbh->{Warn}      = 0;
     local $dbh->{PrintWarn} = 0;
     eval {
-        my $sth = $dbh->prepare('SELECT body FROM pqclose_leak_test WHERE id > ?');
+        my $sth = $dbh->prepare('SELECT body FROM dbd_pg_pqclose_leak_test WHERE id > ?');
         for (1 .. 5) {
             $sth->execute(0);
             $sth->fetchrow_arrayref;
@@ -164,7 +164,7 @@ sub _rss_kb {
     my $ok = 1;
     eval {
         {
-            my $sth = $dbh->prepare('SELECT body FROM pqclose_leak_test WHERE id > ?');
+            my $sth = $dbh->prepare('SELECT body FROM dbd_pg_pqclose_leak_test WHERE id > ?');
             $sth->execute(0);
             1 while $sth->fetchrow_arrayref;
         }
@@ -186,7 +186,7 @@ SKIP: {
         if $pglibversion < 170000;
 
     $dbh->do(q{
-        INSERT INTO pqclose_leak_test (body)
+        INSERT INTO dbd_pg_pqclose_leak_test (body)
         SELECT repeat('z', 512) FROM generate_series(1, 50)
     });
     $dbh->commit;
@@ -196,13 +196,13 @@ SKIP: {
     my $ok = eval {
         # burn through one-time allocations before sampling RSS
         for (1 .. 100) {
-            my $sth = $dbh->prepare('SELECT body FROM pqclose_leak_test WHERE id > ?');
+            my $sth = $dbh->prepare('SELECT body FROM dbd_pg_pqclose_leak_test WHERE id > ?');
             $sth->execute(0);
             1 while $sth->fetchrow_arrayref;
         }
         $rss_before = _rss_kb();
         for (1 .. 1000) {
-            my $sth = $dbh->prepare('SELECT body FROM pqclose_leak_test WHERE id > ?');
+            my $sth = $dbh->prepare('SELECT body FROM dbd_pg_pqclose_leak_test WHERE id > ?');
             $sth->execute(0);
             1 while $sth->fetchrow_arrayref;
         }

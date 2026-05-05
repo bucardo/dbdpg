@@ -4,15 +4,15 @@ RT items can be found by using: https://rt.cpan.org/Public/Bug/Display.html?id=X
 Github items can be found by using: https://github.com/bucardo/dbdpg/issues/XXX
 
 
-Version TBD  (released TBD)
-
- - Fix a memory leak in the libpq 17 PQclosePrepared cleanup path when
-     destroying server-side prepared statement handles.
-
 Version 3.20.3  (unreleased)
 
  - Support whitespace in directory names for the test suite.
    [Greg Sabino Mullane]
+
+ - Fix a memory leak in the libpq 17 PQclosePrepared cleanup path when
+     destroying server-side prepared statement handles.
+   [Rorsarach]
+   (Github issue #187, pull request #188)
 
 
 Version 3.20.2  (released May 1, 2026)
