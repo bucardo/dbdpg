@@ -24,6 +24,8 @@ use Fcntl   ':seek';
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
+my $socket_force_closed = 0;
+
 my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -2863,6 +2865,7 @@ ASYNC_CONNECT: {
     #
     # test sync connect when pfg_async_connect is false
     #
+    $dbh->disconnect() unless $socket_force_closed;
     $dbh = test_connect(0);
     if (!$dbh) {
         fail('failed to create dbh for sync connect test');
@@ -2913,5 +2916,6 @@ sub socket_fail {
     my $fd = $ldbh->{pg_socket} or die 'Could not determine socket';
     open(DBH_PG_FH, '<&='.$fd) or die "Could not open socket: $!"; ## no critic
     close DBH_PG_FH or die "Could not close socket: $!";
+    $socket_force_closed = 1;
     return;
 }
