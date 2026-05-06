@@ -279,7 +279,7 @@ SKIP: {
     };
     $@ and skip ('Must have File::Temp to complete trace flag testing', 9);
 
-    my ($fh,$filename) = File::Temp::tempfile('dbdpg_test_XXXXXX', SUFFIX => '.tst', UNLINK => 1);
+    my ($fh,$filename) = File::Temp::tempfile('dbdpg_test_XXXXXX', SUFFIX => '.tst', UNLINK => 0);
     my ($flag, $info, $expected, $SQL);
 
     $t=q{Trace flag 'SQL' works as expected};
@@ -452,6 +452,9 @@ dbdpg: Begin _sqlstate
 };
     $info =~ s/(Login connection string: ).+/$1/g;
     is ($info, "$expected", $t);
+
+    $^O =~ /Win32/ and sleep 1;
+    unlink $filename;
 
 } ## end trace flag testing using File::Temp
 
