@@ -9,6 +9,9 @@ Version 3.20.3  (unreleased)
  - Support whitespace in directory names for the test suite.
    [Greg Sabino Mullane]
 
+ - Many tweaks to support building and testing on Win32
+   [Greg Sabino Mullane]
+
 
 Version 3.20.2  (released May 1, 2026)
 
