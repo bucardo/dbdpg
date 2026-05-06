@@ -2863,7 +2863,7 @@ ASYNC_CONNECT: {
     }
 
     #
-    # test sync connect when pfg_async_connect is false
+    # test sync connect when pg_async_connect is false
     #
     $dbh->disconnect() unless $socket_force_closed;
     $dbh = test_connect(0);
