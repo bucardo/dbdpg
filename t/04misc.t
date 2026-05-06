@@ -192,7 +192,7 @@ LANGUAGE plpgsql
 AS $BC$
  DECLARE
    level ALIAS FOR $1;
- BEGIN 
+ BEGIN
   IF level ~* 'notice' THEN
     RAISE NOTICE 'RAISE NOTICE FROM dbdpg_test_error_handler';
   ELSIF level ~* 'warning' THEN
@@ -409,11 +409,11 @@ End pg_db_rollback_commit (result: 1)
     DBI->trace(0);
     seek $fh,0,0;
     { local $/; ($info = <$fh>) =~ s/\r//go; }
-    $expected = q{Login connection string: 
+    $expected = q{Login connection string:
 Connection complete
 Disconnection complete
 };
-    $info =~ s/(Login connection string: ).+/$1/g;
+    $info =~ s/(Login connection string:).+/$1/g;
     is ($info, "$expected$expected", $t);
 
     $t=q{Trace flag 'pglogin' works as expected with DBD::Pg->parse_trace_flag()};
@@ -425,11 +425,11 @@ Disconnection complete
     DBI->trace(0);
     seek $fh,0,0;
     { local $/; ($info = <$fh>) =~ s/\r//go; }
-    $expected = q{Login connection string: 
+    $expected = q{Login connection string:
 Connection complete
 Disconnection complete
 };
-    $info =~ s/(Login connection string: ).+/$1/g;
+    $info =~ s/(Login connection string:).+/$1/g;
     is ($info, "$expected", $t);
 
     $t=q{Trace flag 'pgprefix' and 'pgstart' appended to 'pglogin' work as expected};
@@ -445,12 +445,12 @@ Disconnection complete
     $dbh->rollback();
     seek $fh,0,0;
     { local $/; ($info = <$fh>) =~ s/\r//go; }
-    $expected = q{Login connection string: 
+    $expected = q{Login connection string:
 Connection complete
 dbdpg: Begin pg_quickexec (query: SELECT 'dbdpg_flag_testing' async: 0 async_status: 0)
 dbdpg: Begin _sqlstate
 };
-    $info =~ s/(Login connection string: ).+/$1/g;
+    $info =~ s/(Login connection string:).+/$1/g;
     is ($info, "$expected", $t);
 
     $^O =~ /Win32/ and sleep 1;

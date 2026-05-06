@@ -201,6 +201,24 @@ for my $file (@cfiles, @headerfiles, @perlfiles) {
 }
 
 ##
+## Check files for trailing spaces
+##
+for my $file (@cfiles, @headerfiles, @perlfiles) {
+    my $spacefail = 0;
+    open my $fh, '<', $file or die "Could not open $file: $!\n";
+    while (<$fh>) {
+        $spacefail++ if / $/;
+    }
+    close $fh;
+    if ($spacefail) {
+        fail (qq{File "$file" contains one or more trailing spaces: $spacefail});
+    }
+    else {
+        pass (qq{File "$file" has no trailing spaces});
+    }
+}
+
+##
 ## Make sure all Perl files request the same minimum version of Perl
 ##
 my $firstversion = 0;

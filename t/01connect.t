@@ -78,7 +78,7 @@ eval { $sth->execute() };
 ok ($@, $t);
 
 ## A failure to produce a valid arg for libpq will give a message like this:
-## DBI connect('dbname=dbdpg_test;baldrick=0','',...) failed: 
+## DBI connect('dbname=dbdpg_test;baldrick=0','',...) failed:
 ## invalid connection option "baldrick"
 
 $t=q{Calling DBI->connect() with an invalid option fails};
@@ -117,7 +117,7 @@ like ($@, qr/=/, $t);
 
 $t=q{Calling DBI->connect() with proper quoting but bad port gives expected error};
 ## An otherwise correct call but to an invalid port gives a message like this:
-## DBI connect('dbname='dbdpg \'spacey\' name';port=1','',...) failed: 
+## DBI connect('dbname='dbdpg \'spacey\' name';port=1','',...) failed:
 ## could not connect to server: No such file or directory
 ## Is the server running locally and accepting
 ## connections on Unix domain socket "/tmp/.s.PGSQL.1"?

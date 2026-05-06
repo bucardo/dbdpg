@@ -4,7 +4,7 @@
   Portions Copyright (c) 2002 Jeffrey W. Baker
   Portions Copyright (c) 1997-2000 Edmund Mergl
   Portions Copyright (c) 1994-1997 Tim Bunce
-   
+
   You may distribute under the terms of either the GNU General Public
   License or the Artistic License, as specified in the Perl README file.
 
@@ -321,7 +321,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     /* Call the pg_warn function anytime this connection raises a notice */
     TRACE_PQSETNOTICEPROCESSOR;
     (void)PQsetNoticeProcessor(imp_dbh->conn, pg_warn, (void *)SvRV(dbh));
-    
+
     imp_dbh->pg_enable_utf8  = -1;
 
     imp_dbh->prepare_now       = DBDPG_FALSE;
@@ -418,7 +418,7 @@ int pg_db_continue_connect(SV *dbh)
 }
 
 /* ================================================================== */
-/* 
+/*
    Database specific error handling.
 */
 static void pg_error (pTHX_ SV * h, int error_num, const char * error_msg)
@@ -473,13 +473,13 @@ static void pg_warn (void * arg, const char * message)
 
     /* This fun little bit is to prevent a core dump when the following occurs:
        client_min_messages is set to DEBUG3 or greater, and we exit without a disconnect.
-       DBI issues a 'rollback' in this case, which causes some debugging messages 
-       to be emitted from the server (such as "StartTransactionCommand"). However, we can't do 
+       DBI issues a 'rollback' in this case, which causes some debugging messages
+       to be emitted from the server (such as "StartTransactionCommand"). However, we can't do
        the D_imp_dbh call anymore, because the underlying dbh has lost some of its magic.
-       Unfortunately, DBI then coredumps in dbh_getcom2. Hence, we make sure that the 
+       Unfortunately, DBI then coredumps in dbh_getcom2. Hence, we make sure that the
        object passed in is still 'valid', in that a certain level has a ROK flag.
-       If it's not, we just return without issuing any warning, as we can't check things 
-       like DBIc_WARN. There may be a better way of handling all this, and we may want to 
+       If it's not, we just return without issuing any warning, as we can't check things
+       like DBIc_WARN. There may be a better way of handling all this, and we may want to
        default to always warn() - input welcome.
     */
     if (!SvROK(SvMAGIC(SvRV(tmp))->mg_obj)) {
@@ -564,15 +564,15 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
     sqlstate = NULL;
 
     /*
-      Because PQresultErrorField may not work completely when an error occurs, and 
-      we are connecting over TCP/IP, only set it here if non-null, and fall through 
+      Because PQresultErrorField may not work completely when an error occurs, and
+      we are connecting over TCP/IP, only set it here if non-null, and fall through
       to a better default value below.
     */
     if (result) {
         TRACE_PQRESULTERRORFIELD;
         sqlstate = PQresultErrorField(result, PG_DIAG_SQLSTATE);
     }
-    
+
     if (!sqlstate) {
         /* Do our best to map the status result to a sqlstate code */
         switch ((int)status) {
@@ -670,7 +670,7 @@ int dbd_db_ping (SV * dbh)
     return 1+tstatus;
 
 } /* end of dbd_db_ping */
- 
+
 
 /* ================================================================== */
 static PGTransactionStatusType pg_db_txn_status (pTHX_ imp_dbh_t * imp_dbh)
@@ -696,14 +696,14 @@ static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int actio
                     action ? "commit" : "rollback",
                     DBIc_is(imp_dbh, DBIcf_AutoCommit) ? 1 : 0,
                     DBIc_is(imp_dbh, DBIcf_BegunWork) ? 1 : 0);
-    
+
     /* No action if AutoCommit = on or the connection is invalid */
     if ((NULL == imp_dbh->conn) || (DBIc_has(imp_dbh, DBIcf_AutoCommit))) {
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_rollback_commit (result: 0)\n", THEADER_slow);
         return 0;
     }
 
-    /* We only perform these actions if we need to. For newer servers, we 
+    /* We only perform these actions if we need to. For newer servers, we
        ask it for the status directly and double-check things */
 
     tstatus = pg_db_txn_status(aTHX_ imp_dbh);
@@ -740,7 +740,7 @@ static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int actio
     }
 
     status = _result(aTHX_ imp_dbh, action ? "commit" : "rollback");
-        
+
     /* Set this early, for scripts that continue despite the error below */
     imp_dbh->done_begin = DBDPG_FALSE;
 
@@ -791,16 +791,16 @@ int dbd_db_disconnect (SV * dbh, imp_dbh_t * imp_dbh)
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_disconnect\n", THEADER_slow);
 
-    /* We assume that disconnect will always work    
+    /* We assume that disconnect will always work
        since most errors imply already disconnected. */
 
     DBIc_ACTIVE_off(imp_dbh);
-    
+
     if (NULL != imp_dbh->conn) {
         /* Attempt a rollback */
         if (0 != dbd_db_rollback(dbh, imp_dbh) && TRACE5_slow)
             TRC(DBILOGFP, "%sdbd_db_disconnect: AutoCommit=off -> rollback\n", THEADER_slow);
-        
+
         TRACE_PQFINISH;
         PQfinish(imp_dbh->conn);
         imp_dbh->conn = NULL;
@@ -1020,7 +1020,7 @@ SV * dbd_db_FETCH_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 
     if (!retsv)
         return Nullsv;
-    
+
     if (retsv == &PL_sv_yes || retsv == &PL_sv_no) {
         return retsv; /* no need to mortalize yes or no */
     }
@@ -1039,7 +1039,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
     int          retval = 0;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_STORE (key: %s newval: %d kl:%d)\n", THEADER_slow, key, newval, (int)kl);
-    
+
     switch (kl) {
 
     case 8: /* ReadOnly */
@@ -1070,7 +1070,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
             retval = 1;
         }
         break;
-    
+
     case 13: /* pg_errorlevel */
 
         if (strEQ("pg_errorlevel", key)) {
@@ -1094,9 +1094,9 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
             retval = 1;
         }
 
-        /* 
+        /*
            We don't want to check the client_encoding every single time we talk to the database,
-           so we only do it here, which allows people to signal DBD::Pg that something 
+           so we only do it here, which allows people to signal DBD::Pg that something
            may have changed, so could you please rescan client_encoding?
         */
         else if (strEQ("pg_enable_utf8", key)) {
@@ -1378,7 +1378,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
     }
 
     fields = DBIc_NUM_FIELDS(imp_sth);
-    
+
     switch (kl) {
 
     case 4: /* NAME  TYPE */
@@ -1445,7 +1445,7 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
             sql_type_info_t * type_info;
             AV *av = newAV();
             retsv = newRV_inc(sv_2mortal((SV*)av));
-            while(--fields >= 0) {            
+            while(--fields >= 0) {
                 TRACE_PQFTYPE;
                 type_info = pg_type_data((int)PQftype(imp_sth->result,fields));
                 (void)av_store(av, fields, newSVpv(type_info ? type_info->type_name : "unknown", 0));
@@ -1583,7 +1583,7 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_STORE (key: %s value: %s)\n",
                     THEADER_slow, key, value);
-    
+
     switch (kl) {
 
     case 8: /* pg_async */
@@ -1717,7 +1717,7 @@ SV * pg_db_pg_notifies (SV * dbh, imp_dbh_t * imp_dbh)
 
     if (!notify) {
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_pg_notifies (undef)\n", THEADER_slow);
-        return &PL_sv_undef; 
+        return &PL_sv_undef;
     }
 
     ret=newAV();
@@ -1989,7 +1989,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
         if (
             (ch < 34 && ch != 0)
             || (ch > 63 && ch != 91) /* > @ABC... but not [ */
-            || 
+            ||
             (ch!=34 && ch!=39 &&    /* " ' simple quoting */
              ch!=45 && ch!=47 &&    /* - / comment */
              ch!=36 &&              /* $   dollar quoting or placeholder */
@@ -2070,13 +2070,13 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
 
         /* 3: advanced dollar quoting */
         if ('$' == ch &&
-            (*statement == '$' 
+            (*statement == '$'
              || *statement == '_'
-             || (*statement >= 'A' && *statement <= 'Z') 
+             || (*statement >= 'A' && *statement <= 'Z')
              || (*statement >= 'a' && *statement <= 'z')
              || ((unsigned char)*statement >= (unsigned char)'\200'))) {
-            /* "SQL identifiers must begin with a letter (a-z, but also letters with diacritical marks and non-Latin letters) 
-                or an underscore (_). Subsequent characters in an identifier or key word can be letters, underscores, 
+            /* "SQL identifiers must begin with a letter (a-z, but also letters with diacritical marks and non-Latin letters)
+                or an underscore (_). Subsequent characters in an identifier or key word can be letters, underscores,
                 digits (0-9), or dollar signs ($)
             */
             char * dollarstring = NULL; /* Dynamic string between $$ in dollar quoting */
@@ -2096,7 +2096,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
                 }
 
                 /* If we hit an invalid character, bail out */
-                if (ch <= 47 
+                if (ch <= 47
                     || (ch >= 58 && ch <= 64)
                     || (ch >= 91 && ch <= 94)
                     || ch == 96
@@ -2177,7 +2177,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
             continue;
 
         } /* end dollar quoting */
-        
+
         /* All we care about at this point is placeholder characters and end of string */
         if ('?' != ch && '$' != ch && ':' != ch && 0!=ch) {
             continue;
@@ -2268,7 +2268,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
                       placeholder_string[imp_sth->placeholder_type],
                       placeholder_string[placeholder_type]);
         }
-        
+
         /* Move on to the next letter unless we found a placeholder, or we are at the end of the string */
         if (PLACEHOLDER_NONE == placeholder_type && ch)
             continue;
@@ -2290,7 +2290,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
             /* Have we seen this placeholder yet? */
             for (xint=1,thisph=imp_sth->ph; NULL != thisph; thisph=thisph->nextph,xint++) {
                 /*
-                  Because we need to make sure :foobar does not match as a previous 
+                  Because we need to make sure :foobar does not match as a previous
                    hit when seeing :foobar2, we always use the greater of the two lengths:
                    the length of the old name or the current name we are scanning
                 */
@@ -2340,7 +2340,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
         }
         if (TRACE6_slow)
             TRC(DBILOGFP, "%sCreated segment (%s)\n", THEADER_slow, newseg->segment);
-        
+
         /* Tie it in to the previous one */
         if (NULL==currseg) {
             imp_sth->seg = newseg;
@@ -2355,7 +2355,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
         if (placeholder_type != PLACEHOLDER_NONE)
             imp_sth->placeholder_type = placeholder_type;
 
-        /* 
+        /*
            Check if this segment also ends the string.
            If it does, we simply leave right away.
            Make sure we don't peek at statement if we know it is past the end of the string.
@@ -2367,8 +2367,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
 
     /* For dollar sign placeholders, ensure that the rules are followed */
     if (PLACEHOLDER_DOLLAR == imp_sth->placeholder_type) {
-        /* 
-           We follow the Pg rules: must start with $1, repeats are allowed, 
+        /*
+           We follow the Pg rules: must start with $1, repeats are allowed,
            numbers must be sequential. We change numphs if repeats found
         */
         int topdollar = 0;
@@ -2582,7 +2582,7 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_prepare_statement\n", THEADER_slow);
     return 0;
-    
+
 } /* end of pg_st_prepare_statement */
 
 
@@ -2641,7 +2641,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
         if (0==x)
             croak("Cannot bind unknown placeholder '%s'", name);
     }
-    else { /* We have a number */    
+    else { /* We have a number */
         if ('$' == *name)
             name++;
         phnum = atoi(name);
@@ -2723,13 +2723,13 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
         if((svp = hv_fetchs((HV*)SvRV(attribs),"pg_type", 0)) != NULL)
             pg_type = (int)SvIV(*svp);
     }
-    
+
     if (sql_type && pg_type)
         croak ("Cannot specify both sql_type and pg_type");
 
     if (NULL == currph->bind_type && (sql_type || pg_type))
         imp_sth->numbound++;
-    
+
     if (pg_type) {
         if ((currph->bind_type = pg_type_data(pg_type))) {
             if (!currph->bind_type->bind_ok) { /* Re-evaluate with new prepare */
@@ -2742,8 +2742,8 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
         }
     }
     else if (sql_type) {
-        /* always bind as pg_type, because we know we are 
-           inserting into a pg database... It would make no 
+        /* always bind as pg_type, because we know we are
+           inserting into a pg database... It would make no
            sense to quote something to sql semantics and break
            the insert.
         */
@@ -2990,7 +2990,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, char * input, sql_typ
                     THEADER_slow, input, coltype->array_delimiter);
 
     /*
-      Note: we don't do careful balance checking here, as this is coming straight from 
+      Note: we don't do careful balance checking here, as this is coming straight from
       the Postgres backend, and we rely on it to give us a sane and balanced structure
     */
 
@@ -3207,7 +3207,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
         else {
             croak("Must call pg_getcopydata until no more rows before issuing more commands");
         }
-    }            
+    }
 
     /* If we are still waiting on an async, handle it */
     switch (imp_dbh->async_status) {
@@ -3377,9 +3377,9 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
     long          ret;
     PQExecType    pqtype;
     long          power_of_ten;
-    
+
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_execute\n", THEADER_slow);
-    
+
     if (NULL == imp_dbh->conn) {
         pg_error(aTHX_ sth, PGRES_FATAL_ERROR, "Cannot call execute on a disconnected database handle");
         return -2;
@@ -3471,7 +3471,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
     if (TRACE4_slow) TRC(DBILOGFP,
                     "%sPQexec* decision: dml=%d direct=%d server_prepare=%d numbound=%d numphs=%d default=%d current=%d\n",
-                    THEADER_slow, 
+                    THEADER_slow,
                     imp_sth->is_dml,
                     imp_sth->direct,
                     imp_sth->server_prepare,
@@ -3577,7 +3577,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
             }
         }
     }
-    
+
     /* Run one of PQexec (or PQsendQuery), PQexecParams (or PQsendQueryParams), PQexecPrepared (or PQsendQueryPrepared) */
 
     if (PQTYPE_EXEC == pqtype) { /* PQexec or PQsendQuery */
@@ -3602,11 +3602,11 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         }
         statement[execsize] = '\0';
 
-        if (TRACE5_slow) TRC(DBILOGFP, "%sRunning %s with (%s)\n", 
+        if (TRACE5_slow) TRC(DBILOGFP, "%sRunning %s with (%s)\n",
                              THEADER_slow,
                              imp_sth->async_flag & PG_ASYNC ? "PQsendQuery" : "PQexec",
                              statement);
-            
+
         if (TSQL)
             TRC(DBILOGFP, "%s;\n\n", statement);
 
@@ -3675,7 +3675,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
                 sprintf(strchr(statement, '\0'), "$%d", currseg->placeholder);
         }
         statement[execsize] = '\0';
-            
+
         /* Populate PQoids */
         if (NULL == imp_sth->PQoids) {
             Newz(0, imp_sth->PQoids, (unsigned int)imp_sth->numphs, Oid);
@@ -3683,7 +3683,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
             imp_sth->PQoids[x++] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
         }
-        
+
         if (TRACE7_slow) {
             for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
                 TRC(DBILOGFP, "%sPQexecParams item #%d\n", THEADER_slow, (int)x);
@@ -3747,7 +3747,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
     }
     else if (PQTYPE_PREPARED == pqtype) { /* PQexecPrepared or PQsendQueryPrepared */
-    
+
         if (TRACE4_slow) TRC(DBILOGFP, "%s%s\n",
                              THEADER_slow,
                              imp_sth->async_flag & PG_ASYNC ? "PQsendQueryPrepared" : "PQexecPrepared");
@@ -3774,13 +3774,13 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
                 for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
                     TRC(DBILOGFP, "%sPQexecPrepared item #%d\n", THEADER_slow, (int)x);
                     TRC(DBILOGFP, "%s-> Value: (%s)\n",
-                        THEADER_slow, (imp_sth->PQfmts && imp_sth->PQfmts[x]==1) ? "(binary, not shown)" 
+                        THEADER_slow, (imp_sth->PQfmts && imp_sth->PQfmts[x]==1) ? "(binary, not shown)"
                                     : imp_sth->PQvals[x]);
                     TRC(DBILOGFP, "%s-> Length: (%d)\n", THEADER_slow, imp_sth->PQlens ? imp_sth->PQlens[x] : 0);
                     TRC(DBILOGFP, "%s-> Format: (%d)\n", THEADER_slow, imp_sth->PQfmts ? imp_sth->PQfmts[x] : 0);
                 }
             }
-        
+
             if (TRACE5_slow) TRC(DBILOGFP, "%sRunning %s with (%s)\n", THEADER_slow,
                                  imp_sth->async_flag & PG_ASYNC ? "PQsendQueryPrepared" : "PQexecPrepared",
                                  imp_sth->prepare_name);
@@ -3829,7 +3829,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
             }
         }
     } /* end new-style prepare */
-        
+
     /* Some form of PQexec* or PQsend* has been run at this point */
 
     /* If running asynchronously, we don't stick around for the result */
@@ -3902,9 +3902,9 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (error: bad status)\n", THEADER_slow);
         return -2;
     }
-    
+
     /* store the number of affected rows */
-    
+
     imp_sth->rows = ret;
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (rows: %ld)\n", THEADER_slow, ret);
@@ -3922,12 +3922,12 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
     int               i;
     int               chopblanks;
     AV *              av;
-    
+
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_fetch\n", THEADER_slow);
 
     /* Check that execute() was executed successfully */
     if ( !DBIc_ACTIVE(imp_sth) ) {
-        pg_error(aTHX_ sth, PGRES_NONFATAL_ERROR, "no statement executing\n");    
+        pg_error(aTHX_ sth, PGRES_NONFATAL_ERROR, "no statement executing\n");
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_fetch (error: no statement)\n", THEADER_slow);
         return Nullav;
     }
@@ -3945,7 +3945,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 
     av = DBIc_DBISTATE(imp_sth)->get_fbav(imp_sth);
     num_fields = AvFILL(av)+1;
-    
+
     chopblanks = (int)DBIc_has(imp_sth, DBIcf_ChopBlanks);
 
     /* Set up the type_info array if we have not seen it yet */
@@ -3964,7 +3964,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
             }
         }
     }
-    
+
     for (i = 0; i < num_fields; ++i) {
         sql_type_info_t * type_info;
         SV *sv;
@@ -4026,7 +4026,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
                 else {
                     sv_setpv(sv, value);
                 }
-            
+
                 if (type_info && (PG_BPCHAR == type_info->type_id) && chopblanks) {
                     char *p = SvEND(sv);
                     STRLEN len = SvCUR(sv);
@@ -4057,7 +4057,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
             }
         }
     }
-    
+
     imp_sth->cur_tuple += 1;
 
     /* Experimental inout support */
@@ -4076,7 +4076,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 
 
 /* ================================================================== */
-/* 
+/*
    Pop off savepoints to the specified savepoint name
 */
 static void pg_db_free_savepoints_to (pTHX_ imp_dbh_t * imp_dbh, const char *savepoint)
@@ -4112,13 +4112,13 @@ long dbd_st_rows (SV * sth, imp_sth_t * imp_sth)
 
 /* ================================================================== */
 int dbd_st_finish (SV * sth, imp_sth_t * imp_sth)
-{    
+{
     dTHX;
     D_imp_dbh_from_sth;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbdpg_finish (async: %d)\n",
                     THEADER_slow, imp_dbh->async_status);
-    
+
     /* Only handle async cleanup if THIS statement owns the async query */
     if (imp_dbh->async_status && imp_dbh->async_sth == imp_sth) {
         handle_old_async(aTHX_ sth, imp_dbh, PG_OLDQUERY_WAIT);
@@ -4144,7 +4144,7 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     char                    tempsqlstate[6];
     int                     status;
     PGTransactionStatusType tstatus;
-    
+
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_deallocate_statement\n", THEADER_slow);
 
     if (imp_dbh->skip_deallocate) {
@@ -4156,7 +4156,7 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_deallocate_statement (0)\n", THEADER_slow);
         return 0;
     }
-    
+
     tempsqlstate[0] = '\0';
 
     /* What is our status? */
@@ -4299,7 +4299,7 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
     Safefree(imp_sth->PQoids);
 
     /*
-      If our result is the same as the last_result, we will not free it, but will 
+      If our result is the same as the last_result, we will not free it, but will
        cede control over it so that the parent dbh can clear it later.
        We do this in case $dbh->pg_error_field() is called
     */
@@ -4541,7 +4541,7 @@ int pg_db_putcopydata (SV * dbh, SV * dataline)
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
     }
 
-    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata\n", THEADER_slow);    
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata\n", THEADER_slow);
     return copystatus == 1 ? 1 : 0;
 
 } /* end of pg_db_putcopydata */
@@ -4702,7 +4702,7 @@ SV * pg_db_error_field (SV *dbh, char * fieldname)
               0 == strncmp(ucname, "SOURCE_FUNCTION", 11)) {
         fieldcode = PG_DIAG_SOURCE_FUNCTION; // i.e. 'R'
     }
-    else if ( 0 == strncmp(ucname, "PG_DIAG_SQLSTATE", 16) || 
+    else if ( 0 == strncmp(ucname, "PG_DIAG_SQLSTATE", 16) ||
               0 == strncmp(ucname, "SQLSTATE", 8) ||
               0 == strncmp(ucname, "STATE", 5)) {
         fieldcode = PG_DIAG_SQLSTATE; // i.e. 'C'
@@ -4929,7 +4929,7 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 
 
 /* ================================================================== */
-/* 
+/*
    For lo_* functions. Used to ensure we are in a transaction
 */
 static int pg_db_start_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh)
@@ -4955,8 +4955,8 @@ static int pg_db_start_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh)
 
 
 /* ================================================================== */
-/* 
-   For lo_import and lo_export functions. Used to commit or rollback a 
+/*
+   For lo_import and lo_export functions. Used to commit or rollback a
    transaction, but only if AutoCommit is on.
 */
 static int pg_db_end_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int commit)
@@ -5326,7 +5326,7 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
     STRLEN nread;
     SV *   bufsv;
     char * tmp;
-    
+
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_blob_read (objectid: %d offset: %ld length: %ld)\n",
                     THEADER_slow, lobjId, offset, len);
 
@@ -5351,13 +5351,13 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
         pg_error(aTHX_ sth, PGRES_FATAL_ERROR, "dbd_st_blob_read: destoffset < 0");
         return 0;
     }
-    
+
     /* dereference destination and ensure it's writable string */
     bufsv = SvRV(destrv);
     if (0==destoffset) {
         sv_setpvn(bufsv, "", 0);
     }
-    
+
     /* open large object */
     lobj_fd = lo_open(imp_dbh->conn, (unsigned)lobjId, INV_READ);
     if (lobj_fd < 0) {
@@ -5366,7 +5366,7 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_blob_read (error: open failed)\n", THEADER_slow);
         return 0;
     }
-    
+
     /* seek on large object */
     if (offset > 0) {
         ret = lo_lseek(imp_dbh->conn, lobj_fd, (int)offset, SEEK_SET);
@@ -5377,7 +5377,7 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
             return 0;
         }
     }
-    
+
     /* read from large object */
     nread = 0;
     SvGROW(bufsv, (STRLEN)(destoffset + nread + BUFSIZ + 1));
@@ -5392,11 +5392,11 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
         SvGROW(bufsv, (STRLEN)(destoffset + nread + BUFSIZ + 1));
         tmp = (SvPVX(bufsv)) + destoffset + nread;
     }
-    
+
     /* terminate string */
     SvCUR_set(bufsv, (STRLEN)(destoffset + nread));
     *SvEND(bufsv) = '\0';
-    
+
     /* close large object */
     ret = lo_close(imp_dbh->conn, lobj_fd);
     if (ret < 0) {
@@ -5405,7 +5405,7 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_blob_read (error: close failed)\n", THEADER_slow);
         return 0;
     }
-    
+
     if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_blob_read (bytes: %d)\n", THEADER_slow, (int)nread);
     return (int)nread;
 
@@ -5413,7 +5413,7 @@ int dbd_st_blob_read (SV * sth, imp_sth_t * imp_sth, int lobjId, long offset, lo
 
 
 /* ================================================================== */
-/* 
+/*
    Return the result of an asynchronous query, waiting if needed
 */
 long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
@@ -5607,7 +5607,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 
 
 /* ================================================================== */
-/* 
+/*
    Indicates if an asynchronous query has finished yet
    Accepts either a database or a statement handle
    Returns:
@@ -5655,7 +5655,7 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 
     TRACE_PQCONSUMEINPUT;
     if (!PQconsumeInput(imp_dbh->conn)) {
-        _fatal_sqlstate(aTHX_ imp_dbh);        
+        _fatal_sqlstate(aTHX_ imp_dbh);
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ h, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_ready (error: consume failed)\n", THEADER_slow);
@@ -5977,7 +5977,7 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
 
 
 /* ================================================================== */
-/* 
+/*
    Attempt to cancel a synchronous query
    Returns true if the cancel succeeded, and false if it did not
 */
@@ -5998,7 +5998,7 @@ int dbd_st_cancel(SV *sth, imp_sth_t *imp_sth)
 
 
 /* ================================================================== */
-/* 
+/*
    Retrieves table oid and column position (in that table) for every column in resultset
    Returns array of arrays of table oid and column pos or undef if column is not a simple reference
 */
@@ -6036,7 +6036,7 @@ SV* dbd_st_canonical_ids(SV *sth, imp_sth_t *imp_sth)
 
 
 /* ================================================================== */
-/* 
+/*
    Retrieves canonical name (schema.table.column) for every column in resultset
    Returns array of strings or undef if column is not a simple reference
 */
@@ -6061,7 +6061,7 @@ SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth)
             int pos = PQftablecol(imp_sth->result, fields);
             if(pos > 0){
                 char statement[204];
-                sprintf(statement, 
+                sprintf(statement,
                     "SELECT n.nspname, c.relname, a.attname FROM pg_class c LEFT JOIN pg_namespace n ON c.relnamespace = n.oid LEFT JOIN pg_attribute a ON a.attrelid = c.oid WHERE c.oid = %u AND a.attnum = %d", oid, pos);
                 TRACE_PQEXEC;
                 result = PQexec(imp_dbh->conn, statement);
@@ -6102,19 +6102,19 @@ SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth)
 Some information to keep you sane:
 typedef enum
 {
-    PGRES_EMPTY_QUERY = 0,        // empty query string was executed 
+    PGRES_EMPTY_QUERY = 0,        // empty query string was executed
 1    PGRES_COMMAND_OK,            // a query command that doesn't return
                                    anything was executed properly by the
-                                   backend 
+                                   backend
 2    PGRES_TUPLES_OK,            // a query command that returns tuples was
                                    executed properly by the backend, PGresult
-                                   contains the result tuples 
-3    PGRES_COPY_OUT,                // Copy Out data transfer in progress 
-4    PGRES_COPY_IN,                // Copy In data transfer in progress 
+                                   contains the result tuples
+3    PGRES_COPY_OUT,                // Copy Out data transfer in progress
+4    PGRES_COPY_IN,                // Copy In data transfer in progress
 5    PGRES_BAD_RESPONSE,            // an unexpected response was recv'd from the
-                                   backend 
-6    PGRES_NONFATAL_ERROR,        // notice or warning message 
-7    PGRES_FATAL_ERROR            // query failed 
+                                   backend
+6    PGRES_NONFATAL_ERROR,        // notice or warning message
+7    PGRES_FATAL_ERROR            // query failed
 } ExecStatusType;
 
 */

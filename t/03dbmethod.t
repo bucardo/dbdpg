@@ -1646,8 +1646,8 @@ $result = $sth->fetchall_arrayref({});
 $t='DB handle method "foreign_key_info" returns fields required by DBI';
 $result = $sth->fetchall_arrayref({});
 @required =
-    (qw(UK_TABLE_CAT UK_TABLE_SCHEM UK_TABLE_NAME PK_COLUMN_NAME 
-            FK_TABLE_CAT FK_TABLE_SCHEM FK_TABLE_NAME FK_COLUMN_NAME 
+    (qw(UK_TABLE_CAT UK_TABLE_SCHEM UK_TABLE_NAME PK_COLUMN_NAME
+            FK_TABLE_CAT FK_TABLE_SCHEM FK_TABLE_NAME FK_COLUMN_NAME
             ORDINAL_POSITION UPDATE_RULE DELETE_RULE FK_NAME UK_NAME
             DEFERABILITY UNIQUE_OR_PRIMARY UK_DATA_TYPE FK_DATA_TYPE));
 undef %missing;
@@ -1930,10 +1930,10 @@ ok (!$bad_result, $t);
 $t='DB handle method "type_info" returns fields required by DBI';
 $result = $dbh->type_info(4);
 @required =
-    (qw(TYPE_NAME DATA_TYPE COLUMN_SIZE LITERAL_PREFIX LITERAL_SUFFIX 
-            CREATE_PARAMS NULLABLE CASE_SENSITIVE SEARCHABLE UNSIGNED_ATTRIBUTE 
-            FIXED_PREC_SCALE AUTO_UNIQUE_VALUE LOCAL_TYPE_NAME MINIMUM_SCALE 
-            MAXIMUM_SCALE SQL_DATA_TYPE SQL_DATETIME_SUB NUM_PREC_RADIX 
+    (qw(TYPE_NAME DATA_TYPE COLUMN_SIZE LITERAL_PREFIX LITERAL_SUFFIX
+            CREATE_PARAMS NULLABLE CASE_SENSITIVE SEARCHABLE UNSIGNED_ATTRIBUTE
+            FIXED_PREC_SCALE AUTO_UNIQUE_VALUE LOCAL_TYPE_NAME MINIMUM_SCALE
+            MAXIMUM_SCALE SQL_DATA_TYPE SQL_DATETIME_SUB NUM_PREC_RADIX
             INTERVAL_PRECISION));
 undef %missing;
 for (@required) {
@@ -2182,7 +2182,7 @@ is ($dbh->quote_identifier( undef, 'Her schema', 'My table' ), q{"Her schema"."M
 # Test of the "table_attributes" database handle method (deprecated)
 #
 
-# Because this function is deprecated and really just calling the column_info() 
+# Because this function is deprecated and really just calling the column_info()
 # and primary_key() methods, we will do minimal testing.
 $t='DB handle method "table_attributes" returns the expected fields';
 $result = $dbh->func('dbd_pg_test', 'table_attributes');
