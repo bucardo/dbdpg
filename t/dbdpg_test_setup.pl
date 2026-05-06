@@ -969,7 +969,7 @@ sub shutdown_test_database {
             build_command('su TESTUSER -m -c "PGCTL stop -D DATADIR --mode fast"',
                           [$su, $pg_ctl, "$testdir/data" ], 'backslash_spaces')
             : build_command('PGCTL stop -D DATADIR --mode fast',
-                            [$pg_ctl, "$testdir/data" ], 'backslash_spaces');
+                            [$pg_ctl, "$testdir/data" ]);
         my $olddir = getcwd;
         $su and chdir $testdir;
         eval { qx{$COM}; };
