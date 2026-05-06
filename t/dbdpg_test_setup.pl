@@ -467,7 +467,7 @@ version: $version
         $info = '';
         my $evalok = 0;
         eval {
-            $info = qx{ss -QanO 2>&1};
+            $info = $^O =~ /Win32/ ? qx{netstat -anp TCP}: qx{ss -QanO 2>&1};
             $evalok = 1;
         };
         if (!$evalok or ! defined $info) {
