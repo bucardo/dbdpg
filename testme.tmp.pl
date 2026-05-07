@@ -190,7 +190,7 @@ is($sth_u->{Active},1,'Sth active');
 is($sth_u->fetch->[0],1,'Row was found: TWO');
 $sth_u->finish();
 exit;
- 
+
 # Test update on non-existant record
 # psql> kalidb_test=# UPDATE test_view SET animal = 'wolf', sound = 'howl' WHERE id = 99;
 # psql>  bool

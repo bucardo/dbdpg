@@ -249,14 +249,14 @@ char * quote_sql_binary(pTHX_ const char *string, STRLEN len, STRLEN *retlen, in
          we warn first */
     warn("Use of SQL_BINARY invalid in quote()");
     return quote_bytea(aTHX_ string, len, retlen, estring);
-    
+
 }
 
 /* Return TRUE, FALSE, or throws an error */
 char * quote_bool(pTHX_ const char *value, STRLEN len, STRLEN *retlen, int estring)
 {
     char *result;
-    
+
     /* Things that are true: t, T, 1, true, TRUE, 0E0, 0 but true */
     if (
         (1 == len && (0 == strncasecmp(value, "t", 1) || '1' == *value))
@@ -288,7 +288,7 @@ char * quote_bool(pTHX_ const char *value, STRLEN len, STRLEN *retlen, int estri
     }
 
     croak("Invalid boolean value");
-    
+
 }
 
 char * quote_int(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
@@ -343,7 +343,7 @@ char * quote_float(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int est
                 || 'e' == *string
                 || 'E' == *string) {
                 string++;
-                continue;            
+                continue;
             }
             croak("Invalid float");
         }
@@ -378,14 +378,14 @@ char * quote_name(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estr
     /* 1. It starts with anything other than [a-z_] */
     safe = ((string[0] >= 'a' && string[0] <= 'z') || '_' == string[0]);
 
-    /* 2. It has characters other than [a-z_0-9] (also count number of quotes) */    
+    /* 2. It has characters other than [a-z_0-9] (also count number of quotes) */
     for (ptr = string; *ptr; ptr++) {
 
         char ch = *ptr;
 
         if (
             (ch < 'a' || ch > 'z')
-            && 
+            &&
             (ch < '0' || ch > '9')
             &&
             ch != '_') {
@@ -2001,7 +2001,7 @@ bool is_keyword(const char *string)
 
 ## Autogenerate the list of reserved keywords
 
-## You should only run this if you are developing DBD::Pg and 
+## You should only run this if you are developing DBD::Pg and
 ## understand what this script does
 
 ## Usage: perl -x $0 "path-to-pgsql-source"

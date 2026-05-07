@@ -2,7 +2,7 @@
     Copyright (c) 2000-2026 Greg Sabino Mullane and others: see the Changes file
     Portions Copyright (c) 1997-2000 Edmund Mergl
     Portions Copyright (c) 1994-1997 Tim Bunce
-    
+
     You may distribute under the terms of either the GNU General Public
     License or the Artistic License, as specified in the Perl README file.
 */
@@ -211,7 +211,7 @@ SV* dbd_st_canonical_ids(SV *sth, imp_sth_t *imp_sth);
 SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth);
 
 
-/* 
+/*
    Everything else should map back to the DBI version, or be handled by Pg.pm
    TODO: Explicitly map out each one.
 */

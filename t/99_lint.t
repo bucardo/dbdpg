@@ -16,9 +16,9 @@ if (! $ENV{AUTHOR_TESTING}) {
 
 $ENV{LANG} = 'C';
 find (sub { push @cfiles      => $File::Find::name if /^[^.].+\.c$/ and $_ ne 'Pg.c' and $File::Find::dir !~ /tmp|DBD-Pg/; }, '.');
-find (sub { push @headerfiles => $File::Find::name if /^[^.].+\.h$/ and $_ ne 'dbivport.h' and $File::Find::dir !~ /tmp/; }, '.');
+find (sub { push @headerfiles => $File::Find::name if /^[^.].+\.h$/ and $_ ne 'dbivport.h' and $File::Find::dir !~ /tmp|DBD-Pg/; }, '.');
 find (sub { push @testfiles   => $File::Find::name if /^[^.]\w+\.(t|pl)$/; }, 't');
-find (sub { push @perlfiles   => $File::Find::name if /^[^.].+\.(pm|pl|t)$/ and $File::Find::dir !~ /tmp/; }, '.');
+find (sub { push @perlfiles   => $File::Find::name if /^[^.].+\.(pm|pl|t)$/ and $File::Find::dir !~ /tmp|DBD-Pg|blib/; }, '.');
 
 ##
 ## Load all Test::More calls into memory
@@ -151,12 +151,17 @@ for my $file (sort keys %devfile) {
 }
 
 ## All files in the repo should be mentioned in the README.dev
-my %gitfiles = map { chomp; $_, 1 } qx{git -c 'safe.directory=*' ls-files};
-for my $file (sort keys %gitfiles) {
-    next if $file =~ /^z_announcements/;
-    next if $file =~ /^\.git/;
-    if (!exists $devfile{$file}) {
-        fail qq{File "$file" is in the repo but not in the README.dev file};
+SKIP: {
+
+    skip 'Cannot verify repo contents when using Windows', 1 if $^O =~ /Win32/;
+
+    my %gitfiles = map { chomp; $_, 1 } qx{git -c 'safe.directory=*' ls-files};
+    for my $file (sort keys %gitfiles) {
+        next if $file =~ /^z_announcements/;
+        next if $file =~ /^\.git/;
+        if (!exists $devfile{$file}) {
+            fail qq{File "$file" is in the repo but not in the README.dev file};
+        }
     }
 }
 
@@ -192,6 +197,24 @@ for my $file (@cfiles, @headerfiles, @perlfiles) {
     }
     else {
         pass (qq{File "$file" has no tabs});
+    }
+}
+
+##
+## Check files for trailing spaces
+##
+for my $file (@cfiles, @headerfiles, @perlfiles) {
+    my $spacefail = 0;
+    open my $fh, '<', $file or die "Could not open $file: $!\n";
+    while (<$fh>) {
+        $spacefail++ if / $/;
+    }
+    close $fh;
+    if ($spacefail) {
+        fail (qq{File "$file" contains one or more trailing spaces: $spacefail});
+    }
+    else {
+        pass (qq{File "$file" has no trailing spaces});
     }
 }
 
