@@ -514,24 +514,24 @@ version: $version
             }
             $debug and Test::More::diag qq{Writing to "$conf"};
             print {$cfh} "\n\n## DBD::Pg testing parameters\n";
-            print {$cfh} "port=$testport\n";
-            print {$cfh} "max_connections=11\n";
-            print {$cfh} "log_statement = 'all'\n";
+            print {$cfh} "port                       = $testport\n";
+            print {$cfh} "max_connections            = 11\n";
+            print {$cfh} "log_statement              = 'all'\n";
             print {$cfh} "log_min_duration_statement = 0\n";
-            print {$cfh} "log_line_prefix = '%m [%p] '\n";
-            print {$cfh} "log_filename = 'postgres%Y-%m-%d.log'\n";
-            print {$cfh} "log_rotation_size = 0\n";
+            print {$cfh} "log_line_prefix            = '%m [%p] '\n";
+            print {$cfh} "log_filename               = 'postgres.log'\n";
+            print {$cfh} "log_rotation_size          = 0\n";
 
             if (8.1 == $version) {
-                print {$cfh} "redirect_stderr = on\n";
+                print {$cfh} "redirect_stderr            = on\n";
             }
 
             if ($version >= 8.3) {
-                print {$cfh} "logging_collector = on\n";
+                print {$cfh} "logging_collector          = on\n";
             }
 
             if ($^O =~ /Win32/) {
-                print {$cfh} "listen_addresses='127.0.0.1'\n";
+                print {$cfh} "listen_addresses           ='127.0.0.1'\n";
             }
 
             print {$cfh} "\n";
