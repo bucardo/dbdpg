@@ -191,8 +191,8 @@ version: $version
                         : build_command(q{PG_CTL -o '-k TESTDIR' -l LOGFILE -D DATADIR start},
                                         [$pg_ctl, $testdir, "$testdir/$logfile", "$testdir/data"]);
                     $su and chdir $testdir;
+                    eval { system($COM); };
                     $info = '';
-                    eval { $info = qx{$COM}; };
                     my $err = $@;
                     $su and chdir $olddir;
                     if ($info !~ /starting/ and ($err or $info !~ /\w/)) {
@@ -354,7 +354,7 @@ version: $version
         }
 
         ## initdb and pg_ctl seems to be available, let's use them to fire up a cluster
-        warn "Please wait, creating new Postgres cluster (version $version) for testing\n";
+        Test::More::diag "Please wait, creating new Postgres cluster (version $version) for testing\n";
         $info = '';
         my $locale = $ENV{DBDPG_TEST_LOCALE} || 'C';
         my $initdbcom = build_command('INITDB --locale=LOCALE -E utf8 -D DATADIR 2>&1',
@@ -471,7 +471,7 @@ version: $version
             $evalok = 1;
         };
         if (!$evalok or ! defined $info) {
-            warn "ss call to determine open port failed, trying port $testport\n";
+            Test::More::diag "ss call to determine open port failed, trying port $testport\n";
         }
         else {
             {
@@ -486,7 +486,7 @@ version: $version
         }
         $@ = '';
 
-        $debug and Test::More::diag "Port to use: $testport";
+        Test::More::diag "Port used for testing: $testport";
 
         my $conf = "$testdir/data/postgresql.conf";
         my $cfh;
@@ -545,12 +545,11 @@ version: $version
                                 [$pg_ctl, $testdir, "$testdir/$logfile", "$testdir/data"]);
             $olddir = getcwd;
             $su and chdir $testdir;
-            $info = '';
-            eval { $info = qx{$COM}; };
+            eval { system($COM); };
             my $err = $@;
             $su and chdir $olddir;
             if ($err) {
-                $@ = "Could not startup new database ($COM) ($err) ($info)";
+                $@ = "Could not startup new database ($COM) ($err)";
                 last GETHANDLE; ## Fail - startup failed
             }
             sleep 1;
