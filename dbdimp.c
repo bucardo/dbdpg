@@ -4205,17 +4205,16 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
      * owned by this sth before overwriting both imp_sth->result and
      * imp_dbh->last_result, otherwise the old result is leaked.
      */
-    if (imp_sth->result) {
-        if (imp_sth->result != imp_dbh->last_result) {
-            TRACE_PQCLEAR;
-            PQclear(imp_sth->result);
-        } else {
-            TRACE_PQCLEAR;
-            PQclear(imp_dbh->last_result);
-            imp_dbh->last_result = NULL;
-        }
-        imp_sth->result = NULL;
+    if (imp_sth->result && imp_sth->result != imp_dbh->last_result) {
+        TRACE_PQCLEAR;
+        PQclear(imp_sth->result);
     }
+    if (imp_dbh->last_result) {
+        TRACE_PQCLEAR;
+        PQclear(imp_dbh->last_result);
+        imp_dbh->last_result = NULL;
+    }
+    imp_sth->result = NULL;
 
     imp_dbh->last_result = imp_sth->result
         = PQclosePrepared(imp_dbh->conn, imp_sth->prepare_name);
