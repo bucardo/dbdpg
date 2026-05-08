@@ -237,7 +237,7 @@ version: $version
 
     if (! $testdsn) {
         $helpconnect = 1;
-        $testdsn = $^O =~ /Win32/ ? 'dbi:Pg:host=localhost' : 'dbi:Pg:dbname=postgres';
+        $testdsn = $^O =~ /Win32/ ? 'dbi:Pg:host=127.0.0.1' : 'dbi:Pg:dbname=postgres';
     }
     if (! $testuser) {
         $testuser = 'postgres';
@@ -570,7 +570,7 @@ version: $version
         ## Attempt to connect to this server
         $testdsn = "dbi:Pg:dbname=postgres;port=$testport";
         if ($^O =~ /Win32/) {
-            $testdsn .= ';host=localhost';
+            $testdsn .= ';host=127.0.0.1';
         }
         else {
             $testdsn .= build_command(';host=TESTDIR', [$testdir], 'backslash_spaces');
