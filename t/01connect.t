@@ -10,7 +10,9 @@ use lib 'blib/lib', 'blib/arch', 't';
 use DBI;
 use DBD::Pg;
 use Test::More;
+my $verbose_end = 0;
 require 'dbdpg_test_setup.pl';
+$verbose_end = 1;
 select(($|=1,select(STDERR),$|=1)[1]);
 
 ## Define this here in case we get to the END block before a connection is made.
@@ -160,6 +162,8 @@ like ($@, ($^O =~ /Win/ ? qr/DBI/s : qr/DBI.*\Q.s.PGSQL.1\E\b/s), $t);
 }
 
 END {
+
+    exit unless $verbose_end;
 
     my $pv = sprintf('%vd', $^V);
     my $schema = 'dbd_pg_testschema';
