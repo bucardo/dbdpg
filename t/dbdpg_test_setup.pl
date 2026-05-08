@@ -16,6 +16,12 @@ my $superuser = 1;
 my $TEST_PORT_MIN = 5442;
 my $TEST_PORT_MAX = 5542;
 
+if ($^O =~ /Win32/ and !eval { require Win32::Process; 1 }) {
+    Test::More::diag("\n\n");
+    Test::More::BAIL_OUT("Running tests on Win32 requires the Win32::Process module\n\n");
+    exit;
+}
+
 my $logfile = 'dbdpg_test.logfile';
 
 my $testfh;
@@ -184,19 +190,32 @@ version: $version
                         return $helpconnect, '', undef;
                     }
 
-                    warn "Restarting test database $testdsn at $testdir\n";
+                    Test::More::diag("Restarting test database $testdsn at $testdir");
                     my $COM = $su ?
                         build_command(q{su TESTUSER -m -c "PG_CTL -o '-k TESTDIR' -l LOGFILE -D DATADIR start"},
                                       [$su, $pg_ctl, $testdir, "$testdir/$logfile", "$testdir/data"], 'backslash_spaces')
                         : build_command(q{PG_CTL -o '-k TESTDIR' -l LOGFILE -D DATADIR start},
                                         [$pg_ctl, $testdir, "$testdir/$logfile", "$testdir/data"]);
                     $su and chdir $testdir;
-                    eval { system($COM); };
-                    $info = '';
+                    eval {
+                        if ($^O =~ /Win32/) {
+                            Win32::Process::Create(
+                                my $proc,
+                                $pg_ctl,
+                                $COM,
+                                0,
+                                Win32::Process::NORMAL_PRIORITY_CLASS() | Win32::Process::CREATE_NO_WINDOW(),
+                                '.'
+                                );
+                        }
+                        else {
+                            system($COM);
+                        }
+                    };
                     my $err = $@;
                     $su and chdir $olddir;
-                    if ($info !~ /starting/ and ($err or $info !~ /\w/)) {
-                        $err = "Could not startup new database (err=$err) ($info)";
+                    if ($err) {
+                        $err = "Could not startup new database (err=$err)";
                         return $helpconnect, $err, undef;
                     }
                     ## Wait for it to startup and verify the connection
@@ -344,6 +363,13 @@ version: $version
         if (! -e $pg_ctl) {
             $pg_ctl = 'pg_ctl';
         }
+        if ($^O =~ /Win32/) {
+            my $fullpath = qx{where $pg_ctl};
+            chomp $fullpath;
+            $fullpath =~ /pg_ctl/ or die "Could not determine full path for pg_ctl on Win32!\n";
+            $pg_ctl = $fullpath;
+        }
+
         my $pgctlcom = build_command('PGCTL --help 2>&1', [$pg_ctl]);
         $info = '';
         eval { $info = qx{$pgctlcom}; };
@@ -545,7 +571,21 @@ version: $version
                                 [$pg_ctl, $testdir, "$testdir/$logfile", "$testdir/data"]);
             $olddir = getcwd;
             $su and chdir $testdir;
-            eval { system($COM); };
+            eval {
+                if ($^O =~ /Win32/) {
+                    Win32::Process::Create(
+                        my $proc,
+                        $pg_ctl,
+                        $COM,
+                        0,
+                        Win32::Process::NORMAL_PRIORITY_CLASS() | Win32::Process::CREATE_NO_WINDOW(),
+                        '.'
+                        );
+                }
+                else {
+                    system($COM);
+                }
+            };
             my $err = $@;
             $su and chdir $olddir;
             if ($err) {
@@ -960,7 +1000,7 @@ sub shutdown_test_database {
                             [$pg_ctl, "$testdir/data" ]);
         my $olddir = getcwd;
         $su and chdir $testdir;
-        eval { qx{$COM}; };
+        system $COM;
         $su and chdir $olddir;
     }
 
