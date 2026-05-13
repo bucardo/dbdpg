@@ -4201,20 +4201,17 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     if (TRACE5_slow)
         TRC(DBILOGFP, "%sUsing PQclosePrepared: %s\n", THEADER_slow, imp_sth->prepare_name);
 
-    /* PQclosePrepared returns a new PGresult. Clear any result currently
-     * owned by this sth before overwriting both imp_sth->result and
-     * imp_dbh->last_result, otherwise the old result is leaked.
-     */
-    if (imp_sth->result && imp_sth->result != imp_dbh->last_result) {
-        TRACE_PQCLEAR;
-        PQclear(imp_sth->result);
-    }
-    if (imp_dbh->last_result) {
+    /* Free any existing results before overwriting with PQclosePrepared's return value */
+    if (imp_dbh->last_result && imp_dbh->result_clearable) {
         TRACE_PQCLEAR;
         PQclear(imp_dbh->last_result);
         imp_dbh->last_result = NULL;
     }
-    imp_sth->result = NULL;
+    if (imp_sth->result) {
+        TRACE_PQCLEAR;
+        PQclear(imp_sth->result);
+        imp_sth->result = NULL;
+    }
 
     imp_dbh->last_result = imp_sth->result
         = PQclosePrepared(imp_dbh->conn, imp_sth->prepare_name);
