@@ -16,6 +16,12 @@ my $superuser = 1;
 my $TEST_PORT_MIN = 5442;
 my $TEST_PORT_MAX = 5542;
 
+if ($^O =~ /Win32/ and !eval { require Win32::Process; 1 }) {
+    Test::More::diag("\n\n");
+    Test::More::BAIL_OUT("Running tests on Win32 requires the Win32::Process module\n\n");
+    exit;
+}
+
 my $logfile = 'dbdpg_test.logfile';
 
 my $testfh;
@@ -184,19 +190,32 @@ version: $version
                         return $helpconnect, '', undef;
                     }
 
-                    warn "Restarting test database $testdsn at $testdir\n";
+                    Test::More::diag("Restarting test database $testdsn at $testdir");
                     my $COM = $su ?
                         build_command(q{su TESTUSER -m -c "PG_CTL -o '-k TESTDIR' -l LOGFILE -D DATADIR start"},
                                       [$su, $pg_ctl, $testdir, "$testdir/$logfile", "$testdir/data"], 'backslash_spaces')
                         : build_command(q{PG_CTL -o '-k TESTDIR' -l LOGFILE -D DATADIR start},
                                         [$pg_ctl, $testdir, "$testdir/$logfile", "$testdir/data"]);
                     $su and chdir $testdir;
-                    $info = '';
-                    eval { $info = qx{$COM}; };
+                    eval {
+                        if ($^O =~ /Win32/) {
+                            Win32::Process::Create(
+                                my $proc,
+                                $pg_ctl,
+                                $COM,
+                                0,
+                                Win32::Process::NORMAL_PRIORITY_CLASS() | Win32::Process::CREATE_NO_WINDOW(),
+                                '.'
+                                );
+                        }
+                        else {
+                            system($COM);
+                        }
+                    };
                     my $err = $@;
                     $su and chdir $olddir;
-                    if ($info !~ /starting/ and ($err or $info !~ /\w/)) {
-                        $err = "Could not startup new database (err=$err) ($info)";
+                    if ($err) {
+                        $err = "Could not startup new database (err=$err)";
                         return $helpconnect, $err, undef;
                     }
                     ## Wait for it to startup and verify the connection
@@ -237,7 +256,7 @@ version: $version
 
     if (! $testdsn) {
         $helpconnect = 1;
-        $testdsn = $^O =~ /Win32/ ? 'dbi:Pg:host=localhost' : 'dbi:Pg:dbname=postgres';
+        $testdsn = $^O =~ /Win32/ ? 'dbi:Pg:host=127.0.0.1' : 'dbi:Pg:dbname=postgres';
     }
     if (! $testuser) {
         $testuser = 'postgres';
@@ -344,6 +363,13 @@ version: $version
         if (! -e $pg_ctl) {
             $pg_ctl = 'pg_ctl';
         }
+        if ($^O =~ /Win32/) {
+            my $fullpath = qx{where $pg_ctl};
+            chomp $fullpath;
+            $fullpath =~ /pg_ctl/ or die "Could not determine full path for pg_ctl on Win32!\n";
+            $pg_ctl = $fullpath;
+        }
+
         my $pgctlcom = build_command('PGCTL --help 2>&1', [$pg_ctl]);
         $info = '';
         eval { $info = qx{$pgctlcom}; };
@@ -354,7 +380,7 @@ version: $version
         }
 
         ## initdb and pg_ctl seems to be available, let's use them to fire up a cluster
-        warn "Please wait, creating new Postgres cluster (version $version) for testing\n";
+        Test::More::diag "Please wait, creating new Postgres cluster (version $version) for testing\n";
         $info = '';
         my $locale = $ENV{DBDPG_TEST_LOCALE} || 'C';
         my $initdbcom = build_command('INITDB --locale=LOCALE -E utf8 -D DATADIR 2>&1',
@@ -471,7 +497,7 @@ version: $version
             $evalok = 1;
         };
         if (!$evalok or ! defined $info) {
-            warn "ss call to determine open port failed, trying port $testport\n";
+            Test::More::diag "ss call to determine open port failed, trying port $testport\n";
         }
         else {
             {
@@ -486,7 +512,7 @@ version: $version
         }
         $@ = '';
 
-        $debug and Test::More::diag "Port to use: $testport";
+        Test::More::diag "Port used for testing: $testport";
 
         my $conf = "$testdir/data/postgresql.conf";
         my $cfh;
@@ -514,37 +540,26 @@ version: $version
             }
             $debug and Test::More::diag qq{Writing to "$conf"};
             print {$cfh} "\n\n## DBD::Pg testing parameters\n";
-            print {$cfh} "port=$testport\n";
-            print {$cfh} "max_connections=11\n";
-            print {$cfh} "log_statement = 'all'\n";
+            print {$cfh} "port                       = $testport\n";
+            print {$cfh} "max_connections            = 11\n";
+            print {$cfh} "log_statement              = 'all'\n";
             print {$cfh} "log_min_duration_statement = 0\n";
-            print {$cfh} "log_line_prefix = '%m [%p] '\n";
-            print {$cfh} "log_filename = 'postgres%Y-%m-%d.log'\n";
-            print {$cfh} "log_rotation_size = 0\n";
+            print {$cfh} "log_line_prefix            = '%m [%p] '\n";
+            print {$cfh} "log_filename               = 'postgres.log'\n";
+            print {$cfh} "log_rotation_size          = 0\n";
+
             if (8.1 == $version) {
-                print {$cfh} "redirect_stderr = on\n";
+                print {$cfh} "redirect_stderr            = on\n";
             }
 
             if ($version >= 8.3) {
-                print {$cfh} "logging_collector = on\n";
+                print {$cfh} "logging_collector          = on\n";
             }
 
-            if ($version >= 9.4) {
-                print {$cfh} "wal_level = logical\n";
-                print {$cfh} "max_replication_slots = 1\n";
-                print {$cfh} "max_wal_senders = 1\n";
-
-                open my $hba, '>>', "$testdir/data/pg_hba.conf"
-                    or die qq{Could not open "$testdir/data/pg_hba.conf": $!\n};
-
-                print {$hba} "local\treplication\tall\ttrust\n";
-                print {$hba} "host\treplication\tall\t127.0.0.1/32\ttrust\n";
-                print {$hba} "host\treplication\tall\t::1/128\ttrust\n";
-
-                close $hba or die qq{Could not close "$testdir/data/pg_hba.conf": $!\n};
+            if ($^O =~ /Win32/) {
+                print {$cfh} "listen_addresses           ='127.0.0.1'\n";
             }
 
-            print {$cfh} "listen_addresses='127.0.0.1'\n" if $^O =~ /Win32/;
             print {$cfh} "\n";
             close $cfh or die qq{Could not close "$conf": $!\n};
 
@@ -556,12 +571,25 @@ version: $version
                                 [$pg_ctl, $testdir, "$testdir/$logfile", "$testdir/data"]);
             $olddir = getcwd;
             $su and chdir $testdir;
-            $info = '';
-            eval { $info = qx{$COM}; };
+            eval {
+                if ($^O =~ /Win32/) {
+                    Win32::Process::Create(
+                        my $proc,
+                        $pg_ctl,
+                        $COM,
+                        0,
+                        Win32::Process::NORMAL_PRIORITY_CLASS() | Win32::Process::CREATE_NO_WINDOW(),
+                        '.'
+                        );
+                }
+                else {
+                    system($COM);
+                }
+            };
             my $err = $@;
             $su and chdir $olddir;
             if ($err) {
-                $@ = "Could not startup new database ($COM) ($err) ($info)";
+                $@ = "Could not startup new database ($COM) ($err)";
                 last GETHANDLE; ## Fail - startup failed
             }
             sleep 1;
@@ -570,7 +598,7 @@ version: $version
         ## Attempt to connect to this server
         $testdsn = "dbi:Pg:dbname=postgres;port=$testport";
         if ($^O =~ /Win32/) {
-            $testdsn .= ';host=localhost';
+            $testdsn .= ';host=127.0.0.1';
         }
         else {
             $testdsn .= build_command(';host=TESTDIR', [$testdir], 'backslash_spaces');
@@ -972,7 +1000,7 @@ sub shutdown_test_database {
                             [$pg_ctl, "$testdir/data" ]);
         my $olddir = getcwd;
         $su and chdir $testdir;
-        eval { qx{$COM}; };
+        system $COM;
         $su and chdir $olddir;
     }
 
