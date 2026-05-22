@@ -3,6 +3,7 @@ Possible items to do, in no particular order
 Feature requests can be entered at 
 https://github.com/bucardo/dbdpg/issues
 
+- Automate rebuilding is_keyword via doc/src/sgml/keywords/*.txt
 - Address that "XXX Wrong" in types.c
 - Consider support for PQchangePassword
 - Support pipeline mode: https://www.postgresql.org/docs/14/libpq-pipeline-mode.html
