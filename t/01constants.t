@@ -109,8 +109,8 @@ is (PG_NUMMULTIRANGEARRAY               ,  6151, 'PG_NUMMULTIRANGEARRAY returns 
 is (PG_NUMRANGE                         ,  3906, 'PG_NUMRANGE returns correct value');
 is (PG_NUMRANGEARRAY                    ,  3907, 'PG_NUMRANGEARRAY returns correct value');
 is (PG_OID                              ,    26, 'PG_OID returns correct value');
-is (PG_OID8                             ,  8256, 'PG_OID8 returns correct value');
-is (PG_OID8ARRAY                        ,  8261, 'PG_OID8ARRAY returns correct value');
+is (PG_OID8                             ,  6437, 'PG_OID8 returns correct value');
+is (PG_OID8ARRAY                        ,  6442, 'PG_OID8ARRAY returns correct value');
 is (PG_OIDARRAY                         ,  1028, 'PG_OIDARRAY returns correct value');
 is (PG_OIDVECTOR                        ,    30, 'PG_OIDVECTOR returns correct value');
 is (PG_OIDVECTORARRAY                   ,  1013, 'PG_OIDVECTORARRAY returns correct value');
@@ -149,8 +149,8 @@ is (PG_REGCOLLATION                     ,  4191, 'PG_REGCOLLATION returns correc
 is (PG_REGCOLLATIONARRAY                ,  4192, 'PG_REGCOLLATIONARRAY returns correct value');
 is (PG_REGCONFIG                        ,  3734, 'PG_REGCONFIG returns correct value');
 is (PG_REGCONFIGARRAY                   ,  3735, 'PG_REGCONFIGARRAY returns correct value');
-is (PG_REGDATABASE                      ,  8326, 'PG_REGDATABASE returns correct value');
-is (PG_REGDATABASEARRAY                 ,  8327, 'PG_REGDATABASEARRAY returns correct value');
+is (PG_REGDATABASE                      ,  6490, 'PG_REGDATABASE returns correct value');
+is (PG_REGDATABASEARRAY                 ,  6491, 'PG_REGDATABASEARRAY returns correct value');
 is (PG_REGDICTIONARY                    ,  3769, 'PG_REGDICTIONARY returns correct value');
 is (PG_REGDICTIONARYARRAY               ,  3770, 'PG_REGDICTIONARYARRAY returns correct value');
 is (PG_REGNAMESPACE                     ,  4089, 'PG_REGNAMESPACE returns correct value');
