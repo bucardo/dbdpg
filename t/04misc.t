@@ -473,6 +473,7 @@ like ((join ' ' => @sources), $expected, $t);
 
 $t='The "data_sources" method returns an error when called with no arg via DBI';
 eval {
+    local $ENV{DBI_DRIVER} = '';
     @sources = DBI->data_sources();
 };
 like ($@, qr/usage:/, $t);
