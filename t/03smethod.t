@@ -22,7 +22,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 152;
+plan tests => 159;
 
 isnt ($dbh, undef, 'Connect to database for statement handle method testing');
 
@@ -498,6 +498,46 @@ $sth->execute();
 $rows = $sth->rows();
 $sth->finish();
 is ($rows, 2, $t);
+
+$t='Statement handle method "rows" returns 1 for ON CONFLICT DO NOTHING (insert valid row)';
+$sth = $dbh->prepare('INSERT INTO dbd_pg_test(id) VALUES (?) ON CONFLICT DO NOTHING');
+$sth->execute(1);
+$rows = $sth->rows();
+is ($rows, 1, $t);
+
+$t='Statement handle method "rows" returns 0 for ON CONFLICT DO NOTHING (insert duplicate row)';
+$sth->execute(1);
+$rows = $sth->rows();
+is ($rows, 0, $t);
+
+$t='Statement handle method "rows" returns 0 for non-matching UPDATE';
+$sth = $dbh->prepare('UPDATE dbd_pg_test set id = -55 where id = ?');
+$sth->execute(-99);
+$rows = $sth->rows();
+is ($rows, 0, $t);
+
+$t='Statement handle method "rows" returns 1 for matching UPDATE';
+$sth->execute(1);
+$rows = $sth->rows();
+is ($rows, 1, $t);
+
+$t='Statement handle method "rows" returns correct number of rows for UPDATE';
+$sth = $dbh->prepare('UPDATE dbd_pg_test set id = id where id > ?');
+$sth->execute(-500);
+$rows = $sth->rows();
+cmp_ok ($rows, '>=', 2, $t);
+
+$t='Statement handle method "rows" returns 0 for DELETE of no rows';
+$sth = $dbh->prepare('DELETE from dbd_pg_test where id = ?');
+$sth->execute(-500);
+$rows = $sth->rows();
+is ($rows, 0, $t);
+
+$t='Statement handle method "rows" returns 1 for DELETE of one row';
+$sth = $dbh->prepare('DELETE from dbd_pg_test where id = ?');
+$sth->execute(-55);
+$rows = $sth->rows();
+is ($rows, 1, $t);
 
 #
 # Test of the "bind_col" statement handle method

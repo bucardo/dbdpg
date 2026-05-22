@@ -3869,6 +3869,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
             TRACE_PQCMDTUPLES;
             ret = atol(PQcmdTuples(imp_sth->result));
             gotrows = ret;
+            imp_sth->rows = ret;
         }
         if (!gotrows) {
             /* No rows affected, but check for change of state */
