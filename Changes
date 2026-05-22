@@ -4,7 +4,12 @@ RT items can be found by using: https://rt.cpan.org/Public/Bug/Display.html?id=X
 Github items can be found by using: https://github.com/bucardo/dbdpg/issues/XXX
 
 
-Version 3.20.3  (unreleased)
+Version 3.21.0  (unreleased)
+
+ - Ensure $sth->rows() returns 0 when no rows returned for updates, deletes,
+     or inserts with ON CONFLICT DO NOTHING
+   [Greg Sabino Mullane, reported by Yiannis]
+   (Github issue #194, pull request #194)
 
  - Support whitespace in directory names for the test suite.
    [Greg Sabino Mullane]
