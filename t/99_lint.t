@@ -206,12 +206,17 @@ for my $file (@cfiles, @headerfiles, @perlfiles) {
 for my $file (@cfiles, @headerfiles, @perlfiles) {
     my $spacefail = 0;
     open my $fh, '<', $file or die "Could not open $file: $!\n";
+    my $lastline = 0;
     while (<$fh>) {
-        $spacefail++ if / $/;
+        if (/ $/) {
+            $spacefail++;
+            $lastline = $.;
+            diag "found at $.";
+        }
     }
     close $fh;
     if ($spacefail) {
-        fail (qq{File "$file" contains one or more trailing spaces: $spacefail});
+        fail (qq{File "$file" has this many lines with trailing spaces: $spacefail (last at $lastline)});
     }
     else {
         pass (qq{File "$file" has no trailing spaces});
