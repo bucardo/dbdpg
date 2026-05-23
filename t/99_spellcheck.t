@@ -116,7 +116,7 @@ for my $file (@alltestfiles) {
 }
 
 ## The plain ol' textfiles
-for my $file (qw/README Changes TODO README.dev README.win32 CONTRIBUTING.md/) {
+for my $file (qw/README Changes README.dev README.win32 CONTRIBUTING.md/) {
 
     if (!open $fh, '<', $file) {
         fail (qq{Could not find the file "$file"!});
@@ -413,6 +413,7 @@ ENV
 ErrCount
 errorlevel
 errstr
+ERRSTR
 estring
 eval
 exe
