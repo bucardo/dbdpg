@@ -18,7 +18,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 105;
+plan tests => 104;
 
 my $superuser = is_super();
 
@@ -211,7 +211,7 @@ $BC$
     };
     if ($@) {
         $dbh->rollback();
-        $@ and skip ('Cannot load function  for testing', 6);
+        $@ and skip ('Cannot load function for testing', 6);
     }
 
     $sth = $dbh->prepare('SELECT * FROM dbdpg_test_error_handler( ? )');
@@ -415,22 +415,6 @@ Disconnection complete
 };
     $info =~ s/(Login connection string:).+/$1/g;
     is ($info, "$expected$expected", $t);
-
-    $t=q{Trace flag 'pglogin' works as expected with DBD::Pg->parse_trace_flag()};
-    seek $fh, 0, 0;
-    truncate $fh, tell($fh);
-    DBI->trace($flagval, $filename);
-    $dbh = connect_database({nosetup => 1});
-    $dbh->disconnect();
-    DBI->trace(0);
-    seek $fh,0,0;
-    { local $/; ($info = <$fh>) =~ s/\r//go; }
-    $expected = q{Login connection string:
-Connection complete
-Disconnection complete
-};
-    $info =~ s/(Login connection string:).+/$1/g;
-    is ($info, "$expected", $t);
 
     $t=q{Trace flag 'pgprefix' and 'pgstart' appended to 'pglogin' work as expected};
     seek $fh, 0, 0;

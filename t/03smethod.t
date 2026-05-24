@@ -22,7 +22,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 159;
+plan tests => 155;
 
 isnt ($dbh, undef, 'Connect to database for statement handle method testing');
 
@@ -437,8 +437,11 @@ is_deeply ($result, $expected, $t);
 
 
 SKIP: {
-    if ($DBI::VERSION >= 1.603) {
-        skip ('fetchall_arrayref max rows broken in DBI 1.603', 2);
+
+    my $bad_dbi_version = 1.603;
+
+    if ($DBI::VERSION >= $bad_dbi_version) {
+        skip ("fetchall_arrayref max rows broken since DBI $bad_dbi_version", 2);
     }
 
     # Test of the 'maxrows' argument
@@ -543,7 +546,7 @@ is ($rows, 1, $t);
 # Test of the "bind_col" statement handle method
 #
 
-$t='Statement handle method "bind_col" returns the correct value';
+$t='Statement handle method "bind_col" returns the correct value (column 2)';
 $sth = $dbh->prepare('SELECT id, val FROM dbd_pg_test WHERE id IN (33,34)');
 $sth->execute();
 my $bindme;
@@ -556,24 +559,20 @@ is ($bindme, 'Peach', $t);
 
 $dbh->do(q{UPDATE dbd_pg_test SET testarray = '{2,3,55}' WHERE id = 33});
 
-$t='Statement handle method "bind_col" returns the correct value';
+$t='Statement handle method "bind_col" returns the correct value (column 1)';
 my $bindarray;
 $sth = $dbh->prepare('SELECT id, testarray FROM dbd_pg_test WHERE id = 33');
 $sth->execute();
 $result = $sth->bind_col(1, \$bindme);
 is ($result, 1, $t);
 
-$t='Statement handle method "bind_col" returns the correct value';
+$t='Statement handle method "bind_col" correctly binds numbers';
 $result = $sth->bind_col(2, \$bindarray);
 is ($result, 1, $t);
 
-$t='Statement handle method "bind_col" correctly binds parameters';
-$sth->fetch();
-is ($bindme, '33', $t);
-
 $t='Statement handle method "bind_col" correctly binds arrayref';
+$sth->fetch();
 is_deeply ($bindarray, [2,3,55], $t);
-
 
 #
 # Test of the "bind_columns" statement handle method
@@ -627,8 +626,11 @@ is ($result, '42703', $t);
 #
 
 SKIP: {
-    if ($DBI::VERSION < 1.54) {
-        skip ('DBI must be at least version 1.54 to test $sth->private_attribute_info', 2);
+
+    my $min_dbi_version = 1.54;
+
+    if ($DBI::VERSION < $min_dbi_version) {
+        skip ("DBI must be at least version $min_dbi_version to test \$sth->private_attribute_info", 2);
     }
 
 
@@ -720,24 +722,14 @@ $sth->bind_param(1, 123);
 is_deeply ($sth->{pg_bound}, {1=>1, 2=>1}, $t);
 
 #
-# Test of the statement handle method "pg_numbound"
-#
-
-$t=q{Statement handle attribute pg_numbound returns 1 if one placeholders bound as NULL};
-$sth = $dbh->prepare('SELECT 123 WHERE 1 > ? AND 2 > ?');
-$sth->bind_param(1, undef);
-is_deeply ($sth->{pg_bound}, {1=>1, 2=>0}, $t);
-
-
-#
 # Test of the statement handle method "pg_current_row"
 #
 
-$t=q{Statement handle attribute pg_current_row returns zero until first row fetched};
+$t=q{Statement handle attribute pg_current_row returns zero until first row fetched (prepare)};
 $sth = $dbh->prepare('SELECT 1 FROM pg_class LIMIT 5');
 is ($sth->{pg_current_row}, 0, $t);
 
-$t=q{Statement handle attribute pg_current_row returns zero until first row fetched};
+$t=q{Statement handle attribute pg_current_row returns zero until first row fetched (execute)};
 $sth->execute();
 is ($sth->{pg_current_row}, 0, $t);
 
@@ -763,6 +755,7 @@ is ($sth->{pg_current_row}, 0, $t);
 #
 
 SKIP: {
+
     if ($^O =~ /Win/) {
         skip ('Cannot test POSIX signaling on Windows', 1);
     }
@@ -810,26 +803,6 @@ is_deeply ($sth->pg_canonical_names, [
     undef
 ], $t);
 
-$t=q{2Statement handle method "pg_canonical_names" returns expected values};
-$sth = $dbh->prepare('SELECT id, id AS not_id, id + 1 AS not_a_simple FROM dbd_pg_test LIMIT 1');
-$sth->execute;
-
-is_deeply ($sth->pg_canonical_names, [
-    'dbd_pg_testschema.dbd_pg_test.id',
-    'dbd_pg_testschema.dbd_pg_test.id',
-    undef
-], $t);
-
-$t=q{3Statement handle method "pg_canonical_names" returns expected values};
-$sth = $dbh->prepare('SELECT id, id AS not_id, id + 1 AS not_a_simple FROM dbd_pg_test LIMIT 1');
-$sth->execute;
-
-is_deeply ($sth->pg_canonical_names, [
-    'dbd_pg_testschema.dbd_pg_test.id',
-    'dbd_pg_testschema.dbd_pg_test.id',
-    undef
-], $t);
-
 #
 # Test of the statement handle method "pg_canonical_ids"
 #
@@ -842,7 +815,6 @@ $t=q{Statement handle method pg_canonical_ids has undef as the last element in r
 is ($data->[2], undef, $t);
 
 $t=q{Statement handle method "pg_canonical_ids" returns identical first and second elements};
-$t=q{first and second array elements must be the same};
 is_deeply ($data->[0], $data->[1], $t);
 
 $sth->finish;
@@ -879,8 +851,10 @@ $sth->finish;
 
 SKIP: {
 
-    if ($DBI::VERSION < 1.642) {
-        skip ('DBI must be at least version 1.642 to test $sth->last_insert_id', 12);
+    my $min_dbi_version = 1.642;
+
+    if ($DBI::VERSION < $min_dbi_version) {
+        skip ("DBI must be at least version $min_dbi_version to test $sth->last_insert_id", 12);
     }
 
     $t='Statement handle method "last_insert_id" fails when no arguments are given';

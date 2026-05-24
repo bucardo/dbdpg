@@ -559,7 +559,7 @@ SKIP: {
     };
     is ($@, q{}, $t);
 
-    $t='Retrieving an array containing utf-8 works';
+    $t='Retrieving an array containing utf-8 works (normal)';
     $SQL = q{SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1};
     $sth = $dbh->prepare($SQL);
     $sth->execute();
@@ -567,10 +567,10 @@ SKIP: {
     my $expected = [1,[$utf8_str,$utf8_str],'one'];
     is_deeply ($result, $expected, $t);
 
-    $t='Selected string should be UTF-8';
+    $t='Selected string should be UTF-8 (column 1)';
     ok (Encode::is_utf8( $result->[1][0] ), $t);
 
-    $t='Selected string should be UTF-8';
+    $t='Selected string should be UTF-8 (column 2)';
     ok (Encode::is_utf8( $result->[1][1] ), $t);
 
     $t='Inserting utf-8 into an array via prepare and arrayref works';
@@ -584,7 +584,7 @@ SKIP: {
 
     local $dbh->{pg_enable_utf8} = 1;
 
-    $t='Retrieving an array containing utf-8 works';
+    $t='Retrieving an array containing utf-8 works (pg_enable_utf8=1)';
     $SQL = q{SELECT id, testarray, val FROM dbd_pg_test WHERE id = 1};
     $sth = $dbh->prepare($SQL);
     $sth->execute();

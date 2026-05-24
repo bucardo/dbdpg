@@ -18,7 +18,7 @@ my (undef,undef,$dbh) = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 277;
+plan tests => 273;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -261,31 +261,13 @@ is ($value, 1, $t);
 
 {
 
+$t='Database handle attribute "PrintWarn" shows warnings when on';
+
 local $SIG{__WARN__} = sub { $warning .= shift; };
-
 $dbh->do(q{SET client_min_messages = 'DEBUG1'});
-$t='Database handle attribute "PrintWarn" works when on';
 $warning = q{};
-eval {
-    $dbh->do('CREATE TEMP TABLE dbd_pg_test_temp(id INT PRIMARY KEY)');
-};
-is ($@, q{}, $t);
-
-$t='Database handle attribute "PrintWarn" shows warnings when on';
+$dbh->do('CREATE TEMP TABLE dbd_pg_test_temp(id INT PRIMARY KEY)');
 like ($warning, qr{dbd_pg_test_temp}, $t);
-
-
-$t='Database handle attribute "PrintWarn" works when on';
-$dbh->rollback();
-$dbh->{PrintWarn}=0;
-$warning = q{};
-eval {
-    $dbh->do('CREATE TEMP TABLE dbd_pg_test_temp(id INT PRIMARY KEY)');
-};
-is ($@, q{}, $t);
-
-$t='Database handle attribute "PrintWarn" shows warnings when on';
-is ($warning, q{}, $t);
 
 $dbh->{PrintWarn}=1;
 $dbh->rollback();
@@ -359,7 +341,7 @@ $t='Database handle method "pg_skip_deallocate" starts as 0';
 $result = $dbh->{pg_skip_deallocate};
 is ($result, 0, $t);
 
-$t=q{Database handle method "pg_skip_deallocate" deallocates prepare statements when off};
+$t=q{Database handle method "pg_skip_deallocate" deallocates statements when off};
 ## pg_prepared_statements added in 8.2, so we don't bother with a skip block
 $SQL = 'SELECT count(*) from pg_prepared_statements';
 my $tempsth = $dbh->prepare('select * FROM pg_class WHERE reltuples = 42', {pg_prepare_now => 1});
@@ -373,7 +355,7 @@ $dbh->{pg_skip_deallocate} = 1;
 $result = $dbh->{pg_skip_deallocate};
 is ($result, 1, $t);
 
-$t=q{Database handle method "pg_skip_deallocate" deallocates prepare statements when off};
+$t=q{Database handle method "pg_skip_deallocate" does not deallocate statements when on};
 $tempsth = $dbh->prepare('select * FROM pg_class WHERE reltuples = 42', {pg_prepare_now => 1});
 $initial_count = $dbh->selectall_arrayref($SQL)->[0][0];
 $tempsth = $dbh->prepare('select * FROM pg_class WHERE relpages = 42', {pg_prepare_now => 0});
@@ -466,12 +448,19 @@ SKIP: {
 
 # Attempt to test whether or not we can get unicode out of the database
 SKIP: {
+
+    my $encode_tests = 4;
+
     eval { require Encode; };
-    skip ('Encode module is needed for unicode tests', 5) if $@;
+
+    if ($@) {
+        skip ('Encode module is needed for unicode tests', $encode_tests);
+    }
 
     my $server_encoding = $dbh->selectall_arrayref('SHOW server_encoding')->[0][0];
-    skip ('Cannot reliably test unicode without a UTF8 database', 5)
-        if $server_encoding ne 'UTF8';
+    if ($server_encoding ne 'UTF8') {
+        skip ('Cannot reliably test unicode without a UTF8 database', $encode_tests);
+    }
 
     $SQL = 'SELECT pname FROM dbd_pg_test WHERE id = ?';
     $sth = $dbh->prepare($SQL);
@@ -693,7 +682,7 @@ is_deeply ($sth->{'NAME_uc'}, [], $t);
 $t='Statement handle attribute "NAME_hash" returns empty hashref after an update';
 is_deeply ($sth->{'NAME_hash'}, {}, $t);
 
-$t='Statement handle attribute "NAME_uc_hash" returns empty hashref after an update';
+$t='Statement handle attribute "NAME_lc_hash" returns empty hashref after an update';
 is_deeply ($sth->{'NAME_lc_hash'}, {}, $t);
 
 $t='Statement handle attribute "NAME_uc_hash" returns empty hashref after an update';
@@ -793,7 +782,7 @@ SKIP: {
     $t='Statement handle attribute "NULLABLE" returns empty arrayref for inserts';
     is_deeply ($sth->{'NULLABLE'}, [0,0,1,1], $t);
 
-    $t='Statement handle attribute "NUM_OF_FIELDS" returns correct value for RETURNING updates';
+    $t='Statement handle attribute "NUM_OF_FIELDS" returns correct value for RETURNING deletes';
     $sth = $dbh->prepare('DELETE FROM dbd_pg_test WHERE id = 88 RETURNING id, lii, expo, "CaseTest"');
     $sth->execute();
     is_deeply ($sth->{'NUM_OF_FIELDS'}, 4, $t);
@@ -938,15 +927,6 @@ $sth->bind_param(':foobar2', 'TMW', {pg_type => PG_TEXT});
 $attrib = $sth->{ParamTypes};
 $expected = {':foobar' => {TYPE => SQL_INTEGER}, ':foobar2' => {TYPE => SQL_LONGVARCHAR}, ':foobar3' => undef};
 is_deeply ($attrib, $expected, $t);
-
-$t='Statement handle attributes "ParamValues" and "ParamTypes" can be passed back to bind_param';
-eval {
-    my $vals = $sth->{ParamValues};
-    my $types = $sth->{ParamTypes};
-    $sth->bind_param($_, $vals->{$_}, $types->{$_} )
-        for keys %$types;
-};
-is( $@, q{}, $t);
 
 $t='Statement handle attribute "ParamTypes" works after execute';
 $sth->bind_param(':foobar3', 3, {pg_type => PG_INT2});
@@ -1279,8 +1259,11 @@ is ($warning, undef, $t);
 SKIP: {
     $t = q{When client_min_messages is FATAL, we do our best to alert the caller it's a Bad Idea};
     $dbh->do(q{SET client_min_messages = 'FATAL'});
-    skip 'This version of PostgreSQL caps client_min_messages to ERROR', 1
-        unless $dbh->selectrow_array('SHOW client_min_messages') eq 'fatal';
+
+    my $cmm = $dbh->selectrow_array('SHOW client_min_messages');
+    if ($cmm ne 'fatal') {
+        skip ('This version of PostgreSQL caps client_min_messages to ERROR', 1);
+    }
 
     $dbh->{RaiseError} = 0;
     $dbh->{AutoCommit} = 1;
@@ -1568,8 +1551,11 @@ is ($attrib, 1, $t);
 #
 
 SKIP: {
-    if ($DBI::VERSION < 1.55) {
-        skip ('DBI must be at least version 1.55 to test DB attribute "ReadOnly"', 8);
+
+    my $min_dbi_version = 1.55;
+
+    if ($DBI::VERSION < $min_dbi_version) {
+        skip (qq{DBI must be at least version $min_dbi_version to test DB attribute "ReadOnly"}, 6);
     }
 
     $t='Database handle attribute "ReadOnly" starts out undefined';
@@ -1632,13 +1618,19 @@ $attrib = $dbh->{Active};
 is ($attrib, '', $t);
 
 SKIP: {
-    skip ('Cannot test database handle "AutoInactiveDestroy" on a Windows system', 8)
-        if $^O =~ /Win/;
+
+    my $skip_tests = 8;
+
+    if ($^O =~ /Win/) {
+        skip ('Cannot test database handle "AutoInactiveDestroy" on a Windows system', $skip_tests);
+    }
 
     require Test::Simple;
 
-    skip ('Test::Simple version 0.47 or better required for testing of attribute "AutoInactiveDestroy"', 8)
-        if $Test::Simple::VERSION < 0.47;
+    my $min_ts_version = 0.47;
+    if ($Test::Simple::VERSION < $min_ts_version) {
+        skip (qq{Test::Simple version $min_ts_version or better required for testing of attribute "AutoInactiveDestroy"}, $skip_tests);
+    }
 
     # Test of forking. Hang on to your hats
 

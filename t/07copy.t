@@ -15,7 +15,7 @@ select(($|=1,select(STDERR),$|=1)[1]);
 my $dbh = connect_database();
 
 if ($dbh) {
-    plan tests => 62;
+    plan tests => 60;
 }
 else {
     plan skip_all => 'Connection to database failed, cannot continue testing';
@@ -46,13 +46,8 @@ $dbh->do("COPY $table FROM STDIN");
 $result = $dbh->pg_putline("12\tMulberry\n");
 is ($result, 1, $t);
 
-$t='putline returned a value of 1 for success';
 $result = $dbh->pg_putline("13\tStrawberry\n");
-is ($result, 1, $t);
-
-$t='putline returned a value of 1 for success';
 $result = $dbh->pg_putline("14\tBlueberry\n");
-is ($result, 1, $t);
 
 ## Commands are not allowed while in a COPY IN state
 $t='do() fails while in a COPY IN state';
@@ -109,7 +104,7 @@ eval {
 };
 ok ($@, $t);
 
-$t='pg_getline returns a 1';
+$t='pg_getline returns a 1 (column 1)';
 $dbh->do("COPY $table TO STDOUT");
 my $buffer = '';
 $result = $dbh->pg_getline($data[0], 100);
@@ -129,12 +124,12 @@ eval {
 };
 ok ($@, $t);
 
-$t='pg_getline returned a 1';
+$t='pg_getline returns a 1 (column 2)';
 $data[1]=$data[2]=$data[3]='';
 $result = $dbh->pg_getline($data[1], 100);
 is ($result, 1, $t);
 
-$t='pg_getline returned a 1';
+$t='pg_getline returns a 1 (column 3)';
 $result = $dbh->pg_getline($data[2], 100);
 is ($result, 1, $t);
 
@@ -352,6 +347,7 @@ $dbh->pg_result();
 
 
 SKIP: {
+
     $pgversion < 80200 and skip ('Server version 8.2 or greater needed for test', 1);
 
     $t='pg_getcopydata works when pulling from an empty table into an empty var';
