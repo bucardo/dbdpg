@@ -21,6 +21,38 @@ find (sub { push @testfiles   => $File::Find::name if /^[^.]\w+\.(t|pl)$/; }, 't
 find (sub { push @perlfiles   => $File::Find::name if /^[^.].+\.(pm|pl|t)$/ and $File::Find::dir !~ /tmp|DBD-Pg|blib/; }, '.');
 
 ##
+## Ensure all test names are unique
+##
+my %message;
+for my $file (@testfiles) {
+    open my $fh, '<', $file or die qq{Could not open "$file": $!\n};
+    while (my $line = <$fh>) {
+        chomp $line;
+        last if $line =~ /__DATA__/; ## perlcritic.t
+        next if $line !~ /^\s*\$t\b/;
+        next if $line !~ s/^\s*\$t\s*=\s*//;
+
+        $line =~ s/^'(.+)'.*/$1/;
+        $line =~ s/^"(.+)".*/$1/;
+        $line =~ s/^q\{(.+)\}.*/$1/;
+        $line =~ s/^qq\{(.+)\}.*/$1/;
+
+        ## Assume anything with a variable knows what it is doing
+        next if $line =~ /\$/;
+
+        if (exists $message{$line}) {
+            my $msg = sprintf 'Duplicated test name in file %s:%d:%d >>%s<<',
+                $file, $message{$line}, $., $line;
+            fail $msg;
+        }
+        $message{$line} = $.;
+
+    }
+    close $fh or die qq{Could not close "$file": $!\n};
+}
+
+
+##
 ## Load all Test::More calls into memory
 ##
 my $testmore = 0;
