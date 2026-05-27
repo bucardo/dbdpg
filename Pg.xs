@@ -757,7 +757,7 @@ pg_getline(dbh, buf, len)
         buf = SvGROW(bufsv, 3);
         if (len > 3)
             buf = SvGROW(bufsv, len);
-        ret = pg_db_getline(dbh, bufsv, (int)len);
+        ret = pg_db_getline(dbh, bufsv);
         sv_setpv((SV*)ST(1), buf);
         SvSETMAGIC(ST(1));
         ST(0) = (-1 != ret) ? &PL_sv_yes : &PL_sv_no;
@@ -813,7 +813,7 @@ getline(dbh, buf, len)
         buf = SvGROW(bufsv, 3);
         if (len > 3)
             buf = SvGROW(bufsv, len);
-        ret = pg_db_getline(dbh, bufsv, (int)len);
+        ret = pg_db_getline(dbh, bufsv);
         sv_setpv((SV*)ST(1), buf);
         SvSETMAGIC(ST(1));
         ST(0) = (-1 != ret) ? &PL_sv_yes : &PL_sv_no;

@@ -131,6 +131,9 @@ static int do_send_cancel(SV *h, imp_dbh_t *imp_dbh, char const *caller)
 void dbd_init (dbistate_t *dbistate)
 {
     dTHX;
+
+    PERL_UNUSED_VAR(dbistate);
+
     DBISTATE_INIT;
 }
 
@@ -409,6 +412,12 @@ int pg_db_continue_connect(SV *dbh)
             imp_dbh->async_status = DBH_NO_ASYNC;
 
             status = -2;
+            break;
+
+        default:
+            croak("Unknown status returned in pg_db_continue_connect");
+
+
         }
     }
 
@@ -602,8 +611,7 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
         }
     }
 
-    strncpy(imp_dbh->sqlstate, sqlstate, 5);
-    imp_dbh->sqlstate[5] = 0;
+    memcpy(imp_dbh->sqlstate, sqlstate, 6);
 
     if (TRACE7_slow) TRC(DBILOGFP, "%s_sqlstate txn_status is %d\n",
                     THEADER_slow, pg_db_txn_status(aTHX_ imp_dbh));
@@ -1186,6 +1194,11 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
             retval = 1;
         }
         break;
+
+    default:
+        /* Do nothing: DBI may want to handle these */
+
+
     }
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_STORE_attrib\n", THEADER_slow);
@@ -1208,6 +1221,8 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
     char *            key = SvPV(keysv,kl);
     SV *              retsv = Nullsv;
     int               fields;
+
+    PERL_UNUSED_VAR(sth);
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_FETCH (key: %s)\n", THEADER_slow, key);
 
@@ -1575,6 +1590,9 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv)
 {
     dTHX;
+
+    PERL_UNUSED_VAR(sth);
+
     STRLEN kl;
     char * key = SvPV(keysv,kl);
     STRLEN vl;
@@ -1660,6 +1678,8 @@ int dbd_st_STORE_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv, SV * valuesv
 int dbd_discon_all (SV * drh, imp_drh_t * imp_drh)
 {
     dTHX;
+
+    PERL_UNUSED_VAR(drh);
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_discon_all\n", THEADER_slow);
 
@@ -2602,7 +2622,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
     char * value_string = NULL;
     bool   is_array = DBDPG_FALSE;
 
-    maxlen = 0; /* not used, this makes the compiler happy */
+    PERL_UNUSED_VAR(maxlen);
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_bind_ph (ph_name: %s)\n",
                     THEADER_slow,
@@ -4012,6 +4032,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
                             break;
                         }
 #endif
+                    /* fallthrough */
                     case PG_INT2:
                     case PG_INT4:
                         sv_setiv(sv, atol(value));
@@ -4103,6 +4124,8 @@ static void pg_db_free_savepoints_to (pTHX_ imp_dbh_t * imp_dbh, const char *sav
 long dbd_st_rows (SV * sth, imp_sth_t * imp_sth)
 {
     dTHX;
+
+    PERL_UNUSED_VAR(sth);
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_rows\n", THEADER_slow);
 
@@ -4404,7 +4427,7 @@ int pg_db_putline (SV * dbh, SV * svbuf)
 
 
 /* ================================================================== */
-int pg_db_getline (SV * dbh, SV * svbuf, int length)
+int pg_db_getline (SV * dbh, SV * svbuf)
 {
     dTHX;
     D_imp_dbh(dbh);
@@ -4419,7 +4442,6 @@ int pg_db_getline (SV * dbh, SV * svbuf, int length)
     if (PGRES_COPY_OUT != imp_dbh->copystate && PGRES_COPY_BOTH != imp_dbh->copystate)
         croak("pg_getline can only be called directly after issuing a COPY TO command\n");
 
-    length = 0; /* Make compilers happy */
     TRACE_PQGETCOPYDATA;
     copystatus = PQgetCopyData(imp_dbh->conn, &tempbuf, 0);
 
@@ -5556,6 +5578,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
                 rows = 0;
                 break;
             }
+            /* fallthrough */
 
         default:
             rows = -2;
@@ -5664,6 +5687,10 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
         if (TRACE5_slow) TRC(DBILOGFP, "%snot yet connected\n", THEADER_slow);
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_ready (error: not connected)\n", THEADER_slow);
         return -1;
+
+    default:
+        /* Future fix: handle gracefully or throw a warning */
+
     }
 
     TRACE_PQCONSUMEINPUT;
@@ -6018,6 +6045,9 @@ int dbd_st_cancel(SV *sth, imp_sth_t *imp_sth)
 SV* dbd_st_canonical_ids(SV *sth, imp_sth_t *imp_sth)
 {
     dTHX;
+
+    PERL_UNUSED_VAR(sth);
+
     TRACE_PQNFIELDS;
     int fields = PQnfields(imp_sth->result);
     AV* result = newAV();
@@ -6059,6 +6089,9 @@ SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth)
     D_imp_dbh_from_sth;
     ExecStatusType status;
     PGresult * result;
+
+    PERL_UNUSED_VAR(sth);
+
     TRACE_PQNFIELDS;
     int fields = PQnfields(imp_sth->result);
     AV* result_av = newAV();

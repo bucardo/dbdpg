@@ -216,6 +216,8 @@ if ($ENV{DBDPG_GCCDEBUG}) {
     $comp_opts .= ' -Wsystem-headers';
     $comp_opts .= ' -Wmissing-noreturn';
     $comp_opts .= ' -Wfloat-equal'; ## Does not like SvTRUE() calls
+    $comp_opts .= ' -Wno-inline';
+
 }
 
 my %opts =

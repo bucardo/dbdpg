@@ -319,7 +319,7 @@ for my $file (qw{
     README Changes TODO README.dev README.win32 CONTRIBUTING.md
     Pg.pm Pg.xs dbdimp.c quote.c Makefile.PL Pg.h types.c dbdimp.h
     t/01connect.t t/01constants.t t/02attribs.t t/03dbmethod.t t/03smethod.t
-    t/04misc.t t/12placeholders.t t/99_yaml.t
+    t/04misc.t t/05leak.t t/12placeholders.t t/99_yaml.t
     testme.tmp.pl dbdpg_test_postgres_versions.pl
 }) {
     open $fh, '<', $file or die "Could not open $file: $!\n";
