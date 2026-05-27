@@ -14,6 +14,11 @@ Version 3.21.0  (unreleased)
  - Support whitespace in directory names for the test suite.
    [Greg Sabino Mullane]
 
+ - Fix a memory leak in the libpq 17 PQclosePrepared cleanup path when
+     destroying server-side prepared statement handles.
+   [Rorsarach]
+   (Github issue #187, pull request #188)
+
  - Many tweaks to support building and testing on Win32
    [Greg Sabino Mullane]
 

@@ -702,6 +702,7 @@ prereqs
 PrintError
 printf
 PrintWarn
+proc
 profiler
 PROGRA
 projdisplay
