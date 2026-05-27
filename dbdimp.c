@@ -1197,7 +1197,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 
     default:
         /* Do nothing: DBI may want to handle these */
-
+        break;
 
     }
 
@@ -5690,6 +5690,7 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 
     default:
         /* Future fix: handle gracefully or throw a warning */
+        break;
 
     }
 
