@@ -49,7 +49,7 @@ struct imp_dbh_st {
     bool    client_encoding_utf8; /* is the client_encoding utf8 last we checked? */
 
     PGresult  *last_result;     /* PGresult structure from the last executed query (can be from imp_dbh or imp_sth) */
-    bool      result_clearable; /* Is it alright to call PQclear on last_result? (statements handles set it to false */
+    bool      result_shared;    /* Are more than one things pointing to this PGresult? */
     imp_sth_t *do_tmp_sth;      /* temporary sth to refer inside a do() call */
 };
 
