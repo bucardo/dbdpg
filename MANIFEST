@@ -41,13 +41,13 @@ t/02attribs.t
 t/03dbmethod.t
 t/03smethod.t
 t/04misc.t
+t/05leak.t
 t/06bytea.t
 t/07copy.t
 t/08async.t
 t/09arrays.t
 t/10_pg_error_field.t
 t/12placeholders.t
-t/13leak.t
 t/20savepoints.t
 t/30unicode.t
 t/98cleanup.t

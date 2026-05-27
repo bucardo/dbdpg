@@ -189,6 +189,8 @@ t/03smethod.t - Tests all statement handle methods.
 
 t/04misc.t - Tests tracing, data_sources, $DBDPG_DEFAULT, and txn status changes.
 
+t/05leak.t - Memory leak tests.
+
 t/06bytea.t - Tests bytea manipulation.
 
 t/07copy.t - Tests COPY-related methods.
@@ -200,9 +202,6 @@ t/09arrays.t - Tests array manipulation.
 t/10_pg_error_field.t - Tests $dbh->pg_error_field function
 
 t/12placeholders.t - Tests placeholders.
-
-t/13leak.t - Regression tests for the PQclosePrepared cleanup path
-  (libpq >= 17), which previously leaked the SELECT result.
 
 t/20savepoints.t - Test savepoints.
 

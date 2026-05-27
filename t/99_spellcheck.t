@@ -703,6 +703,7 @@ PrintError
 printf
 PrintWarn
 proc
+procfile
 profiler
 PROGRA
 projdisplay

@@ -6,6 +6,10 @@ Github items can be found by using: https://github.com/bucardo/dbdpg/issues/XXX
 
 Version 3.21.0  (unreleased)
 
+ - Fix a memory leak in the PQclosePrepared cleanup path
+   [Rorsarach]
+   (Github issue #187, pull request #188)
+
  - Ensure $sth->rows() returns 0 when no rows returned for updates, deletes,
      or inserts with ON CONFLICT DO NOTHING
    [Greg Sabino Mullane, reported by Yiannis]
@@ -13,11 +17,6 @@ Version 3.21.0  (unreleased)
 
  - Support whitespace in directory names for the test suite.
    [Greg Sabino Mullane]
-
- - Fix a memory leak in the libpq 17 PQclosePrepared cleanup path when
-     destroying server-side prepared statement handles.
-   [Rorsarach]
-   (Github issue #187, pull request #188)
 
  - Many tweaks to support building and testing on Win32
    [Greg Sabino Mullane]
