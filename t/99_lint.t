@@ -386,5 +386,47 @@ for my $file (qw{README Pg.pm Pg.xs Pg.h dbdimp.c dbdimp.h quote.c types.c}) {
 }
 pass $t;
 
+##
+## Verify that result_shared is always set properly when last_result is set
+##
+
+$file = 'dbdimp.c';
+open $fh, '<', $file or die "Could not open $file: $!\n";
+$.=0;
+my $pointers = 0;
+while (<$fh>) {
+    chomp;
+
+    if ($pointers) {
+        if (1 == $pointers) {
+            $t = "Correct assignment of result_shared to false at $file line $.";
+            / imp_dbh->result_shared = DBDPG_FALSE;/ ? pass($t) : fail($t);
+        }
+        elsif (2 == $pointers) {
+            $t = "Correct assignment of result_shared to true at $file line $.";
+            / imp_dbh->result_shared = DBDPG_TRUE;/ ? pass($t) : fail($t);
+        }
+        else {
+            fail "Cannot handle more than two assignments for $file line $.";
+        }
+        $pointers = 0;
+    }
+
+    ## Find lines in which we are settig last_result to something
+    next if ! /last_result\s*=\s*(.+)/;
+
+    # Skip places where we simply are setting it to null
+    next if /=\s*NULL/;
+
+    ## How many things are we assigning to this? (expect one or two only)
+    $pointers = (tr/=//);
+    $pointers or die "Expected an assignment for $_\n";
+
+    ## If this is a single-line statement, we continue
+    next if /;$/;
+
+    ## Otherwise, go until we get a semi-colon
+    1 while <$fh> !~ /;/;
+}
 
 done_testing();
