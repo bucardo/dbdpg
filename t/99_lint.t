@@ -6,7 +6,6 @@ use 5.008001;
 use strict;
 use warnings;
 use Test::More;
-use File::Find;
 
 my (@testfiles,@perlfiles,@cfiles,@headerfiles,%fileslurp,$t);
 
@@ -15,10 +14,22 @@ if (! $ENV{AUTHOR_TESTING}) {
 }
 
 $ENV{LANG} = 'C';
-find (sub { push @cfiles      => $File::Find::name if /^[^.].+\.c$/ and $_ ne 'Pg.c' and $File::Find::dir !~ /tmp|DBD-Pg/; }, '.');
-find (sub { push @headerfiles => $File::Find::name if /^[^.].+\.h$/ and $_ ne 'dbivport.h' and $File::Find::dir !~ /tmp|DBD-Pg/; }, '.');
-find (sub { push @testfiles   => $File::Find::name if /^[^.]\w+\.(t|pl)$/; }, 't');
-find (sub { push @perlfiles   => $File::Find::name if /^[^.].+\.(pm|pl|t)$/ and $File::Find::dir !~ /tmp|DBD-Pg|blib/; }, '.');
+
+my $mfile = 'MANIFEST';
+if (! -e $mfile) {
+    plan (skip_all => 'Could not find the MANIFEST file');
+    exit;
+}
+
+open my $fh, '<', $mfile or die "Could not open $mfile: $!\n";
+@perlfiles = map { chomp; $_ } grep { /\.pm$/ or /\.t$/ } <$fh>;
+seek $fh ,0, 0;
+@testfiles = map { chomp; $_ } grep { m{t/.*\.t$} } <$fh>;
+seek $fh ,0, 0;
+@headerfiles = map { chomp; $_ } grep { m{\.h$} } <$fh>;
+seek $fh ,0, 0;
+@cfiles = map { chomp; $_ } grep { m{\.c$} } <$fh>;
+close $fh;
 
 ##
 ## Ensure all test names are unique
@@ -79,7 +90,7 @@ ok (@testfiles, 'Found files in test directory');
 ## Make sure the README.dev mentions all files used, and jives with the MANIFEST
 ##
 my $file = 'README.dev';
-open my $fh, '<', $file or die qq{Could not open "$file": $!\n};
+open $fh, '<', $file or die qq{Could not open "$file": $!\n};
 my $point = 1;
 my %devfile;
 while (<$fh>) {
@@ -138,7 +149,6 @@ for my $file (@cfiles) {
             next if $func eq 'PQgetvalue';
             next if $func eq 'PQbinaryTuples';
             next if $func eq 'PQflush';
-            next if $func eq 'PQclosePrepared';
 
             my $uc = uc($func);
             next if $lastline =~ /TRACE_$uc\b/;
@@ -218,6 +228,10 @@ for my $file (sort keys %fileslurp) {
 ## Check C and Perl files for errant tabs
 ##
 for my $file (@cfiles, @headerfiles, @perlfiles) {
+
+    ## This one is special, and out of our control:
+    next if $file eq 'dbivport.h';
+
     my $tabfail = 0;
     open my $fh, '<', $file or die "Could not open $file: $!\n";
     while (<$fh>) {
@@ -258,7 +272,7 @@ for my $file (@cfiles, @headerfiles, @perlfiles) {
 ##
 ## Make sure all Perl files request the same minimum version of Perl
 ##
-my $firstversion = 0;
+my $canonical_version = 5.008001;
 my %ver;
 for my $file (@perlfiles) {
 
@@ -272,29 +286,24 @@ for my $file (@perlfiles) {
     my $minversion = 0;
     while (<$fh>) {
         if (/^use ([0-9]+\.[0-9]+);$/) {
-            $minversion = $1;
-            $firstversion ||= $minversion;
-            $ver{$file} = $minversion;
+            $ver{$file} = $1;
             last;
         }
     }
 
     close $fh;
-    if ($minversion) {
-        pass (qq{Found a minimum Perl version of $minversion for the file $file});
-    }
-    else {
+    if (! exists $ver{$file}) {
         fail (qq{Failed to find a minimum Perl version for the file $file});
     }
 }
 
 for my $file (sort keys %ver) {
     my $version = $ver{$file};
-    if ($version eq $firstversion) {
-        pass(qq{Correct minimum Perl version ($firstversion) for file $file});
+    if ($version eq $canonical_version) {
+        pass(qq{Correct minimum Perl version ($canonical_version) for file $file});
     }
     else {
-        fail(qq{Wrong minimum Perl version ($version is not $firstversion) for file $file});
+        fail(qq{Wrong minimum Perl version ($version is not $canonical_version) for file $file});
     }
 }
 
