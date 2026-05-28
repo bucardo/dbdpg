@@ -15,6 +15,8 @@ if (! $ENV{AUTHOR_TESTING}) {
 
 $ENV{LANG} = 'C';
 
+my ($all_ok, $count);
+
 my $mfile = 'MANIFEST';
 if (! -e $mfile) {
     plan (skip_all => 'Could not find the MANIFEST file');
@@ -84,8 +86,6 @@ for my $file (@testfiles) {
     close $fh or die qq{Could not close "$file": $!\n};
 }
 
-ok (@testfiles, 'Found files in test directory');
-
 ##
 ## Make sure the README.dev mentions all files used, and jives with the MANIFEST
 ##
@@ -130,6 +130,8 @@ close $fh or die qq{Could not close "$file": $!\n};
 
 
 ## Make sure each PQxx() call has a matching TRACE above it
+$all_ok = 1;
+$count = 0;
 for my $file (@cfiles) {
     open $fh, '<', $file or die qq{Could not open "$file": $!\n};
     my $lastline = '';
@@ -150,6 +152,7 @@ for my $file (@cfiles) {
             next if $func eq 'PQbinaryTuples';
             next if $func eq 'PQflush';
 
+            $count++;
             my $uc = uc($func);
             next if $lastline =~ /TRACE_$uc\b/;
             next if $lastline !~ /;/ and $lastline2 =~ /TRACE_$uc\b/;
@@ -161,13 +164,15 @@ for my $file (@cfiles) {
         $lastline = $_;
     }
     close $fh;
-    if ($traceok) {
-        pass (qq{File "$file" has matching TRACE calls for each PQ function});
-    }
-    else {
+    if (!$traceok) {
         fail (qq{File "$file" does not have TRACE calls for each PQ function});
+        $all_ok = 0;
     }
 }
+if ($all_ok) {
+    pass (qq{Scanned $count locations; all PQ functions have matching TRACE calls});
+}
+
 
 ##
 ## Everything in MANIFEST[.SKIP] should also be in README.dev
@@ -210,28 +215,40 @@ SKIP: {
 ##
 ## Make sure all Test::More function calls are standardized
 ##
+$all_ok = 1;
+$count = 0;
 for my $file (sort keys %fileslurp) {
     for my $linenum (sort {$a <=> $b} keys %{$fileslurp{$file}}) {
         for my $func (sort keys %{$fileslurp{$file}{$linenum}}) {
+            $count++;
             $t=qq{Test::More method "$func" is in standard format inside $file at line $linenum};
             my $line = $fileslurp{$file}{$linenum}{$func};
             ## Must be at start of line (optional whitespace and comment), a space, a paren, and something interesting
             next if $line =~ /testmorewords/;
             next if $line =~ /\w+ fail/;
             next if $line =~ /defined \$expected \? like/;
-            like ($line, qr{^\s*#?$func \(['\S]}, $t);
+            if ($line !~ qr{^\s*#?$func \(['\S]}) {
+                fail ($t);
+                $all_ok = 0;
+            }
         }
     }
+}
+if ($all_ok) {
+    pass ("Scanned $count test lines; all have correct format");
 }
 
 ##
 ## Check C and Perl files for errant tabs
 ##
+$all_ok = 1;
+$count = 0;
 for my $file (@cfiles, @headerfiles, @perlfiles) {
 
     ## This one is special, and out of our control:
     next if $file eq 'dbivport.h';
 
+    $count++;
     my $tabfail = 0;
     open my $fh, '<', $file or die "Could not open $file: $!\n";
     while (<$fh>) {
@@ -240,17 +257,21 @@ for my $file (@cfiles, @headerfiles, @perlfiles) {
     close $fh;
     if ($tabfail) {
         fail (qq{File "$file" contains one or more tabs: $tabfail});
+        $all_ok = 0;
     }
-    else {
-        pass (qq{File "$file" has no tabs});
-    }
+}
+if ($all_ok) {
+    pass ("Scanned $count files; none have tabs");
 }
 
 ##
 ## Check files for trailing spaces
 ##
+$all_ok = 1;
+$count = 0;
 for my $file (@cfiles, @headerfiles, @perlfiles) {
     my $spacefail = 0;
+    $count++;
     open my $fh, '<', $file or die "Could not open $file: $!\n";
     my $lastline = 0;
     while (<$fh>) {
@@ -263,11 +284,14 @@ for my $file (@cfiles, @headerfiles, @perlfiles) {
     close $fh;
     if ($spacefail) {
         fail (qq{File "$file" has this many lines with trailing spaces: $spacefail (last at $lastline)});
-    }
-    else {
-        pass (qq{File "$file" has no trailing spaces});
+        $all_ok = 0;
     }
 }
+
+if ($all_ok) {
+    pass ("Scanned $count files; none have trailing spaces");
+}
+
 
 ##
 ## Make sure all Perl files request the same minimum version of Perl
@@ -297,15 +321,20 @@ for my $file (@perlfiles) {
     }
 }
 
+$all_ok = 1;
+$count = 0;
 for my $file (sort keys %ver) {
     my $version = $ver{$file};
-    if ($version eq $canonical_version) {
-        pass(qq{Correct minimum Perl version ($canonical_version) for file $file});
-    }
-    else {
+    $count++;
+    if ($version ne $canonical_version) {
         fail(qq{Wrong minimum Perl version ($version is not $canonical_version) for file $file});
+        $all_ok = 0;
     }
 }
+if ($all_ok) {
+    pass(qq{Scanned $count Perl files; all require version $canonical_version});
+}
+
 
 ##
 ## Check for stale or duplicated spelling words
@@ -399,6 +428,7 @@ pass $t;
 ## Verify that result_shared is always set properly when last_result is set
 ##
 
+$all_ok = 1;
 $file = 'dbdimp.c';
 open $fh, '<', $file or die "Could not open $file: $!\n";
 $.=0;
@@ -408,20 +438,27 @@ while (<$fh>) {
 
     if ($pointers) {
         if (1 == $pointers) {
-            $t = "Correct assignment of result_shared to false at $file line $.";
-            / imp_dbh->result_shared = DBDPG_FALSE;/ ? pass($t) : fail($t);
+            $t = "Incorrect assignment of result_shared to false at $file line $.";
+            if (! / imp_dbh->result_shared = DBDPG_FALSE;/) {
+                fail($t);
+                $all_ok = 0;
+            }
         }
         elsif (2 == $pointers) {
-            $t = "Correct assignment of result_shared to true at $file line $.";
-            / imp_dbh->result_shared = DBDPG_TRUE;/ ? pass($t) : fail($t);
+            $t = "Incorrect assignment of result_shared to true at $file line $.";
+            if (! / imp_dbh->result_shared = DBDPG_TRUE;/) {
+                fail($t);
+                $all_ok = 0;
+            }
         }
         else {
             fail "Cannot handle more than two assignments for $file line $.";
+            $all_ok = 0;
         }
         $pointers = 0;
     }
 
-    ## Find lines in which we are settig last_result to something
+    ## Find lines in which we are setting last_result to something
     next if ! /last_result\s*=\s*(.+)/;
 
     # Skip places where we simply are setting it to null
@@ -436,6 +473,10 @@ while (<$fh>) {
 
     ## Otherwise, go until we get a semi-colon
     1 while <$fh> !~ /;/;
+}
+
+if ($all_ok) {
+    pass('All calls to last_result in dbdimp.c have correct result_shared');
 }
 
 done_testing();
