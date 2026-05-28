@@ -17,13 +17,13 @@ $ENV{LANG} = 'C';
 
 my ($all_ok, $count);
 
-my $mfile = 'MANIFEST';
-if (! -e $mfile) {
-    plan (skip_all => 'Could not find the MANIFEST file');
+my $file = 'MANIFEST';
+if (! -e $file) {
+    plan (skip_all => "Could not find the $file file");
     exit;
 }
 
-open my $fh, '<', $mfile or die "Could not open $mfile: $!\n";
+open my $fh, '<', $file or die "Could not open $file: $!\n";
 @perlfiles = map { chomp; $_ } grep { /\.pm$/ or /\.t$/ } <$fh>;
 seek $fh ,0, 0;
 @testfiles = map { chomp; $_ } grep { m{t/.*\.t$} } <$fh>;
@@ -31,6 +31,18 @@ seek $fh ,0, 0;
 @headerfiles = map { chomp; $_ } grep { m{\.h$} } <$fh>;
 seek $fh ,0, 0;
 @cfiles = map { chomp; $_ } grep { m{\.c$} } <$fh>;
+close $fh;
+
+## A few things are in MANIFEST.SKIP but we still want to check on them
+$file = 'MANIFEST.SKIP';
+if (! -e $file) {
+    plan (skip_all => "Could not find the $file file");
+    exit;
+}
+open $fh, '<', $file or die "Could not open $file: $!\n";
+push @testfiles => map { chomp; $_ } grep { m{t/.*\.t} } <$fh>;
+seek $fh, 0, 0;
+push @perlfiles => map { chomp; $_ } grep { m{t/.*\.t} } <$fh>;
 close $fh;
 
 ##
@@ -89,7 +101,7 @@ for my $file (@testfiles) {
 ##
 ## Make sure the README.dev mentions all files used, and jives with the MANIFEST
 ##
-my $file = 'README.dev';
+$file = 'README.dev';
 open $fh, '<', $file or die qq{Could not open "$file": $!\n};
 my $point = 1;
 my %devfile;
@@ -302,9 +314,6 @@ for my $file (@perlfiles) {
 
     ## The App::Info items do not need this check
     next if $file =~ m{/App/Info};
-
-    ## Skip this one for now, it needs slightly higher version
-    next if $file =~ /00_release/;
 
     open my $fh, '<', $file or die "Could not open $file: $!\n";
     my $minversion = 0;

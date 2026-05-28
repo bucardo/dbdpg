@@ -625,12 +625,14 @@ $t=q{String lengths of returned arrays are correct};
 my @numbers = ('one', 'two', 'three');
 $result = $dbh->selectall_arrayref(q{SELECT array['one','two','three']});
 for my $col (@{$result->[0][0]}) {
-    is (length($col), length(shift @numbers), $t);
+    is (length($col), length(shift @numbers), "$t (col $col)");
 }
 
 SKIP: {
+
     my $fancytime;
     eval { require Time::Piece; $fancytime = Time::Piece->localtime;};
+
     if ($@) {
         skip ('Need Time::Piece for some tests', 2);
     }
