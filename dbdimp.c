@@ -68,6 +68,29 @@ typedef enum
     (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV &&                    \
      SvRMAGICAL(SvRV(h)) && (SvMAGIC(SvRV(h)))->mg_type == 'P')
 
+/*
+  For a database handle's PGresult pointer, free it via PQclear if A) it is non-null, and
+  B) if nothing else is also pointing to it (indicated by result_shared being false)
+*/
+#define CLEAR_LAST_RESULT(mydbh) \
+do { \
+  if (mydbh->last_result && ! mydbh->result_shared) { \
+    TRACE_PQCLEAR; \
+    PQclear(mydbh->last_result); \
+    mydbh->last_result = NULL; \
+  } \
+} while (0)
+
+/* For a statement handle's PGresult pointer, free it as needed */
+#define CLEAR_STH_RESULT(mysth) \
+do { \
+  if (mysth && mysth->result) { \
+    TRACE_PQCLEAR; \
+    PQclear(mysth->result); \
+    mysth->result = NULL; \
+  } \
+} while (0)
+
 enum {
     STH_ASYNC_AUTOERROR = -2,    /* PG_OLDQUERY_WAIT auto-retrieved an error result */
     STH_ASYNC_CANCELLED = -1,
@@ -344,7 +367,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     imp_dbh->async_status      = DBH_NO_ASYNC;
     imp_dbh->async_sth         = NULL;
     imp_dbh->last_result       = NULL; /* NULL or the last PGresult returned by a database or statement handle */
-    imp_dbh->result_clearable  = DBDPG_TRUE;
+    imp_dbh->result_shared     = DBDPG_FALSE;
     imp_dbh->pg_int8_as_string = DBDPG_FALSE;
     imp_dbh->skip_deallocate   = DBDPG_FALSE;
 
@@ -523,16 +546,12 @@ static ExecStatusType _result(pTHX_ imp_dbh_t * imp_dbh, const char * sql)
 
     if (TSQL) TRC(DBILOGFP, "%s;\n\n", sql);
 
-    /* Free the last_result as needed, as we are about to replace it */
-    if (imp_dbh->last_result && imp_dbh->result_clearable) {
-        TRACE_PQCLEAR;
-        PQclear(imp_dbh->last_result);
-        imp_dbh->last_result = NULL;
-    }
+    CLEAR_LAST_RESULT(imp_dbh);
 
     TRACE_PQEXEC;
     imp_dbh->last_result = PQexec(imp_dbh->conn, sql);
-    imp_dbh->result_clearable = DBDPG_TRUE;
+    imp_dbh->result_shared = DBDPG_FALSE;
+
     status = _sqlstate(aTHX_ imp_dbh, imp_dbh->last_result);
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd _result\n", THEADER_slow);
@@ -838,21 +857,9 @@ void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
     if (DBIc_ACTIVE(imp_dbh))
         (void)dbd_db_disconnect(dbh, imp_dbh);
 
-    if (NULL != imp_dbh->async_sth) { /* Just in case */
-        if (imp_dbh->async_sth->result) {
-            TRACE_PQCLEAR;
-            PQclear(imp_dbh->async_sth->result);
-            imp_dbh->async_sth->result = NULL;
-        }
-        imp_dbh->async_sth = NULL;
-    }
+    CLEAR_STH_RESULT(imp_dbh->async_sth);
 
-    /* Free the last_result as needed */
-    if (imp_dbh->last_result && imp_dbh->result_clearable) {
-        TRACE_PQCLEAR;
-        PQclear(imp_dbh->last_result);
-        imp_dbh->last_result = NULL;
-    }
+    CLEAR_LAST_RESULT(imp_dbh);
 
     av_undef(imp_dbh->savepoints);
     sv_free((SV *)imp_dbh->savepoints);
@@ -1197,7 +1204,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
 
     default:
         /* Do nothing: DBI may want to handle these */
-
+        break;
 
     }
 
@@ -2553,18 +2560,9 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     if (TSQL)
         TRC(DBILOGFP, "PREPARE %s AS %s;\n\n", imp_sth->prepare_name, statement);
 
-    /* Free the last_result as needed, even if happens to be owned by us */
-    if (imp_dbh->last_result && imp_dbh->result_clearable) {
-        TRACE_PQCLEAR;
-        PQclear(imp_dbh->last_result);
-        imp_dbh->last_result = NULL;
-    }
-    if (imp_sth->result) {
+    CLEAR_LAST_RESULT(imp_dbh);
 
-        TRACE_PQCLEAR;
-        PQclear(imp_sth->result);
-        imp_sth->result = NULL;
-    }
+    CLEAR_STH_RESULT(imp_sth);
 
     if (imp_sth->async_flag & PG_ASYNC) {
         TRACE_PQSENDPREPARE;
@@ -2580,7 +2578,7 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     } else {
         TRACE_PQPREPARE;
         imp_dbh->last_result = imp_sth->result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids);
-        imp_dbh->result_clearable = DBDPG_FALSE;
+        imp_dbh->result_shared = DBDPG_TRUE;
 
         status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
         if (PGRES_COMMAND_OK == status) {
@@ -3298,17 +3296,12 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 
     if (TSQL) TRC(DBILOGFP, "%s;\n\n", sql);
 
-
-    /* Free the last_result as needed, as we are about to replace it */
-    if (imp_dbh->last_result && imp_dbh->result_clearable) {
-        TRACE_PQCLEAR;
-        PQclear(imp_dbh->last_result);
-        imp_dbh->last_result = NULL;
-    }
+    CLEAR_LAST_RESULT(imp_dbh);
 
     TRACE_PQEXEC;
     imp_dbh->last_result = PQexec(imp_dbh->conn, sql);
-    imp_dbh->result_clearable = DBDPG_TRUE;
+    imp_dbh->result_shared = DBDPG_FALSE;
+
     status = _sqlstate(aTHX_ imp_dbh, imp_dbh->last_result);
 
     imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
@@ -3477,11 +3470,9 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
       deleted implicitly the next time pg_db_result is
       called.
     */
-    if (imp_sth->result && !(imp_sth->async_flag & PG_ASYNC)) {
-        TRACE_PQCLEAR;
-        PQclear(imp_sth->result);
-        imp_sth->result = NULL;
-    }
+     if (!(imp_sth->async_flag & PG_ASYNC)) {
+         CLEAR_STH_RESULT(imp_sth);
+     }
 
     /*
       Now, we need to build the statement to send to the backend
@@ -3643,22 +3634,13 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         }
         else {
 
-            /* Free the last_result as needed, even if happens to be owned by us */
-            if (imp_dbh->last_result && imp_dbh->result_clearable) {
-                TRACE_PQCLEAR;
-                PQclear(imp_dbh->last_result);
-                imp_dbh->last_result = NULL;
-            }
-            if (imp_sth->result) {
-                TRACE_PQCLEAR;
-                PQclear(imp_sth->result);
-                imp_sth->result = NULL;
-            }
+            CLEAR_LAST_RESULT(imp_dbh);
+
+            CLEAR_STH_RESULT(imp_sth);
 
             TRACE_PQEXEC;
-            imp_dbh->last_result = imp_sth->result
-                = PQexec(imp_dbh->conn, statement);
-            imp_dbh->result_clearable = DBDPG_FALSE;
+            imp_dbh->last_result = imp_sth->result = PQexec(imp_dbh->conn, statement);
+            imp_dbh->result_shared = DBDPG_TRUE;
         }
 
         Safefree(statement);
@@ -3742,25 +3724,17 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         }
         else {
 
-            /* Free the last_result as needed, even if happens to be owned by us */
-            if (imp_dbh->last_result && imp_dbh->result_clearable) {
-                TRACE_PQCLEAR;
-                PQclear(imp_dbh->last_result);
-                imp_dbh->last_result = NULL;
-            }
-            if (imp_sth->result) {
-                TRACE_PQCLEAR;
-                PQclear(imp_sth->result);
-                imp_sth->result = NULL;
-            }
+            CLEAR_LAST_RESULT(imp_dbh);
+
+            CLEAR_STH_RESULT(imp_sth);
 
             TRACE_PQEXECPARAMS;
-            imp_dbh->last_result = imp_sth->result
-                = PQexecParams(
-                               imp_dbh->conn, statement, imp_sth->numphs,
-                               imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0
-                               );
-            imp_dbh->result_clearable = DBDPG_FALSE;
+            imp_dbh->last_result = imp_sth->result = PQexecParams
+                (
+                 imp_dbh->conn, statement, imp_sth->numphs,
+                 imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0
+                 );
+            imp_dbh->result_shared = DBDPG_TRUE;
         }
 
         Safefree(statement);
@@ -3827,25 +3801,17 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
             }
             else {
 
-                /* Free the last_result as needed, even if happens to be owned by us */
-                if (imp_dbh->last_result && imp_dbh->result_clearable) {
-                    TRACE_PQCLEAR;
-                    PQclear(imp_dbh->last_result);
-                    imp_dbh->last_result = NULL;
-                }
-                if (imp_sth->result) {
-                    TRACE_PQCLEAR;
-                    PQclear(imp_sth->result);
-                    imp_sth->result = NULL;
-                }
+                CLEAR_LAST_RESULT(imp_dbh);
+
+                CLEAR_STH_RESULT(imp_sth);
 
                 TRACE_PQEXECPREPARED;
-                imp_dbh->last_result = imp_sth->result
-                    = PQexecPrepared(
-                        imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs,
-                        imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0
-                        );
-                imp_dbh->result_clearable = DBDPG_FALSE;
+                imp_dbh->last_result = imp_sth->result = PQexecPrepared
+                    (
+                     imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs,
+                     imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0
+                     );
+                imp_dbh->result_shared = DBDPG_TRUE;
             }
         }
     } /* end new-style prepare */
@@ -4225,21 +4191,14 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     if (TRACE5_slow)
         TRC(DBILOGFP, "%sUsing PQclosePrepared: %s\n", THEADER_slow, imp_sth->prepare_name);
 
-    /* Free any existing results before overwriting with PQclosePrepared's return value */
-    if (imp_dbh->last_result && imp_dbh->result_clearable) {
-        TRACE_PQCLEAR;
-        PQclear(imp_dbh->last_result);
-        imp_dbh->last_result = NULL;
-    }
-    if (imp_sth->result) {
-        TRACE_PQCLEAR;
-        PQclear(imp_sth->result);
-        imp_sth->result = NULL;
-    }
+    CLEAR_LAST_RESULT(imp_dbh);
 
-    imp_dbh->last_result = imp_sth->result
-        = PQclosePrepared(imp_dbh->conn, imp_sth->prepare_name);
-    imp_dbh->result_clearable = DBDPG_FALSE;
+    CLEAR_STH_RESULT(imp_sth);
+
+    TRACE_PQCLOSEPREPARED;
+    imp_dbh->last_result = imp_sth->result = PQclosePrepared(imp_dbh->conn, imp_sth->prepare_name);
+    imp_dbh->result_shared = DBDPG_TRUE;
+
     status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
 #else
     {
@@ -4340,14 +4299,10 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
        We do this in case $dbh->pg_error_field() is called
     */
     if (imp_sth->result == imp_dbh->last_result) {
-        imp_dbh->result_clearable = DBDPG_TRUE;
+        imp_dbh->result_shared = DBDPG_FALSE;
     }
     else {
-        if (imp_sth->result) {
-            /* Nobody else is using this PGresult, so we can clear it */
-            TRACE_PQCLEAR;
-            PQclear(imp_sth->result);
-        }
+        CLEAR_STH_RESULT(imp_sth);
     }
 
     /* Regardless of the above, we want to not use this anymore */
@@ -5589,39 +5544,31 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
 
         /* Store the result in the appropriate statement handle */
         if (imp_sth && imp_sth == imp_dbh->async_sth) {
-            if (imp_dbh->last_result && imp_dbh->result_clearable) {
-                TRACE_PQCLEAR;
-                PQclear(imp_dbh->last_result);
-            }
-            if (imp_sth->result && imp_sth->result != imp_dbh->last_result) {
-                TRACE_PQCLEAR;
-                PQclear(imp_sth->result);
-            }
+
+            CLEAR_LAST_RESULT(imp_dbh);
+
+            CLEAR_STH_RESULT(imp_sth);
+
             imp_dbh->last_result = imp_sth->result = result;
-            imp_dbh->result_clearable = DBDPG_FALSE;
+            imp_dbh->result_shared = DBDPG_TRUE;
         }
         else if (NULL == imp_sth && NULL != imp_dbh->async_sth) {
-            if (imp_dbh->last_result && imp_dbh->result_clearable) {
-                TRACE_PQCLEAR;
-                PQclear(imp_dbh->last_result);
-            }
+            CLEAR_LAST_RESULT(imp_dbh);
+
             /* If the above wasn't the async handle's result, free that too */
-            if (imp_dbh->async_sth->result && imp_dbh->async_sth->result != imp_dbh->last_result) {
-                TRACE_PQCLEAR;
-                PQclear(imp_dbh->async_sth->result);
+            if (imp_dbh->async_sth->result != imp_dbh->last_result) {
+                CLEAR_STH_RESULT(imp_dbh->async_sth);
             }
 
             imp_dbh->last_result = imp_dbh->async_sth->result = result;
-            imp_dbh->result_clearable = DBDPG_FALSE;
+            imp_dbh->result_shared = DBDPG_TRUE;
 
         }
         else {
-            if (imp_dbh->last_result && imp_dbh->result_clearable) {
-                TRACE_PQCLEAR;
-                PQclear(imp_dbh->last_result);
-            }
+            CLEAR_LAST_RESULT(imp_dbh);
+
             imp_dbh->last_result = result;
-            imp_dbh->result_clearable = DBDPG_TRUE;
+            imp_dbh->result_shared = DBDPG_FALSE;
         }
         if (rows == -1) {
             break;
@@ -5690,6 +5637,7 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 
     default:
         /* Future fix: handle gracefully or throw a warning */
+        break;
 
     }
 
@@ -5892,12 +5840,10 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
 
                 imp_sth_t *orig_sth = async_sth;
 
-                if (orig_sth->result) {
-                    TRACE_PQCLEAR;
-                    PQclear(orig_sth->result);
-                }
+                CLEAR_STH_RESULT(orig_sth);
 
                 orig_sth->result = result;
+
                 if (PGRES_TUPLES_OK == status) {
                     TRACE_PQNTUPLES;
                     orig_sth->rows = PQntuples(result);
@@ -5929,10 +5875,7 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
 
                 imp_sth_t *orig_sth = async_sth;
 
-                if (orig_sth->result) {
-                    TRACE_PQCLEAR;
-                    PQclear(orig_sth->result);
-                }
+                CLEAR_STH_RESULT(orig_sth);
 
                 orig_sth->result = result;
                 orig_sth->rows = -2; /* Error; pg_db_result reports the actual error via pg_error */
