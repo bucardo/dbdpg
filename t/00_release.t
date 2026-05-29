@@ -6,8 +6,6 @@
 use 5.008001;
 use strict;
 use warnings;
-use lib 'blib/lib', 'blib/arch', 't';
-use Data::Dumper;
 use Test::More;
 
 if (! $ENV{RELEASE_TESTING}) {

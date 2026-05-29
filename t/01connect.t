@@ -40,8 +40,8 @@ pass ('Connection to test database works');
 
 $pgversion    = $dbh->{pg_server_version};
 $pglibversion = $dbh->{pg_lib_version};
-$pgdefport    = $dbh->{pg_default_port};
 $pgvstring    = $dbh->selectall_arrayref('SELECT VERSION()')->[0][0];
+$pgdefport    = $dbh->{pg_default_port};
 
 ok ($dbh->disconnect(), 'Calling $dbh->disconnect() works');
 
@@ -230,7 +230,7 @@ END {
         }
     }
 
-    ## More helpful stuff
+    ## Show things of interest we grabbed from pg_settings
     for my $name (sort keys %setting) {
         $extra .= sprintf "\n%-*s %s", $offset, $name, $setting{$name};
     }
