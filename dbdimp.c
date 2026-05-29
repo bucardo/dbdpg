@@ -630,7 +630,8 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
         }
     }
 
-    memcpy(imp_dbh->sqlstate, sqlstate, 6);
+    memcpy(imp_dbh->sqlstate, sqlstate, 5);
+    imp_dbh->sqlstate[5] = '\0';
 
     if (TRACE7_slow) TRC(DBILOGFP, "%s_sqlstate txn_status is %d\n",
                     THEADER_slow, pg_db_txn_status(aTHX_ imp_dbh));
