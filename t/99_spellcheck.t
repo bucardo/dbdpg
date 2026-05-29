@@ -561,7 +561,6 @@ MYMETA
 myperl
 myval
 Compiled
-ndone
 ne
 ness
 netstat
