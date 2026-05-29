@@ -722,12 +722,20 @@ open $newfh, '>', "$file.tmp";
 $step = 0;
 while (<$oldfh>) {
     if (0 == $step) {
-        if (/^is/) {
+        if (/fail /) {
             for (sort { $pgtype{$a}{define} cmp $pgtype{$b}{define} } keys %pgtype) {
-                printf $newfh qq{is (%-*s, %5s, '%s returns correct value');\n},
-                    3+$maxlen, $pgtype{$_}{define}, $pgtype{$_}{oid}, $pgtype{$_}{define};
+                printf $newfh qq{%-*s == %5s or (%s && fail ('%s returned wrong value: expected %s, got ' . %s));\n},
+                $maxlen, $pgtype{$_}{define}, $pgtype{$_}{oid}, '++$fails',
+                $pgtype{$_}{define},$pgtype{$_}{oid},$pgtype{$_}{define};
             }
-            print $newfh "\ndone_testing();\n";
+            print $newfh <<'EOT';
+
+if (!$fails) {
+    pass ('All types returned the correct value');
+}
+
+done_testing();
+EOT
             $step = 1;
             last;
         }
