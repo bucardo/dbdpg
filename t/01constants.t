@@ -15,6 +15,8 @@ use DBD::Pg qw(:pg_types :async);
 
 my $fails=0;
 
+## no critic (Lax::RequireConstantOnLeftSideOfEquality::ExceptEq)
+
 PG_ACLITEM                        ==  1033 or (++$fails && fail ('PG_ACLITEM returned wrong value: expected 1033, got ' . PG_ACLITEM));
 PG_ACLITEMARRAY                   ==  1034 or (++$fails && fail ('PG_ACLITEMARRAY returned wrong value: expected 1034, got ' . PG_ACLITEMARRAY));
 PG_ANY                            ==  2276 or (++$fails && fail ('PG_ANY returned wrong value: expected 2276, got ' . PG_ANY));
