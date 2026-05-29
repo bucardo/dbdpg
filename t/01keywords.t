@@ -9,6 +9,10 @@ select(($|=1,select(STDERR),$|=1)[1]);
 
 use DBD::Pg ();
 
+my $all_ok = 1;
+my $count = 0;
+my $t;
+
 for (
 # BEGIN GENERATED KEYWORDS
   'abort',
@@ -486,11 +490,22 @@ for (
   'zone',
 # END GENERATED KEYWORDS
 ) {
-  # This tests only positive results.
-  # Negative results should be foolproof, because is_keyword always ends with a strcmp()
-  ok (DBD::Pg::db::_is_keyword($_), $_);
+    # This tests only positive results.
+    # Negative results should be foolproof, because is_keyword always ends with a strcmp()
+    $count++;
+    if (! DBD::Pg::db::_is_keyword($_)) {
+        $t="Keyword is not recognized: $_";
+        fail ($t);
+        $all_ok = 0;
+    }
 }
+if ($all_ok) {
+    $t="Verified $count keywords successfully";
+    pass ($t);
+}
+
 # ...but why not test just one negative result
-ok (!DBD::Pg::db::_is_keyword('notakeyword'), 'notakeyword'); ## nospellcheck
+$t='Verified a non-keyword does not identify as one';
+ok (!DBD::Pg::db::_is_keyword('turnstep'), $t);
 
 done_testing;
