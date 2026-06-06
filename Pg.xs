@@ -799,6 +799,107 @@ pg_putcopyend(dbh)
     OUTPUT:
         RETVAL
 
+I32
+pg_pipeline_status(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_pipeline_status(dbh);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_enter_pipeline_mode(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_enter_pipeline_mode(dbh);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_exit_pipeline_mode(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_exit_pipeline_mode(dbh);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_pipeline_sync(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_pipeline_sync(dbh);
+    OUTPUT:
+        RETVAL
+
+void
+pg_getresult(dbh)
+    SV * dbh
+    CODE:
+        ST(0) = pg_db_getresult(dbh);
+
+I32
+pg_send_query_params(dbh, sql, ...)
+    INPUT:
+        SV * dbh
+        char * sql
+    PREINIT:
+        AV * params = NULL;
+    CODE:
+        if (items > 2 && SvROK(ST(2)) && SvTYPE(SvRV(ST(2))) == SVt_PVAV) {
+            params = (AV *)SvRV(ST(2));
+        }
+        RETVAL = pg_db_send_query_params(dbh, sql, params);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_send_prepare(dbh, name, sql)
+    INPUT:
+        SV * dbh
+        char * name
+        char * sql
+    CODE:
+        RETVAL = pg_db_send_prepare(dbh, name, sql);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_send_query_prepared(dbh, name, ...)
+    INPUT:
+        SV * dbh
+        char * name
+    PREINIT:
+        AV * params = NULL;
+    CODE:
+        if (items > 2 && SvROK(ST(2)) && SvTYPE(SvRV(ST(2))) == SVt_PVAV) {
+            params = (AV *)SvRV(ST(2));
+        }
+        RETVAL = pg_db_send_query_prepared(dbh, name, params);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_send_flush_request(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_send_flush_request(dbh);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_flush(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_flush(dbh);
+    OUTPUT:
+        RETVAL
+
 void
 getline(dbh, buf, len)
     PREINIT:
