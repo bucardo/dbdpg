@@ -73,7 +73,7 @@ sql_type_info_t* sql_type_data(int);
 #define                  PG_NUMMULTIRANGE  4532
 #define                       PG_NUMRANGE  3906
 #define                            PG_OID  26
-#define                           PG_OID8  8256
+#define                           PG_OID8  6437
 #define                      PG_OIDVECTOR  30
 #define                           PG_PATH  602
 #define                   PG_PG_ATTRIBUTE  75
@@ -96,7 +96,7 @@ sql_type_info_t* sql_type_data(int);
 #define                       PG_REGCLASS  2205
 #define                   PG_REGCOLLATION  4191
 #define                      PG_REGCONFIG  3734
-#define                    PG_REGDATABASE  8326
+#define                    PG_REGDATABASE  6490
 #define                  PG_REGDICTIONARY  3769
 #define                   PG_REGNAMESPACE  4089
 #define                        PG_REGOPER  2203
@@ -172,7 +172,7 @@ sql_type_info_t* sql_type_data(int);
 #define                   PG_NUMERICARRAY  1231
 #define             PG_NUMMULTIRANGEARRAY  6151
 #define                  PG_NUMRANGEARRAY  3907
-#define                      PG_OID8ARRAY  8261
+#define                      PG_OID8ARRAY  6442
 #define                       PG_OIDARRAY  1028
 #define                 PG_OIDVECTORARRAY  1013
 #define                      PG_PATHARRAY  1019
@@ -189,7 +189,7 @@ sql_type_info_t* sql_type_data(int);
 #define                  PG_REGCLASSARRAY  2210
 #define              PG_REGCOLLATIONARRAY  4192
 #define                 PG_REGCONFIGARRAY  3735
-#define               PG_REGDATABASEARRAY  8327
+#define               PG_REGDATABASEARRAY  6491
 #define             PG_REGDICTIONARYARRAY  3770
 #define              PG_REGNAMESPACEARRAY  4090
 #define                   PG_REGOPERARRAY  2208

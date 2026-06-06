@@ -162,7 +162,7 @@ dbdpg_test_postgres_versions.pl - Run the test suite against multiple versions o
   Postgres, both for compilation and target. Run with "--setup head,9.4,12" etc.
   to create Postgres directories in ~/pg, then run with no arguments to test all
   combinations. Specify one or more compilation versions with "-c" and one or more
-  target versions with "-r". For example, "-c 9.4,11 -r head"
+  target versions with "-r". For example, "-c 16,17 -r head"
 
 t/dbdpg_test_setup.pl - Common connection, schema creation, and schema destruction subs.
   Goes through a lot of trouble to try and get a database to test with.
@@ -189,6 +189,8 @@ t/03smethod.t - Tests all statement handle methods.
 
 t/04misc.t - Tests tracing, data_sources, $DBDPG_DEFAULT, and txn status changes.
 
+t/05leak.t - Memory leak tests.
+
 t/06bytea.t - Tests bytea manipulation.
 
 t/07copy.t - Tests COPY-related methods.
@@ -205,7 +207,7 @@ t/20savepoints.t - Test savepoints.
 
 t/30unicode.t - Test Unicode. Or at least UTF8.
 
-t/99cleanup.t - Removes anything we have created for the tests (e.g. tables)
+t/98cleanup.t - Removes anything we have created for the tests (e.g. tables)
 
 t/99_lint.t - Various minor code cleanliness checks. Requires TEST_CRITIC to be set.
 
@@ -539,6 +541,8 @@ current test table and other objects, use connect_database({nosetup => 1}).
 * Use the standard format for tests, and always provide an appropriate output text. 
 Abbreviations are encouraged, but be consistent throughout the file.
 
+* Every test name should be unique!
+
 * Make sure to test on different versions of PostgreSQL, DBI, and Perl. Use the SKIP 
 tag with an appropriate message if a test does not work on a particular version of 
 something (see 20savepoints.t for an example).
@@ -765,6 +769,12 @@ across all committed files (which is rare). Always give a good description
 of the exact changes made : assume that the log will be read independently 
 of a diff.
 
+* Make the first line of the commit a short but descriptive title. Add an empty
+line, then add more details. Reference the github or other links with a "Report:"
+line. If others helped the committer, add them each with their own "Co-authored-by:"
+line. Please credit the reports of the issue with a "Reported-by:" line. If relevant,
+add a "Security:" line. Refer to recent Postgres and DBD::Pg git logs for examples.
+
 * Don't forget to test for memory leaks, particularly if you are working with 
 the more complicated sections of dbdimp.c. For a quick check, enter a loop, 
 then watch the memory size using the top tool. Here's a quick checker:
@@ -803,7 +813,7 @@ while (1)
 == Resources ==
 ===============
 
-The primary resource is the mailing list, where the developers live.
+The primary resources are the mailing list, and the github repository.
 
 Subscribe with an email to dbd-pg-subscribe@perl.org
 
@@ -846,21 +856,6 @@ to find those obscure libpq functions quickly. You also may want to keep the lib
 
 All of the Postgres mailing lists:
 http://www.postgresql.org/community/lists/
-
-A great source for searching the pg documentation and mailing lists is:
-
-http://www.pgsql.ru/db/pgsearch/
-
-which allows you to limit the search by version: very helpful as we support multiple versions of PostgreSQL.
-
-There are many ways to search the Postgres mailing lists:
-
-http://postgresql.markmail.org/
-
-http://archives.postgresql.org/
-
-http://groups.google.com/ (add group:pgsql.*)
-
 
 * Perl
 

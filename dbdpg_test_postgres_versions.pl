@@ -206,7 +206,7 @@ for my $lib_version (shuffle @compile_versions) {
         printf {$fh} "STARTED $lib_version vs $target_version: %s\n\n", scalar localtime;
         my $start_time = [gettimeofday];
 
-        system "perl t/99cleanup.t >> $outfile";
+        system "perl t/98cleanup.t >> $outfile";
 
         $COM = "LD_LIBRARY_PATH=$lib_dir/lib DBDPG_TEST_ALWAYS_ENV=0 AUTHOR_TESTING=0 TEST_SIGNATURE=0 DBDPG_INITDB=$target_dir/bin/initdb make test TEST_VERBOSE=1 2>&1 >> $outfile";
         $testfile and $COM =~ s/make test/make test TEST_FILES=$testfile/;

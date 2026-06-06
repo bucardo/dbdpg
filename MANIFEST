@@ -41,6 +41,7 @@ t/02attribs.t
 t/03dbmethod.t
 t/03smethod.t
 t/04misc.t
+t/05leak.t
 t/06bytea.t
 t/07copy.t
 t/08async.t
@@ -49,7 +50,7 @@ t/10_pg_error_field.t
 t/12placeholders.t
 t/20savepoints.t
 t/30unicode.t
-t/99cleanup.t
+t/98cleanup.t
 
 t/lib/App/Info.pm
 t/lib/App/Info/Handler.pm

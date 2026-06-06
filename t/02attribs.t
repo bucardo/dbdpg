@@ -18,7 +18,7 @@ my (undef,undef,$dbh) = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 293;
+plan tests => 273;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -125,8 +125,7 @@ my ($testdsn, $testuser) = get_test_settings();
 $SQL = 'SELECT 123';
 $sth = $dbh->prepare($SQL);
 $sth->finish();
-
-$t='DB handle attribute "Statement" returns the last prepared query';
+$t='Database handle attribute "Statement" returns the last prepared query';
 $attrib = $dbh->{Statement};
 is ($attrib, $SQL, $t);
 
@@ -213,9 +212,9 @@ is ($attrib, 'Pg', $t);
 
 SKIP: {
 
-    $t='DB handle attribute "Name" returns same value as DBI_DSN';
+    $t='Database handle attribute "Name" returns same value as DBI_DSN';
     if (! length $testdsn or $testdsn !~ /^dbi:Pg:(.+)/) {
-        skip (q{Cannot test DB handle attribute "Name" invalid DBI_DSN}, 1);
+        skip (q{Cannot test Database handle attribute "Name" invalid DBI_DSN}, 1);
     }
     $expected = $1 || $ENV{PGDATABASE};
     defined $expected and length $expected or skip ('Cannot test unless database name known', 1);
@@ -229,11 +228,11 @@ SKIP: {
 # Test of the database handle attribute "RowCacheSize"
 #
 
-$t='DB handle attribute "RowCacheSize" returns undef';
+$t='Database handle attribute "RowCacheSize" returns undef';
 $attrib = $dbh->{RowCacheSize};
 is ($attrib, undef, $t);
 
-$t='Setting DB handle attribute "RowCacheSize" has no effect';
+$t='Database handle attribute "RowCacheSize" can be changed (with no effect)';
 $dbh->{RowCacheSize} = 42;
 $attrib = $dbh->{RowCacheSize};
 is ($attrib, undef, $t);
@@ -242,7 +241,7 @@ is ($attrib, undef, $t);
 # Test of the database handle attribute "Username"
 #
 
-$t='DB handle attribute "Username" returns the same value as DBI_USER';
+$t='Database handle attribute "Username" returns the same value as DBI_USER';
 SKIP: {
     if (! length $testuser) {
         skip ('Cannot test $dbh->{Username} unless DBI_USER is set', 1);
@@ -256,37 +255,19 @@ SKIP: {
 # Test of the "PrintWarn" database handle attribute
 #
 
-$t='DB handle attribute "PrintWarn" defaults to on';
+$t='Database handle attribute "PrintWarn" defaults to on';
 my $value = $dbh->{PrintWarn};
 is ($value, 1, $t);
 
 {
 
+$t='Database handle attribute "PrintWarn" shows warnings when on';
+
 local $SIG{__WARN__} = sub { $warning .= shift; };
-
 $dbh->do(q{SET client_min_messages = 'DEBUG1'});
-$t='DB handle attribute "PrintWarn" works when on';
 $warning = q{};
-eval {
-    $dbh->do('CREATE TEMP TABLE dbd_pg_test_temp(id INT PRIMARY KEY)');
-};
-is ($@, q{}, $t);
-
-$t='DB handle attribute "PrintWarn" shows warnings when on';
+$dbh->do('CREATE TEMP TABLE dbd_pg_test_temp(id INT PRIMARY KEY)');
 like ($warning, qr{dbd_pg_test_temp}, $t);
-
-
-$t='DB handle attribute "PrintWarn" works when on';
-$dbh->rollback();
-$dbh->{PrintWarn}=0;
-$warning = q{};
-eval {
-    $dbh->do('CREATE TEMP TABLE dbd_pg_test_temp(id INT PRIMARY KEY)');
-};
-is ($@, q{}, $t);
-
-$t='DB handle attribute "PrintWarn" shows warnings when on';
-is ($warning, q{}, $t);
 
 $dbh->{PrintWarn}=1;
 $dbh->rollback();
@@ -325,29 +306,29 @@ is ($dbh->{pg_errorlevel}, 1, $t);
 # Test of the database handle attribute "pg_bool_tf"
 #
 
-$t='DB handle method "pg_bool_tf" starts as 0';
+$t='Database handle method "pg_bool_tf" starts as 0';
 $result = $dbh->{pg_bool_tf}=0;
 is ($result, 0, $t);
 
-$t=q{DB handle method "pg_bool_tf" returns '1' for true when on};
+$t=q{Database handle method "pg_bool_tf" returns '1' for true when off};
 $sth = $dbh->prepare('SELECT ?::bool');
 $sth->bind_param(1,1,SQL_BOOLEAN);
 $sth->execute();
 $result = $sth->fetchall_arrayref()->[0][0];
 is ($result, '1', $t);
 
-$t=q{DB handle method "pg_bool_tf" returns '0' for false when on};
+$t=q{Database handle method "pg_bool_tf" returns '0' for false when off};
 $sth->execute(0);
 $result = $sth->fetchall_arrayref()->[0][0];
 is ($result, '0', $t);
 
-$t=q{DB handle method "pg_bool_tf" returns 't' for true when on};
+$t=q{Database handle method "pg_bool_tf" returns 't' for true when on};
 $dbh->{pg_bool_tf}=1;
 $sth->execute(1);
 $result = $sth->fetchall_arrayref()->[0][0];
 is ($result, 't', $t);
 
-$t=q{DB handle method "pg_bool_tf" returns 'f' for true when on};
+$t=q{Database handle method "pg_bool_tf" returns 'f' for true when on};
 $sth->execute(0);
 $result = $sth->fetchall_arrayref()->[0][0];
 is ($result, 'f', $t);
@@ -356,11 +337,11 @@ is ($result, 'f', $t);
 # Test of the database handle attribute "pg_skip_deallocate"
 #
 
-$t='DB handle method "pg_skip_deallocate" starts as 0';
+$t='Database handle method "pg_skip_deallocate" starts as 0';
 $result = $dbh->{pg_skip_deallocate};
 is ($result, 0, $t);
 
-$t=q{DB handle method "pg_skip_deallocate" deallocates prepare statements when off};
+$t=q{Database handle method "pg_skip_deallocate" deallocates statements when off};
 ## pg_prepared_statements added in 8.2, so we don't bother with a skip block
 $SQL = 'SELECT count(*) from pg_prepared_statements';
 my $tempsth = $dbh->prepare('select * FROM pg_class WHERE reltuples = 42', {pg_prepare_now => 1});
@@ -369,12 +350,12 @@ $tempsth = $dbh->prepare('select * FROM pg_class WHERE relpages = 42', {pg_prepa
 my $new_count = $dbh->selectall_arrayref($SQL)->[0][0];
 is ($new_count, $initial_count-1, $t);
 
-$t=q{DB handle method "pg_skip_deallocate" returns '1' for true when enabled};
+$t=q{Database handle method "pg_skip_deallocate" returns '1' for true when enabled};
 $dbh->{pg_skip_deallocate} = 1;
 $result = $dbh->{pg_skip_deallocate};
 is ($result, 1, $t);
 
-$t=q{DB handle method "pg_skip_deallocate" deallocates prepare statements when off};
+$t=q{Database handle method "pg_skip_deallocate" does not deallocate statements when on};
 $tempsth = $dbh->prepare('select * FROM pg_class WHERE reltuples = 42', {pg_prepare_now => 1});
 $initial_count = $dbh->selectall_arrayref($SQL)->[0][0];
 $tempsth = $dbh->prepare('select * FROM pg_class WHERE relpages = 42', {pg_prepare_now => 0});
@@ -384,47 +365,47 @@ $dbh->{pg_skip_deallocate} = 0;
 
 ## Test of all the informational pg_* database handle attributes
 
-$t='DB handle attribute "pg_db" returns at least one character';
+$t='Database handle attribute "pg_protocol" returns at least one character';
 $result = $dbh->{pg_protocol};
 like ($result, qr/^[0-9]+$/, $t);
 
-$t='DB handle attribute "pg_db" returns at least one character';
+$t='Database handle attribute "pg_db" returns at least one character';
 $result = $dbh->{pg_db};
 ok (length $result, $t);
 
-$t='DB handle attribute "pg_user" returns a value';
+$t='Database handle attribute "pg_user" returns a value';
 $result = $dbh->{pg_user};
 ok (defined $result, $t);
 
-$t='DB handle attribute "pg_pass" returns a value';
+$t='Database handle attribute "pg_pass" returns a value';
 $result = $dbh->{pg_pass};
 ok (defined $result, $t);
 
-$t='DB handle attribute "pg_port" returns a number';
+$t='Database handle attribute "pg_port" returns a number';
 $result = $dbh->{pg_port};
 like ($result, qr/^[0-9]+$/, $t);
 
-$t='DB handle attribute "pg_default_port" returns a number';
+$t='Database handle attribute "pg_default_port" returns a number';
 $result = $dbh->{pg_default_port};
 like ($result, qr/^[0-9]+$/, $t);
 
-$t='DB handle attribute "pg_options" returns a value';
+$t='Database handle attribute "pg_options" returns a value';
 $result = $dbh->{pg_options};
 ok (defined $result, $t);
 
-$t='DB handle attribute "pg_socket" returns a value';
+$t='Database handle attribute "pg_socket" returns a value';
 $result = $dbh->{pg_socket};
 like ($result, qr/^[0-9]+$/, $t);
 
-$t='DB handle attribute "pg_pid" returns a value';
+$t='Database handle attribute "pg_pid" returns a value';
 $result = $dbh->{pg_pid};
 like ($result, qr/^[0-9]+$/, $t);
 
-$t='Using INSERT returns correct number of rows affected';
+$t='Database method do() returns correct number of rows affected by an INSERT';
 $SQL = q{INSERT INTO dbd_pg_test (id) VALUES (444),(445),(446)};
 is ($dbh->do($SQL), '3', $t);
 
-$t='Using UPDATE returns correct number of rows affected';
+$t='Database method do() returns correct number of rows affected by an UPDATE';
 $SQL = q{UPDATE dbd_pg_test SET pname = 'update_test' WHERE id IN (444,445,446)};
 is ($dbh->do($SQL), '3', $t);
 
@@ -434,12 +415,12 @@ SKIP: {
         skip ('Cannot test MERGE return value on pre 15 servers', 1);
     }
 
-    $t='Using MERGE returns correct number of rows affected';
+    $t='Database method do() returns correct number of rows affected by a MERGE';
     $SQL = q{MERGE into dbd_pg_test d using (select 1) as f on (d.id between 444 and 446) when matched then update set pname=''};
     is ($dbh->do($SQL), '3', $t);
 }
 
-$t='Using DELETE returns correct number of rows affected';
+$t='Database method do() returns correct number of rows affected by a DELETE';
 $SQL = q{DELETE from dbd_pg_test WHERE id IN (444,445,446)};
 is ($dbh->do($SQL), '3', $t);
 
@@ -449,16 +430,16 @@ SKIP: {
         skip ('Cannot test standard_conforming_strings on this version of Postgres', 3);
     }
 
-    $t='DB handle attribute "pg_standard_conforming_strings" returns a valid value';
+    $t='Database handle attribute "pg_standard_conforming_strings" returns a valid value';
     my $oldscs = $dbh->{pg_standard_conforming_strings};
     like ($oldscs, qr/^on|off$/, $t);
 
-    $t='DB handle attribute "pg_standard_conforming_strings" returns correct value';
+    $t='Database handle attribute "pg_standard_conforming_strings" returns correct value when set on';
     $dbh->do('SET standard_conforming_strings = on');
     $result = $dbh->{pg_standard_conforming_strings};
     is ($result, 'on', $t);
 
-    $t='DB handle attribute "pg_standard_conforming_strings" returns correct value';
+    $t='Database handle attribute "pg_standard_conforming_strings" returns correct value when set off';
     $dbh->do('SET standard_conforming_strings = off');
     $result = $dbh->{pg_standard_conforming_strings};
     $dbh->do("SET standard_conforming_strings = $oldscs");
@@ -467,39 +448,41 @@ SKIP: {
 
 # Attempt to test whether or not we can get unicode out of the database
 SKIP: {
+
+    my $encode_tests = 4;
+
     eval { require Encode; };
-    skip ('Encode module is needed for unicode tests', 5) if $@;
+
+    if ($@) {
+        skip ('Encode module is needed for unicode tests', $encode_tests);
+    }
 
     my $server_encoding = $dbh->selectall_arrayref('SHOW server_encoding')->[0][0];
-    skip ('Cannot reliably test unicode without a UTF8 database', 5)
-        if $server_encoding ne 'UTF8';
+    if ($server_encoding ne 'UTF8') {
+        skip ('Cannot reliably test unicode without a UTF8 database', $encode_tests);
+    }
 
     $SQL = 'SELECT pname FROM dbd_pg_test WHERE id = ?';
     $sth = $dbh->prepare($SQL);
     $sth->execute(1);
     local $dbh->{pg_enable_utf8} = 1;
 
-    $t='Quote method returns correct utf-8 characters';
+    $t='Database method quote() returns correct utf-8 characters';
     my $utf8_str = chr(0x100).'dam'; # LATIN CAPITAL LETTER A WITH MACRON
     is ($dbh->quote( $utf8_str ),  "'$utf8_str'", $t);
 
-    $t='Able to insert unicode character into the database';
+    $t='Database method do() inserts utf-8 characters correctly';
     $SQL = "INSERT INTO dbd_pg_test (id, pname, val) VALUES (40, '$utf8_str', 'Orange')";
     is ($dbh->do($SQL), '1', $t);
 
-    $t='Able to read unicode (utf8) data from the database';
+    $t='Statement method fetchrow_array() returns a proper utf-8 string';
     $sth->execute(40);
     my $name = $sth->fetchrow_array();
     ok (Encode::is_utf8($name), $t);
 
-    $t='Unicode (utf8) data returned from database is not corrupted';
+    $t='Statement method fetchrow_array() returns correct utf-8 string';
     is ($name, $utf8_str, $t);
 
-    $t='ASCII text returned from database does have utf8 bit set';
-    $sth->finish();
-    $sth->execute(1);
-    my $name2 = $sth->fetchrow_array();
-    ok (Encode::is_utf8($name2), $t);
     $sth->finish();
 }
 
@@ -509,7 +492,7 @@ SKIP: {
 
 undef $sth;
 
-$t='Attribute "Warn" attribute set on by default';
+$t='Database attribute "Warn" set on by default';
 ok ($dbh->{Warn}, $t);
 
 $t='Statement handle inherits the "Warn" attribute';
@@ -518,7 +501,7 @@ $sth = $dbh->prepare($SQL);
 $sth->finish();
 ok ($sth->{Warn}, $t);
 
-$t='Able to turn off the "Warn" attribute in the database handle';
+$t='Database attribute "Warn" can be disabled';
 $dbh->{Warn} = 0;
 ok (! $dbh->{Warn}, $t);
 
@@ -582,56 +565,51 @@ $t='Statement handle attribute "NUM_OF_PARAMS" works correctly after execute';
 $sth->execute(12);
 is ($sth->{'NUM_OF_PARAMS'}, 1, $t);
 
-$t='Statement handle attribute "NUM_OF_FIELDS" works correctly for SELECT statements';
+$t='Statement handle attribute "NUM_OF_FIELDS" works correctly after execute';
 is ($sth->{'NUM_OF_FIELDS'}, 2, $t);
 
-$t='Statement handle attribute "NAME" works correctly for SELECT statements';
+$t='Statement handle attribute "NAME" works correctly after execute';
 my $colnames = ['Sheep', 'id'];
 my $actual = $sth->{'NAME'};
 is_deeply ($actual, $colnames, $t);
 
-$t='Statement handle attribute "NAME" returns correct string lengths';
-is (length($actual->[0]), 5, $t);
-is (length($actual->[1]), 2, $t);
-my $expected_length = 5;
-for my $x (@$actual) {
-    is (length($x), $expected_length, $t);
-    $expected_length -= 3;
-}
+$t='Statement handle attribute "NAME" returns correct string length';
+is (length($actual->[0]), 5, "$t for column 1");
+is (length($actual->[1]), 2, "$t for column 2");
 
-$t='Statement handle attribute "NAME_lc" works correctly for SELECT statements';
+$t='Statement handle attribute "NAME_lc" works correctly after execute';
 $colnames = ['sheep', 'id'];
 is_deeply ($sth->{'NAME_lc'}, $colnames, $t);
 
-$t='Statement handle attribute "NAME_uc" works correctly for SELECT statements';
+$t='Statement handle attribute "NAME_uc" works correctly after execute';
 $colnames = ['SHEEP', 'ID'];
 is_deeply ($sth->{'NAME_uc'}, $colnames, $t);
 
-$t='Statement handle attribute "NAME_hash" works correctly for SELECT statements';
+$t='Statement handle attribute "NAME_hash" works correctly after execute';
 $colnames = {'Sheep' => 0, id => 1};
 is_deeply ($sth->{'NAME_hash'}, $colnames, $t);
 
-$t='Statement handle attribute "NAME_lc_hash" works correctly for SELECT statements';
+$t='Statement handle attribute "NAME_lc_hash" works correctly after execute';
 $colnames = {'sheep' => 0, id => 1};
 is_deeply ($sth->{'NAME_lc_hash'}, $colnames, $t);
 
-$t='Statement handle attribute "NAME_uc_hash" works correctly for SELECT statements';
+$t='Statement handle attribute "NAME_uc_hash" works correctly after execute';
 $colnames = {'SHEEP' => 0, ID => 1};
 is_deeply ($sth->{'NAME_uc_hash'}, $colnames, $t);
 
-$t='Statement handle attribute "TYPE" works correctly for SELECT statements';
+$t='Statement handle attribute "TYPE" works correctly after execute';
 $colnames = [4, 6];
 is_deeply ($sth->{'TYPE'}, $colnames, $t);
 
-$t='Statement handle attribute "PRECISION" works correctly';
+$t='Statement handle attribute "PRECISION" works correctly after execute';
 $colnames = [4, 8];
 is_deeply ($sth->{'PRECISION'}, $colnames, $t);
 
-$t='Statement handle attribute "SCALE" works correctly';
+$t='Statement handle attribute "SCALE" works correctly after execute';
 $colnames = [undef,undef];
 is_deeply ($sth->{'SCALE'}, $colnames, $t);
 
-$t='Statement handle attribute "NULLABLE" works correctly';
+$t='Statement handle attribute "NULLABLE" works correctly after execute';
 $colnames = [2,2];
 is_deeply ($sth->{NULLABLE}, $colnames, $t);
 
@@ -645,15 +623,15 @@ is ($sth->{'NUM_OF_PARAMS'}, 1, $t);
 $t='Statement handle attribute "NUM_OF_FIELDS" works correctly after finish';
 is ($sth->{'NUM_OF_FIELDS'}, 2, $t);
 
-$t='Statement handle attribute "NAME" returns values after finish';
+$t='Statement handle attribute "NAME" works correctly after finish';
 $colnames = ['Sheep', 'id'];
 is_deeply ($sth->{'NAME'}, $colnames, $t);
 
-$t='Statement handle attribute "NAME_lc" returns values after finish';
+$t='Statement handle attribute "NAME_lc" works correctly after finish';
 $colnames = ['sheep', 'id'];
 is_deeply ($sth->{'NAME_lc'}, $colnames, $t);
 
-$t='Statement handle attribute "NAME_uc" returns values after finish';
+$t='Statement handle attribute "NAME_uc" works correctly after finish';
 $colnames = ['SHEEP', 'ID'];
 is_deeply ($sth->{'NAME_uc'}, $colnames, $t);
 
@@ -692,34 +670,34 @@ $sth = $dbh->prepare('UPDATE dbd_pg_test SET id = 99 WHERE id = ?');
 $sth->execute(1);
 is_deeply ($sth->{'NUM_OF_FIELDS'}, undef, $t);
 
-$t='Statement handle attribute "NAME" returns empty arrayref for updates';
+$t='Statement handle attribute "NAME" returns empty arrayref after an update';
 is_deeply ($sth->{'NAME'}, [], $t);
 
-$t='Statement handle attribute "NAME_lc" returns empty arrayref for updates';
+$t='Statement handle attribute "NAME_lc" returns empty arrayref after an update';
 is_deeply ($sth->{'NAME_lc'}, [], $t);
 
-$t='Statement handle attribute "NAME_uc" returns empty arrayref for updates';
+$t='Statement handle attribute "NAME_uc" returns empty arrayref after an update';
 is_deeply ($sth->{'NAME_uc'}, [], $t);
 
-$t='Statement handle attribute "NAME_hash" returns empty hashref for updates';
+$t='Statement handle attribute "NAME_hash" returns empty hashref after an update';
 is_deeply ($sth->{'NAME_hash'}, {}, $t);
 
-$t='Statement handle attribute "NAME_uc_hash" returns empty hashref for updates';
+$t='Statement handle attribute "NAME_lc_hash" returns empty hashref after an update';
 is_deeply ($sth->{'NAME_lc_hash'}, {}, $t);
 
-$t='Statement handle attribute "NAME_uc_hash" returns empty hashref for updates';
+$t='Statement handle attribute "NAME_uc_hash" returns empty hashref after an update';
 is_deeply ($sth->{'NAME_uc_hash'}, {}, $t);
 
-$t='Statement handle attribute "TYPE" returns empty arrayref for updates';
+$t='Statement handle attribute "TYPE" returns empty arrayref after an update';
 is_deeply ($sth->{'TYPE'}, [], $t);
 
-$t='Statement handle attribute "PRECISION" returns empty arrayref for updates';
+$t='Statement handle attribute "PRECISION" returns empty arrayref after an update';
 is_deeply ($sth->{'PRECISION'}, [], $t);
 
-$t='Statement handle attribute "SCALE" returns empty arrayref for updates';
+$t='Statement handle attribute "SCALE" returns empty arrayref after an update';
 is_deeply ($sth->{'SCALE'}, [], $t);
 
-$t='Statement handle attribute "NULLABLE" returns empty arrayref for updates';
+$t='Statement handle attribute "NULLABLE" returns empty arrayref after an update';
 is_deeply ($sth->{'NULLABLE'}, [], $t);
 
 $dbh->do('UPDATE dbd_pg_test SET id = 1 WHERE id = 99');
@@ -764,7 +742,7 @@ SKIP: {
     $t='Statement handle attribute "SCALE3" returns correct info for RETURNING updates';
     is_deeply ($sth->{'SCALE'}, [undef,2,undef], $t);
 
-    $t='Statement handle attribute "NULLABLE4" returns correct values for updates';
+    $t='Statement handle attribute "NULLABLE" returns correct info for RETURNING updates';
     is_deeply ($sth->{'NULLABLE'}, [0,1,1], $t);
 
     $dbh->do('UPDATE dbd_pg_test SET id = 1 WHERE id = 99');
@@ -804,7 +782,7 @@ SKIP: {
     $t='Statement handle attribute "NULLABLE" returns empty arrayref for inserts';
     is_deeply ($sth->{'NULLABLE'}, [0,0,1,1], $t);
 
-    $t='Statement handle attribute "NUM_OF_FIELDS" returns correct value for RETURNING updates';
+    $t='Statement handle attribute "NUM_OF_FIELDS" returns correct value for RETURNING deletes';
     $sth = $dbh->prepare('DELETE FROM dbd_pg_test WHERE id = 88 RETURNING id, lii, expo, "CaseTest"');
     $sth->execute();
     is_deeply ($sth->{'NUM_OF_FIELDS'}, 4, $t);
@@ -836,7 +814,7 @@ SKIP: {
     $t='Statement handle attribute "SCALE" returns correct info for RETURNING deletes';
     is_deeply ($sth->{'SCALE'}, [undef,undef,2,undef], $t);
 
-    $t='Statement handle attribute "NULLABLE" returns empty arrayref for deletes';
+    $t='Statement handle attribute "NULLABLE" returns empty arrayref for RETURNING deletes';
     is_deeply ($sth->{'NULLABLE'}, [0,0,1,1], $t);
 
 }
@@ -917,7 +895,8 @@ $sth = $dbh->prepare('INSERT INTO dbd_pg_test (id, val, pname) VALUES (?, ?, "")
 $sth->bind_param(1, 1234);
 $sth->bind_param(2, $tvalue, {pg_type => PG_BYTEA});
 $attrib = $sth->{ParamValues};
-is ($attrib->{2}, $tvalue);
+is ($attrib->{2}, $tvalue, $t);
+
 
 #
 # Test of the statement handle attribute "ParamTypes"
@@ -948,15 +927,6 @@ $sth->bind_param(':foobar2', 'TMW', {pg_type => PG_TEXT});
 $attrib = $sth->{ParamTypes};
 $expected = {':foobar' => {TYPE => SQL_INTEGER}, ':foobar2' => {TYPE => SQL_LONGVARCHAR}, ':foobar3' => undef};
 is_deeply ($attrib, $expected, $t);
-
-$t='Statement handle attributes "ParamValues" and "ParamTypes" can be passed back to bind_param';
-eval {
-    my $vals = $sth->{ParamValues};
-    my $types = $sth->{ParamTypes};
-    $sth->bind_param($_, $vals->{$_}, $types->{$_} )
-        for keys %$types;
-};
-is( $@, q{}, $t);
 
 $t='Statement handle attribute "ParamTypes" works after execute';
 $sth->bind_param(':foobar3', 3, {pg_type => PG_INT2});
@@ -1007,7 +977,7 @@ $sth->finish();
 # Test of the statement handle attribute "pg_oid_status"
 #
 
-$t='Statement handle attribute "pg_oid_status" returned a numeric value after insert';
+$t='Statement handle attribute "pg_oid_status" returns a numeric value after insert';
 $SQL = q{INSERT INTO dbd_pg_test (id, val) VALUES (?, 'lemon')};
 $sth = $dbh->prepare($SQL);
 $sth->bind_param('$1','',SQL_INTEGER);
@@ -1072,23 +1042,22 @@ $dbh->pg_cancel();
 is ($sth->{pg_async_status}, 0, $t);
 $t=q{Database handle attribute "pg_async_status" returns a 0 after a cancel};
 is ($dbh->{pg_async_status}, 0, $t);
-sleep 3;
 
 #
 # Test of the handle attribute "Active"
 #
 
 
-$t='Database handle attribute "Active" is true while connected';
+$t='Database handle attribute "Active" is true';
 $attrib = $dbh->{Active};
 is ($attrib, 1, $t);
 
-
+$t='Database handle attribute "Active" is false after prepare()';
 $sth = $dbh->prepare('SELECT 123 UNION SELECT 456');
 $attrib = $sth->{Active};
 is ($attrib, '', $t);
 
-$t='Statement handle attribute "Active" is true after SELECT';
+$t='Statement handle attribute "Active" is true after execute()';
 $sth->execute();
 $attrib = $sth->{Active};
 is ($attrib, 1, $t);
@@ -1098,7 +1067,7 @@ $sth->fetchrow_arrayref();
 $attrib = $sth->{Active};
 is ($attrib, 1, $t);
 
-$t='Statement handle attribute "Active" is false after finish called';
+$t='Statement handle attribute "Active" is false after finish()';
 $sth->finish();
 $attrib = $sth->{Active};
 is ($attrib, '', $t);
@@ -1157,16 +1126,16 @@ is ($sth->{Executed}, 1, $t);
 # Test of the handle attribute "Kids"
 #
 
-$t='Database handle attribute "Kids" is set properly';
+$t='Database handle attribute "Kids" works correctly for 1 kid';
 $attrib = $dbh3->{Kids};
 is ($attrib, 1, $t);
 
-$t='Database handle attribute "Kids" works';
+$t='Database handle attribute "Kids" works correctly for 2 kids';
 my $sth2 = $dbh3->prepare('SELECT 234');
 $attrib = $dbh3->{Kids};
 is ($attrib, 2, $t);
 
-$t='Statement handle attribute "Kids" is zero';
+$t='Statement handle attribute "Kids" is always zero';
 $attrib = $sth2->{Kids};
 is ($attrib, 0, $t);
 
@@ -1174,17 +1143,17 @@ is ($attrib, 0, $t);
 # Test of the handle attribute "ActiveKids"
 #
 
-$t='Database handle attribute "ActiveKids" is set properly';
+$t='Database handle attribute "ActiveKids" starts at 0';
 $attrib = $dbh3->{ActiveKids};
 is ($attrib, 0, $t);
 
-$t='Database handle attribute "ActiveKids" works';
+$t='Database handle attribute "ActiveKids" works correctly when kids >= 1';
 $sth2 = $dbh3->prepare('SELECT 234');
 $sth2->execute();
 $attrib = $dbh3->{ActiveKids};
 is ($attrib, 1, $t);
 
-$t='Statement handle attribute "ActiveKids" is zero';
+$t='Statement handle attribute "ActiveKids" is always zero';
 $attrib = $sth2->{ActiveKids};
 is ($attrib, 0, $t);
 $sth2->finish();
@@ -1193,9 +1162,11 @@ $sth2->finish();
 # Test of the handle attribute "CachedKids"
 #
 
-$t='Database handle attribute "CachedKids" is set properly';
+$t='Database handle attribute "CachedKids" starts at 0';
 $attrib = $dbh3->{CachedKids};
 is (keys %$attrib, 0, $t);
+
+$t='Database handle attribute "CachedKids" works correctly when 1 kid';
 my $sth4 = $dbh3->prepare_cached('select 1');
 $attrib = $dbh3->{CachedKids};
 is (keys %$attrib, 1, $t);
@@ -1251,7 +1222,7 @@ $dbh4->disconnect();
 # Test of the handle attribute "CompatMode"
 #
 
-$t='Database handle attribute "CompatMode" is set properly';
+$t='Database handle attribute "CompatMode" always returns false';
 $attrib = $dbh->{CompatMode};
 ok (!$attrib, $t);
 
@@ -1288,8 +1259,11 @@ is ($warning, undef, $t);
 SKIP: {
     $t = q{When client_min_messages is FATAL, we do our best to alert the caller it's a Bad Idea};
     $dbh->do(q{SET client_min_messages = 'FATAL'});
-    skip 'This version of PostgreSQL caps client_min_messages to ERROR', 1
-        unless $dbh->selectrow_array('SHOW client_min_messages') eq 'fatal';
+
+    my $cmm = $dbh->selectrow_array('SHOW client_min_messages');
+    if ($cmm ne 'fatal') {
+        skip ('This version of PostgreSQL caps client_min_messages to ERROR', 1);
+    }
 
     $dbh->{RaiseError} = 0;
     $dbh->{AutoCommit} = 1;
@@ -1360,7 +1334,7 @@ $t='Database handle attribute "HandleSetErr" is set properly';
 $attrib = $dbh->{HandleSetErr};
 ok (!$attrib, $t);
 
-$t='Database handle attribute "HandleSetErr" works as expected';
+$t='Database handle attribute "HandleSetErr"';
 undef $warning;
 $dbh->{HandleSetErr} = sub {
     #my ($h,$err,$errstr,$state,$method) = @_;
@@ -1371,22 +1345,10 @@ $dbh->{HandleSetErr} = sub {
 };
 eval {$sth = $dbh->last_insert_id('cat', 'schema', 'table', 'col', ['notahashref']); };
 ## Changing the state does not work yet.
-like ($@, qr{ERRSTR}, $t);
-is ($dbh->errstr, 'ERRSTR', $t); ## nospellcheck
-is ($dbh->err, '42', $t);
+like ($@, qr{ERRSTR}, "$t returns ERRSTR");
+is ($dbh->errstr, 'ERRSTR', "$t sets correct errstr()"); ## nospellcheck
+is ($dbh->err, '42', "$t sets correct err()");
 $dbh->{HandleSetErr} = 0;
-
-my $x = $dbh->errstr;
-$t='Database handle method "errstr" gives correct string length';
-is (length($x), 6, $t);
-$dbh->rollback();
-eval {
-    $dbh->do('SELECT 1/0');
-};
-$x = $dbh->errstr;
-ok (length($x) > 6, $t);
-$dbh->rollback();
-
 
 #
 # Test of the handle attribute "ErrCount"
@@ -1531,7 +1493,7 @@ is ($val, ' Raspberry ', $t);
 # Test of the handle attribute LongReadLen
 #
 
-$t='Handle attribute "LongReadLen" has been set properly';
+$t='Database handle attribute "LongReadLen" has been set properly';
 $attrib = $dbh->{LongReadLen};
 ok ($attrib, $t);
 
@@ -1539,7 +1501,7 @@ ok ($attrib, $t);
 # Test of the handle attribute LongTruncOk
 #
 
-$t='Handle attribute "LongTruncOk" has been set properly';
+$t='Database handle attribute "LongTruncOk" has been set properly';
 $attrib = $dbh->{LongTruncOk};
 ok (!$attrib, $t);
 
@@ -1547,7 +1509,7 @@ ok (!$attrib, $t);
 # Test of the handle attribute TaintIn
 #
 
-$t='Handle attribute "TaintIn" has been set properly';
+$t='Database handle attribute "TaintIn" has been set properly';
 $attrib = $dbh->{TaintIn};
 is ($attrib, '', $t);
 
@@ -1555,7 +1517,7 @@ is ($attrib, '', $t);
 # Test of the handle attribute TaintOut
 #
 
-$t='Handle attribute "TaintOut" has been set properly';
+$t='Database handle attribute "TaintOut" has been set properly';
 $attrib = $dbh->{TaintOut};
 is ($attrib, '', $t);
 
@@ -1563,20 +1525,20 @@ is ($attrib, '', $t);
 # Test of the handle attribute Taint
 #
 
-$t='Handle attribute "Taint" has been set properly';
+$t='Database handle attribute "Taint" has been set properly';
 $attrib = $dbh->{Taint};
 is ($attrib, '', $t);
 
-$t='The value of handle attribute "Taint" can be changed';
+$t='Database handle attribute "Taint" can be changed';
 $dbh->{Taint}=1;
 $attrib = $dbh->{Taint};
 is ($attrib, 1, $t);
 
-$t='Changing handle attribute "Taint" changes "TaintIn"';
+$t='Database handle attribute "Taint" changes "TaintIn"';
 $attrib = $dbh->{TaintIn};
 is ($attrib, 1, $t);
 
-$t='Changing handle attribute "Taint" changes "TaintOut"';
+$t='Database handle attribute "Taint" changes "TaintOut"';
 $attrib = $dbh->{TaintOut};
 is ($attrib, 1, $t);
 
@@ -1589,8 +1551,11 @@ is ($attrib, 1, $t);
 #
 
 SKIP: {
-    if ($DBI::VERSION < 1.55) {
-        skip ('DBI must be at least version 1.55 to test DB attribute "ReadOnly"', 8);
+
+    my $min_dbi_version = 1.55;
+
+    if ($DBI::VERSION < $min_dbi_version) {
+        skip (qq{DBI must be at least version $min_dbi_version to test DB attribute "ReadOnly"}, 6);
     }
 
     $t='Database handle attribute "ReadOnly" starts out undefined';
@@ -1610,40 +1575,28 @@ SKIP: {
     $result = $dbh4->selectall_arrayref('SELECT 12345')->[0][0];
     is ($result, 12345, $t);
 
-    $t='Database handle attribute "ReadOnly" prevents INSERT queries from working when on';
+    $t='Database handle attribute "ReadOnly" prevents INSERT queries';
     $SQL = 'INSERT INTO dbd_pg_test (id) VALUES (50)';
     eval { $dbh4->do($SQL); };
-    is($dbh4->state, '25006', $t);
+    is($dbh4->state, '25006', "$t via do()");
     $dbh4->rollback();
 
     $sth = $dbh4->prepare($SQL);
     eval { $sth->execute(); };
-    is($dbh4->state, '25006', $t);
+    is($dbh4->state, '25006', "$t via execute()");
     $dbh4->rollback();
 
-    $t='Database handle attribute "ReadOnly" allows INSERT queries when switched off';
-    $dbh4->{ReadOnly} = 0;
-    eval { $dbh4->do($SQL); };
-    is ($@, q{}, $t);
-    $dbh4->rollback();
-
-    $t='Database handle attribute "ReadOnly" allows INSERT queries when switched off';
-    $dbh4->{ReadOnly} = 0;
-    eval { $dbh4->do($SQL); };
-    is ($@, q{}, $t);
-    $dbh4->rollback();
-
+    $t='Database handle attribute "ReadOnly" has no effect if AutoCommit is on';
     $dbh4->{ReadOnly} = 1;
     $dbh4->{AutoCommit} = 1;
-    $t='Database handle attribute "ReadOnly" has no effect if AutoCommit is on';
     eval { $dbh4->do($SQL); };
-    is ($@, q{}, $t);
+    is ($@, q{}, "$t (for insert)");
 
     my $delete = 'DELETE FROM dbd_pg_test WHERE id = 50';
     $dbh4->do($delete);
     $sth = $dbh4->prepare($SQL);
     eval { $sth->execute(); };
-    is ($@, q{}, $t);
+    is ($@, q{}, "$t (for delete)");
 
     $dbh4->disconnect();
 }
@@ -1665,13 +1618,19 @@ $attrib = $dbh->{Active};
 is ($attrib, '', $t);
 
 SKIP: {
-    skip ('Cannot test database handle "AutoInactiveDestroy" on a non-forking system', 8)
-        if $^O =~ /Win/;
+
+    my $skip_tests = 8;
+
+    if ($^O =~ /Win/) {
+        skip ('Cannot test database handle "AutoInactiveDestroy" on a Windows system', $skip_tests);
+    }
 
     require Test::Simple;
 
-    skip ('Test::Simple version 0.47 or better required for testing of attribute "AutoInactiveDestroy"', 8)
-        if $Test::Simple::VERSION < 0.47;
+    my $min_ts_version = 0.47;
+    if ($Test::Simple::VERSION < $min_ts_version) {
+        skip (qq{Test::Simple version $min_ts_version or better required for testing of attribute "AutoInactiveDestroy"}, $skip_tests);
+    }
 
     # Test of forking. Hang on to your hats
 
@@ -1703,7 +1662,7 @@ SKIP: {
         }
 
         if ($destroy) {
-            $t=qq{Ping works after the child has exited ("AutoInactiveDestroy" = $destroy)};
+            $t=qq{Ping works after child exit ("AutoInactiveDestroy" = $destroy)};
             ok ($dbh->ping(), $t);
 
             $t='Successful ping returns a SQLSTATE code of 00000 (empty string)';
@@ -1719,77 +1678,9 @@ SKIP: {
             $t=qq{Ping fails after the child has exited ("AutoInactiveDestroy" = $destroy)};
             is ( $dbh->ping(), 0, $t);
 
-            $t=qq{pg_ping gives an error code of -2 after the child has exited ("AutoInactiveDestroy" = $destroy)};
+            $t=qq{Database method pg_ping() returns -2 after child exit ("AutoInactiveDestroy" = $destroy)};
             is ( $dbh->pg_ping(), -2, $t);
             ok ($dbh->disconnect(), 'Disconnect from database');
-        }
-    }
-}
-
-# Disconnect in preparation for the fork tests
-ok ($dbh->disconnect(), 'Disconnect from database');
-
-$t='Database handle attribute "Active" is false after disconnect';
-$attrib = $dbh->{Active};
-is ($attrib, '', $t);
-
-SKIP: {
-    skip ('Cannot test database handle "InactiveDestroy" on a non-forking system', 7)
-        if $^O =~ /Win/;
-
-    require Test::Simple;
-
-    skip ('Test::Simple version 0.47 or better required for testing of attribute "InactiveDestroy"', 7)
-        if $Test::Simple::VERSION < 0.47;
-
-    # Test of forking. Hang on to your hats
-
-    my $answer = 42;
-    $SQL = "SELECT $answer FROM dbd_pg_test WHERE id > ? LIMIT 1";
-
-    for my $destroy (0,1) {
-
-        local $SIG{__WARN__} = sub { warn $_[0] unless $_[0] =~ /DESTROY failed: no connection/ }; # shut up destroy warning
-        $dbh = connect_database({nosetup => 1, AutoCommit => 1});
-        $sth = $dbh->prepare($SQL);
-        $sth->execute(1);
-        $sth->finish();
-
-        # Desired flow: parent test, child test, child kill, parent test
-
-        if (fork) {
-            $t=qq{Parent in fork test is working properly ("InactiveDestroy" = $destroy)};
-            $sth->execute(1);
-            $val = $sth->fetchall_arrayref()->[0][0];
-            is ($val, $answer, $t);
-            # Let the child exit first
-            select(undef,undef,undef,0.5);
-        }
-        else { # Child
-            $dbh->{InactiveDestroy} = $destroy;
-            select(undef,undef,undef,0.1); # Age before beauty
-            exit; ## Calls disconnect via DESTROY unless InactiveDestroy set
-        }
-
-        if ($destroy) {
-            $t=qq{Ping works after the child has exited ("InactiveDestroy" = $destroy)};
-            ok ($dbh->ping(), $t);
-
-            $t='Successful ping returns a SQLSTATE code of 00000 (empty string)';
-            my $state = $dbh->state();
-            is ($state, '', $t);
-
-            $t='Statement handle works after forking';
-            $sth->execute(1);
-            $val = $sth->fetchall_arrayref()->[0][0];
-            is ($val, $answer, $t);
-        }
-        else {
-            $t=qq{Ping fails after the child has exited ("InactiveDestroy" = $destroy)};
-            is ( $dbh->ping(), 0, $t);
-
-            $t=qq{pg_ping gives an error code of -2 after the child has exited ("InactiveDestroy" = $destroy)};
-            is ( $dbh->pg_ping(), -2,$t);
         }
     }
 }

@@ -3,13 +3,10 @@
 ## Make sure the version number is consistent in all places
 ## Check on the format of the Changes file
 
-use 5.010;
+use 5.008001;
 use strict;
 use warnings;
-use lib 'blib/lib', 'blib/arch', 't';
-use Data::Dumper;
 use Test::More;
-use feature 'unicode_strings';
 
 if (! $ENV{RELEASE_TESTING}) {
     plan (skip_all =>  'Test skipped unless environment variable RELEASE_TESTING is set');

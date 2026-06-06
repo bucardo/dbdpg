@@ -18,6 +18,15 @@ jobs:
       matrix:
         perl: [ '5.30', '5.36', '5.40', 'latest' ]
         postgres: [ '11', '13', '15', '17', 'latest' ]
+        compiler: [ 'gcc' ]
+        include:
+          # Add extra jobs for building with clang
+          - perl: 'latest'
+            postgres: 'latest'
+            compiler: 'clang'
+          - perl: '5.40'
+            postgres: '15'
+            compiler: 'clang'
 
     services:
       postgreshost:
@@ -31,7 +40,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
 
     runs-on: ubuntu-latest
     container: perl:${{ matrix.perl }}
@@ -47,6 +55,7 @@ jobs:
       run: |
         apt-get update
         apt-get install -y libaspell-dev
+        if [ "${{ matrix.compiler }}" = "clang" ]; then apt-get install -y clang; fi
 
     - name: Install Modules
       run: |
@@ -61,7 +70,14 @@ jobs:
 
     - name: Run make
       run: |
-        perl Makefile.PL
+        # Conditionally override the compiler for ExtUtils::MakeMaker
+        if [ "${{ matrix.compiler }}" = "clang" ]; then
+          clang --version
+          perl Makefile.PL CC=clang LD=clang OPTIMIZE="$(perl -MConfig -e 'print $Config{optimize}') -Werror"
+        else
+          gcc --version
+          perl Makefile.PL OPTIMIZE="$(perl -MConfig -e 'print $Config{optimize}') -Werror"
+        fi
         make
 
     - name: Run tests
@@ -73,5 +89,3 @@ jobs:
         DBI_USER: test_user
       run: |
         make test
-
-

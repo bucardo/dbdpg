@@ -2,7 +2,7 @@
     Copyright (c) 2000-2026 Greg Sabino Mullane and others: see the Changes file
     Portions Copyright (c) 1997-2000 Edmund Mergl
     Portions Copyright (c) 1994-1997 Tim Bunce
-    
+
     You may distribute under the terms of either the GNU General Public
     License or the Artistic License, as specified in the Perl README file.
 */
@@ -50,7 +50,7 @@ struct imp_dbh_st {
     bool    client_encoding_utf8; /* is the client_encoding utf8 last we checked? */
 
     PGresult  *last_result;     /* PGresult structure from the last executed query (can be from imp_dbh or imp_sth) */
-    bool      result_clearable; /* Is it alright to call PQclear on last_result? (statements handles set it to false */
+    bool      result_shared;    /* Is more than one thing pointing to this PGresult? */
     imp_sth_t *do_tmp_sth;      /* temporary sth to refer inside a do() call */
 };
 
@@ -212,7 +212,7 @@ SV* dbd_st_canonical_ids(SV *sth, imp_sth_t *imp_sth);
 SV* dbd_st_canonical_names(SV *sth, imp_sth_t *imp_sth);
 
 
-/* 
+/*
    Everything else should map back to the DBI version, or be handled by Pg.pm
    TODO: Explicitly map out each one.
 */
@@ -232,7 +232,7 @@ long pg_quickexec (SV *dbh, const char *sql, const int asyncflag);
 
 int pg_db_putline (SV *dbh, SV *svbuf);
 
-int pg_db_getline (SV *dbh, SV * svbuf, int length);
+int pg_db_getline (SV *dbh, SV * svbuf);
 
 int pg_db_getcopydata (SV *dbh, SV * dataline, int async);
 

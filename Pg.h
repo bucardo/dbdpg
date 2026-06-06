@@ -118,6 +118,7 @@ DBISTATE_DECLARE;
 #define TRACE_PQBACKENDPID         TRACE_XX "%sPQbackendPID\n",          THEADER_slow)
 #define TRACE_PQCANCEL             TRACE_XX "%sPQcancel\n",              THEADER_slow)
 #define TRACE_PQCLEAR              TRACE_XX "%sPQclear\n",               THEADER_slow)
+#define TRACE_PQCLOSEPREPARED      TRACE_XX "%sPQclosePrepared\n",       THEADER_slow)
 #define TRACE_PQCMDSTATUS          TRACE_XX "%sPQcmdStatus\n",           THEADER_slow)
 #define TRACE_PQCMDTUPLES          TRACE_XX "%sPQcmdTuples\n",           THEADER_slow)
 #define TRACE_PQCONNECTDB          TRACE_XX "%sPQconnectdb\n",           THEADER_slow)

@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use 5.008001;
 
-our $VERSION = '3.20.1';
+our $VERSION = '3.21.0';
 
 1;
 
@@ -27,8 +27,8 @@ DBD::Pg
 
 =head1 DESCRIPTION
 
-This bundle includes all the modules needed for DBD::Pg (the Perl 
-interface to the Postgres database system). Please feel free to 
+This bundle includes all the modules needed for DBD::Pg (the Perl
+interface to the Postgres database system). Please feel free to
 ask for help or report any problems to dbd-pg@perl.org.
 
 =cut

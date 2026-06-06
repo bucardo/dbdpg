@@ -6,7 +6,6 @@ use 5.008001;
 use strict;
 use warnings;
 use Test::More;
-use File::Find;
 
 my (@testfiles,@perlfiles,@cfiles,@headerfiles,%fileslurp,$t);
 
@@ -15,10 +14,68 @@ if (! $ENV{AUTHOR_TESTING}) {
 }
 
 $ENV{LANG} = 'C';
-find (sub { push @cfiles      => $File::Find::name if /^[^.].+\.c$/ and $_ ne 'Pg.c' and $File::Find::dir !~ /tmp|DBD-Pg/; }, '.');
-find (sub { push @headerfiles => $File::Find::name if /^[^.].+\.h$/ and $_ ne 'dbivport.h' and $File::Find::dir !~ /tmp/; }, '.');
-find (sub { push @testfiles   => $File::Find::name if /^[^.]\w+\.(t|pl)$/; }, 't');
-find (sub { push @perlfiles   => $File::Find::name if /^[^.].+\.(pm|pl|t)$/ and $File::Find::dir !~ /tmp/; }, '.');
+
+my ($all_ok, $count);
+
+my $file = 'MANIFEST';
+if (! -e $file) {
+    plan (skip_all => "Could not find the $file file");
+    exit;
+}
+
+open my $fh, '<', $file or die "Could not open $file: $!\n";
+@perlfiles = map { chomp; $_ } grep { /\.pm$/ or /\.t$/ } <$fh>;
+seek $fh ,0, 0;
+@testfiles = map { chomp; $_ } grep { m{t/.*\.t$} } <$fh>;
+seek $fh ,0, 0;
+@headerfiles = map { chomp; $_ } grep { m{\.h$} } <$fh>;
+seek $fh ,0, 0;
+@cfiles = map { chomp; $_ } grep { m{\.c$} } <$fh>;
+close $fh;
+
+## A few things are in MANIFEST.SKIP but we still want to check on them
+$file = 'MANIFEST.SKIP';
+if (! -e $file) {
+    plan (skip_all => "Could not find the $file file");
+    exit;
+}
+open $fh, '<', $file or die "Could not open $file: $!\n";
+push @testfiles => map { chomp; $_ } grep { m{t/.*\.t} } <$fh>;
+seek $fh, 0, 0;
+push @perlfiles => map { chomp; $_ } grep { m{t/.*\.t} } <$fh>;
+close $fh;
+
+##
+## Ensure all test names are unique
+##
+my %message;
+for my $file (@testfiles) {
+    open my $fh, '<', $file or die qq{Could not open "$file": $!\n};
+    while (my $line = <$fh>) {
+        chomp $line;
+        last if $line =~ /__DATA__/; ## perlcritic.t
+        next if $line !~ /^\s*\$t\b/;
+        next if $line !~ s/^\s*\$t\s*=\s*//;
+
+        $line =~ s/^'(.+)'.*/$1/;
+        $line =~ s/^"(.+)".*/$1/;
+        $line =~ s/^q\{(.+)\}.*/$1/;
+        $line =~ s/^qq\{(.+)\}.*/$1/;
+
+        ## Assume anything with a variable knows what it is doing
+        next if $line =~ /\$/;
+
+        if (exists $message{$line}) {
+            my $msg = sprintf 'Duplicated test name in file %s:%d:%d >>%s<<',
+                $file, $message{$line}, $., $line;
+            fail $msg;
+        }
+        $message{$line} = $.;
+
+    }
+    close $fh or die qq{Could not close "$file": $!\n};
+}
+
 
 ##
 ## Load all Test::More calls into memory
@@ -41,13 +98,11 @@ for my $file (@testfiles) {
     close $fh or die qq{Could not close "$file": $!\n};
 }
 
-ok (@testfiles, 'Found files in test directory');
-
 ##
 ## Make sure the README.dev mentions all files used, and jives with the MANIFEST
 ##
-my $file = 'README.dev';
-open my $fh, '<', $file or die qq{Could not open "$file": $!\n};
+$file = 'README.dev';
+open $fh, '<', $file or die qq{Could not open "$file": $!\n};
 my $point = 1;
 my %devfile;
 while (<$fh>) {
@@ -87,6 +142,8 @@ close $fh or die qq{Could not close "$file": $!\n};
 
 
 ## Make sure each PQxx() call has a matching TRACE above it
+$all_ok = 1;
+$count = 0;
 for my $file (@cfiles) {
     open $fh, '<', $file or die qq{Could not open "$file": $!\n};
     my $lastline = '';
@@ -106,8 +163,8 @@ for my $file (@cfiles) {
             next if $func eq 'PQgetvalue';
             next if $func eq 'PQbinaryTuples';
             next if $func eq 'PQflush';
-            next if $func eq 'PQclosePrepared';
 
+            $count++;
             my $uc = uc($func);
             next if $lastline =~ /TRACE_$uc\b/;
             next if $lastline !~ /;/ and $lastline2 =~ /TRACE_$uc\b/;
@@ -119,13 +176,15 @@ for my $file (@cfiles) {
         $lastline = $_;
     }
     close $fh;
-    if ($traceok) {
-        pass (qq{File "$file" has matching TRACE calls for each PQ function});
-    }
-    else {
+    if (!$traceok) {
         fail (qq{File "$file" does not have TRACE calls for each PQ function});
+        $all_ok = 0;
     }
 }
+if ($all_ok) {
+    pass (qq{Scanned $count locations; all PQ functions have matching TRACE calls});
+}
+
 
 ##
 ## Everything in MANIFEST[.SKIP] should also be in README.dev
@@ -151,36 +210,57 @@ for my $file (sort keys %devfile) {
 }
 
 ## All files in the repo should be mentioned in the README.dev
-my %gitfiles = map { chomp; $_, 1 } qx{git -c 'safe.directory=*' ls-files};
-for my $file (sort keys %gitfiles) {
-    next if $file =~ /^z_announcements/;
-    next if $file =~ /^\.git/;
-    if (!exists $devfile{$file}) {
-        fail qq{File "$file" is in the repo but not in the README.dev file};
+SKIP: {
+
+    skip 'Cannot verify repo contents when using Windows', 1 if $^O =~ /Win32/;
+
+    my %gitfiles = map { chomp; $_, 1 } qx{git -c 'safe.directory=*' ls-files};
+    for my $file (sort keys %gitfiles) {
+        next if $file =~ /^z_announcements/;
+        next if $file =~ /^\.git/;
+        if (!exists $devfile{$file}) {
+            fail qq{File "$file" is in the repo but not in the README.dev file};
+        }
     }
 }
 
 ##
 ## Make sure all Test::More function calls are standardized
 ##
+$all_ok = 1;
+$count = 0;
 for my $file (sort keys %fileslurp) {
     for my $linenum (sort {$a <=> $b} keys %{$fileslurp{$file}}) {
         for my $func (sort keys %{$fileslurp{$file}{$linenum}}) {
+            $count++;
             $t=qq{Test::More method "$func" is in standard format inside $file at line $linenum};
             my $line = $fileslurp{$file}{$linenum}{$func};
             ## Must be at start of line (optional whitespace and comment), a space, a paren, and something interesting
             next if $line =~ /testmorewords/;
             next if $line =~ /\w+ fail/;
             next if $line =~ /defined \$expected \? like/;
-            like ($line, qr{^\s*#?$func \(['\S]}, $t);
+            if ($line !~ qr{^\s*#?$func \(['\S]}) {
+                fail ($t);
+                $all_ok = 0;
+            }
         }
     }
+}
+if ($all_ok) {
+    pass ("Scanned $count test lines; all have correct format");
 }
 
 ##
 ## Check C and Perl files for errant tabs
 ##
+$all_ok = 1;
+$count = 0;
 for my $file (@cfiles, @headerfiles, @perlfiles) {
+
+    ## This one is special, and out of our control:
+    next if $file eq 'dbivport.h';
+
+    $count++;
     my $tabfail = 0;
     open my $fh, '<', $file or die "Could not open $file: $!\n";
     while (<$fh>) {
@@ -189,54 +269,81 @@ for my $file (@cfiles, @headerfiles, @perlfiles) {
     close $fh;
     if ($tabfail) {
         fail (qq{File "$file" contains one or more tabs: $tabfail});
-    }
-    else {
-        pass (qq{File "$file" has no tabs});
+        $all_ok = 0;
     }
 }
+if ($all_ok) {
+    pass ("Scanned $count files; none have tabs");
+}
+
+##
+## Check files for trailing spaces
+##
+$all_ok = 1;
+$count = 0;
+for my $file (@cfiles, @headerfiles, @perlfiles) {
+    my $spacefail = 0;
+    $count++;
+    open my $fh, '<', $file or die "Could not open $file: $!\n";
+    my $lastline = 0;
+    while (<$fh>) {
+        if (/ $/) {
+            $spacefail++;
+            $lastline = $.;
+            diag "found at $.";
+        }
+    }
+    close $fh;
+    if ($spacefail) {
+        fail (qq{File "$file" has this many lines with trailing spaces: $spacefail (last at $lastline)});
+        $all_ok = 0;
+    }
+}
+
+if ($all_ok) {
+    pass ("Scanned $count files; none have trailing spaces");
+}
+
 
 ##
 ## Make sure all Perl files request the same minimum version of Perl
 ##
-my $firstversion = 0;
+my $canonical_version = 5.008001;
 my %ver;
 for my $file (@perlfiles) {
 
     ## The App::Info items do not need this check
     next if $file =~ m{/App/Info};
 
-    ## Skip this one for now, it needs slightly higher version
-    next if $file =~ /00_release/;
-
     open my $fh, '<', $file or die "Could not open $file: $!\n";
     my $minversion = 0;
     while (<$fh>) {
         if (/^use ([0-9]+\.[0-9]+);$/) {
-            $minversion = $1;
-            $firstversion ||= $minversion;
-            $ver{$file} = $minversion;
+            $ver{$file} = $1;
             last;
         }
     }
 
     close $fh;
-    if ($minversion) {
-        pass (qq{Found a minimum Perl version of $minversion for the file $file});
-    }
-    else {
+    if (! exists $ver{$file}) {
         fail (qq{Failed to find a minimum Perl version for the file $file});
     }
 }
 
+$all_ok = 1;
+$count = 0;
 for my $file (sort keys %ver) {
     my $version = $ver{$file};
-    if ($version eq $firstversion) {
-        pass(qq{Correct minimum Perl version ($firstversion) for file $file});
-    }
-    else {
-        fail(qq{Wrong minimum Perl version ($version is not $firstversion) for file $file});
+    $count++;
+    if ($version ne $canonical_version) {
+        fail(qq{Wrong minimum Perl version ($version is not $canonical_version) for file $file});
+        $all_ok = 0;
     }
 }
+if ($all_ok) {
+    pass(qq{Scanned $count Perl files; all require version $canonical_version});
+}
+
 
 ##
 ## Check for stale or duplicated spelling words
@@ -259,7 +366,7 @@ for my $file (qw{
     README Changes TODO README.dev README.win32 CONTRIBUTING.md
     Pg.pm Pg.xs dbdimp.c quote.c Makefile.PL Pg.h types.c dbdimp.h
     t/01connect.t t/01constants.t t/02attribs.t t/03dbmethod.t t/03smethod.t
-    t/04misc.t t/12placeholders.t t/99_yaml.t
+    t/04misc.t t/05leak.t t/12placeholders.t t/99_yaml.t
     testme.tmp.pl dbdpg_test_postgres_versions.pl
 }) {
     open $fh, '<', $file or die "Could not open $file: $!\n";
@@ -287,7 +394,7 @@ for my $x (sort keys %word) {
 ## Make sure all ENV calls in Perl files are known words
 ##
 my $good_var_names = '
-DBI_DSN DBI_USER DBI_PASS
+DBI_DSN DBI_USER DBI_PASS DBI_DRIVER
 DBDPG_INITDB DBDPG_DEBUG DBDPG_NOCLEANUP DBDPG_TESTINITDB DBDPG_TEST_ALWAYS_ENV DBDPG_TEST_NOHELPFILE DBDPG_TEMPDIR
 DBDPG_TEST_LOCALE
 POSTGRES_HOME PGDATABASE PGINITDB
@@ -326,5 +433,59 @@ for my $file (qw{README Pg.pm Pg.xs Pg.h dbdimp.c dbdimp.h quote.c types.c}) {
 }
 pass $t;
 
+##
+## Verify that result_shared is always set properly when last_result is set
+##
+
+$all_ok = 1;
+$file = 'dbdimp.c';
+open $fh, '<', $file or die "Could not open $file: $!\n";
+$.=0;
+my $pointers = 0;
+while (<$fh>) {
+    chomp;
+
+    if ($pointers) {
+        if (1 == $pointers) {
+            $t = "Incorrect assignment of result_shared to false at $file line $.";
+            if (! / imp_dbh->result_shared = DBDPG_FALSE;/) {
+                fail($t);
+                $all_ok = 0;
+            }
+        }
+        elsif (2 == $pointers) {
+            $t = "Incorrect assignment of result_shared to true at $file line $.";
+            if (! / imp_dbh->result_shared = DBDPG_TRUE;/) {
+                fail($t);
+                $all_ok = 0;
+            }
+        }
+        else {
+            fail "Cannot handle more than two assignments for $file line $.";
+            $all_ok = 0;
+        }
+        $pointers = 0;
+    }
+
+    ## Find lines in which we are setting last_result to something
+    next if ! /last_result\s*=\s*(.+)/;
+
+    # Skip places where we simply are setting it to null
+    next if /=\s*NULL/;
+
+    ## How many things are we assigning to this? (expect one or two only)
+    $pointers = (tr/=//);
+    $pointers or die "Expected an assignment for $_\n";
+
+    ## If this is a single-line statement, we continue
+    next if /;$/;
+
+    ## Otherwise, go until we get a semi-colon
+    1 while <$fh> !~ /;/;
+}
+
+if ($all_ok) {
+    pass('All calls to last_result in dbdimp.c have correct result_shared');
+}
 
 done_testing();

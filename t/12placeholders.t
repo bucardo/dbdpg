@@ -114,7 +114,7 @@ eval {
 };
 like ($@, qr{when 0 are needed}, $t);
 
-$t='Execute with quoted ? fails with a placeholder';
+$t='Execute with quoted ? fails with a placeholder (backslashes)';
 $sql = q{SELECT pname FROM dbd_pg_test WHERE pname = '\\\\' AND pname = '?'};
 eval {
     $sth = $dbh->prepare($sql);

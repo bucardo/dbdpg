@@ -121,8 +121,8 @@ constant(name=Nullch)
     PG_NUMRANGE                       = 3906
     PG_NUMRANGEARRAY                  = 3907
     PG_OID                            = 26
-    PG_OID8                           = 8256
-    PG_OID8ARRAY                      = 8261
+    PG_OID8                           = 6437
+    PG_OID8ARRAY                      = 6442
     PG_OIDARRAY                       = 1028
     PG_OIDVECTOR                      = 30
     PG_OIDVECTORARRAY                 = 1013
@@ -161,8 +161,8 @@ constant(name=Nullch)
     PG_REGCOLLATIONARRAY              = 4192
     PG_REGCONFIG                      = 3734
     PG_REGCONFIGARRAY                 = 3735
-    PG_REGDATABASE                    = 8326
-    PG_REGDATABASEARRAY               = 8327
+    PG_REGDATABASE                    = 6490
+    PG_REGDATABASEARRAY               = 6491
     PG_REGDICTIONARY                  = 3769
     PG_REGDICTIONARYARRAY             = 3770
     PG_REGNAMESPACE                   = 4089
@@ -757,7 +757,7 @@ pg_getline(dbh, buf, len)
         buf = SvGROW(bufsv, 3);
         if (len > 3)
             buf = SvGROW(bufsv, len);
-        ret = pg_db_getline(dbh, bufsv, (int)len);
+        ret = pg_db_getline(dbh, bufsv);
         sv_setpv((SV*)ST(1), buf);
         SvSETMAGIC(ST(1));
         ST(0) = (-1 != ret) ? &PL_sv_yes : &PL_sv_no;
@@ -841,7 +841,7 @@ getline(dbh, buf, len)
         buf = SvGROW(bufsv, 3);
         if (len > 3)
             buf = SvGROW(bufsv, len);
-        ret = pg_db_getline(dbh, bufsv, (int)len);
+        ret = pg_db_getline(dbh, bufsv);
         sv_setpv((SV*)ST(1), buf);
         SvSETMAGIC(ST(1));
         ST(0) = (-1 != ret) ? &PL_sv_yes : &PL_sv_no;

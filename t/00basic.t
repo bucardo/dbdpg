@@ -23,7 +23,7 @@ BEGIN {
         my $fh;
         if (open $fh, '<', $file) { ## no critic (CompileTime)
             { local $/; $_ = <$fh>; }
-            close $fh or die qq{Could not close file "$file" $!\n}; ## no critic (CompileTime) 
+            close $fh or die qq{Could not close file "$file" $!\n}; ## no critic (CompileTime)
             for my $keyword (qw/ CCFLAGS INC LIBS /) {
                 if (/^#\s+$keyword => (.+)/m) {
                     diag "$keyword: $1";
