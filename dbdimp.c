@@ -2501,7 +2501,7 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_prepare_statement\n", THEADER_slow);
 
-    Renew(imp_sth->prepare_name, 25, char); /* freed in dbd_st_destroy */
+    Renew(imp_sth->prepare_name, 27, char); /* freed in dbd_st_destroy */
 
     /* Name is "dbdpg_xPID_#", where x is p for positive or n for negative */
     sprintf(imp_sth->prepare_name,"dbdpg_%c%d_%x",
