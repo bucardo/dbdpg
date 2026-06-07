@@ -47,6 +47,8 @@ Oid lo_import_with_oid (PGconn *conn, char *filename, unsigned int lobjId) {
 #define PG_DIAG_SEVERITY_NONLOCALIZED 'V'
 #endif
 
+#define MAX_PREPARE_NAME 27  /* "dbdpg_x" + 10 digit PID + _ + 8 hex + NUL */
+
 #ifndef PGErrorVerbosity
 typedef enum
     {
@@ -2489,29 +2491,29 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
 static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 {
     D_imp_dbh_from_sth;
-    char *       statement;
-    unsigned int placeholder_digits;
-    int          x, params;
-    STRLEN       execsize;
-    int          status;
-    seg_t *      currseg;
-    ph_t *       currph;
-    long         power_of_ten;
-
+    char *         statement;
+    unsigned int   placeholder_digits;
+    int            x, params;
+    STRLEN         execsize;
+    ExecStatusType status;
+    seg_t *        currseg;
+    ph_t *         currph;
+    long           power_of_ten;
+    int            send_prepare_status;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_prepare_statement\n", THEADER_slow);
 
-    Renew(imp_sth->prepare_name, 27, char); /* freed in dbd_st_destroy */
+    Safefree(imp_sth->prepare_name);
+    Newx(imp_sth->prepare_name, MAX_PREPARE_NAME, char); /* freed in dbd_st_destroy */
 
-    /* Name is "dbdpg_xPID_#", where x is p for positive or n for negative */
-    sprintf(imp_sth->prepare_name,"dbdpg_%c%d_%x",
+    /* Name is "dbdpg_xPID_#", where x = p for positive or n for negative */
+    snprintf(imp_sth->prepare_name, MAX_PREPARE_NAME, "dbdpg_%c%d_%x",
             (imp_dbh->pid_number < 0 ? 'n' : 'p'),
             abs(imp_dbh->pid_number),
             imp_dbh->prepare_number);
 
     if (TRACE5_slow)
-        TRC(DBILOGFP, "%sNew statement name (%s)\n",
-            THEADER_slow, imp_sth->prepare_name);
+        TRC(DBILOGFP, "%sNew statement name (%s)\n", THEADER_slow, imp_sth->prepare_name);
 
     execsize = imp_sth->totalsize;
     if (imp_sth->numphs!=0) {
@@ -2545,9 +2547,6 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 
     statement[execsize] = '\0';
 
-    if (TRACE6_slow)
-        TRC(DBILOGFP, "%sPrepared statement (%s)\n", THEADER_slow, statement);
-
     params = 0;
     if (imp_sth->numbound!=0) {
         params = imp_sth->numphs;
@@ -2561,46 +2560,54 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     if (TSQL)
         TRC(DBILOGFP, "PREPARE %s AS %s;\n\n", imp_sth->prepare_name, statement);
 
+    if (imp_sth->async_flag & PG_ASYNC) {
+        TRACE_PQSENDPREPARE;
+        send_prepare_status =
+            PQsendPrepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids);
+        Safefree(statement);
+
+        if (send_prepare_status) {
+            imp_sth->async_status = STH_ASYNC_PREPARE;
+            imp_dbh->async_sth = imp_sth;
+            if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_prepare_statement (async)\n", THEADER_slow);
+            return 0;
+        }
+
+        /* As this was never created, we do not want anything to later try and deallocate it */
+        Safefree(imp_sth->prepare_name);
+        imp_sth->prepare_name = NULL;
+
+        _fatal_sqlstate(aTHX_ imp_dbh);
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_prepare_statement (async error)\n", THEADER_slow);
+        return -2;
+
+    }
+
     CLEAR_LAST_RESULT(imp_dbh);
 
     CLEAR_STH_RESULT(imp_sth);
 
-    if (imp_sth->async_flag & PG_ASYNC) {
-        TRACE_PQSENDPREPARE;
-        status = PQsendPrepare(imp_dbh->conn, imp_sth->prepare_name, statement, params,
-                               imp_sth->PQoids);
-        if (status) {
-            imp_sth->async_status = STH_ASYNC_PREPARE;
-            imp_dbh->async_sth = imp_sth;
-        } else {
-            status = PGRES_FATAL_ERROR;
-            _fatal_sqlstate(aTHX_ imp_dbh);
-        }
-    } else {
-        TRACE_PQPREPARE;
-        imp_dbh->last_result = imp_sth->result = PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids);
-        imp_dbh->result_shared = DBDPG_TRUE;
-
-        status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
-        if (PGRES_COMMAND_OK == status) {
-            imp_sth->prepared_by_us = DBDPG_TRUE; /* Done here so deallocate is not called spuriously */
-            imp_dbh->prepare_number++;
-        }
-    }
-
+    TRACE_PQPREPARE;
+    imp_dbh->last_result = imp_sth->result =
+        PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids);
+    imp_dbh->result_shared = DBDPG_TRUE;
     Safefree(statement);
 
-    if (PGRES_COMMAND_OK != status) {
-        Safefree(imp_sth->prepare_name);
-        imp_sth->prepare_name = NULL;
-        TRACE_PQERRORMESSAGE;
-        pg_error(aTHX_ sth, status, PQerrorMessage(imp_dbh->conn));
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_prepare_statement (error)\n", THEADER_slow);
-        return -2;
+    status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
+
+    if (PGRES_COMMAND_OK == status) {
+        imp_sth->prepared_by_us = DBDPG_TRUE; /* Done here so deallocate is not called spuriously */
+        imp_dbh->prepare_number++;
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_prepare_statement\n", THEADER_slow);
+        return 0;
     }
 
-    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_prepare_statement\n", THEADER_slow);
-    return 0;
+    Safefree(imp_sth->prepare_name);
+    imp_sth->prepare_name = NULL;
+    TRACE_PQERRORMESSAGE;
+    pg_error(aTHX_ sth, status, PQerrorMessage(imp_dbh->conn));
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_prepare_statement (error)\n", THEADER_slow);
+    return -2;
 
 } /* end of pg_st_prepare_statement */
 
