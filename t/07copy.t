@@ -463,7 +463,7 @@ $t='pg_putcopyend_async completes the COPY';
 my $end_result = $dbh->pg_putcopyend_async();
 # May need to poll if result is 0 (not ready yet)
 my $poll_count = 0;
-while ($end_result == 0 && $poll_count < 100) {
+while (0 == $end_result && $poll_count < 100) {
     select(undef, undef, undef, 0.01);
     $end_result = $dbh->pg_putcopyend_async();
     $poll_count++;
@@ -528,22 +528,22 @@ $dbh->do("COPY $async_table FROM STDIN");
 my $async_ok = 1;
 for my $i (1..1000) {
     my $row_result = $dbh->pg_putcopydata_async("$i\tRow number $i\n");
-    if ($row_result == -1) {
+    if (-1 == $row_result) {
         $async_ok = 0;
         last;
     }
     # If buffer full (0), poll and retry
-    while ($row_result == 0) {
+    while (0 == $row_result) {
         select(undef, undef, undef, 0.001);
         $row_result = $dbh->pg_putcopydata_async("$i\tRow number $i\n");
     }
     # Flush after each successful queue
     my $flush = $dbh->pg_flush();
-    while ($flush == 1) {
+    while (1 == $flush) {
         select(undef, undef, undef, 0.001);
         $flush = $dbh->pg_flush();
     }
-    if ($flush == -1) {
+    if (-1 == $flush) {
         $async_ok = 0;
         last;
     }
@@ -553,7 +553,7 @@ ok ($async_ok, $t);
 $t='pg_putcopyend_async works after large data set';
 $end_result = $dbh->pg_putcopyend_async();
 $poll_count = 0;
-while ($end_result == 0 && $poll_count < 100) {
+while (0 == $end_result && $poll_count < 100) {
     select(undef, undef, undef, 0.01);
     $end_result = $dbh->pg_putcopyend_async();
     $poll_count++;
@@ -644,7 +644,7 @@ eval {
     $dbh->pg_flush();
     my $bend = $dbh->pg_putcopyend_async();
     my $bpoll = 0;
-    while ($bend == 0 && $bpoll < 100) {
+    while (0 == $bend && $bpoll < 100) {
         select(undef, undef, undef, 0.01);
         $bend = $dbh->pg_putcopyend_async();
         $bpoll++;
@@ -665,14 +665,14 @@ $dbh->do("COPY $async_table FROM STDIN");
 $dbh->pg_putcopydata_async("50\tFirstCycle\n");
 $dbh->pg_flush();
 my $e1 = $dbh->pg_putcopyend_async();
-while ($e1 == 0) { select(undef, undef, undef, 0.01); $e1 = $dbh->pg_putcopyend_async(); }
+while (0 == $e1) { select(undef, undef, undef, 0.01); $e1 = $dbh->pg_putcopyend_async(); }
 $dbh->commit();
 
 $dbh->do("COPY $async_table FROM STDIN");
 $dbh->pg_putcopydata_async("51\tSecondCycle\n");
 $dbh->pg_flush();
 my $e2 = $dbh->pg_putcopyend_async();
-while ($e2 == 0) { select(undef, undef, undef, 0.01); $e2 = $dbh->pg_putcopyend_async(); }
+while (0 == $e2) { select(undef, undef, undef, 0.01); $e2 = $dbh->pg_putcopyend_async(); }
 is ($e2, 1, $t);
 
 $t='Both async COPY cycles inserted data correctly';

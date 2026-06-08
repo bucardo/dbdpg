@@ -4480,7 +4480,7 @@ blocking variants.
 
 Return values match C<PQputCopyData>:
 
-  1  = data queued successfully (caller should call L</pg_flush> to send)
+  1  = data queued successfully (caller should call pg_flush to send)
   0  = output buffer full; caller should poll the socket for
        write-ready and retry the same pg_putcopydata_async call
   -1 = error
