@@ -786,7 +786,17 @@ pg_putcopydata(dbh, dataline)
         SV * dbh
         SV * dataline
     CODE:
-        RETVAL = pg_db_putcopydata(dbh, dataline);
+        RETVAL = pg_db_putcopydata(dbh, dataline, 0);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_putcopydata_async(dbh, dataline)
+    INPUT:
+        SV * dbh
+        SV * dataline
+    CODE:
+        RETVAL = pg_db_putcopydata(dbh, dataline, 1);
     OUTPUT:
         RETVAL
 
@@ -796,6 +806,24 @@ pg_putcopyend(dbh)
         SV * dbh
     CODE:
         RETVAL = pg_db_putcopyend(dbh);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_putcopyend_async(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_putcopyend_async(dbh);
+    OUTPUT:
+        RETVAL
+
+I32
+pg_flush(dbh)
+    INPUT:
+        SV * dbh
+    CODE:
+        RETVAL = pg_db_flush(dbh);
     OUTPUT:
         RETVAL
 
