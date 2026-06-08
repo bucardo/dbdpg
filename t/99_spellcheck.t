@@ -579,6 +579,7 @@ nosetup
 NOSUCH
 Server
 nullable
+NUL
 NULLABLE
 NULLs
 num
