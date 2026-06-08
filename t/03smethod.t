@@ -10,6 +10,7 @@ use 5.008001;
 use strict;
 use warnings;
 use lib 'blib/lib', 'blib/arch', 't';
+use Data::Dumper;
 use POSIX qw(:signal_h);
 use Test::More;
 use DBI ':sql_types';
@@ -22,7 +23,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 155;
+plan tests => 161;
 
 isnt ($dbh, undef, 'Connect to database for statement handle method testing');
 
@@ -649,8 +650,9 @@ SKIP: {
 }
 
 
+
 #
-# Test of the statement handle method pg_numbound()
+# Test of the statement handle attribute pg_numbound()
 #
 
 $dbh->rollback();
@@ -679,6 +681,31 @@ $sth->bind_param(1, undef);
 is ($sth->{pg_numbound}, 1, $t);
 
 #
+# Test of the statement handle attribute pg_segments()
+#
+
+$t=q{Statement handle attribute pg_segments returns correct arrayref (no placeholders)};
+$sth = $dbh->prepare('SELECT 123');
+is_deeply ($sth->{pg_segments}, [ 'SELECT 123' ], $t);
+
+$t=q{Statement handle attribute pg_segments returns correct arrayref (one placeholder at end)};
+$sth = $dbh->prepare('SELECT 123 WHERE "foo" = ?');
+is_deeply ($sth->{pg_segments}, [ 'SELECT 123 WHERE "foo" = ' ], $t);
+
+$t=q{Statement handle attribute pg_segments returns correct arrayref (one placeholder in middle)};
+$sth = $dbh->prepare('SELECT 123 WHERE "foo" = ? AND 1=1');
+is_deeply ($sth->{pg_segments}, [ 'SELECT 123 WHERE "foo" = ', ' AND 1=1' ], $t);
+
+$t=q{Statement handle attribute pg_segments returns correct arrayref (three placeholders)};
+$sth = $dbh->prepare('SELECT 123 WHERE "foo"=? AND "a"<? AND "b">? ');
+is_deeply ($sth->{pg_segments}, [
+               'SELECT 123 WHERE "foo"=',
+               ' AND "a"<',
+               ' AND "b">',
+               ' '
+           ], $t);
+
+#
 # Test of the statement handle method pg_async()
 #
 
@@ -702,23 +729,32 @@ is ($sth->{pg_async}, 0, $t);
 # Test of the statement handle method pg_bound()
 #
 
-$t=q{Statement handle attribute pg_bound returns an empty hash if no placeholders};
+$t=q{Statement handle attribute pg_bound returns an empty hash if no placeholders (prepare)};
 $sth = $dbh->prepare('SELECT 123');
 is_deeply ($sth->{pg_bound}, {}, $t);
 
+$t=q{Statement handle attribute pg_bound returns an empty hash if no placeholders (execute)};
 $sth->execute();
 is_deeply ($sth->{pg_bound}, {}, $t);
 
-$t=q{Statement handle attribute pg_bound returns correct value if no placeholders bound yet};
-$sth = $dbh->prepare('SELECT 123 WHERE 1 > ? AND 2 > ?');
+$t=q{Statement handle attribute pg_bound returns 0 for unbound single placeholder};
+$sth = $dbh->prepare('SELECT 123 WHERE 1 > ?');
+is_deeply ($sth->{pg_bound}, {1=>0}, $t);
+
+$t=q{Statement handle attribute pg_bound returns 1 for bound single placeholder};
+$sth->bind_param(1, 123);
+is_deeply ($sth->{pg_bound}, {1=>1}, $t);
+
+$t=q{Statement handle attribute pg_bound returns zeroes for two unbound placeholder};
+$sth = $dbh->prepare('SELECT 123 WHERE "a" = ? AND "b" = ?');
 is_deeply ($sth->{pg_bound}, {1=>0, 2=>0}, $t);
 
-$t=q{Statement handle attribute pg_bound returns correct value if one placeholder bound};
-$sth->bind_param(2, 123);
-is_deeply ($sth->{pg_bound}, {1=>0, 2=>1}, $t);
+$t=q{Statement handle attribute pg_bound returns correct value for first bound placeholder};
+$sth->bind_param(1, 111);
+is_deeply ($sth->{pg_bound}, {1=>1, 2=>0}, $t);
 
-$t=q{Statement handle attribute pg_bound returns correct value if two placeholders bound};
-$sth->bind_param(1, 123);
+$t=q{Statement handle attribute pg_bound returns correct value for second bound placeholder};
+$sth->bind_param(2, 222);
 is_deeply ($sth->{pg_bound}, {1=>1, 2=>1}, $t);
 
 #
