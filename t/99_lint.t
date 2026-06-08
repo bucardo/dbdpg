@@ -156,6 +156,9 @@ for my $file (@cfiles) {
                 diag "Failure at line $. for PQerrorMessage\n";
             }
         }
+        ## Specific exceptions
+        next if /ok to not trace/;
+
         while (/\b(PQ[a-z]\w+)\(/g) {
             my $func = $1;
             ## Items small and rare enough not to trace:
