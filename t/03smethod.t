@@ -25,7 +25,7 @@ if (! $dbh) {
 }
 plan tests => 161;
 
-isnt ($dbh, undef, 'Connect to database for statement handle method testing');
+isnt ($dbh, undef, 'Connect to database for statement handle testing');
 
 my ($SQL, $sth, $sth2, $result, @results, $expected, $rows, $t);
 
@@ -652,7 +652,7 @@ SKIP: {
 
 
 #
-# Test of the statement handle attribute pg_numbound()
+# Test of the statement handle attribute pg_numbound
 #
 
 $dbh->rollback();
@@ -681,7 +681,7 @@ $sth->bind_param(1, undef);
 is ($sth->{pg_numbound}, 1, $t);
 
 #
-# Test of the statement handle attribute pg_segments()
+# Test of the statement handle attribute pg_segments
 #
 
 $t=q{Statement handle attribute pg_segments returns correct arrayref (no placeholders)};
@@ -706,7 +706,7 @@ is_deeply ($sth->{pg_segments}, [
            ], $t);
 
 #
-# Test of the statement handle method pg_async()
+# Test of the statement handle attribute pg_async
 #
 
 $t=q{Statement handle attribute pg_async returns 0 if not set yet};
@@ -726,7 +726,7 @@ $sth = $dbh->prepare('SELECT 123', { pg_async => 0 });
 is ($sth->{pg_async}, 0, $t);
 
 #
-# Test of the statement handle method pg_bound()
+# Test of the statement handle attribute pg_bound
 #
 
 $t=q{Statement handle attribute pg_bound returns an empty hash if no placeholders (prepare)};
@@ -758,7 +758,7 @@ $sth->bind_param(2, 222);
 is_deeply ($sth->{pg_bound}, {1=>1, 2=>1}, $t);
 
 #
-# Test of the statement handle method pg_current_row()
+# Test of the statement handle attribute pg_current_row
 #
 
 $t=q{Statement handle attribute pg_current_row returns zero until first row fetched (prepare)};
@@ -828,7 +828,7 @@ SKIP: {
 }
 
 #
-# Test of the statement handle methods "pg_canonical_names"
+# Test of the statement handle method pg_canonical_names()
 #
 
 $t=q{Statement handle method pg_canonical_names() returns expected values};
