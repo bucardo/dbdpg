@@ -149,6 +149,10 @@ quote.c - Various methods to help quote and dequote variables. Some of this is
 
 quote.h - Header file for quote.c
 
+strbuf.c - Small library for string buffer handling
+
+strbuf.h - Header file for strbuf.c
+
 types.c - Lists all known data types for PostgreSQL.
   Can be run as a perl script to check for new types; rewrites the following:
   types.h types.c Pg.xs Pg.pm t/01constants.t 99_pod.t

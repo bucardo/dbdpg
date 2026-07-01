@@ -54,17 +54,7 @@ struct imp_dbh_st {
     imp_sth_t *do_tmp_sth;      /* temporary sth to refer inside a do() call */
 };
 
-
-/* Each statement is broken up into segments */
-struct seg_st {
-    char *segment;          /* non-placeholder string segment */
-    int placeholder;        /* which placeholder this points to, 0=none */
-    struct ph_st *ph;       /* points to the relevant ph structure */
-    struct seg_st *nextseg; /* linked lists are fun */
-};
-typedef struct seg_st seg_t;
-
-/* The placeholders are also a linked list */
+/* The placeholder structure. Used as array elements in the ph_array_t structure */
 struct ph_st {
     char  *fooname;             /* name if using :foo style */
     char  *value;               /* the literal passed-in value, may be binary */
@@ -76,11 +66,34 @@ struct ph_st {
     bool   iscurrent;           /* do we want to use a literal CURRENT_TIMESTAMP? */
     bool   isdefault;           /* are we passing a literal 'DEFAULT'? */
     bool   isinout;             /* is this a bind_param_inout value? */
-    SV     *inout;              /* what variable we are updating via inout magic */
+    SV     *inout;              /* what variable we are updating via inout magic (do not Safefree!) */
     sql_type_info_t* bind_type; /* type information for this placeholder */
-    struct ph_st *nextph;       /* more linked list goodness */
 };
 typedef struct ph_st ph_t;
+
+/* The array container for the placeholders */
+struct ph_array_st {
+    int length;   /* length of the array */
+    int elements; /* num of elements in the array */
+    ph_t *array;     /* the array of placeholders */
+};
+typedef struct ph_array_st ph_array_t;
+
+/* Each statement is broken up into segments */
+struct seg_st {
+    char *segment;          /* non-placeholder string segment */
+    int placeholder;        /* which placeholder this points to, 0=none */
+};
+typedef struct seg_st seg_t;
+
+/* The array container for the segments */
+struct seg_array_st {
+    int length;
+    int elements;
+    seg_t *array;
+};
+typedef struct seg_array_st seg_array_t;
+
 
 typedef enum
     {
@@ -119,8 +132,8 @@ struct imp_sth_st {
     PGresult  *result;       /* result structure from the executed query */
     sql_type_info_t **type_info; /* type of each column in result */
 
-    seg_t  *seg;             /* linked list of segments */
-    ph_t   *ph;              /* linked list of placeholders */
+    ph_array_t ph_array;     /* array of placeholders */
+    seg_array_t seg_array;   /* array of segments */
 
     bool   prepare_now;      /* prepare this statement right away, even if it has placeholders */
     bool   prepared_by_us;   /* false if {prepare_name} set directly */

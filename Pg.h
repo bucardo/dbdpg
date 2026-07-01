@@ -66,6 +66,7 @@ DBISTATE_DECLARE;
 #include "types.h"
 #include "dbdimp.h"
 #include "quote.h"
+#include "strbuf.h"
 
 #define TLEVEL_slow     (DBIS->debug & DBIc_TRACE_LEVEL_MASK)
 #define TFLAGS_slow     (DBIS->debug & DBIc_TRACE_FLAGS_MASK)
