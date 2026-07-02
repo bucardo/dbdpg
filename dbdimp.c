@@ -346,7 +346,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
         connect_string_size += strlen("user='' ") + 2*strlen(uid);
     if (*pwd)
         connect_string_size += strlen("password='' ") + 2*strlen(pwd);
-    New(0, conn_str, connect_string_size+1, char); /* freed in dbd_st_destroy */
+    New(0, conn_str, connect_string_size+1, char); /* freed below */
 
     /* Change all semi-colons in dbname to a space, unless single-quoted */
     dest = conn_str;
@@ -1425,8 +1425,8 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
             retsv = newRV_noinc((SV*)arr);
         }
         else if (strEQ("pg_numbound", key)) {
-            int p, num = 0;
-            for (p=0; p < ph_array_count(imp_sth); p++) {
+            int num = 0;
+            for (int p=0; p < ph_array_count(imp_sth); p++) {
                 ph_t *currph = ph_array_element(imp_sth, p);
                 num += NULL == currph->bind_type ? 0 : 1;
             }
@@ -2726,17 +2726,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
         phnum = atoi(name);
         if (phnum < 1 || phnum > imp_sth->numphs)
             croak("Cannot bind unknown placeholder %d (%s)", phnum, neatsvpv(ph_name,0));
-        found = 0;
-        for (int p=0; p < ph_array_count(imp_sth); p++) {
-            if ((p+1)==phnum) {
-                found = 1;
-                currph = ph_array_element(imp_sth, p);
-                break;
-            }
-        }
-
-        if (!found)
-            croak("Cannot bind unknown placeholder %d", phnum);
+        currph = ph_array_element(imp_sth, phnum - 1);
     }
 
     /* Check the value */
@@ -3640,7 +3630,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         if (imp_sth->has_binary) {
             if (NULL == imp_sth->PQlens) {
                 Newz(0, imp_sth->PQlens, (size_t)imp_sth->numphs, int); /* freed in dbd_st_destroy */
-                Newz(0, imp_sth->PQfmts, (size_t)imp_sth->numphs, int); /* freed below */
+                Newz(0, imp_sth->PQfmts, (size_t)imp_sth->numphs, int); /* freed in dbd_st_destroy */
             }
             for (p=0; p < ph_array_count(imp_sth); p++) {
                 ph_t *currph = ph_array_element(imp_sth, p);
