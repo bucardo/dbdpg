@@ -299,7 +299,8 @@ static int after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
             PQfinish(imp_dbh->conn);
             imp_dbh->conn = NULL;
             sv_free((SV *)imp_dbh->savepoints);
-            if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login (error)\n", THEADER_slow);
+            Safefree(imp_dbh->sqlstate);
+            if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login6 (error)\n", THEADER_slow);
             return 1;
         }
     }
@@ -420,7 +421,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     Safefree(conn_str);
 
     /* Set the initial sqlstate */
-    Renew(imp_dbh->sqlstate, 6, char); /* freed in dbd_db_destroy */
+    Renew(imp_dbh->sqlstate, 6, char); /* freed below, or in dbd_db_destroy */
     strncpy(imp_dbh->sqlstate, "25P01", 6); /* "NO ACTIVE SQL TRANSACTION" */
 
     /* Check to see that the backend connection was successfully made */
@@ -436,7 +437,8 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
         PQfinish(imp_dbh->conn);
         imp_dbh->conn = NULL;
         sv_free((SV *)imp_dbh->savepoints);
-        if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login (error)\n", THEADER_slow);
+        Safefree(imp_dbh->sqlstate);
+        if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login6 (error)\n", THEADER_slow);
         return 0;
     }
 
@@ -476,11 +478,11 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
     else
         retval = ! after_connect_init(aTHX_ dbh, imp_dbh);
 
-    if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login\n", THEADER_slow);
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login6\n", THEADER_slow);
 
     return retval;
 
-} /* end of dbd_db_login */
+} /* end of dbd_db_login6 */
 
 int pg_db_continue_connect(SV *dbh)
 {
