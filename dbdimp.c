@@ -1885,6 +1885,9 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
     /* Break the statement into segments by placeholder */
     pg_st_split_statement(aTHX_ imp_sth, statement);
 
+    /* Tell DBI to call destroy when this handle ends */
+    DBIc_IMPSET_on(imp_sth);
+
     /*
       We prepare it right away if:
       1. The statement is DML
@@ -1917,9 +1920,6 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
         if (STH_ASYNC_PREPARE == imp_sth->async_status)
             imp_dbh->async_status = 1;
     }
-
-    /* Tell DBI to call destroy when this handle ends */
-    DBIc_IMPSET_on(imp_sth);
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_prepare\n", THEADER_slow);
     return 1;
