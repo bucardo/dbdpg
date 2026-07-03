@@ -2858,6 +2858,7 @@ done_testing();
 exit;
 
 sub socket_fail {
+    ## This will cause a memory leak
     my $ldbh = shift;
     $ldbh->{InactiveDestroy} = 1;
     my $fd = $ldbh->{pg_socket} or die 'Could not determine socket';
