@@ -279,11 +279,12 @@ $dbh->do("COPY $table TO STDOUT");
 eval {
     $dbh->pg_getcopydata('wrongo');
 };
-like ($@, qr{read-only}, $t);
+like ($@, qr{writeable scalar}, $t);
 
 $t='pg_getcopydata works and returns the length of the string';
 $data[0] = 'old';
 eval {
+    $dbh->pg_getcopydata($data[0]);
     $dbh->pg_getcopydata($data[0]);
 };
 is ($@, q{}, $t);

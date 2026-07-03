@@ -4448,6 +4448,10 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
     if (PGRES_COPY_OUT != imp_dbh->copystate && PGRES_COPY_BOTH != imp_dbh->copystate)
         croak("pg_getcopydata can only be called directly after issuing a COPY TO command\n");
 
+    /* The arg to pg_db_getcopydata must be a writeable var */
+    if (SvREADONLY(dataline))
+        croak("pg_getcopydata: argument must be a writeable scalar");
+
     tempbuf = NULL;
 
     TRACE_PQGETCOPYDATA;
