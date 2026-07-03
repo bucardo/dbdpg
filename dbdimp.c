@@ -1882,11 +1882,11 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
         }
     }
 
-    /* Break the statement into segments by placeholder */
-    pg_st_split_statement(aTHX_ imp_sth, statement);
-
     /* Tell DBI to call destroy when this handle ends */
     DBIc_IMPSET_on(imp_sth);
+
+    /* Break the statement into segments by placeholder */
+    pg_st_split_statement(aTHX_ imp_sth, statement);
 
     /*
       We prepare it right away if:
