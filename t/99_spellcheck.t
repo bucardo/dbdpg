@@ -566,6 +566,7 @@ ne
 ness
 netstat
 newfh
+newlocale
 newSVpv
 Newz
 nmake

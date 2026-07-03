@@ -402,8 +402,11 @@ does interpreting its output, and deciding what is really a problem and what is 
 
 * Using valgrind
 
-We've not gotten valgrind to work against DBD::Pg, but would love to. Please email the list 
-if you manage to do so!
+Here's a basic recipe, using one test at a time:
+
+valgrind --leak-check=full --show-leak-kinds=definite,indirect perl t/01connect.t 2>valgrind.out
+
+grep -F .c valgrind.out | grep -P -v 'malloc|newlocale'
 
 * Using Devel::Cover
 
