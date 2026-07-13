@@ -786,7 +786,7 @@ sub build_command {
     my $effect = shift || '';
     my $x = 0;
 
-    $string =~ s!([A-Z]{2,})!
+    $string =~ s!([A-Z]{2}[A-Z_]+)!
       {
        my $var = $args->[$x++];
        if (not defined $var) {
