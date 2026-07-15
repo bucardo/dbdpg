@@ -125,6 +125,100 @@ static int pg_db_start_txn (pTHX_ SV *dbh, imp_dbh_t *imp_dbh);
 static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int asyncflag);
 static void pg_db_detect_client_encoding_utf8(pTHX_ imp_dbh_t *imp_dbh);
 
+static void ph_array_init(imp_sth_t *imp_sth)
+{
+    imp_sth->ph_array.length = 15;
+    imp_sth->ph_array.elements = 0;
+    Newz(0, imp_sth->ph_array.array, imp_sth->ph_array.length, ph_t);
+}
+
+static void ph_array_append(imp_sth_t *imp_sth, ph_t *data)
+{
+    if (imp_sth->ph_array.length == imp_sth->ph_array.elements) {
+        /* The array is full, realloc the array to make it bigger */
+        size_t new_length = imp_sth->ph_array.length;
+        if (new_length > SIZE_MAX / 2)
+            croak("ph_array_append: array too large");
+        new_length *= 2;
+        Renew(imp_sth->ph_array.array, new_length, ph_t);
+        imp_sth->ph_array.length = (int)new_length;
+    }
+
+    imp_sth->ph_array.array[imp_sth->ph_array.elements++] = *data;
+}
+
+static ph_t* ph_array_element(imp_sth_t *imp_sth, int idx)
+{
+    return &(imp_sth->ph_array.array[idx]);
+}
+
+static int ph_array_count(imp_sth_t *imp_sth)
+{
+    return imp_sth->ph_array.elements;
+}
+
+static void ph_array_destroy(imp_sth_t *imp_sth)
+{
+    for (int i = 0; i < imp_sth->ph_array.elements; i++) {
+        ph_t *elem = &(imp_sth->ph_array.array[i]);
+
+        Safefree(elem->fooname);
+        Safefree(elem->value);
+        Safefree(elem->quoted);
+        elem->bind_type = NULL;
+    }
+
+    Safefree(imp_sth->ph_array.array);
+    imp_sth->ph_array.array = NULL;
+    imp_sth->ph_array.length = 0;
+    imp_sth->ph_array.elements = 0;
+}
+
+static void seg_array_init(imp_sth_t *imp_sth)
+{
+    imp_sth->seg_array.length = 15;
+    imp_sth->seg_array.elements = 0;
+    Newz(0, imp_sth->seg_array.array, imp_sth->seg_array.length, seg_t);
+}
+
+static void seg_array_append(imp_sth_t *imp_sth, seg_t *data)
+{
+    if (imp_sth->seg_array.length == imp_sth->seg_array.elements) {
+        /* The array is full, realloc the array to make it bigger */
+        size_t new_length = imp_sth->seg_array.length;
+        if (new_length > SIZE_MAX / 2)
+            croak("seg_array_append: array too large");
+        new_length *= 2;
+        Renew(imp_sth->seg_array.array, new_length, seg_t);
+        imp_sth->seg_array.length = (int)new_length;
+    }
+
+    imp_sth->seg_array.array[imp_sth->seg_array.elements++] = *data;
+}
+
+static seg_t* seg_array_element(imp_sth_t *imp_sth, int idx)
+{
+    return &(imp_sth->seg_array.array[idx]);
+}
+
+static int seg_array_count(imp_sth_t *imp_sth)
+{
+    return imp_sth->seg_array.elements;
+}
+
+static void seg_array_destroy(imp_sth_t *imp_sth)
+{
+    for (int i = 0; i < imp_sth->seg_array.elements; i++) {
+        seg_t *elem = &(imp_sth->seg_array.array[i]);
+        Safefree(elem->segment);
+    }
+
+    Safefree(imp_sth->seg_array.array);
+    imp_sth->seg_array.array = NULL;
+    imp_sth->seg_array.length = 0;
+    imp_sth->seg_array.elements = 0;
+}
+
 static int do_send_cancel(SV *h, imp_dbh_t *imp_dbh, char const *caller)
 {
     dTHX;
@@ -1245,16 +1339,14 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 
         if (strEQ("pg_bound", key)) {
             HV *pvhv = newHV();
-            ph_t *currph;
-            int i;
-            for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
-                SV *key, *val;
-                key = pg_st_placeholder_key(imp_sth, currph, i);
-                val = newSViv(NULL == currph->bind_type ? 0 : 1);
-                if (! hv_store_ent(pvhv, key, val, 0)) {
+            for (int p=0; p < ph_array_count(imp_sth); p++) {
+                ph_t *currph = ph_array_element(imp_sth, p);
+                SV *phkey = pg_st_placeholder_key(imp_sth, currph, p);
+                SV *val = newSViv(NULL == currph->bind_type ? 0 : 1);
+                if (! hv_store_ent(pvhv, phkey, val, 0)) {
                     SvREFCNT_dec(val);
                 }
-                SvREFCNT_dec(key);
+                SvREFCNT_dec(phkey);
             }
             retsv = newRV_noinc((SV*)pvhv);
         }
@@ -1273,14 +1365,13 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 
         if (strEQ("ParamTypes", key)) {
             HV *pvhv = newHV();
-            ph_t *currph;
-            int i;
-            for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
-                SV *key, *val;
-                key = pg_st_placeholder_key(imp_sth, currph, i);
+            for (int p=0; p < ph_array_count(imp_sth); p++) {
+                ph_t *currph = ph_array_element(imp_sth, p);
+                SV *phkey = pg_st_placeholder_key(imp_sth, currph, p);
+                SV *val;
                 if (NULL == currph->bind_type) {
                     val = newSV(0);
-                    if (! hv_store_ent(pvhv, key, val, 0)) {
+                    if (! hv_store_ent(pvhv, phkey, val, 0)) {
                         SvREFCNT_dec(val);
                     }
                 }
@@ -1293,11 +1384,11 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
                         (void)hv_store(pvhv2, "pg_type", 7, newSViv(currph->bind_type->type_id), 0);
                     }
                     val = newRV_noinc((SV*)pvhv2);
-                    if (! hv_store_ent(pvhv, key, val, 0)) {
+                    if (! hv_store_ent(pvhv, phkey, val, 0)) {
                         SvREFCNT_dec(val);
                     }
                 }
-                SvREFCNT_dec(key);
+                SvREFCNT_dec(phkey);
             }
             retsv = newRV_noinc((SV*)pvhv);
         }
@@ -1307,43 +1398,41 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
 
         if (strEQ("ParamValues", key)) {
             HV *pvhv = newHV();
-            ph_t *currph;
-            int i;
-            for (i=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,i++) {
-                SV *key, *val;
-                key = pg_st_placeholder_key(imp_sth, currph, i);
+            for (int p=0; p < ph_array_count(imp_sth); p++) {
+                ph_t *currph = ph_array_element(imp_sth, p);
+                SV *phkey = pg_st_placeholder_key(imp_sth, currph, p);
+                SV *val;
                 if (NULL == currph->value) {
                     val = newSV(0);
-                    if (!hv_store_ent(pvhv, key, val, 0)) {
+                    if (!hv_store_ent(pvhv, phkey, val, 0)) {
                         SvREFCNT_dec(val);
                     }
                 }
                 else {
                     val = newSVpv(currph->value,currph->valuelen);
-                    if (!hv_store_ent(pvhv, key, val, 0)) {
+                    if (!hv_store_ent(pvhv, phkey, val, 0)) {
                         SvREFCNT_dec(val);
                     }
                 }
-                SvREFCNT_dec(key);
+                SvREFCNT_dec(phkey);
             }
             retsv = newRV_noinc((SV*)pvhv);
         }
         else if (strEQ("pg_segments", key)) {
             AV *arr = newAV();
-            seg_t *currseg;
-            int i;
-            for (i=0,currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg,i++) {
+            for (int s=0; s < seg_array_count(imp_sth); s++) {
+                seg_t *currseg = seg_array_element(imp_sth, s);
                 av_push(arr, newSVpv(currseg->segment ? currseg->segment : "NULL",0));
             }
             retsv = newRV_noinc((SV*)arr);
         }
         else if (strEQ("pg_numbound", key)) {
-            ph_t *currph;
-            int i = 0;
-            for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
-                i += NULL == currph->bind_type ? 0 : 1;
+            int num = 0;
+            for (int p=0; p < ph_array_count(imp_sth); p++) {
+                ph_t *currph = ph_array_element(imp_sth, p);
+                num += NULL == currph->bind_type ? 0 : 1;
             }
-            retsv = newSViv(i);
+            retsv = newSViv(num);
         }
         break;
 
@@ -1499,10 +1588,10 @@ SV * dbd_st_FETCH_attrib (SV * sth, imp_sth_t * imp_sth, SV * keysv)
                 TRACE_PQFTABLECOL;
                 y = PQftablecol(imp_sth->result, fields);
                 if (InvalidOid != o && y > 0) { /* We know what table and column this came from */
-                    char statement[128];
-                    sprintf(statement, "SELECT attnotnull FROM pg_catalog.pg_attribute WHERE attrelid=%u AND attnum=%d", o, y);
+                    char sqlstring[128];
+                    sprintf(sqlstring, "SELECT attnotnull FROM pg_catalog.pg_attribute WHERE attrelid=%u AND attnum=%d", o, y);
                     TRACE_PQEXEC;
-                    result = PQexec(imp_dbh->conn, statement);
+                    result = PQexec(imp_dbh->conn, sqlstring);
                     TRACE_PQRESULTSTATUS;
                     status = PQresultStatus(result);
                     if (PGRES_TUPLES_OK == status) {
@@ -1810,8 +1899,6 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
     imp_sth->firstword         = NULL;
     imp_sth->result            = NULL;
     imp_sth->type_info         = NULL;
-    imp_sth->seg               = NULL;
-    imp_sth->ph                = NULL;
     imp_sth->PQvals            = NULL;
     imp_sth->PQlens            = NULL;
     imp_sth->PQfmts            = NULL;
@@ -1825,6 +1912,10 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
     imp_sth->use_inout         = DBDPG_FALSE; /* Are any of the placeholders using inout? */
     imp_sth->all_bound         = DBDPG_FALSE; /* Have all placeholders been bound? */
     imp_sth->number_iterations = 0;
+
+    /* Create the array of placeholders and array of segments */
+    ph_array_init(imp_sth);
+    seg_array_init(imp_sth);
 
     /* We inherit some preferences from the database handle */
     imp_sth->server_prepare   = imp_dbh->server_prepare;
@@ -1947,20 +2038,19 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
 
     PGPlaceholderType placeholder_type; /* Which type we are in: one of none,?,$,: */
 
-     unsigned char ch; /* The current character being checked */
+    unsigned char ch; /* The current character being checked */
 
     unsigned char oldch; /* The previous character */
 
     signed char non_standard_strings = -1; /* Status 0=standard 1=non_standard -1=unknown  */
 
+    seg_t newseg;
+
     int xint;
-
-    seg_t *newseg, *currseg = NULL; /* Segment structures to help build linked lists */
-
-    ph_t *newph, *thisph, *currph = NULL; /* Placeholder structures to help build ll */
 
     bool statement_rewritten = DBDPG_FALSE;
     char * original_statement = NULL; /* Copy as needed so we can restore the original */
+    char * statement_start = statement; /* Safe point to rewind to */
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_split_statement\n", THEADER_slow);
     if (TRACE6_slow) TRC(DBILOGFP, "%spg_st_split_statement: (%s)\n", THEADER_slow, statement);
@@ -1974,24 +2064,24 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
             TRC(DBILOGFP, "%snot splitting due to %s\n",
                 THEADER_slow, imp_sth->direct ? "pg_direct" : "empty string");
         }
-        imp_sth->numsegs   = 1;
         imp_sth->numphs    = 0;
         imp_sth->totalsize = strlen(statement);
 
-        New(0, imp_sth->seg, 1, seg_t); /* freed in dbd_st_destroy */
-        imp_sth->seg->placeholder = 0;
-        imp_sth->seg->nextseg     = NULL;
-        imp_sth->seg->ph          = NULL;
+        newseg.placeholder = 0;
 
         if (imp_sth->totalsize > 0) {
-            New(0, imp_sth->seg->segment, imp_sth->totalsize+1, char); /* freed in dbd_st_destroy */
-            Copy(statement, imp_sth->seg->segment, imp_sth->totalsize+1, char);
+            New(0, newseg.segment, imp_sth->totalsize+1, char); /* freed in dbd_st_destroy */
+            Copy(statement, newseg.segment, imp_sth->totalsize+1, char);
+
         }
         else {
-            imp_sth->seg->segment = NULL;
+            newseg.segment = NULL;
         }
+        seg_array_append(imp_sth, &newseg);
+        imp_sth->numsegs = 1;
+
         if (TRACE6_slow) TRC(DBILOGFP, "%sdirect split = (%s) length=(%d)\n",
-                        THEADER_slow, imp_sth->seg->segment, (int)imp_sth->totalsize);
+                        THEADER_slow, newseg.segment, (int)imp_sth->totalsize);
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_split_statement (direct)\n", THEADER_slow);
         return;
     }
@@ -2223,8 +2313,8 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
         */
         if ('\\' == oldch && imp_dbh->ph_escaped) {
             if (! statement_rewritten) {
-                New(0, original_statement, strlen(statement-currpos)+1, char);
-                Copy(statement-currpos, original_statement, strlen(statement-currpos)+1, char);
+                New(0, original_statement, strlen(statement_start)+1, char);
+                Copy(statement-currpos, original_statement, strlen(statement_start)+1, char);
                 statement_rewritten = DBDPG_TRUE;
             }
 
@@ -2306,81 +2396,72 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
             continue;
 
         /* If we got here, we have a segment that needs to be saved */
-        New(0, newseg, 1, seg_t); /* freed in dbd_st_destroy */
-        newseg->nextseg = NULL;
-        newseg->placeholder = 0;
-        newseg->ph = NULL;
+        newseg.placeholder = 0;
 
         if (PLACEHOLDER_QUESTIONMARK == placeholder_type) {
-            newseg->placeholder = ++imp_sth->numphs;
+            newseg.placeholder = ++imp_sth->numphs;
         }
         else if (PLACEHOLDER_DOLLAR == placeholder_type) {
-            newseg->placeholder = atoi(statement-(currpos-sectionstop-1));
+            newseg.placeholder = atoi(statement-(currpos-sectionstop-1));
         }
         else if (PLACEHOLDER_COLON == placeholder_type) {
             STRLEN phsectionsize = currpos-sectionstop;
             /* Have we seen this placeholder yet? */
-            for (xint=1,thisph=imp_sth->ph; NULL != thisph; thisph=thisph->nextph,xint++) {
+            for (int p=0; p < ph_array_count(imp_sth); p++) {
+                ph_t *thisph = ph_array_element(imp_sth, p);
+                STRLEN fooname_len = strlen(thisph->fooname);
+                STRLEN best_len = fooname_len > phsectionsize ? fooname_len : phsectionsize;
                 /*
                   Because we need to make sure :foobar does not match as a previous
                    hit when seeing :foobar2, we always use the greater of the two lengths:
                    the length of the old name or the current name we are scanning
                 */
-                if (0==strncmp(thisph->fooname, statement-phsectionsize,
-                               strlen(thisph->fooname) > phsectionsize ? strlen(thisph->fooname) : phsectionsize)) {
-                    newseg->placeholder = xint;
-                    newseg->ph = thisph;
+                if (0==strncmp(thisph->fooname, statement-phsectionsize, best_len)) {
+                    newseg.placeholder = p+1;
                     break;
                 }
             }
-            if (0==newseg->placeholder) {
+            if (0==newseg.placeholder) {
+                ph_t newph;
+
                 imp_sth->numphs++;
-                newseg->placeholder = imp_sth->numphs;
-                New(0, newph, 1, ph_t); /* freed in dbd_st_destroy */
-                newseg->ph        = newph;
-                newph->nextph     = NULL;
-                newph->bind_type  = NULL;
-                newph->value      = NULL;
-                newph->quoted     = NULL;
-                newph->referenced = DBDPG_FALSE;
-                newph->defaultval = DBDPG_TRUE;
-                newph->isdefault  = DBDPG_FALSE;
-                newph->iscurrent  = DBDPG_FALSE;
-                newph->isinout    = DBDPG_FALSE;
-                New(0, newph->fooname, phsectionsize+1, char); /* freed in dbd_st_destroy */
-                Copy(statement-phsectionsize, newph->fooname, phsectionsize, char);
-                newph->fooname[phsectionsize] = '\0';
-                if (NULL==currph) {
-                    imp_sth->ph = newph;
-                }
-                else {
-                    currph->nextph = newph;
-                }
-                currph = newph;
+                newseg.placeholder = imp_sth->numphs;
+                newph.bind_type  = NULL;
+                newph.value      = NULL;
+                newph.quoted     = NULL;
+                newph.referenced = DBDPG_FALSE;
+                newph.defaultval = DBDPG_TRUE;
+                newph.isdefault  = DBDPG_FALSE;
+                newph.iscurrent  = DBDPG_FALSE;
+                newph.isinout    = DBDPG_FALSE;
+                newph.valuelen   = 0;
+                newph.quotedlen  = 0;
+
+                New(0, newph.fooname, phsectionsize+1, char); /* freed in dbd_st_destroy */
+                Copy(statement-phsectionsize, newph.fooname, phsectionsize, char);
+                newph.fooname[phsectionsize] = '\0';
+
+                ph_array_append(imp_sth, &newph);
+
             }
         } /* end if placeholder_type */
 
         sectionsize = sectionstop-sectionstart; /* 4-0 for "ABCD" */
         if (sectionsize>0) {
-            New(0, newseg->segment, sectionsize+1, char); /* freed in dbd_st_destroy */
-            Copy(statement-(currpos-sectionstart), newseg->segment, sectionsize, char);
-            newseg->segment[sectionsize] = '\0';
+            New(0, newseg.segment, sectionsize+1, char); /* freed in dbd_st_destroy */
+            Copy(statement-(currpos-sectionstart), newseg.segment, sectionsize, char);
+            newseg.segment[sectionsize] = '\0';
             imp_sth->totalsize += sectionsize;
         }
         else {
-            newseg->segment = NULL;
+            newseg.segment = NULL;
         }
         if (TRACE6_slow)
-            TRC(DBILOGFP, "%sCreated segment (%s)\n", THEADER_slow, newseg->segment);
+            TRC(DBILOGFP, "%sCreated segment (%s)\n", THEADER_slow, newseg.segment);
 
-        /* Tie it in to the previous one */
-        if (NULL==currseg) {
-            imp_sth->seg = newseg;
-        }
-        else {
-            currseg->nextseg = newseg;
-        }
-        currseg = newseg;
+        /* Add to the list of segments */
+        seg_array_append(imp_sth, &newseg);
+
         sectionstart = currpos;
         imp_sth->numsegs++;
 
@@ -2404,14 +2485,16 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
            numbers must be sequential. We change numphs if repeats found
         */
         int topdollar = 0;
-        for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
+        for (int s=0; s < seg_array_count(imp_sth); s++) {
+            seg_t *currseg = seg_array_element(imp_sth, s);
             if (currseg->placeholder > topdollar)
                 topdollar = currseg->placeholder;
         }
         /* Make sure every placeholder from 1 to topdollar is used at least once */
         for (xint=1; xint <= topdollar; xint++) {
             bool found = DBDPG_FALSE;
-            for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
+            for (int s=0; s < seg_array_count(imp_sth); s++) {
+                seg_t *currseg = seg_array_element(imp_sth, s);
                 if (currseg->placeholder==xint) {
                     found = DBDPG_TRUE;
                     break;
@@ -2427,30 +2510,22 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
     /* Create sequential placeholders */
     if (PLACEHOLDER_COLON != imp_sth->placeholder_type) {
         for (xint=1; xint <= imp_sth->numphs; xint++) {
-            New(0, newph, 1, ph_t); /* freed in dbd_st_destroy */
-            newph->nextph     = NULL;
-            newph->bind_type  = NULL;
-            newph->value      = NULL;
-            newph->quoted     = NULL;
-            newph->fooname    = NULL;
-            newph->referenced = DBDPG_FALSE;
-            newph->defaultval = DBDPG_TRUE;
-            newph->isdefault  = DBDPG_FALSE;
-            newph->iscurrent  = DBDPG_FALSE;
-            newph->isinout    = DBDPG_FALSE;
-            /* Let the correct segment(s) point to it */
-            for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-                if (currseg->placeholder==xint) {
-                    currseg->ph = newph;
-                }
-            }
-            if (NULL==currph) {
-                imp_sth->ph = newph;
-            }
-            else {
-                currph->nextph = newph;
-            }
-            currph = newph;
+            ph_t newph;
+
+            newph.bind_type  = NULL;
+            newph.value      = NULL;
+            newph.quoted     = NULL;
+            newph.fooname    = NULL;
+            newph.inout      = NULL;
+            newph.referenced = DBDPG_FALSE;
+            newph.defaultval = DBDPG_TRUE;
+            newph.isdefault  = DBDPG_FALSE;
+            newph.iscurrent  = DBDPG_FALSE;
+            newph.isinout    = DBDPG_FALSE;
+            newph.valuelen   = 0;
+            newph.quotedlen  = 0;
+
+            ph_array_append(imp_sth, &newph);
         }
     }
 
@@ -2459,16 +2534,17 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
             THEADER_slow, imp_sth->placeholder_type, imp_sth->numsegs, imp_sth->numphs);
         TRC(DBILOGFP, "%sPlaceholder numbers and segments:\n",
             THEADER_slow);
-        for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
+        for (int s=0; s < seg_array_count(imp_sth); s++) {
+            seg_t *currseg = seg_array_element(imp_sth, s);
             TRC(DBILOGFP, "%sPH: (%d) SEG: (%s)\n",
                 THEADER_slow, currseg->placeholder, currseg->segment);
         }
         if (imp_sth->numphs) {
             TRC(DBILOGFP, "%sPlaceholder number, fooname, id:\n", THEADER_slow);
             STRLEN xlen = 1;
-            for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph,xlen++) {
-                TRC(DBILOGFP, "%s#%d FOONAME: (%s)\n",
-                    THEADER_slow, (int)xlen, currph->fooname);
+            for (int p=0; p < ph_array_count(imp_sth); p++) {
+                ph_t *currph = ph_array_element(imp_sth, p);
+                TRC(DBILOGFP, "%s#%d FOONAME: (%s)\n", THEADER_slow, p+1, currph->fooname);
             }
         }
     }
@@ -2476,7 +2552,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
     DBIc_NUM_PARAMS(imp_sth) = imp_sth->numphs;
 
     if (statement_rewritten) {
-        Copy(original_statement, statement-currpos, strlen(original_statement)+1, char);
+        Copy(original_statement, statement_start, strlen(original_statement)+1, char);
     }
     Safefree(original_statement);
 
@@ -2493,15 +2569,9 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
 static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 {
     D_imp_dbh_from_sth;
-    char *         statement;
-    unsigned int   placeholder_digits;
-    int            x, params;
-    STRLEN         execsize;
-    ExecStatusType status;
-    seg_t *        currseg;
-    ph_t *         currph;
-    long           power_of_ten;
+    strbuf_t      *statement = NULL;
     int            send_prepare_status;
+    ExecStatusType prepare_status;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_st_prepare_statement\n", THEADER_slow);
 
@@ -2517,56 +2587,37 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     if (TRACE5_slow)
         TRC(DBILOGFP, "%sNew statement name (%s)\n", THEADER_slow, imp_sth->prepare_name);
 
-    execsize = imp_sth->totalsize;
-    if (imp_sth->numphs!=0) {
-        for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-            if (0==currseg->placeholder)
-                continue;
-            /* The parameter itself: dollar sign plus digit(s) */
-            power_of_ten = 10;
-            for (placeholder_digits=1; placeholder_digits<7; placeholder_digits++, power_of_ten *= 10) {
-                if (currseg->placeholder < power_of_ten)
-                    break;
-            }
-            if (placeholder_digits >= 7)
-                croak("Too many placeholders!");
-            execsize += placeholder_digits+1;
-        }
-    }
-
-    New(0, statement, execsize+1, char); /* freed below */
-
-    statement[0] = '\0';
 
     /* Construct the statement, with proper placeholders */
-    for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-        if (currseg->segment != NULL)
-            strcat(statement, currseg->segment);
-        if (currseg->placeholder) {
-            sprintf(strchr(statement, '\0'), "$%d", currseg->placeholder);
+    statement = strbuf_create(1024);
+    for (int s = 0; s < seg_array_count(imp_sth); s++) {
+        seg_t *currseg = seg_array_element(imp_sth, s);
+        if (currseg->segment) {
+            strbuf_append_text(statement, currseg->segment);
+        }
+        if (currseg->placeholder != 0) {
+            strbuf_append_dollar_placeholder(statement, currseg->placeholder);
         }
     }
 
-    statement[execsize] = '\0';
-
-    params = 0;
-    if (imp_sth->numbound!=0) {
-        params = imp_sth->numphs;
-        if (NULL == imp_sth->PQoids) {
-            Newz(0, imp_sth->PQoids, (unsigned int)imp_sth->numphs, Oid);
+    /* If the user has bound anything, send the entire array of oids */
+    if (imp_sth->numbound) {
+        if (!imp_sth->PQoids) {
+            Newz(0, imp_sth->PQoids, ph_array_count(imp_sth), Oid); /* freed in dbd_st_destroy */
         }
-        for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
-            imp_sth->PQoids[x++] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
+        for (int p = 0; p < ph_array_count(imp_sth); p++) {
+            ph_t *currph = ph_array_element(imp_sth, p);
+            imp_sth->PQoids[p] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
         }
     }
     if (TSQL)
-        TRC(DBILOGFP, "PREPARE %s AS %s;\n\n", imp_sth->prepare_name, statement);
+        TRC(DBILOGFP, "PREPARE %s AS %s;\n\n", imp_sth->prepare_name, strbuf_get(statement));
 
     if (imp_sth->async_flag & PG_ASYNC) {
         TRACE_PQSENDPREPARE;
         send_prepare_status =
-            PQsendPrepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids);
-        Safefree(statement);
+            PQsendPrepare(imp_dbh->conn, imp_sth->prepare_name, strbuf_get(statement), imp_sth->numphs, imp_sth->PQoids);
+        strbuf_destroy(statement);
 
         if (send_prepare_status) {
             imp_sth->async_status = STH_ASYNC_PREPARE;
@@ -2591,13 +2642,13 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
 
     TRACE_PQPREPARE;
     imp_dbh->last_result = imp_sth->result =
-        PQprepare(imp_dbh->conn, imp_sth->prepare_name, statement, params, imp_sth->PQoids);
+        PQprepare(imp_dbh->conn, imp_sth->prepare_name, strbuf_get(statement), imp_sth->numphs, imp_sth->PQoids);
     imp_dbh->result_shared = DBDPG_TRUE;
-    Safefree(statement);
+    strbuf_destroy(statement);
 
-    status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
+    prepare_status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
 
-    if (PGRES_COMMAND_OK == status) {
+    if (PGRES_COMMAND_OK == prepare_status) {
         imp_sth->prepared_by_us = DBDPG_TRUE; /* Done here so deallocate is not called spuriously */
         imp_dbh->prepare_number++;
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_prepare_statement\n", THEADER_slow);
@@ -2607,7 +2658,7 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     Safefree(imp_sth->prepare_name);
     imp_sth->prepare_name = NULL;
     TRACE_PQERRORMESSAGE;
-    pg_error(aTHX_ sth, status, PQerrorMessage(imp_dbh->conn));
+    pg_error(aTHX_ sth, prepare_status, PQerrorMessage(imp_dbh->conn));
     if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_prepare_statement (error)\n", THEADER_slow);
     return -2;
 
@@ -2626,6 +2677,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
     int    x, phnum;
     SV **  svp;
     bool   reprepare = DBDPG_FALSE;
+    bool   found;
     int    pg_type = 0;
     char * value_string = NULL;
     bool   is_array = DBDPG_FALSE;
@@ -2658,15 +2710,16 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
     }
 
     /* Find the placeholder in question */
-
     if (PLACEHOLDER_COLON == imp_sth->placeholder_type) {
-        for (x=0,currph=imp_sth->ph; NULL != currph; currph = currph->nextph) {
+        found = 0;
+        for (int p=0; p < ph_array_count(imp_sth); p++) {
+            currph = ph_array_element(imp_sth, p);
             if (0==strcmp(currph->fooname, name)) {
-                x=1;
+                found = 1;
                 break;
             }
         }
-        if (0==x)
+        if (!found)
             croak("Cannot bind unknown placeholder '%s'", name);
     }
     else { /* We have a number */
@@ -2675,10 +2728,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
         phnum = atoi(name);
         if (phnum < 1 || phnum > imp_sth->numphs)
             croak("Cannot bind unknown placeholder %d (%s)", phnum, neatsvpv(ph_name,0));
-        for (x=1,currph=imp_sth->ph; NULL != currph; currph = currph->nextph,x++) {
-            if (x==phnum)
-                break;
-        }
+        currph = ph_array_element(imp_sth, phnum - 1);
     }
 
     /* Check the value */
@@ -3390,16 +3440,11 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 {
     dTHX;
     D_imp_dbh_from_sth;
-    ph_t *        currph;
-    int           status;
-    STRLEN        execsize, x;
-    unsigned int  placeholder_digits;
-    seg_t *       currseg;
-    char *        statement = NULL;
-    int           num_fields;
+    int           status, p, s;
+    STRLEN        execsize;
+    strbuf_t     *statement = NULL;
     long          ret;
     PQExecType    pqtype;
-    long          power_of_ten;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_execute\n", THEADER_slow);
 
@@ -3414,7 +3459,8 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
     /* Ensure that all the placeholders have been bound */
     if (!imp_sth->all_bound && imp_sth->numphs!=0) {
-        for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
+        for (p=0; p < ph_array_count(imp_sth); p++) {
+            ph_t *currph = ph_array_element(imp_sth, p);
             if (NULL == currph->bind_type) {
                 pg_error(aTHX_ sth, PGRES_FATAL_ERROR, "execute called with an unbound placeholder");
                 if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (error: unbound placeholder)\n", THEADER_slow);
@@ -3540,7 +3586,8 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
     /* If using plain old PQexec, we need to quote each value ourselves */
     if (PQTYPE_EXEC == pqtype) {
-        for (currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
+        for (p=0; p < ph_array_count(imp_sth); p++) {
+            ph_t *currph = ph_array_element(imp_sth, p);
             if (currph->isdefault) {
                 Renew(currph->quoted, 8, char); /* freed in dbd_st_destroy */
                 strncpy(currph->quoted, "DEFAULT", 8);
@@ -3573,27 +3620,29 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
         /* Put all values into an array to pass to one of the above */
         if (NULL == imp_sth->PQvals) {
-            Newz(0, imp_sth->PQvals, (unsigned int)imp_sth->numphs, const char *); /* freed in dbd_st_destroy */
+            Newz(0, imp_sth->PQvals, (size_t)imp_sth->numphs, const char *); /* freed in dbd_st_destroy */
         }
-        for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
-            imp_sth->PQvals[x++] = currph->value;
+        for (p=0; p < ph_array_count(imp_sth); p++) {
+            ph_t *currph = ph_array_element(imp_sth, p);
+            imp_sth->PQvals[p] = currph->value;
         }
 
         /* Binary or regular? */
 
         if (imp_sth->has_binary) {
             if (NULL == imp_sth->PQlens) {
-                Newz(0, imp_sth->PQlens, (unsigned int)imp_sth->numphs, int); /* freed in dbd_st_destroy */
-                Newz(0, imp_sth->PQfmts, (unsigned int)imp_sth->numphs, int); /* freed below */
+                Newz(0, imp_sth->PQlens, (size_t)imp_sth->numphs, int); /* freed in dbd_st_destroy */
+                Newz(0, imp_sth->PQfmts, (size_t)imp_sth->numphs, int); /* freed in dbd_st_destroy */
             }
-            for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
+            for (p=0; p < ph_array_count(imp_sth); p++) {
+                ph_t *currph = ph_array_element(imp_sth, p);
                 if (PG_BYTEA==currph->bind_type->type_id) {
-                    imp_sth->PQlens[x] = (int)currph->valuelen;
-                    imp_sth->PQfmts[x] = 1;
+                    imp_sth->PQlens[p] = (int)currph->valuelen;
+                    imp_sth->PQfmts[p] = 1;
                 }
                 else {
-                    imp_sth->PQlens[x] = 0;
-                    imp_sth->PQfmts[x] = 0;
+                    imp_sth->PQlens[p] = 0;
+                    imp_sth->PQfmts[p] = 0;
                 }
             }
         }
@@ -3608,33 +3657,35 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
                              imp_sth->async_flag & PG_ASYNC ? "PQsendQuery" : "PQexec");
 
         /* Go through and quote each value, then turn into a giant statement */
-        for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-            if (currseg->placeholder!=0)
-                execsize += currseg->ph->quotedlen;
+        for (s=0; s < seg_array_count(imp_sth); s++) {
+            seg_t *currseg = seg_array_element(imp_sth, s);
+            if (currseg->placeholder!=0) {
+                execsize += ph_array_element(imp_sth, currseg->placeholder-1)->quotedlen;
+            }
         }
 
-        New(0, statement, execsize+1, char); /* freed below at end of this 'if' block */
-        statement[0] = '\0';
-        for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
+        statement = strbuf_create(execsize + 1);
+
+        for (s=0; s < seg_array_count(imp_sth); s++) {
+            seg_t *currseg = seg_array_element(imp_sth, s);
             if (currseg->segment != NULL)
-                strcat(statement, currseg->segment);
+                strbuf_append_text(statement, currseg->segment);
             if (currseg->placeholder!=0)
-                strcat(statement, currseg->ph->quoted);
+                strbuf_append_text(statement, ph_array_element(imp_sth, currseg->placeholder-1)->quoted);
         }
-        statement[execsize] = '\0';
 
         if (TRACE5_slow) TRC(DBILOGFP, "%sRunning %s with (%s)\n",
                              THEADER_slow,
                              imp_sth->async_flag & PG_ASYNC ? "PQsendQuery" : "PQexec",
-                             statement);
+                             strbuf_get(statement));
 
         if (TSQL)
-            TRC(DBILOGFP, "%s;\n\n", statement);
+            TRC(DBILOGFP, "%s;\n\n", strbuf_get(statement));
 
         if (imp_sth->async_flag & PG_ASYNC) {
             TRACE_PQSENDQUERY;
-            if (!PQsendQuery(imp_dbh->conn, statement)) {
-                Safefree(statement);
+            if (!PQsendQuery(imp_dbh->conn, strbuf_get(statement))) {
+                strbuf_destroy(statement);
                 _fatal_sqlstate(aTHX_ imp_dbh);
                 TRACE_PQERRORMESSAGE;
                 pg_error(aTHX_ sth, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
@@ -3649,11 +3700,11 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
             CLEAR_STH_RESULT(imp_sth);
 
             TRACE_PQEXEC;
-            imp_dbh->last_result = imp_sth->result = PQexec(imp_dbh->conn, statement);
+            imp_dbh->last_result = imp_sth->result = PQexec(imp_dbh->conn, strbuf_get(statement));
             imp_dbh->result_shared = DBDPG_TRUE;
         }
 
-        Safefree(statement);
+        strbuf_destroy(statement);
 
     }
     else if (PQTYPE_PARAMS == pqtype) { /* PQexecParams or PQsendQueryParams */
@@ -3662,54 +3713,41 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
                              THEADER_slow,
                              imp_sth->async_flag & PG_ASYNC ? "PQsendQueryParams" : "PQexecParams");
 
-        /* Figure out how big the statement plus placeholders will be */
-        for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
-            if (0==currseg->placeholder)
-                continue;
-            /* The parameter itself: dollar sign plus digit(s) */
-            power_of_ten = 10;
-            for (placeholder_digits=1; placeholder_digits<7; placeholder_digits++, power_of_ten *= 10) {
-                if (currseg->placeholder < power_of_ten)
-                    break;
-            }
-            if (placeholder_digits >= 7)
-                croak("Too many placeholders!");
-            execsize += placeholder_digits+1;
-        }
 
-        /* Create the statement */
-        New(0, statement, execsize+1, char); /* freed below at end of this 'if' block */
-        statement[0] = '\0';
-        for (currseg=imp_sth->seg; NULL != currseg; currseg=currseg->nextseg) {
+        statement = strbuf_create(1024);
+
+        for (s=0; s < seg_array_count(imp_sth); s++) {
+            seg_t *currseg = seg_array_element(imp_sth, s);
             if (currseg->segment != NULL)
-                strcat(statement, currseg->segment);
+                strbuf_append_text(statement, currseg->segment);
             if (currseg->placeholder!=0)
-                sprintf(strchr(statement, '\0'), "$%d", currseg->placeholder);
+                strbuf_append_dollar_placeholder(statement, currseg->placeholder);
         }
-        statement[execsize] = '\0';
 
         /* Populate PQoids */
         if (NULL == imp_sth->PQoids) {
-            Newz(0, imp_sth->PQoids, (unsigned int)imp_sth->numphs, Oid);
+            Newz(0, imp_sth->PQoids, (size_t)imp_sth->numphs, Oid); /* freed in dbd_st_destroy */
         }
-        for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph) {
-            imp_sth->PQoids[x++] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
+        for (p=0; p < ph_array_count(imp_sth); p++) {
+            ph_t *currph = ph_array_element(imp_sth, p);
+            imp_sth->PQoids[p] = (currph->defaultval) ? 0 : (Oid)currph->bind_type->type_id;
         }
 
         if (TRACE7_slow) {
-            for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-                TRC(DBILOGFP, "%sPQexecParams item #%d\n", THEADER_slow, (int)x);
-                TRC(DBILOGFP, "%s-> Type: (%d)\n", THEADER_slow, imp_sth->PQoids[x]);
-                TRC(DBILOGFP, "%s-> Value: (%s)\n", THEADER_slow, imp_sth->PQvals[x]);
-                TRC(DBILOGFP, "%s-> Length: (%d)\n", THEADER_slow, imp_sth->PQlens ? imp_sth->PQlens[x] : 0);
-                TRC(DBILOGFP, "%s-> Format: (%d)\n", THEADER_slow, imp_sth->PQfmts ? imp_sth->PQfmts[x] : 0);
+            for (p=0; p < ph_array_count(imp_sth); p++) {
+                ph_t *currph = ph_array_element(imp_sth, p);
+                TRC(DBILOGFP, "%sPQexecParams item #%d\n", THEADER_slow, (int)p);
+                TRC(DBILOGFP, "%s-> Type: (%d)\n", THEADER_slow, imp_sth->PQoids[p]);
+                TRC(DBILOGFP, "%s-> Value: (%s)\n", THEADER_slow, imp_sth->PQvals[p]);
+                TRC(DBILOGFP, "%s-> Length: (%d)\n", THEADER_slow, imp_sth->PQlens ? imp_sth->PQlens[p] : 0);
+                TRC(DBILOGFP, "%s-> Format: (%d)\n", THEADER_slow, imp_sth->PQfmts ? imp_sth->PQfmts[p] : 0);
             }
         }
 
         if (TSQL) {
-            TRC(DBILOGFP, "EXECUTE %s (\n", statement);
-            for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-                TRC(DBILOGFP, "$%d: %s\n", (int)x+1, imp_sth->PQvals[x]);
+            TRC(DBILOGFP, "EXECUTE %s (\n", strbuf_get(statement));
+            for (p=0; p < ph_array_count(imp_sth); p++) {
+                TRC(DBILOGFP, "$%d: %s\n", p+1, imp_sth->PQvals[p]);
             }
             TRC(DBILOGFP, ");\n\n");
         }
@@ -3717,12 +3755,12 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         if (TRACE5_slow) TRC(DBILOGFP, "%sRunning %s with (%s)\n",
                              THEADER_slow,
                              imp_sth->async_flag & PG_ASYNC ? "PQsendQueryParams" : "PQexecParams",
-                             statement);
+                             strbuf_get(statement));
 
         if (imp_sth->async_flag & PG_ASYNC) {
             TRACE_PQSENDQUERYPARAMS;
             if (!PQsendQueryParams
-                (imp_dbh->conn, statement, imp_sth->numphs,
+                (imp_dbh->conn, strbuf_get(statement), imp_sth->numphs,
                  imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0)) {
                 Safefree(statement);
                 _fatal_sqlstate(aTHX_ imp_dbh);
@@ -3741,13 +3779,13 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
             TRACE_PQEXECPARAMS;
             imp_dbh->last_result = imp_sth->result = PQexecParams
                 (
-                 imp_dbh->conn, statement, imp_sth->numphs,
+                 imp_dbh->conn, strbuf_get(statement), imp_sth->numphs,
                  imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0
                  );
             imp_dbh->result_shared = DBDPG_TRUE;
         }
 
-        Safefree(statement);
+        strbuf_destroy(statement);
 
     }
     else if (PQTYPE_PREPARED == pqtype) { /* PQexecPrepared or PQsendQueryPrepared */
@@ -3775,13 +3813,13 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
         if (STH_ASYNC_PREPARE != imp_sth->async_status) {
             if (TRACE7_slow) {
-                for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-                    TRC(DBILOGFP, "%sPQexecPrepared item #%d\n", THEADER_slow, (int)x);
+                for (p=0; p < ph_array_count(imp_sth); p++) {
+                    TRC(DBILOGFP, "%sPQexecPrepared item #%d\n", THEADER_slow, p);
                     TRC(DBILOGFP, "%s-> Value: (%s)\n",
-                        THEADER_slow, (imp_sth->PQfmts && imp_sth->PQfmts[x]==1) ? "(binary, not shown)"
-                                    : imp_sth->PQvals[x]);
-                    TRC(DBILOGFP, "%s-> Length: (%d)\n", THEADER_slow, imp_sth->PQlens ? imp_sth->PQlens[x] : 0);
-                    TRC(DBILOGFP, "%s-> Format: (%d)\n", THEADER_slow, imp_sth->PQfmts ? imp_sth->PQfmts[x] : 0);
+                        THEADER_slow, (imp_sth->PQfmts && imp_sth->PQfmts[p]==1) ? "(binary, not shown)"
+                                    : imp_sth->PQvals[p]);
+                    TRC(DBILOGFP, "%s-> Length: (%d)\n", THEADER_slow, imp_sth->PQlens ? imp_sth->PQlens[p] : 0);
+                    TRC(DBILOGFP, "%s-> Format: (%d)\n", THEADER_slow, imp_sth->PQfmts ? imp_sth->PQfmts[p] : 0);
                 }
             }
 
@@ -3791,8 +3829,8 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
             if (TSQL) {
                 TRC(DBILOGFP, "EXECUTE %s (\n", imp_sth->prepare_name);
-                for (x=0,currph=imp_sth->ph; NULL != currph; currph=currph->nextph,x++) {
-                    TRC(DBILOGFP, "$%d: %s\n", (int)x+1, imp_sth->PQvals[x]);
+                for (p=0; p < ph_array_count(imp_sth); p++) {
+                    TRC(DBILOGFP, "$%d: %s\n", p+1, imp_sth->PQvals[p]);
                 }
                 TRC(DBILOGFP, ");\n\n");
             }
@@ -3843,9 +3881,9 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
     imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
 
     if (PGRES_TUPLES_OK == status) {
-        TRACE_PQNFIELDS;
-        num_fields = PQnfields(imp_sth->result);
         imp_sth->cur_tuple = 0;
+        TRACE_PQNFIELDS;
+        int num_fields = PQnfields(imp_sth->result);
         DBIc_NUM_FIELDS(imp_sth) = num_fields;
         DBIc_ACTIVE_on(imp_sth);
         TRACE_PQNTUPLES;
@@ -3947,7 +3985,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 
     /* Set up the type_info array if we have not seen it yet */
     if (NULL == imp_sth->type_info) {
-        Newz(0, imp_sth->type_info, (unsigned int)num_fields, sql_type_info_t*); /* freed in dbd_st_destroy */
+        Newz(0, imp_sth->type_info, (size_t)num_fields, sql_type_info_t*); /* freed in dbd_st_destroy */
         for (i = 0; i < num_fields; ++i) {
             TRACE_PQFTYPE;
             imp_sth->type_info[i] = pg_type_data((int)PQftype(imp_sth->result, i));
@@ -4060,10 +4098,10 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
 
     /* Experimental inout support */
     if (imp_sth->use_inout) {
-        ph_t *currph;
-        for (i=0,currph=imp_sth->ph; NULL != currph && i < num_fields; currph=currph->nextph,i++) {
+        for (int p=0; p < ph_array_count(imp_sth); p++) {
+            ph_t *currph = ph_array_element(imp_sth, p);
             if (currph->isinout)
-                sv_copypv(currph->inout, AvARRAY(av)[i]);
+                sv_copypv(currph->inout, AvARRAY(av)[p]);
         }
     }
 
@@ -4249,20 +4287,16 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
 {
     dTHX;
     D_imp_dbh_from_sth;
-    seg_t * currseg;
-    seg_t * nextseg;
-    ph_t *  currph;
-    ph_t *  nextph;
 
     imp_dbh->do_tmp_sth = NULL;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_destroy\n", THEADER_slow);
 
-    if (NULL == imp_sth->seg) /* Already been destroyed! */
+    if (0 == seg_array_count(imp_sth)) /* Already been destroyed! */
         croak("dbd_st_destroy called twice!");
 
     /* If the AutoInactiveDestroy flag has been set, we go no further */
-    if ((DBIc_AIADESTROY(imp_dbh)) && ((U32)PerlProc_getpid() != (unsigned int)imp_dbh->pid_number)) {
+    if ((DBIc_AIADESTROY(imp_dbh)) && ((U32)PerlProc_getpid() != (size_t)imp_dbh->pid_number)) {
         if (TRACE4_slow) {
             TRC(DBILOGFP, "%sskipping sth destroy due to AutoInactiveDestroy\n", THEADER_slow);
         }
@@ -4319,28 +4353,10 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
     imp_sth->result = NULL;
 
     /* Free all the segments */
-    currseg = imp_sth->seg;
-    while (NULL != currseg) {
-        Safefree(currseg->segment);
-        currseg->ph = NULL;
-        nextseg = currseg->nextseg;
-        Safefree(currseg);
-        currseg = nextseg;
-    }
-    imp_sth->seg = NULL;
+    seg_array_destroy(imp_sth);
 
     /* Free all the placeholders */
-    currph = imp_sth->ph;
-    while (NULL != currph) {
-        Safefree(currph->fooname);
-        Safefree(currph->value);
-        Safefree(currph->quoted);
-         currph->bind_type = NULL;
-        nextph = currph->nextph;
-        Safefree(currph);
-        currph = nextph;
-    }
-    imp_sth->ph = NULL;
+    ph_array_destroy(imp_sth);
 
     if (NULL != imp_dbh->async_sth && imp_dbh->async_sth == imp_sth)
         imp_dbh->async_sth = NULL;

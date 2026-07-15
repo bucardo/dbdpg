@@ -23,7 +23,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 161;
+plan tests => 163;
 
 isnt ($dbh, undef, 'Connect to database for statement handle testing');
 
@@ -127,8 +127,15 @@ $sth = $dbh->prepare($SQL, {pg_server_prepare => 1});
 $sth->execute(1);
 ok ($sth->execute, $t);
 
+$t='Statement handle attribute pg_prepare_now returns default of 0';
+is ($sth->{pg_prepare_now}, 0, $t);
+
+$t='Statement handle attribute pg_prepare_now returns correct value after explicit set';
+$sth = $dbh->prepare($SQL);
+$sth->{pg_prepare_now} = 1;
+is ($sth->{pg_prepare_now}, 1, $t);
+
 $t='Prepare/execute with pg_prepare_now on at database handle works';
-$dbh->{pg_prepare_now} = 1;
 $sth = $dbh->prepare($SQL);
 $sth->execute(1);
 ok ($sth->execute, $t);

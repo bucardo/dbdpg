@@ -25,6 +25,8 @@ Pg.xs
 dbivport.h
 dbdimp.c
 dbdimp.h
+strbuf.h
+strbuf.c
 types.c
 types.h
 quote.c

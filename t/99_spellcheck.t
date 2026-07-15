@@ -732,6 +732,7 @@ RDBMS
 README
 ReadOnly
 realclean
+realloc
 recv'd
 RedHat
 Refactor
@@ -754,6 +755,7 @@ RowCacheSize
 RowsInCache
 rowtypes
 Sabino
+Safefree
 safemalloc
 sandia
 savepoint
@@ -803,6 +805,7 @@ STDERR
 STDIN
 STDOUT
 sth
+strbuf
 strcmp
 strcpy
 strdup
