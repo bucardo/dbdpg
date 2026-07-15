@@ -1935,19 +1935,19 @@ is ($dbh->quote(' -123', 4), ' -123', $t);
 
 $t='Database handle method quote() fails with integer data type for digit followed by a plus';
 eval { $dbh->quote('1+1', 4); };
-like ($@, qr{Invalid integer}, $t);
+like ($@, qr{quote_integer: invalid input}, $t);
 
 $t='Database handle method quote() fails with integer data type for digit followed by a minus';
 eval { $dbh->quote('1--', 4); };
-like ($@, qr{Invalid integer}, $t);
+like ($@, qr{quote_integer: invalid input}, $t);
 
 $t='Database handle method quote() fails with integer data type for digit followed by space';
 eval { $dbh->quote('123 456', 4); };
-like ($@, qr{Invalid integer}, $t);
+like ($@, qr{quote_integer: invalid input}, $t);
 
 $t='Database handle method quote() fails with integer data type for a non digit';
 eval { $dbh->quote('12z45', 4); };
-like ($@, qr{Invalid integer}, $t);
+like ($@, qr{quote_integer: invalid input}, $t);
 
 
 ## Test bytea quoting
@@ -2014,47 +2014,27 @@ is ($@, q{}, $t);
 $t='Database handle method quote() returns correct value for type PG_POINT';
 is ($result, q{'123,456'}, $t);
 
-$t='Database handle method quote() fails with invalid PG_POINT string (numbers only)';
-eval { $result = $dbh->quote(q{[123,456]}, { pg_type => PG_POINT }); };
-like ($@, qr{Invalid input for geometric type}, $t);
-
 $t='Database handle method quote() fails with invalid PG_POINT string (string)';
 eval { $result = $dbh->quote(q{A123,456}, { pg_type => PG_POINT }); };
-like ($@, qr{Invalid input for geometric type}, $t);
+like ($@, qr{quote_geometric: invalid input}, $t);
 
 ## Lines and line segments
 $t='Database handle method quote() works with valid PG_LINE string (numbers)';
 eval { $result = $dbh->quote(q{123,456}, { pg_type => PG_LINE }); };
 is ($@, q{}, $t);
 
-$t='Database handle method quote() fails with invalid PG_LINE string (array)';
-eval { $result = $dbh->quote(q{[123,456]}, { pg_type => PG_LINE }); };
-like ($@, qr{Invalid input for geometric type}, $t);
-
-$t='Database handle method quote() fails with invalid PG_LINE string (bad chars)';
-eval { $result = $dbh->quote(q{<123,456}, { pg_type => PG_LINE }); };
-like ($@, qr{Invalid input for geometric type}, $t);
-
-$t='Database handle method quote() fails with invalid PG_LSEG string (numbers)';
-eval { $result = $dbh->quote(q{[123,456]}, { pg_type => PG_LSEG }); };
-like ($@, qr{Invalid input for geometric type}, $t);
-
-$t='Database handle method quote() fails with invalid PG_LSEG string (missing brace)';
-eval { $result = $dbh->quote(q{[123,456}, { pg_type => PG_LSEG }); };
-like ($@, qr{Invalid input for geometric type}, $t);
+$t='Database handle method quote() fails with invalid PG_LSEG string (alpha)';
+eval { $result = $dbh->quote(q{[ABC123,456}, { pg_type => PG_LSEG }); };
+like ($@, qr{quote_geometric: invalid input}, $t);
 
 ## Boxes
 $t='Database handle method quote() works with valid PG_BOX string';
 eval { $result = $dbh->quote(q{1,2,3,4}, { pg_type => PG_BOX }); };
 is ($@, q{}, $t);
 
-$t='Database handle method quote() fails with invalid PG_BOX string (numbers)';
-eval { $result = $dbh->quote(q{[1,2,3,4]}, { pg_type => PG_BOX }); };
-like ($@, qr{Invalid input for geometric type}, $t);
-
 $t='Database handle method quote() fails with invalid PG_BOX string (string)'; ## string cheese!?
 eval { $result = $dbh->quote(q{1,2,3,4,cheese}, { pg_type => PG_BOX }); };
-like ($@, qr{Invalid input for geometric type}, $t);
+like ($@, qr{quote_geometric: invalid input}, $t);
 
 ## Paths - can have optional square brackets
 $t='Database handle method quote() works with valid PG_PATH string';
@@ -2064,26 +2044,14 @@ is ($@, q{}, $t);
 $t='Database handle method quote() returns correct value for type PG_PATH';
 is ($result, q{'[(1,2),(3,4)]'}, $t);
 
-$t='Database handle method quote() fails with invalid PG_PATH string (double numbers)';
-eval { $result = $dbh->quote(q{<(1,2),(3,4)>}, { pg_type => PG_PATH }); };
-like ($@, qr{Invalid input for path type}, $t);
-
-$t='Database handle method quote() fails with invalid PG_PATH string (single numbers)';
-eval { $result = $dbh->quote(q{<1,2,3,4>}, { pg_type => PG_PATH }); };
-like ($@, qr{Invalid input for path type}, $t);
-
 ## Polygons
 $t='Database handle method quote() works with valid PG_POLYGON string (numbers)';
 eval { $result = $dbh->quote(q{1,2,3,4}, { pg_type => PG_POLYGON }); };
 is ($@, q{}, $t);
 
-$t='Database handle method quote() fails with invalid PG_POLYGON string (array)';
-eval { $result = $dbh->quote(q{[1,2,3,4]}, { pg_type => PG_POLYGON }); };
-like ($@, qr{Invalid input for geometric type}, $t);
-
 $t='Database handle method quote() fails with invalid PG_POLYGON string';
 eval { $result = $dbh->quote(q{1,2,3,4,cheese}, { pg_type => PG_POLYGON }); };
-like ($@, qr{Invalid input for geometric type}, $t);
+like ($@, qr{quote_geometric: invalid input}, $t);
 
 ## Circles - can have optional angle brackets
 $t='Database handle method quote() works with valid PG_CIRCLE string';
@@ -2093,13 +2061,9 @@ is ($@, q{}, $t);
 $t='Database handle method quote() returns correct value for type PG_CIRCLE';
 is ($result, q{'<(1,2,3)>'}, $t);
 
-$t='Database handle method quote() fails with invalid PG_CIRCLE string (array)';
-eval { $result = $dbh->quote(q{[(1,2,3)]}, { pg_type => PG_CIRCLE }); };
-like ($@, qr{Invalid input for circle type}, $t);
-
-$t='Database handle method quote() fails with invalid PG_CIRCLE string (numbers)';
-eval { $result = $dbh->quote(q{1,2,3,4,H}, { pg_type => PG_CIRCLE }); };
-like ($@, qr{Invalid input for circle type}, $t);
+$t='Database handle method quote() fails with invalid PG_CIRCLE string (alpha)';
+eval { $result = $dbh->quote(q{1,2,3,4,Z}, { pg_type => PG_CIRCLE }); };
+like ($@, qr{quote_geometric: invalid input}, $t);
 
 
 #

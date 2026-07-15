@@ -289,7 +289,6 @@ CMD
 cmd
 cmdtaglist
 cmp
-compat
 CompatMode
 conf
 config
@@ -528,7 +527,6 @@ lotest
 lpq
 lseg
 LSEG
-lsegs
 lssl
 lt
 mak
@@ -562,6 +560,7 @@ MYMETA
 myperl
 myval
 Compiled
+NaN
 ne
 ness
 netstat
@@ -578,9 +577,9 @@ noprefix
 noreturn
 nosetup
 NOSUCH
-Server
 nullable
 NUL
+NULs
 NULLABLE
 NULLs
 num
@@ -868,6 +867,7 @@ TODO
 topav
 topdollar
 TraceLevel
+tRu
 TSQUERY
 tty
 tuple

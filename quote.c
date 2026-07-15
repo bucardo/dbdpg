@@ -10,362 +10,427 @@
 #include "Pg.h"
 
 #if defined (_WIN32) && !defined (strncasecmp)
-int
+static int
 strncasecmp(const char *s1, const char *s2, size_t n)
 {
-    while(n > 0
-          && toupper((unsigned char)*s1) == toupper((unsigned char)*s2))
-    {
-        if(*s1 == '\0')
+    while (n > 0
+           && tolower((unsigned char)*s1) == tolower((unsigned char)*s2)) {
+        if (*s1 == '\0')
             return 0;
         s1++;
         s2++;
         n--;
     }
-    if(n == 0)
+    if (n == 0)
         return 0;
-    return toupper((unsigned char)*s1) - toupper((unsigned char)*s2);
+    return tolower((unsigned char)*s1) - tolower((unsigned char)*s2);
 }
 #endif
 
 /*
-The 'estring' indicates if the server is capable of using the E'' syntax
-In other words, is it 8.1 or better?
-It must arrive as 0 or 1
+  Quote a text string.
+  Most data types use this function to quote: see types.c for the assignments.
+  This function will croak if a NUL occurs before the supplied length.
+  The entire string is encased in single quotes.
+  Any single quotes or backslashes are escaped by doubling them.
+  If the server supports it, AND there are backslashes, the E'' format is used.
+*/
+char * quote_string(pTHX_ const char *string, STRLEN length, STRLEN *new_length, const int supports_estring)
+{
+    const char * const string_start = string;
+    const STRLEN original_length = length;
+    char * new_string;
+    char * new_string_start;
+    STRLEN new_string_length;
+    bool use_estring = DBDPG_FALSE;
+    bool needs_escaping = DBDPG_FALSE;
+
+    /*
+      Reject very long strings.
+      Worst case is everything backslashed, plus E, plus quotes, plus NUL.
+    */
+    if (length > (MEM_SIZE_MAX - 4) / 2)
+        croak("quote_string: string is too large to quote safely");
+
+    /* First pass we determine needed size, verify no embedded NULs, and determine E'' usage */
+    new_string_length = 2; /* Outer single quotes */
+    while (length > 0) {
+        if (*string == '\0')
+            croak("quote_string: string has embedded NUL within declared length");
+        if (*string == '\'') {
+            needs_escaping = DBDPG_TRUE;
+            new_string_length++;
+        }
+        else if (*string == '\\') {
+            needs_escaping = DBDPG_TRUE;
+            new_string_length++;
+            if (supports_estring && !use_estring) {
+                use_estring = DBDPG_TRUE;
+                new_string_length++; /* For the leading E */
+            }
+        }
+        new_string_length++;
+        string++;
+        length--;
+    }
+
+    New(0, new_string, new_string_length + 1, char);
+    new_string_start = new_string;
+    if (use_estring)
+        *new_string++ = 'E';
+    *new_string++ = '\'';
+
+    /* If nothing needs escaping, we can simply bulk copy */
+    if (! needs_escaping)  {
+        memcpy(new_string, string_start, original_length);
+        new_string += original_length;
+    }
+    else {
+        /* Keep doubling logic same as above */
+        length = original_length;
+        string = string_start;
+        while (length > 0) {
+            if (*string == '\'' || *string == '\\') {
+                *new_string++ = *string;
+            }
+            *new_string++ = *string++;
+            length--;
+        }
+    }
+    *new_string++ = '\'';
+    *new_string = '\0';
+    *new_length = new_string_length;
+    return new_string_start;
+}
+
+
+/*
+  Quote a geometric string.
+  We only do a rough check for valid characters.
+  This function will croak if a NUL occurs before the supplied length.
+  The entire string is encased in single quotes.
+  Valid for point, box, and polygon: <space> <tab> 0-9 .,+- E e ()
+  Valid for path: same as points, plus []
+  Valid for line and lseg: same as points, plus [] and {}
+  Valid for circle: same as points, plus <>
+  We allow the complete union of valid chars, and depend on the server to reject invalid type inputs.
+  Reference: https://www.postgresql.org/docs/current/datatype-geometric.html
+*/
+char * quote_geometric(pTHX_ const char *string, STRLEN length, STRLEN *new_length, const int supports_estring)
+{
+    const char * const string_start = string;
+    const STRLEN original_length = length;
+    char * new_string;
+    char * new_string_start;
+
+    PERL_UNUSED_ARG(supports_estring);
+
+    /* Reject very long strings. */
+    if (length > (MEM_SIZE_MAX - 3))
+        croak("quote_geometric: string is too large to quote safely");
+
+    /* Check for valid characters, and verify no embedded NULs */
+    while (length > 0) {
+        if (*string == '\0')
+            croak("quote_geometric: string has embedded NUL before declared length");
+        if (*string != '\t' && *string != ' '     /* whitespace */
+            && (*string < '0' || *string > '9')   /* number */
+            && *string != '.' && *string != ','   /* separators */
+            && *string != '+' && *string != '-'   /* sign */
+            && *string != 'E' && *string != 'e'   /* exponent */
+            && *string != '(' && *string != ')'   /* parens */
+            && *string != '[' && *string != ']'   /* brackets */
+            && *string != '{' && *string != '}'   /* braces */
+            && *string != '<' && *string != '>'   /* circle delimiters */
+            )
+            croak("quote_geometric: invalid input");
+        string++;
+        length--;
+    }
+
+    New(0, new_string, original_length + 3, char);
+    new_string_start = new_string;
+
+    *new_string++ = '\'';
+    memcpy(new_string, string_start, original_length);
+    new_string += original_length;
+    *new_string++ = '\'';
+    *new_string = '\0';
+    *new_length = original_length + 2;
+    return new_string_start;
+}
+
+/*
+  Quote a bytea value (binary string).
+  This one may have embedded NULs.
+  The entire string is encased in single quotes.
+  If the server supports it, use the E'' format.
+  Reference: https://www.postgresql.org/docs/current/datatype-binary.html
+*/
+char * quote_bytea(pTHX_ const char *string, STRLEN length, STRLEN *new_length, const int supports_estring)
+{
+    const char * const string_start = string;
+    const STRLEN original_length = length;
+    char * new_string;
+    char * new_string_start;
+    STRLEN new_string_length;
+    bool needs_escaping = DBDPG_FALSE;
+
+    if (length > (MEM_SIZE_MAX - 4) / 5)
+        croak("quote_bytea: string is too large to quote safely");
+
+    new_string_length = 2; /* Outer single quotes */
+    if (supports_estring)
+        new_string_length++;
+
+    for (length = original_length; length > 0; length--) {
+        if (*string == '\'') { /* Single quote gets doubled */
+            needs_escaping = DBDPG_TRUE;
+            new_string_length += 2;
+        }
+        else if (*string == '\\') { /* Backslash gets quadrupled */
+            needs_escaping = DBDPG_TRUE;
+            new_string_length += 4;
+        }
+        else if ((unsigned char)*string < 0x20 || (unsigned char)*string > 0x7e) { /* Special chars get escaped */
+            needs_escaping = DBDPG_TRUE;
+            new_string_length += 5;
+        }
+        else {
+            new_string_length += 1;
+        }
+        string++;
+    }
+
+    New(0, new_string, new_string_length + 1, char);
+    new_string_start = new_string;
+    if (supports_estring)
+        *new_string++ = 'E';
+    *new_string++ = '\'';
+
+    if (!needs_escaping) {
+        memcpy(new_string, string_start, original_length);
+        new_string += original_length;
+    }
+    else {
+        string = string_start;
+        /* Keep this in sync with the previous for loop's conditions */
+        for (length = original_length; length > 0; length--) {
+            if (*string == '\'') { /* Single quote gets doubled */
+                *new_string++ = *string;
+                *new_string++ = *string++;
+            }
+            else if (*string == '\\') { /* Backslash gets quadrupled */
+                *new_string++ = *string;
+                *new_string++ = *string;
+                *new_string++ = *string;
+                *new_string++ = *string++;
+            }
+            else if ((unsigned char)*string < 0x20 || (unsigned char)*string > 0x7e) {
+                /* Special chars get escaped */
+                (void) sprintf(new_string, "\\\\%03o", (unsigned char)*string++);
+                new_string += 5;
+            }
+            else {
+                *new_string++ = *string++;
+            }
+        }
+    }
+    *new_string++ = '\'';
+    *new_string = '\0';
+    *new_length = new_string_length;
+    return new_string_start;
+}
+
+/*
+  Quote a string and return literal 'TRUE' or 'FALSE'.
+  No need to check for NULs or a too-large length, as we just scan for small strings.
+  Postgres technically allows more variants such as " \t  tRu  " but we do not.
+  Reference: https://www.postgresql.org/docs/current/datatype-boolean.html
+*/
+char * quote_bool(pTHX_ const char * string, STRLEN length, STRLEN *new_length, const int supports_estring)
+{
+    char *new_string;
+
+    PERL_UNUSED_ARG(supports_estring);
+
+    /* Things that are true (case insensitive): t, y, 1, on, yes, 0e0, true, 0 but true */
+    if (
+        (1 == length && ('t' == *string || 'T' == *string))
+        ||
+        (1 == length && ('y' == *string || 'Y' == *string))
+        ||
+        (1 == length && '1' == *string)
+        ||
+        (2 == length && 0 == strncasecmp(string, "on", 2))
+        ||
+        (3 == length && 0 == strncasecmp(string, "yes", 3))
+        ||
+        (3 == length && 0 == strncasecmp(string, "0e0", 3))
+        ||
+        (4 == length && 0 == strncasecmp(string, "true", 4))
+        ||
+        (10 == length && 0 == strncasecmp(string, "0 but true", 10))
+        ) {
+        *new_length = 4;
+        New(0, new_string, *new_length + 1, char);
+        Copy("TRUE", new_string, *new_length, char);
+        new_string[*new_length] = '\0';
+        return new_string;
+    }
+
+    /* Things that are false (case-insensitive): f, n, 0, no, off, false, <zero-length string> */
+    if (
+        (1 == length && ('f' == *string || 'F' == *string))
+        ||
+        (1 == length && ('n' == *string || 'N' == *string))
+        ||
+        (1 == length && ('0' == *string))
+        ||
+        (2 == length && 0 == strncasecmp(string, "no", 2))
+        ||
+        (3 == length && 0 == strncasecmp(string, "off", 3))
+        ||
+        (5 == length && 0 == strncasecmp(string, "false", 5))
+        ||
+        (0 == length)
+        ) {
+        *new_length = 5;
+        New(0, new_string, *new_length + 1, char);
+        Copy("FALSE", new_string, *new_length, char);
+        new_string[*new_length] = '\0';
+        return new_string;
+    }
+
+    croak("quote_bool: invalid input");
+    return NULL;
+}
+
+/*
+  Quote an integer.
+  This function will croak if an unexpected character appears (including a NUL).
+  It allows for leading and trailing spaces, and + or - signs before the digit.
+  Note that we don't go overboard in checking, letting the server handle items like '+-123'
+*/
+char * quote_integer(pTHX_ const char *string, STRLEN length, STRLEN *new_length, const int supports_estring)
+{
+    char * new_string;
+    const char * const string_start = string;
+    const STRLEN original_length = length;
+    bool seen_digit = DBDPG_FALSE;
+    bool seen_trailing_space = DBDPG_FALSE;
+
+    PERL_UNUSED_ARG(supports_estring);
+
+    while (length > 0) {
+        if (isdigit((unsigned char)*string) && !seen_trailing_space) {
+            seen_digit = DBDPG_TRUE;
+        }
+        else if (' ' == *string) {
+            if (seen_digit)
+                seen_trailing_space = DBDPG_TRUE;
+        }
+        else if (!seen_digit && !seen_trailing_space && ('+' == *string || '-' == *string)) {
+            ; /* All ok */
+        }
+        else {
+            croak("quote_integer: invalid input");
+        }
+        string++;
+        length--;
+    }
+    if (!seen_digit)
+        croak("quote_integer: invalid input");
+
+    New(0, new_string, original_length + 1, char);
+    Copy(string_start, new_string, original_length, char);
+    new_string[original_length] = '\0';
+    (*new_length) = original_length;
+    return new_string;
+}
+
+/*
+  Quote a float aka numeric.
+  We handle some string literals, e.g. "infinity"
+  The server is more liberal than we are here, allowing nonsense things like '+NaN'.
+  If not a special string, we allow for <space> .+- e E and 0-9 characters.
+*/
+char * quote_float(pTHX_ const char *string, STRLEN length, STRLEN *new_length, const int supports_estring)
+{
+    const char * const string_start = string;
+    const STRLEN original_length = length;
+    char * new_string;
+    char * new_string_start;
+    bool seen_digit = DBDPG_FALSE;
+
+    PERL_UNUSED_ARG(supports_estring);
+
+    if ((3 == length && 0 == strncasecmp(string, "NaN", 3)) ||
+        (8 == length && 0 == strncasecmp(string, "Infinity", 8)) ||
+        (9 == length && 0 == strncasecmp(string, "+Infinity", 9)) ||
+        (9 == length && 0 == strncasecmp(string, "-Infinity", 9)) ||
+        (3 == length && 0 == strncasecmp(string, "Inf", 3)) ||
+        (4 == length && 0 == strncasecmp(string, "+Inf", 4)) ||
+        (4 == length && 0 == strncasecmp(string, "-Inf", 4))) {
+        New(0, new_string, length + 1, char);
+        new_string_start = new_string;
+        *new_string++ = '\'';
+        Copy(string_start, new_string, length, char);
+        new_string += length;
+        *new_string++ = '\'';
+        *new_string++ = '\0';
+        *new_length = length + 2;
+        return new_string_start;
+    }
+
+    while (length > 0) {
+        if (isdigit((unsigned char)*string)) {
+            seen_digit = DBDPG_TRUE;
+        }
+        else if (' ' == *string
+                 || '.' == *string
+                 || '+' == *string
+                 || '-' == *string
+                 || 'e' == *string
+                 || 'E' == *string) {
+            ; /* Technically the order matters, but this is a simple check */
+        }
+        else
+            croak("quote_float: invalid input");
+
+        string++;
+        length--;
+    }
+    if (!seen_digit)
+        croak("quote_float: invalid input");
+
+    New(0, new_string, original_length + 1, char);
+    new_string_start = new_string;
+    Copy(string_start, new_string, original_length, char);
+    new_string[original_length] = '\0';
+    (*new_length) = original_length;
+    return new_string_start;
+}
+
+/*
+  Quote an identifier.
+  This function will croak if a NUL occurs before the supplied length.
+  Reference: https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
 */
 
-char * null_quote(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
+char * quote_identifier(pTHX_ const char *string, STRLEN length, STRLEN *new_length, const int supports_estring)
 {
-    char *result;
+    const char * const string_start = string;
+    const STRLEN original_length = length;
+    char * new_string;
+    char * new_string_start;
+    STRLEN embedded_quotes = 0;
+    bool needs_quoting = DBDPG_FALSE;
 
-    New(0, result, len+1, char);
-    strncpy(result,string,len);
-    result[len]='\0';
-    *retlen = len;
-    return result;
-}
+    PERL_UNUSED_ARG(supports_estring);
 
-
-char * quote_string(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
-{
-    char * result;
-    STRLEN oldlen = len;
-    const char * const tmp = string;
-
-    (*retlen) = 2;
-    while (len > 0 && *string != '\0') {
-        if (*string == '\'')
-            (*retlen)++;
-        else if (*string == '\\') {
-            if (estring == 1)
-                estring = 2;
-            (*retlen)++;
-        }
-        (*retlen)++;
-        string++;
-        len--;
-    }
-    if (estring == 2)
-        (*retlen)++;
-
-    string = tmp;
-    New(0, result, 1+(*retlen), char);
-    if (estring == 2)
-        *result++ = 'E';
-    *result++ = '\'';
-
-    len = oldlen;
-    while (len > 0 && *string != '\0') {
-        if (*string == '\'' || *string == '\\') {
-                *result++ = *string;
-        }
-        *result++ = *string++;
-        len--;
-    }
-    *result++ = '\'';
-    *result = '\0';
-    return result - (*retlen);
-}
-
-
-/* Quote a geometric constant. */
-/* Note: we only verify correct characters here, not for 100% valid input */
-/* Covers: points, lines, lsegs, boxes, polygons */
-char * quote_geom(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
-{
-    char * result;
-    const char *tmp;
-
-    len = 0; /* stops compiler warnings. Remove entirely someday */
-    tmp = string;
-    (*retlen) = 2;
-
-    while (*string != '\0') {
-        if (*string != '\t' && *string != ' ' && *string != '(' && *string != ')'
-            && *string != '-' && *string != '+' && *string != '.'
-            && *string != 'e' && *string != 'E'
-            && *string != ',' && (*string < '0' || *string > '9'))
-            croak("Invalid input for geometric type");
-        (*retlen)++;
-        string++;
-    }
-    string = tmp;
-    New(0, result, 1+(*retlen), char);
-    *result++ = '\'';
-
-    while (*string != '\0') {
-        *result++ = *string++;
-    }
-    *result++ = '\'';
-    *result = '\0';
-    return result - (*retlen);
-}
-
-/* Same as quote_geom, but also allows square brackets */
-char * quote_path(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
-{
-    char * result;
-    const char * const tmp = string;
-
-    len = 0; /* stops compiler warnings. Remove entirely someday */
-    (*retlen) = 2;
-    while (*string != '\0') {
-        if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
-            && *string != '-' && *string != '+' && *string != '.'
-            && *string != 'e' && *string != 'E'
-            && *string != '[' && *string != ']'
-            && *string != ',' && (*string < '0' || *string > '9'))
-            croak("Invalid input for path type");
-        (*retlen)++;
-        string++;
-    }
-    string = tmp;
-    New(0, result, 1+(*retlen), char);
-    *result++ = '\'';
-
-    while (*string != '\0') {
-        *result++ = *string++;
-    }
-    *result++ = '\'';
-    *result = '\0';
-    return result - (*retlen);
-}
-
-/* Same as quote_geom, but also allows less than / greater than signs */
-char * quote_circle(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
-{
-    char * result;
-    const char * const tmp = string;
-
-    len = 0; /* stops compiler warnings. Remove entirely someday */
-    (*retlen) = 2;
-
-    while (*string != '\0') {
-        if (*string !=9 && *string != 32 && *string != '(' && *string != ')'
-            && *string != '-' && *string != '+' && *string != '.'
-            && *string != 'e' && *string != 'E'
-            && *string != '<' && *string != '>'
-            && *string != ',' && (*string < '0' || *string > '9'))
-            croak("Invalid input for circle type");
-        (*retlen)++;
-        string++;
-    }
-    string = tmp;
-    New(0, result, 1+(*retlen), char);
-    *result++ = '\'';
-
-    while (*string != '\0') {
-        *result++ = *string++;
-    }
-    *result++ = '\'';
-    *result = '\0';
-    return result - (*retlen);
-}
-
-
-char * quote_bytea(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
-{
-    char * result;
-    STRLEN oldlen = len;
-
-    /* For this one, always use the E'' format if we can */
-    result = (char *)string;
-    (*retlen) = 2;
-    while (len > 0) {
-        if (*string == '\'') {
-            (*retlen) += 2;
-        }
-        else if (*string == '\\') {
-            (*retlen) += 4;
-        }
-        else if (*string < 0x20 || *string > 0x7e) {
-            (*retlen) += 5;
-        }
-        else {
-            (*retlen)++;
-        }
-        string++;
-        len--;
-    }
-    string = result;
-    if (estring)
-        (*retlen)++;
-
-    New(0, result, 1+(*retlen), char);
-    if (estring)
-        *result++ = 'E';
-    *result++ = '\'';
-
-    len = oldlen;
-    while (len > 0) {
-        if (*string == '\'') { /* Single quote becomes double quotes */
-            *result++ = *string;
-            *result++ = *string++;
-        }
-        else if (*string == '\\') { /* Backslash becomes 4 backslashes */
-            *result++ = *string;
-            *result++ = *string++;
-            *result++ = '\\';
-            *result++ = '\\';
-        }
-        else if (*string < 0x20 || *string > 0x7e) {
-            (void) sprintf((char *)result, "\\\\%03o", (unsigned char)*string++);
-            result += 5;
-        }
-        else {
-            *result++ = *string++;
-        }
-        len--;
-    }
-    *result++ = '\'';
-    *result = '\0';
-
-    return (char *)result - (*retlen);
-}
-
-char * quote_sql_binary(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
-{
-    /* We are going to return a quote_bytea() for backwards compat but
-         we warn first */
-    warn("Use of SQL_BINARY invalid in quote()");
-    return quote_bytea(aTHX_ string, len, retlen, estring);
-
-}
-
-/* Return TRUE, FALSE, or throws an error */
-char * quote_bool(pTHX_ const char *value, STRLEN len, STRLEN *retlen, int estring)
-{
-    char *result;
-
-    /* Things that are true: t, T, 1, true, TRUE, 0E0, 0 but true */
-    if (
-        (1 == len && (0 == strncasecmp(value, "t", 1) || '1' == *value))
-        ||
-        (4 == len && 0 == strncasecmp(value, "true", 4))
-        ||
-        (3 == len && 0 == strncasecmp(value, "0e0", 3))
-        ||
-        (10 == len && 0 == strncasecmp(value, "0 but true", 10))
-        ) {
-        New(0, result, 5, char);
-        strcpy(result,"TRUE");
-        *retlen = 4;
-        return result;
-    }
-
-    /* Things that are false: f, F, 0, false, FALSE, 0, zero-length string */
-    if (
-        (1 == len && (0 == strncasecmp(value, "f", 1) || '0' == *value))
-        ||
-        (5 == len && 0 == strncasecmp(value, "false", 5))
-        ||
-        (0 == len)
-        ) {
-        New(0, result, 6, char);
-        strcpy(result,"FALSE");
-        *retlen = 5;
-        return result;
-    }
-
-    croak("Invalid boolean value");
-
-}
-
-char * quote_int(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
-{
-    char * result;
-    const char *p = string;
-    STRLEN left = len;
-    bool seendigit = DBDPG_FALSE;
-
-    while (left-- > 0 && *p != '\0') {
-        if (isdigit(*p)) {
-            seendigit = DBDPG_TRUE;
-            p++;
-            continue;
-        }
-        if (!seendigit && (' ' == *p || '+' == *p || '-' == *p)) {
-            p++;
-            continue;
-        }
-        croak("Invalid integer");
-    }
-
-    New(0, result, len+1, char);
-    strcpy(result,string);
-    *retlen = len;
-
-    return result;
-}
-
-char * quote_float(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
-{
-    char * result;
-
-    /* Empty string is always an error. Here for dumb compilers. */
-    if (len<1)
-        croak("Invalid float");
-
-    result = (char*)string;
-    *retlen = len;
-
-    /* Allow some standard strings in */
-    if (0 != strncasecmp(string, "NaN", 4)
-        && 0 != strncasecmp(string, "Infinity", 9)
-        && 0 != strncasecmp(string, "-Infinity", 10)) {
-        while (len > 0 && *string != '\0') {
-            len--;
-            if (isdigit(*string)
-                || '.' == *string
-                || ' ' == *string
-                || '+' == *string
-                || '-' == *string
-                || 'e' == *string
-                || 'E' == *string) {
-                string++;
-                continue;
-            }
-            croak("Invalid float");
-        }
-    }
-
-    string = result;
-    New(0, result, 1+(*retlen), char);
-    strcpy(result,string);
-
-    return result;
-}
-
-char * quote_name(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estring)
-{
-    char * result;
-    const char *ptr;
-    int nquotes = 0;
-    int x;
-    bool safe;
-
-    if (len < 1)
-        croak("Empty identifier name");
+    if (length < 1)
+        croak("quote_identifier: invalid input");
 
     /* We throw double quotes around the whole thing, if:
        1. It starts with anything other than [a-z_]
@@ -376,78 +441,79 @@ char * quote_name(pTHX_ const char *string, STRLEN len, STRLEN *retlen, int estr
     */
 
     /* 1. It starts with anything other than [a-z_] */
-    safe = ((string[0] >= 'a' && string[0] <= 'z') || '_' == string[0]);
+    if (string[0] != '_' && (string[0] < 'a' || string[0] > 'z'))
+        needs_quoting = DBDPG_TRUE;
 
     /* 2. It has characters other than [a-z_0-9] (also count number of quotes) */
-    for (ptr = string; *ptr; ptr++) {
-
-        char ch = *ptr;
-
-        if (
-            (ch < 'a' || ch > 'z')
-            &&
-            (ch < '0' || ch > '9')
-            &&
-            ch != '_') {
-            safe = DBDPG_FALSE;
-            if (ch == '"')
-                nquotes++;
+    while (length > 0) {
+        if (*string == '\0')
+            croak("quote_identifier: string has embedded NUL before declared length");
+        if (*string == '_'
+            || (*string >= 'a' && *string <= 'z')
+            || (*string >= '0' && *string <= '9'))
+            ; /* All good */
+        else {
+            needs_quoting = DBDPG_TRUE;
+            if (*string == '"')
+                embedded_quotes++;
         }
+        string++;
+        length--;
     }
+    string = string_start;
+    length = original_length;
 
     /* 3. Is it a reserved word (e.g. `user`) */
-    if (safe) {
-        if (! is_keyword(string)) {
-            New(0, result, len+1, char);
-            strcpy(result,string);
-            *retlen = len;
-            return result;
-        }
+    if (!needs_quoting && !is_keyword(string)) {
+        New(0, new_string, length + 1, char);
+        Copy(string, new_string, length, char);
+        new_string[length] = '\0';
+        *new_length = length;
+        return new_string;
     }
 
     /* Need room for the string, the outer quotes, any inner quotes (which get doubled) and \0 */
-    *retlen = len + 2 + nquotes;
-    New(0, result, *retlen + 1, char);
+    *new_length = length + 2 + embedded_quotes;
+    New(0, new_string, *new_length + 1, char);
+    new_string_start = new_string;
 
-    x=0;
-    result[x++] = '"';
-    for (ptr = string; *ptr; ptr++) {
-        char ch = *ptr;
-        result[x++] = ch;
-        if (ch == '"')
-            result[x++] = '"';
+    *new_string++ = '"';
+    while (length > 0) {
+        if (*string == '"')
+            *new_string++ = '"';
+        *new_string++ = *string++;
+        length--;
     }
-    result[x++] = '"';
-    result[x] = '\0';
-
-    return result;
+    *new_string++ = '"';
+    *new_string = '\0';
+    return new_string_start;
 }
 
-void dequote_char(pTHX_ char *string, STRLEN *retlen)
+
+void dequote_char(pTHX_ char *string, STRLEN *new_length)
 {
     /* TODO: chop_blanks if requested */
-    *retlen = strlen(string);
+    *new_length = strlen(string);
 }
 
 
-void dequote_string(pTHX_ char *string, STRLEN *retlen)
+void dequote_string(pTHX_ char *string, STRLEN *new_length)
 {
-    *retlen = strlen(string);
+    *new_length = strlen(string);
 }
 
 
-
-static void _dequote_bytea_escape(char *string, STRLEN *retlen)
+static void _dequote_bytea_escape(char *string, STRLEN *new_length)
 {
     char *result;
 
-    (*retlen) = 0;
+    (*new_length) = 0;
 
     if (NULL != string) {
         result = string;
 
         while (*string != '\0') {
-            (*retlen)++;
+            (*new_length)++;
             if ('\\' == *string) {
                 if ('\\' == *(string+1)) {
                     *result++ = '\\';
@@ -462,7 +528,7 @@ static void _dequote_bytea_escape(char *string, STRLEN *retlen)
                         string += 4;
                     }
                 else { /* Invalid escape sequence - ignore the backslash */
-                    (*retlen)--;
+                    (*new_length)--;
                     string++;
                 }
             }
@@ -486,11 +552,11 @@ static int _decode_hex_digit(char digit)
     return -1;
 }
 
-static void _dequote_bytea_hex(char *string, STRLEN *retlen)
+static void _dequote_bytea_hex(char *string, STRLEN *new_length)
 {
     char *result;
 
-    (*retlen) = 0;
+    (*new_length) = 0;
 
     if (NULL != string) {
         result = string;
@@ -501,7 +567,7 @@ static void _dequote_bytea_hex(char *string, STRLEN *retlen)
             digit2 = _decode_hex_digit(*(string+1));
             if (digit1 >= 0 && digit2 >= 0) {
                 *result++ = 16 * digit1 + digit2;
-                (*retlen)++;
+                (*new_length)++;
             }
             string += 2;
         }
@@ -509,14 +575,14 @@ static void _dequote_bytea_hex(char *string, STRLEN *retlen)
     }
 }
 
-void dequote_bytea(pTHX_ char *string, STRLEN *retlen)
+void dequote_bytea(pTHX_ char *string, STRLEN *new_length)
 {
 
     if (NULL != string) {
         if ('\\' == *string && 'x' == *(string+1))
-            _dequote_bytea_hex(string, retlen);
+            _dequote_bytea_hex(string, new_length);
         else
-            _dequote_bytea_escape(string, retlen);
+            _dequote_bytea_escape(string, new_length);
     }
 }
 
@@ -525,19 +591,19 @@ void dequote_bytea(pTHX_ char *string, STRLEN *retlen)
     it might be nice to let people go the other way too. Say when talking
     to something that uses SQL_BINARY
  */
-void dequote_sql_binary(pTHX_ char *string, STRLEN *retlen)
+void dequote_sql_binary(pTHX_ char *string, STRLEN *new_length)
 {
 
     /* We are going to return a dequote_bytea(), just in case */
     warn("Use of SQL_BINARY invalid in dequote()");
-    dequote_bytea(aTHX_ string, retlen);
+    dequote_bytea(aTHX_ string, new_length);
 
     /* Put dequote_sql_binary function here at some point */
 }
 
 
 
-void dequote_bool(pTHX_ char *string, STRLEN *retlen)
+void dequote_bool(pTHX_ char *string, STRLEN *new_length)
 {
 
     if (NULL != string) {
@@ -547,14 +613,14 @@ void dequote_bool(pTHX_ char *string, STRLEN *retlen)
         default:
             croak("I do not know how to deal with %c as a bool", *string);
         }
-        *retlen = 1;
+        *new_length = 1;
     }
 }
 
 
-void null_dequote(pTHX_ char *string, STRLEN *retlen)
+void null_dequote(pTHX_ char *string, STRLEN *new_length)
 {
-    *retlen = strlen(string);
+    *new_length = strlen(string);
 
 }
 
@@ -1987,8 +2053,6 @@ bool is_keyword(const char *string)
     }
     if (0 == strcmp(word, test_str))
         return DBDPG_TRUE;
-
-    /* We made it! */
 
     return DBDPG_FALSE;
 

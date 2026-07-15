@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 266;
+plan tests => 225;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -240,7 +240,7 @@ point datatype plus and minus signs
 
 point datatype invalid number
 123,abc
-ERROR: Invalid input for geometric type
+ERROR: quote_geometric: invalid input
 ERROR: any
 
 point datatype invalid format
@@ -251,16 +251,6 @@ ERROR: any
 point datatype invalid format
 123,456,789
 '123,456,789'
-ERROR: any
-
-point datatype invalid format
-<(2,4),6>
-ERROR: Invalid input for geometric type
-ERROR: any
-
-point datatype invalid format
-[(1,2)]
-ERROR: Invalid input for geometric type
 ERROR: any
 
 line datatype integers
@@ -285,7 +275,7 @@ ERROR: not yet implemented
 
 line datatype invalid number
 123,abc
-ERROR: Invalid input for geometric type
+ERROR: quote_geometric: invalid input
 ERROR: not yet implemented
 
 
@@ -346,12 +336,6 @@ path datatype many elements
 '(1.2,3.4),(5,6),(7,8),(-9,10)'
 ((1.2,3.4),(5,6),(7,8),(-9,10))
 
-path datatype fails with braces
-{(1,2),(3,4)}
-ERROR: Invalid input for path type
-ERROR: any
-
-
 polygon datatype invalid format
 12,34
 '12,34'
@@ -372,11 +356,6 @@ polygon datatype many elements
 '(1.2,3.4),(5,6),(7,8),(-9,10)'
 ((1.2,3.4),(5,6),(7,8),(-9,10))
 
-polygon datatype fails with brackets
-[(1,2),(3,4)]
-ERROR: Invalid input for geometric type
-ERROR: any
-
 circle datatype integers
 <(12,34),5>
 '<(12,34),5>'
@@ -386,11 +365,6 @@ circle datatype floating point and exponential numbers
 <(-1.2,2E2),3e3>
 '<(-1.2,2E2),3e3>'
 <(-1.2,200),3000>
-
-circle datatype fails with brackets
-[(1,2),(3,4)]
-ERROR: Invalid input for circle type
-ERROR: any
 
 };
 
@@ -738,7 +712,7 @@ $val = -1;
 eval {
     $val = $dbh->quote('123abc', SQL_INTEGER);
 };
-like ($@, qr{Invalid integer}, $t);
+like ($@, qr{quote_integer: invalid input}, $t);
 is ($val, -1, $t);
 
 my $prefix = 'Valid float value works when quoting with SQL_FLOAT';
@@ -747,23 +721,23 @@ for my $float ('123','0.00','0.234','23.31562', '1.23e04','6.54e+02','4e-3','NaN
     $val = -1;
     eval { $val = $dbh->quote($float, SQL_FLOAT); };
     is ($@, q{}, $t);
-    is ($val, $float, $t);
+    is ($val, ($float =~ /[ai]/ ? qq{'$float'} : $float), $t);
 
-    next unless $float =~ /\w/;
+    next unless $float =~ /[ai]/;
 
-    my $lcfloat = lc $float;
-    $t = "$prefix (value=$lcfloat)";
+    my $number = lc $float;
+    $t = "$prefix (value=$number)";
     $val = -1;
-    eval { $val = $dbh->quote($lcfloat, SQL_FLOAT); };
+    eval { $val = $dbh->quote($number, SQL_FLOAT); };
     is ($@, q{}, $t);
-    is ($val, $lcfloat, $t);
+    is ($val, qq{'$number'}, $t);
 
-    my $ucfloat = uc $float;
-    $t = "$prefix (value=$ucfloat)";
+    $number = uc $float;
+    $t = "$prefix (value=$number)";
     $val = -1;
-    eval { $val = $dbh->quote($ucfloat, SQL_FLOAT); };
+    eval { $val = $dbh->quote($number, SQL_FLOAT); };
     is ($@, q{}, $t);
-    is ($val, $ucfloat, $t);
+    is ($val, qq{'$number'}, $t);
 }
 
 $prefix = 'Invalid float value fails when quoting with SQL_FLOAT';
@@ -771,7 +745,7 @@ for my $float ('3abc','123abc','','NaNum','-infinitee') {
     $t = "$prefix (value=$float)";
     $val = -1;
     eval { $val = $dbh->quote($float, SQL_FLOAT); };
-    like ($@, qr{Invalid float}, $t);
+    like ($@, qr{quote_float: invalid input}, $t);
     is ($val, -1, $t);
 }
 
@@ -786,7 +760,17 @@ $sth->bind_param(1, 1, SQL_INTEGER);
 eval {
     $sth->execute('10foo',20);
 };
-like ($@, qr{Invalid integer}, 'Invalid integer test 2');
+like ($@, qr{quote_integer: invalid input}, $t);
+
+$t='Bound placeholders works when quoting text-based float values';
+$sth = $dbh->prepare('SELECT ?::float');
+$sth->bind_param(1, 1, SQL_FLOAT);
+$sth->execute('infinity');
+pass ($t);
+
+$t='Bound placeholders fails when quoting invalid text-based float values';
+eval { $sth->execute('infinity3'); };
+like ($@, qr{quote_float: invalid input}, $t);
 
 ## Test quoting of the "name" type
 $prefix = q{The 'name' data type does correct quoting};
@@ -849,7 +833,7 @@ while (my ($name,$res) = each %booltest) {
     $t = "Boolean quoting of $desc",
     eval { $result = $dbh->quote($bool, {pg_type => PG_BOOL}); };
     if ($@) {
-        if ($res eq 'ERROR' and $@ =~ /Invalid boolean/) {
+        if ($res eq 'ERROR' and $@ =~ /quote_bool: invalid input/) {
             pass ($t);
         }
         else {

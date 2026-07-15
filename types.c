@@ -114,13 +114,13 @@ static sql_type_info_t pg_types[] = {
  {PG_ANYRANGE                      ,"anyrange"                     ,0,',',"anyrange_out"        ,quote_string,dequote_string,{0},0},
  {PG_BIT                           ,"bit"                          ,1,',',"bit_out"             ,quote_string,dequote_string,{0},0},
  {PG_BOOL                          ,"bool"                         ,1,',',"boolout"             ,quote_bool  ,dequote_bool  ,{SQL_BOOLEAN},3},
- {PG_BOX                           ,"box"                          ,1,';',"box_out"             ,quote_geom  ,dequote_string,{0},0},
+ {PG_BOX                           ,"box"                          ,1,';',"box_out"             ,quote_geometric,dequote_string,{0},0},
  {PG_BPCHAR                        ,"bpchar"                       ,1,',',"bpcharout"           ,quote_string,dequote_char  ,{SQL_CHAR},0},
  {PG_BYTEA                         ,"bytea"                        ,1,',',"byteaout"            ,quote_bytea ,dequote_bytea ,{SQL_VARBINARY},0},
  {PG_CHAR                          ,"char"                         ,1,',',"charout"             ,quote_string,dequote_char  ,{SQL_CHAR},0},
  {PG_CID                           ,"cid"                          ,1,',',"cidout"              ,quote_string,dequote_string,{0},0},
  {PG_CIDR                          ,"cidr"                         ,1,',',"cidr_out"            ,quote_string,dequote_string,{0},0},
- {PG_CIRCLE                        ,"circle"                       ,1,',',"circle_out"          ,quote_circle,dequote_string,{0},0},
+ {PG_CIRCLE                        ,"circle"                       ,1,',',"circle_out"          ,quote_geometric,dequote_string,{0},0},
  {PG_CSTRING                       ,"cstring"                      ,0,',',"cstring_out"         ,quote_string,dequote_string,{0},0},
  {PG_DATE                          ,"date"                         ,1,',',"date_out"            ,quote_string,dequote_string,{SQL_TYPE_DATE},0},
  {PG_DATEMULTIRANGE                ,"datemultirange"               ,1,',',"multirange_out"      ,quote_string,dequote_string,{0},0},
@@ -132,12 +132,12 @@ static sql_type_info_t pg_types[] = {
  {PG_GTSVECTOR                     ,"gtsvector"                    ,1,',',"gtsvectorout"        ,quote_string,dequote_string,{0},0},
  {PG_INDEX_AM_HANDLER              ,"index_am_handler"             ,0,',',"index_am_handler_out",quote_string,dequote_string,{0},0},
  {PG_INET                          ,"inet"                         ,1,',',"inet_out"            ,quote_string,dequote_string,{0},0},
- {PG_INT2                          ,"int2"                         ,1,',',"int2out"             ,quote_int   ,null_dequote  ,{SQL_SMALLINT},1},
+ {PG_INT2                          ,"int2"                         ,1,',',"int2out"             ,quote_integer,null_dequote  ,{SQL_SMALLINT},1},
  {PG_INT2VECTOR                    ,"int2vector"                   ,1,',',"int2vectorout"       ,quote_string,dequote_string,{0},0},
- {PG_INT4                          ,"int4"                         ,1,',',"int4out"             ,quote_int   ,null_dequote  ,{SQL_INTEGER},1},
+ {PG_INT4                          ,"int4"                         ,1,',',"int4out"             ,quote_integer,null_dequote  ,{SQL_INTEGER},1},
  {PG_INT4MULTIRANGE                ,"int4multirange"               ,1,',',"multirange_out"      ,quote_string,dequote_string,{0},0},
  {PG_INT4RANGE                     ,"int4range"                    ,1,',',"range_out"           ,quote_string,dequote_string,{0},0},
- {PG_INT8                          ,"int8"                         ,1,',',"int8out"             ,quote_int   ,null_dequote  ,{SQL_BIGINT},0},
+ {PG_INT8                          ,"int8"                         ,1,',',"int8out"             ,quote_integer,null_dequote  ,{SQL_BIGINT},0},
  {PG_INT8MULTIRANGE                ,"int8multirange"               ,1,',',"multirange_out"      ,quote_string,dequote_string,{0},0},
  {PG_INT8RANGE                     ,"int8range"                    ,1,',',"range_out"           ,quote_string,dequote_string,{0},0},
  {PG_INTERNAL                      ,"internal"                     ,0,',',"internal_out"        ,quote_string,dequote_string,{0},0},
@@ -146,19 +146,19 @@ static sql_type_info_t pg_types[] = {
  {PG_JSONB                         ,"jsonb"                        ,1,',',"jsonb_out"           ,quote_string,dequote_string,{0},0},
  {PG_JSONPATH                      ,"jsonpath"                     ,1,',',"jsonpath_out"        ,quote_string,dequote_string,{0},0},
  {PG_LANGUAGE_HANDLER              ,"language_handler"             ,0,',',"language_handler_out",quote_string,dequote_string,{0},0},
- {PG_LINE                          ,"line"                         ,1,',',"line_out"            ,quote_geom  ,dequote_string,{0},0},
- {PG_LSEG                          ,"lseg"                         ,1,',',"lseg_out"            ,quote_geom  ,dequote_string,{0},0},
+ {PG_LINE                          ,"line"                         ,1,',',"line_out"            ,quote_geometric,dequote_string,{0},0},
+ {PG_LSEG                          ,"lseg"                         ,1,',',"lseg_out"            ,quote_geometric,dequote_string,{0},0},
  {PG_MACADDR                       ,"macaddr"                      ,1,',',"macaddr_out"         ,quote_string,dequote_string,{0},0},
  {PG_MACADDR8                      ,"macaddr8"                     ,1,',',"macaddr8_out"        ,quote_string,dequote_string,{0},0},
  {PG_MONEY                         ,"money"                        ,1,',',"cash_out"            ,quote_string,dequote_string,{0},0},
- {PG_NAME                          ,"name"                         ,1,',',"nameout"             ,quote_name  ,null_dequote  ,{SQL_VARCHAR},0},
+ {PG_NAME                          ,"name"                         ,1,',',"nameout"             ,quote_identifier,null_dequote  ,{SQL_VARCHAR},0},
  {PG_NUMERIC                       ,"numeric"                      ,1,',',"numeric_out"         ,quote_float ,null_dequote  ,{SQL_NUMERIC},2},
  {PG_NUMMULTIRANGE                 ,"nummultirange"                ,1,',',"multirange_out"      ,quote_string,dequote_string,{0},0},
  {PG_NUMRANGE                      ,"numrange"                     ,1,',',"range_out"           ,quote_string,dequote_string,{0},0},
- {PG_OID                           ,"oid"                          ,1,',',"oidout"              ,quote_int   ,null_dequote  ,{0},1},
+ {PG_OID                           ,"oid"                          ,1,',',"oidout"              ,quote_integer,null_dequote  ,{0},1},
  {PG_OID8                          ,"oid8"                         ,1,',',"oid8out"             ,quote_string,dequote_string,{0},0},
  {PG_OIDVECTOR                     ,"oidvector"                    ,1,',',"oidvectorout"        ,quote_string,dequote_string,{0},0},
- {PG_PATH                          ,"path"                         ,1,',',"path_out"            ,quote_path  ,dequote_string,{0},0},
+ {PG_PATH                          ,"path"                         ,1,',',"path_out"            ,quote_geometric,dequote_string,{0},0},
  {PG_PG_ATTRIBUTE                  ,"pg_attribute"                 ,1,',',"record_out"          ,quote_string,dequote_string,{0},0},
  {PG_PG_BRIN_BLOOM_SUMMARY         ,"pg_brin_bloom_summary"        ,1,',',"brin_bloom_summary_out",quote_string,dequote_string,{0},0},
  {PG_PG_BRIN_MINMAX_MULTI_SUMMARY  ,"pg_brin_minmax_multi_summary" ,1,',',"brin_minmax_multi_summary_out",quote_string,dequote_string,{0},0},
@@ -172,8 +172,8 @@ static sql_type_info_t pg_types[] = {
  {PG_PG_PROC                       ,"pg_proc"                      ,1,',',"record_out"          ,quote_string,dequote_string,{0},0},
  {PG_PG_SNAPSHOT                   ,"pg_snapshot"                  ,1,',',"pg_snapshot_out"     ,quote_string,dequote_string,{0},0},
  {PG_PG_TYPE                       ,"pg_type"                      ,1,',',"record_out"          ,quote_string,dequote_string,{0},0},
- {PG_POINT                         ,"point"                        ,1,',',"point_out"           ,quote_geom  ,dequote_string,{0},0},
- {PG_POLYGON                       ,"polygon"                      ,1,',',"poly_out"            ,quote_geom  ,dequote_string,{0},0},
+ {PG_POINT                         ,"point"                        ,1,',',"point_out"           ,quote_geometric,dequote_string,{0},0},
+ {PG_POLYGON                       ,"polygon"                      ,1,',',"poly_out"            ,quote_geometric,dequote_string,{0},0},
  {PG_RECORD                        ,"record"                       ,0,',',"record_out"          ,quote_string,dequote_string,{0},0},
  {PG_REFCURSOR                     ,"refcursor"                    ,1,',',"textout"             ,quote_string,dequote_string,{0},0},
  {PG_REGCLASS                      ,"regclass"                     ,1,',',"regclassout"         ,quote_string,dequote_string,{0},0},
@@ -190,7 +190,7 @@ static sql_type_info_t pg_types[] = {
  {PG_REGTYPE                       ,"regtype"                      ,1,',',"regtypeout"          ,quote_string,dequote_string,{0},0},
  {PG_TABLE_AM_HANDLER              ,"table_am_handler"             ,0,',',"table_am_handler_out",quote_string,dequote_string,{0},0},
  {PG_TEXT                          ,"text"                         ,1,',',"textout"             ,quote_string,dequote_string,{SQL_LONGVARCHAR},0},
- {PG_TID                           ,"tid"                          ,1,',',"tidout"              ,quote_geom  ,dequote_string,{0},0},
+ {PG_TID                           ,"tid"                          ,1,',',"tidout"              ,quote_geometric,dequote_string,{0},0},
  {PG_TIME                          ,"time"                         ,1,',',"time_out"            ,quote_string,dequote_string,{SQL_TYPE_TIME},0},
  {PG_TIMESTAMP                     ,"timestamp"                    ,1,',',"timestamp_out"       ,quote_string,dequote_string,{SQL_TIMESTAMP},0},
  {PG_TIMESTAMPTZ                   ,"timestamptz"                  ,1,',',"timestamptz_out"     ,quote_string,dequote_string,{SQL_TYPE_TIMESTAMP_WITH_TIMEZONE},0},
@@ -431,11 +431,11 @@ static sql_type_info_t sql_types[] = {
  {SQL_REAL,"SQL_REAL",1,',', "none", quote_float, null_dequote, {PG_FLOAT4}, 2},
  {SQL_FLOAT,"SQL_FLOAT",1,',', "none", quote_float, null_dequote, {PG_FLOAT8}, 2},
  {SQL_DOUBLE,"SQL_DOUBLE",1,',', "none", quote_float, null_dequote, {PG_FLOAT8}, 2},
- {SQL_SMALLINT,"SQL_SMALLINT",1,',', "none", quote_int, null_dequote, {PG_INT2}, 1},
- {SQL_TINYINT,"SQL_TINYINT",1,',', "none", quote_int, null_dequote, {PG_INT2}, 1},
- {SQL_INTEGER,"SQL_INTEGER",1,',', "none", quote_int, null_dequote, {PG_INT4}, 1},
- {SQL_BIGINT,"SQL_BIGINT",1,',', "none", quote_int, null_dequote, {PG_INT8}, 0},
- {SQL_VARCHAR,"SQL_VARCHAR",1,',', "none", quote_name, null_dequote, {PG_NAME}, 0},
+ {SQL_SMALLINT,"SQL_SMALLINT",1,',', "none", quote_integer, null_dequote, {PG_INT2}, 1},
+ {SQL_TINYINT,"SQL_TINYINT",1,',', "none", quote_integer, null_dequote, {PG_INT2}, 1},
+ {SQL_INTEGER,"SQL_INTEGER",1,',', "none", quote_integer, null_dequote, {PG_INT4}, 1},
+ {SQL_BIGINT,"SQL_BIGINT",1,',', "none", quote_integer, null_dequote, {PG_INT8}, 0},
+ {SQL_VARCHAR,"SQL_VARCHAR",1,',', "none", quote_identifier, null_dequote, {PG_NAME}, 0},
  {SQL_NUMERIC,"SQL_NUMERIC",1,',', "none", quote_float, null_dequote, {PG_NUMERIC}, 2},
  {SQL_DECIMAL,"SQL_DECIMAL",1,',', "none", quote_float, null_dequote, {PG_NUMERIC}, 2},
  {SQL_LONGVARCHAR,"SQL_LONGVARCHAR",1,',', "none", quote_string, dequote_string, {PG_TEXT}, 0},
@@ -903,29 +903,29 @@ bpchar   quote_string  dequote_char    SQL_CHAR                  1  0
 cid      quote_string  dequote_string  0                         0  0
 
 ## Things that get special quoting
-int2     quote_int     null_dequote    SQL_SMALLINT|SQL_TINYINT  1  1
-int4     quote_int     null_dequote    SQL_INTEGER               1  1
-int8     quote_int     null_dequote    SQL_BIGINT                1  0
+int2     quote_integer     null_dequote    SQL_SMALLINT|SQL_TINYINT  1  1
+int4     quote_integer     null_dequote    SQL_INTEGER               1  1
+int8     quote_integer     null_dequote    SQL_BIGINT                1  0
 float4   quote_float   null_dequote    SQL_REAL                  1  2
 float8   quote_float   null_dequote    SQL_FLOAT|SQL_DOUBLE      1  2
 numeric  quote_float   null_dequote    SQL_NUMERIC|SQL_DECIMAL   1  2
-oid      quote_int     null_dequote    0                         0  1
-name     quote_name    null_dequote    SQL_VARCHAR               0  0 ## XXX Wrong
+oid      quote_integer     null_dequote    0                         0  1
+name     quote_identifier    null_dequote    SQL_VARCHAR               0  0 ## XXX Wrong
 
 ## Boolean
 bool     quote_bool    dequote_bool    SQL_BOOLEAN               1  3
 
 ## Geometric types
-point    quote_geom    dequote_string  0                         0  0
-line     quote_geom    dequote_string  0                         0  0
-lseg     quote_geom    dequote_string  0                         0  0
-box      quote_geom    dequote_string  0                         0  0
-path     quote_path    dequote_string  0                         0  0
-polygon  quote_geom    dequote_string  0                         0  0
-circle   quote_circle  dequote_string  0                         0  0
+point    quote_geometric    dequote_string  0                         0  0
+line     quote_geometric    dequote_string  0                         0  0
+lseg     quote_geometric    dequote_string  0                         0  0
+box      quote_geometric    dequote_string  0                         0  0
+path     quote_geometric    dequote_string  0                         0  0
+polygon  quote_geometric    dequote_string  0                         0  0
+circle   quote_geometric    dequote_string  0                         0  0
 
 ## Similar enough to geometric types that we use the same quoting rules
-tid      quote_geom    dequote_string  0                         0  0
+tid      quote_geometric    dequote_string  0                         0  0
 
 ## Binary - very different quoting rules
 bytea    quote_bytea   dequote_bytea   SQL_VARBINARY|SQL_BLOB|SQL_BINARY|SQL_LONGVARBINARY             1  0
