@@ -165,7 +165,6 @@ static void ph_array_destroy(imp_sth_t *imp_sth)
         Safefree(elem->fooname);
         Safefree(elem->value);
         Safefree(elem->quoted);
-        elem->bind_type = NULL;
     }
 
     Safefree(imp_sth->ph_array.array);
@@ -3604,8 +3603,10 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
                 currph->quotedlen = 4;
             }
             else {
-                if (currph->quoted)
+                if (currph->quoted) {
                     Safefree(currph->quoted);
+                    currph->quoted = NULL;
+                }
                 currph->quoted = currph->bind_type->quote(
                     aTHX_
                     currph->value,
