@@ -6,14 +6,36 @@ Github items can be found by using: https://github.com/bucardo/dbdpg/issues/XXX
 
 Version 3.21.0  (unreleased)
 
- - Fix a memory leak in the PQclosePrepared cleanup path
-   [Rorsarach]
-   (Github issue #187, pull request #188)
+ - Add non-blocking async COPY FROM support (pg_putcopydata_async, pg_putcopyend_async, pg_flush)
+   (Github issue #177, pull request #176)
+   [John Napiorkowski, Ed Sabol]
 
  - Ensure $sth->rows() returns 0 when no rows returned for updates, deletes,
      or inserts with ON CONFLICT DO NOTHING
    [Greg Sabino Mullane, reported by Yiannis]
    (Github issue #194, pull request #194)
+
+ - Fix incorrect quoting of float string values (e.g. 'NaN')
+   [Greg Sabino Mullane]
+
+ - Fix a memory leak in the PQclosePrepared cleanup path
+   [Rorsarach]
+   (Github issue #187, pull request #188)
+
+ - Fix a memory leak when bind_param called, and some around statement handles.
+   [Greg Sabino Mullane]
+
+ - Implement new string buffer system for statements and placeholders.
+   This replaces the old linked lists with arrays, and is much faster.
+   [Matt Tyson, Greg Sabino Mullane]
+   (Github pull requests #21 and #201)
+
+ - Cleanup and refactor code in quote.c. Rename internal functions.
+   Standardize and change error messages.
+   [Greg Sabino Mullane]
+
+ - Improve and add tests for PQclear logic in dbdimp.c
+   [Greg Sabino Mullane]
 
  - Support whitespace in directory names for the test suite.
    [Greg Sabino Mullane]
