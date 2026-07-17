@@ -299,6 +299,7 @@ static int after_connect_init(pTHX_ SV *dbh, imp_dbh_t * imp_dbh)
             imp_dbh->conn = NULL;
             sv_free((SV *)imp_dbh->savepoints);
             Safefree(imp_dbh->sqlstate);
+            imp_dbh->sqlstate = NULL;
             if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login6 (error)\n", THEADER_slow);
             return 1;
         }
@@ -437,6 +438,7 @@ int dbd_db_login6 (SV * dbh, imp_dbh_t * imp_dbh, char * dbname, char * uid, cha
         imp_dbh->conn = NULL;
         sv_free((SV *)imp_dbh->savepoints);
         Safefree(imp_dbh->sqlstate);
+        imp_dbh->sqlstate = NULL;
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_db_login6 (error)\n", THEADER_slow);
         return 0;
     }
@@ -962,6 +964,7 @@ void dbd_db_destroy (SV * dbh, imp_dbh_t * imp_dbh)
     av_undef(imp_dbh->savepoints);
     sv_free((SV *)imp_dbh->savepoints);
     Safefree(imp_dbh->sqlstate);
+    imp_dbh->sqlstate = NULL;
 
     DBIc_IMPSET_off(imp_dbh);
 

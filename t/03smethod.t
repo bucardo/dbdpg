@@ -515,7 +515,7 @@ is ($rows, 2, $t);
 SKIP: {
 
     if ($pgversion < 90500) {
-        skip ("Cannot test ON CONFLICT etc. when Postgres is < 9.5", 7);
+        skip ('Cannot test ON CONFLICT etc. when Postgres is < 9.5', 7);
     }
 
     $t='Statement handle method rows() returns 1 for ON CONFLICT DO NOTHING (insert valid row)';

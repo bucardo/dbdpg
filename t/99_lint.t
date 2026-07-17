@@ -491,4 +491,52 @@ if ($all_ok) {
     pass('All calls to last_result in dbdimp.c have correct result_shared');
 }
 
+##
+## All calls to Safefree must immediately set to null if something else might try and read it
+##
+
+$all_ok = 1;
+$file = 'dbdimp.c';
+open $fh, '<', $file or die "Could not open $file: $!\n";
+$.=0;
+my $current_function = '?';
+while (<$fh>) {
+    chomp;
+
+    ## /* Get the current function */
+    if (/^\w.+ (\w+) ?\(/) {
+        $current_function = $1;
+        next;
+    }
+
+    if (/->/ and /Safefree\((.+)\)/) {
+
+        my $var = $1;
+
+        ## These are safe and controlled
+        next if $var =~ /elem->/;
+
+        my $nextline = <$fh>;
+
+        ## We want to immediately NULL it
+        next if $nextline =~ /$var = NULL/;
+
+        ## Also okay of we use New() or Newx()
+        next if $nextline =~ /New.+$var/;
+
+        ## Special case for dbd_st_destroy
+        next if $current_function eq 'dbd_st_destroy';
+
+        fail "Found suspicious Safefree() on $var at line $. ($current_function)";
+        $all_ok = 0;
+
+    }
+}
+
+if ($all_ok) {
+    pass('All Safefree calls in dbdimp.c look ok');
+}
+
+
+
 done_testing();
