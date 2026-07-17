@@ -129,8 +129,8 @@ eval { DBI->connect($bad_dsn, '', '', {RaiseError=>1}) };
 like ($@, ($^O =~ /Win/ ? qr/DBI/s : qr/DBI.*\Q.s.PGSQL.1\E\b/s), $t);
 
  SKIP: {
-     if ($pglibversion < 100000) {
-         skip ('Calling DBI->connect() with multiple host names requires libpq >= 10', 1);
+     if ($pglibversion <= 100000) {
+         skip ('Calling DBI->connect() with multiple host names requires libpq > 10', 1);
      }
      $t=q{Calling DBI->connect() works with multiple host names};
      (my $tempdsn = $testdsn) =~ s/host=/host=foo.invalid,/;

@@ -542,7 +542,7 @@ version: $version
             $debug and Test::More::diag qq{Writing to "$conf"};
             print {$cfh} "\n\n## DBD::Pg testing parameters\n";
             print {$cfh} "port                       = $testport\n";
-            print {$cfh} "max_connections            = 11\n";
+            print {$cfh} "max_connections            = 15\n";
             print {$cfh} "log_statement              = 'all'\n";
             print {$cfh} "log_min_duration_statement = 0\n";
             print {$cfh} "log_line_prefix            = '%m [%p] '\n";

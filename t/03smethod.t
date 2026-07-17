@@ -31,6 +31,8 @@ my ($SQL, $sth, $sth2, $result, @results, $expected, $rows, $t);
 
 my ($schema,$schema2,$schema3) = ('dbd_pg_testschema', 'dbd_pg_testschema2', 'dbd_pg_testschema3');
 
+my ($pglibversion,$pgversion) = ($dbh->{pg_lib_version},$dbh->{pg_server_version});
+
 #
 # Test of the prepare flags
 #
@@ -510,45 +512,53 @@ $rows = $sth->rows();
 $sth->finish();
 is ($rows, 2, $t);
 
-$t='Statement handle method rows() returns 1 for ON CONFLICT DO NOTHING (insert valid row)';
-$sth = $dbh->prepare('INSERT INTO dbd_pg_test(id) VALUES (?) ON CONFLICT DO NOTHING');
-$sth->execute(1);
-$rows = $sth->rows();
-is ($rows, 1, $t);
+SKIP: {
 
-$t='Statement handle method rows() returns 0 for ON CONFLICT DO NOTHING (insert duplicate row)';
-$sth->execute(1);
-$rows = $sth->rows();
-is ($rows, 0, $t);
+    if ($pgversion < 90500) {
+        skip ("Cannot test ON CONFLICT etc. when Postgres is < 9.5", 7);
+    }
 
-$t='Statement handle method rows() returns 0 for non-matching UPDATE';
-$sth = $dbh->prepare('UPDATE dbd_pg_test set id = -55 where id = ?');
-$sth->execute(-99);
-$rows = $sth->rows();
-is ($rows, 0, $t);
+    $t='Statement handle method rows() returns 1 for ON CONFLICT DO NOTHING (insert valid row)';
+    $sth = $dbh->prepare('INSERT INTO dbd_pg_test(id) VALUES (?) ON CONFLICT DO NOTHING');
+    $sth->execute(1);
+    $rows = $sth->rows();
+    is ($rows, 1, $t);
 
-$t='Statement handle method rows() returns 1 for matching UPDATE';
-$sth->execute(1);
-$rows = $sth->rows();
-is ($rows, 1, $t);
+    $t='Statement handle method rows() returns 0 for ON CONFLICT DO NOTHING (insert duplicate row)';
+    $sth->execute(1);
+    $rows = $sth->rows();
+    is ($rows, 0, $t);
 
-$t='Statement handle method rows() returns correct number of rows for UPDATE';
-$sth = $dbh->prepare('UPDATE dbd_pg_test set id = id where id > ?');
-$sth->execute(-500);
-$rows = $sth->rows();
-cmp_ok ($rows, '>=', 2, $t);
+    $t='Statement handle method rows() returns 0 for non-matching UPDATE';
+    $sth = $dbh->prepare('UPDATE dbd_pg_test set id = -55 where id = ?');
+    $sth->execute(-99);
+    $rows = $sth->rows();
+    is ($rows, 0, $t);
 
-$t='Statement handle method rows() returns 0 for DELETE of no rows';
-$sth = $dbh->prepare('DELETE from dbd_pg_test where id = ?');
-$sth->execute(-500);
-$rows = $sth->rows();
-is ($rows, 0, $t);
+    $t='Statement handle method rows() returns 1 for matching UPDATE';
+    $sth->execute(1);
+    $rows = $sth->rows();
+    is ($rows, 1, $t);
 
-$t='Statement handle method rows() returns 1 for DELETE of one row';
-$sth = $dbh->prepare('DELETE from dbd_pg_test where id = ?');
-$sth->execute(-55);
-$rows = $sth->rows();
-is ($rows, 1, $t);
+    $t='Statement handle method rows() returns correct number of rows for UPDATE';
+    $sth = $dbh->prepare('UPDATE dbd_pg_test set id = id where id > ?');
+    $sth->execute(-500);
+    $rows = $sth->rows();
+    cmp_ok ($rows, '>=', 2, $t);
+
+    $t='Statement handle method rows() returns 0 for DELETE of no rows';
+    $sth = $dbh->prepare('DELETE from dbd_pg_test where id = ?');
+    $sth->execute(-500);
+    $rows = $sth->rows();
+    is ($rows, 0, $t);
+
+    $t='Statement handle method rows() returns 1 for DELETE of one row';
+    $sth = $dbh->prepare('DELETE from dbd_pg_test where id = ?');
+    $sth->execute(-55);
+    $rows = $sth->rows();
+    is ($rows, 1, $t);
+
+}
 
 #
 # Test of the "bind_col" statement handle method
