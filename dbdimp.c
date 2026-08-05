@@ -2543,7 +2543,6 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
         }
         if (imp_sth->numphs) {
             TRC(DBILOGFP, "%sPlaceholder number, fooname, id:\n", THEADER_slow);
-            STRLEN xlen = 1;
             for (int p=0; p < ph_array_count(imp_sth); p++) {
                 ph_t *currph = ph_array_element(imp_sth, p);
                 TRC(DBILOGFP, "%s#%d FOONAME: (%s)\n", THEADER_slow, p+1, currph->fooname);
@@ -3739,7 +3738,6 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
         if (TRACE7_slow) {
             for (p=0; p < ph_array_count(imp_sth); p++) {
-                ph_t *currph = ph_array_element(imp_sth, p);
                 TRC(DBILOGFP, "%sPQexecParams item #%d\n", THEADER_slow, (int)p);
                 TRC(DBILOGFP, "%s-> Type: (%d)\n", THEADER_slow, imp_sth->PQoids[p]);
                 TRC(DBILOGFP, "%s-> Value: (%s)\n", THEADER_slow, imp_sth->PQvals[p]);
