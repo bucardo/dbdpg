@@ -191,12 +191,13 @@ my $dbi_arch_dir;
 
 my $defines = " -DPGLIBVERSION=$serverversion -DPGDEFPORT=$defaultport";
 if ($Config{ivsize} >= 8 && $serverversion >= 90300) {
-    $defines .= ' -DHAS64BITLO';
+    $defines .= ' -DHAS64BITLO ';
 }
 my $comp_opts = $Config{q{ccflags}} . $defines;
 
 if ($ENV{DBDPG_GCCDEBUG}) {
     warn "Enabling many compiler options\n";
+    $comp_opts .= " -isystem $Config{archlibexp}/CORE";
     $comp_opts .= ' -Wchar-subscripts -Wcomment';
     $comp_opts .= ' -Wformat=2'; ## does -Wformat,-Wformat-y2k,-Wformat-nonliteral,-Wformat-security
     $comp_opts .= ' -Wnonnull';
@@ -213,11 +214,9 @@ if ($ENV{DBDPG_GCCDEBUG}) {
     $comp_opts .= ' -Wnested-externs';
     $comp_opts .= ' -Wstrict-prototypes'; ## Still hits a couple places in types.h
     $comp_opts .= ' -Wswitch-default';
-    $comp_opts .= ' -Wsystem-headers';
     $comp_opts .= ' -Wmissing-noreturn';
     $comp_opts .= ' -Wfloat-equal'; ## Does not like SvTRUE() calls
     $comp_opts .= ' -Wno-inline';
-
 }
 
 my %opts =
