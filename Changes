@@ -4,7 +4,7 @@ RT items can be found by using: https://rt.cpan.org/Public/Bug/Display.html?id=X
 Github items can be found by using: https://github.com/bucardo/dbdpg/issues/XXX
 
 
-Version 3.21.0  (unreleased)
+Version 3.21.0  (released August 22, 2026)
 
  - Add non-blocking async COPY FROM support (pg_putcopydata_async, pg_putcopyend_async, pg_flush)
    (Github issue #177, pull request #176)
