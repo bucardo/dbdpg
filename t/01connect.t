@@ -34,7 +34,7 @@ if ($connerror or (!defined $dbh)) {
     plan skip_all => "Connection to database failed, cannot continue testing ($connerror) (dbh=" . (defined($dbh) ? $dbh : '<undefined>') . ')';
 }
 
-plan tests => 24;
+plan tests => 18;
 
 pass ('Connection to test database works');
 
@@ -147,6 +147,7 @@ like ($@, ($^O =~ /Win/ ? qr/DBI/s : qr/DBI.*\Q.s.PGSQL.1\E\b/s), $t);
          skip ('Calling DBI->connect() with an application_name requires Postgres >= 9.0', @names);
      }
 
+     my $problems = 0;
      for my $aname (@names) {
          $t=qq{Calling DBI->connect() works with application name $aname};
          (my $escaped_name = $aname) =~ s/(['\\])/\\$1/g;
@@ -156,9 +157,14 @@ like ($@, ($^O =~ /Win/ ? qr/DBI/s : qr/DBI.*\Q.s.PGSQL.1\E\b/s), $t);
              next;
          }
          my $returned_name = $tempdbh->selectrow_array('show application_name');
-         is ($returned_name, $aname, $t);
+         if ($returned_name ne $aname) {
+             is ($returned_name, $aname, $t);
+             $problems++;
+         }
          $tempdbh->disconnect;
      }
+     $t=qq{Calling DBI->connect() works with all application name variants};
+     $problems ? fail ($t) : pass ($t);
 }
 
 END {
