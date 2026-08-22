@@ -1,12 +1,13 @@
 #!perl
 
-## Test that our SIGNATURE file is valid - requires TEST_SIGNATURE env
+## Test that our SIGNATURE file is valid
+## Will only run if the environment variable TEST_SIGNATURE is true
+## Reference: https://metacpan.org/pod/Test::Signature
 
 use 5.008001;
 use strict;
 use warnings;
 use Test::More;
-select(($|=1,select(STDERR),$|=1)[1]);
 
 if (!$ENV{TEST_SIGNATURE}) {
     plan skip_all => 'Set the environment variable TEST_SIGNATURE to enable this test';
