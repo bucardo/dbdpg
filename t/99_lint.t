@@ -242,6 +242,7 @@ for my $file (sort keys %fileslurp) {
             ## Must be at start of line (optional whitespace and comment), a space, a paren, and something interesting
             next if $line =~ /testmorewords/;
             next if $line =~ /\w+ fail/;
+            next if $line =~ / \? fail/;
             next if $line =~ /defined \$expected \? like/;
             if ($line !~ qr{^\s*#?$func \(['\S]}) {
                 fail ($t);

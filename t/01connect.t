@@ -163,7 +163,7 @@ like ($@, ($^O =~ /Win/ ? qr/DBI/s : qr/DBI.*\Q.s.PGSQL.1\E\b/s), $t);
          }
          $tempdbh->disconnect;
      }
-     $t=qq{Calling DBI->connect() works with all application name variants};
+     $t=q{Calling DBI->connect() works with all application name variants};
      $problems ? fail ($t) : pass ($t);
 }
 
