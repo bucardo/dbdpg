@@ -974,5 +974,4 @@ XSubPPtmpAAAA
 xxh
 yaml
 YAML
-YAMLiciousness
 yml

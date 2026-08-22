@@ -35,6 +35,5 @@ t/99_lint.t
 t/99_perlcritic.t
 t/99_pod.t
 t/99_spellcheck.t
-t/99_yaml.t
 z_tarballs/
 misc/pg9.1.24.scan.c.gz

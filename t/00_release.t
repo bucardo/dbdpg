@@ -11,7 +11,20 @@ use Test::More;
 if (! $ENV{RELEASE_TESTING}) {
     plan (skip_all =>  'Test skipped unless environment variable RELEASE_TESTING is set');
 }
-plan tests => 3;
+plan tests => 5;
+
+eval {
+    require Test::CPAN::Meta::YAML;
+    Test::CPAN::Meta::YAML->import;
+};
+if ($@) {
+    SKIP: {
+        skip ('Skipping Test::CPAN::Meta::YAML tests: module not found', 2);
+    }
+}
+else {
+    meta_spec_ok();
+}
 
 my $vre = qr{([0-9]+\.[0-9]+\.[0-9]+\_?[0-9]*)};
 

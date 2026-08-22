@@ -224,8 +224,6 @@ t/99_perlcritic.t - Uses Perl::Critic to check Pg.pm and all of the test files.
 t/99_pod.t - Verifies the POD of Pg.pm. Requires Test::POD version 0.95, and 
   Test::Pod::Coverage 1.04.
 
-t/99_yaml.t - Uses Test::YAML::Meta to verify the META.yml file.
-
 t/99_spellcheck.t - Checks the spelling of everything it can.
 
 testdb - May be created by the test suite as a place to store 
