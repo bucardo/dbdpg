@@ -13,7 +13,7 @@ use charnames ':full';
 use Encode qw(encode_utf8);
 use Data::Dumper;
 use Test::More;
-plan tests => 607;
+plan tests => 2;
 use open qw/ :std :encoding(utf8) /;
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
@@ -68,6 +68,9 @@ eval { $dbh->do('DROP TABLE dbd_pg_test_unicode') };
 $dbh->commit();
 $dbh->do('CREATE TABLE dbd_pg_test_unicode(t TEXT)');
 
+my $count = 0;
+my $problems = 0;
+my ($actual, $expected);
 foreach (@tests) {
     my ($state, $range, $type, $value) = @$_;
  SKIP:
@@ -126,11 +129,20 @@ foreach (@tests) {
                     : encode_utf8($want);
             }
 
-            is(utf8::is_utf8($test->{sql}), ($state eq 'upgraded'), "$description query has correct flag")
-                if $test->{qtype} =~ /^interpolated/;
+            if ($test->{qtype} =~ /^interpolated/) {
+                $count++;
+                if (utf8::is_utf8($test->{sql}) ne ($state eq 'upgraded')) {
+                    $problems++;
+                    is (utf8::is_utf8($test->{sql}), ($state eq 'upgraded'), "$description query has correct flag");
+                }
+            }
             if ($state ne 'mixed') {
                 foreach my $arg (map { ref($_) ? @{$_} : $_ } @args) { ## no critic
-                    is(utf8::is_utf8($arg), ($state eq 'upgraded'), "$description arg has correct flag")
+                    $count++;
+                    if (utf8::is_utf8($arg) ne ($state eq 'upgraded')) {
+                        $problems++;
+                        is(utf8::is_utf8($arg), ($state eq 'upgraded'), "$description arg has correct flag");
+                    }
                 }
             }
             $dbh->{pg_enable_utf8} = $enable_utf8;
@@ -138,17 +150,16 @@ foreach (@tests) {
             ## Skip pg_enable_utf=0 for now
             if (0 == $enable_utf8) {
                 if ($range eq 'latin 1 range' or $range eq 'base plane' or $range eq 'astral plane') {
-                    pass ("Skipping test of pg_enable_utf=0 with $range");
                     next;
                 }
             }
-
 
             my $sth = $dbh->prepare($test->{sql});
             eval {
                 $sth->execute(@args);
             };
             if ($@) {
+                $problems++;
                 diag "Failure: enable_utf8=$enable_utf8, SQL=$test->{sql}, range=$range\n";
                 die $@;
             }
@@ -159,21 +170,39 @@ foreach (@tests) {
                     $sth->execute();
                 }
                 my $result = $sth->fetchall_arrayref->[0][0];
-                is_deeply ($result, $want, "$description via prepare+execute+fetchall returns proper value");
+                if (ref $want eq 'ARRAY') {
+                    $actual = $result->[0];
+                    $expected = $want->[0];
+                }
+                else {
+                    $actual = $result;
+                    $expected = $want;
+                }
+                $count++;
+                if ($actual ne $expected) {
+                    $problems++;
+                    is_deeply ($result, $want, "$description via prepare+execute+fetchall returns proper value");
+                }
+
                 if ($test->{qtype} !~ /length/) {
                     # Whilst XS code can set SVf_UTF8 on an IV, the core's SV
                     # copying code doesn't copy it. So we can't assume that numeric
                     # values we see "out here" still have it set. Hence skip this
                     # test for the SQL length() tests.
-                    is (utf8::is_utf8($_), !!$enable_utf8, "$description via prepare+execute+fetchall returns string with correct UTF-8 flag")
-                        for (ref $result ? @{$result} : $result);
+                    for (ref $result ? @{$result} : $result) {
+                        $count++;
+                        if (utf8::is_utf8($_) ne !!$enable_utf8) {
+                            $problems++;
+                            is (utf8::is_utf8($_), !!$enable_utf8,
+                                "$description via prepare+execute+fetchall returns string with correct UTF-8 flag");
+                        }
+                    }
                 }
             }
             if ($test->{qtype} =~ /insert/) {
                 $dbh->do('DELETE FROM dbd_pg_test_unicode');
                 $dbh->commit();
             }
-
 
             my $result;
             if ($test->{qtype} =~ /insert/) {
@@ -186,20 +215,39 @@ foreach (@tests) {
                 $result = eval { $dbh->selectall_arrayref($test->{sql}, undef, @args)->[0][0] };
             }
             if ($@) {
+                $problems++;
                 diag "Failure: enable_utf8=$enable_utf8, SQL=$test->{sql}, range=$range\n";
                 die $@;
             }
+
+            if (ref $want eq 'ARRAY') {
+                $actual = $result->[0];
+                $expected = $want->[0];
+            }
             else {
-                is_deeply ($result, $want, "$description via do/selectall returns proper value");
-                if ($test->{qtype} !~ /length/) {
-                    # Whilst XS code can set SVf_UTF8 on an IV, the core's SV
-                    # copying code doesn't copy it. So we can't assume that numeric
-                    # values we see "out here" still have it set. Hence skip this
-                    # test for the SQL length() tests.
-                    is (utf8::is_utf8($_), !!$enable_utf8, "$description via do/selectall returns string with correct UTF-8 flag")
-                        for (ref $result ? @{$result} : $result);
+                $actual = $result;
+                $expected = $want;
+            }
+            $count++;
+            if ($actual ne $expected) {
+                $problems++;
+                is_deeply ($result, $want, "$description via do/selecall returns proper value");
+            }
+
+            if ($test->{qtype} !~ /length/) {
+                # Whilst XS code can set SVf_UTF8 on an IV, the core's SV
+                # copying code doesn't copy it. So we can't assume that numeric
+                # values we see "out here" still have it set. Hence skip this
+                # test for the SQL length() tests.
+                for (ref $result ? @{$result} : $result) {
+                    $count++;
+                    if (utf8::is_utf8($_) ne !!$enable_utf8) {
+                        $problems++;
+                        is (utf8::is_utf8($_), !!$enable_utf8, "$description via do/selectall returns string with correct UTF-8 flag");
+                    }
                 }
             }
+
             if ($test->{qtype} =~ /insert/) {
                 $dbh->do('DELETE FROM dbd_pg_test_unicode');
                 $dbh->commit();
@@ -240,21 +288,35 @@ for my $name ('LATIN CAPITAL LETTER N',
         $sth->execute($ord);
         my $result = $sth->fetchall_arrayref->[0][0];
         if (!$enable_utf8) {
+            $count++;
             # We asked for UTF-8 octets to arrive in Perl-space.
             # Check this, and convert them to character(s).
             # If we didn't, the next two tests are meaningless, so skip them.
-            is(utf8::decode($result), 1, "Got valid UTF-8 for $description")
-                or next;
+            if (utf8::decode($result) != 1) {
+                $problems++;
+                is(utf8::decode($result), 1, "Got valid UTF-8 for $description");
+                next;
+            }
         }
-        is (length $result, 1, "Got 1 character for $description");
-        is (ord $result, $ord, "Got correct character for $description");
+
+        $count++;
+        if (length($result) != 1) {
+            $problems++;
+            is (length $result, 1, "Got 1 character for $description");
+        }
+        else {
+            $count++;
+            if (ord $result ne $ord) {
+                $problems++;
+                is (ord $result, $ord, "Got correct character for $description");
+            }
+        }
     }
 }
+my $t = "Wide range of $count Unicode tests";
+$problems ? fail ($t) : pass ($t);
 
 $dbh->do('DROP TABLE dbd_pg_test_unicode');
 $dbh->commit();
 cleanup_database($dbh,'test');
 $dbh->disconnect();
-
-
-
