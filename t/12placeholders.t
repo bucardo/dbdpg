@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 225;
+plan tests => 73;
 
 my $t='Connect to database for placeholder testing';
 isnt ($dbh, undef, $t);
@@ -370,6 +370,8 @@ circle datatype floating point and exponential numbers
 
 $testdata =~ s/^\s+//;
 my $curtype = '';
+my $problems = 0;
+$count = 0;
 for my $line (split /\n\n+/ => $testdata) {
     my ($text,$input,$quoted,$rows) = split /\n/ => $line;
     next if ! $text;
@@ -385,50 +387,66 @@ for my $line (split /\n\n+/ => $testdata) {
     }
     $dbh->do('DELETE FROM dbd_pg_test_geom');
     eval { $qresult = $dbh->quote($input, {pg_type => $typemap{$type}}); };
+
+    $count++;
     if ($@) {
         if ($quoted !~ /ERROR: (.+)/) { ## no critic
+            $problems++;
             fail ("$t error: $@");
         }
-        else {
+        elsif ($@ !~ qr{$1}) {
+            $problems++;
             like ($@, qr{$1}, $t);
         }
     }
     else {
-        is ($qresult, $quoted, $t);
+        if ($qresult ne $quoted) {
+            $problems++;
+            is ($qresult, $quoted, $t);
+        }
     }
     $dbh->commit();
 
     eval { $dbh->do("EXECUTE geotest('$input')"); };
     if ($@) {
+        $count++;
         if ($rows !~ /ERROR: .+/) {
+            $problems++;
             fail ("$t error: $@");
-        }
-        else {
-            ## Do any error for now: i18n worries
-            pass ($t);
         }
     }
     $dbh->commit();
 
     eval { $sth->execute($input); };
     if ($@) {
+        $count++;
         if ($rows !~ /ERROR: .+/) {
-            fail ($t);
-        }
-        else {
-            ## Do any error for now: i18n worries
-            pass ($t);
+            $problems++;
+            fail ("$t: error");
         }
     }
     $dbh->commit();
 
     if ($rows !~ /ERROR/) {
+        $count++;
         $SQL = "SELECT x$type FROM dbd_pg_test_geom";
         $expected = [[$rows],[$rows]];
         $result = $dbh->selectall_arrayref($SQL);
-        is_deeply ($result, $expected, $t);
+        if (! defined $result->[0] or ! defined $result->[1]
+            or ! defined $result->[0][0] or ! defined $result->[1][0]) {
+            $problems++;
+            fail ('Geometric test for $test failed to return valid result');
+        }
+        elsif ($result->[0][0] ne $expected->[0][0]
+            or $result->[1][0] ne $expected->[1][0]) {
+            $problems++;
+            is_deeply ($result, $expected, "$t: results");
+        }
     }
 }
+
+$t = "Geometric type tests, checked $count variants";
+$problems ? fail ($t) : pass ($t);
 
 $t='Calling do() with non-DML placeholder works';
 $sth->finish();
@@ -605,16 +623,23 @@ eval {
 like ($@, qr{Invalid placeholders}, $t);
 
 $t='Dollar quotes with invalid characters are not parsed as identifiers';
+$problems = 0;
 for my $char (qw!+ / : @ [ `!) { ## six characters
     eval {
         $sth = $dbh->prepare(qq{SELECT \$abc${char}\$ 123 \$abc${char}\$});
         $sth->execute();
         $sth->finish();
     };
-    like ($@, qr{syntax error}, "$t: char=$char");
+    if ($@ !~ qr{syntax error}) {
+        $problems++;
+        like ($@, qr{syntax error}, "$t: char=$char");
+    }
 }
+$problems ? fail ($t) : pass ($t);
+
 
 $t='Dollar quotes with valid characters are parsed as identifiers';
+$problems = 0;
 $dbh->rollback();
 for my $char (qw{0 9 A Z a z}) { ## six letters
     eval {
@@ -622,7 +647,10 @@ for my $char (qw{0 9 A Z a z}) { ## six letters
         $sth->execute();
         $sth->finish();
     };
-    is ($@, q{}, $t);
+    if ($@) {
+        $problems++;
+        is ($@, q{}, "$t: $char");
+    }
 }
 
 SKIP: {
@@ -640,9 +668,13 @@ SKIP: {
             $sth->execute();
             $sth->finish();
         };
-        is ($@, q{}, $t);
+        if ($@) {
+            $problems++;
+            is ($@, q{}, "$t: $ident");
+        }
     }
 }
+$problems ? fail ($t) : pass ($t);
 
 SKIP: {
     skip 'Cannot run backslash_quote test on Postgres < 8.2', 1 if $pgversion < 80200;
@@ -716,12 +748,21 @@ like ($@, qr{quote_integer: invalid input}, $t);
 is ($val, -1, $t);
 
 my $prefix = 'Valid float value works when quoting with SQL_FLOAT';
+$count = 0;
+$problems = 0;
 for my $float ('123','0.00','0.234','23.31562', '1.23e04','6.54e+02','4e-3','NaN','Infinity','-infinity') {
+    $count++;
     $t = "$prefix (value=$float)";
     $val = -1;
     eval { $val = $dbh->quote($float, SQL_FLOAT); };
-    is ($@, q{}, $t);
-    is ($val, ($float =~ /[ai]/ ? qq{'$float'} : $float), $t);
+    if ($@ ne q{}) {
+        $problems++;
+        is ($@, q{}, "$t: error");
+    }
+    elsif ($val ne ($float =~ /[ai]/ ? qq{'$float'} : $float)) {
+        $problems++;
+        is ($val, ($float =~ /[ai]/ ? qq{'$float'} : $float), $t);
+    }
 
     next unless $float =~ /[ai]/;
 
@@ -729,25 +770,47 @@ for my $float ('123','0.00','0.234','23.31562', '1.23e04','6.54e+02','4e-3','NaN
     $t = "$prefix (value=$number)";
     $val = -1;
     eval { $val = $dbh->quote($number, SQL_FLOAT); };
-    is ($@, q{}, $t);
-    is ($val, qq{'$number'}, $t);
+    if ($@ ne q{}) {
+        $problems++;
+        is ($@, q{}, "$t: error");
+    }
+    elsif ($val ne qq{'$number'}) {
+        $problems++;
+        is ($val, qq{'$number'}, $t);
+    }
 
     $number = uc $float;
     $t = "$prefix (value=$number)";
     $val = -1;
     eval { $val = $dbh->quote($number, SQL_FLOAT); };
-    is ($@, q{}, $t);
-    is ($val, qq{'$number'}, $t);
+    if ($@ ne q{}) {
+        $problems++;
+        is ($@, q{}, "$t: error");
+    }
+    elsif ($val ne qq{'$number'}) {
+        $problems++;
+        is ($val, qq{'$number'}, $t);
+    }
 }
 
 $prefix = 'Invalid float value fails when quoting with SQL_FLOAT';
 for my $float ('3abc','123abc','','NaNum','-infinitee') {
+    $count++;
     $t = "$prefix (value=$float)";
     $val = -1;
     eval { $val = $dbh->quote($float, SQL_FLOAT); };
-    like ($@, qr{quote_float: invalid input}, $t);
-    is ($val, -1, $t);
+    if ($@ !~ qr{quote_float: invalid input}) {
+        $problems++;
+        like ($@, qr{quote_float: invalid input}, $t);
+    }
+    elsif ($val != -1) {
+        $problems++;
+        is ($val, -1, $t);
+    }
 }
+
+$t = "Quoting worked for type float, checked $count variants";
+$problems ? fail ($t) : pass ($t);
 
 $dbh->rollback();
 
@@ -774,20 +837,31 @@ like ($@, qr{quote_float: invalid input}, $t);
 
 ## Test quoting of the "name" type
 $prefix = q{The 'name' data type does correct quoting};
-
+$count = 0;
+$problems = 0;
 for my $word (qw/User user USER trigger Trigger user-user/) {
+    $count++;
     $t = qq{$prefix for the word "$word"};
     my $got = $dbh->quote($word, { pg_type => PG_NAME });
     $expected = qq{"$word"};
-    is ($got, $expected, $t);
+    if ($got ne $expected) {
+        $problems++;
+        is ($got, $expected, $t);
+    }
 }
 
 for my $word (qw/auser userz/) {
+    $count++;
     $t = qq{$prefix for the word "$word"};
     my $got = $dbh->quote($word, { pg_type => PG_NAME });
     $expected = qq{$word};
-    is ($got, $expected, $t);
+    if ($got ne $expected) {
+        $problems++;
+        is ($got, $expected, $t);
+    }
 }
+$t = "Name type tests, checked $count variants";
+$problems ? fail ($t) : pass ($t);
 
 ## Test quoting of booleans
 
@@ -825,6 +899,8 @@ undef         => 'NULL',
 '0 but truez' => 'ERROR',
 );
 
+$count = 0;
+$problems = 0;
 while (my ($name,$res) = each %booltest) {
     my ($bool, $desc) =
         $name eq 'undef'  ? (undef, $name) :
@@ -832,19 +908,23 @@ while (my ($name,$res) = each %booltest) {
                             ($name, qq{"$name"});
     $t = "Boolean quoting of $desc",
     eval { $result = $dbh->quote($bool, {pg_type => PG_BOOL}); };
+    $count++;
     if ($@) {
-        if ($res eq 'ERROR' and $@ =~ /quote_bool: invalid input/) {
-            pass ($t);
-        }
-        else {
+        if ($res ne 'ERROR' or $@ !~ /quote_bool: invalid input/) {
+            $problems++;
             fail ("Failure at $t: $@");
         }
         $dbh->rollback();
     }
     else {
-        is ($result, $res, $t);
+        if ($result ne $res) {
+            $problems++;
+            is ($result, $res, $t);
+        }
     }
 }
+$t = "Boolean type tests, checked $count variants";
+$problems ? fail ($t) : pass ($t);
 
 $t = q{Inserting into a boolean column with an empty string fails};
 $SQL = q{INSERT INTO dbd_pg_test(id, "CaseTest", val) VALUES (?,?,?) RETURNING id, "CaseTest"};
