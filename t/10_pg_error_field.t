@@ -7,6 +7,7 @@ use strict;
 use warnings;
 use lib 'blib/lib', 'blib/arch', 't';
 use Test::More;
+plan tests => 499;
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
@@ -110,5 +111,4 @@ $dbh->do("DROP TABLE $test_table");
 $dbh->commit();
 $dbh->disconnect();
 
-done_testing();
 

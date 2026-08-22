@@ -8,6 +8,7 @@ use 5.008001;
 use strict;
 use warnings;
 use Test::More;
+plan tests => 29;
 use Data::Dumper;
 
 if (! $ENV{AUTHOR_TESTING}) {
@@ -153,5 +154,4 @@ for my $filename (sort @testfiles) {
 
 pass ('Finished Perl::Critic testing');
 
-done_testing();
 

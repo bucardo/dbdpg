@@ -6,6 +6,7 @@ use strict;
 ## no critic (RequireUseWarnings)
 use lib 'blib/lib', 'blib/arch', 't';
 use Test::More;
+plan tests => 1;
 select(($|=1,select(STDERR),$|=1)[1]);
 
 use DBD::Pg qw(:pg_types :async);
@@ -218,5 +219,3 @@ PG_XMLARRAY                       ==   143 or (++$fails && fail ('PG_XMLARRAY re
 if (!$fails) {
     pass ('All types returned the correct value');
 }
-
-done_testing();

@@ -10,6 +10,7 @@ use 5.008001;
 use strict;
 use warnings;
 use Test::More;
+plan tests => 65;
 use utf8; ## no critic (TooMuchCode::ProhibitUnnecessaryUTF8Pragma)
 select(($|=1,select(STDERR),$|=1)[1]);
 
@@ -207,9 +208,7 @@ SKIP: {
 
 }
 
-
-done_testing();
-
+exit;
 
 __DATA__
 ## These words are okay

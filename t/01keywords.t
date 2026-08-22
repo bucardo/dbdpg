@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use lib 'blib/lib', 'blib/arch', 't';
 use Test::More;
+plan tests => 2;
 select(($|=1,select(STDERR),$|=1)[1]);
 
 use DBD::Pg ();
@@ -508,4 +509,3 @@ if ($all_ok) {
 $t='Verified a non-keyword does not identify as one';
 ok (!DBD::Pg::db::_is_keyword('turnstep'), $t);
 
-done_testing;

@@ -6,6 +6,7 @@ use 5.008001;
 use strict;
 use warnings;
 use Test::More;
+plan tests => 11;
 
 my (@testfiles,@perlfiles,@cfiles,@headerfiles,%fileslurp,$t);
 
@@ -536,7 +537,3 @@ while (<$fh>) {
 if ($all_ok) {
     pass('All Safefree calls in dbdimp.c look ok');
 }
-
-
-
-done_testing();

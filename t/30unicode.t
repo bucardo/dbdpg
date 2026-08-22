@@ -13,6 +13,7 @@ use charnames ':full';
 use Encode qw(encode_utf8);
 use Data::Dumper;
 use Test::More;
+plan tests => 607;
 use open qw/ :std :encoding(utf8) /;
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
@@ -255,6 +256,5 @@ $dbh->commit();
 cleanup_database($dbh,'test');
 $dbh->disconnect();
 
-done_testing();
 
 
