@@ -1,7 +1,8 @@
 #!perl
 
-## Simply test that we can load the DBI and DBD::Pg modules,
-## and that the latter gives a good version
+## Simply test that we can load the DBI and DBD::Pg modules
+## If either fails, we bail out of all testing
+## Check that DBD::Pg gives a sane VERSION number
 
 use 5.008001;
 use strict;

@@ -1,6 +1,8 @@
 #!perl
 
 ## Test all handle attributes: database, statement, and generic ("any")
+## Reference: https://metacpan.org/pod/Encode
+## Reference: https://metacpan.org/pod/Test::Simple
 
 use 5.008001;
 use strict;

@@ -1,5 +1,8 @@
 ## Helper file for the DBD::Pg tests
 
+## Reference: https://metacpan.org/pod/Win32::Process
+## Reference: https://metacpan.org/pod/File::Path
+
 use strict;
 use warnings;
 use lib 'blib/lib', 'blib/arch'; ## no critic

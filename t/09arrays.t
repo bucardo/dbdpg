@@ -1,6 +1,8 @@
 #!perl
 
 ## Test arrays
+## Reference: https://metacpan.org/pod/Encode
+## Reference: https://metacpan.org/pod/Time::Piece
 
 use 5.008001;
 use strict;

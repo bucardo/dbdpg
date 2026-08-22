@@ -1,6 +1,7 @@
 #!perl
 
 ## Test the COPY functionality
+## Reference: https://metacpan.org/pod/Test::Warn
 
 use 5.008001;
 use strict;

@@ -2,6 +2,8 @@
 
 ## Check our Pod, requires Test::Pod
 ## Also done if available: Test::Pod::Coverage
+## Reference: https://metacpan.org/pod/Test::Pod
+## Reference: https://metacpan.org/pod/Test::Pod::Coverage
 
 use 5.008001;
 use strict;

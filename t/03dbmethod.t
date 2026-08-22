@@ -9,6 +9,8 @@
 ## "pg_getline"  "pg_endcopy"  "pg_getcopydata"  "pg_getcopydata_async" (see 07copy.t)
 ## "pg_putline"  "pg_putcopydata"  "pg_putcopydata_async (see 07copy.t)
 ## "pg_cancel"  "pg_ready"  "pg_result" (see 08async.t)
+## Reference: https://metacpan.org/pod/Test::Warn
+## Reference: https://metacpan.org/pod/File::Temp
 
 use 5.008001;
 use strict;

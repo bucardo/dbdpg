@@ -2,6 +2,7 @@
 
 ## Run Perl::Critic against the source code and the tests
 ## This is highly customized, so take with a grain of salt
+## Reference: https://metacpan.org/pod/Perl::Critic
 
 use 5.008001;
 use strict;

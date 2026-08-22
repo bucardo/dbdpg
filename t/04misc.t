@@ -1,6 +1,8 @@
 #!perl
 
 ## Various stuff that does not go elsewhere
+## Reference: https://metacpan.org/pod/Test::Output
+## Reference: https://metacpan.org/pod/File::Temp
 
 use 5.008001;
 use strict;

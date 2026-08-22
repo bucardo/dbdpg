@@ -1,6 +1,10 @@
 #!perl
 
 ## Spell check as much as we can
+## Reference: https://metacpan.org/pod/Text::SpellChecker
+## Reference: https://metacpan.org/pod/Pod::Spell
+## Reference: https://metacpan.org/pod/File::Comments
+## Reference: https://metacpan.org/pod/File::Comments::Plugin::C
 
 use 5.008001;
 use strict;
