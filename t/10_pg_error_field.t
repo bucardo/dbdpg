@@ -7,7 +7,7 @@ use strict;
 use warnings;
 use lib 'blib/lib', 'blib/arch', 't';
 use Test::More;
-plan tests => 499;
+plan tests => 5;
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
@@ -64,6 +64,8 @@ pg_diag_source_function              | 70400  | undef | int4div           | Colu
 $dbh->do("CREATE TABLE $test_table (id int, constraint rainbow check(id < 10) )");
 $dbh->commit();
 
+my $problems = 0;
+my $count = 0;
 my $pgversion = $dbh->{pg_server_version};
 for my $loop (1..5) {
     if (2==$loop) { eval { $dbh->do('SELECT 1/0'); }; }
@@ -87,25 +89,64 @@ for my $loop (1..5) {
                 $expected = ($expected eq 'number') ? qr/^[0-9]+$/ : qr/$expected/i;
             }
             my $field_copy = "[$field]"; # force perl to copy the string contents
+
             $t = "(query $loop) Calling pg_error_field returns expected value for field $field";
+            $count++;
             my $actual = $dbh->pg_error_field($field);
-            defined $expected ? like ($actual, $expected, $t) : is($actual, undef, $t);
-            is "[$field]", $field_copy, "(query $loop) Calling pg_error_field does not modify its argument: $field";
+            if (defined $expected) {
+                if (!defined $actual or $actual !~ $expected) {
+                    $problems++;
+                    like ($actual, $expected, $t);
+                }
+            }
+            elsif (defined $actual) {
+                $problems++;
+                is ($actual, undef, $t);
+            }
 
-            $field = uc $field;
+            $t = "(query $loop) Calling pg_error_field does not modify its argument: $field";
+            $count++;
+            if ("[$field]" ne $field_copy) {
+                $problems++;
+                is ("[$field]", $field_copy, $t);
+            }
+
             $t = "(query $loop) Calling pg_error_field returns expected value for field $field";
+            $field = uc $field;
             $actual = $dbh->pg_error_field($field);
-            defined $expected ? like ($actual, $expected, $t) : is($actual, undef, $t);
+            if (defined $expected) {
+                if (!defined $actual or $actual !~ $expected) {
+                    $problems++;
+                    like ($actual, $expected, $t);
+                }
+            }
+            elsif (defined $actual) {
+                $problems++;
+                is ($actual, undef, $t);
+            }
 
+            $t = "(query $loop) Calling pg_error_field returns expected value for field $field";
             if ($field =~ s/PG_DIAG_//) {
-                $t = "(query $loop) Calling pg_error_field returns expected value for field $field";
+                $count++;
                 $actual = $dbh->pg_error_field($field);
-                defined $expected ? like ($actual, $expected, $t) : is($actual, undef, $t);
+                if (defined $expected) {
+                    if (!defined $actual or $actual !~ $expected) {
+                        $problems++;
+                        like ($actual, $expected, $t);
+                    }
+                }
+                elsif (defined $actual) {
+                    $problems++;
+                    is ($actual, undef, $t);
+                }
             }
         }
     }
     $dbh->rollback();
 }
+
+$t=qq{Database function pg_error_field() returns correct output for $count variants};
+$problems ? fail ($t) : pass ($t);
 
 $dbh->do("DROP TABLE $test_table");
 $dbh->commit();
