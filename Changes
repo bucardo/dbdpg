@@ -9,6 +9,7 @@ Version 3.21.1  (released August 23, 2026)
  - Fix incorrect allocation inside of quote_float()
    Check for NUL more carefully inside of  _dequote_bytea_hex()
    Fix incorrect allocation inside of pg_destringify_array()
+   [CVE-2026-78184]
    [Greg Sabino Mullane]
 
  - Make tests much less verbose; only failed tests need to give details.
