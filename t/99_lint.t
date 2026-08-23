@@ -6,7 +6,6 @@ use 5.008001;
 use strict;
 use warnings;
 use Test::More;
-plan tests => 11;
 
 my (@testfiles,@perlfiles,@cfiles,@headerfiles,%fileslurp,$t);
 
@@ -23,6 +22,8 @@ if (! -e $file) {
     plan (skip_all => "Could not find the $file file");
     exit;
 }
+
+plan tests => 11;
 
 open my $fh, '<', $file or die "Could not open $file: $!\n";
 @perlfiles = map { chomp; $_ } grep { /\.pm$/ or /\.t$/ } <$fh>;
@@ -76,7 +77,6 @@ for my $file (@testfiles) {
     }
     close $fh or die qq{Could not close "$file": $!\n};
 }
-
 
 ##
 ## Load all Test::More calls into memory
