@@ -372,7 +372,7 @@ char * quote_float(pTHX_ const char *string, STRLEN length, STRLEN *new_length, 
         (3 == length && 0 == strncasecmp(string, "Inf", 3)) ||
         (4 == length && 0 == strncasecmp(string, "+Inf", 4)) ||
         (4 == length && 0 == strncasecmp(string, "-Inf", 4))) {
-        New(0, new_string, length + 1, char);
+        New(0, new_string, length + 3, char);
         new_string_start = new_string;
         *new_string++ = '\'';
         Copy(string_start, new_string, length, char);
@@ -561,7 +561,7 @@ static void _dequote_bytea_hex(char *string, STRLEN *new_length)
     if (NULL != string) {
         result = string;
 
-        while (*string != '\0') {
+        while (*string != '\0' && *(string+1) != '\0') {
             int digit1, digit2;
             digit1 = _decode_hex_digit(*string);
             digit2 = _decode_hex_digit(*(string+1));

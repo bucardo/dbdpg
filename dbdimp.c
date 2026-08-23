@@ -3092,7 +3092,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, char * input, sql_typ
     }
     input -= opening_braces;
 
-    New(0, string, strlen(input), char); /* Freed at end of this function */
+    New(0, string, strlen(input) + 1, char); /* Freed at end of this function */
     string[0] = '\0';
 
     av = currentav = topav = newAV();
