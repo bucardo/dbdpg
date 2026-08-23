@@ -231,7 +231,7 @@ foreach (@tests) {
             $count++;
             if ($actual ne $expected) {
                 $problems++;
-                is_deeply ($result, $want, "$description via do/selecall returns proper value");
+                is_deeply ($result, $want, "$description via do/selectall returns proper value");
             }
 
             if ($test->{qtype} !~ /length/) {
