@@ -4,6 +4,17 @@ RT items can be found by using: https://rt.cpan.org/Public/Bug/Display.html?id=X
 Github items can be found by using: https://github.com/bucardo/dbdpg/issues/XXX
 
 
+Version 3.21.1  (released August 23, 2026)
+
+ - Fix incorrect allocation inside of quote_float()
+   Check for NUL more carefully inside of  _dequote_bytea_hex()
+   Fix incorrect allocation inside of pg_destringify_array()
+   [Greg Sabino Mullane]
+
+ - Make tests much less verbose; only failed tests need to give details.
+   [Greg Sabino Mullane]
+
+
 Version 3.21.0  (released August 22, 2026)
 
  - Add non-blocking async COPY FROM support (pg_putcopydata_async, pg_putcopyend_async, pg_flush)
