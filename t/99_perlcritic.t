@@ -23,7 +23,7 @@ plan tests => 29;
 
 $ENV{LANG} = 'C';
 opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
-my @testfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
+my @testfiles = map { "t/$_" } grep { /^[\w\d].+\.(t|pl)$/ } readdir $dir;
 closedir $dir or die qq{Could not closedir "$dir": $!\n};
 
 ## Check some non-test files

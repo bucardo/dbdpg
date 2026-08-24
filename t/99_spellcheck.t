@@ -25,9 +25,9 @@ else {
     plan tests => 65;
 
     opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
-    @testfiles = map { "t/$_" } grep { ! /spellcheck|lint/ } grep { /^.+\.(t|pl)$/ } readdir $dir;
+    @testfiles = map { "t/$_" } grep { ! /spellcheck|lint/ } grep { /^[\w\d].+\.(t|pl)$/ } readdir $dir;
     rewinddir $dir;
-    @alltestfiles = map { "t/$_" } grep { /^.+\.(t|pl)$/ } readdir $dir;
+    @alltestfiles = map { "t/$_" } grep { /^[\w\d].+\.(t|pl)$/ } readdir $dir;
     closedir $dir or die qq{Could not closedir "$dir": $!\n};
 }
 
