@@ -23,8 +23,6 @@ if (! -e $file) {
     exit;
 }
 
-plan tests => 11;
-
 open my $fh, '<', $file or die "Could not open $file: $!\n";
 @perlfiles = map { chomp; $_ } grep { /\.pm$/ or /\.t$/ } <$fh>;
 seek $fh ,0, 0;
@@ -46,6 +44,8 @@ push @testfiles => map { chomp; $_ } grep { m{t/.*\.t} } <$fh>;
 seek $fh, 0, 0;
 push @perlfiles => map { chomp; $_ } grep { m{t/.*\.t} } <$fh>;
 close $fh;
+
+plan tests => 11;
 
 ##
 ## Ensure all test names are unique

@@ -7,7 +7,6 @@ use strict;
 use warnings;
 use lib 'blib/lib', 'blib/arch', 't';
 use Test::More;
-plan tests => 5;
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
 
@@ -16,6 +15,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
+plan tests => 5;
 
 my $t='Connect to database for pg_error_field testing';
 isnt ($dbh, undef, $t);

@@ -17,7 +17,6 @@ use strict;
 use warnings;
 use lib 'blib/lib', 'blib/arch', 't';
 use Test::More;
-plan tests => 702;
 use Config;
 use DBI     ':sql_types';
 use DBD::Pg ':pg_types';
@@ -31,6 +30,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
+plan tests => 702;
 
 my $superuser = is_super();
 

@@ -8,7 +8,6 @@ use 5.008001;
 use strict;
 use warnings;
 use Test::More;
-plan tests => 29;
 use Data::Dumper;
 
 if (! $ENV{AUTHOR_TESTING}) {
@@ -20,6 +19,7 @@ elsif (!eval { require Perl::Critic; 1 }) {
 elsif ($Perl::Critic::VERSION < 0.23) {
     plan skip_all => 'Perl::Critic must be version 0.23 or higher';
 }
+plan tests => 29;
 
 $ENV{LANG} = 'C';
 opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
