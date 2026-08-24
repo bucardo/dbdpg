@@ -13,7 +13,6 @@ use charnames ':full';
 use Encode qw(encode_utf8);
 use Data::Dumper;
 use Test::More;
-plan tests => 2;
 use open qw/ :std :encoding(utf8) /;
 require 'dbdpg_test_setup.pl';
 select(($|=1,select(STDERR),$|=1)[1]);
@@ -23,6 +22,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
+plan tests => 2;
 
 isnt ($dbh, undef, 'Connect to database for unicode testing');
 

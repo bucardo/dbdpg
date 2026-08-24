@@ -10,7 +10,6 @@ use 5.008001;
 use strict;
 use warnings;
 use Test::More;
-plan tests => 65;
 use utf8; ## no critic (TooMuchCode::ProhibitUnnecessaryUTF8Pragma)
 select(($|=1,select(STDERR),$|=1)[1]);
 
@@ -23,6 +22,8 @@ elsif (!eval { require Text::SpellChecker; 1 }) {
     plan skip_all => 'Could not find Text::SpellChecker'; ## nospellcheck
 }
 else {
+    plan tests => 65;
+
     opendir my $dir, 't' or die qq{Could not open directory 't': $!\n};
     @testfiles = map { "t/$_" } grep { ! /spellcheck|lint/ } grep { /^.+\.(t|pl)$/ } readdir $dir;
     rewinddir $dir;
