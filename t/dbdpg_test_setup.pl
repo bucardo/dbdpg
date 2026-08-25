@@ -497,15 +497,15 @@ version: $version
         $info = '';
         my $evalok = 0;
         eval {
-            $info = $^O =~ /Win32/ ? qx{netstat -anp TCP}: qx{ss -QanO 2>&1};
+            $info = $^O =~ /(?:Win32|darwin|bsd|dragonfly)/ ? qx{netstat -anp TCP 2>&1} : qx{ss -anO 2>&1};
             $evalok = 1;
         };
         if (!$evalok or ! defined $info) {
-            Test::More::diag "ss call to determine open port failed, trying port $testport\n";
+            Test::More::diag "Unable to determine open port, trying port $testport\n";
         }
         else {
             {
-                last if $info !~ /:$testport /m;
+                last if $info !~ /^\s*tcp.+?(?:\d+\.\d+\.\d+\.\d+|\*)[:.]$testport\s/im;
                 last if ++$testport > $TEST_PORT_MAX;
                 redo;
             }
