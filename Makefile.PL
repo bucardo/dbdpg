@@ -193,6 +193,15 @@ my $defines = " -DPGLIBVERSION=$serverversion -DPGDEFPORT=$defaultport";
 if ($Config{ivsize} >= 8 && $serverversion >= 90300) {
     $defines .= ' -DHAS64BITLO ';
 }
+
+# GCC versions < 5 need -std=gnu99 to support for-loop local declarations
+if ($Config{gccversion} && $Config{gccversion} =~ /^(\d+)\./) {
+    my $gcc_major_version = $1;
+    if ($gcc_major_version < 5) {
+        $defines .= ' -std=gnu99 ';
+    }
+}
+
 my $comp_opts = $Config{q{ccflags}} . $defines;
 
 if ($ENV{DBDPG_GCCDEBUG}) {
