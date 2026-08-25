@@ -414,8 +414,9 @@ version: $version
             my @userlist = (qw/postgres postgresql pgsql _postgres/);
 
             ## Start with whoever owns this file, unless it's us
-            my $username = getpwuid ((stat($0))[4]);
-            unshift @userlist, $username if defined $username and $username ne getpwent;
+            my $file_owner_uid = (stat($0))[4];
+            my $username = defined $file_owner_uid ? getpwuid($file_owner_uid) : undef;
+            unshift @userlist, $username if defined $username and $file_owner_uid != $<;
 
             my %doneuser;
             for (@userlist) {
