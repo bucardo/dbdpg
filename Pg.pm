@@ -1304,7 +1304,7 @@ EOSQL
         my $ti =
             [
              $names,
-# name     sql_type          size   pfx/sfx crt   n/c/s    +-/P/I   local       min max  sub rdx itvl
+# name       sql_type          size   pfx/sfx    crt   n/c/s  +-/P/I   local        min max sub rdx itvl
 
 ['unknown',  SQL_UNKNOWN_TYPE,  0,    $UN,$UN,   $UN,  1,0,0, $UN,0,0, 'UNKNOWN',   $UN,$UN,
              SQL_UNKNOWN_TYPE,                                                             $UN, $UN, $UN ],
