@@ -457,40 +457,40 @@ dbdpg: Begin _sqlstate
 # Test of the "data_sources" method
 #
 
-$t='Database handle method data_source() returns an entry for template0';
+$t='Database handle method data_sources() returns an entry for template0';
 my @sources = $dbh->data_sources('Pg');
 my $expected = qr{\bdbi:Pg:dbname=template0\b};
 like ((join ' ' => @sources), $expected, $t);
 
-$t='DBI method data_source() returns an entry for template0';
+$t='DBI method data_sources() returns an entry for template0';
 @sources = DBI->data_sources('Pg');
 like ((join ' ' => @sources), $expected, $t);
 
-$t='Database handle method data_source() returns an entry for template0 when called with no arg';
+$t='Database handle method data_sources() returns an entry for template0 when called with no arg';
 eval {
     @sources = $dbh->data_sources();
 };
 like ((join ' ' => @sources), $expected, $t);
 
-$t='DBI method data_source() returns an error when called with no arg';
+$t='DBI method data_sources() returns an error when called with no arg';
 eval {
     local $ENV{DBI_DRIVER} = '';
     @sources = DBI->data_sources();
 };
 like ($@, qr/usage:/, $t);
 
-$t='DBI method data_source() returns correct DSN when second arg is a port';
+$t='DBI method data_sources() returns correct DSN when second arg is a port';
 my $port = 12345;
 @sources = DBI->data_sources('Pg',"port=$port");
 like ((join ' ' => @sources), qr{dbi:Pg:dbname=template0;port=$port}, $t);
 
-$t='DBI method data_source() returns correct DSN when second arg is a port with a leading semicolon';
+$t='DBI method data_sources() returns correct DSN when second arg is a port with a leading semicolon';
 @sources = DBI->data_sources('Pg',";port=$port");
 like ((join ' ' => @sources), qr{dbi:Pg:dbname=template0;port=$port}, $t);
 
 SKIP: {
 
-    $t='DBI method data_source() handles database names with spaces';
+    $t='DBI method data_sources() handles database names with spaces';
     my $test_db_name = 'dbdpg space test';
 
     if (! grep { /\b$test_db_name\b/ } @sources) {
