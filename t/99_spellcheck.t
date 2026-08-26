@@ -823,6 +823,7 @@ strncpy
 strtod
 struct
 structs
+su
 subdirectory
 submitnews
 substr

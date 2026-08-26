@@ -4,12 +4,21 @@ RT items can be found by using: https://rt.cpan.org/Public/Bug/Display.html?id=X
 Github items can be found by using: https://github.com/bucardo/dbdpg/issues/XXX
 
 
-Version 3.21.2  (unreleased)
+Version 3.21.2  (released August 26, 2026)
 
- - In the tests, ensure the plan declaration happens after the skip_all calls
+ - In the tests, ensure the plan declaration happens after the skip_all calls.
    [Russell Jenkins]
 
- - Make port discovery more robust in the tests.
+ - Fix missing closing double-quote in su -c commands in test setup script.
+   [Jitka Plesnikova]
+
+ - Support compiling with versions of GCC < 5.
+   [Ed Sabol]
+
+ - Make port discovery more robust in test setup script.
+   [Ed Sabol, Greg Sabino Mullane]
+
+ - Avoid using getpwent and compare uid values instead in test setup script.
    [Ed Sabol]
 
 
