@@ -23,7 +23,7 @@ END { defined $filename and -e $filename and unlink $filename; }
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 100;
+plan tests => 117;
 
 my $superuser = is_super();
 
@@ -457,63 +457,107 @@ dbdpg: Begin _sqlstate
 # Test of the "data_sources" method
 #
 
-$t='Database handle method data_sources() returns an entry for template0';
-my @sources = $dbh->data_sources('Pg');
-my $expected = qr{\bdbi:Pg:dbname=template0\b};
-like ((join ' ' => @sources), $expected, $t);
+my $expected = qr{\bdbi:Pg:dbname=template0(?:$| )};
+my $expected_port = qr{\bdbi:Pg:dbname=template0;port=1234(?:$| )};
+my $expected_hostport = qr{\bdbi:Pg:dbname=template0;host=foo;port=1234(?:$| )};
+my @sources;
+my $dsn = defined $ENV{DBI_DSN} ? $ENV{DBI_DSN} : '';
 
-$t='DBI method data_sources() returns an entry for template0';
+$t=q{DBI method data_sources() works when first arg is 'Pg'};
 @sources = DBI->data_sources('Pg');
 like ((join ' ' => @sources), $expected, $t);
 
-$t='Database handle method data_sources() returns an entry for template0 when called with no arg';
-eval {
-    @sources = $dbh->data_sources();
-};
+$t=q{DBI method data_sources() works when first arg is 'Pg' and second arg is set};
+@sources = DBI->data_sources('Pg', 'port=1234');
+like ((join ' ' => @sources), $expected_port, $t);
+
+$t='DBI method data_sources() throws an error when first arg is "pg"';
+eval { @sources = DBI->data_sources('pg'); };
+like ($@, qr/install_driver/, $t);
+
+$t='DBI method data_sources() throws an error when DBI_DSN is invalid';
+eval { local $ENV{DBI_DSN} = 'foo'; @sources = DBI->data_sources('Pg'); };
+like ($@, qr/Could not connect/, $t);
+
+$t='DBI method data_sources() works when DBI_DSN is valid';
+{ local $ENV{DBI_DSN} .= "$dsn;sslmode=allow"; @sources = DBI->data_sources('Pg'); }
 like ((join ' ' => @sources), $expected, $t);
 
-$t='DBI method data_sources() returns an error when called with no arg';
-eval {
-    local $ENV{DBI_DRIVER} = '';
-    @sources = DBI->data_sources();
-};
+$t=q{DBI method data_sources() removes 'dbi:Pg:' from DBI_DSN};
+{ local $ENV{DBI_DSN} .= "$dsn;dbi:Pg:sslmode=allow"; @sources = DBI->data_sources('Pg'); }
+like ((join ' ' => @sources), $expected, $t);
+
+$t=q{DBI method data_sources() removes '  DBI:PG:' from DBI_DSN};
+{ local $ENV{DBI_DSN} .= "$dsn;  DBI:PG:sslmode=allow"; @sources = DBI->data_sources('Pg'); }
+like ((join ' ' => @sources), $expected, $t);
+
+$t='DBI method data_sources() throws an error when no args';
+eval { local $ENV{DBI_DRIVER}; @sources = DBI->data_sources(); };
 like ($@, qr/usage:/, $t);
 
-$t='DBI method data_sources() returns correct DSN when second arg is a port';
-my $port = 12345;
-@sources = DBI->data_sources('Pg',"port=$port");
-like ((join ' ' => @sources), qr{dbi:Pg:dbname=template0;port=$port}, $t);
+$t='DBI method data_sources() throws an error when no args and DBI_DRIVER is empty';
+eval { local $ENV{DBI_DRIVER} = ''; @sources = DBI->data_sources(); };
+like ($@, qr/usage:/, $t);
 
-$t='DBI method data_sources() returns correct DSN when second arg is a port with a leading semicolon';
-@sources = DBI->data_sources('Pg',";port=$port");
-like ((join ' ' => @sources), qr{dbi:Pg:dbname=template0;port=$port}, $t);
+$t=q{DBI method data_sources() throws an error when no args and DBI_DRIVER is 'pg'};
+eval { local $ENV{DBI_DRIVER} = 'pg'; @sources = DBI->data_sources(); };
+like ($@, qr/install_driver/, $t);
 
-SKIP: {
+$t=q{DBI method data_sources() works when no args and DBI_DRIVER is 'Pg'};
+{ local $ENV{DBI_DRIVER} = 'Pg'; @sources = DBI->data_sources(); }
+like ((join ' ' => @sources), $expected, $t);
 
-    $t='DBI method data_sources() handles database names with spaces';
-    my $test_db_name = 'dbdpg space test';
+$t=q{DBI method data_sources() works when first arg is empty string and DBI_DRIVER is 'Pg'};
+{ local $ENV{DBI_DRIVER} = 'Pg'; @sources = DBI->data_sources(''); }
+like ((join ' ' => @sources), $expected, $t);
 
-    if (! grep { /\b$test_db_name\b/ } @sources) {
-        eval {
-            $dbh->{AutoCommit} = 1;
-            $dbh->do(qq{CREATE DATABASE "$test_db_name" TEMPLATE template0});
-        };
-        if ($@) {
-            skip (qq{Could not create database "$test_db_name": $@}, 1);
-        }
-    }
+$t=q{DBI method data_sources() works when first arg is undef, second arg is set, and DBI_DRIVER is 'Pg'};
+{ local $ENV{DBI_DRIVER} = 'Pg'; @sources = DBI->data_sources(undef, 'port=1234'); }
+like ((join ' ' => @sources), $expected_port, $t);
 
-    @sources = DBI->data_sources('Pg',"port=$port");
+$t=q{DBI method data_sources() works when first arg is empty string, second arg is set, and DBI_DRIVER is 'Pg'};
+{ local $ENV{DBI_DRIVER} = 'Pg'; @sources = DBI->data_sources('', 'port=1234'); }
+like ((join ' ' => @sources), $expected_port, $t);
 
-    like ((join ' ' => @sources), qr{dbi:Pg:dbname="$test_db_name";port=$port}, $t);
+$t=q{DBI method data_sources() handles leading semicolon from second arg};
+@sources = DBI->data_sources('Pg', ';port=1234');
+like ((join ' ' => @sources), $expected_port, $t);
 
-    eval {
-        $dbh->{AutoCommit} = 1;
-        $dbh->do(qq{DROP DATABASE "$test_db_name"});
-    };
-    $@ and diag "Unable to drop database $test_db_name: $@";
+$t=q{DBI method data_sources() works when second arg is a single item hashref};
+@sources = DBI->data_sources('Pg', {port => 1234});
+like ((join ' ' => @sources), $expected_port, $t);
 
-}
+$t=q{DBI method data_sources() works when second arg is a multi item hashref};
+@sources = DBI->data_sources('Pg', {host => 'foo', port => 1234});
+like ((join ' ' => @sources), $expected_hostport, $t);
+
+$t=q{DBI method data_sources() works when second arg is an empty hashref};
+@sources = DBI->data_sources('Pg', {});
+like ((join ' ' => @sources), $expected, $t);
+
+$t=q{DBI method data_sources() throws an error when second arg is an arrayref};
+eval { @sources = DBI->data_sources('Pg', ['port', 1234]); };
+like ($@, qr/hashref/, $t);
+
+$t=q{Database handle method data_sources() works when first arg is 'Pg'};
+@sources = $dbh->data_sources('Pg');
+like ((join ' ' => @sources), $expected, $t);
+
+$t=q{Database handle method data_sources() throws an error when more than one argument given};
+eval { @sources = $dbh->data_sources('Pg', 'port=1234'); };
+like ($@, qr/\Qhandle + 2/, $t);
+
+$t='Database handle method data_sources() works when no args';
+{ local $ENV{DBI_DRIVER}; @sources = $dbh->data_sources(); }
+like ((join ' ' => @sources), $expected, $t);
+
+$t=q{Database handle method data_sources() works when no args and DBI_DRIVER is 'pg'};
+{ local $ENV{DBI_DRIVER} = 'pg'; @sources = $dbh->data_sources(); }
+like ((join ' ' => @sources), $expected, $t);
+
+$t=q{Database handle method data_sources() works when first arg is set};
+@sources = $dbh->data_sources('port=1234');
+like ((join ' ' => @sources), $expected_port, $t);
 
 #
 # Test the use of $DBDPG_DEFAULT

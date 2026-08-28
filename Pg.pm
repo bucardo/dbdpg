@@ -215,22 +215,43 @@ use 5.008001;
 
     use strict;
 
-    ## Returns an array of formatted database names from the pg_database table
+    ## Returns a list of formatted database names from the pg_database table
+    ## Each is prefixed with 'dbi:Pg:dbname=' making it suitable to pass to connect()
+    ## This function can be called via DBI or $dbh
     sub data_sources {
 
         my $drh = shift;
         my $extra_conninfo = shift || '';
-        $extra_conninfo =~ s/^([^;])/;$1/;
+        my $ref = ref $extra_conninfo;
+
+        if ($ref eq 'HASH') {
+            if (%$extra_conninfo) {
+                $extra_conninfo = ';' . join ';' => map { "$_=$extra_conninfo->{$_}" } sort keys %$extra_conninfo;
+            }
+            else {
+                $extra_conninfo = '';
+            }
+        }
+        elsif ($ref eq '') {
+            $extra_conninfo = '' if $extra_conninfo eq 'Pg';
+            $extra_conninfo =~ s/^([^;])/;$1/;
+        }
+        else {
+            die "data_sources(): unsupported argument type $ref: should be string or a hashref\n";
+        }
 
         my $connstring = 'dbname=postgres';
         if ($ENV{DBI_DSN}) {
-            ($connstring = $ENV{DBI_DSN}) =~ s/dbi:Pg://i;
+            ($connstring = $ENV{DBI_DSN}) =~ s/\s*dbi:Pg://ig;
         }
+        $connstring =~ s/^;//;
 
-        my $dbh = DBD::Pg::dr::connect($drh, $connstring) or die 'Could not connect to the database';
+        my $dbh = DBD::Pg::dr::connect($drh, $connstring)
+          or die "Could not connect to the database: $DBI::errstr";
 
         my @sources;
         eval {
+            ## The quote_ident function will quote database names with semicolons inside of them
             my $SQL = 'SELECT pg_catalog.quote_ident(datname) FROM pg_catalog.pg_database ORDER BY 1';
             my $sth = $dbh->prepare($SQL) or die $dbh->errstr;
             $sth->execute() or die $sth->errstr;
@@ -1873,18 +1894,20 @@ Implemented by DBI, no driver-specific impact.
 
 =head3 B<data_sources>
 
-  @data_sources = $dbh->data_sources('Pg', \%attr);
-  @data_sources = DBI->data_sources('Pg', \%attr);
+  @data_sources = $dbh->data_sources($attr);
+  @data_sources = DBI->data_sources('Pg', $attr);
 
 Returns a list of available databases as DBI connection strings.
 
-Unless the environment variable C<DBI_DSN> is set, a connection will be attempted
-to the database C<postgres>. The normal connection environment variables also apply,
-such as C<PGHOST>, C<PGPORT>, C<DBI_USER>, C<DBI_PASS>, and C<PGSERVICE>.
+The first argument must be 'Pg' when using the DBI->data_sources form.
 
-The first argument should always be 'Pg'
+The $attr argument gives options to append to the resulting connection strings.
+It can be a string or a hashref.
 
-The second argument is a list of options to append to the resulting connection strings.
+This connects to the database named 'postgres' by default. To use another,
+specify it in the DBI_DSN environment variable, e.g.:
+
+  { $ENV{DBI_DSN} = 'dbname=mydb'; @data_sources = $dbh->data_sources(); }
 
 For example, to specify an alternate port and host:
 
