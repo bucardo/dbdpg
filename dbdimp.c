@@ -21,6 +21,10 @@
 #define SvIsBOOL(sv) DBDPG_FALSE
 #endif
 
+#ifndef PGLIBVERSION
+#error "PGLIBVERSION is not set"
+#endif
+
 #if PGLIBVERSION < 80300
 Oid lo_truncate (PGconn *conn, int fd, size_t len);
 Oid lo_truncate (PGconn *conn, int fd, size_t len) {
