@@ -552,6 +552,7 @@ pg_lo_lseek(dbh, fd, offset, whence)
     ALIAS:
         pg_lo_lseek64 = 1
     CODE:
+        PERL_UNUSED_VAR(ix);
         const IV ret = pg_db_lo_lseek(dbh, fd, offset, whence);
         ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
@@ -562,6 +563,7 @@ pg_lo_tell(dbh, fd)
     ALIAS:
         pg_lo_tell64 = 1
     CODE:
+        PERL_UNUSED_VAR(ix);
         const IV ret = pg_db_lo_tell(dbh, fd);
         ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 
@@ -573,6 +575,7 @@ pg_lo_truncate(dbh, fd, len)
     ALIAS:
         pg_lo_truncate64 = 1
     CODE:
+        PERL_UNUSED_VAR(ix);
         const IV ret = pg_db_lo_truncate(dbh, fd, len);
         ST(0) = (ret >= 0) ? sv_2mortal(newSViv(ret)) : &PL_sv_undef;
 

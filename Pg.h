@@ -61,7 +61,10 @@ static int errno;
 
 #include <dbd_xsh.h>    /* installed by the DBI module */
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 DBISTATE_DECLARE;
+#pragma GCC diagnostic pop
 
 #include "types.h"
 #include "dbdimp.h"
