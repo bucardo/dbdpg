@@ -1895,7 +1895,9 @@ Implemented by DBI, no driver-specific impact.
 =head3 B<data_sources>
 
   @data_sources = $dbh->data_sources($attr);
+  @data_sources = $dbh->data_sources(\%attr);
   @data_sources = DBI->data_sources('Pg', $attr);
+  @data_sources = DBI->data_sources('Pg', \%attr);
 
 Returns a list of available databases as DBI connection strings.
 
