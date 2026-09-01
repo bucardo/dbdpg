@@ -267,6 +267,8 @@ static int want_async_connect(pTHX_ SV *attrs)
 
     return
         attrs
+        && SvROK(attrs)
+        && SvTYPE(SvRV(attrs)) == SVt_PVHV
         && (psv = hv_fetchs((HV *)SvRV(attrs), "pg_async_connect", 0))
         && (sv = *psv)
         && SvTRUE(sv);
