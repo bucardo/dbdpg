@@ -1826,8 +1826,7 @@ For example:
   password=W$2Hc00YSgP
   port=6543
 
-There are four valid arguments to the I<sslmode> parameter, which controls
-whether to use SSL to connect to the database:
+Arguments to the I<sslmode> parameter are:
 
 =over 4
 
