@@ -457,7 +457,7 @@ dbdpg: Begin _sqlstate
 # Test of the "data_sources" method
 #
 
-my $expected = qr{\bdbi:Pg:dbname=template0(?:$| )};
+my $expected = qr{\bdbi:Pg:dbname=template0\b};
 my $expected_port = qr{\bdbi:Pg:dbname=template0;port=1234(?:$| )};
 my $expected_hostport = qr{\bdbi:Pg:dbname=template0;host=foo;port=1234(?:$| )};
 my @sources;

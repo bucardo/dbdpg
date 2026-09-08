@@ -250,6 +250,10 @@ use 5.008001;
           or die "Could not connect to the database: $DBI::errstr";
 
         my @sources;
+        ## Add in the port, unless already added via DBI_DSN
+        if ($extra_conninfo !~ /\bport\b/) {
+            $extra_conninfo .= ";port=$dbh->{pg_port}";
+        }
         eval {
             ## The quote_ident function will quote database names with semicolons inside of them
             my $SQL = 'SELECT pg_catalog.quote_ident(datname) FROM pg_catalog.pg_database ORDER BY 1';
