@@ -283,8 +283,8 @@ use 5.008001;
         ## No other escaping needed here: docs indicate this is a client job:
         #e.g. C<dbi:Pg:dbname='\'spacey\' name';host=$host>.
 
-        $user = defined($user) ? $user : defined $ENV{DBI_USER} ? $ENV{DBI_USER} : '';
-        $pass = defined($pass) ? $pass : defined $ENV{DBI_PASS} ? $ENV{DBI_PASS} : '';
+        $user = defined $user ? $user : defined $ENV{DBI_USER} ? $ENV{DBI_USER} : '';
+        $pass = defined $pass ? $pass : defined $ENV{DBI_PASS} ? $ENV{DBI_PASS} : '';
 
         my ($dbh) = DBI::_new_dbh($drh, {
             'Name'         => $dsn,
