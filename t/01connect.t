@@ -34,9 +34,12 @@ if ($connerror or (!defined $dbh)) {
     plan skip_all => "Connection to database failed, cannot continue testing ($connerror) (dbh=" . (defined($dbh) ? $dbh : '<undefined>') . ')';
 }
 
-plan tests => 18;
+plan tests => 21;
 
 pass ('Connection to test database works');
+
+my $tdsn = sprintf
+    'dbi:Pg:dbname=%s;host=%s;port=%d', $dbh->{pg_db}, $dbh->{pg_host}, $dbh->{pg_port};
 
 $pgversion    = $dbh->{pg_server_version};
 $pglibversion = $dbh->{pg_lib_version};
@@ -84,20 +87,48 @@ ok ($@, $t);
 ## DBI connect('dbname=dbdpg_test;baldrick=0','',...) failed:
 ## invalid connection option "baldrick"
 
-$t=q{Calling DBI->connect() fails with an invalid option};
+$t=q{DBI->connect() fails with an invalid option};
 my $bad_dsn = 'dbi:Pg:dbname=dbdpg_test;baldrick=0';
 eval { DBI->connect($bad_dsn, '', '', {RaiseError=>1}) };
 like ($@, qr/DBI.*baldrick/, $t);
 
-$t=q{Calling DBI->connect() works with database as "XXX"};
-for my $opt (qw/db dbname database/) {
+$t=q{DBI->connect() works with 'dbname' synonym "XXX"};
+for my $opt (qw/db database/) {
     $bad_dsn = "dbi:Pg:$opt=dbdpg_test;edmund=1";
     eval { DBI->connect($bad_dsn, '', '', {RaiseError=>1}) };
     (my $tname = $t) =~ s/XXX/$opt/;
     like ($@, qr/DBI.*edmund/, $tname);
 }
 
-$t=q{Calling DBI->connect() works with forced uppercase 'DBI:'};
+$dbh = connect_database();
+$t=q{DBI->connect() properly changes dbname double quotes to single quotes};
+my $tdsn2 = sprintf
+    'dbi:Pg:dbname="%s";port=%d;host=%s', $dbh->{pg_db}, $dbh->{pg_port}, $dbh->{pg_host};
+eval { DBI->connect($tdsn2, '', '', {RaiseError=>1}) };
+is ($@, '', $t);
+
+{
+    my $baduser1 = 'dbdpg_invalid_test_user_1';
+    my $baduser2 = 'dbdpg_invalid_test_user_2';
+
+    local $ENV{DBI_USER} = $baduser1;
+
+    $t=q{DBI->connect() 'user' argument overrides env DBI_USER};
+    eval { DBI->connect($tdsn, $baduser2, '', {RaiseError=>1}) };
+    like ($@, qr/DBI.*$baduser2/, $t);
+
+    $t=q{DBI->connect() uses env DBI_USER when 'user' argument is undef};
+    eval { DBI->connect($tdsn, undef, '', {RaiseError=>1}) };
+    like ($@, qr/DBI.*$baduser1/, $t);
+
+    $t=q{DBI->connect() does not use env DBI_USER when 'user' argument is an empty string};
+    ## Falls back to the current user
+    eval { $dbh2 = DBI->connect($tdsn, '', '', {RaiseError=>1}) };
+    is ($@, '', $t);
+
+}
+
+$t=q{DBI->connect() works with forced uppercase 'DBI:'};
 my ($testdsn,$testuser,undef,$su,$uid,$testdir,$pg_ctl,$initdb,$error,$version) ## no critic (Variables::ProhibitUnusedVarsStricter)
     = get_test_settings();
 $testdsn =~ s/^dbi/DBI/i;
@@ -105,20 +136,20 @@ my $tempdbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS});
 ok (ref $tempdbh, $t);
 $tempdbh->disconnect();
 
-$t=q{Calling DBI->connect() works with mixed case 'DbI:'}; ## nospellcheck
+$t=q{DBI->connect() works with mixed case 'DbI:'}; ## nospellcheck
 $testdsn =~ s/^dbi/DbI/i;
 $tempdbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS});
 ok (ref $tempdbh, $t);
 $tempdbh->disconnect();
 
-$t=q{Calling DBI->connect() fails with an improperly quoted dbname};
+$t=q{DBI->connect() fails with an improperly quoted dbname};
 ## A failure to produce a valid arg for libpq will give a message like this:
 ## failed: missing "=" after "s" in connection info string
 $bad_dsn = q{dbi:Pg:dbname=dbdpg space name;port=1};
 eval { DBI->connect($bad_dsn, '', '', {RaiseError=>1}) };
 like ($@, qr/=/, $t);
 
-$t=q{Calling DBI->connect() fails with proper quoting but bad port};
+$t=q{DBI->connect() fails with proper quoting but bad port};
 ## An otherwise correct call but to an invalid port gives a message like this:
 ## DBI connect('dbname='dbdpg \'spacey\' name';port=1','',...) failed:
 ## could not connect to server: No such file or directory
@@ -130,9 +161,9 @@ like ($@, ($^O =~ /Win/ ? qr/DBI/s : qr/DBI.*\Q.s.PGSQL.1\E\b/s), $t);
 
  SKIP: {
      if ($pglibversion <= 100000) {
-         skip ('Calling DBI->connect() with multiple host names requires libpq > 10', 1);
+         skip ('DBI->connect() with multiple host names requires libpq > 10', 1);
      }
-     $t=q{Calling DBI->connect() works with multiple host names};
+     $t=q{DBI->connect() works with multiple host names};
      (my $tempdsn = $testdsn) =~ s/host=/host=foo.invalid,/;
      $tempdbh = DBI->connect($tempdsn, $testuser, $ENV{DBI_PASS});
      ok (ref $tempdbh, $t);
@@ -144,12 +175,12 @@ like ($@, ($^O =~ /Win/ ? qr/DBI/s : qr/DBI.*\Q.s.PGSQL.1\E\b/s), $t);
  SKIP: {
      my @names = ('foo', 'foo bar', ';foo;bar;', 'foo\'bar', 'foo\\\'bar', 'foo\';bar\';', '\\foo\\');
      if ($pgversion < 90000) {
-         skip ('Calling DBI->connect() with an application_name requires Postgres >= 9.0', @names);
+         skip ('DBI->connect() with an application_name requires Postgres >= 9.0', @names);
      }
 
      my $problems = 0;
      for my $aname (@names) {
-         $t=qq{Calling DBI->connect() works with application name $aname};
+         $t=qq{DBI->connect() works with application name $aname};
          (my $escaped_name = $aname) =~ s/(['\\])/\\$1/g;
          $tempdbh = DBI->connect("$testdsn;application_name='$escaped_name'", $testuser, $ENV{DBI_PASS});
          if (! ref $tempdbh) {
@@ -163,7 +194,7 @@ like ($@, ($^O =~ /Win/ ? qr/DBI/s : qr/DBI.*\Q.s.PGSQL.1\E\b/s), $t);
          }
          $tempdbh->disconnect;
      }
-     $t=q{Calling DBI->connect() works with all application name variants};
+     $t=q{DBI->connect() works with all application name variants};
      $problems ? fail ($t) : pass ($t);
 }
 
