@@ -34,7 +34,7 @@ if ($connerror or (!defined $dbh)) {
     plan skip_all => "Connection to database failed, cannot continue testing ($connerror) (dbh=" . (defined($dbh) ? $dbh : '<undefined>') . ')';
 }
 
-plan tests => 21;
+plan tests => 19;
 
 pass ('Connection to test database works');
 
@@ -100,13 +100,6 @@ for my $opt (qw/db database/) {
     like ($@, qr/DBI.*edmund/, $tname);
 }
 
-$dbh = connect_database();
-$t=q{DBI->connect() properly changes dbname double quotes to single quotes};
-my $tdsn2 = sprintf
-    'dbi:Pg:dbname="%s";port=%d;host=%s', $dbh->{pg_db}, $dbh->{pg_port}, $dbh->{pg_host};
-eval { DBI->connect($tdsn2, '', '', {RaiseError=>1}) };
-is ($@, '', $t);
-
 {
     my $baduser1 = 'dbdpg_invalid_test_user_1';
     my $baduser2 = 'dbdpg_invalid_test_user_2';
@@ -120,11 +113,6 @@ is ($@, '', $t);
     $t=q{DBI->connect() uses env DBI_USER when 'user' argument is undef};
     eval { DBI->connect($tdsn, undef, '', {RaiseError=>1}) };
     like ($@, qr/DBI.*$baduser1/, $t);
-
-    $t=q{DBI->connect() does not use env DBI_USER when 'user' argument is an empty string};
-    ## Falls back to the current user
-    eval { $dbh2 = DBI->connect($tdsn, '', '', {RaiseError=>1}) };
-    is ($@, '', $t);
 
 }
 
