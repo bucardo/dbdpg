@@ -322,6 +322,7 @@ use 5.008001;
     }
 
     sub prepare {
+
         my($dbh, $statement, @attribs) = @_;
 
         return undef if ! defined $statement;
@@ -392,18 +393,17 @@ use 5.008001;
             ## either via ownership (e.g. serial, identity) or a manual default?
             my $idcond = $dbh->{private_dbdpg}{version} >= 100000
                 ? q{a.attidentity <> ''} : q{false};
+            ## pg_get_serial_sequence takes text, not regclass
+            ## the first left join lets us distinguish table not found (0 rows)
+            ## vs no suitable column found (at least one all-NULL row)
             $SQL = sprintf(q{
                 SELECT i.indisprimary,
                     COALESCE(
-                        -- this takes the table name as text, not regclass
                         pg_catalog.pg_get_serial_sequence(
-                            -- and pre-8.3 doesn't have a cast from regclass to text,
-                            -- and pre-9.3 doesn't have format, so do it the long way
                             quote_ident(n.nspname) || '.' || quote_ident(c.relname),
                             a.attname),
                         (SELECT replace(substring(pg_catalog.pg_get_expr(d.adbin, d.adrelid)
                                             from $r$^nextval\('(.+)'::[\w\s]+\)$$r$),
-                                        -- unescape any single quotes from the default
                                         $$''$$, $$'$$)
                             FROM pg_catalog.pg_attrdef d
                             WHERE a.atthasdef
@@ -412,8 +412,6 @@ use 5.008001;
                     ) AS seqname
                 FROM pg_class c
                     JOIN pg_catalog.pg_namespace n ON (n.oid = c.relnamespace)
-                    -- LEFT JOIN so we can distinguish between table not found (zero rows)
-                    -- and no suitable column found (at least one all-NULL row)
                     LEFT JOIN pg_catalog.pg_index i
                         ON c.oid = i.indrelid AND i.indisunique
                     LEFT JOIN pg_catalog.pg_attribute a
@@ -991,6 +989,32 @@ EOSQL
         }
 
         my $WHERE = join ' AND ', @where;
+
+        my $codecomment = <<'EOL'
+ We can't match confkey from the fk constraint to conkey of the unique constraint,
+ because the unique constraint might not exist or there might be more than one
+ matching one. However, there must be at least a unique _index_ on the key
+ columns, so we look for that; but we can't find it via pg_index, since there may
+ again be more than one matching index.
+
+ So instead, we look at pg_depend for the dependency that was created by the fk
+ constraint. This dependency is of type 'n' (normal) and ties the pg_constraint
+ row oid to the pg_class oid for the index relation (a single arbitrary one if
+ more than one matching unique index existed at the time the constraint was
+ created).  Fortunately, the constraint does not create dependencies on the
+ referenced table itself, but on the _columns_ of the referenced table, so the
+ index can be distinguished easily.  Then we look for another pg_depend entry,
+ this time an 'i' (implementation) dependency from a pg_constraint oid (the unique
+ constraint if one exists) to the index oid; but we have to allow for the
+ possibility that this one doesn't exist.          - Andrew Gierth (RhodiumToad)
+
+ We use generate_series because:
+   can't do unnest() until 8.4, and would need WITH ORDINALITY to get the array indices,
+   which isn't available until 9.4 at the earliest, so we join against a series table instead
+
+EOL
+
+
         my $SQL = qq{
             SELECT
                 pg_catalog.quote_ident(pg_catalog.current_database()),
@@ -1024,31 +1048,12 @@ EOSQL
                 JOIN pg_catalog.pg_namespace uk_ns ON uk_class.relnamespace = uk_ns.oid
                 JOIN pg_catalog.pg_class fk_class ON constr.conrelid = fk_class.oid
                 JOIN pg_catalog.pg_namespace fk_ns ON fk_class.relnamespace = fk_ns.oid
-                -- can't do unnest() until 8.4, and would need WITH ORDINALITY to get the array indices,
-                -- which isn't available until 9.4 at the earliest, so we join against a series table instead
                 JOIN pg_catalog.generate_series(1, pg_catalog.current_setting('max_index_keys')::integer) colnum(i)
                     ON colnum.i <= pg_catalog.array_upper(constr.conkey,1)
                 JOIN pg_catalog.pg_attribute uk_col ON uk_col.attrelid = constr.confrelid AND uk_col.attnum = constr.confkey[colnum.i]
                 JOIN pg_catalog.pg_type uk_type ON uk_col.atttypid = uk_type.oid
                 JOIN pg_catalog.pg_attribute fk_col ON fk_col.attrelid = constr.conrelid AND fk_col.attnum = constr.conkey[colnum.i]
                 JOIN pg_catalog.pg_type fk_type ON fk_col.atttypid = fk_type.oid
-
-                -- We can't match confkey from the fk constraint to conkey of the unique constraint,
-                -- because the unique constraint might not exist or there might be more than one
-                -- matching one. However, there must be at least a unique _index_ on the key
-                -- columns, so we look for that; but we can't find it via pg_index, since there may
-                -- again be more than one matching index.
-
-                -- So instead, we look at pg_depend for the dependency that was created by the fk
-                -- constraint. This dependency is of type 'n' (normal) and ties the pg_constraint
-                -- row oid to the pg_class oid for the index relation (a single arbitrary one if
-                -- more than one matching unique index existed at the time the constraint was
-                -- created).  Fortunately, the constraint does not create dependencies on the
-                -- referenced table itself, but on the _columns_ of the referenced table, so the
-                -- index can be distinguished easily.  Then we look for another pg_depend entry,
-                -- this time an 'i' (implementation) dependency from a pg_constraint oid (the unique
-                -- constraint if one exists) to the index oid; but we have to allow for the
-                -- possibility that this one doesn't exist.          - Andrew Gierth (RhodiumToad)
 
                 JOIN pg_catalog.pg_depend dep ON (
                     dep.classid = 'pg_catalog.pg_constraint'::regclass
@@ -1190,7 +1195,6 @@ EOSQL
                 SELECT pg_catalog.quote_ident(pg_catalog.current_database()) AS "TABLE_CAT"
                      , pg_catalog.quote_ident(n.nspname) AS "TABLE_SCHEM"
                      , pg_catalog.quote_ident(c.relname) AS "TABLE_NAME"
-                       -- any temp table or temp view is LOCAL TEMPORARY for us
                      , CASE WHEN pg_catalog.quote_ident(n.nspname) ~ '^pg_(toast_)?temp_' THEN
                                  'LOCAL TEMPORARY'
                             WHEN c.relkind ~ 'r|p' THEN
