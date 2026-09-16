@@ -3448,7 +3448,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
     int           status, p, s;
     STRLEN        execsize;
     strbuf_t     *statement = NULL;
-    long          ret;
+    long          ret = -1;
     PQExecType    pqtype;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_st_execute\n", THEADER_slow);
@@ -6052,7 +6052,7 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
     imp_sth_t * async_sth;
     PGresult *result;
     ExecStatusType ret;
-    int status;
+    int status = -1;
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin handle_old_async (flag: %d)\n", THEADER_slow, asyncflag);
 
