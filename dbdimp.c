@@ -80,45 +80,45 @@ typedef enum
 */
 #define CLEAR_LAST_RESULT(mydbh) \
 do { \
-  if (mydbh->last_result && ! mydbh->result_shared) { \
+  if ((mydbh)->last_result && ! (mydbh)->result_shared) { \
     TRACE_PQCLEAR; \
-    PQclear(mydbh->last_result); \
-    mydbh->last_result = NULL; \
+    PQclear((mydbh)->last_result); \
+    (mydbh)->last_result = NULL; \
   } \
 } while (0)
 
 /* For a statement handle's PGresult pointer, free it as needed */
 #define CLEAR_STH_RESULT(mysth) \
 do { \
-  if (mysth && mysth->result) { \
+  if ((mysth) && (mysth)->result) { \
     TRACE_PQCLEAR; \
-    PQclear(mysth->result); \
-    mysth->result = NULL; \
+    PQclear((mysth)->result); \
+    (mysth)->result = NULL; \
   } \
 } while (0)
 
 enum {
-    STH_ASYNC_AUTOERROR = -2,    /* PG_OLDQUERY_WAIT auto-retrieved an error result */
-    STH_ASYNC_CANCELLED = -1,
-    STH_NO_ASYNC,
-    STH_ASYNC,
-    STH_ASYNC_PREPARE,
-    STH_ASYNC_AUTORETRIEVED      /* PG_OLDQUERY_WAIT auto-retrieved results */
+    STH_ASYNC_AUTOERROR     = -2, /* PG_OLDQUERY_WAIT auto-retrieved an error result */
+    STH_ASYNC_CANCELLED     = -1,
+    STH_NO_ASYNC            =  0,
+    STH_ASYNC               =  1,
+    STH_ASYNC_PREPARE       =  2,
+    STH_ASYNC_AUTORETRIEVED =  3  /* PG_OLDQUERY_WAIT auto-retrieved results */
 };
 
 enum {
-    DBH_ASYNC_CANCELLED = -1,
-    DBH_NO_ASYNC,
-    DBH_ASYNC,
-    DBH_ASYNC_CONNECT,
-    DBH_ASYNC_CONNECT_POLL
+    DBH_ASYNC_CANCELLED    = -1,
+    DBH_NO_ASYNC           = 0,
+    DBH_ASYNC              = 1,
+    DBH_ASYNC_CONNECT      = 2,
+    DBH_ASYNC_CONNECT_POLL = 3
 };
 
 static void pg_error(pTHX_ SV *h, int error_num, const char *error_msg);
 static void pg_warn (void * arg, const char * message);
-static ExecStatusType _result(pTHX_ imp_dbh_t *imp_dbh, const char *sql);
-static void _fatal_sqlstate(pTHX_ imp_dbh_t *imp_dbh);
-static ExecStatusType _sqlstate(pTHX_ imp_dbh_t *imp_dbh, PGresult *result);
+static ExecStatusType run_sql(pTHX_ imp_dbh_t *imp_dbh, const char *sql);
+static void fatal_sqlstate(pTHX_ imp_dbh_t *imp_dbh);
+static ExecStatusType set_sqlstate(pTHX_ imp_dbh_t *imp_dbh, PGresult *result);
 static int pg_db_rollback_commit (pTHX_ SV *dbh, imp_dbh_t *imp_dbh, int action);
 static SV *pg_st_placeholder_key (imp_sth_t *imp_sth, ph_t *currph, int i);
 static void pg_st_split_statement (pTHX_ imp_sth_t *imp_sth, char *statement);
@@ -238,7 +238,7 @@ static int do_send_cancel(SV *h, imp_dbh_t *imp_dbh, char const *caller)
         TRACE_PQFREECANCEL;
         PQfreeCancel(cancel);
         if (TRACEWARN_slow) { TRC(DBILOGFP, "%sPQcancel failed: %s\n", THEADER_slow, errbuf); }
-        _fatal_sqlstate(aTHX_ imp_dbh);
+        fatal_sqlstate(aTHX_ imp_dbh);
         pg_error(aTHX_ h, PGRES_FATAL_ERROR, "PQcancel failed");
         if (TEND_slow) TRC(DBILOGFP, "%sEnd %s (error: cancel failed)\n", THEADER_slow, caller);
         return DBDPG_FALSE;
@@ -641,11 +641,11 @@ static void pg_warn (void * arg, const char * message)
 /*
   Quick command executor used throughout this file
 */
-static ExecStatusType _result(pTHX_ imp_dbh_t * imp_dbh, const char * sql)
+static ExecStatusType run_sql(pTHX_ imp_dbh_t * imp_dbh, const char * sql)
 {
     ExecStatusType status;
 
-    if (TSTART_slow) TRC(DBILOGFP, "%sBegin _result (sql: %s)\n", THEADER_slow, sql);
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin run_sql (sql: %s)\n", THEADER_slow, sql);
 
     if (TSQL) TRC(DBILOGFP, "%s;\n\n", sql);
 
@@ -655,17 +655,17 @@ static ExecStatusType _result(pTHX_ imp_dbh_t * imp_dbh, const char * sql)
     imp_dbh->last_result = PQexec(imp_dbh->conn, sql);
     imp_dbh->result_shared = DBDPG_FALSE;
 
-    status = _sqlstate(aTHX_ imp_dbh, imp_dbh->last_result);
+    status = set_sqlstate(aTHX_ imp_dbh, imp_dbh->last_result);
 
-    if (TEND_slow) TRC(DBILOGFP, "%sEnd _result\n", THEADER_slow);
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd run_sql\n", THEADER_slow);
     return status;
 
-} /* end of _result */
+} /* end of run_sql */
 
 
 /* ================================================================== */
 /* Set the SQLSTATE for a 'fatal' error */
-static void _fatal_sqlstate(pTHX_ imp_dbh_t * imp_dbh)
+static void fatal_sqlstate(pTHX_ imp_dbh_t * imp_dbh)
 {
     char *sqlstate;
 
@@ -680,12 +680,12 @@ static void _fatal_sqlstate(pTHX_ imp_dbh_t * imp_dbh)
 /*
   Set the SQLSTATE based on a result, returns the status
 */
-static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
+static ExecStatusType set_sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
 {
     char *sqlstate;
     ExecStatusType status   = PGRES_FATAL_ERROR; /* until proven otherwise */
 
-    if (TSTART_slow) TRC(DBILOGFP, "%sBegin _sqlstate\n", THEADER_slow);
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin set_sqlstate\n", THEADER_slow);
 
     if (result) {
         TRACE_PQRESULTSTATUS;
@@ -740,10 +740,10 @@ static ExecStatusType _sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
                     THEADER_slow, pg_db_txn_status(aTHX_ imp_dbh));
 
 
-    if (TEND_slow) TRC(DBILOGFP, "%sEnd _sqlstate (status: %d)\n", THEADER_slow, status);
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd set_sqlstate (status: %d)\n", THEADER_slow, status);
     return status;
 
-} /* end of _sqlstate */
+} /* end of set_sqlstate */
 
 
 /* ================================================================== */
@@ -840,7 +840,7 @@ static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int actio
     tstatus = pg_db_txn_status(aTHX_ imp_dbh);
     if (TRACE4_slow) TRC(DBILOGFP, "%sdbd_db_%s txn_status is %d\n", THEADER_slow, action ? "commit" : "rollback", tstatus);
 
-    if (PQTRANS_IDLE == tstatus) { /* Not in a transaction */
+    if (PQTRANS_IDLE == tstatus) { /* We are not in a transaction */
         if (imp_dbh->done_begin) {
             /* We think we ARE in a transaction but we really are not */
             if (TRACEWARN_slow)
@@ -870,7 +870,7 @@ static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int actio
         return 1;
     }
 
-    status = _result(aTHX_ imp_dbh, action ? "commit" : "rollback");
+    status = run_sql(aTHX_ imp_dbh, action ? "commit" : "rollback");
 
     /* Set this early, for scripts that continue despite the error below */
     imp_dbh->done_begin = DBDPG_FALSE;
@@ -1832,7 +1832,7 @@ SV * pg_db_pg_notifies (SV * dbh, imp_dbh_t * imp_dbh)
     TRACE_PQCONSUMEINPUT;
     status = PQconsumeInput(imp_dbh->conn);
     if (0 == status) {
-        _fatal_sqlstate(aTHX_ imp_dbh);
+        fatal_sqlstate(aTHX_ imp_dbh);
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_pg_notifies (error)\n", THEADER_slow);
@@ -2635,7 +2635,7 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
         Safefree(imp_sth->prepare_name);
         imp_sth->prepare_name = NULL;
 
-        _fatal_sqlstate(aTHX_ imp_dbh);
+        fatal_sqlstate(aTHX_ imp_dbh);
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_st_prepare_statement (async error)\n", THEADER_slow);
         return -2;
 
@@ -2651,7 +2651,7 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     imp_dbh->result_shared = DBDPG_TRUE;
     strbuf_destroy(statement);
 
-    prepare_status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
+    prepare_status = set_sqlstate(aTHX_ imp_dbh, imp_sth->result);
 
     if (PGRES_COMMAND_OK == prepare_status) {
         imp_sth->prepared_by_us = DBDPG_TRUE; /* Done here so deallocate is not called spuriously */
@@ -2730,7 +2730,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
     else { /* We have a number */
         if ('$' == *name)
             name++;
-        phnum = atoi(name);
+        phnum = atoi(name); /* NOLINT(cert-err34-c) (verified above) */
         if (phnum < 1 || phnum > imp_sth->numphs)
             croak("Cannot bind unknown placeholder %d (%s)", phnum, neatsvpv(ph_name,0));
         currph = ph_array_element(imp_sth, phnum - 1);
@@ -2814,7 +2814,8 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
         imp_sth->numbound++;
 
     if (pg_type) {
-        if ((currph->bind_type = pg_type_data(pg_type))) {
+        currph->bind_type = pg_type_data(pg_type);
+        if (currph->bind_type) {
             if (!currph->bind_type->bind_ok) { /* Re-evaluate with new prepare */
                 croak("Cannot bind %s, pg_type %s not supported by DBD::Pg",
                       name, currph->bind_type->type_name);
@@ -2830,10 +2831,12 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
            sense to quote something to sql semantics and break
            the insert.
         */
-        if (!(currph->bind_type = sql_type_data((int)sql_type))) {
+        currph->bind_type = sql_type_data((int)sql_type);
+        if (!currph->bind_type) {
             croak("Cannot bind param %s: unknown sql_type %ld", name, (long)sql_type);
         }
-        if (!(currph->bind_type = pg_type_data(currph->bind_type->type.pg))) {
+        currph->bind_type = pg_type_data(currph->bind_type->type.pg);
+        if (!currph->bind_type) {
             croak("Cannot find a pg_type for %ld", (long)sql_type);
         }
      }
@@ -3314,7 +3317,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 
     /* If not autocommit, start a new transaction */
     if (!imp_dbh->done_begin && !DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-        status = _result(aTHX_ imp_dbh, "begin");
+        status = run_sql(aTHX_ imp_dbh, "begin");
         if (PGRES_COMMAND_OK != status) {
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
@@ -3324,7 +3327,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
         imp_dbh->done_begin = DBDPG_TRUE;
         /* If read-only mode, make it so */
         if (imp_dbh->txn_read_only) {
-            status = _result(aTHX_ imp_dbh, "set transaction read only");
+            status = run_sql(aTHX_ imp_dbh, "set transaction read only");
             if (PGRES_COMMAND_OK != status) {
                 TRACE_PQERRORMESSAGE;
                 pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
@@ -3345,7 +3348,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
         TRACE_PQSENDQUERY;
         if (! PQsendQuery(imp_dbh->conn, sql)) {
             if (TRACE4_slow) TRC(DBILOGFP, "%sPQsendQuery failed\n", THEADER_slow);
-            _fatal_sqlstate(aTHX_ imp_dbh);
+            fatal_sqlstate(aTHX_ imp_dbh);
 
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
@@ -3367,7 +3370,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
     imp_dbh->last_result = PQexec(imp_dbh->conn, sql);
     imp_dbh->result_shared = DBDPG_FALSE;
 
-    status = _sqlstate(aTHX_ imp_dbh, imp_dbh->last_result);
+    status = set_sqlstate(aTHX_ imp_dbh, imp_dbh->last_result);
 
     imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
 
@@ -3505,7 +3508,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
 
     /* If not autocommit, start a new transaction */
     if (!imp_dbh->done_begin && !DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-        status = _result(aTHX_ imp_dbh, "begin");
+        status = run_sql(aTHX_ imp_dbh, "begin");
         if (PGRES_COMMAND_OK != status) {
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ sth, status, PQerrorMessage(imp_dbh->conn));
@@ -3515,7 +3518,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         imp_dbh->done_begin = DBDPG_TRUE;
         /* If read-only mode, make it so */
         if (imp_dbh->txn_read_only) {
-            status = _result(aTHX_ imp_dbh, "set transaction read only");
+            status = run_sql(aTHX_ imp_dbh, "set transaction read only");
             if (PGRES_COMMAND_OK != status) {
                 TRACE_PQERRORMESSAGE;
                 pg_error(aTHX_ sth, status, PQerrorMessage(imp_dbh->conn));
@@ -3693,7 +3696,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
             TRACE_PQSENDQUERY;
             if (!PQsendQuery(imp_dbh->conn, strbuf_get(statement))) {
                 strbuf_destroy(statement);
-                _fatal_sqlstate(aTHX_ imp_dbh);
+                fatal_sqlstate(aTHX_ imp_dbh);
                 TRACE_PQERRORMESSAGE;
                 pg_error(aTHX_ sth, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
                 if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (error: PQsendQuery failed)\n", THEADER_slow);
@@ -3769,7 +3772,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
                 (imp_dbh->conn, strbuf_get(statement), imp_sth->numphs,
                  imp_sth->PQoids, imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0)) {
                 Safefree(statement);
-                _fatal_sqlstate(aTHX_ imp_dbh);
+                fatal_sqlstate(aTHX_ imp_dbh);
                 TRACE_PQERRORMESSAGE;
                 pg_error(aTHX_ sth, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
                 if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (error: PQsendQueryParams failed)\n", THEADER_slow);
@@ -3846,7 +3849,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
                 if (!PQsendQueryPrepared
                     (imp_dbh->conn, imp_sth->prepare_name, imp_sth->numphs,
                      imp_sth->PQvals, imp_sth->PQlens, imp_sth->PQfmts, 0)) {
-                    _fatal_sqlstate(aTHX_ imp_dbh);
+                    fatal_sqlstate(aTHX_ imp_dbh);
                     TRACE_PQERRORMESSAGE;
                     pg_error(aTHX_ sth, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
                     if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_execute (error: PQsendQueryPrepared failed)\n", THEADER_slow);
@@ -3882,7 +3885,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         return 0;
     }
 
-    status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
+    status = set_sqlstate(aTHX_ imp_dbh, imp_sth->result);
 
     imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
 
@@ -4224,11 +4227,11 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
                 sprintf(cmd, "rollback to %s", SvPV_nolen(sp));
                 strncpy(tempsqlstate, imp_dbh->sqlstate, sizeof(tempsqlstate)-1);
                 tempsqlstate[sizeof(tempsqlstate)-1]='\0';
-                status = _result(aTHX_ imp_dbh, cmd);
+                status = run_sql(aTHX_ imp_dbh, cmd);
                 Safefree(cmd);
             }
             else {
-                status = _result(aTHX_ imp_dbh, "ROLLBACK");
+                status = run_sql(aTHX_ imp_dbh, "ROLLBACK");
                 imp_dbh->done_begin = DBDPG_FALSE;
             }
         }
@@ -4253,7 +4256,7 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     imp_dbh->last_result = imp_sth->result = PQclosePrepared(imp_dbh->conn, imp_sth->prepare_name);
     imp_dbh->result_shared = DBDPG_TRUE;
 
-    status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
+    status = set_sqlstate(aTHX_ imp_dbh, imp_sth->result);
 #else
     {
         char *                  stmt;
@@ -4264,7 +4267,7 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
         if (TRACE5_slow)
             TRC(DBILOGFP, "%sDeallocating (%s)\n", THEADER_slow, imp_sth->prepare_name);
 
-        status = _result(aTHX_ imp_dbh, stmt);
+        status = run_sql(aTHX_ imp_dbh, stmt);
         Safefree(stmt);
     }
 #endif
@@ -4397,7 +4400,7 @@ int pg_db_putline (SV * dbh, SV * svbuf)
     TRACE_PQPUTCOPYDATA;
     copystatus = PQputCopyData(imp_dbh->conn, buffer, (int)strlen(buffer));
     if (-1 == copystatus) {
-        _fatal_sqlstate(aTHX_ imp_dbh);
+        fatal_sqlstate(aTHX_ imp_dbh);
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putline (error: copystatus not -1)\n", THEADER_slow);
@@ -4441,7 +4444,7 @@ int pg_db_getline (SV * dbh, SV * svbuf)
         return -1;
     }
     else if (copystatus < 1) {
-        _fatal_sqlstate(aTHX_ imp_dbh);
+        fatal_sqlstate(aTHX_ imp_dbh);
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
     }
@@ -4491,7 +4494,7 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
     else if (0 == copystatus) { /* async and still in progress: consume and return */
         TRACE_PQCONSUMEINPUT;
         if (!PQconsumeInput(imp_dbh->conn)) {
-            _fatal_sqlstate(aTHX_ imp_dbh);
+            fatal_sqlstate(aTHX_ imp_dbh);
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
             if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_getcopydata (error: async in progress)\n", THEADER_slow);
@@ -4505,7 +4508,7 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
         imp_dbh->copystate=0;
         TRACE_PQGETRESULT;
         result = PQgetResult(imp_dbh->conn);
-        status = _sqlstate(aTHX_ imp_dbh, result);
+        status = set_sqlstate(aTHX_ imp_dbh, result);
         while (result != NULL) {
             TRACE_PQCLEAR;
             PQclear(result);
@@ -4518,7 +4521,7 @@ int pg_db_getcopydata (SV * dbh, SV * dataline, int async)
         }
     }
     else {
-        _fatal_sqlstate(aTHX_ imp_dbh);
+        fatal_sqlstate(aTHX_ imp_dbh);
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
     }
@@ -4548,7 +4551,7 @@ int pg_db_putcopydata (SV * dbh, SV * dataline, int async)
     if (async && !imp_dbh->copy_nonblocking) {
         TRACE_PQSETNONBLOCKING;
         if (PQsetnonblocking(imp_dbh->conn, 1) != 0) {
-            _fatal_sqlstate(aTHX_ imp_dbh);
+            fatal_sqlstate(aTHX_ imp_dbh);
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
             if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata (error: setnonblocking)\n", THEADER_slow);
@@ -4570,7 +4573,7 @@ int pg_db_putcopydata (SV * dbh, SV * dataline, int async)
         if (PGRES_COPY_BOTH == imp_dbh->copystate) {
             TRACE_PQFLUSH;
             if (PQflush(imp_dbh->conn)) {
-                _fatal_sqlstate(aTHX_ imp_dbh);
+                fatal_sqlstate(aTHX_ imp_dbh);
                 TRACE_PQERRORMESSAGE;
                 pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
                 if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata (error: flush)\n", THEADER_slow);
@@ -4587,7 +4590,7 @@ int pg_db_putcopydata (SV * dbh, SV * dataline, int async)
         return 0;
     }
     else {
-        _fatal_sqlstate(aTHX_ imp_dbh);
+        fatal_sqlstate(aTHX_ imp_dbh);
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopydata (error)\n", THEADER_slow);
@@ -4633,7 +4636,7 @@ int pg_db_putcopyend (SV * dbh)
         imp_dbh->copystate = 0;
         TRACE_PQGETRESULT;
         result = PQgetResult(imp_dbh->conn);
-        status = _sqlstate(aTHX_ imp_dbh, result);
+        status = set_sqlstate(aTHX_ imp_dbh, result);
         while (result != NULL) {
             TRACE_PQCLEAR;
             PQclear(result);
@@ -4654,7 +4657,7 @@ int pg_db_putcopyend (SV * dbh)
         return 0;
     }
     else {
-        _fatal_sqlstate(aTHX_ imp_dbh);
+        fatal_sqlstate(aTHX_ imp_dbh);
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend (error: copystatus unknown)\n", THEADER_slow);
@@ -4725,7 +4728,7 @@ int pg_db_putcopyend_async (SV * dbh)
                 PQsetnonblocking(imp_dbh->conn, 0);
                 imp_dbh->copy_nonblocking = 0;
             }
-            _fatal_sqlstate(aTHX_ imp_dbh);
+            fatal_sqlstate(aTHX_ imp_dbh);
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
             if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (error)\n", THEADER_slow);
@@ -4746,7 +4749,7 @@ int pg_db_putcopyend_async (SV * dbh)
                 PQsetnonblocking(imp_dbh->conn, 0);
                 imp_dbh->copy_nonblocking = 0;
             }
-            _fatal_sqlstate(aTHX_ imp_dbh);
+            fatal_sqlstate(aTHX_ imp_dbh);
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
             if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (error: flush)\n", THEADER_slow);
@@ -4770,7 +4773,7 @@ int pg_db_putcopyend_async (SV * dbh)
             PQsetnonblocking(imp_dbh->conn, 0);
             imp_dbh->copy_nonblocking = 0;
         }
-        _fatal_sqlstate(aTHX_ imp_dbh);
+        fatal_sqlstate(aTHX_ imp_dbh);
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (invalid copystate)\n", THEADER_slow);
@@ -4790,7 +4793,7 @@ int pg_db_putcopyend_async (SV * dbh)
                 PQsetnonblocking(imp_dbh->conn, 0);
                 imp_dbh->copy_nonblocking = 0;
             }
-            _fatal_sqlstate(aTHX_ imp_dbh);
+            fatal_sqlstate(aTHX_ imp_dbh);
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
             if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_putcopyend_async (error: consumeInput)\n", THEADER_slow);
@@ -4822,7 +4825,7 @@ int pg_db_putcopyend_async (SV * dbh)
         TRACE_PQGETRESULT;
         result = PQgetResult(imp_dbh->conn);
         if (result) {
-            status = _sqlstate(aTHX_ imp_dbh, result);
+            status = set_sqlstate(aTHX_ imp_dbh, result);
             TRACE_PQCLEAR;
             PQclear(result);
         }
@@ -4865,7 +4868,7 @@ int pg_db_flush (SV * dbh)
     flush_status = PQflush(imp_dbh->conn);
 
     if (-1 == flush_status) {
-        _fatal_sqlstate(aTHX_ imp_dbh);
+        fatal_sqlstate(aTHX_ imp_dbh);
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_flush (error)\n", THEADER_slow);
@@ -5012,7 +5015,7 @@ int pg_db_endcopy (SV * dbh)
         TRACE_PQPUTCOPYEND;
         copystatus = PQputCopyEnd(imp_dbh->conn, NULL);
         if (-1 == copystatus) {
-            _fatal_sqlstate(aTHX_ imp_dbh);
+            fatal_sqlstate(aTHX_ imp_dbh);
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
             if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_endcopy (error)\n", THEADER_slow);
@@ -5023,7 +5026,7 @@ int pg_db_endcopy (SV * dbh)
         /* Get the final result of the copy */
         TRACE_PQGETRESULT;
         result = PQgetResult(imp_dbh->conn);
-        status = _sqlstate(aTHX_ imp_dbh, result);
+        status = set_sqlstate(aTHX_ imp_dbh, result);
         TRACE_PQCLEAR;
         PQclear(result);
         if (PGRES_COMMAND_OK != status) {
@@ -5095,7 +5098,7 @@ int pg_db_savepoint (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 
     /* Start a new transaction if this is the first command */
     if (!imp_dbh->done_begin) {
-        status = _result(aTHX_ imp_dbh, "begin");
+        status = run_sql(aTHX_ imp_dbh, "begin");
         if (PGRES_COMMAND_OK != status) {
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
@@ -5107,7 +5110,7 @@ int pg_db_savepoint (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 
     New(0, action, strlen(savepoint) + 11, char); /* freed below */
     sprintf(action, "savepoint %s", savepoint);
-    status = _result(aTHX_ imp_dbh, action);
+    status = run_sql(aTHX_ imp_dbh, action);
     Safefree(action);
 
     if (PGRES_COMMAND_OK != status) {
@@ -5141,7 +5144,7 @@ int pg_db_rollback_to (SV * dbh, imp_dbh_t * imp_dbh, const char *savepoint)
 
     New(0, action, strlen(savepoint) + 13, char);
     sprintf(action, "rollback to %s", savepoint);
-    status = _result(aTHX_ imp_dbh, action);
+    status = run_sql(aTHX_ imp_dbh, action);
     Safefree(action);
 
     if (PGRES_COMMAND_OK != status) {
@@ -5175,7 +5178,7 @@ int pg_db_release (SV * dbh, imp_dbh_t * imp_dbh, char * savepoint)
 
     New(0, action, strlen(savepoint) + 9, char);
     sprintf(action, "release %s", savepoint);
-    status = _result(aTHX_ imp_dbh, action);
+    status = run_sql(aTHX_ imp_dbh, action);
     Safefree(action);
 
     if (PGRES_COMMAND_OK != status) {
@@ -5202,7 +5205,7 @@ static int pg_db_start_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh)
 
     /* If not autocommit, start a new transaction */
     if (!imp_dbh->done_begin) {
-        int status = _result(aTHX_ imp_dbh, "begin");
+        int status = run_sql(aTHX_ imp_dbh, "begin");
         if (PGRES_COMMAND_OK != status) {
             TRACE_PQERRORMESSAGE;
             pg_error(aTHX_ dbh, status, PQerrorMessage(imp_dbh->conn));
@@ -5230,7 +5233,7 @@ static int pg_db_end_txn (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int commit)
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_end_txn with %s\n",
                     THEADER_slow, commit ? "commit" : "rollback");
 
-    status = _result(aTHX_ imp_dbh, commit ? "commit" : "rollback");
+    status = run_sql(aTHX_ imp_dbh, commit ? "commit" : "rollback");
     imp_dbh->done_begin = DBDPG_FALSE;
     if (PGRES_COMMAND_OK != status) {
         TRACE_PQERRORMESSAGE;
@@ -5704,7 +5707,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             return -2;
         }
 
-        status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
+        status = set_sqlstate(aTHX_ imp_dbh, imp_sth->result);
 
         if (PGRES_TUPLES_OK == status || PGRES_COMMAND_OK == status) {
             rows = imp_sth->rows;
@@ -5728,7 +5731,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
             return -2;
         }
 
-        status = _sqlstate(aTHX_ imp_dbh, imp_sth->result);
+        status = set_sqlstate(aTHX_ imp_dbh, imp_sth->result);
 
         TRACE_PQRESULTERRORMESSAGE;
         pg_error(aTHX_ h, status, PQresultErrorMessage(imp_sth->result));
@@ -5757,7 +5760,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
     TRACE_PQGETRESULT;
     while ((result = PQgetResult(imp_dbh->conn)) != NULL) {
         /* TODO: Better multiple result-set handling */
-        status = _sqlstate(aTHX_ imp_dbh, result);
+        status = set_sqlstate(aTHX_ imp_dbh, result);
         switch ((int)status) {
         case PGRES_TUPLES_OK:
             TRACE_PQNTUPLES;
@@ -5878,7 +5881,7 @@ static int pg_db_ready_error(SV *h, imp_dbh_t *imp_dbh, char *pq_call)
     dTHX;
 
     if (strcmp(imp_dbh->sqlstate, "00000") != 0)
-        _fatal_sqlstate(aTHX_ imp_dbh);
+        fatal_sqlstate(aTHX_ imp_dbh);
 
     TRACE_PQERRORMESSAGE;
     pg_error(aTHX_ h, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
@@ -5917,7 +5920,7 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
 
     TRACE_PQCONSUMEINPUT;
     if (!PQconsumeInput(imp_dbh->conn)) {
-        _fatal_sqlstate(aTHX_ imp_dbh);
+        fatal_sqlstate(aTHX_ imp_dbh);
         TRACE_PQERRORMESSAGE;
         pg_error(aTHX_ h, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_ready (error: consume failed)\n", THEADER_slow);
@@ -5941,7 +5944,7 @@ int pg_db_ready(SV *h, imp_dbh_t *imp_dbh)
             status = PGRES_COMMAND_OK;
             TRACE_PQGETRESULT;
             while ((result = PQgetResult(imp_dbh->conn))) {
-                ret = _sqlstate(aTHX_ imp_dbh, result);
+                ret = set_sqlstate(aTHX_ imp_dbh, result);
                 if (ret != PGRES_COMMAND_OK) status = ret;
                 TRACE_PQCLEAR;
                 PQclear(result);
@@ -6105,7 +6108,7 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
     wait_for_result:
         TRACE_PQGETRESULT;
         while ((result = PQgetResult(imp_dbh->conn)) != NULL) {
-            status = _sqlstate(aTHX_ imp_dbh, result);
+            status = set_sqlstate(aTHX_ imp_dbh, result);
 
             /* Auto-retrieve results for the owning statement instead of discarding */
             if (NULL != async_sth &&

@@ -342,14 +342,14 @@ PQresultErrorField
     seek $fh,0,0;
     { local $/; ($info = <$fh>) =~ s/\r//go; }
     $expected = q{Begin pg_quickexec (query: SELECT 'dbdpg_flag_testing' async: 0 async_status: 0)
-Begin _result (sql: begin)
-Begin _sqlstate
-Begin _sqlstate
+Begin run_sql (sql: begin)
+Begin set_sqlstate
+Begin set_sqlstate
 Begin dbd_db_commit
 Begin pg_db_rollback_commit (action: commit AutoCommit: 0 BegunWork: 0)
 Begin PGTransactionStatusType
-Begin _result (sql: commit)
-Begin _sqlstate
+Begin run_sql (sql: commit)
+Begin set_sqlstate
 };
     is ($info, $expected, $t);
 
@@ -363,14 +363,14 @@ Begin _sqlstate
     seek $fh,0,0;
     { local $/; ($info = <$fh>) =~ s/\r//go; }
     $expected = q{dbdpg: Begin pg_quickexec (query: SELECT 'dbdpg_flag_testing' async: 0 async_status: 0)
-dbdpg: Begin _result (sql: begin)
-dbdpg: Begin _sqlstate
-dbdpg: Begin _sqlstate
+dbdpg: Begin run_sql (sql: begin)
+dbdpg: Begin set_sqlstate
+dbdpg: Begin set_sqlstate
 dbdpg: Begin dbd_db_commit
 dbdpg: Begin pg_db_rollback_commit (action: commit AutoCommit: 0 BegunWork: 0)
 dbdpg: Begin PGTransactionStatusType
-dbdpg: Begin _result (sql: commit)
-dbdpg: Begin _sqlstate
+dbdpg: Begin run_sql (sql: commit)
+dbdpg: Begin set_sqlstate
 };
     is ($info, $expected, $t);
 
@@ -383,12 +383,12 @@ dbdpg: Begin _sqlstate
     $dbh->trace(0);
     seek $fh,0,0;
     { local $/; ($info = <$fh>) =~ s/\r//go; }
-    $expected = q{End _sqlstate (status: 1)
-End _result
-End _sqlstate (status: 2)
+    $expected = q{End set_sqlstate (status: 1)
+End run_sql
+End set_sqlstate (status: 2)
 End pg_quickexec (rows: 1, txn_status: 2)
-End _sqlstate (status: 1)
-End _result
+End set_sqlstate (status: 1)
+End run_sql
 End pg_db_rollback_commit (result: 1)
 };
     is ($info, $expected, $t);
@@ -442,7 +442,7 @@ Disconnection complete
     $expected = q{Login connection string:
 Connection complete
 dbdpg: Begin pg_quickexec (query: SELECT 'dbdpg_flag_testing' async: 0 async_status: 0)
-dbdpg: Begin _sqlstate
+dbdpg: Begin set_sqlstate
 };
     $info =~ s/(Login connection string:).+/$1/g;
     is ($info, "$expected", $t);

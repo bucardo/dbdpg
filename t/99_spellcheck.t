@@ -576,6 +576,7 @@ Newz
 nmake
 nntp
 nohead
+NOLINT
 nonliteral
 nopause
 noprefix
