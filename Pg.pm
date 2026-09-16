@@ -990,7 +990,7 @@ EOSQL
 
         my $WHERE = join ' AND ', @where;
 
-        my $codecomment = <<'EOL'
+        my $codecomment = <<'EOL';
  We can't match confkey from the fk constraint to conkey of the unique constraint,
  because the unique constraint might not exist or there might be more than one
  matching one. However, there must be at least a unique _index_ on the key
@@ -1013,7 +1013,6 @@ EOSQL
    which isn't available until 9.4 at the earliest, so we join against a series table instead
 
 EOL
-
 
         my $SQL = qq{
             SELECT
