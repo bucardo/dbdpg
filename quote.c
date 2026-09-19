@@ -566,7 +566,7 @@ static void _dequote_bytea_hex(char *string, STRLEN *new_length)
             digit1 = _decode_hex_digit(*string);
             digit2 = _decode_hex_digit(*(string+1));
             if (digit1 >= 0 && digit2 >= 0) {
-                *result++ = 16 * digit1 + digit2;
+                *result++ = (char) (16 * digit1 + digit2);
                 (*new_length)++;
             }
             string += 2;

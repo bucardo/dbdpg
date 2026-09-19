@@ -9,13 +9,20 @@
 
 */
 
-#define NEED_newSVpvn_flags
-
 #include "Pg.h"
 
 #ifdef _MSC_VER
 #define strncasecmp(a,b,c) _strnicmp((a),(b),(c))
 #endif
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wundef"
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundef"
+#pragma clang diagnostic ignored "-Wunused-macros"
+
+#define NEED_newSVpvn_flags
 
 MODULE = DBD::Pg    PACKAGE = DBD::Pg
 

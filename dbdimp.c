@@ -726,7 +726,7 @@ static ExecStatusType set_sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
                 sqlstate = "08000";    /* CONNECTION EXCEPTION */
                 break;
             }
-            /*@fallthrough@*/
+            __attribute__((fallthrough));
         default:
             sqlstate = "22000"; /* DATA EXCEPTION */
             break;
@@ -736,11 +736,11 @@ static ExecStatusType set_sqlstate(pTHX_ imp_dbh_t * imp_dbh, PGresult * result)
     memcpy(imp_dbh->sqlstate, sqlstate, 5);
     imp_dbh->sqlstate[5] = '\0';
 
-    if (TRACE7_slow) TRC(DBILOGFP, "%s_sqlstate txn_status is %d\n",
+    if (TRACE7_slow) TRC(DBILOGFP, "%s_sqlstate txn_status is %u\n",
                     THEADER_slow, pg_db_txn_status(aTHX_ imp_dbh));
 
 
-    if (TEND_slow) TRC(DBILOGFP, "%sEnd set_sqlstate (status: %d)\n", THEADER_slow, status);
+    if (TEND_slow) TRC(DBILOGFP, "%sEnd set_sqlstate (status: %d)\n", THEADER_slow, (int) status);
     return status;
 
 } /* end of set_sqlstate */
@@ -763,7 +763,7 @@ int dbd_db_ping (SV * dbh)
     }
 
     tstatus = pg_db_txn_status(aTHX_ imp_dbh);
-    if (TRACE5_slow) TRC(DBILOGFP, "%sdbd_db_ping txn_status is %d\n", THEADER_slow, tstatus);
+    if (TRACE5_slow) TRC(DBILOGFP, "%sdbd_db_ping txn_status is %d\n", THEADER_slow, (int) tstatus);
 
     if (tstatus >= PQTRANS_UNKNOWN) { /* Unknown, so we err on the side of "bad" */
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_pg_ping (result: -2 unknown/bad)\n", THEADER_slow);
@@ -838,7 +838,7 @@ static int pg_db_rollback_commit (pTHX_ SV * dbh, imp_dbh_t * imp_dbh, int actio
        ask it for the status directly and double-check things */
 
     tstatus = pg_db_txn_status(aTHX_ imp_dbh);
-    if (TRACE4_slow) TRC(DBILOGFP, "%sdbd_db_%s txn_status is %d\n", THEADER_slow, action ? "commit" : "rollback", tstatus);
+    if (TRACE4_slow) TRC(DBILOGFP, "%sdbd_db_%s txn_status is %d\n", THEADER_slow, action ? "commit" : "rollback", (int) tstatus);
 
     if (PQTRANS_IDLE == tstatus) { /* We are not in a transaction */
         if (imp_dbh->done_begin) {
@@ -1158,7 +1158,7 @@ int dbd_db_STORE_attrib (SV * dbh, imp_dbh_t * imp_dbh, SV * keysv, SV * valuesv
     unsigned int newval = SvTRUE(valuesv);
     int          retval = 0;
 
-    if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_STORE (key: %s newval: %d kl:%d)\n", THEADER_slow, key, newval, (int)kl);
+    if (TSTART_slow) TRC(DBILOGFP, "%sBegin dbd_db_STORE (key: %s newval: %u kl:%d)\n", THEADER_slow, key, newval, (int)kl);
 
     switch (kl) {
 
@@ -2537,7 +2537,7 @@ static void pg_st_split_statement (pTHX_ imp_sth_t * imp_sth, char * statement)
 
     if (TRACE7_slow) {
         TRC(DBILOGFP, "%sPlaceholder type: %d numsegs: %d numphs: %d\n",
-            THEADER_slow, imp_sth->placeholder_type, imp_sth->numsegs, imp_sth->numphs);
+            THEADER_slow, (int) imp_sth->placeholder_type, imp_sth->numsegs, imp_sth->numphs);
         TRC(DBILOGFP, "%sPlaceholder numbers and segments:\n",
             THEADER_slow);
         for (int s=0; s < seg_array_count(imp_sth); s++) {
@@ -2587,7 +2587,7 @@ static int pg_st_prepare_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     snprintf(imp_sth->prepare_name, MAX_PREPARE_NAME, "dbdpg_%c%d_%x",
             (imp_dbh->pid_number < 0 ? 'n' : 'p'),
             abs(imp_dbh->pid_number),
-            imp_dbh->prepare_number);
+            (unsigned int) imp_dbh->prepare_number);
 
     if (TRACE5_slow)
         TRC(DBILOGFP, "%sNew statement name (%s)\n", THEADER_slow, imp_sth->prepare_name);
@@ -3374,7 +3374,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
 
     imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
 
-    if (TRACE4_slow) TRC(DBILOGFP, "%sGot a status of %d\n", THEADER_slow, status);
+    if (TRACE4_slow) TRC(DBILOGFP, "%sGot a status of %d\n", THEADER_slow, (int) status);
     switch ((int)status) {
     case PGRES_TUPLES_OK:
         TRACE_PQNTUPLES;
@@ -3427,7 +3427,7 @@ long pg_quickexec (SV * dbh, const char * sql, const int asyncflag)
     }
 
     if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_quickexec (rows: %ld, txn_status: %d)\n",
-                  THEADER_slow, rows, txn_status);
+                  THEADER_slow, rows, (int) txn_status);
     return rows;
 
 } /* end of pg_quickexec */
@@ -3746,7 +3746,7 @@ long dbd_st_execute (SV * sth, imp_sth_t * imp_sth)
         if (TRACE7_slow) {
             for (p=0; p < ph_array_count(imp_sth); p++) {
                 TRC(DBILOGFP, "%sPQexecParams item #%d\n", THEADER_slow, (int)p);
-                TRC(DBILOGFP, "%s-> Type: (%d)\n", THEADER_slow, imp_sth->PQoids[p]);
+                TRC(DBILOGFP, "%s-> Type: (%d)\n", THEADER_slow, (int) imp_sth->PQoids[p]);
                 TRC(DBILOGFP, "%s-> Value: (%s)\n", THEADER_slow, imp_sth->PQvals[p]);
                 TRC(DBILOGFP, "%s-> Length: (%d)\n", THEADER_slow, imp_sth->PQlens ? imp_sth->PQlens[p] : 0);
                 TRC(DBILOGFP, "%s-> Format: (%d)\n", THEADER_slow, imp_sth->PQfmts ? imp_sth->PQfmts[p] : 0);
@@ -4002,7 +4002,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
                 if (TRACEWARN_slow) {
                     TRACE_PQFTYPE;
                     TRC(DBILOGFP, "%sUnknown type returned by Postgres: %d. Setting to UNKNOWN\n",
-                        THEADER_slow, PQftype(imp_sth->result, i));
+                        THEADER_slow, (int) PQftype(imp_sth->result, i));
                 }
                 imp_sth->type_info[i] = pg_type_data(PG_UNKNOWN);
             }
@@ -4055,7 +4055,7 @@ AV * dbd_st_fetch (SV * sth, imp_sth_t * imp_sth)
                             break;
                         }
 #endif
-                    /* fallthrough */
+                        __attribute__((fallthrough));
                     case PG_INT2:
                     case PG_INT4:
                         sv_setiv(sv, atol(value));
@@ -4209,7 +4209,7 @@ static int pg_st_deallocate_statement (pTHX_ SV * sth, imp_sth_t * imp_sth)
     /* What is our status? */
     tstatus = pg_db_txn_status(aTHX_ imp_dbh);
     if (TRACE5_slow)
-        TRC(DBILOGFP, "%stxn_status is %d\n", THEADER_slow, tstatus);
+        TRC(DBILOGFP, "%stxn_status is %d\n", THEADER_slow, (int) tstatus);
 
     /* If we are in a failed transaction, rollback before deallocating */
     if (PQTRANS_INERROR == tstatus) {
@@ -4893,7 +4893,7 @@ SV * pg_db_error_field (SV *dbh, char * fieldname)
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_db_error_field (fieldname=%s)\n", THEADER_slow, fieldname);
 
     for (i = 0; i < (int)sizeof(ucname) - 1 && fieldname[i]; i++)
-        ucname[i] = toupper((unsigned char)fieldname[i]);
+        ucname[i] = (char) toupper((unsigned char)fieldname[i]);
     ucname[i] = '\0';
 
     /* These allow partial matches, which is why 'severity_nonlocalized'  needs to go first */
@@ -5810,8 +5810,7 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
                 rows = 0;
                 break;
             }
-            /* fallthrough */
-
+            __attribute__((fallthrough));
         default:
             rows = -2;
             TRACE_PQERRORMESSAGE;
