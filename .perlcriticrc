@@ -34,6 +34,8 @@ stop_words = ActiveKids afterwards arrayref arrayrefs async attr autocommit Auto
 [-Community::PackageMatchesFilename]
 [-Community::WhileDiamondDefaultAssignment]
 [-Compatibility::PodMinimumVersion]
+[-ControlStructures::LoopsRequireLabels]
+[-ControlStructures::ProhibitBareBlockLoopControls]
 [-ControlStructures::ProhibitCascadingIfElse]
 [-ControlStructures::ProhibitCStyleForLoops]
 [-ControlStructures::ProhibitDeepNests]
