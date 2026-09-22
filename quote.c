@@ -9,7 +9,7 @@
 
 #include "Pg.h"
 
-#if defined (_WIN32) && !defined (strncasecmp)
+#if defined(_WIN32) && !defined(strncasecmp) && !defined(__MINGW32__) && !defined(__MINGW64__)
 static int
 strncasecmp(const char *s1, const char *s2, size_t n)
 {
