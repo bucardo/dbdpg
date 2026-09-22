@@ -204,8 +204,50 @@ if ($Config{gccversion} && $Config{gccversion} =~ /^(\d+)\./) {
 
 my $comp_opts = $Config{q{ccflags}} . $defines;
 
-if ($ENV{DBDPG_GCCDEBUG}) {
-    warn "Enabling many compiler options\n";
+if ($ENV{DBDPG_CLANGDEBUG}) {
+    warn "Enabling many clang compiler options\n";
+    $comp_opts .= " -isystem $Config{archlibexp}/CORE/";
+
+    $comp_opts .= ' -Walloca -Warray-bounds-pointer-arithmetic -Watomic-implicit-seq-cst';
+    $comp_opts .= ' -Wbad-function-cast -Wc23-compat -Wc23-extensions -Wc2y-extensions';
+    $comp_opts .= ' -Wc99-compat -Wc99-extensions -Wcalled-once-parameter -Wcast-align';
+    $comp_opts .= ' -Wcast-function-type -Wcast-qual -Wcomma -Wcompound-token-split -Wconditional-uninitialized';
+    $comp_opts .= ' -Wcovered-switch-default -Wcstring-format-directive -Wcuda-compat';
+    $comp_opts .= ' -Wdate-time -Wdeprecated -Wdouble-promotion -Wduplicate-enum -Wexpansion-to-defined';
+    $comp_opts .= ' -Wextra-semi -Wfloat-equal -Wformat-non-iso -Wformat-pedantic -Wformat-signedness';
+    $comp_opts .= ' -Wformat-type-confusion -Wformat=2 -Wfour-char-constants -Wgcc-compat';
+    $comp_opts .= ' -Wgnu -Wheader-hygiene -Wimplicit-fallthrough -Wincompatible-function-pointer-types-strict';
+    $comp_opts .= ' -Wincomplete-module -Winvalid-or-nonexistent-directory -Wloop-analysis';
+    $comp_opts .= ' -Wmain -Wmain-return-type -Wmissing-include-dirs -Wmissing-noreturn';
+    $comp_opts .= ' -Wmissing-prototypes -Wmissing-variable-declarations -Wnewline-eof';
+    $comp_opts .= ' -Wnon-gcc -Wnonportable-include-path -Wnonportable-private-system-apinotes-path';
+    $comp_opts .= ' -Wnonportable-system-include-path -Wnullable-to-nonnull-conversion';
+    $comp_opts .= ' -Wover-aligned -Wpacked -Wpedantic -Wpedantic-core-features -Wpointer-arith';
+    $comp_opts .= ' -Wpoison-system-directories -Wpragmas -Wpre-c11-compat -Wpre-c23-compat-pedantic';
+    $comp_opts .= ' -Wpre-c2y-compat-pedantic -Wprofile-instr-missing -Wquoted-include-in-framework-header';
+    $comp_opts .= ' -Wredundant-parens -Wshadow-all -Wshift-sign-overflow -Wsigned-enum-bitfield';
+    $comp_opts .= ' -Wstrict-prototypes -Wswitch-default -Wswitch-enum -Wtautological-constant-in-range-compare';
+    $comp_opts .= ' -Wthread-safety -Wthread-safety-beta -Wthread-safety-negative -Wthread-safety-verbose';
+    $comp_opts .= ' -Wunaligned-access -Wundef -Wundef-prefix -Wunguarded-availability';
+    $comp_opts .= ' -Wunreachable-code-aggressive -Wunused-macros -Wvariadic-macros -Wvector-conversion';
+    $comp_opts .= ' -Wvla';
+
+    ## Must turn off because isystem does not work well on clang
+    $comp_opts .= ' -Wno-gnu-statement-expression-from-macro-expansion -Wno-shorten-64-to-32';
+
+    ## Perhaps add in the future:
+    ## $comp_opts .= ' -Wduplicate-header-ownership -Wimplicit-overflow-behavior-conversion';
+    ## $comp_opts .= ' -Wmmap-deprecated-symlink-to-modular-header -Wmodule-file-mapping-mismatch';
+    ## $comp_opts .= ' -Wmodule-map-path-outside-directory -Wms-bitfield-padding -Wshadow-header';
+    ## $comp_opts .= ' -Wshift-bool -Wthread-safety-pointer';
+
+    ## Skipped because they are too picky:
+    $comp_opts .= ' -Wno-sign-conversion';
+    ## $comp_opts .= '; -Wdeclaration-after-statement -Wextra-semi-stmt -Wunsafe-buffer-usage';
+
+}
+elsif ($ENV{DBDPG_GCCDEBUG}) {
+    warn "Enabling many gcc compiler options\n";
     $comp_opts .= " -isystem $Config{archlibexp}/CORE";
     $comp_opts .= ' -Wchar-subscripts -Wcomment';
     $comp_opts .= ' -Wformat=2'; ## does -Wformat,-Wformat-y2k,-Wformat-nonliteral,-Wformat-security

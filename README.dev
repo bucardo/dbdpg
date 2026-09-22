@@ -298,6 +298,12 @@ $comp_opts .= " -Wtraditional"; ## Lots and lots of junk
 $comp_opts .= " -Wold-style-definition"; ## We use lots of these
 $comp_opts .= " -Wunreachable-code"; ## Lots due to our multi-version ifdefs
 
+If using Clang, you can set DBDPG_CLANGDEBUG=1 to get a large set of options, 
+designed to carefully enable certain warnings. See Makefile.PL for the current list.
+To run with clang, pass to CC option. Using it as an exported env may not work, so:
+
+perl Makefile.PL CC=/usr/bin/clang
+
 Please feel free to add to and clarify the above lists.
 
 
