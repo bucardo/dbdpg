@@ -733,8 +733,6 @@ while (<$oldfh>) {
 if (!$fails) {
     pass ('All types returned the correct value');
 }
-
-done_testing();
 EOT
             $step = 1;
             last;
