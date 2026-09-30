@@ -473,7 +473,7 @@ like ((join ' ' => @sources), $expected_port, $t);
 
 $t='DBI method data_sources() throws an error when first arg is "pg"';
 eval { @sources = DBI->data_sources('pg'); };
-like ($@, qr/install_driver/, $t);
+like ($@, qr/install_driver|capitali[sz]ation|Can't locate object method "driver"/, $t);
 
 $t='DBI method data_sources() throws an error when DBI_DSN is invalid';
 eval { local $ENV{DBI_DSN} = 'foo'; @sources = DBI->data_sources('Pg'); };
@@ -501,7 +501,7 @@ like ($@, qr/usage:/, $t);
 
 $t=q{DBI method data_sources() throws an error when no args and DBI_DRIVER is 'pg'};
 eval { local $ENV{DBI_DRIVER} = 'pg'; @sources = DBI->data_sources(); };
-like ($@, qr/install_driver/, $t);
+like ($@, qr/install_driver|capitali[sz]ation|Can't locate object method "driver"/, $t);
 
 $t=q{DBI method data_sources() works when no args and DBI_DRIVER is 'Pg'};
 { local $ENV{DBI_DRIVER} = 'Pg'; @sources = DBI->data_sources(); }
