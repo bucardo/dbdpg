@@ -34,7 +34,7 @@ if ($connerror or (!defined $dbh)) {
     plan skip_all => "Connection to database failed, cannot continue testing ($connerror) (dbh=" . (defined($dbh) ? $dbh : '<undefined>') . ')';
 }
 
-plan tests => 19;
+plan tests => 20;
 
 pass ('Connection to test database works');
 
@@ -184,6 +184,49 @@ like ($@, ($^O =~ /Win/ ? qr/DBI/s : qr/DBI.*\Q.s.PGSQL.1\E\b/s), $t);
      }
      $t=q{DBI->connect() works with all application name variants};
      $problems ? fail ($t) : pass ($t);
+}
+
+#
+# Defensive check: non-hashref attribute argument to DBI->connect must not segfault.
+# Covers the hv_fetchs() path in want_async_connect() (dbdimp.c).
+# Refer to GitHub PRs #210 and #213 and Perl/perl5#24682 for details.
+#
+
+$t = q{DBI->connect does not segfault when attrs is not a hashref};
+{
+    my @bad_attrs = (
+        undef,
+        0,
+        1,
+        '',
+        'pg_async_connect',
+        [],
+        \42,
+        sub { 1 },
+    );
+
+    # Suppress the expected "old-style" deprecation that modern DBI emits
+    # when the 4th argument is not a hashref.  We still want to exercise
+    # the non-hashref path that used to segfault in dbdimp.c.
+    local $SIG{__WARN__} = sub {
+        my $msg = shift;
+        return if $msg =~ /old-style.*syntax is deprecated/;
+        warn $msg;
+    };
+
+    for my $attr (@bad_attrs) {
+        my $tmpdbh;
+        eval {
+            $tmpdbh = DBI->connect(
+                $testdsn,
+                $testuser,
+                $ENV{DBI_PASS},
+                $attr,
+            );
+        };
+        $tmpdbh->disconnect if $tmpdbh;
+    }
+    pass ($t);
 }
 
 END {

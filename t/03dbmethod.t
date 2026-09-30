@@ -30,7 +30,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 702;
+plan tests => 704;
 
 my $superuser = is_super();
 
@@ -67,6 +67,53 @@ $t = 'Database handle method prepare() fails when statement is empty';
 $SQL = q{};
 eval { $dbh->prepare($SQL) };
 like ($@, qr{^Cannot prepare empty statement}, $t);
+
+#
+# Defensive checks: non-hashref attribute arguments to prepare/bind_param
+# must not segfault. Covers the hv_fetchs() paths in pg_st_prepare() and
+# dbd_bind_ph() (dbdimp.c).
+# Refer to GitHub PRs #210 and #213 and Perl/perl5#24682 for details.
+#
+
+{
+    my @bad_attrs = (
+        undef,
+        0,
+        1,
+        '',
+        'pg_async_connect',
+        [],
+        \42,
+        sub { 1 },
+    );
+
+    $t = q{$dbh->prepare does not segfault when attribs is not a hashref};
+    for my $attribs (@bad_attrs) {
+        my $this_sth;
+        eval {
+            $this_sth = $dbh->prepare('SELECT 1', $attribs);
+        };
+        $this_sth->finish if $this_sth;
+    }
+    pass ($t);
+
+    $t = q{$sth->bind_param does not segfault when attribs is not a hashref};
+    {
+        my $this_sth = $dbh->prepare('SELECT ?::int');
+        for my $attribs (@bad_attrs) {
+            # This should fail, but it should not segfault.
+            eval {
+                $this_sth->bind_param(1, 1, $attribs);
+            };
+        }
+        # Valid bind so execute is well-defined
+        eval {
+            $this_sth->bind_param(1, 1);
+        };
+        $this_sth->finish if $this_sth;
+    }
+    pass ($t);
+}
 
 # Populate the testing table for later use
 
