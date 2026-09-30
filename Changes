@@ -3,6 +3,21 @@ Changes for the DBD::Pg module
 RT items can be found by using: https://rt.cpan.org/Public/Bug/Display.html?id=XXX
 Github items can be found by using: https://github.com/bucardo/dbdpg/issues/XXX
 
+Version ???  (unreleased)
+
+ - Fix MinGW compilation errors for Strawberry Perl
+   [Ed Sabol]
+
+ - Allow $dbh->data_sources('Pg') to work by removing the 'Pg' argument.
+   Support arguments to both DBI->data_sources and $dbh->data_sources
+     to be strings or hashrefs.
+   Always show the port in the output.
+   [Greg Sabino Mullane]
+
+ - Add new env DBDPG_CLANGDEBUG for advanced clang debugging
+   [Greg Sabino Mullane]
+
+
 
 Version 3.21.2  (released August 26, 2026)
 
