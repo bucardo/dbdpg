@@ -261,15 +261,15 @@ void dbd_init (dbistate_t *dbistate)
 
 
 /* ================================================================== */
-static int want_async_connect(pTHX_ SV *attrs)
+static int want_async_connect(pTHX_ SV *attribs)
 {
     SV **psv, *sv;
 
     return
-        attrs
-        && SvROK(attrs)
-        && SvTYPE(SvRV(attrs)) == SVt_PVHV
-        && (psv = hv_fetchs((HV *)SvRV(attrs), "pg_async_connect", 0))
+        attribs
+        && SvROK(attribs)
+        && SvTYPE(SvRV(attribs)) == SVt_PVHV
+        && (psv = hv_fetchs((HV *)SvRV(attribs), "pg_async_connect", 0))
         && (sv = *psv)
         && SvTRUE(sv);
 }
