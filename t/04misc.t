@@ -472,8 +472,15 @@ $t=q{DBI method data_sources() works when first arg is 'Pg' and second arg is se
 like ((join ' ' => @sources), $expected_port, $t);
 
 $t='DBI method data_sources() throws an error when first arg is "pg"';
-eval { @sources = DBI->data_sources('pg'); };
-like ($@, qr/install_driver/, $t);
+SKIP: {
+    # On case-insensitive file systems (Windows/macOS) 'pg' loads DBD::Pg
+    #  successfully, so the expected failure does not occur.
+    skip 'Case-insensitive file system: "pg" loads DBD::Pg', 1
+        if $^O =~ /Win32|msys|cygwin|darwin/i;
+
+    eval { @sources = DBI->data_sources('pg'); };
+    like ($@, qr/install_driver/, $t);
+}
 
 $t='DBI method data_sources() throws an error when DBI_DSN is invalid';
 eval { local $ENV{DBI_DSN} = 'foo'; @sources = DBI->data_sources('Pg'); };
@@ -500,8 +507,15 @@ eval { local $ENV{DBI_DRIVER} = ''; @sources = DBI->data_sources(); };
 like ($@, qr/usage:/, $t);
 
 $t=q{DBI method data_sources() throws an error when no args and DBI_DRIVER is 'pg'};
-eval { local $ENV{DBI_DRIVER} = 'pg'; @sources = DBI->data_sources(); };
-like ($@, qr/install_driver/, $t);
+SKIP: {
+    # On case-insensitive file systems (Windows/macOS) 'pg' loads DBD::Pg
+    #  successfully, so the expected failure does not occur.
+    skip 'Case-insensitive file system: "pg" loads DBD::Pg', 1
+        if $^O =~ /Win32|msys|cygwin|darwin/i;
+
+    eval { local $ENV{DBI_DRIVER} = 'pg'; @sources = DBI->data_sources(); };
+    like ($@, qr/install_driver/, $t);
+}
 
 $t=q{DBI method data_sources() works when no args and DBI_DRIVER is 'Pg'};
 { local $ENV{DBI_DRIVER} = 'Pg'; @sources = DBI->data_sources(); }
