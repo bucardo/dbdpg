@@ -261,13 +261,15 @@ void dbd_init (dbistate_t *dbistate)
 
 
 /* ================================================================== */
-static int want_async_connect(pTHX_ SV *attrs)
+static int want_async_connect(pTHX_ SV *attribs)
 {
     SV **psv, *sv;
 
     return
-        attrs
-        && (psv = hv_fetchs((HV *)SvRV(attrs), "pg_async_connect", 0))
+        attribs
+        && SvROK(attribs)
+        && SvTYPE(SvRV(attribs)) == SVt_PVHV
+        && (psv = hv_fetchs((HV *)SvRV(attribs), "pg_async_connect", 0))
         && (sv = *psv)
         && SvTRUE(sv);
 }
@@ -1931,7 +1933,7 @@ int dbd_st_prepare_sv (SV * sth, imp_sth_t * imp_sth, SV * statement_sv, SV * at
     imp_sth->nocolons         = imp_dbh->nocolons;
 
     /* Parse and set any attributes passed in */
-    if (attribs) {
+    if (attribs && SvROK(attribs) && SvTYPE(SvRV(attribs)) == SVt_PVHV) {
         if ((svp = hv_fetchs((HV*)SvRV(attribs),"pg_server_prepare", 0)) != NULL) {
             imp_sth->server_prepare = SvTRUE(*svp) ? DBDPG_TRUE : DBDPG_FALSE;
         }
@@ -2802,7 +2804,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
     }
 
     /* Check for a pg_type argument (sql_type already handled) */
-    if (attribs) {
+    if (attribs && SvROK(attribs) && SvTYPE(SvRV(attribs)) == SVt_PVHV) {
         if((svp = hv_fetchs((HV*)SvRV(attribs),"pg_type", 0)) != NULL)
             pg_type = (int)SvIV(*svp);
     }

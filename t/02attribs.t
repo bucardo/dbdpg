@@ -20,7 +20,7 @@ my (undef,undef,$dbh) = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 273;
+plan tests => 276;
 
 isnt ($dbh, undef, 'Connect to database for handle attributes testing');
 
@@ -1601,6 +1601,68 @@ SKIP: {
     is ($@, q{}, "$t (for delete)");
 
     $dbh4->disconnect();
+}
+
+#
+# Defensive checks to ensure non-hashref attribute arguments do not segfault.
+# These cover hv_fetchs((HV*)SvRV(...)) patterns in dbdimp.c
+# (e.g., want_async_connect / pg_st_prepare / dbd_bind_ph).
+# See GitHub PR #210 and Perl/perl5#24682.
+#
+
+SKIP: {
+    my @bad_attrs = (
+        undef,
+        0,
+        1,
+        '',
+        'pg_async_connect',
+        [],
+        \42,
+        sub { 1 },
+    );
+
+    $t = q{DBI->connect does not segfault when attrs is not a hashref};
+    for my $attr (@bad_attrs) {
+        my $tmpdbh;
+        eval {
+            $tmpdbh = DBI->connect(
+                $testdsn,
+                $testuser,
+                $ENV{DBI_PASS},
+                $attr,
+            );
+        };
+        $tmpdbh->disconnect if $tmpdbh;
+    }
+    pass ($t);
+
+    $t = q{$dbh->prepare does not segfault when attribs is not a hashref};
+    for my $attribs (@bad_attrs) {
+        my $this_sth;
+        eval {
+            $this_sth = $dbh->prepare('SELECT 1', $attribs);
+        };
+        $sth->finish if $sth;
+    }
+    pass ($t);
+
+    $t = q{$sth->bind_param does not segfault when attribs is not a hashref};
+    {
+        my $this_sth = $dbh->prepare('SELECT ?::int');
+        for my $attribs (@bad_attrs) {
+            # This should fail, but it should not segfault.
+            eval {
+                $this_sth->bind_param(1, 1, $attribs);
+            };
+        }
+        # Valid bind so execute is well-defined
+        eval {
+            $this_sth->bind_param(1, 1);
+        };
+        $sth->finish if $sth;
+    }
+    pass ($t);
 }
 
 #
