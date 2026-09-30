@@ -60,13 +60,19 @@ jobs:
     - name: Install Modules
       run: |
         cpanm -v
+        # FIXME: TEMPORARILY pin DBI to < 1.654: 1.654 has a C89-incompatible
+        # declaration-after-label in DBI.xs (sql_type_cast_svpv) that breaks
+        # older GCC in the official perl Docker images. See
+        # https://github.com/perl5-dbi/dbi/issues/198
+        cpanm --notest DBI@1.653
         cpanm --installdeps --notest .
         cpanm --notest Perl::Critic Text::SpellChecker
 
-    - name: Show Errors on Ubuntu
-      if:  ${{ failure() && startsWith( matrix.runner, 'ubuntu-')}}
+    - name: Show Errors
+      if: failure()
       run: |
-         cat /home/runner/.cpanm/work/*/build.log
+        ls -la "${HOME}/.cpanm/work/" || true
+        cat "${HOME}/.cpanm/work/"*/build.log || true
 
     - name: Run make
       run: |
