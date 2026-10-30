@@ -26,7 +26,7 @@ if (! $dbh_noerr) {
 $dbh_noerr->{RaiseError} = 0;
 $dbh_noerr->{PrintError} = 0;
 
-plan tests => 127;
+plan tests => 138;
 
 isnt ($dbh, undef, 'Connect to database for async testing');
 
@@ -659,6 +659,72 @@ $t=q{sth2 finish succeeds};
 ok ($sth2->finish, $t);
 
 $sth1->finish;
+
+## pg_result() without pg_ready() must still send the query after an async prepare (GH #217)
+
+$dbh->do(q{CREATE TEMP TABLE dbd_pg_async217 (id INT PRIMARY KEY)});
+my $async217_ids = sub {
+    my $ids = $dbh->selectcol_arrayref(q{SELECT id FROM dbd_pg_async217 ORDER BY id});
+    $dbh->do(q{DELETE FROM dbd_pg_async217});
+    return $ids;
+};
+my $insert217 = q{INSERT INTO dbd_pg_async217 VALUES (?)};
+
+$t=q{One async server-prepared sth executed 4 times with pg_result() between executes inserts every row};
+eval {
+    $sth1 = $dbh->prepare($insert217, { pg_async => PG_ASYNC, pg_server_prepare => 1 });
+    for my $id (1..4) {
+        $dbh->pg_result if $id > 1;
+        $sth1->execute($id);
+    }
+    $res = $dbh->pg_result;
+};
+is ($@, q{}, $t);
+is ($res, 1, "$t - final pg_result() returns rows affected by the INSERT");
+is_deeply ($async217_ids->(), [1..4], "$t - all rows present");
+
+$t=q{Sync sth followed by async sth: pg_result() after async prepare still runs the query};
+eval {
+    $sth1 = $dbh->prepare($insert217);
+    $sth1->execute($_) for 1, 2;
+    $sth2 = $dbh->prepare($insert217, { pg_async => PG_ASYNC });
+    for my $id (3, 4) {
+        $sth2->execute($id);
+        $res = $sth2->pg_result;
+        die "Wrong row count ($res) for id $id\n" if $res != 1;
+    }
+};
+is ($@, q{}, $t);
+is_deeply ($async217_ids->(), [1..4], "$t - all rows present");
+
+$t=q{Two async sths executed alternately do not collide on prepared statement names};
+eval {
+    my @alt_sths = map { $dbh->prepare($insert217, { pg_async => PG_ASYNC }) } 1, 2;
+    for my $id (1..4) {
+        $dbh->pg_result if $id > 1;
+        $alt_sths[$id % 2]->execute($id);
+    }
+    $dbh->pg_result;
+};
+is ($@, q{}, $t);
+is_deeply ($async217_ids->(), [1..4], "$t - all rows present");
+
+$t=q{pg_result() reports an error from a failed async prepare};
+$sth1 = $dbh_noerr->prepare(q{INSERT INTO dbd_pg_async217_missing VALUES (?)}, { pg_async => PG_ASYNC });
+for my $id (1, 2) { ## First execute uses an unnamed statement, second does the prepare
+    $dbh_noerr->pg_result if $id > 1;
+    $sth1->execute($id);
+}
+$res = $dbh_noerr->pg_result;
+is ($res, undef, $t);
+like ($dbh_noerr->errstr, qr{dbd_pg_async217_missing}, "$t - error message mentions the missing table");
+
+$t=q{Database handle is usable after a failed async prepare};
+is ($dbh_noerr->{pg_async_status}, 0, $t);
+eval { $dbh_noerr->do('SELECT 1') or die $dbh_noerr->errstr };
+is ($@, q{}, "$t - synchronous query works");
+
+$dbh->do(q{DROP TABLE dbd_pg_async217});
 
 # Test async COPY TO STDOUT: non-blocking do(), polling, result, and data drain
 $t = q{do() with PG_ASYNC on COPY TO STDOUT returns '0E0' immediately (non-blocking)};

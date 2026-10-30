@@ -5759,6 +5759,55 @@ long pg_db_result (SV *h, imp_dbh_t *imp_dbh)
         return -2;
     }
 
+    /*
+      If an async prepare is outstanding, the result waiting for us is that
+      of the prepare, not of the query. Deal with it, then send the actual
+      query and collect its result below (same as pg_db_ready does).
+    */
+    if (imp_dbh->async_sth && STH_ASYNC_PREPARE == imp_dbh->async_sth->async_status) {
+        imp_sth_t *prep_sth = imp_dbh->async_sth;
+        ExecStatusType prep_status = PGRES_COMMAND_OK;
+
+        TRACE_PQGETRESULT;
+        while ((result = PQgetResult(imp_dbh->conn)) != NULL) {
+            status = set_sqlstate(aTHX_ imp_dbh, result);
+            if (PGRES_COMMAND_OK != status) {
+                if (PGRES_COMMAND_OK == prep_status) {
+                    TRACE_PQRESULTERRORMESSAGE;
+                    pg_error(aTHX_ h, status, PQresultErrorMessage(result));
+                }
+                prep_status = status;
+            }
+            TRACE_PQCLEAR;
+            PQclear(result);
+        }
+
+        if (PGRES_COMMAND_OK != prep_status) {
+            /* The statement was never created, so do not try to deallocate it later */
+            Safefree(prep_sth->prepare_name);
+            prep_sth->prepare_name = NULL;
+            prep_sth->async_status = STH_NO_ASYNC;
+            prep_sth->rows = -2;
+            imp_dbh->async_status = DBH_NO_ASYNC;
+            if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (error: async prepare failed)\n", THEADER_slow);
+            return -2;
+        }
+
+        prep_sth->prepared_by_us = DBDPG_TRUE;
+        ++imp_dbh->prepare_number;
+
+        if (!pq_send_prepared_query(aTHX_ imp_dbh, prep_sth)) {
+            TRACE_PQERRORMESSAGE;
+            pg_error(aTHX_ h, PGRES_FATAL_ERROR, PQerrorMessage(imp_dbh->conn));
+            prep_sth->async_status = STH_NO_ASYNC;
+            prep_sth->rows = -2;
+            imp_dbh->async_status = DBH_NO_ASYNC;
+            if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_db_result (error: PQsendQueryPrepared failed)\n", THEADER_slow);
+            return -2;
+        }
+        prep_sth->async_status = STH_ASYNC;
+    }
+
     imp_dbh->copystate = 0; /* Assume not in copy mode until told otherwise */
 
     TRACE_PQGETRESULT;
@@ -6202,6 +6251,7 @@ static int handle_old_async(pTHX_ SV * handle, imp_dbh_t * imp_dbh, const int as
            to be sent & the result dealt with */
         if (async_sth && async_sth->async_status == STH_ASYNC_PREPARE
             && status == PGRES_COMMAND_OK) {
+            async_sth->prepared_by_us = DBDPG_TRUE;
             ++imp_dbh->prepare_number;
 
             ret = pq_send_prepared_query(aTHX_ imp_dbh, async_sth);
