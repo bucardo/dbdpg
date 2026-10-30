@@ -4309,6 +4309,8 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
         if (TRACE4_slow) {
             TRC(DBILOGFP, "%sskipping sth destroy due to AutoInactiveDestroy\n", THEADER_slow);
         }
+        if (imp_dbh->async_sth == imp_sth) /* the connection must not point at a freed statement */
+            imp_dbh->async_sth = NULL;
         DBIc_IMPSET_off(imp_sth); /* let DBI know we've done it */
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_destroy (AutoInactiveDestroy set)\n", THEADER_slow);
         return;
@@ -4319,6 +4321,8 @@ void dbd_st_destroy (SV * sth, imp_sth_t * imp_sth)
         if (TRACE4_slow) {
             TRC(DBILOGFP, "%sskipping sth destroy due to InactiveDestroy\n", THEADER_slow);
         }
+        if (imp_dbh->async_sth == imp_sth) /* the connection must not point at a freed statement */
+            imp_dbh->async_sth = NULL;
         DBIc_IMPSET_off(imp_sth); /* let DBI know we've done it */
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_st_destroy (InactiveDestroy set)\n", THEADER_slow);
         return;
