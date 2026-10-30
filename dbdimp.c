@@ -2933,6 +2933,10 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version,
 
     if (TSTART_slow) TRC(DBILOGFP, "%sBegin pg_stringify_array\n", THEADER_slow);
 
+    /* Callers should only pass arrayrefs; defend against misuse */
+    if (!SvROK(input) || SvTYPE(SvRV(input)) != SVt_PVAV)
+        croak("Cannot stringify a non-array reference");
+
     toparr = (AV *) SvRV(input);
     value = newSVpv("{", 1);
     if (utf8)
