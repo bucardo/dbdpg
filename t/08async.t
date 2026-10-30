@@ -697,7 +697,7 @@ eval {
 is ($@, q{}, $t);
 is_deeply ($async217_ids->(), [1..4], "$t - all rows present");
 
-$t=q{Two async sths executed alternately do not collide on prepared statement names};
+$t=q{Two async statement handles executed alternately do not collide on prepared statement names};
 eval {
     my @alt_sths = map { $dbh->prepare($insert217, { pg_async => PG_ASYNC }) } 1, 2;
     for my $id (1..4) {
