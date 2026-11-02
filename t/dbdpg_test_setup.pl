@@ -267,13 +267,13 @@ version: $version
     }
 
     ## From here on out, we don't return directly, but save it first
-  GETHANDLE: {
+  GETHANDLE_START:
         eval {
             $dbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
                                 {RaiseError => 1, PrintError => 0, AutoCommit => 1});
         };
 
-        last GETHANDLE if ! $@; ## Made it!
+        goto GETHANDLE_END if ! $@; ## Made it!
         ## If the error was because of the user, try a few others
         if ($@ =~ /postgres/) {
 
@@ -290,7 +290,7 @@ version: $version
                 $dbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
                                     {RaiseError => 1, PrintError => 0, AutoCommit => 1});
             };
-            last GETHANDLE if ! $@; ## Made it!
+            goto GETHANDLE_END if ! $@; ## Made it!
 
             ## Final user tweak: set to postgres for Beastie
             if ($testuser ne 'postgres') {
@@ -300,7 +300,7 @@ version: $version
                     $dbh = DBI->connect($testdsn, $testuser, $ENV{DBI_PASS},
                                         {RaiseError => 1, PrintError => 0, AutoCommit => 1});
                 };
-                last GETHANDLE if ! $@; ## Made it!
+                goto GETHANDLE_END if ! $@; ## Made it!
             }
         }
 
@@ -334,7 +334,7 @@ version: $version
         my $initcom = build_command('INITDB --version 2>&1', [$initdb]);
         $info = '';
         eval { $info = qx{$initcom}; };
-        last GETHANDLE if $@; ## Fail - initdb bad
+        goto GETHANDLE_END if $@; ## Fail - initdb bad
         $version = 0;
         if (!defined $info or ($info !~ /Postgres|EnterpriseDB/i and $info !~ /run as root/)) {
             if (defined $info) {
@@ -351,7 +351,7 @@ version: $version
                 $msg .= " Final call was: $initdb";
                 $@ = $msg;
             }
-            last GETHANDLE; ## Fail - initdb bad
+            goto GETHANDLE_END; ## Fail - initdb bad
         }
         elsif ($info =~ /([0-9]+)(?:devel|beta|rc|alpha)/) { ## Can be 10devel
             $version = $1;
@@ -377,10 +377,10 @@ version: $version
         my $pgctlcom = build_command('PGCTL --help 2>&1', [$pg_ctl]);
         $info = '';
         eval { $info = qx{$pgctlcom}; };
-        last GETHANDLE if $@; ## Fail - pg_ctl bad
+        goto GETHANDLE_END if $@; ## Fail - pg_ctl bad
         if (!defined $info or ($info !~ /\@(?:[a-z.-]*?postgresql\.org|enterprisedb\.com)/ and $info !~ /run as root/)) {
             $@ = defined $initdb ? "Bad pg_ctl output: $info" : 'Bad pg_ctl output';
-            last GETHANDLE; ## Fail - pg_ctl bad
+            goto GETHANDLE_END; ## Fail - pg_ctl bad
         }
 
         ## initdb and pg_ctl seems to be available, let's use them to fire up a cluster
@@ -390,7 +390,7 @@ version: $version
         my $initdbcom = build_command('INITDB --locale=LOCALE -E utf8 -D DATADIR 2>&1',
                                       [$initdb, $locale, "$testdir/data"]);
         eval { $info = qx{$initdbcom}; };
-        last GETHANDLE if $@; ## Fail - initdb bad
+        goto GETHANDLE_END if $@; ## Fail - initdb bad
 
         ## initdb and pg_ctl cannot be run as root, so let's handle that
         if ($info =~ /run as root/ or $info =~ /unprivilegierte/) {
@@ -441,18 +441,18 @@ version: $version
             }
             if (!$founduser) {
                 $@ = 'Unable to find a user to run initdb as';
-                last GETHANDLE; ## Fail - no user
+                goto GETHANDLE_END; ## Fail - no user
             }
             if (! -e "$testdir/data") {
                 $@ = 'Could not create a test database via initdb';
-                last GETHANDLE; ## Fail - no datadir created
+                goto GETHANDLE_END; ## Fail - no datadir created
             }
             ## At this point, both $su and $testuser are set
         }
 
         if ($info =~ /FATAL/) {
             $@ = "initdb gave a FATAL error: $info";
-            last GETHANDLE; ## Fail - FATAL
+            goto GETHANDLE_END; ## Fail - FATAL
         }
 
         if ($info =~ /but is not empty/) {
@@ -460,7 +460,7 @@ version: $version
         }
         elsif ($info !~ /pg_ctl/) {
             $@ = "initdb did not give a pg_ctl string: $info";
-            last GETHANDLE; ## Fail - bad output
+            goto GETHANDLE_END; ## Fail - bad output
         }
 
         ## Which user do we connect as?
@@ -512,7 +512,7 @@ version: $version
             }
             if ($testport > $TEST_PORT_MAX) {
                 $@ = "No free ports found for testing: tried $TEST_PORT_MIN to $TEST_PORT_MAX\n";
-                last GETHANDLE; ## Fail - no free ports
+                goto GETHANDLE_END; ## Fail - no free ports
             }
         }
         $@ = '';
@@ -541,7 +541,7 @@ version: $version
             if (! open $cfh, '>>', $conf) {
                 $@ = qq{Could not open "$conf": $!};
                 $debug and Test::More::diag qq{Failed to open "$conf"};
-                last GETHANDLE; ## Fail - no conf file
+                goto GETHANDLE_END; ## Fail - no conf file
             }
             $debug and Test::More::diag qq{Writing to "$conf"};
             print {$cfh} "\n\n## DBD::Pg testing parameters\n";
@@ -595,7 +595,7 @@ version: $version
             $su and chdir $olddir;
             if ($err) {
                 $@ = "Could not startup new database ($COM) ($err)";
-                last GETHANDLE; ## Fail - startup failed
+                goto GETHANDLE_END; ## Fail - startup failed
             }
             sleep 1;
         }
@@ -658,10 +658,10 @@ version: $version
                     redo STARTUP;
                 }
             }
-            last GETHANDLE; ## Made it!
+            goto GETHANDLE_END; ## Made it!
         }
 
-    } ## end of GETHANDLE
+    GETHANDLE_END:
 
     ## At this point, we've got a connection, or have failed
     ## Either way, we record for future runs
