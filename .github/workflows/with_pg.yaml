@@ -60,11 +60,6 @@ jobs:
     - name: Install Modules
       run: |
         cpanm -v
-        # FIXME: TEMPORARILY pin DBI to < 1.654: 1.654 has a C89-incompatible
-        # declaration-after-label in DBI.xs (sql_type_cast_svpv) that breaks
-        # older GCC in the official perl Docker images. See
-        # https://github.com/perl5-dbi/dbi/issues/198
-        cpanm --notest DBI@1.653
         cpanm --installdeps --notest .
         cpanm --notest Perl::Critic Text::SpellChecker
 
@@ -93,5 +88,45 @@ jobs:
         DBI_DSN: "dbi:Pg:dbname=test_db;host=postgreshost"
         DBI_PASS: test_secret
         DBI_USER: test_user
+      run: |
+        make test
+
+  # Extra job that forces the initdb path (covers the GETHANDLE / last GETHANDLE
+  # code exercised when no pre-existing server is available). This is the path
+  # that broke under Perl 5.44 (see PR #220 / Debian bug #1151887).
+  test-initdb:
+    name: test initdb path (latest, latest, gcc)
+    runs-on: ubuntu-latest
+    container: perl:latest
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Show Perl Version
+      run: |
+        perl -v
+
+    - name: Install non-perl dependencies
+      run: |
+        apt-get update
+        apt-get install -y postgresql postgresql-client libaspell-dev
+
+    - name: Install Modules
+      run: |
+        cpanm --installdeps --notest .
+        cpanm --notest Perl::Critic Text::SpellChecker
+
+    - name: Run make
+      run: |
+        gcc --version
+        perl Makefile.PL OPTIMIZE="$(perl -MConfig -e 'print $Config{optimize}') -Werror"
+        make
+
+    - name: Run tests (forced initdb path)
+      env:
+        AUTHOR_TESTING: 1
+        RELEASE_TESTING: 1
+        DBDPG_TESTINITDB: 1          # force the INITDB path
+        # deliberately omit DBI_DSN/DBI_USER so the harness will create a cluster
       run: |
         make test
