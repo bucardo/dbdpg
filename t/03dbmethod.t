@@ -30,7 +30,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 704;
+plan tests => 705;
 
 my $superuser = is_super();
 
@@ -2041,6 +2041,10 @@ is ($dbh->quote('foobar'), q{'foobar'}, $t);
 $t='Database handle method quote() throws exception on non-reference type argument';
 eval { $dbh->quote('abc', 'def'); };
 like ($@, qr{hashref}, $t);
+
+$t='Database handle method quote() rejects a non-array reference';
+eval { $dbh->quote({ a => 1 }); };
+like ($@, qr{Cannot quote}, $t);
 
 $t='Database handle method quote() throws exception on arrayref type argument';
 eval { $dbh->quote('abc', ['arraytest']); };
