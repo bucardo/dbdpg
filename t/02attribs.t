@@ -1388,25 +1388,28 @@ eval {
     $sth->execute();
 };
 like ($@, qr{for Statement "Testing}, $t);
+$dbh->rollback();
 
 $t='Database handle attribute "ShowErrorStatement" adds statement and placeholders to errors via execute() with null args';
-$SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class WHERE relname = ? AND reltuples = ?};
+$SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class WHERE relname = ? AND reltuples = ? AND (SELECT 1/0) = 1};
 eval {
     $sth = $dbh->prepare($SQL);
     $sth->execute(123);
 };
 like ($@, qr{with ParamValues}, $t);
+$dbh->rollback();
 
 $t='Statement handle attribute "ShowErrorStatement" adds statement and placeholders to errors via execute()';
-$SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class WHERE relname = ? AND reltuples = ?};
+$SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class WHERE relname = ? AND reltuples = ? AND (SELECT 1/0) = 1};
 eval {
     $sth = $dbh->prepare($SQL);
     $sth->execute(123,456);
 };
 like ($@, qr{with ParamValues: 1='123', 2='456'}, $t);
+$dbh->rollback();
 
 $t='Database handle attribute "ShowErrorStatement" adds statement and placeholders to errors via do()';
-$SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class WHERE relname = ? AND reltuples = ?};
+$SQL = q{SELECT 'Another ShowErrorStatement Test' FROM pg_class WHERE relname = ? AND reltuples = ? AND (SELECT 1/0) = 1};
 eval {
     $dbh->do($SQL, {}, 123, 456);
 };
