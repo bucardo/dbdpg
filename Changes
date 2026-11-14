@@ -3,7 +3,7 @@ Changes for the DBD::Pg module
 RT items can be found by using: https://rt.cpan.org/Public/Bug/Display.html?id=XXX
 Github items can be found by using: https://github.com/bucardo/dbdpg/issues/XXX
 
-Version ???  (unreleased)
+Version 3.22.0  (unreleased)
 
  - Set async_sth to NULL on early return branches in dbd_st_destroy.
    [Chad Granum]
