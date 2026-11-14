@@ -894,6 +894,11 @@ sub get_test_settings {
         $testuser = $ENV{DBI_USER} || '';
     }
 
+    ## Allow using an existing port (no explicit host)
+    if (exists $ENV{DBDPG_TEST_PORT} and $ENV{DBDPG_TEST_PORT} =~ /^\d+$/) {
+        $testdsn = "dbi:Pg:dbname=postgres;port=$ENV{DBDPG_TEST_PORT}";
+    }
+
     return $testdsn, $testuser, $helpconnect, $su, $uid, $testdir, $pg_ctl, $initdb, $error, $version;
 
 } ## end of get_test_settings
