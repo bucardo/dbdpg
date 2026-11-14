@@ -9,6 +9,7 @@ my $USAGE = "Usage: $0 <postgresdir> [-t specific_test_file] [-c compile_version
 ## --quiet
 ## --nohead
 ## --nopause
+## --dryrun
 
 
 ## Usage examples:
@@ -47,7 +48,7 @@ use Data::Dumper; $Data::Dumper::Sortkeys = 1;
 use Time::HiRes qw/ gettimeofday tv_interval /;
 use List::Util qw/ shuffle /;
 
-our $VERSION = 1.6;
+our $VERSION = 1.7;
 
 my $startdir = getcwd();
 
@@ -55,6 +56,7 @@ my %arg = (
     quiet => 0,
     minversion => '',
     nohead => 0,
+    dryrun => 0,
 );
 
 GetOptions
@@ -70,6 +72,7 @@ GetOptions
    'minversion=s',
    'nohead',
    'nopause',
+   'dryrun',
    'help',
 ) or die "Usage: $USAGE\n";
 
@@ -175,22 +178,33 @@ for my $lib_version (shuffle @compile_versions) {
     my $lib_dir = "$basedir/$lib_version";
 
     my $compfile = "tmp/alltest.dbdpg.compile.$lib_version.log";
-    note "Compiling $lib_version - results stored in $compfile";
+    my $MAKE = "LD_LIBRARY_PATH=$lib_dir/lib POSTGRES_LIB= POSTGRES_INCLUDE= POSTGRES_HOME=$lib_dir perl Makefile.PL 2>&1 >> $compfile";
 
-    open my $fh, '>>', $compfile;
-    printf {$fh} "STARTED COMPILE $lib_version: %s\n\n", scalar localtime;
-    my $start_time = [gettimeofday];
+    if ($arg{dryrun}) {
+        $MAKE =~ s/perl Makefile.PL.*/\\ \n  perl Makefile.PL/;
+    }
+    else {
+        note "Compiling $lib_version - results stored in $compfile";
 
-    my $COM = "LD_LIBRARY_PATH=$lib_dir/lib POSTGRES_LIB= POSTGRES_INCLUDE= POSTGRES_HOME=$lib_dir perl Makefile.PL 2>&1 >> $compfile";
-    note "--> $COM";
-    print {$fh} "***\nRUN: $COM\n***\n\n\n";
-    print {$fh} qx{$COM};
+        open my $fh, '>>', $compfile;
+        printf {$fh} "STARTED COMPILE $lib_version: %s\n\n", scalar localtime;
+        my $start_time = [gettimeofday];
 
-    $COM = "LD_LIBRARY_PATH=$lib_dir/lib make 2>&1 >> $compfile";
+        note "--> $MAKE";
+        print {$fh} "***\nRUN: $MAKE\n***\n\n\n";
+        print {$fh} qx{$MAKE};
+    }
 
     for my $target_version (shuffle @run_versions) {
-
         my $target_dir = "$basedir/$target_version";
+
+        my $COM = "LD_LIBRARY_PATH=$lib_dir/lib DBDPG_TEST_ALWAYS_ENV=0 AUTHOR_TESTING=0 TEST_SIGNATURE=0 DBDPG_INITDB=$target_dir/bin/initdb make test TEST_VERBOSE=1";
+        if ($arg{dryrun}) {
+            $COM =~ s/make test/\\ \n  make test/;
+            print "\n## Compile version $lib_version, test against version $target_version\n$MAKE\n";
+            print "$COM\n\n";
+            next;
+        }
 
         unlink $readme if -e $readme;
 
@@ -208,7 +222,7 @@ for my $lib_version (shuffle @compile_versions) {
 
         system "perl t/98cleanup.t >> $outfile";
 
-        $COM = "LD_LIBRARY_PATH=$lib_dir/lib DBDPG_TEST_ALWAYS_ENV=0 AUTHOR_TESTING=0 TEST_SIGNATURE=0 DBDPG_INITDB=$target_dir/bin/initdb make test TEST_VERBOSE=1 2>&1 >> $outfile";
+        $COM .= " 2>&1 >> $outfile";
         $testfile and $COM =~ s/make test/make test TEST_FILES=$testfile/;
         note "--> $COM";
         print {$fh} "***\nRUN: $COM\n***\n\n\n";
