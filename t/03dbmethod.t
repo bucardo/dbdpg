@@ -348,7 +348,7 @@ SKIP: {
 
 SKIP: {
     if ($pgversion < 100000) {
-        skip('Cannot test GENERATED AS IDENTITY columns on pre-10 servers', 1);
+        skip('Cannot test GENERATED AS IDENTITY columns on pre-10 servers', 4);
     }
 
     for my $WHEN ('BY DEFAULT', 'ALWAYS') {
