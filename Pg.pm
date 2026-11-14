@@ -4410,7 +4410,8 @@ the L</quote> and the L</execute> methods. In both cases, the array is
 flattened into a string representing a Postgres array.
 
 When fetching rows from a table that contains a column with an
-array type, the result will be passed back to your script as an arrayref.
+array type, the result will be passed back to your script as an arrayref. This only
+works for the built-in array data types: see C<bind_param()> for the complete list.
 
 To turn off the automatic parsing of returned arrays into arrayrefs,
 you can set the attribute L<pg_expand_array|/pg_expand_array (boolean)>, which is true by default.
