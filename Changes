@@ -5,6 +5,12 @@ Github items can be found by using: https://github.com/bucardo/dbdpg/issues/XXX
 
 Version ???  (unreleased)
 
+ - Set async_sth to NULL on early return branches in dbd_st_destroy.
+   [Chad Granum]
+
+ - Stricter checking that attribute argument expecting a reference are actually a reference.
+   [Ed Sabol, Leon Timmermans]
+
  - Fix MinGW compilation errors for Strawberry Perl
    [Ed Sabol]
 
@@ -17,7 +23,8 @@ Version ???  (unreleased)
  - Add new env DBDPG_CLANGDEBUG for advanced clang debugging
    [Greg Sabino Mullane]
 
-
+ - Do not set array_nulls in tests if Postgres >= 20
+   [Greg Sabino Mullane]
 
 Version 3.21.2  (released August 26, 2026)
 
