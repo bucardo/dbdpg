@@ -30,7 +30,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 704;
+plan tests => 706;
 
 my $superuser = is_super();
 
@@ -322,7 +322,7 @@ SKIP: {
     if ($pgversion < 80300) {
         $dbh->do("DROP TABLE $schema2.$table2");
         $dbh->do("DROP SEQUENCE $schema2.$sequence2");
-        skip ('Cannot test sequence rename on pre-8.3 servers', 1);
+        skip ('Cannot test sequence rename on pre-8.3 servers', 2);
     }
 
     $t='Database handle method last_insert_id() fails with renamed sequence and cache enabled';
@@ -739,7 +739,7 @@ is ($sth->rows(), $total_temp-1, $t);
 SKIP: {
 
     if ($pgversion < 90300) {
-        skip ('Cannot test table_info for materialized views unless database if 9.3 or higher', 1);
+        skip ('Cannot test table_info for materialized views unless database if 9.3 or higher', 3);
     }
 
     $sth = $dbh->table_info(undef,undef,undef,'MATERIALIZED VIEW');
@@ -764,7 +764,7 @@ SKIP: {
 SKIP: {
 
     if ($pgversion < 90100) {
-        skip ('Cannot test table_info for foreign tables unless database is 9.1 or higher', 1);
+        skip ('Cannot test table_info for foreign tables unless database is 9.1 or higher', 3);
     }
 
     ## We can check for finer-grained access in more recent versions, but this is good enough:
@@ -2268,7 +2268,7 @@ $dbh->commit;
 SKIP: {
 
     if ($pglibversion < 80300 or $pgversion < 80300) {
-        skip ('Postgres version 8.3 or greater needed for pg_lo_truncate tests', 1);
+        skip ('Postgres version 8.3 or greater needed for pg_lo_truncate tests', 10);
     }
 
     $t='Database handle method pg_lo_truncate() fails if opened in read mode only';
@@ -2305,7 +2305,7 @@ SKIP: {
 
   SKIP: {
         if ($Config{ivsize} < 8 or $pgversion < 90300 or $pglibversion < 90300) {
-            skip 'Cannot test 64-bit offsets for largeobject functions without 64-bit integers and Postgres 9.3 or higher', 1;
+            skip ('Cannot test 64-bit offsets for largeobject functions without 64-bit integers and Postgres 9.3 or higher', 4);
         }
 
         # large objects are stored in chunks of BLOCKSZ/4 with an
@@ -2341,16 +2341,16 @@ $result = $dbh->pg_lo_unlink($object);
 ok (!$result, $t);
 $dbh->rollback();
 
-SKIP: {
+SKIP: { ## skip1
 
-    $superuser or skip ('Cannot run largeobject tests unless run as Postgres superuser', 1);
+    $superuser or skip ('Cannot run largeobject tests unless run as Postgres superuser', 38);
 
-  SKIP: {
+  SKIP: { ## skip2
 
         eval {
             require File::Temp;
         };
-        $@ and skip ('Must have File::Temp to test pg_lo_import* and pg_lo_export', 1);
+        $@ and skip ('Must have File::Temp to test pg_lo_import* and pg_lo_export', 13);
 
         $t='Database handle method pg_lo_import() works';
         my ($fh,$filename) = File::Temp::tmpnam();
@@ -2366,12 +2366,12 @@ SKIP: {
         is_deeply ($info, "abc\ndef", $t);
         $dbh->commit();
 
-      SKIP: {
+      SKIP: { ## skip3
             if ($pglibversion < 80400) {
-                skip ('Cannot test pg_lo_import_with_oid unless compiled against 8.4 or better server', 1);
+                skip ('Cannot test pg_lo_import_with_oid unless compiled against 8.4 or better server', 5);
             }
             if ($pgversion < 80100) {
-                skip ('Cannot test pg_lo_import_with_oid against old versions of Postgres', 1);
+                skip ('Cannot test pg_lo_import_with_oid against old versions of Postgres', 5);
             }
 
             $t='Database handle method pg_lo_import_with_oid() works with high number';
@@ -2379,9 +2379,9 @@ SKIP: {
             $dbh->pg_lo_unlink($highnumber);
             $dbh->commit();
             my $thandle;
-          SKIP: {
+          SKIP: { ## skip4
 
-                skip ('Known bug: pg_log_import_with_oid throws an error. See RT #90448', 1);
+                skip ('Known bug: pg_log_import_with_oid throws an error. See RT #90448', 3);
 
                 $thandle = $dbh->pg_lo_import_with_oid($filename, $highnumber);
                 is ($thandle, $highnumber, $t);
@@ -2391,7 +2391,7 @@ SKIP: {
                 $SQL = "SELECT data FROM pg_largeobject where loid = $thandle";
                 $info = $dbh->selectall_arrayref($SQL)->[0][0];
                 is_deeply ($info, "abc\ndef", $t);
-            }
+            } ## end skip4
 
             $t='Database handle method pg_lo_import_with_oid() fails when given already used number';
             eval {
@@ -2406,7 +2406,8 @@ SKIP: {
             };
             ok ($thandle, $t);
             $dbh->rollback();
-        }
+
+        } ## end skip3
 
         unlink $filename;
 
@@ -2432,7 +2433,8 @@ SKIP: {
         close $fh or warn 'Could not close tempfile';
         unlink $filename;
         $dbh->pg_lo_unlink($objid);
-    }
+
+    } ## end skip2
 
     ## Same pg_lo_* tests, but with AutoCommit on
 
@@ -2487,13 +2489,12 @@ SKIP: {
     };
     like ($@, qr{pg_lo_unlink when AutoCommit is on}, $t);
 
-
-  SKIP: {
+  SKIP: { ## skip5
 
         eval {
             require File::Temp;
         };
-        $@ and skip ('Must have File::Temp to test pg_lo_import and pg_lo_export', 1);
+        $@ and skip ('Must have File::Temp to test pg_lo_import and pg_lo_export', 17);
 
         $t='Database handle method pg_lo_import() works (AutoCommit on)';
         my ($fh,$filename) = File::Temp::tmpnam();
@@ -2590,9 +2591,12 @@ SKIP: {
         $dbh->{AutoCommit} = 0;
         $dbh->pg_lo_unlink($handle);
         $dbh->{AutoCommit} = 1;
-    }
+
+    } ## end skip5
+
     $dbh->{AutoCommit} = 0;
-}
+
+} ## end skip1
 
 #
 # Test of the "pg_notifies" database handle method
@@ -2631,7 +2635,7 @@ SKIP: {
     $t='Database handle method pg_notifies() returns correct string length for recycled var';
 
     if ($pgversion < 90000) {
-        skip ('Cannot test notification payloads on pre-9.0 servers', 1);
+        skip ('Cannot test notification payloads on pre-9.0 servers', 4);
     }
 
     $dbh->do("LISTEN abc$notify_name");
@@ -2681,7 +2685,7 @@ $dbh->rollback();
 
 SKIP: {
     if ($DBI::VERSION < 1.54) {
-        skip ('DBI must be at least version 1.54 to test private_attribute_info', 1);
+        skip ('DBI must be at least version 1.54 to test private_attribute_info', 2);
     }
 
     $t='Database handle method private_attribute_info() returns at least one record';
@@ -2723,7 +2727,7 @@ my $mtvar; ## This is an implicit test of getcopydata: please leave this var und
 SKIP: {
 
     if ($pgversion < 80300) {
-        skip ('Cannot test pg_ping via COPY on pre-8.3 servers', 1);
+        skip ('Cannot test pg_ping via COPY on pre-8.3 servers', 20);
     }
 
     for my $type (qw/ ping pg_ping /) {
@@ -2773,23 +2777,26 @@ SKIP: {
 
       SKIP: {
 
-        skip 'Cannot safely reopen sockets on Win32', 1 if $^O =~ /Win32/;
+          if ($^O =~ /Win32/) {
+              skip ('Cannot safely reopen sockets on Win32', 2);
+          }
 
-        $val = $type eq 'ping' ? 0 : -3;
-        $t=qq{Database handle method $type() returns $val after a lost network connection (outside transaction)};
-        socket_fail($dbh);
-        is ($dbh->$type(), $val, $t);
 
-        ## Reconnect, and try the same thing but inside a transaction
-        $val = $type eq 'ping' ? 0 : -3;
-        $t=qq{Database handle method $type() returns $val after a lost network connection (inside transaction)};
-        $dbh = connect_database({nosetup => 1});
-        $dbh->do(q{SELECT 'DBD::Pg testing'});
-        socket_fail($dbh);
-        is ($dbh->$type(), $val, $t);
+          $val = $type eq 'ping' ? 0 : -3;
+          $t=qq{Database handle method $type() returns $val after a lost network connection (outside transaction)};
+          socket_fail($dbh);
+          is ($dbh->$type(), $val, $t);
 
-        $type eq 'ping' and $dbh = connect_database({nosetup => 1});
-    }
+          ## Reconnect, and try the same thing but inside a transaction
+          $val = $type eq 'ping' ? 0 : -3;
+          $t=qq{Database handle method $type() returns $val after a lost network connection (inside transaction)};
+          $dbh = connect_database({nosetup => 1});
+          $dbh->do(q{SELECT 'DBD::Pg testing'});
+          socket_fail($dbh);
+          is ($dbh->$type(), $val, $t);
+
+          $type eq 'ping' and $dbh = connect_database({nosetup => 1});
+        }
     }
 
 }
