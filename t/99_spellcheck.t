@@ -395,6 +395,7 @@ dr
 drh
 drnoble
 DRV
+dryrun
 DSN
 dTHX
 dv
