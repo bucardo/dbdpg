@@ -369,7 +369,8 @@ version: $version
         }
         if ($^O =~ /Win32/) {
             my $fullpath = qx{where $pg_ctl};
-            chomp $fullpath;
+            $fullpath = '' if !defined $fullpath;
+            $fullpath =~ s/\r?\n.*//s;  #  we only want the first result
             $fullpath =~ /pg_ctl/ or die "Could not determine full path for pg_ctl on Win32!\n";
             $pg_ctl = $fullpath;
         }
