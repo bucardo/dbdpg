@@ -246,6 +246,7 @@ for my $lib_version (shuffle @compile_versions) {
 
         ## Just in case we want to catch something
         if ($final_line =~ /FAIL/) {
+            print {$sfh} "******* FAILURE at $outfile\n\n";
             if ($arg{nopause}) {
                 warn " ******* FAILURE at $outfile\n";
             }
