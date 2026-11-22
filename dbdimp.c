@@ -2738,6 +2738,52 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
         currph = ph_array_element(imp_sth, phnum - 1);
     }
 
+    /* Check for a pg_type argument (sql_type already handled) */
+    if (attribs && SvROK(attribs) && SvTYPE(SvRV(attribs)) == SVt_PVHV) {
+        if((svp = hv_fetchs((HV*)SvRV(attribs),"pg_type", 0)) != NULL)
+            pg_type = (int)SvIV(*svp);
+    }
+
+    if (sql_type && pg_type)
+        croak ("Cannot specify both sql_type and pg_type");
+
+    if (NULL == currph->bind_type && (sql_type || pg_type))
+        imp_sth->numbound++;
+
+    if (pg_type) {
+        currph->bind_type = pg_type_data(pg_type);
+        if (currph->bind_type) {
+            if (!currph->bind_type->bind_ok) { /* Re-evaluate with new prepare */
+                croak("Cannot bind %s, pg_type %s not supported by DBD::Pg",
+                      name, currph->bind_type->type_name);
+            }
+        }
+        else {
+            croak("Cannot bind %s unknown pg_type %d", name, pg_type);
+        }
+    }
+    else if (sql_type) {
+        /* always bind as pg_type, because we know we are
+           inserting into a pg database... It would make no
+           sense to quote something to sql semantics and break
+           the insert.
+        */
+        currph->bind_type = sql_type_data((int)sql_type);
+        if (!currph->bind_type) {
+            croak("Cannot bind param %s: unknown sql_type %ld", name, (long)sql_type);
+        }
+        currph->bind_type = pg_type_data(currph->bind_type->type.pg);
+        if (!currph->bind_type) {
+            croak("Cannot find a pg_type for %ld", (long)sql_type);
+        }
+     }
+    else if (NULL == currph->bind_type) { /* "sticky" data type */
+        /* This is the default type, but we will honor defaultval if we can */
+        currph->bind_type = pg_type_data(PG_UNKNOWN);
+        if (!currph->bind_type)
+            croak("Default type is bad!!!!???");
+    }
+
     /* Check the value */
     if (SvTYPE(newvalue) > SVt_PVLV) { /* hook for later array logic    */
         croak("Cannot bind a non-scalar value (%s)", neatsvpv(newvalue,0));
@@ -2801,52 +2847,6 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
         }
         if (TEND_slow) TRC(DBILOGFP, "%sEnd dbd_bind_ph (special)\n", THEADER_slow);
         return 1;
-    }
-
-    /* Check for a pg_type argument (sql_type already handled) */
-    if (attribs && SvROK(attribs) && SvTYPE(SvRV(attribs)) == SVt_PVHV) {
-        if((svp = hv_fetchs((HV*)SvRV(attribs),"pg_type", 0)) != NULL)
-            pg_type = (int)SvIV(*svp);
-    }
-
-    if (sql_type && pg_type)
-        croak ("Cannot specify both sql_type and pg_type");
-
-    if (NULL == currph->bind_type && (sql_type || pg_type))
-        imp_sth->numbound++;
-
-    if (pg_type) {
-        currph->bind_type = pg_type_data(pg_type);
-        if (currph->bind_type) {
-            if (!currph->bind_type->bind_ok) { /* Re-evaluate with new prepare */
-                croak("Cannot bind %s, pg_type %s not supported by DBD::Pg",
-                      name, currph->bind_type->type_name);
-            }
-        }
-        else {
-            croak("Cannot bind %s unknown pg_type %d", name, pg_type);
-        }
-    }
-    else if (sql_type) {
-        /* always bind as pg_type, because we know we are
-           inserting into a pg database... It would make no
-           sense to quote something to sql semantics and break
-           the insert.
-        */
-        currph->bind_type = sql_type_data((int)sql_type);
-        if (!currph->bind_type) {
-            croak("Cannot bind param %s: unknown sql_type %ld", name, (long)sql_type);
-        }
-        currph->bind_type = pg_type_data(currph->bind_type->type.pg);
-        if (!currph->bind_type) {
-            croak("Cannot find a pg_type for %ld", (long)sql_type);
-        }
-     }
-    else if (NULL == currph->bind_type) { /* "sticky" data type */
-        /* This is the default type, but we will honor defaultval if we can */
-        currph->bind_type = pg_type_data(PG_UNKNOWN);
-        if (!currph->bind_type)
-            croak("Default type is bad!!!!???");
     }
 
     if (pg_type || sql_type) {

@@ -269,14 +269,6 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 
         SvGETMAGIC(to_quote_sv);
 
-        /* Reject references other than overloaded objects (presumed
-          stringifiable) and arrays (will make a PostgreSQL array). */
-        if (SvROK(to_quote_sv) && !SvAMAGIC(to_quote_sv)) {
-            if (SvTYPE(SvRV(to_quote_sv)) != SVt_PVAV)
-                croak("Cannot quote a reference");
-            to_quote_sv = pg_stringify_array(to_quote_sv, ",", imp_dbh->pg_server_version, imp_dbh->client_encoding_utf8);
-        }
-
         /* Null is always returned as "NULL", so we can ignore any type given */
         if (!SvOK(to_quote_sv)) {
             RETVAL = newSVpvn("NULL", 4);
@@ -332,6 +324,14 @@ quote(dbh, to_quote_sv, type_sv=Nullsv)
 
             if (SvMAGICAL(to_quote_sv))
                 (void)mg_get(to_quote_sv);
+
+            /* Reject references other than overloaded objects (presumed
+              stringifiable) and arrays (will make a PostgreSQL array). */
+            if (SvROK(to_quote_sv) && !SvAMAGIC(to_quote_sv)) {
+                if (SvTYPE(SvRV(to_quote_sv)) != SVt_PVAV)
+                    croak("Cannot quote a reference");
+                to_quote_sv = pg_stringify_array(to_quote_sv, ",", imp_dbh->pg_server_version, imp_dbh->client_encoding_utf8);
+            }
 
             /* avoid up- or down-grading the argument */
             to_quote_sv = pg_rightgraded_sv(aTHX_ to_quote_sv, utf8);
