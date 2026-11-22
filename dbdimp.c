@@ -3159,7 +3159,7 @@ static SV * pg_destringify_array(pTHX_ imp_dbh_t *imp_dbh, char * input, sql_typ
                 else {
                     // Bytea gets special dequoting
                     if (0 == strncmp(coltype->type_name, "_bytea", 6)) {
-                        coltype->dequote(aTHX_ string, &section_size);
+                        dequote_bytea(aTHX_ string, &section_size);
                     }
 
                     SV *sv = newSVpvn(string, section_size);

@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 36;
+plan tests => 39;
 
 isnt ($dbh, undef, 'Connect to database for bytea testing');
 
@@ -73,6 +73,14 @@ $sth->bind_param(1, undef, { pg_type => PG_INT4 });
 $sth->bind_param(2, undef, SQL_LONGVARBINARY);
 ok ($sth->execute(408, $binary_out), $t);
 
+# array tests
+
+$t='store binary array data in bytea[] column';
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytearray) VALUES (?,?)});
+$sth->bind_param(1, undef, { pg_type => PG_INT4 });
+# without bind_param, special characters need to be escaped; 012 is newline
+ok ($sth->execute(500, [1, 'foo\012bar']), $t);
+
 
 # Set DBDPG_TEST_BYTEA_HEX environment variable to 1 or 0 to force
 # enable/disable testing of hex quoting.
@@ -86,7 +94,7 @@ if ($supports_hex) {
 }
 else {
     test_outputs($supports_hex, undef);
-    SKIP: { skip 'No BYTEA hex format support before 9.0', 13 }
+    SKIP: { skip 'No BYTEA hex format support before 9.0', 14 }
 }
 
 $sth->finish();
@@ -134,6 +142,11 @@ sub test_outputs {
     ($binary_in) = $sth->fetchrow_array();
     cmp_ok ($binary_in, 'eq', $binary_out, $t);
 
+    $t="Received correct representation of bytea[] data$t_append";
+    $sth = $dbh->prepare(q{SELECT bytearray FROM dbd_pg_test WHERE id=?});
+    $sth->execute(500);
+    ($binary_in) = $sth->fetchrow_array();
+    is_deeply ($binary_in, [1, "foo\nbar"], $t);
 
     $t="quote properly handles bytea strings$t_append";
     my $string = "abc\123\\def\0ghi";

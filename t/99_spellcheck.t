@@ -273,6 +273,7 @@ Bunce
 bytea
 Bytea
 BYTEA
+BYTEAARRAY
 cabrion
 CachedKids
 cancelled
