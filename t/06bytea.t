@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 39;
+plan tests => 45;
 
 isnt ($dbh, undef, 'Connect to database for bytea testing');
 
@@ -81,6 +81,13 @@ $sth->bind_param(1, undef, { pg_type => PG_INT4 });
 # without bind_param, special characters need to be escaped; 012 is newline
 ok ($sth->execute(500, [1, 'foo\012bar']), $t);
 
+$t='store mixed printable/non-printable characters in bytea[] column';
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytearray) VALUES (?,?)});
+$sth->bind_param(1, undef, { pg_type => PG_INT4 });
+ok ($sth->execute(501, [1,'foo',
+            'null\000tab\011escape\033backslash\\\\double quote"single quote\'high bytes\200\234\277\305\340\377'
+        ]), $t);
+
 
 # Set DBDPG_TEST_BYTEA_HEX environment variable to 1 or 0 to force
 # enable/disable testing of hex quoting.
@@ -90,11 +97,16 @@ if (! defined($supports_hex)) {
 }
 
 if ($supports_hex) {
+    $t='store hex-escaped characters in a bytea[] column';
+    $sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytearray) VALUES (?,?)});
+    $sth->bind_param(1, undef, { pg_type => PG_INT4 });
+    ok ($sth->execute(550, [1,'foo', '\x00104A8FABDEFF' ]), $t);
+
     test_outputs($supports_hex, $_) for qw(hex escape);
 }
 else {
     test_outputs($supports_hex, undef);
-    SKIP: { skip 'No BYTEA hex format support before 9.0', 14 }
+    SKIP: { skip 'No BYTEA hex format support before 9.0', 18 }
 }
 
 $sth->finish();
@@ -147,6 +159,20 @@ sub test_outputs {
     $sth->execute(500);
     ($binary_in) = $sth->fetchrow_array();
     is_deeply ($binary_in, [1, "foo\nbar"], $t);
+
+    $t="Received correct representation of mixed printable/non-printable bytea[] data$t_append";
+    $sth = $dbh->prepare(q{SELECT bytearray FROM dbd_pg_test WHERE id=?});
+    $sth->execute(501);
+    ($binary_in) = $sth->fetchrow_array();
+    is_deeply ($binary_in, [1, 'foo', "null\0tab\tescape\033backslash\\double quote\"single quote'high bytes\200\234\277\305\340\377"], $t);
+
+    if ($test_hex) {
+        $t="Received correct representation of bytea[] data inserted via hex-escape$t_append";
+        $sth = $dbh->prepare(q{SELECT bytearray FROM dbd_pg_test WHERE id=?});
+        $sth->execute(550);
+        ($binary_in) = $sth->fetchrow_array();
+        is_deeply ($binary_in, [1, 'foo', "\x00\x10\x4A\x8F\xAB\xDE\xFF"]);
+    }
 
     $t="quote properly handles bytea strings$t_append";
     my $string = "abc\123\\def\0ghi";
