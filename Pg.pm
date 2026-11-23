@@ -4727,7 +4727,7 @@ L<The B<DBI> module|DBI>
 =head1 BUGS
 
 To report a bug, or view the current list of bugs, please visit
-https://github.com/bucardo/dbdpg/issues
+L<https://github.com/bucardo/dbdpg/issues>
 
 =head1 DEVELOPMENT
 
