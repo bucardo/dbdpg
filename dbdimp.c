@@ -97,6 +97,8 @@ do { \
   } \
 } while (0)
 
+#define BYTEA_ARRAY_ESCAPE_LEN 6 /* e.g. "\\123", with trailing null */
+
 enum {
     STH_ASYNC_AUTOERROR     = -2, /* PG_OLDQUERY_WAIT auto-retrieved an error result */
     STH_ASYNC_CANCELLED     = -1,
@@ -2809,12 +2811,13 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
         }
         else if (SvTYPE(SvRV(newvalue)) == SVt_PVAV) {
             SV * quotedval;
-            quotedval = pg_stringify_array(newvalue,",",imp_dbh->pg_server_version,imp_dbh->pg_utf8_flag);
+            quotedval = pg_stringify_array(newvalue,",",imp_dbh->pg_server_version,imp_dbh->pg_utf8_flag,currph->bind_type);
             currph->valuelen = sv_len(quotedval);
             Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
             Copy(SvUTF8(quotedval) ? SvPVutf8_nolen(quotedval) : SvPV_nolen(quotedval),
                  currph->value, currph->valuelen+1, char);
-            currph->bind_type = pg_type_data(PG_CSTRINGARRAY);
+            if (PG_UNKNOWN == currph->bind_type->type_id)
+                currph->bind_type = pg_type_data(PG_CSTRINGARRAY);
             sv_2mortal(quotedval);
             is_array = DBDPG_TRUE;
         }
@@ -2876,8 +2879,9 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
             currph->valuelen = 1;
         }
         else {
+            bool is_bytea = PG_BYTEA == currph->bind_type->type_id || PG_BYTEAARRAY == currph->bind_type->type_id;
             /* get the right encoding, without modifying the caller's copy */
-            newvalue = pg_rightgraded_sv(aTHX_ newvalue, imp_dbh->pg_utf8_flag && PG_BYTEA!=currph->bind_type->type_id);
+            newvalue = pg_rightgraded_sv(aTHX_ newvalue, imp_dbh->pg_utf8_flag && !is_bytea);
             value_string = SvPV(newvalue, currph->valuelen);
         }
         Renew(currph->value, currph->valuelen+1, char); /* freed in dbd_st_destroy */
@@ -2917,7 +2921,7 @@ int dbd_bind_ph (SV * sth, imp_sth_t * imp_sth, SV * ph_name, SV * newvalue, IV 
 
 
 /* ================================================================== */
-SV * pg_stringify_array(SV *input, const char * array_delim, int server_version, bool utf8) {
+SV * pg_stringify_array(SV *input, const char * array_delim, int server_version, bool utf8, sql_type_info_t *type_info) {
 
     dTHX;
     AV * toparr;
@@ -2947,6 +2951,9 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version,
         if (TEND_slow) TRC(DBILOGFP, "%sEnd pg_stringify_array (empty)\n", THEADER_slow);
         return value;
     }
+
+    if (! type_info)
+        croak("DBD::Pg internal error: type_info is null");
 
     done = 0;
     currarr = lastarr = toparr;
@@ -3021,15 +3028,25 @@ SV * pg_stringify_array(SV *input, const char * array_delim, int server_version,
                     sv_catpv(value, "NULL"); /* Beware of array_nulls config param! */
                 }
                 else {
+                    bool is_bytea = PG_BYTEAARRAY == type_info->type_id;
                     sv_catpv(value, "\"");
                     /* avoid up- or down-grading the caller's value */
-                    svitem = pg_rightgraded_sv(aTHX_ svitem, utf8);
+                    svitem = pg_rightgraded_sv(aTHX_ svitem, utf8 && !is_bytea);
                     string = SvPV(svitem, stringlength);
                     while (stringlength--) {
-                        /* Escape backslashes and double-quotes. */
-                        if ('\"' == *string || '\\' == *string)
-                            sv_catpvn(value, "\\", 1);
-                        sv_catpvn(value, string, 1);
+                        unsigned char c = *string;
+                        if (is_bytea && (c < 0x20 || c > 0x7e || c == '\\')) {
+                            /* Octal-escape special chars and backslash for bytea array. */
+                            char tmp[BYTEA_ARRAY_ESCAPE_LEN];
+                            snprintf(tmp, (size_t) BYTEA_ARRAY_ESCAPE_LEN, "\\\\%03o", (unsigned char)*string);
+                            sv_catpvn(value, tmp, BYTEA_ARRAY_ESCAPE_LEN-1);
+                        } else {
+                            /* Escape backslashes and double-quotes. */
+                            if ('\"' == *string || '\\' == *string)
+                                sv_catpvn(value, "\\", 1);
+                            sv_catpvn(value, string, 1);
+                        }
+
                         string++;
                     }
                     sv_catpv(value, "\"");
