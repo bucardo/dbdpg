@@ -4418,6 +4418,40 @@ you can set the attribute L<pg_expand_array|/pg_expand_array (boolean)>, which i
 
   $dbh->{pg_expand_array} = 0;
 
+=head2 Bytea Array support (bytea[])
+
+To store data in a bytea[] column, there are two options.
+
+The first option is to send an array of strings, where all "non-printable"
+octets (decimal values 0 to 31 and 127 to 255) are already escaped as per
+PostgreSQL's rules:
+
+L<https://www.postgresql.org/docs/current/datatype-binary.html>
+
+The second option is to use bind_param, in which case DBD::Pg will
+automatically escape as necessary.
+
+For example, to send "foo" with a trailing newline:
+
+    # first option (send escaped strings):
+    $sth = $dbh->prepare('INSERT INTO example_table (id, bytearray) VALUES (?,?)');
+    # octal 012 is a newline
+    $sth->execute(500, ['1', 'foo\012']);
+
+    # second option (use bind_param)
+    $sth = $dbh->prepare('INSERT INTO example_table (id, bytearray) VALUES (?,?)');
+    $sth->bind_param(2, undef, { pg_type => PG_BYTEAARRAY });
+    $sth->execute(500, ['1', "foo\n"]);
+
+Usage with the database handle's quote method is similar; for example:
+
+    # first option (quote escaped strings):
+    $string = $dbh->quote(['1', 'foo\012']);
+
+    # second option (specify pg_type):
+    $string = $dbh->quote(['1', "foo\n"], { pg_type => PG_BYTEAARRAY });
+
+When DBD::Pg fetches bytea[] data, the data is automatically unescaped.
 
 =head2 COPY support
 
