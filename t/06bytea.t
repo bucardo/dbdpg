@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 45;
+plan tests => 49;
 
 isnt ($dbh, undef, 'Connect to database for bytea testing');
 
@@ -106,7 +106,7 @@ if ($supports_hex) {
 }
 else {
     test_outputs($supports_hex, undef);
-    SKIP: { skip 'No BYTEA hex format support before 9.0', 18 }
+    SKIP: { skip 'No BYTEA hex format support before 9.0', 21 }
 }
 
 $sth->finish();
@@ -184,5 +184,20 @@ sub test_outputs {
     is ($dbh->quote($string, SQL_BINARY), $expected, "$t (SQL_BINARY)");
     is ($dbh->quote($string, SQL_VARBINARY), $expected, "$t (SQL_VARBINARY)");
     is ($dbh->quote($string, SQL_LONGVARBINARY), $expected, "$t (SQL_LONGVARBINARY)");
+
+    $t="quote properly handles bytea escaped binary in arrays$t_append";
+    my $array = ['abc', '\000', 10];
+    $result = $dbh->quote($array);
+    $expected = qq{${E}'{"abc","\\\\\\\\000","10"}'};
+    is ($result, $expected, $t);
+
+    if ($test_hex) {
+        $t="quote properly handles bytea hex-escaped binary in arrays$t_append";
+        $array = ['abc', '\x00507080ABFF', 10];
+        $result = $dbh->quote($array);
+        $expected = qq{${E}'{"abc","\\\\\\\\x00507080ABFF","10"}'};
+        is ($result, $expected, $t);
+    }
+
     return;
 }
