@@ -73,12 +73,20 @@ $sth->bind_param(1, undef, { pg_type => PG_INT4 });
 $sth->bind_param(2, undef, SQL_LONGVARBINARY);
 ok ($sth->execute(408, $binary_out), $t);
 
-if ($pgversion < 90000) {
-    test_outputs(undef);
-    SKIP: { skip 'No BYTEA output format setting before 9.0', 13 }
+
+# Set DBDPG_TEST_BYTEA_HEX environment variable to 1 or 0 to force
+# enable/disable testing of hex quoting.
+my $supports_hex = $ENV{DBDPG_TEST_BYTEA_HEX};
+if (! defined($supports_hex)) {
+    $supports_hex = $pgversion >= 90000;
+}
+
+if ($supports_hex) {
+    test_outputs($supports_hex, $_) for qw(hex escape);
 }
 else {
-    test_outputs($_) for qw(hex escape);
+    test_outputs($supports_hex, undef);
+    SKIP: { skip 'No BYTEA hex format support before 9.0', 13 }
 }
 
 $sth->finish();
@@ -87,24 +95,26 @@ cleanup_database($dbh,'test');
 $dbh->disconnect();
 
 sub test_outputs {
+    my $test_hex = shift;
     my $output = shift;
-    $dbh->do(qq{SET bytea_output = '$output'}) if $output;
+    my $t_append = '';
+    if ($output) {
+        $dbh->do(qq{SET bytea_output = '$output'});
+        $t_append = " ($output output)";
+    }
 
-    $t='Received correct text from BYTEA column with backslashes';
-    $t.=" ($output output)" if $output;
+    $t="Received correct text from BYTEA column with backslashes$t_append";
     $sth = $dbh->prepare(q{SELECT bytetest FROM dbd_pg_test WHERE id=?});
     $sth->execute(400);
     my $byte = $sth->fetchall_arrayref()->[0][0];
     is ($byte, 'aa\bb\cc\\\0dd\\', $t); ## nospellcheck
 
-    $t='Received correct text from BYTEA column with quote';
-    $t.=" ($output output)" if $output;
+    $t="Received correct text from BYTEA column with quote$t_append";
     $sth->execute(402);
     $byte = $sth->fetchall_arrayref()->[0][0];
     is ($byte, '\'', $t);
 
-    $t='Ensure proper handling of high bit characters';
-    $t.=" ($output output)" if $output;
+    $t="Ensure proper handling of high bit characters$t_append";
     $sth->execute(403);
     ($binary_in) = $sth->fetchrow_array();
     cmp_ok ($binary_in, 'eq', $binary_out, $t);
@@ -124,8 +134,8 @@ sub test_outputs {
     ($binary_in) = $sth->fetchrow_array();
     cmp_ok ($binary_in, 'eq', $binary_out, $t);
 
-    $t='quote properly handles bytea strings';
-    $t.=" ($output output)" if $output;
+
+    $t="quote properly handles bytea strings$t_append";
     my $string = "abc\123\\def\0ghi";
     my $result = $dbh->quote($string, { pg_type => PG_BYTEA });
     my $E = $pgversion >= 80100 ? q{E} : q{};
