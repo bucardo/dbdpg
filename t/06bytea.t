@@ -17,7 +17,7 @@ my $dbh = connect_database();
 if (! $dbh) {
     plan skip_all => 'Connection to database failed, cannot continue testing';
 }
-plan tests => 36;
+plan tests => 60;
 
 isnt ($dbh, undef, 'Connect to database for bytea testing');
 
@@ -25,6 +25,8 @@ my $pgversion = $dbh->{pg_server_version};
 if ($pgversion >= 80100 and $pgversion < 19000) {
     $dbh->do('SET escape_string_warning = false');
 }
+
+my $all_octets = pack('C*', 0..255);
 
 my ($sth, $t);
 
@@ -73,12 +75,60 @@ $sth->bind_param(1, undef, { pg_type => PG_INT4 });
 $sth->bind_param(2, undef, SQL_LONGVARBINARY);
 ok ($sth->execute(408, $binary_out), $t);
 
-if ($pgversion < 90000) {
-    test_outputs(undef);
-    SKIP: { skip 'No BYTEA output format setting before 9.0', 13 }
+# array tests
+
+$t='store binary array data in bytea[] column';
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytearray) VALUES (?,?)});
+$sth->bind_param(1, undef, { pg_type => PG_INT4 });
+# without bind_param, special characters need to be escaped; 012 is newline
+ok ($sth->execute(500, [1, 'foo\012bar']), $t);
+
+$t='store mixed printable/non-printable characters in bytea[] column';
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytearray) VALUES (?,?)});
+$sth->bind_param(1, undef, { pg_type => PG_INT4 });
+ok ($sth->execute(501, [1,'foo',
+            'null\000tab\011escape\033backslash\\\\double quote"single quote\'high bytes\200\234\277\305\340\377'
+        ]), $t);
+
+$t='store binary array data in bytea[] column via PG_BYTEAARRAY';
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytearray) VALUES (?,?)});
+$sth->bind_param(1, undef, { pg_type => PG_INT4 });
+$sth->bind_param(2, undef, { pg_type => PG_BYTEAARRAY });
+ok ($sth->execute(502, [1, "foo\nbar"]), $t);
+
+$t='store mixed printable/non-printable characters in bytea[] column via PG_BYTEAARRAY';
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytearray) VALUES (?,?)});
+$sth->bind_param(1, undef, { pg_type => PG_INT4 });
+$sth->bind_param(2, undef, { pg_type => PG_BYTEAARRAY });
+ok ($sth->execute(503, [1,'foo',
+            "null\0tab\tescape\033backslash\\double quote\"single quote'braces([{high bytes\200\234\277\305\340\377",
+        ]), $t);
+
+$t='store all octets in bytea[] column via PG_BYTEAARRAY';
+$sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytearray) VALUES (?,?)});
+$sth->bind_param(1, undef, { pg_type => PG_INT4 });
+$sth->bind_param(2, undef, { pg_type => PG_BYTEAARRAY });
+ok ($sth->execute(504, [1,'foo', $all_octets]), $t);
+
+
+# Set DBDPG_TEST_BYTEA_HEX environment variable to 1 or 0 to force
+# enable/disable testing of hex quoting.
+my $supports_hex = $ENV{DBDPG_TEST_BYTEA_HEX};
+if (! defined($supports_hex)) {
+    $supports_hex = $pgversion >= 90000;
+}
+
+if ($supports_hex) {
+    $t='store hex-escaped characters in a bytea[] column';
+    $sth = $dbh->prepare(q{INSERT INTO dbd_pg_test (id,bytearray) VALUES (?,?)});
+    $sth->bind_param(1, undef, { pg_type => PG_INT4 });
+    ok ($sth->execute(550, [1,'foo', '\x00104A8FABDEFF' ]), $t);
+
+    test_outputs($supports_hex, $_) for qw(hex escape);
 }
 else {
-    test_outputs($_) for qw(hex escape);
+    test_outputs($supports_hex, undef);
+    SKIP: { skip 'No BYTEA hex format support before 9.0', 25 }
 }
 
 $sth->finish();
@@ -87,24 +137,26 @@ cleanup_database($dbh,'test');
 $dbh->disconnect();
 
 sub test_outputs {
+    my $test_hex = shift;
     my $output = shift;
-    $dbh->do(qq{SET bytea_output = '$output'}) if $output;
+    my $t_append = '';
+    if ($output) {
+        $dbh->do(qq{SET bytea_output = '$output'});
+        $t_append = " ($output output)";
+    }
 
-    $t='Received correct text from BYTEA column with backslashes';
-    $t.=" ($output output)" if $output;
+    $t="Received correct text from BYTEA column with backslashes$t_append";
     $sth = $dbh->prepare(q{SELECT bytetest FROM dbd_pg_test WHERE id=?});
     $sth->execute(400);
     my $byte = $sth->fetchall_arrayref()->[0][0];
     is ($byte, 'aa\bb\cc\\\0dd\\', $t); ## nospellcheck
 
-    $t='Received correct text from BYTEA column with quote';
-    $t.=" ($output output)" if $output;
+    $t="Received correct text from BYTEA column with quote$t_append";
     $sth->execute(402);
     $byte = $sth->fetchall_arrayref()->[0][0];
     is ($byte, '\'', $t);
 
-    $t='Ensure proper handling of high bit characters';
-    $t.=" ($output output)" if $output;
+    $t="Ensure proper handling of high bit characters$t_append";
     $sth->execute(403);
     ($binary_in) = $sth->fetchrow_array();
     cmp_ok ($binary_in, 'eq', $binary_out, $t);
@@ -124,8 +176,44 @@ sub test_outputs {
     ($binary_in) = $sth->fetchrow_array();
     cmp_ok ($binary_in, 'eq', $binary_out, $t);
 
-    $t='quote properly handles bytea strings';
-    $t.=" ($output output)" if $output;
+    $t="Received correct representation of bytea[] data$t_append";
+    $sth = $dbh->prepare(q{SELECT bytearray FROM dbd_pg_test WHERE id=?});
+    $sth->execute(500);
+    ($binary_in) = $sth->fetchrow_array();
+    is_deeply ($binary_in, [1, "foo\nbar"], $t);
+
+    $t="Received correct representation of mixed printable/non-printable bytea[] data$t_append";
+    $sth = $dbh->prepare(q{SELECT bytearray FROM dbd_pg_test WHERE id=?});
+    $sth->execute(501);
+    ($binary_in) = $sth->fetchrow_array();
+    is_deeply ($binary_in, [1, 'foo', "null\0tab\tescape\033backslash\\double quote\"single quote'high bytes\200\234\277\305\340\377"], $t);
+
+    $t="Received correct representation of bytea[] data inserted via PG_BYTEAARRAY$t_append";
+    $sth->execute(502);
+    ($binary_in) = $sth->fetchrow_array();
+    is_deeply ($binary_in, [1, "foo\nbar"], $t);
+
+    $t="Received correct representation of mixed printable/non-printable bytea[] data inserted via PG_BYTEARRAY$t_append";
+    $sth = $dbh->prepare(q{SELECT bytearray FROM dbd_pg_test WHERE id=?});
+    $sth->execute(503);
+    ($binary_in) = $sth->fetchrow_array();
+    is_deeply ($binary_in, [1, 'foo',"null\0tab\tescape\033backslash\\double quote\"single quote'braces([{high bytes\200\234\277\305\340\377" ], $t);
+
+    $t='Received correct representation of all octets in bytea[] data inserted via PG_BYTEARRAY';
+    $sth = $dbh->prepare(q{SELECT bytearray FROM dbd_pg_test WHERE id=?});
+    $sth->execute(504);
+    ($binary_in) = $sth->fetchrow_array();
+    is_deeply ($binary_in, [1, 'foo', $all_octets], $t);
+
+    if ($test_hex) {
+        $t="Received correct representation of bytea[] data inserted via hex-escape$t_append";
+        $sth = $dbh->prepare(q{SELECT bytearray FROM dbd_pg_test WHERE id=?});
+        $sth->execute(550);
+        ($binary_in) = $sth->fetchrow_array();
+        is_deeply ($binary_in, [1, 'foo', "\x00\x10\x4A\x8F\xAB\xDE\xFF"]);
+    }
+
+    $t="quote properly handles bytea strings$t_append";
     my $string = "abc\123\\def\0ghi";
     my $result = $dbh->quote($string, { pg_type => PG_BYTEA });
     my $E = $pgversion >= 80100 ? q{E} : q{};
@@ -135,5 +223,27 @@ sub test_outputs {
     is ($dbh->quote($string, SQL_BINARY), $expected, "$t (SQL_BINARY)");
     is ($dbh->quote($string, SQL_VARBINARY), $expected, "$t (SQL_VARBINARY)");
     is ($dbh->quote($string, SQL_LONGVARBINARY), $expected, "$t (SQL_LONGVARBINARY)");
+
+    $t="quote properly handles bytea escaped binary in arrays$t_append";
+    my $array = ['abc', '\000', 10];
+    $result = $dbh->quote($array);
+    $expected = qq{${E}'{"abc","\\\\\\\\000","10"}'};
+    is ($result, $expected, $t);
+
+    if ($test_hex) {
+        $t="quote properly handles bytea hex-escaped binary in arrays$t_append";
+        $array = ['abc', '\x00507080ABFF', 10];
+        $result = $dbh->quote($array);
+        $expected = qq{${E}'{"abc","\\\\\\\\x00507080ABFF","10"}'};
+        is ($result, $expected, $t);
+    }
+
+    $t='quote properly handles bytea arrays';
+    $t.=" ($output output)" if $output;
+    $array = ['abc', "\0", 10];
+    $result = $dbh->quote($array, { pg_type => PG_BYTEAARRAY });
+    $expected = qq{${E}'{"abc","\\\\\\\\000","10"}'};
+    is ($result, $expected, $t);
+
     return;
 }
